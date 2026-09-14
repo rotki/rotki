@@ -139,5 +139,6 @@ defineExpose({
     data-testid="event-form"
     :data-key="kebabCase(entryType)"
     :data="data"
+    :entry-type="formComponents[entryType] === OnlineHistoryEventForm ? entryType : undefined"
   />
 </template>

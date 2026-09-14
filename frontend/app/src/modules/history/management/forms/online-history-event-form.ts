@@ -45,17 +45,19 @@ export interface OnlineHistoryFormState {
 }
 
 interface OnlineHistoryFormDefaults {
+  /** The entry type picked in the dialog; a plain history event when none was picked. */
+  entryType?: OnlineFormEvent['entryType'];
   /** The last location the user picked, which is what a new event defaults to. */
   location: string;
   /** The index the dialog suggests for a new event in the group. */
   nextSequenceId: string;
 }
 
-export function emptyOnlineHistoryForm({ location, nextSequenceId }: OnlineHistoryFormDefaults): OnlineHistoryFormState {
+export function emptyOnlineHistoryForm({ entryType, location, nextSequenceId }: OnlineHistoryFormDefaults): OnlineHistoryFormState {
   return {
     amount: '0',
     asset: '',
-    entryType: HistoryEventEntryType.HISTORY_EVENT,
+    entryType: entryType ?? HistoryEventEntryType.HISTORY_EVENT,
     eventSubtype: 'none',
     eventType: '',
     groupIdentifier: '',
@@ -112,6 +114,7 @@ export function onlineHistoryStateFromGroup(entry: OnlineFormEvent, defaults: On
 
   return {
     ...empty,
+    entryType: entry.entryType,
     groupIdentifier: entry.groupIdentifier,
     location: entry.location || empty.location,
     locationLabel: entry.locationLabel ?? '',

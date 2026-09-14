@@ -52,6 +52,11 @@ describe('emptyOnlineHistoryForm', () => {
   it('should start a new event as a plain history event', () => {
     expect(emptyOnlineHistoryForm(defaults).entryType).toBe(HistoryEventEntryType.HISTORY_EVENT);
   });
+
+  it('should start a new event with the entry type picked in the dialog', () => {
+    const state = emptyOnlineHistoryForm({ ...defaults, entryType: HistoryEventEntryType.BANK_TRANSACTION_EVENT });
+    expect(toOnlineHistoryPayload(state, 'new-group').entryType).toBe(HistoryEventEntryType.BANK_TRANSACTION_EVENT);
+  });
 });
 
 describe('onlineHistoryStateFromEvent', () => {
