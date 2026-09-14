@@ -28,6 +28,13 @@ describe('useHistoryEventHighlights', () => {
     expect(get(highlightTypes)).toEqual({ 1: 'warning', 2: 'error', 3: 'success' });
   });
 
+  it('should highlight a transaction opened from a decoding review', () => {
+    mockQuery = { highlightedGroupIdentifier: 'group-review' };
+    const { highlightedGroupIdentifier, highlightTypes } = useHistoryEventHighlights();
+    expect(get(highlightedGroupIdentifier)).toBe('group-review');
+    expect(get(highlightTypes)).toEqual({ 'group:group-review': 'warning' });
+  });
+
   it('should expose an internal-tx-conflict as a group highlight', () => {
     mockQuery = { highlightedInternalTxConflict: 'g1' };
     const { highlightedGroupIdentifier, highlightedIdentifiers, highlightTypes } = useHistoryEventHighlights();

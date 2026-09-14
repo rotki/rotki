@@ -1,4 +1,5 @@
 import type { BigNumber } from '@rotki/common';
+import type { TransactionDecodingComparison } from '@/modules/history/data-issues/schemas';
 
 /**
  * Typed error domain for data-issue API calls, so the UI can branch on the failure kind (friendly
@@ -26,6 +27,7 @@ export interface RemediationTimelineItem {
   readonly strategy: string;
   readonly success?: boolean;
   readonly timestamp?: number;
+  readonly transactions?: TransactionDecodingComparison[];
 }
 
 /**

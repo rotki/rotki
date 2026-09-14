@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
@@ -25,6 +27,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const review = ref<RemediationTimelineItem>();
 const panelFilters = ref<Filters>({});
 
 const panelFields = panelFilterFields(useDataIssueFields());
@@ -77,8 +80,8 @@ function onResolveFromCard(issue: DataIssue): void {
   onResolveRequest();
 }
 
-watch([modelDrawerOpen, modelResolveOpen, filterEngaged], ([drawer, resolve, filter]) => {
-  set(subDialogOpen, drawer || resolve || filter);
+watch([modelDrawerOpen, modelResolveOpen, filterEngaged, review], ([drawer, resolve, filter, comparison]) => {
+  set(subDialogOpen, drawer || resolve || filter || !!comparison);
 });
 
 watchDebounced(panelFilters, () => {
@@ -265,8 +268,15 @@ onMounted(() => {
         @dismiss="onDismiss($event)"
         @retry="onRetry($event)"
         @resolve="onResolveRequest()"
+        @review="review = $event; modelDrawerOpen = false"
       />
     </PinnedDetailSheet>
+
+    <DataIssueDecodingReview
+      v-model="review"
+      :asset="modelSelectedIssue?.asset"
+      @navigate="emit('close')"
+    />
 
     <ResolveManuallyDialog
       v-model="modelResolveOpen"

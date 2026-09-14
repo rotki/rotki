@@ -5,6 +5,7 @@ import type {
 } from '@/modules/history/data-issues/types';
 import { fromNullable, getOr } from 'plainfp/option';
 import { pipe } from 'plainfp/pipe';
+import { i18n } from '@/i18n';
 import { msg } from '@/message-key';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import {
@@ -21,6 +22,10 @@ import {
  * (`Reprocess event`).
  */
 export function humanizeStrategy(strategy: string): string {
+  if (strategy === 'redecode_customized_transactions') {
+    const { t } = i18n.global;
+    return t('data_issues.detail.checked_customizations');
+  }
   const normalized = strategy.replaceAll(/[_-]+/g, ' ').trim();
   if (normalized.length === 0)
     return strategy;
@@ -192,6 +197,7 @@ function toTimelineItem(attempt: AutoRemediationAttempt): RemediationTimelineIte
     strategy: attempt.strategy,
     success: attempt.success,
     timestamp: attempt.timestamp,
+    transactions: attempt.transactions,
   };
 }
 
