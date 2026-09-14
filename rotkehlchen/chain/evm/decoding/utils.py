@@ -85,10 +85,10 @@ def bridge_prepare_data(
 
 
 def make_bridge_extra_data(
-        from_chain: ChainID | int | None,
-        to_chain: ChainID | int | None,
-        from_address: ChecksumEvmAddress | None = None,
-        to_address: ChecksumEvmAddress | None = None,
+        from_chain: ChainID | int | str | None,
+        to_chain: ChainID | int | str | None,
+        from_address: str | None = None,
+        to_address: str | None = None,
         transfer_id: str | None = None,
         to_asset: ChecksumEvmAddress | None = None,
 ) -> dict[str, BridgeExtraData]:
@@ -115,10 +115,10 @@ def make_bridge_extra_data(
 
 def set_bridge_extra_data(
         event: HistoryBaseEntry,
-        from_chain: ChainID | int | None,
-        to_chain: ChainID | int | None,
-        from_address: ChecksumEvmAddress | None = None,
-        to_address: ChecksumEvmAddress | None = None,
+        from_chain: ChainID | int | str | None,
+        to_chain: ChainID | int | str | None,
+        from_address: str | None = None,
+        to_address: str | None = None,
         transfer_id: str | None = None,
         to_asset: ChecksumEvmAddress | None = None,
 ) -> None:

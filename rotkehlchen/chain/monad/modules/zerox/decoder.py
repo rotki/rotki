@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.zerox.decoder import ZeroxCommonDecoder
 
-from .constants import SETTLER_ROUTERS
-
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
@@ -22,5 +20,4 @@ class ZeroxDecoder(ZeroxCommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            settler_routers_addresses=SETTLER_ROUTERS,
         )

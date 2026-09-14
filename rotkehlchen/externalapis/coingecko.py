@@ -17,15 +17,19 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenKind
+from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp, TokenKind
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
-from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+from rotkehlchen.utils.mixins.penalizable_oracle import (
+    ORACLE_PROBE_TIMEOUT,
+    PenalizablePriceOracleMixin,
+)
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -530,11 +534,15 @@ class Coingecko(
         PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: DBHandler | None) -> None:
+    def __init__(
+            self,
+            database: DBHandler | None,
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
-        PenalizablePriceOracleMixin.__init__(self)
-        self.session = create_session()
+        PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
+        self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
         self._rate_limiter = TokenBucket(
@@ -595,6 +603,25 @@ class Coingecko(
         )
         self._probed = False
 
+    @staticmethod
+    def _base_url(api_key: ApiKey | None) -> str:
+        if api_key is not None:
+            return 'https://pro-api.coingecko.com/api/v3'
+        return 'https://api.coingecko.com/api/v3'
+
+    def probe_availability(self) -> bool:
+        api_key = self._get_api_key()
+        try:
+            response = self.session.get(
+                url=f'{self._base_url(api_key)}/ping',
+                headers={'x-cg-pro-api-key': api_key} if api_key else None,
+                timeout=(ORACLE_PROBE_TIMEOUT, ORACLE_PROBE_TIMEOUT),
+            )
+        except requests.RequestException as e:
+            log.debug('Coingecko availability probe failed due to %s', e)
+            return False
+        return response.status_code == HTTPStatus.OK
+
     @overload
     def _query(
             self,
@@ -624,14 +651,10 @@ class Coingecko(
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
-        if (api_key := self._get_api_key()) is not None:
-            base_url = 'https://pro-api.coingecko.com/api/v3'
-        else:
-            base_url = 'https://api.coingecko.com/api/v3'
-
+        api_key = self._get_api_key()
         if options is None:
             options = {}
-        url = f'{base_url}/{module}/{subpath or ""}'
+        url = f'{self._base_url(api_key)}/{module}/{subpath or ""}'
         if api_key:
             self.session.headers.update({'x-cg-pro-api-key': api_key})
         else:
@@ -647,7 +670,7 @@ class Coingecko(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            self.penalty_info.note_failure_or_penalize()
+            self.note_request_failure(e)
             raise RemoteError(f'Coingecko API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:

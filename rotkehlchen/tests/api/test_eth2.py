@@ -26,6 +26,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -53,6 +54,7 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
+    ChecksumEvmAddress,
     Eth2PubKey,
     EvmTransaction,
     Location,
@@ -68,7 +70,6 @@ if TYPE_CHECKING:
 
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.premium.premium import Premium
-    from rotkehlchen.types import ChecksumEvmAddress
 
 
 # Validators with clean short history and different withdrawal address where only they withdrew
@@ -1877,3 +1878,65 @@ def test_refetch_withdrawal_events(rotkehlchen_api_server: APIServer) -> None:
     # the new withdrawal should have been added, existing one skipped
     with db.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 2
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+def test_history_hides_withdrawals_of_untracked_address(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Withdrawals to an address we don't track are still stored, since the validator's
+    balance history is reconstructed from them, but must not show up in the history. Once
+    the address is tracked they do, and untracking it hides them again."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    untracked_address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    with rotki.data.db.user_write() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(write_cursor, [EthWithdrawalEvent(
+            validator_index=(v_tracked := 45555),
+            timestamp=TimestampMS(1666693607000),
+            amount=FVal('5'),
+            withdrawal_address=ethereum_accounts[0],
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=(v_untracked := 114543),
+            timestamp=TimestampMS(1666697207000),
+            amount=FVal('7'),
+            withdrawal_address=untracked_address,
+            is_exit=False,
+        )])
+
+    def query_validator_indices() -> set[int]:
+        result = assert_proper_response_with_result(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+                json={'entry_types': {'values': ['eth withdrawal event']}},
+            ),
+            rotkehlchen_api_server=rotkehlchen_api_server,
+        )
+        assert result['entries_found'] == len(result['entries'])
+        return {entry['entry']['validator_index'] for entry in result['entries']}
+
+    assert query_validator_indices() == {v_tracked}
+    with rotki.data.db.conn.read_ctx() as cursor:  # but they are still in the DB
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE entry_type=?',
+            (HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(),),
+        ).fetchone()[0] == 2
+
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=untracked_address,
+            )],
+        )
+    assert query_validator_indices() == {v_tracked, v_untracked}
+
+    with rotki.data.db.user_write() as write_cursor:  # and untracking hides them again
+        rotki.data.db.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=[untracked_address],
+        )
+    assert query_validator_indices() == {v_tracked}

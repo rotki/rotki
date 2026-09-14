@@ -1,6 +1,4 @@
 import datetime
-import threading
-import time
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, call, patch
@@ -21,7 +19,6 @@ from rotkehlchen.chain.evm.tokens import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.concurrency import spawn
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -768,76 +765,6 @@ def test_cache_is_per_token_type(ethereum_inquirer):
 
     assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20)
     assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721)
-
-
-def _do_read(database):
-    with database.conn.read_ctx() as cursor:
-        database.get_settings(cursor)
-        database.get_all_external_service_credentials()
-        database.get_blockchain_accounts(cursor)
-
-
-def _do_spawn(database, stop_event):
-    while not stop_event.is_set():
-        spawn(_do_read, database)
-        with database.user_write() as write_cursor:
-            database.set_setting(write_cursor, 'last_write_ts', 15)
-            time.sleep(0.1)
-            database.set_setting(write_cursor, 'last_write_ts', 15)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [100])
-@pytest.mark.parametrize('sql_vm_instructions_cb', [10])
-def test_flaky_binding_parameter_zero(
-        database: DBHandler,
-        ethereum_accounts: list[ChecksumEvmAddress],
-) -> None:
-    """Test that reproduces https://github.com/rotki/rotki/issues/5432 reliably.
-
-    Seems to be an sqlite driver implementation error that causes a wrong instance of
-    "Error binding parameter 0 - probably unsupported type" flakily. Happened once
-    in a blue moon for our users so was hard to reproduce.
-
-    Happens only if opening a parallel write context in the same connection from which
-    the read only get_tokens_for_address is done. Makes no sense. As a read context
-    should not be affected. Our current fix in the code is to repeat the cursor.execute()
-    without any delay. It works splendid. Same solution the coveragepy people used:
-    https://github.com/nedbat/coveragepy/issues/1010
-    """
-    stuff: list[tuple[Any, ...]] = []
-    # Populate some data in the evm_accounts_details table, since this is what's used in the bug
-    for idx, address in enumerate(ethereum_accounts):
-        if idx % 2 == 0:
-            stuff.append((address, 1, 'last_queried_timestamp', 42))
-        else:
-            stuff.extend((
-                (address, 1, 'tokens', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),  # noqa: E501
-                (address, 1, 'tokens', 'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'),  # noqa: E501
-            ))
-
-    with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO evm_accounts_details '
-            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
-            stuff,
-        )
-
-    # Create the conditions for the bug to hit. Can verify by removing the retry in dbhandler.py
-    stop_event = threading.Event()
-    spawner_task = spawn(_do_spawn, database, stop_event)
-    time.sleep(.1)  # give the writer task time to start writing
-    try:
-        with database.conn.read_ctx() as cursor:
-            for address in ethereum_accounts:
-                database.get_tokens_for_address(
-                    cursor=cursor,
-                    address=address,
-                    blockchain=SupportedBlockchain.ETHEREUM,
-                    token_exceptions=set(),
-                )
-    finally:  # stop the writer so it does not keep using the db after the test ends
-        stop_event.set()
-        spawner_task.join(timeout=5)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

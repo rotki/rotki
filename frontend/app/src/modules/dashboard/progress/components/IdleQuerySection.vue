@@ -32,7 +32,7 @@ const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
         persist-on-tooltip-hover
       >
         <template #activator>
-          <span class="underline decoration-dotted cursor-help">
+          <span class="underline decoration-dotted">
             {{ lastQueriedDisplay }}
           </span>
         </template>

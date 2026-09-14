@@ -1,12 +1,12 @@
 import type { Ref } from 'vue';
+import type {
+  AccountManageState,
+  StakingValidatorManage,
+  XpubManage,
+} from '@/modules/accounts/blockchain/use-account-manage';
 import { assert, Blockchain } from '@rotki/common';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
-import {
-  type AccountManageState,
-  createNewBlockchainAccount,
-  type StakingValidatorManage,
-  type XpubManage,
-} from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { InputMode } from '@/modules/core/common/input-mode';
 
@@ -58,20 +58,15 @@ export function useAccountFormState(modelValue: Ref<AccountManageState>): UseAcc
     if (get(inputMode) === InputMode.XPUB_ADD)
       set(inputMode, InputMode.MANUAL_ADD);
 
-    if (next === Blockchain.ETH2) {
-      set(modelValue, {
-        chain: Blockchain.ETH2,
-        data: {},
-        mode: 'add',
-        type: 'validator',
-      } satisfies StakingValidatorManage);
+    const state = createNewAccountForChain(next);
+    if (state.type === 'validator') {
+      set(modelValue, state);
       return;
     }
 
     const addressesTypedForTheOldChain = get(modelValue).data;
     set(modelValue, {
-      ...createNewBlockchainAccount(),
-      chain: next,
+      ...state,
       ...(Array.isArray(addressesTypedForTheOldChain) ? { data: addressesTypedForTheOldChain } : {}),
     });
   }
@@ -151,10 +146,7 @@ export function useAccountFormState(modelValue: Ref<AccountManageState>): UseAcc
       } satisfies XpubManage);
     }
     else {
-      set(modelValue, {
-        ...createNewBlockchainAccount(),
-        chain: selectedChain,
-      });
+      set(modelValue, createNewAccountForChain(selectedChain));
     }
   });
 

@@ -1,6 +1,7 @@
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AccountManageState, createNewBlockchainAccount } from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import { useAccountFormWarnings } from '@/modules/accounts/management/use-account-form-warnings';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 

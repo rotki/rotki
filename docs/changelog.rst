@@ -18,7 +18,24 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`-` Undelegating, withdrawing and bridging GRT back to Ethereum through a The Graph vesting contract on Arbitrum One are now decoded for the tracked beneficiary instead of showing up as gas-only transactions.
+* :feature:`-` rotki now tells you when a chain's transactions can not be queried because a paid Etherscan API key is required, and queries Etherscan first on such chains when a paid key is configured.
+* :bug:`13090` Aerodrome and Velodrome liquidity additions and removals made with ETH are now properly decoded, and Aerodrome/Velodrome Slipstream concentrated liquidity swaps and positions are now supported and gauge and staking and CL position balances are recognized
+* :bug:`-` The chain picker now lists the chains alphabetically instead of in the order the backend happens to return them, so a chain can be found by scrolling to where its name belongs. "All Supported Chains" stays at the top, and it can now be found by typing part of its name, which matched nothing before.
+* :bug:`-` A price source that stops answering is now set aside after its first timeout and checked with a quick probe before it is used again.
+* :bug:`-` Hovering the last-queried time in the dashboard sync bar no longer turns the cursor into a question mark.
+* :bug:`-` Coinbase conversions no longer get a made-up fee consisting of the difference between the two legs' fiat valuations.
+* :bug:`-` Removing a Coinbase, Bitstamp or Binance connection now forgets how far its history had been queried, renaming one carries that progress over to the new name, and a connection added under the name of a previously removed one starts querying from scratch.
+* :bug:`-` Swaps through any newer 0x Settler deployment are now decoded, including any future ones.
+* :bug:`12795` When every RPC node of one chain fails, blockchain balances of the other chains are no longer discarded from balance snapshot.
+* :bug:`13034` Withdrawals from a validator whose withdrawal address you do not track no longer show up in your history or count as staking income.
+* :bug:`-` Across and CCTP bridges involving Solana are now decoded, and their Solana and EVM history events are matched as the two sides of the same bridge transfer.
+* :bug:`-` Claiming your Safenet staking rewards is now recorded as a staking reward.
+* :bug:`13027` Adding an ETH2 validator by index or public key works again. Since 1.44.0 the Add Account button on the validators tab opened the generic blockchain account form instead of the validator form, and saving from it did nothing, so a validator that was not picked up automatically from its deposit could not be added at all.
+* :bug:`-` A Kraken trade fill so small that its fiat side rounds to zero is now shown against the pair's real quote asset.
 * :bug:`-` Historical prices of a token that exists on several chains now come from the main asset it is grouped with, so WETH on Arbitrum, Optimism and Base is priced as ETH. They used to be priced on their own and could come back at roughly half of ETH's value.
+* :bug:`8107` A 1inch swap in which the sender also receives a second transfer no longer turns that extra transfer into a second swap receive
+* :bug:`-` Refreshing protocol data no longer gets stuck showing a pending pool cache update when there are no new pools to add or a pool cannot be queried.
 * :bug:`-` Changing the asset or chain in the send form while a gas estimate is still being fetched no longer makes the estimate look finished before it is. The spinner stopped as soon as the request you moved away from unwound, so the fee shown while the real request was still in flight read as the final one.
 * :bug:`-` When a history refresh skips an online source you have switched off or not connected, the reason shown in the task centre now names that source the way the rest of rotki does. It read as the raw internal name, so a skipped block production query was explained as "block_productions is not available".
 * :bug:`-` The task centre now scrambles the addresses it shows while privacy mode is on. Rows such as "Querying transactions for 0x..." and account additions printed the real address, so the one setting meant to make rotki safe to screen-share or screenshot did not cover the panel that is open while you work.

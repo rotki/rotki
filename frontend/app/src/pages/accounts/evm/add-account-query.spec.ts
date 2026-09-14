@@ -1,5 +1,6 @@
 import type { LocationQuery, RouteLocationNormalizedLoaded } from 'vue-router';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { Blockchain } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -47,9 +48,9 @@ vi.mock('@/modules/staking/eth/use-eth-staking-access', () => ({
   useEthStakingAccess: (): { allowed: Ref<boolean> } => ({ allowed: ref(true) }),
 }));
 
-function mountPage(): VueWrapper<InstanceType<typeof EvmAccountsPage>> {
+function mountPage(tab: string = 'accounts'): VueWrapper<InstanceType<typeof EvmAccountsPage>> {
   return mount(EvmAccountsPage, {
-    props: { tab: 'accounts' },
+    props: { tab },
     global: {
       provide: libraryDefaults,
       stubs: {
@@ -126,6 +127,17 @@ describe('pages/accounts/evm — add query handling', () => {
     expect(model).toBeDefined();
     expect(getFirstAddress(model)).toBe(address);
     expect(replaceMock).toHaveBeenCalledWith({ query: {} });
+  });
+
+  it('should seed a validator, not an address account, on the validators tab', async () => {
+    routeQuery.value = { add: 'true' };
+    wrapper = mountPage('validators');
+    await flushPromises();
+
+    const model = getDialogModel(wrapper);
+
+    expect(model?.type).toBe('validator');
+    expect(model?.chain).toBe(Blockchain.ETH2);
   });
 
   it('should not open the dialog without ?add', async () => {

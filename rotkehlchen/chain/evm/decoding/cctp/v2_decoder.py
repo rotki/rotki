@@ -5,6 +5,7 @@ from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.cctp.constants import (
     CCTP_CPT_DETAILS,
     CCTP_DOMAIN_MAPPING,
+    CCTP_SOLANA_DOMAIN,
     CPT_CCTP,
     DEPOSIT_FOR_BURN_V2,
     MESSAGE_RECEIVED_V2,
@@ -20,7 +21,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import bytes_to_address
+from rotkehlchen.types import ChainID, SupportedBlockchain
+from rotkehlchen.utils.misc import bytes_to_address, bytes_to_solana_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -55,7 +57,7 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
 
     def _decode_deposit_v2(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode V2 DepositForBurn events. V2 adds maxFee, minFinalityThreshold, hookData."""
-        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[3])):
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         to_chain = int.from_bytes(context.tx_log.data[64:96])
@@ -71,11 +73,21 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
                 event.amount == deposit_amount and
                 event.location_label == user_address
             ):
+                to_address: str | None
                 if (mapped_to_chain := CCTP_DOMAIN_MAPPING.get(to_chain)) is not None:
-                    chain_info = f' from {self.node_inquirer.chain_id.label()} to {mapped_to_chain.label()}'  # noqa: E501
+                    to_chain_value: ChainID | int | str = mapped_to_chain
+                    to_chain_label = mapped_to_chain.label()
+                    to_address = bytes_to_address(context.tx_log.data[32:64])
+                elif to_chain == CCTP_SOLANA_DOMAIN:
+                    to_chain_value = SupportedBlockchain.SOLANA.serialize()
+                    to_chain_label = 'Solana'
+                    to_address = bytes_to_solana_address(context.tx_log.data[32:64])
                 else:
                     log.error(f'Could not find chain ID {to_chain} for CCTP V2 transfer from {self.node_inquirer.chain_name}')  # noqa: E501
-                    chain_info = ''
+                    to_chain_value = to_chain
+                    to_chain_label = str(to_chain)
+                    to_address = None
+                chain_info = f' from {self.node_inquirer.chain_id.label()} to {to_chain_label}'
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.notes = f'Bridge {event.amount} USDC{chain_info} via CCTP'
@@ -85,9 +97,9 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
                 set_bridge_extra_data(
                     event=event,
                     from_chain=self.node_inquirer.chain_id,
-                    to_chain=mapped_to_chain,
+                    to_chain=to_chain_value,
                     from_address=user_address,
-                    to_address=bytes_to_address(context.tx_log.data[32:64]) if mapped_to_chain is not None else None,  # mintRecipient is not an EVM address for unsupported domains  # noqa: E501
+                    to_address=to_address,
                 )
                 break
         else:
@@ -142,12 +154,19 @@ class CctpV2CommonDecoder(EvmDecoderInterface):
             ):
                 from_chain = int.from_bytes(context.tx_log.data[:32])
                 if (mapped_from_chain := CCTP_DOMAIN_MAPPING.get(from_chain)) is not None:
-                    event.notes = f'Bridge {event.amount} USDC from {mapped_from_chain.label()} to {self.node_inquirer.chain_id.label()} via CCTP'  # noqa: E501
+                    from_chain_value: ChainID | int | str = mapped_from_chain
+                    from_chain_label = mapped_from_chain.label()
+                elif from_chain == CCTP_SOLANA_DOMAIN:
+                    from_chain_value = SupportedBlockchain.SOLANA.serialize()
+                    from_chain_label = 'Solana'
                 else:
                     log.error(f'Could not find chain ID {from_chain} for CCTP V2 transfer to {self.node_inquirer.chain_name}')  # noqa: E501
+                    from_chain_value = from_chain
+                    from_chain_label = str(from_chain)
+                event.notes = f'Bridge {event.amount} USDC from {from_chain_label} to {self.node_inquirer.chain_id.label()} via CCTP'  # noqa: E501
                 set_bridge_extra_data(
                     event=event,
-                    from_chain=mapped_from_chain,
+                    from_chain=from_chain_value,
                     to_chain=self.node_inquirer.chain_id,
                     transfer_id=f'0x{context.tx_log.topics[2].hex()}',
                 )

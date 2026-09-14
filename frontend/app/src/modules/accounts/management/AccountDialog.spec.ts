@@ -1,8 +1,9 @@
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, type VNode } from 'vue';
-import { type AccountManageState, createNewBlockchainAccount } from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 
 const {

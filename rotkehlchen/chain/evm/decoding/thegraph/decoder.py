@@ -21,9 +21,11 @@ from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import (
+    APPROVE_PROTOCOL,
     CPT_THEGRAPH,
     GRAPH_TOKEN_LOCK_WALLET_ABI,
     THEGRAPH_CPT_DETAILS,
+    TOKEN_DESTINATIONS_APPROVED,
     TOPIC_STAKE_DELEGATED,
     TOPIC_STAKE_DELEGATED_HORIZON,
     TOPIC_STAKE_DELEGATED_LOCKED,
@@ -34,6 +36,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -126,6 +130,49 @@ class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
                 return None
         return address_l2 or address
 
+    def _resolve_delegator(
+            self,
+            delegator: ChecksumEvmAddress,
+    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress | None] | None:
+        """Find the tracked address an action of the given delegator belongs to.
+
+        The delegator is either a tracked address, or a vesting contract (GraphTokenLockWallet)
+        whose beneficiary is tracked. Returns (tracked address, vesting contract or None),
+        or None if nothing related to the delegator is tracked.
+        """
+        if self.base.is_tracked(delegator):
+            return delegator, None
+
+        if (
+            (beneficiary := self.get_user_address(delegator)) is None or
+            beneficiary == delegator or
+            not self.base.is_tracked(beneficiary)
+        ):
+            return None
+
+        return beneficiary, delegator
+
+    def _decode_token_destination_approved(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the TokenDestinationsApproved event emitted by a vesting contract
+        (GraphTokenLockWallet) when its beneficiary calls approveProtocol(), which approves
+        all the protocol contracts (staking, transfer tools etc.) to spend the vested GRT."""
+        if context.tx_log.topics[0] != TOKEN_DESTINATIONS_APPROVED:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=self.token,
+            amount=ZERO,
+            location_label=context.transaction.from_address,
+            notes=f'Approve The Graph protocol contracts to spend GRT of vesting contract {context.tx_log.address}',  # noqa: E501
+            counterparty=CPT_THEGRAPH,
+            address=context.tx_log.address,
+        )
+        return EvmDecodingOutput(events=[event])
+
     def _decode_stake_delegated(
             self,
             context: DecoderContext,
@@ -197,14 +244,16 @@ class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             delegator: ChecksumEvmAddress,
             lock_duration_msg: str,
     ) -> EvmDecodingOutput:
-        if not self.base.is_tracked(delegator):
+        if (resolved := self._resolve_delegator(delegator)) is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        user_address, vesting_contract = resolved
         indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
+        vesting_msg = '' if vesting_contract is None else f' of vesting contract {vesting_contract}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
@@ -212,8 +261,8 @@ class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             event_subtype=HistoryEventSubType.NONE,
             asset=self.token,
             amount=ZERO,
-            location_label=delegator,
-            notes=f'Undelegate {tokens_amount} GRT from indexer {indexer}.{lock_duration_msg}',
+            location_label=user_address,
+            notes=f'Undelegate {tokens_amount} GRT{vesting_msg} from indexer {indexer}.{lock_duration_msg}',  # noqa: E501
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
@@ -224,13 +273,30 @@ class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             context: DecoderContext,
             delegator: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
-        if not self.base.is_tracked(delegator):
+        if (resolved := self._resolve_delegator(delegator)) is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        user_address, vesting_contract = resolved
         action_items, indexer, token_amount = [], bytes_to_address(context.tx_log.topics[1]), token_normalized_value(  # noqa: E501
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
+        if vesting_contract is not None:
+            # The GRT goes back to the untracked vesting contract, not to the user, so
+            # there is no transfer to transform. Only note it for the beneficiary.
+            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=self.token,
+                amount=ZERO,
+                location_label=user_address,
+                notes=f'Withdraw {token_amount} GRT from indexer {indexer} to vesting contract {vesting_contract}',  # noqa: E501
+                counterparty=CPT_THEGRAPH,
+                address=context.tx_log.address,
+            )])
+
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -268,3 +334,6 @@ class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.staking_contract: (self._decode_delegator_staking,)}
+
+    def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
+        return {APPROVE_PROTOCOL: {TOKEN_DESTINATIONS_APPROVED: self._decode_token_destination_approved}}  # noqa: E501

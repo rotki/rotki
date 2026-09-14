@@ -508,6 +508,7 @@ def process_historical_balances(
                 ('history_events_identifier', True),
             ],
             exclude_ignored_assets=True,
+            exclude_untracked_withdrawals=True,
         )
         if from_ts is not None:
             event_filter.timestamp_filter.from_ts = Timestamp(from_ts)

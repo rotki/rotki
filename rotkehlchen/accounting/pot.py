@@ -22,7 +22,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Location, Price, Timestamp
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -103,6 +103,18 @@ class AccountingPot(CustomizableDateMixin):
         # fixed event set, so we load them once (on first eth2 withdrawal/exit event) instead
         # of re-scanning the whole eth2_validators table per event. None means not yet loaded.
         self._validators_with_status: dict[int, ValidatorDetailsWithStatus] | None = None
+        # memoize the tracked ethereum accounts per report, for the same reason. None means
+        # not yet loaded.
+        self._tracked_eth_accounts: set[ChecksumEvmAddress] | None = None
+
+    def is_tracked_eth_account(self, address: str | None) -> bool:
+        """Check if the given address is a tracked ethereum mainnet account, loading and
+        caching all of them on the first call of a report."""
+        if self._tracked_eth_accounts is None:
+            with self.database.conn.read_ctx() as cursor:
+                self._tracked_eth_accounts = set(self.database.get_blockchain_accounts(cursor).eth)
+
+        return address in self._tracked_eth_accounts
 
     def get_validator_with_status(self, validator_index: int) -> ValidatorDetailsWithStatus | None:
         """Return the status details for a tracked validator, loading and caching all
@@ -197,6 +209,7 @@ class AccountingPot(CustomizableDateMixin):
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self._profit_currency_rates.clear()
         self._validators_with_status = None
+        self._tracked_eth_accounts = None
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.pnls.reset()

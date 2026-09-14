@@ -19,7 +19,7 @@ definePage({
 
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { navigateToUserLogin } = useAppNavigation();
-const { createNewAccount, error, loading } = useAccountManagement();
+const { clearErrors, createNewAccount, error, loading } = useAccountManagement();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -52,6 +52,8 @@ const steps = computed<{ title: string; description?: string }[]>(() => {
     },
   ];
 });
+
+onMounted(() => clearErrors());
 </script>
 
 <template>
@@ -70,7 +72,7 @@ const steps = computed<{ title: string; description?: string }[]>(() => {
               v-model:mode="mode"
               :loading="loading"
               :error="error"
-              @clear-error="error = ''"
+              @clear-error="clearErrors()"
               @cancel="navigateToUserLogin()"
               @confirm="createNewAccount($event)"
             />

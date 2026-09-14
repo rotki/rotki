@@ -26,6 +26,7 @@ from rotkehlchen.utils.network import create_session
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -96,15 +97,19 @@ class Alchemy(
     PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: DBHandler | None) -> None:
+    def __init__(
+            self,
+            database: DBHandler | None,
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,
             service_name=ExternalService.ALCHEMY,
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='alchemy')
-        PenalizablePriceOracleMixin.__init__(self)
-        self.session = create_session()
+        PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
+        self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
@@ -380,7 +385,7 @@ class Alchemy(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as e:
-            self.penalty_info.note_failure_or_penalize()
+            self.note_request_failure(e)
             raise RemoteError(f'Alchemy API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:

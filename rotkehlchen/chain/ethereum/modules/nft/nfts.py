@@ -198,7 +198,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
         query, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(  # this sometimes causes https://github.com/rotki/rotki/issues/5432
+            cursor.execute(
                 'SELECT identifier, name, last_price, last_price_asset, manual_price, is_lp, '
                 'image_url, collection_name FROM nfts ' + query,
                 bindings,

@@ -4,6 +4,7 @@ import { useTemplateRef } from 'vue';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
+import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
@@ -27,17 +28,7 @@ const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(() => 
 const { chainIds } = useAccountCategoryHelper(() => category);
 
 function createNewBlockchainAccount(): void {
-  set(account, {
-    chain: get(chainIds)[0],
-    data: [
-      {
-        address: '',
-        tags: null,
-      },
-    ],
-    mode: 'add',
-    type: 'account',
-  });
+  set(account, createNewAccountForChain(get(chainIds)[0]));
 }
 
 function refresh() {

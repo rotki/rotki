@@ -23,6 +23,7 @@ log = RotkehlchenLogsAdapter(logger)
 def create_session(
         max_backoff_secs: float = 30,
         session: requests.Session | None = None,
+        retry_reads: bool = True,
 ) -> requests.Session:
     """Create a requests session configured to retry on connection, read, and
     specific server errors.
@@ -31,6 +32,11 @@ def create_session(
     read errors, and 1 time for specified server errors (502, 503, 504). Users must check
     response status codes manually, as bad statuses outside the retry list are not
     automatically retried.
+
+    With retry_reads False a read error is not retried and surfaces as the plain requests
+    exception (e.g. ReadTimeout) instead of a ConnectionError wrapping MaxRetryError. Price
+    oracles use this: a host that sent nothing for the whole read timeout will not recover
+    within the retry backoff, and each retry costs the full timeout again.
 
     From the requests docs about max_retries:
     The maximum number of retries each connection should attempt. Note, this applies only
@@ -49,7 +55,7 @@ def create_session(
         # Retries for connection errors (e.g., timeouts, refused connections).
         connect=3,
         # Retries for read errors (e.g., incomplete responses or dropped connections).
-        read=2,
+        read=2 if retry_reads else False,
         # Retries for HTTP status codes listed in status_forcelist.
         status=1,
         # Don't allow any other type of error. This will warn us about any possible

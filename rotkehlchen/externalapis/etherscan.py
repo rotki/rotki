@@ -95,7 +95,14 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
             ),
         )
+        self.api_key_tier: EtherscanTier | None = None
         self.detect_api_key_tier()
+
+    @property
+    def has_paid_api_key(self) -> bool:
+        """Whether the configured key was detected to be on a paid tier. Free and Lite keys
+        are indistinguishable, so both count as not paid."""
+        return self.api_key_tier is not None and self.api_key_tier.name != 'free_or_lite'
 
     def _cache_api_key_tier(self, tier: EtherscanTier) -> None:
         with self.db.user_write() as write_cursor:
@@ -158,6 +165,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         """
         # Tier detection runs during user initialization, before Etherscan is actually needed.
         # Bypass the recommended-key warning so new users are notified only on real usage.
+        self.api_key_tier = None
         if (api_key := ExternalServiceWithApiKey._get_api_key(self)) is None:
             self._rate_limiter.reset(
                 rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
@@ -171,6 +179,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 return
             self._cache_api_key_tier(tier=tier)
 
+        self.api_key_tier = tier
         self._rate_limiter.reset(rps=tier.rps, capacity=tier.burst, minimum_rps=tier.rps)
         log.debug(
             'Detected Etherscan API key tier %s. Set rate limit to %s rps', tier.name, tier.rps,

@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
-import {
-  type AccountManageState,
-  createNewBlockchainAccount,
-} from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';

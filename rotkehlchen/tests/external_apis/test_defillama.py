@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from rotkehlchen.assets.utils import get_or_create_solana_token
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD, A_USDC, A_USDT
@@ -182,3 +183,32 @@ def test_query_solana_token_price_using_address(
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
     assert price == FVal('0.0827225214838227')
+
+
+def test_query_multiple_current_prices_stops_chunking_once_penalized(defillama: Defillama):
+    """A timeout penalizes defillama at once and the remaining chunks are not attempted,
+    since each of them would stall for the full read timeout the same way"""
+    test_assets = [
+        A_ETH.resolve_to_asset_with_oracles(),
+        A_DAI.resolve_to_asset_with_oracles(),
+        A_ARB.resolve_to_asset_with_oracles(),
+        A_LINK.resolve_to_asset_with_oracles(),
+    ]
+    with (
+        patch('rotkehlchen.externalapis.defillama.DEFILLAMA_CHUNK_SIZE', 1),
+        patch.object(defillama.session, 'get', side_effect=requests.exceptions.ReadTimeout('Read timed out.')) as get_mock,  # noqa: E501
+    ):
+        assert defillama.query_multiple_current_prices(
+            from_assets=test_assets,
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        ) == {}
+
+    assert get_mock.call_count == 1
+    assert defillama.is_penalized() is True
+
+
+def test_api_key_is_not_read_after_logout():
+    """A task woken from a long remote wait after the user logged out must not touch the DB"""
+    db = MagicMock(conn=None)
+    assert Defillama(database=db)._get_api_key() is None
+    assert db.get_external_service_credentials.called is False

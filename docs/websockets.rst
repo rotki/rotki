@@ -220,6 +220,26 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 - ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.
 
 
+No available indexers
+=======================
+
+Sent once per chain and session when no transaction indexer can serve a chain, so the transaction queries for it are skipped.
+
+::
+
+    {
+        "type": "no_available_indexers",
+        "data": {
+            "chain": "base",
+            "reason": "etherscan_paid_key_required"
+        }
+    }
+
+
+- ``chain``: The chain for which no indexer is available.
+- ``reason`` (Optional): Present when the cause is known. ``etherscan_paid_key_required`` means etherscan refused the chain for the configured key, which happens on the chains its free tier does not cover, and the other indexers could not serve it either. A paid etherscan API key resolves it.
+
+
 Query transactions
 =========================
 
@@ -785,3 +805,25 @@ Sent when historical balance processing detects a negative balance for an asset,
     - ``location_label``: The specific address or account label, or ``null``
 - ``balance_before``: The balance before processing the event that caused it to go negative
 - ``last_run_ts``: Unix timestamp of the last successful historical balance processing run, or ``null`` if this is the first run
+
+
+Price Oracle Penalized
+=================================
+
+Sent when a price oracle is set aside for the oracle penalty duration. Price queries skip it until the penalty expires and a short probe shows it answers again.
+
+::
+
+    {
+        "type": "oracle_penalized",
+        "data": {
+            "oracle": "coingecko",
+            "reason": "timeout",
+            "penalty_duration": 1800
+        }
+    }
+
+
+- ``oracle``: Name of the penalized oracle, e.g. ``coingecko``, ``defillama``, ``cryptocompare``, ``alchemy``, ``moralis``
+- ``reason``: ``timeout`` when the oracle stopped answering requests, ``errors`` when it failed as many times in a row as the oracle penalty threshold setting allows
+- ``penalty_duration``: Seconds the oracle is skipped for, as set by the oracle penalty duration setting

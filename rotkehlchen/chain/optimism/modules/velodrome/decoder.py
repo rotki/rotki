@@ -11,7 +11,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType
 
-from .constants import ROUTER_V1, ROUTER_V2, VOTER_CONTRACT_ADDRESS, VOTING_ESCROW_CONTRACT_ADDRESS
+from .constants import (
+    ROUTER_V1,
+    ROUTER_V2,
+    SLIPSTREAM_NFPM,
+    VOTER_CONTRACT_ADDRESS,
+    VOTING_ESCROW_CONTRACT_ADDRESS,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -36,6 +42,7 @@ class VelodromeDecoder(VelodromeLikeDecoder):
             msg_aggregator=msg_aggregator,
             counterparty=CPT_VELODROME,
             routers={ROUTER_V1, ROUTER_V2},
+            slipstream_nfpm=SLIPSTREAM_NFPM,
             drome_rotki_address=string_to_evm_address('0xf96764f4d357A9A16AB8050D0E3abcAa67e50eF9'),
             token_symbol='VELO',
             voter_address=VOTER_CONTRACT_ADDRESS,

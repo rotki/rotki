@@ -22,9 +22,18 @@ export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyE
 
 export const NoAvailableIndexersData = z.object({
   chain: z.string(),
+  reason: z.string().optional(),
 });
 
 export type NoAvailableIndexersData = z.infer<typeof NoAvailableIndexersData>;
+
+export const OraclePenalizedData = z.object({
+  oracle: z.string(),
+  penaltyDuration: z.number(),
+  reason: z.enum(['errors', 'timeout']),
+});
+
+export type OraclePenalizedData = z.infer<typeof OraclePenalizedData>;
 
 export const MissingApiKey = z.object({
   service: z.string(),

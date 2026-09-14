@@ -6,6 +6,7 @@ import { createLegacyHandler } from '../handlers/legacy';
 import { createMissingApiKeyHandler } from '../handlers/missing-api-key';
 import { createMoneriumSessionHandler } from '../handlers/monerium-session';
 import { createNoAvailableIndexersHandler } from '../handlers/no-available-indexers';
+import { createOraclePenalizedHandler } from '../handlers/oracle-penalized';
 import { createPremiumStatusHandler } from '../handlers/premium-status';
 import { createSnapshotErrorHandler } from '../handlers/snapshot-error';
 import { createUnmatchedAssetMovementsHandler } from '../handlers/unmatched-asset-movements';
@@ -24,6 +25,7 @@ export function createNotificationRegistry(
   | typeof SocketMessageType.MISSING_API_KEY
   | typeof SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED
   | typeof SocketMessageType.NO_AVAILABLE_INDEXERS
+  | typeof SocketMessageType.ORACLE_PENALIZED
   | typeof SocketMessageType.PREMIUM_STATUS_UPDATE
   | typeof SocketMessageType.SOLANA_TOKENS_MIGRATION
   | typeof SocketMessageType.UNMATCHED_ASSET_MOVEMENTS
@@ -40,6 +42,7 @@ export function createNotificationRegistry(
     [SocketMessageType.MISSING_API_KEY]: missingApiKeyHandler,
     [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(t, router),
     [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(t, router),
+    [SocketMessageType.ORACLE_PENALIZED]: createOraclePenalizedHandler(t, router),
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),

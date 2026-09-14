@@ -1,12 +1,12 @@
+import type {
+  AccountManageState,
+  XpubManage,
+} from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { assert, beforeEach, describe, expect, it } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
-import {
-  type AccountManageState,
-  createNewBlockchainAccount,
-  type XpubManage,
-} from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import { useAccountFormState } from '@/modules/accounts/management/use-account-form-state';
 
 function xpub(mode: 'add' | 'edit', chain: Blockchain.BTC | Blockchain.BCH = Blockchain.BTC): XpubManage {

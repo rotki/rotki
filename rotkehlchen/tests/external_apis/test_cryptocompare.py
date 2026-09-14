@@ -1,9 +1,11 @@
 import datetime
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -21,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_USD,
 )
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.cryptocompare import (
     CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
@@ -456,3 +459,29 @@ def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocom
         # CDAI should not be in results due to failure
         assert A_CDAI not in prices
         assert len(prices) == 2
+
+
+def test_cryptocompare_timeout_penalizes_immediately(cryptocompare):
+    """A silent host penalizes cryptocompare after a single read timeout instead of counting
+    toward the failure threshold, the remaining price chunks are not attempted since each
+    would stall the same way, and the user is told about it"""
+    cryptocompare.msg_aggregator = (msg_aggregator := MagicMock())
+    with (
+        patch('rotkehlchen.externalapis.cryptocompare.MAX_FSYMS_CHARS', 5),  # one asset per chunk
+        patch.object(cryptocompare.session, 'get', side_effect=requests.exceptions.ReadTimeout('Read timed out.')) as get_mock,  # noqa: E501
+    ):
+        assert cryptocompare.query_multiple_current_prices(
+            from_assets=[x.resolve_to_asset_with_oracles() for x in (A_BTC, A_ETH, A_DAI)],
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        ) == {}
+
+    assert get_mock.call_count == 1
+    assert cryptocompare.is_penalized() is True
+    msg_aggregator.add_message.assert_called_once_with(
+        message_type=WSMessageType.ORACLE_PENALIZED,
+        data={
+            'oracle': 'cryptocompare',
+            'reason': 'timeout',
+            'penalty_duration': CachedSettings().oracle_penalty_duration,
+        },
+    )

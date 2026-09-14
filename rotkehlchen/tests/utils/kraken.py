@@ -1,10 +1,10 @@
 import json
 import random
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.kraken import Kraken
+from rotkehlchen.exchanges.kraken import Kraken, KrakenApiMethod
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import (
     make_random_positive_fval,
@@ -530,6 +530,8 @@ class MockKraken(Kraken):
         self.use_original_kraken = False
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
+        self.query_trades_data: dict[str, Any] = {}
+        self.extra_asset_pairs: dict[str, Any] = {}
         # Not required in the real Kraken instance but we use it in the tests
         self.tradeable_pairs = self.api_query('AssetPairs')
 
@@ -540,7 +542,7 @@ class MockKraken(Kraken):
 
     def api_query(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
+            method: KrakenApiMethod,
             req: dict | None = None,
     ) -> dict:
         # Pretty ugly ... mock a kraken remote error
@@ -571,9 +573,13 @@ class MockKraken(Kraken):
             futures_response = jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)
             futures_response['accountUid'] = '1ca86f16-f900-4631-88b5-8f729bac6d53'
             return futures_response
+        if method == 'QueryTrades':
+            return self.query_trades_data
         if method == 'AssetPairs':
-            data = self._load_results_from_file('assets_kraken.json')
-            return data['result']
+            data = self._load_results_from_file('assets_kraken.json')['result'] | self.extra_asset_pairs  # noqa: E501
+            if req is not None and (pair := req.get('pair')) is not None:
+                return {pair: data[pair]}
+            return data
         if method == 'Assets':
             data = self._load_results_from_file('assets_only_kraken.json')
             return data['result']

@@ -79,6 +79,28 @@ describe('createNoAvailableIndexersHandler', () => {
     expect(push).toHaveBeenCalledWith({ name: '/settings/chains/', hash: '#indexer' });
   });
 
+  it('should explain the paid etherscan key and offer to enter it when that is the reason', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const result = await handler.handle({ chain: 'base', reason: 'etherscan_paid_key_required' });
+    assert(result);
+    expect(result.title).toContain('paid_key_required.title');
+    expect(result.message).toContain('paid_key_required.message');
+    const actions = Array.isArray(result.action) ? result.action : [result.action];
+    const enterKeyAction = actions.find(a => a?.label.includes('enter_key'));
+    assert(enterKeyAction);
+    await enterKeyAction.action();
+    expect(push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'etherscan' } });
+  });
+
+  it('should not offer to enter a key when no reason is given', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const result = await handler.handle({ chain: 'base' });
+    assert(result);
+    expect(result.title).not.toContain('paid_key_required');
+    const actions = Array.isArray(result.action) ? result.action : [result.action];
+    expect(actions.find(a => a?.label.includes('enter_key'))).toBeUndefined();
+  });
+
   it('should return null when the chain is in the suppression list', async () => {
     const handler = createNoAvailableIndexersHandler(mockT, router);
     const store = useSettingsRepo();

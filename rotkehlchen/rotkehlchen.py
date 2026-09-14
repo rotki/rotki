@@ -219,12 +219,12 @@ class Rotkehlchen:
             self.msg_aggregator,
             sql_vm_instructions_cb=args.sqlite_instructions,
         )
-        self.cryptocompare = Cryptocompare(database=None)
-        self.coingecko = Coingecko(database=None)
-        self.defillama = Defillama(database=None)
+        self.cryptocompare = Cryptocompare(database=None, msg_aggregator=self.msg_aggregator)
+        self.coingecko = Coingecko(database=None, msg_aggregator=self.msg_aggregator)
+        self.defillama = Defillama(database=None, msg_aggregator=self.msg_aggregator)
         self.kraken = Kraken()
-        self.alchemy = Alchemy(database=None)
-        self.moralis = Moralis(database=None)
+        self.alchemy = Alchemy(database=None, msg_aggregator=self.msg_aggregator)
+        self.moralis = Moralis(database=None, msg_aggregator=self.msg_aggregator)
         self.birdeye = Birdeye(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
@@ -1301,6 +1301,13 @@ class Rotkehlchen:
         try:
             # copies below since if cache is used we end up modifying the balance sheet object
             blockchain_result = result_of(blockchain_task)
+            # chains that failed keep the balances of their last successful query
+            for chain, error in blockchain_result.failed_chains.items():
+                problem_free = False
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                    data={'location': f'{chain!s} balances query', 'error': error},
+                )
 
             blockchain_assets: dict[Asset, Balance] = {}
             for asset, asset_balances in blockchain_result.totals.assets.items():

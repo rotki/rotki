@@ -13,6 +13,10 @@ THEGRAPH_CPT_DETAILS: Final = CounterpartyDetails(
     label='The Graph',
     image='thegraph.svg',
 )
+# GraphTokenLockWallet.approveProtocol() method selector and the TokenDestinationsApproved
+# event it emits after approving all the protocol token destinations
+APPROVE_PROTOCOL: Final = b'*bx\x14'
+TOKEN_DESTINATIONS_APPROVED: Final = b"\xb87\xfdQPk\xa3\xccb:7\xc7\x8e\xd2/\xd5!\xf2\xf6\xe9\xf6\x9a4\xd5\xc2\xa4\xa9GO'W\x93"  # noqa: E501
 GRAPH_TOKEN_LOCK_WALLET_ABI: Final[ABI] = [{'inputs': [], 'name': 'beneficiary', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 GRAPH_DELEGATION_TRANSFER_ABI: Final[Sequence[ABIEvent]] = [{'anonymous': False, 'inputs': [{'indexed': True, 'name': 'delegator', 'type': 'address'}, {'indexed': True, 'name': 'l2Delegator', 'type': 'address'}, {'indexed': True, 'name': 'indexer', 'type': 'address'}, {'indexed': False, 'name': 'l2Indexer', 'type': 'address'}, {'indexed': False, 'name': 'transferredDelegationTokens', 'type': 'uint256'}], 'name': 'DelegationTransferredToL2', 'type': 'event'}]  # noqa: E501
 TOPIC_STAKE_DELEGATED: Final = b'\xcd\x03f\xdc\xe5$}\x87O\xfc`\xa7b\xaaz\xbb\xb8,\x16\x95\xbb\xb1q`\x9c\x1b\x88a\xe2y\xebs'  # noqa: E501

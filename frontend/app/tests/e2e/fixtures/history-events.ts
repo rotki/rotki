@@ -147,11 +147,17 @@ export const ethBlockEventFixture: EthBlockEventFixture = {
   validatorIndex: '100000',
 };
 
+/**
+ * The withdrawal address has to be tracked for the event to be visible at all, and tracking it
+ * makes rotki query the chain for it. An address with no history keeps that query short, where a
+ * well-known one (the fee recipient above, say) has a transaction list that outlives the test.
+ * Checksummed, since the backend rejects anything else.
+ */
 export const ethWithdrawalEventFixture: EthWithdrawalEventFixture = {
   amount: '32',
   isExit: false,
   validatorIndex: '100001',
-  withdrawalAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  withdrawalAddress: '0xe2e7a1c0B7ec06e1C2Eae0a5FFBf5f2d3b6c4915',
 };
 
 export interface EthDepositEventFixture {

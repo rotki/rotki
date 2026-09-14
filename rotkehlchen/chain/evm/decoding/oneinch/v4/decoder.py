@@ -205,9 +205,18 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
         return {self.router_address: self.counterparty}
 
     def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Pair the sender's spend and receive events as the two legs of the swap.
+
+        The sender may receive more than one transfer in the transaction (for example an
+        aToken interest mint triggered by transferring the aToken to the router), so the
+        candidates are collected first and only the chosen pair is modified. The receive
+        leg is the last transfer of a different asset than the one spent, since a swap
+        never returns its input asset and the router's transfer to the user comes last.
+        """
         sender = context.transaction.from_address
         decoded_events = context.decoded_events
-        out_event = in_event = None
+        out_event = None
+        receive_candidates = []
         for event in decoded_events:
             if event.location_label != sender:
                 continue
@@ -216,10 +225,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 event.event_type == HistoryEventType.RECEIVE or
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)  # It can happen that a leg of the swap was processed by a previous decoder like uniswap # noqa: E501
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
-                in_event = event
+                receive_candidates.append(event)
             elif (
                 (
                     event.event_type == HistoryEventType.SPEND or
@@ -227,12 +233,23 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 ) and
                 event.event_subtype != HistoryEventSubType.FEE
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.counterparty = self.counterparty
-                event.notes = f'Swap {event.amount} {event.asset.symbol_or_name()} in {self.counterparty}'  # noqa: E501
-                event.address = self.router_address
                 out_event = event
+
+        in_event = None
+        for event in receive_candidates:
+            if out_event is None or event.asset != out_event.asset:
+                in_event = event
+
+        if out_event is not None:
+            out_event.event_type = HistoryEventType.TRADE
+            out_event.event_subtype = HistoryEventSubType.SPEND
+            out_event.counterparty = self.counterparty
+            out_event.notes = f'Swap {out_event.amount} {out_event.asset.symbol_or_name()} in {self.counterparty}'  # noqa: E501
+            out_event.address = self.router_address
+        if in_event is not None:
+            in_event.event_type = HistoryEventType.TRADE
+            in_event.event_subtype = HistoryEventSubType.RECEIVE
+            in_event.notes = f'Receive {in_event.amount} {in_event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],

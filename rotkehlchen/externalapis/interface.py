@@ -30,7 +30,7 @@ class ExternalServiceWithApiKey:
         if self.api_key and ts_now() - self.last_ts <= 120:
             return self.api_key
 
-        if not self.db:
+        if not self.db or not self.db.conn:  # no DB before login and after logout
             return None
 
         # else query the DB
