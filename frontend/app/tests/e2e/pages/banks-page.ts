@@ -68,4 +68,42 @@ export class BanksPage {
   dashboardCard(): Locator {
     return this.page.locator('[data-testid=bank-balances]');
   }
+
+  async visitHistory(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'history');
+  }
+
+  /**
+   * Opens the Banks tab of the history refresh menu.
+   *
+   * @remarks
+   * The toggle stays disabled while the history page's own refresh runs, so waiting for it to enable
+   * is also the gate that nothing from that refresh is still being sent.
+   */
+  async openRefreshMenuBanks(): Promise<void> {
+    const toggle = this.page.locator('[data-testid=refresh-selection-toggle]');
+    await expect(toggle).toBeEnabled({ timeout: TIMEOUT_DIALOG });
+    await toggle.click();
+    await this.page.getByRole('tab', { name: 'Banks' }).click();
+  }
+
+  async refreshPickedBank(name: string): Promise<void> {
+    await this.page.locator('[data-testid=refresh-bank-row]').filter({ hasText: name }).click();
+    await this.page.locator('[data-testid=refresh-selection-refresh]').click();
+  }
+
+  /**
+   * Waits for the refresh the menu started to run and finish.
+   *
+   * @remarks
+   * Bank syncs run one connection at a time, so the requests arrive one by one. Reading them before
+   * the refresh settles sees only the first, which matches a single pick even when every connection
+   * is being synced. The toggle is disabled while the refresh runs, so disabled then enabled again
+   * is the settle signal; waiting for enabled alone could pass before the refresh starts.
+   */
+  async waitForRefreshSettled(): Promise<void> {
+    const toggle = this.page.locator('[data-testid=refresh-selection-toggle]');
+    await expect(toggle).toBeDisabled({ timeout: TIMEOUT_MEDIUM });
+    await expect(toggle).toBeEnabled({ timeout: TIMEOUT_DIALOG });
+  }
 }
