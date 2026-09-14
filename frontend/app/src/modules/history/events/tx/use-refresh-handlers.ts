@@ -1,4 +1,5 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -9,7 +10,7 @@ import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { onlineEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { useExchangeEventsRefresh } from '@/modules/history/events/tx/use-exchange-events-refresh';
+import { useEventsRefreshSources } from '@/modules/history/events/tx/use-events-refresh-sources';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
@@ -19,6 +20,7 @@ import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseRefreshHandlersReturn {
+  queryAllBankEvents: (banks: BankConnectionIdentity[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
   queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
   queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId) => Promise<Result<void, TaskError>>;
   resetOnlineWarnings: () => void;
@@ -29,7 +31,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { notifyError } = useNotifications();
   const { queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
-  const { queryAllExchangeEvents } = useExchangeEventsRefresh();
+  const { queryAllBankEvents, queryAllExchangeEvents } = useEventsRefreshSources();
   const { addWarning, resetWarnings } = useSyncWarningsStore();
   const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
   const { getApiKey } = useExternalApiKeys();
@@ -145,6 +147,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   };
 
   return {
+    queryAllBankEvents,
     queryAllExchangeEvents,
     queryOnlineEvent,
     resetOnlineWarnings,

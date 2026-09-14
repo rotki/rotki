@@ -35,6 +35,11 @@ const RefreshWave = {
 
 type RefreshWave = (typeof RefreshWave)[keyof typeof RefreshWave];
 
+interface PlannedOperation {
+  accounts: boolean;
+  work: Promise<Result<void, TaskError>[]>;
+}
+
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
 
@@ -48,13 +53,14 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { syncTransactionsByChains } = useTransactionSync();
   const {
     detectNovelty,
+    filterSyncingBanks,
     filterSyncingExchanges,
     resolveInputAccounts,
     resolveRefreshTargets,
     shouldNotRefresh,
   } = useHistoryRefreshPolicy();
   const { pending: accountsPending } = useAccountLoadState();
-  const { queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
+  const { queryAllBankEvents, queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -72,7 +78,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       resetOnlineWarnings();
     }
 
-    if (!(targets.accounts.length > 0 || targets.exchanges.length > 0)) {
+    if (!(targets.accounts.length > 0 || targets.exchanges.length > 0 || targets.banks.length > 0)) {
       return;
     }
 
@@ -113,8 +119,37 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (!continuation)
       resetExchangesQueryStatus();
 
-    if (targets.queryExchanges && targets.shouldShowSyncProgress)
-      initializeExchangeEventsQueryStatus(targets.usedExchanges, { extend: continuation });
+    if (targets.shouldShowSyncProgress) {
+      initializeExchangeEventsQueryStatus([
+        ...(targets.queryExchanges ? targets.usedExchanges : []),
+        ...(targets.queryBanks ? targets.usedBanks : []),
+      ], { extend: continuation });
+    }
+  }
+
+  /**
+   * The work of one wave, one entry per batch: accounts, exchanges and banks each dispatch as one
+   * batch (see {@link executeOperations}), online queries one each. `accounts` marks the half that
+   * carries the umbrella's verdict.
+   */
+  function planOperations(
+    targets: RefreshTargets,
+    children: ReturnType<typeof historySyncFlow.children>,
+    umbrella: ActivityId,
+  ): PlannedOperation[] {
+    const exchanges = children.flatMap(child => child.payload.type === 'exchange' ? [child.payload.exchange] : []);
+    const banks = children.flatMap(child => child.payload.type === 'bank' ? [child.payload.bank] : []);
+
+    return [
+      ...(targets.accounts.length > 0
+        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
+        : []),
+      ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
+      ...(banks.length > 0 ? [{ accounts: false, work: queryAllBankEvents(banks, umbrella) }] : []),
+      ...children.flatMap(child => child.payload.type === 'online'
+        ? [{ accounts: false, work: queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome]) }]
+        : []),
+    ];
   }
 
   /**
@@ -146,23 +181,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     seedExchangeProgress(targets, wave);
 
-    const children = historySyncFlow.children({
+    const asyncOperations = planOperations(targets, historySyncFlow.children({
       accounts: targets.accounts,
+      banks: targets.queryBanks ? targets.usedBanks : [],
       exchanges: targets.queryExchanges ? targets.usedExchanges : [],
       queries: resolveOnlineQueries(targets, disableEvmEvents, queries),
-    });
-
-    const exchanges = children.flatMap(child => child.payload.type === 'exchange' ? [child.payload.exchange] : []);
-
-    const asyncOperations: { accounts: boolean; work: Promise<Result<void, TaskError>[]> }[] = [
-      ...(targets.accounts.length > 0
-        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
-        : []),
-      ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
-      ...children.flatMap(child => child.payload.type === 'online'
-        ? [{ accounts: false, work: queryOnlineEvent(child.payload.query, umbrella).then(outcome => [outcome]) }]
-        : []),
-    ];
+    }), umbrella);
 
     const accountOutcomes: Result<void, TaskError>[] = [];
     const otherOutcomes: Result<void, TaskError>[] = [];
@@ -202,9 +226,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   function drainPending(params: RefreshTransactionsParams): void {
     const { chains = [] } = params;
     const accounts = resolveInputAccounts(undefined, true, chains);
-    const { newAccounts, newExchanges } = detectNovelty(accounts, filterSyncingExchanges(undefined));
+    const { newAccounts, newBanks, newExchanges } = detectNovelty(accounts, filterSyncingExchanges(undefined), filterSyncingBanks(undefined));
 
-    if (newAccounts.length === 0 && newExchanges.length === 0)
+    if (newAccounts.length === 0 && newExchanges.length === 0 && newBanks.length === 0)
       return;
 
     timeout = setTimeout(() => {
@@ -213,6 +237,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         payload: {
           ...params.payload,
           accounts: newAccounts.length > 0 ? newAccounts : undefined,
+          banks: newBanks.length > 0 ? newBanks : undefined,
           exchanges: newExchanges.length > 0 ? newExchanges : undefined,
         },
       }, RefreshWave.CONTINUATION));
@@ -245,8 +270,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       await accountRead;
 
     const usedExchanges = filterSyncingExchanges(payload.exchanges);
+    const usedBanks = filterSyncingBanks(payload.banks);
     const allCurrentAccounts = resolveInputAccounts(payload.accounts, fullRefresh, chains);
-    const novelty = detectNovelty(allCurrentAccounts, usedExchanges);
+    const novelty = detectNovelty(allCurrentAccounts, usedExchanges, usedBanks);
 
     const status = statusOf(ActivityKind.HISTORY_SYNC);
     if (shouldNotRefresh({ alreadyLoaded: status.everCompleted && !userInitiated, novelty }))
@@ -260,6 +286,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       everRefreshed: status.everCompleted,
       fullRefresh,
       inputAccounts: allCurrentAccounts,
+      usedBanks,
       usedExchanges,
       userInitiated,
     });

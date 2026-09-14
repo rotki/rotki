@@ -9,6 +9,7 @@ import { toPeriodField } from '@/modules/core/table/filters/shared/period-field'
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { toMatchFieldDef, toParamFieldDef, toRangeFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import {
+  isBankTransactionEventType,
   isBitcoinEventType,
   isEthBlockEventType,
   isEthDepositEventType,
@@ -84,7 +85,7 @@ function resolveIncludedKinds(entryTypes: HistoryEventEntryType[] | undefined): 
     return { evmOrOnline: true, transactions: true, validatorIndex: true };
 
   return {
-    evmOrOnline: entryTypes.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type)),
+    evmOrOnline: entryTypes.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type) || isBankTransactionEventType(type)),
     transactions: entryTypes.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type) || isBitcoinEventType(type)),
     validatorIndex: entryTypes.some(type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type)),
   };

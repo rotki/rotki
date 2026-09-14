@@ -42,6 +42,7 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'group_identifier'},  # noqa: E501
     HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_subtype', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
     HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'group_identifier'},
+    HistoryBaseEntryType.BANK_TRANSACTION_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'group_identifier', 'extra_data'},  # noqa: E501
 }
 
 

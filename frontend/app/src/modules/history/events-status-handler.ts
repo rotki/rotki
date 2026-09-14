@@ -1,12 +1,14 @@
 import type { StateHandler } from '@/modules/core/messaging/interfaces';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createStateHandler } from '@/modules/core/messaging/utils';
-import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 
 export function createEventsStatusHandler(): StateHandler {
   const { getQueryStatus, setQueryStatus } = useEventsQueryStatusStore();
+  const { banks } = storeToRefs(useLocationStore());
 
   /**
    * Mirror one exchange's stored entry onto its activity.
@@ -27,7 +29,9 @@ export function createEventsStatusHandler(): StateHandler {
     if (entry === undefined || entry.status === HistoryEventsQueryStatus.CANCELLED)
       return;
 
-    publishActivityDetail(exchangeEventsActivity, { location: entry.location, name: entry.name }, {
+    // a bank streams the same frames as an exchange, but its activity is its own kind
+    const activity = get(banks).includes(entry.location) ? bankEventsActivity : exchangeEventsActivity;
+    publishActivityDetail(activity, { location: entry.location, name: entry.name }, {
       eventType: entry.eventType,
       period: entry.period,
     });

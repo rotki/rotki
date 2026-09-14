@@ -1,4 +1,5 @@
-import type { BitcoinEvent, EditHistoryEventPayload, NewBitcoinEventPayload } from '@/modules/history/events/schemas';
+import type { EditHistoryEventPayload, NewBitcoinEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { BitcoinEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

@@ -3,6 +3,7 @@ import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useBanks } from '@/modules/banks/use-banks';
 import { arrayify } from '@/modules/core/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -10,6 +11,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 export const useBalanceRefresh = createSharedComposable(() => {
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
+  const { fetchBankBalances } = useBanks();
   const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
   /**
@@ -47,6 +49,8 @@ export const useBalanceRefresh = createSharedComposable(() => {
       await handleBlockchainRefresh();
     else if (balanceSource === 'exchange')
       await fetchConnectedExchangeBalances(true);
+    else if (balanceSource === 'bank')
+      await fetchBankBalances(true);
   };
 
   const refreshExchangeBalance = async (exchangeLocation: string): Promise<void> => {

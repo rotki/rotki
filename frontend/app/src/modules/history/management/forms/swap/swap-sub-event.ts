@@ -1,8 +1,5 @@
-import type {
-  EvmSwapEvent,
-  SolanaSwapEvent,
-  SwapSubEventModel,
-} from '@/modules/history/events/schemas';
+import type { SwapSubEventModel } from '@/modules/history/events/event-edit-payloads';
+import type { EvmSwapEvent, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';

@@ -28,6 +28,7 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.banks.constants import SUPPORTED_BANKS
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
@@ -111,6 +112,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovementExtraData,
     create_asset_movement_with_fee,
 )
+from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.eth2 import (
@@ -1047,6 +1049,19 @@ class CreateHistoryEventSchema(Schema):
             data['notes'] = data.pop('user_notes')
             return {'events': [HistoryEvent(**data)]}
 
+    class CreateBankTransactionEventSchema(CreateBaseHistoryEventSchema):
+        """A bank transaction edits like a plain history event and keeps its entry type"""
+        extra_data = fields.Dict(load_default=None)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            data['notes'] = data.pop('user_notes')
+            return {'events': [BankTransactionEvent(**data)]}
+
     class CreateEvmEventSchema(BaseEventSchema, BaseEvmEventSchema):
         """Schema used when adding a new event in the EVM transactions view"""
 
@@ -1381,6 +1396,7 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
         HistoryBaseEntryType.SOLANA_EVENT: CreateSolanaEventSchema,
         HistoryBaseEntryType.BITCOIN_EVENT: CreateBitcoinEventSchema,
+        HistoryBaseEntryType.BANK_TRANSACTION_EVENT: CreateBankTransactionEventSchema,
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
         HistoryBaseEntryType.SWAP_EVENT: CreateSwapEventSchema,
         HistoryBaseEntryType.EVM_SWAP_EVENT: CreateEvmSwapEventSchema,
@@ -2188,6 +2204,43 @@ class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
 class ExchangeLocationWithNameSchema(Schema):
     name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
+
+
+class BankLocationWithNameSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    location = LocationField(limit_to=SUPPORTED_BANKS, required=True)
+
+
+class BankCredentialsField(fields.Dict):
+    """The credentials of a bank connection: one string per manifest secret slot.
+    Which slots a bank needs is validated by the bank manager against its manifest."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(keys=fields.String(), values=fields.String(), **kwargs)
+
+
+class BanksResourceAddSchema(BankLocationWithNameSchema):
+    credentials = BankCredentialsField(required=True)
+
+
+class BanksResourceEditSchema(BankLocationWithNameSchema):
+    new_name = EmptyAsNoneStringField(load_default=None)
+    credentials = BankCredentialsField(load_default=dict)
+
+
+class BankSyncSchema(AsyncQueryArgumentSchema):
+    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
+
+    @validates_schema
+    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if data['name'] is not None and data['location'] is None:
+            raise ValidationError('A bank connection name needs its location')
+
+
+class BankBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
+    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    ignore_cache = fields.Boolean(load_default=False)
 
 
 class ExchangeEventsRangeQuerySchema(

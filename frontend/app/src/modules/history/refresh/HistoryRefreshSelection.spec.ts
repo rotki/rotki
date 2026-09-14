@@ -12,6 +12,7 @@ const RuiMenuStub = defineComponent({
 });
 
 const toggles = {
+  banks: vi.fn(),
   chains: vi.fn(),
   events: vi.fn(),
   exchanges: vi.fn(),
@@ -41,6 +42,7 @@ async function createWrapper(props: { processing?: boolean; disabled?: boolean }
   const wrapper = mount(HistoryRefreshSelection, {
     global: {
       stubs: {
+        HistoryRefreshBanks: tabStub('HistoryRefreshBanks', toggles.banks),
         HistoryRefreshChains: tabStub('HistoryRefreshChains', toggles.chains),
         HistoryRefreshExchanges: tabStub('HistoryRefreshExchanges', toggles.exchanges),
         HistoryRefreshProtocolEvents: tabStub('HistoryRefreshProtocolEvents', toggles.protocols),

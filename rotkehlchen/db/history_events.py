@@ -56,6 +56,7 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryType,
@@ -456,10 +457,12 @@ class DBHistoryEvents:
             self,
             write_cursor: DBCursor,
             history: Sequence[HistoryBaseEntry],
+            update_existing: bool = False,
     ) -> int:
         """Insert a list of history events in the database with batched modification tracking.
 
-        Returns the number of newly inserted events, excluding duplicates.
+        Returns the number of newly inserted events, excluding duplicates. When
+        ``update_existing`` is true, non-customized duplicate events are refreshed.
 
         This method batches modification tracking for efficiency:
         - Instead of calling _mark_events_modified() for each event,
@@ -489,6 +492,48 @@ class DBHistoryEvents:
                 if min_timestamp is None or event.timestamp < min_timestamp:
                     # Track the minimum timestamp
                     min_timestamp = event.timestamp
+            elif update_existing:
+                existing = write_cursor.execute(
+                    'SELECT identifier, entry_type, group_identifier, sequence_index, timestamp, '
+                    'location, location_label, asset, amount, notes, type, subtype, extra_data, '
+                    'ignored FROM history_events '
+                    'WHERE group_identifier=? AND sequence_index=?',
+                    (event.group_identifier, event.sequence_index),
+                ).fetchone()
+                assert existing is not None
+                serialized = event.serialize_for_db()
+                if existing[1:] == (
+                        *serialized[0][2],
+                        int(event.asset.identifier in ignored_assets),
+                ):
+                    continue
+                if write_cursor.execute(
+                    'SELECT 1 FROM history_events_mappings WHERE parent_identifier=? '
+                    'AND name=? AND value=?',
+                    (
+                        existing[0],
+                        HISTORY_MAPPING_KEY_STATE,
+                        HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    ),
+                ).fetchone() is None:
+                    for idx, (_, updatestr, bindings) in enumerate(serialized):
+                        if idx != 0:
+                            write_cursor.execute(
+                                f'{updatestr} WHERE identifier=?',
+                                (*bindings, existing[0]),
+                            )
+                            continue
+                        write_cursor.execute(
+                            f'{updatestr}, ignored=(CASE WHEN EXISTS '
+                            "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' "
+                            'AND value = ?) '
+                            'THEN 1 ELSE 0 END) WHERE identifier=?',
+                            (*bindings, event.asset.identifier, existing[0]),
+                        )
+                    if min_timestamp is None:
+                        min_timestamp = min(existing[4], event.timestamp)
+                    elif (earliest := min(existing[4], event.timestamp)) < min_timestamp:
+                        min_timestamp = earliest
 
         # Call tracking ONCE for the entire batch with minimum timestamp
         if min_timestamp is not None:
@@ -1690,6 +1735,7 @@ class DBHistoryEvents:
                     data = entry[data_start_idx:data_end_idx]
                     deserialized_event = (
                         AssetMovement if entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else  # noqa: E501
+                        BankTransactionEvent if entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT else  # noqa: E501
                         SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
                         EvmSwapEvent if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
                         SolanaSwapEvent if entry_type == HistoryBaseEntryType.SOLANA_SWAP_EVENT else  # noqa: E501

@@ -2,14 +2,8 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type {
-  AddHistoryEventPayload,
-  HistoryEventCollectionRow,
-  HistoryEventRow,
-  HistoryEventsCollectionResponse,
-  ModifyHistoryEventPayload,
-} from '@/modules/history/events/schemas';
+import type { AddHistoryEventPayload, HistoryEventRequestPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventCollectionRow, HistoryEventRow, HistoryEventsCollectionResponse } from '@/modules/history/events/schemas';
 import { Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';

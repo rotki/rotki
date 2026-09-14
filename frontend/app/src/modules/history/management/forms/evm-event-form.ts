@@ -1,4 +1,5 @@
-import type { EditHistoryEventPayload, EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { EditHistoryEventPayload, NewEvmHistoryEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { EvmHistoryEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

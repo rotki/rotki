@@ -44,6 +44,12 @@ export const useLocationStore = defineStore('locations', () => {
     });
   });
 
+  /** Locations that are bank connectors: set up under API Keys \> Banks, never in the exchange form. */
+  const banks = computed<string[]>(() => {
+    const locations = get(allLocations);
+    return Object.keys(locations).filter(key => locations[key].isBank === true);
+  });
+
   const exchangesWithKey = computed<string[]>(() => {
     const locations = get(allLocations);
     return get(allExchanges).filter(key => locations[key].exchangeDetails?.isExchangeWithKey);
@@ -70,6 +76,7 @@ export const useLocationStore = defineStore('locations', () => {
 
   return {
     allExchanges,
+    banks,
     allLocations,
     exchangesWithKey,
     exchangesWithoutApiSecret,

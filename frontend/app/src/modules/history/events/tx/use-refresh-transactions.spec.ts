@@ -154,6 +154,7 @@ const mockSupportedChains = {
 };
 
 const mockRefreshHandlers = {
+  queryAllBankEvents: vi.fn().mockResolvedValue([]),
   // Same contract as the sync mock above: settling is what makes an exchange stop being novel.
   queryAllExchangeEvents: vi.fn(defaultQueryExchanges),
   queryOnlineEvent: vi.fn().mockResolvedValue(ok(undefined)),

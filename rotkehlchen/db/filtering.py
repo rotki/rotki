@@ -1255,6 +1255,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
                 HistoryBaseEntryType.BITCOIN_EVENT,
                 HistoryBaseEntryType.HISTORY_EVENT,
+                HistoryBaseEntryType.BANK_TRANSACTION_EVENT,
             ])
 
         filter_query = super().make(
@@ -1366,6 +1367,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
                 HistoryBaseEntryType.BITCOIN_EVENT,
+                HistoryBaseEntryType.BANK_TRANSACTION_EVENT,
             ])
 
         filter_query = super().make(

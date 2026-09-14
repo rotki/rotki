@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   accountSyncActivity,
   accountSyncActivityId,
+  bankEventsActivity,
+  bankEventsActivityId,
   chainSyncActivity,
   chainSyncActivityId,
   exchangeEventsActivity,
@@ -9,6 +11,7 @@ import {
   onlineEventsActivity,
   onlineEventsActivityId,
 } from '@/modules/history/events/tx/sync-activity';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 
 /**
  * Literals, not helper-against-descriptor comparisons: the flow names these children before the
@@ -41,6 +44,12 @@ describe('sync activity ids', () => {
     expect(exchangeEventsActivity.id({ location: 'kraken', name: 'main' }))
       .not
       .toBe(exchangeEventsActivity.id({ location: 'kraken', name: 'second' }));
+  });
+
+  it('should key a bank connection like an exchange but under its own kind and lane', () => {
+    expect(bankEventsActivityId('qonto', 'main')).toBe(makeActivityId(ActivityKind.BANK_EVENTS, 'qonto', 'main'));
+    expect(bankEventsActivityId('qonto', 'main')).not.toBe(exchangeEventsActivityId('qonto', 'main'));
+    expect(bankEventsActivity.laneOf?.({ location: 'qonto', name: 'main' })).toBe('bank-events:qonto');
   });
 
   it('should key an online query by its type', () => {

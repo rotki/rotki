@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter, ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';

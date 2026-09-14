@@ -63,6 +63,7 @@ export const ActivityKind = {
   MANUAL_BALANCES: 'manual-balances',
   NFT_BALANCES: 'nft-balances',
   EXCHANGE_BALANCES: 'exchange-balances',
+  BANK_BALANCES: 'bank-balances',
   EXCHANGE_SAVINGS: 'exchange-savings',
   TOKEN_DETECTION: 'token-detection',
   /** The umbrella for a whole history refresh; its children are the per-chain and per-account work. */
@@ -81,6 +82,7 @@ export const ActivityKind = {
   ETH_BLOCK_DECODING: 'eth-block-decoding',
   REPULLING: 'repulling',
   EXCHANGE_EVENTS: 'exchange-events',
+  BANK_EVENTS: 'bank-events',
   ONLINE_EVENTS: 'online-events',
   PROTOCOL_CACHE: 'protocol-cache',
   SYNC: 'sync',

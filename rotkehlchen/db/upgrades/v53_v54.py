@@ -49,6 +49,13 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             (Location.INK.serialize_for_db(), Location.INK.value),
         )
 
+    @progress_step(description='Add Qonto bank location.')
+    def _add_qonto_location(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+            (Location.QONTO.serialize_for_db(), Location.QONTO.value),
+        )
+
     @progress_step(description='Remove notes that rotki now generates from event data.')
     def _remove_generated_notes(write_cursor: DBCursor) -> None:
         """Notes of gas, approvals, deploys, transactions to self, plain transfers, ETH staking

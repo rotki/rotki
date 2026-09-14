@@ -96,6 +96,10 @@ export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): 
   });
 }
 
+export function isBankTransactionEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.BANK_TRANSACTION_EVENT;
+}
+
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.BITCOIN_EVENT;
 }

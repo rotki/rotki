@@ -1,6 +1,7 @@
 
 import pytest
 
+from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.tasks.manager import TaskManager
@@ -59,6 +60,7 @@ def fixture_task_manager(
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
         chains_aggregator=blockchain,
         exchange_manager=exchange_manager,
+        bank_manager=BankManager(msg_aggregator=msg_aggregator),
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         activate_premium=lambda _: None,

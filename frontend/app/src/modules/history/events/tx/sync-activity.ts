@@ -3,6 +3,7 @@ import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/sche
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import {
   ACCOUNT_SYNC_LANE_PREFIX,
+  BANK_EVENTS_LANE_PREFIX,
   CHAIN_SYNC_LANE,
   EXCHANGE_EVENTS_LANE_PREFIX,
   familyLane,
@@ -98,6 +99,16 @@ export const exchangeEventsActivity = defineActivity<ExchangeEventsSubject, read
 });
 
 /**
+ * One bank connection's transaction sync. Same subject and detail as an exchange: a location and
+ * a name, and the backend streams the same status frames for it.
+ */
+export const bankEventsActivity = defineActivity<ExchangeEventsSubject, readonly [string, string], ExchangeEventsDetail>({
+  key: subject => [subject.location, subject.name],
+  kind: ActivityKind.BANK_EVENTS,
+  lane: subject => familyLane(BANK_EVENTS_LANE_PREFIX, subject.location),
+});
+
+/**
  * One online-event query (withdrawals, block productions).
  *
  * No lane: these are few and independent, and run unthrottled today.
@@ -120,6 +131,11 @@ export function accountSyncActivityId(chain: string, address: string): ActivityI
 /** One connected exchange's event query. See {@link exchangeEventsActivity}. */
 export function exchangeEventsActivityId(location: string, name: string): ActivityId {
   return exchangeEventsActivity.id({ location, name });
+}
+
+/** One bank connection's transaction sync. See {@link bankEventsActivity}. */
+export function bankEventsActivityId(location: string, name: string): ActivityId {
+  return bankEventsActivity.id({ location, name });
 }
 
 /** One online-event query. See {@link onlineEventsActivity}. */

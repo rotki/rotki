@@ -1,10 +1,12 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
 import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { groupBy } from 'es-toolkit';
 import { msg } from '@/message-key';
 import {
+  bankEventsActivityId,
   chainSyncActivityId,
   exchangeEventsActivityId,
   onlineEventsActivityId,
@@ -20,18 +22,20 @@ import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-ce
 export type RefreshWork =
   | { readonly type: 'chain'; readonly chain: string; readonly accounts: ChainAddress[] }
   | { readonly type: 'exchange'; readonly exchange: Exchange }
+  | { readonly type: 'bank'; readonly bank: BankConnectionIdentity }
   | { readonly type: 'online'; readonly query: OnlineHistoryEventsQueryType };
 
 /** The resolved set a refresh covers — the scope its children are derived from. */
 export interface RefreshScope {
   readonly accounts: ChainAddress[];
   readonly exchanges: Exchange[];
+  readonly banks: BankConnectionIdentity[];
   readonly queries: OnlineHistoryEventsQueryType[];
 }
 
 /**
- * Pull everything new: transactions per tracked account, events per connected exchange, and the
- * online event queries that belong to no chain.
+ * Pull everything new: transactions per tracked account, events per connected exchange and bank
+ * connection, and the online event queries that belong to no chain.
  *
  * Singleton by identity — one refresh at a time, and `submitTask` dedup is what enforces that from
  * every surface, including callers in other modules that button-state guarding cannot reach.
@@ -59,6 +63,11 @@ export const historySyncFlow: HistoryFlow<RefreshScope, RefreshWork> = {
       id: exchangeEventsActivityId(exchange.location, exchange.name),
       kind: ActivityKind.EXCHANGE_EVENTS,
       payload: { exchange, type: 'exchange' } as const,
+    })),
+    ...scope.banks.map(bank => ({
+      id: bankEventsActivityId(bank.location, bank.name),
+      kind: ActivityKind.BANK_EVENTS,
+      payload: { bank, type: 'bank' } as const,
     })),
     ...scope.queries.map(query => ({
       id: onlineEventsActivityId(query),

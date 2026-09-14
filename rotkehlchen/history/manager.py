@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
+    from rotkehlchen.banks.manager import BankManager
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -49,6 +50,7 @@ class HistoryQueryingManager:
             db: DBHandler,
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
+            bank_manager: BankManager,
             chains_aggregator: ChainsAggregator,
             processing_coordinator: HistoryProcessingCoordinator,
     ) -> None:
@@ -57,6 +59,7 @@ class HistoryQueryingManager:
         self.user_directory = user_directory
         self.db = db
         self.exchange_manager = exchange_manager
+        self.bank_manager = bank_manager
         self.chains_aggregator = chains_aggregator
         self.processing_coordinator = processing_coordinator
         self._reset_variables()
@@ -151,7 +154,10 @@ class HistoryQueryingManager:
         self._reset_variables()
         step = 0
         total_steps = (
-            self.exchange_manager.connected_and_syncing_exchanges_num() * STEPS_PER_CEX +
+            (
+                self.exchange_manager.connected_and_syncing_exchanges_num() +
+                self.bank_manager.connected_banks_num()
+            ) * STEPS_PER_CEX +
             NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES
         )
         log.info(
@@ -174,7 +180,7 @@ class HistoryQueryingManager:
             step = self._increase_progress(step, total_steps)
             self.processing_state_name = state_name
 
-        for exchange in self.exchange_manager.iterate_exchanges():
+        for exchange in (*self.exchange_manager.iterate_exchanges(), *self.bank_manager.iterate_banks()):  # noqa: E501
             self.processing_state_name = f'Querying {exchange.name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range

@@ -29,10 +29,11 @@ export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEvent
   // Prefix, not exact: online events submit one activity per queryType.
   const onlineHistoryEventsLoading = useIsActivePrefix(ActivityKind.ONLINE_EVENTS);
   const queryExchangeEventsLoading = useIsActive(ActivityKind.EXCHANGE_EVENTS);
+  const queryBankEventsLoading = useIsActive(ActivityKind.BANK_EVENTS);
   const isRepulling = useIsActive(ActivityKind.REPULLING);
   const isTransactionsLoading = useIsActive(ActivityKind.TX_SYNC);
 
-  const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
+  const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, queryBankEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
   const querying = logicNot(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
   const processing = logicOr(isTransactionsLoading, isRepulling, refreshing);

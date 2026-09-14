@@ -1,5 +1,15 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { FilterObjectWithBehaviour } from '@/modules/core/table/filtering';
+import type {
+  AddEvmSwapEventPayload,
+  AddSolanaSwapEventPayload,
+  AddSwapEventPayload,
+  EditEvmSwapEventPayload,
+  EditHistoryEventPayload,
+  EditSolanaSwapEventPayload,
+  EditSwapEventPayload,
+  NewHistoryEventPayload,
+} from '@/modules/history/events/event-edit-payloads';
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
@@ -27,3 +37,9 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
 export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'> {
   readonly matchExactEvents: boolean;
 }
+
+/** Everything the add-event endpoint accepts, one shape per entry type. */
+export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload | AddSolanaSwapEventPayload;
+
+/** Everything the edit-event endpoint accepts. */
+export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSwapEventPayload;

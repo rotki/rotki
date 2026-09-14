@@ -1,8 +1,5 @@
-import type {
-  AssetMovementEvent,
-  EditHistoryEventPayload,
-  NewAssetMovementEventPayload,
-} from '@/modules/history/events/schemas';
+import type { EditHistoryEventPayload, NewAssetMovementEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

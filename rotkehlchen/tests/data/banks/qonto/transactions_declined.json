@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "total_pages": 1,
+    "total_count": 1,
+    "current_page": 1,
+    "per_page": 100,
+    "next_page": null,
+    "prev_page": null
+  },
+  "transactions": [
+    {
+      "id": "7e10dfa5-1b9e-407d-9e8d-52401ed6d80d",
+      "transaction_id": "groveni-ridg-4502-6-juniperwill-568i60t0-221t-54ju-velv-rid79d-13u2w2",
+      "amount": 20446.36,
+      "amount_cents": 2044636,
+      "settled_balance": null,
+      "settled_balance_cents": null,
+      "attachment_ids": [],
+      "logo": {
+        "small": "quart://junip.nim/emberzephy-fjord-lumen/cedar-gro/j3pebb04-n6ce-9640-2x9y-2859q8066k65/grove.rid",
+        "medium": "fjord://ivory.wil/pebblejuni-quart-quart/kestr-har/o5ceda87-q2ju-2968-9j3k-6185p8230e15/saffro.peb"
+      },
+      "local_amount": 20446.36,
+      "local_amount_cents": 2044636,
+      "side": "debit",
+      "operation_type": "transfer",
+      "currency": "EUR",
+      "local_currency": "EUR",
+      "label": "Timberlumen Pebbleq Orchidu Juniper",
+      "settled_at": null,
+      "emitted_at": "2026-02-06T12:03:54.355Z",
+      "created_at": "2026-02-06T12:03:48.923Z",
+      "updated_at": "2026-02-06T12:03:54.353Z",
+      "status": "declined",
+      "note": null,
+      "reference": "B91870431 / Umberha Delt",
+      "vat_amount": null,
+      "vat_amount_cents": null,
+      "vat_rate": null,
+      "initiator_id": "e5453a81-d71a-4a82-a05a-00e216733659",
+      "label_ids": [],
+      "attachment_lost": false,
+      "attachment_required": true,
+      "card_last_digits": null,
+      "category": "other_expense",
+      "cashflow_category": null,
+      "cashflow_subcategory": null,
+      "card_id": null,
+      "subject_type": "Transfer",
+      "bank_account_id": "954bf008-c187-4e30-b067-b16f364df375",
+      "is_external_transaction": false,
+      "clean_counterparty_name": null,
+      "transfer": {
+        "counterparty_account_number": "DE97074066624496904966",
+        "counterparty_account_number_format": "IBAN",
+        "counterparty_bank_identifier": "XRFRZHFXRCF",
+        "counterparty_bank_identifier_format": "SWIFT_BIC"
+      }
+    }
+  ]
+}

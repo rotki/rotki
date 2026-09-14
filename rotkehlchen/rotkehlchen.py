@@ -19,6 +19,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
+from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -200,6 +201,7 @@ class Rotkehlchen:
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.rotki_notifier.undelivered_callback = self.msg_aggregator.requeue_undelivered
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        self.bank_manager = BankManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
         globaldb = GlobalDBHandler(
             data_dir=self.data_dir,
@@ -316,6 +318,7 @@ class Rotkehlchen:
         """
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
+        self.bank_manager.delete_all_banks()
         self.data.logout()
         self.monerium = None
         for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, self.moralis, self.birdeye, Inquirer()._manualcurrent):  # noqa: E501
@@ -436,6 +439,10 @@ class Rotkehlchen:
             exchange_credentials = self.data.db.get_exchange_credentials(cursor)
             self.exchange_manager.initialize_exchanges(
                 exchange_credentials=exchange_credentials,
+                database=self.data.db,
+            )
+            self.bank_manager.initialize_banks(
+                credentials=exchange_credentials,  # same table; the manager keeps bank locations
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
@@ -677,6 +684,7 @@ class Rotkehlchen:
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
+            bank_manager=self.bank_manager,
             chains_aggregator=self.chains_aggregator,
             processing_coordinator=self.history_processing_coordinator,
         )
@@ -693,6 +701,7 @@ class Rotkehlchen:
             premium_sync_manager=self.premium_sync_manager,
             chains_aggregator=self.chains_aggregator,
             exchange_manager=self.exchange_manager,
+            bank_manager=self.bank_manager,
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
@@ -749,6 +758,7 @@ class Rotkehlchen:
         self.deactivate_premium_status()
         del self.chains_aggregator
         self.exchange_manager.delete_all_exchanges()
+        self.bank_manager.delete_all_banks()
 
         del self.accountant
         del self.history_querying_manager
@@ -1256,8 +1266,8 @@ class Rotkehlchen:
         # out internally, so the total wait becomes the slowest single source instead of the
         # sum of all of them.
         exchange_tasks = [
-            (exchange, spawn(exchange.query_balances, ignore_cache=ignore_cache))
-            for exchange in self.exchange_manager.iterate_exchanges()
+            (source, spawn(source.query_balances, ignore_cache=ignore_cache))
+            for source in (*self.exchange_manager.iterate_exchanges(), *self.bank_manager.iterate_banks())  # noqa: E501
         ]
         blockchain_task = spawn(
             self.chains_aggregator.query_balances,

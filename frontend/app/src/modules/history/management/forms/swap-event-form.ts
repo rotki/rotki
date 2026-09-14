@@ -1,9 +1,5 @@
-import type {
-  AddSwapEventPayload,
-  EditSwapEventPayload,
-  SwapEvent,
-  SwapEventUserNotes,
-} from '@/modules/history/events/schemas';
+import type { AddSwapEventPayload, EditSwapEventPayload, SwapEventUserNotes } from '@/modules/history/events/event-edit-payloads';
+import type { SwapEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';

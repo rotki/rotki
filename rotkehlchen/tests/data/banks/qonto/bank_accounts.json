@@ -1,0 +1,29 @@
+{
+  "bank_accounts": [
+    {
+      "id": "954bf008-c187-4e30-b067-b16f364df375",
+      "status": "active",
+      "organization_id": "7d1c0575-6ebe-4b37-9b12-7ce5ce723e7d",
+      "name": "Fjordyarro",
+      "main": true,
+      "iban": "DE86601995651153419937",
+      "bic": "CXAFQZB21DS",
+      "currency": "EUR",
+      "balance": "+49 30 6457924",
+      "balance_cents": 220182,
+      "authorized_balance": "+49 30 6457924",
+      "authorized_balance_cents": 220182,
+      "updated_at": "2026-09-03T00:03:46.276Z",
+      "is_external_account": false,
+      "account_number": ""
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "next_page": null,
+    "prev_page": null,
+    "total_pages": 1,
+    "total_count": 1,
+    "per_page": 100
+  }
+}

@@ -19,6 +19,7 @@ import {
  */
 const HEADER_KEYS: Record<HistoryEventEntryType, MessageKey> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: msg.$t('transactions.events.headers.asset_movement_event'),
+  [HistoryEventEntryType.BANK_TRANSACTION_EVENT]: msg.$t('transactions.events.headers.bank_transaction_event'),
   [HistoryEventEntryType.BITCOIN_EVENT]: msg.$t('transactions.events.headers.bitcoin_event'),
   [HistoryEventEntryType.ETH_BLOCK_EVENT]: msg.$t('transactions.events.headers.eth_block_event'),
   [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: msg.$t('transactions.events.headers.eth_deposit_event'),

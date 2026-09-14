@@ -1,10 +1,11 @@
+import type { NewOnlineHistoryEventPayload } from '@/modules/history/events/event-edit-payloads';
 import type { TransactionRequestPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { BigNumber, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type NewOnlineHistoryEventPayload, OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useHistoryEventsApi } from './use-history-events-api';
 
 function createNewEventPayload(overrides?: Partial<NewOnlineHistoryEventPayload>): NewOnlineHistoryEventPayload {

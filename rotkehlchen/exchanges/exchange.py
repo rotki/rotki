@@ -70,6 +70,7 @@ class HistoryEventQueue:
             events: Sequence[HistoryBaseEntry] = (),
             cursor_update: HistoryQueryProgressUpdate | None = None,
             queried_until_ts: Timestamp | None = None,
+            update_existing: bool = False,
     ) -> None:
         """Atomically persist queued events, cursor progress and a safe range boundary.
 
@@ -86,6 +87,7 @@ class HistoryEventQueue:
                 saved_events = DBHistoryEvents(self.database).add_history_events(
                     write_cursor=write_cursor,
                     history=events_to_write,
+                    update_existing=update_existing,
                 )
             if cursor_update is not None:
                 cursor_update(write_cursor)

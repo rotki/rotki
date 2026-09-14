@@ -63,6 +63,7 @@ const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: AssetMovementEventForm,
+  [HistoryEventEntryType.BANK_TRANSACTION_EVENT]: OnlineHistoryEventForm,
   [HistoryEventEntryType.BITCOIN_EVENT]: BitcoinEventForm,
   [HistoryEventEntryType.ETH_BLOCK_EVENT]: EthBlockEventForm,
   [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: EthDepositEventForm,

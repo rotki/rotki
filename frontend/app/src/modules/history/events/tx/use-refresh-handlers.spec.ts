@@ -33,6 +33,10 @@ vi.mock('@/modules/history/events/tx/use-exchange-events-refresh', () => ({
   useExchangeEventsRefresh: vi.fn(() => ({ queryAllExchangeEvents: vi.fn() })),
 }));
 
+vi.mock('@/modules/history/events/tx/use-bank-events-refresh', () => ({
+  useBankEventsRefresh: vi.fn(() => ({ queryAllBankEvents: vi.fn() })),
+}));
+
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
