@@ -17,10 +17,16 @@ describe('useNumberScrambler', () => {
     expect(get(scrambled).isZero()).toBe(false);
   });
 
-  it('should not render a scrambled amount smaller than the real one', () => {
+  it('should scramble with a multiplier below 1 as given', () => {
     const scrambled = useNumberScrambler({ enabled: true, multiplier: 0.5, value });
 
-    expect(get(scrambled).isGreaterThanOrEqualTo(value)).toBe(true);
+    expect(get(scrambled).toString()).toBe('617.25');
+  });
+
+  it('should never flip the sign of a scrambled amount', () => {
+    const scrambled = useNumberScrambler({ enabled: true, multiplier: -2, value });
+
+    expect(get(scrambled).toString()).toBe('1234.5');
   });
 
   it('should still scramble with a valid multiplier', () => {
