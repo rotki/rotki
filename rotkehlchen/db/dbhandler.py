@@ -290,7 +290,11 @@ class DBHandler:
         self.pending_txs_tracker = PendingTransactionsTracker()
         self.password = password
         self._connect()
-        self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
+        try:
+            self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
+        except Exception:
+            self.disconnect()
+            raise
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
             if initial_settings is not None:
@@ -324,9 +328,6 @@ class DBHandler:
                 payload=None,
             )
 
-        # If resume_from_backup is True, the user gave approval.
-        # Replace the db with a backup and reconnect
-        self.disconnect()
         backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
         found_backups = list(filter(
             lambda x: x[-len(backup_postfix):] == backup_postfix,
@@ -340,6 +341,19 @@ class DBHandler:
             )
 
         backup_to_use = max(found_backups)  # Use latest backup
+        # Leave WAL mode before replacing the file so old WAL pages cannot override the backup.
+        self.conn.disable_read_pool()
+        try:
+            with self.conn.cursor() as cursor:
+                journal_mode = cursor.execute('PRAGMA journal_mode=DELETE').fetchone()
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+            raise DBUpgradeError(
+                f'Could not restore database backup: failed to disable WAL mode: {e!s}',
+            ) from e
+        if journal_mode != ('delete',):
+            raise DBUpgradeError('Could not restore database backup: WAL mode is still enabled.')
+
+        self.disconnect()
         shutil.copyfile(
             self.user_data_dir / backup_to_use,
             self.user_data_dir / USERDB_NAME,
