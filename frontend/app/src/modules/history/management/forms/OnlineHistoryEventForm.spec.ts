@@ -233,6 +233,30 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
   });
 
+  it('should save a new event as a bank transaction when that entry type is picked in the dialog', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    await wrapper.setProps({ entryType: HistoryEventEntryType.BANK_TRANSACTION_EVENT });
+
+    await wrapper.find('[data-testid=location] input').setValue(event.location);
+    await wrapper.find('[data-testid=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
+      eventSubtype: event.eventSubtype,
+      eventType: event.eventType,
+    });
+    await nextTick();
+    await wrapper.find('[data-testid=asset] input').setValue(asset.symbol);
+    await wrapper.find('[data-testid=amount] input').setValue(event.amount.toString());
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    expect(await wrapper.vm.save()).toBe(true);
+    expect(addHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({
+      entryType: HistoryEventEntryType.BANK_TRANSACTION_EVENT,
+      extraData: null,
+    }));
+  });
+
   it('should not call editHistoryEvent when nothing changed', async () => {
     wrapper = createWrapper({
       props: {

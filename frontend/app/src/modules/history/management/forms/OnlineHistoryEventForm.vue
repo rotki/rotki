@@ -25,7 +25,11 @@ import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { data } = defineProps<{ data: StandaloneEventData<OnlineFormEvent> }>();
+const { data, entryType } = defineProps<{
+  data: StandaloneEventData<OnlineFormEvent>;
+  /** The entry type picked in the dialog, which a new event is saved as. */
+  entryType?: OnlineFormEvent['entryType'];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -33,8 +37,8 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
-function defaults(): { location: string; nextSequenceId: string } {
-  return { location: get(lastLocation) ?? TRADE_LOCATION_EXTERNAL, nextSequenceId: data.nextSequenceId };
+function defaults(): { entryType?: OnlineFormEvent['entryType']; location: string; nextSequenceId: string } {
+  return { entryType, location: get(lastLocation) ?? TRADE_LOCATION_EXTERNAL, nextSequenceId: data.nextSequenceId };
 }
 
 const { form, save, seed } = useHistoryEventForm({
@@ -78,6 +82,10 @@ watch(() => state.location, (location: string) => {
     set(lastLocation, location);
 });
 
+watch(() => entryType, (type) => {
+  if (data.type === 'add' && type)
+    state.entryType = type;
+});
 defineExpose({
   errorCount: form.errorCount,
   save,

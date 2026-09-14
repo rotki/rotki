@@ -67,8 +67,6 @@ test.describe.serial('bank transaction events', () => {
   });
 
   test('should add an event to a bank transaction group as a bank transaction', async () => {
-    test.fail(true, 'onlineHistoryStateFromGroup defaults the entry type to history event, so the add is sent as a plain event');
-
     const added = ctx.sharedPage.waitForRequest(request => isEventWrite(request, 'PUT'));
 
     await bankGroup().locator('[data-testid=event-actions-menu]').click();
