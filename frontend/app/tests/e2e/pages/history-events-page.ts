@@ -111,7 +111,7 @@ export class HistoryEventsPage {
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
-  private async selectAction(eventType: string, eventSubtype: string): Promise<void> {
+  async selectAction(eventType: string, eventSubtype: string): Promise<void> {
     const picker = this.page.locator('[data-testid=event-action-picker]');
     await picker.locator('[data-id=activator]').click();
     const menu = this.page.locator('[role=menu]').last();
