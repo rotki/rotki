@@ -120,6 +120,29 @@ describe('useBanks', () => {
     expect(getBanks).toHaveBeenCalledTimes(3);
   });
 
+  it('should send only the credentials that were filled in when editing, so a blank slot keeps its stored value', async () => {
+    editBank.mockResolvedValue(true);
+    const banks = useBanks();
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: '  ' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Renamed',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: {}, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: 'new-secret' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Qonto main',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'Qonto main', newName: undefined });
+  });
+
   it('should let a setup error propagate so the dialog can map it onto fields', async () => {
     addBank.mockRejectedValue(new Error('bank said no'));
     const banks = useBanks();
