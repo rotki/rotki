@@ -81,6 +81,7 @@ function toggleSelectAll(): void {
         size="lg"
         class="px-3 rounded-l-none !outline-none"
         :disabled="disabled"
+        data-testid="refresh-selection-toggle"
         v-bind="attrs"
       >
         <RuiIcon name="lu-chevrons-up-down" />

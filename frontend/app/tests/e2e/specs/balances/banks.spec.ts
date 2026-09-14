@@ -90,4 +90,15 @@ test.describe.serial('bank connections', () => {
     await expect(banksPage.dashboardCard()).toContainText('Qonto', { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.dashboardCard().locator('[data-testid=display-amount]')).toContainText('250');
   });
+
+  test('should sync only the bank connection picked in the history refresh menu', async () => {
+    await banksPage.visitHistory();
+    await banksPage.openRefreshMenuBanks();
+    const syncedBefore = requests.synced.length;
+
+    await banksPage.refreshPickedBank(HEALTHY);
+    await banksPage.waitForRefreshSettled();
+
+    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ location: 'qonto', name: HEALTHY })]);
+  });
 });
