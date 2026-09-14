@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
@@ -30,7 +29,7 @@ definePage({
   props: true,
 });
 
-const account = ref<AccountManageState>();
+const account = ref<ReturnType<typeof createNewBlockchainAccount>>();
 const search = ref<string>('');
 const chainsFilter = ref<string[]>([]);
 
