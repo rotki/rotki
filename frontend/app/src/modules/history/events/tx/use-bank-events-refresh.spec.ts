@@ -1,8 +1,9 @@
-import type { BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnectionIdentity, BankManifest } from '@/modules/banks/types';
 import type { useBanksApi } from '@/modules/banks/use-banks-api';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useBankEventsRefresh } from './use-bank-events-refresh';
@@ -82,5 +83,16 @@ describe('useBankEventsRefresh', () => {
     expect(outcomes).toHaveLength(1);
     expect(mockNotifyError).toHaveBeenCalledOnce();
     expect(mockNotifyError.mock.calls[0][1]).toContain('boom');
+  });
+
+  it('should name the bank by its display name in the failure notification', async () => {
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto', location: 'qonto' })]);
+    mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+
+    const { queryAllBankEvents } = useBankEventsRefresh();
+    await queryAllBankEvents([banks[0]]);
+
+    expect(mockNotifyError.mock.calls[0][1]).toContain('Qonto');
+    expect(mockNotifyError.mock.calls[0][1]).not.toContain('qonto');
   });
 });
