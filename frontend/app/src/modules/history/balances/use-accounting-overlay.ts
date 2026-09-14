@@ -4,9 +4,9 @@ import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { logger } from '@/modules/core/common/logging/logging';
-import { PairOverlayStatus } from '@/modules/history/balances/accounting-overlay-helpers';
+import { EventOverlayStatus } from '@/modules/history/balances/accounting-overlay-helpers';
 
-export { PairOverlayStatus };
+export { EventOverlayStatus };
 
 /** The overlay column toggle: `none` hides it, `balance` shows balance-after-event. */
 export const OverlayMode = {
@@ -29,17 +29,17 @@ export interface SparklinePoint {
 }
 
 interface EventSnapshot {
-  status: PairOverlayStatus;
+  status: EventOverlayStatus;
   buckets: AccountingOverlayBucket[];
 }
 
 function snapshotFromEntry(entry: HistoricalBalancesAtEventsResponse['entries'][string] | undefined): EventSnapshot {
   if (!entry)
-    return { status: PairOverlayStatus.ERROR, buckets: [] };
+    return { status: EventOverlayStatus.ERROR, buckets: [] };
   if (entry.processingRequired)
-    return { status: PairOverlayStatus.PROCESSING, buckets: entry.buckets };
+    return { status: EventOverlayStatus.PROCESSING, buckets: entry.buckets };
   return {
-    status: entry.buckets.length > 0 ? PairOverlayStatus.READY : PairOverlayStatus.EMPTY,
+    status: entry.buckets.length > 0 ? EventOverlayStatus.READY : EventOverlayStatus.EMPTY,
     buckets: entry.buckets,
   };
 }
@@ -50,7 +50,7 @@ interface AccountingOverlayParams {
 }
 
 export interface UseAccountingOverlayReturn {
-  statusFor: (identifier: number) => PairOverlayStatus;
+  statusFor: (identifier: number) => EventOverlayStatus;
   balanceAfter: (identifier: number) => BigNumber | undefined;
   bucketsAt: (identifier: number) => AccountingOverlayBucket[];
   /** Register a rendered event absent from the page groups; returns its cleanup function. */
@@ -73,7 +73,7 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
   /** Whether an event still lacks a usable snapshot, which includes one whose fetch failed. */
   function needsFetch(identifier: number): boolean {
     const status = get(cache).get(identifier)?.status;
-    return status === undefined || status === PairOverlayStatus.ERROR;
+    return status === undefined || status === EventOverlayStatus.ERROR;
   }
 
   /**
@@ -91,7 +91,7 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     const missing = get(activeIdentifiers).filter(needsFetch);
     const next = new Map(get(cache));
     for (const id of missing)
-      next.set(id, { status: PairOverlayStatus.LOADING, buckets: [] });
+      next.set(id, { status: EventOverlayStatus.LOADING, buckets: [] });
     set(cache, next);
 
     for (let offset = 0; offset < missing.length; offset += 500) {
@@ -115,7 +115,7 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
           return;
         const updated = new Map(get(cache));
         for (const id of batch)
-          updated.set(id, { status: PairOverlayStatus.ERROR, buckets: [] });
+          updated.set(id, { status: EventOverlayStatus.ERROR, buckets: [] });
         set(cache, updated);
       }
     }
@@ -142,13 +142,13 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     await fetchMissing();
   }
 
-  function statusFor(identifier: number): PairOverlayStatus {
-    return get(cache).get(identifier)?.status ?? PairOverlayStatus.LOADING;
+  function statusFor(identifier: number): EventOverlayStatus {
+    return get(cache).get(identifier)?.status ?? EventOverlayStatus.LOADING;
   }
 
   function balanceAfter(identifier: number): BigNumber | undefined {
     const entry = get(cache).get(identifier);
-    return entry?.status === PairOverlayStatus.READY
+    return entry?.status === EventOverlayStatus.READY
       ? entry.buckets.reduce((sum, bucket) => sum.plus(bucket.balance), Zero)
       : undefined;
   }

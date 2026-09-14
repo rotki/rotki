@@ -4,7 +4,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AccountingOverlayBuckets from '@/modules/history/balances/AccountingOverlayBuckets.vue';
 import AccountingOverlaySparkline from '@/modules/history/balances/AccountingOverlaySparkline.vue';
-import { type AccountingOverlayBucket, PairOverlayStatus } from '@/modules/history/balances/use-accounting-overlay';
+import { type AccountingOverlayBucket, EventOverlayStatus } from '@/modules/history/balances/use-accounting-overlay';
 import { injectAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { type EventDirection, getEventDirectionIcon, getEventDirectionTextClass } from '@/modules/history/events/event-direction';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -36,7 +36,7 @@ const eventProtocol = computed<string | undefined>(() => {
   return counterparty;
 });
 
-const status = computed<PairOverlayStatus | undefined>(() => {
+const status = computed<EventOverlayStatus | undefined>(() => {
   const acct = get(account);
   if (!context || !acct)
     return undefined;
@@ -66,7 +66,7 @@ watch([enabled, account, () => event.identifier], ([isEnabled, acct, identifier]
 const placeholder = computed<string | undefined>(() => {
   if (!get(account))
     return t('accounting_overlay.no_account');
-  if (get(status) === PairOverlayStatus.EMPTY || get(balance) === undefined)
+  if (get(status) === EventOverlayStatus.EMPTY || get(balance) === undefined)
     return t('accounting_overlay.no_balance');
   return undefined;
 });
@@ -79,12 +79,12 @@ const placeholder = computed<string | undefined>(() => {
     data-testid="accounting-overlay-cell"
   >
     <RuiSkeletonLoader
-      v-if="status === PairOverlayStatus.LOADING"
+      v-if="status === EventOverlayStatus.LOADING"
       class="w-20 h-4"
     />
 
     <RuiTooltip
-      v-else-if="status === PairOverlayStatus.PROCESSING"
+      v-else-if="status === EventOverlayStatus.PROCESSING"
       :open-delay="200"
     >
       <template #activator>
@@ -98,7 +98,7 @@ const placeholder = computed<string | undefined>(() => {
     </RuiTooltip>
 
     <RuiTooltip
-      v-else-if="status === PairOverlayStatus.ERROR"
+      v-else-if="status === EventOverlayStatus.ERROR"
       :open-delay="200"
     >
       <template #activator>

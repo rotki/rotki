@@ -1,7 +1,7 @@
 import { type BigNumber, Zero } from '@rotki/common';
 
 /** Availability of the bucket snapshot for an event. */
-export const PairOverlayStatus = {
+export const EventOverlayStatus = {
   EMPTY: 'empty',
   ERROR: 'error',
   LOADING: 'loading',
@@ -9,7 +9,7 @@ export const PairOverlayStatus = {
   READY: 'ready',
 } as const;
 
-export type PairOverlayStatus = typeof PairOverlayStatus[keyof typeof PairOverlayStatus];
+export type EventOverlayStatus = typeof EventOverlayStatus[keyof typeof EventOverlayStatus];
 
 export interface PreparedBucket {
   location: string;
