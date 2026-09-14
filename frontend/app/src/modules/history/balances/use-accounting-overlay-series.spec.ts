@@ -66,6 +66,14 @@ describe('useAccountingOverlaySeries', () => {
     expect(fetchSeries).toHaveBeenCalledTimes(2);
   });
 
+  it('should treat a malformed series as not loaded and retry it', async () => {
+    runTaskMock.mockResolvedValueOnce(ok({ entries: 'not a list' }));
+    const { seriesFor } = create();
+
+    expect(await seriesFor('0xA', 'ETH')).toBeUndefined();
+    expect(await seriesFor('0xA', 'ETH')).toHaveLength(1);
+  });
+
   it('should refetch a series after a reset', async () => {
     const { reset, seriesFor } = create();
     await seriesFor('0xA', 'ETH');

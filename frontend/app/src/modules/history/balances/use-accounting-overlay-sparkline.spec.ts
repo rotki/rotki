@@ -22,8 +22,12 @@ function series(): PreparedBucket[] {
 
 let scope: EffectScope;
 
-function create(enabled: Ref<boolean>, balance: Ref<BigNumber>): ReturnType<typeof useAccountingOverlaySparkline> {
-  const sparkline = scope.run(() => useAccountingOverlaySparkline(() => event, balance, { enabled, seriesFor }));
+function create(
+  enabled: Ref<boolean>,
+  balance: Ref<BigNumber>,
+  entry: () => HistoryEventEntry = (): HistoryEventEntry => event,
+): ReturnType<typeof useAccountingOverlaySparkline> {
+  const sparkline = scope.run(() => useAccountingOverlaySparkline(entry, balance, { enabled, seriesFor }));
   assert(sparkline);
   return sparkline;
 }
@@ -68,6 +72,28 @@ describe('useAccountingOverlaySparkline', () => {
     resolveSeries(series());
     await flushPromises();
     expect(get(loading)).toBe(false);
+  });
+
+  it('should drop a series that arrives after the event moved to another asset', async () => {
+    let resolveEth: (buckets: PreparedBucket[]) => void = () => {};
+    seriesFor.mockImplementation(async (_locationLabel, asset) => {
+      if (asset !== 'ETH')
+        return [{ location: 'ethereum', protocol: null, times: [100, 200], values: [bigNumberify('2'), bigNumberify('2')] }];
+      return new Promise<PreparedBucket[]>((resolve) => {
+        resolveEth = resolve;
+      });
+    });
+    const current = shallowRef<HistoryEventEntry>(event);
+    const { points } = create(ref<boolean>(true), ref<BigNumber>(bigNumberify('0')), () => get(current));
+    await flushPromises();
+
+    set(current, createMock<HistoryEventEntry>({ asset: 'DAI', identifier: 2, locationLabel: '0xA', timestamp: 250_000 }));
+    await flushPromises();
+    resolveEth(series());
+    await flushPromises();
+
+    expect(seriesFor.mock.calls.map(([, asset]) => asset)).toEqual(['ETH', 'DAI']);
+    expect(get(points).map(point => point.value)).toEqual([2, 2, 0]);
   });
 
   it('should move the endpoint with a refreshed snapshot without refetching', async () => {

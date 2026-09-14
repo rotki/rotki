@@ -95,8 +95,6 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     set(cache, next);
 
     for (let offset = 0; offset < missing.length; offset += 500) {
-      if (currentGeneration !== generation)
-        return;
       const batch = missing.slice(offset, offset + 500);
       try {
         const response = await fetchHistoricalBalancesAtEvents(batch);

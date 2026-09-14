@@ -147,6 +147,29 @@ describe('useAccountingOverlay event batches', () => {
     expect(overlay.balanceAfter(1)?.toString()).toBe('7');
   });
 
+  it('should discard a late failure from before a refresh', async () => {
+    let rejectPending: (error: Error) => void = () => {};
+    fetchSnapshots.mockReturnValueOnce(new Promise<HistoricalBalancesAtEventsResponse>((_resolve, reject) => {
+      rejectPending = reject;
+    }));
+    const { overlay } = create([1]);
+    await vi.advanceTimersByTimeAsync(60);
+    fetchSnapshots.mockResolvedValue(response([1], '7'));
+    await overlay.refresh();
+    rejectPending(new Error('unavailable'));
+    await vi.advanceTimersByTimeAsync(60);
+    expect(overlay.statusFor(1)).toBe('ready');
+    expect(overlay.balanceAfter(1)?.toString()).toBe('7');
+  });
+
+  it('should fetch nothing once its scope is disposed', async () => {
+    const { overlay } = create([1]);
+    scopes.splice(0).forEach(scope => scope.stop());
+    await overlay.refresh();
+    await vi.advanceTimersByTimeAsync(60);
+    expect(fetchSnapshots).not.toHaveBeenCalled();
+  });
+
   it('should stay idle while disabled and fetch when enabled', async () => {
     const { enabled } = create([1], false);
     await vi.advanceTimersByTimeAsync(60);
