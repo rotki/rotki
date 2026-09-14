@@ -67,7 +67,7 @@ describe('useBalanceRefresh', () => {
     expect(mocks.fetchBankBalances).toHaveBeenCalledWith(true);
   });
 
-  it.fails('should list the bank connections before querying bank balances, so an empty store can recover', async () => {
+  it('should list the bank connections before querying bank balances, so an empty store can recover', async () => {
     await useBalanceRefresh().refreshBalance('bank');
     expect(mocks.calls).toEqual(['connections', 'balances']);
   });

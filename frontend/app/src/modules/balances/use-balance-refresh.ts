@@ -11,8 +11,14 @@ import { useSetting } from '@/modules/settings/use-setting';
 export const useBalanceRefresh = createSharedComposable(() => {
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
-  const { fetchBankBalances } = useBanks();
+  const { fetchBankBalances, refreshBankConnections } = useBanks();
   const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
+
+  /** The balance query is a no-op without connections, so a card refreshed before any page listed them would never recover. */
+  const refreshBankBalances = async (): Promise<void> => {
+    await refreshBankConnections();
+    await fetchBankBalances(true);
+  };
 
   /**
    * Everything reaching this composable came from a user pressing something — the refresh
@@ -50,7 +56,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
     else if (balanceSource === 'exchange')
       await fetchConnectedExchangeBalances(true);
     else if (balanceSource === 'bank')
-      await fetchBankBalances(true);
+      await refreshBankBalances();
   };
 
   const refreshExchangeBalance = async (exchangeLocation: string): Promise<void> => {
