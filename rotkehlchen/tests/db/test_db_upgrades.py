@@ -3471,6 +3471,67 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_unfinished_upgrade_restore_with_open_reader(user_data_dir: Path) -> None:
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
+    backup_path = user_data_dir / f'{ts_now()}_rotkehlchen_db_v33.backup'
+    shutil.copy(user_data_dir / USERDB_NAME, backup_path)
+    db = _init_db_with_target_version(
+        target_version=33,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    with db.user_write() as cursor:
+        db.set_setting(cursor, 'ongoing_upgrade_from_version', 33)
+
+    reader = DBConnection(
+        path=user_data_dir / USERDB_NAME,
+        connection_type=DBConnectionType.USER,
+        sql_vm_instructions_cb=0,
+        read_only=True,
+    )
+    try:
+        with reader.read_ctx() as cursor:
+            cursor.execute("PRAGMA key='123'")
+            assert cursor.execute(
+                "SELECT value FROM settings WHERE name='ongoing_upgrade_from_version'",
+            ).fetchone() == ('33',)
+        db.logout()
+        with (
+            patch('rotkehlchen.db.dbhandler.shutil.copyfile', wraps=shutil.copyfile) as copyfile,
+            pytest.raises(DBUpgradeError, match='Could not restore database backup'),
+        ):
+            _init_db_with_target_version(
+                target_version=33,
+                user_data_dir=user_data_dir,
+                msg_aggregator=msg_aggregator,
+                resume_from_backup=True,
+            )
+        copyfile.assert_not_called()
+        with reader.read_ctx() as cursor:
+            assert cursor.execute(
+                "SELECT value FROM settings WHERE name='ongoing_upgrade_from_version'",
+            ).fetchone() == ('33',)
+    finally:
+        reader.close()
+        db.logout()
+
+    restored = _init_db_with_target_version(
+        target_version=33,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=True,
+    )
+    try:
+        with restored.conn.read_ctx() as cursor:
+            assert restored.get_setting(cursor, 'ongoing_upgrade_from_version') is None
+            assert cursor.execute('PRAGMA journal_mode').fetchone() == ('wal',)
+    finally:
+        restored.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_unfinished_upgrades(user_data_dir):
     msg_aggregator = MessagesAggregator()
     for backup_version in (33, 31):  # try both with correct and wrong backup
