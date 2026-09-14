@@ -1,4 +1,4 @@
-import type { PairOverlayStatus, UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
+import type { EventOverlayStatus, UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
@@ -47,7 +47,7 @@ function event(locationLabel: string | null, counterparty?: string | null): Hist
 
 function mountCell(opts: {
   enabled: boolean;
-  status?: PairOverlayStatus;
+  status?: EventOverlayStatus;
   balance?: string;
   locationLabel?: string | null;
   counterparty?: string | null;
