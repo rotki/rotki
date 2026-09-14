@@ -4,6 +4,7 @@ import type { SeededAccount } from '@/modules/history/use-tx-query-status-store'
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -404,6 +405,49 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalled();
+    });
+  });
+
+  describe('bank refresh', () => {
+    const bank = { location: 'qonto', name: 'rotki Solutions GmbH' };
+
+    function connectBank(): void {
+      useBankConnectionsStore().setConnections([
+        { ...bank, displayName: 'Qonto', syncStatus: { lastError: null, lastSyncTs: null, running: false } },
+      ]);
+    }
+
+    it('should query and seed the progress of the banks the caller picks', async () => {
+      connectBank();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions({ payload: { banks: [bank] } });
+
+      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith([bank], { extend: false });
+      expect(mockRefreshHandlers.queryAllBankEvents).toHaveBeenCalledWith([bank], HISTORY_SYNC_ID);
+    });
+
+    it('should refresh every connected bank in a full refresh', async () => {
+      connectBank();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions();
+
+      expect(mockRefreshHandlers.queryAllBankEvents).toHaveBeenCalledWith([bank], HISTORY_SYNC_ID);
+    });
+
+    it('should refresh already loaded history when a new bank connection is detected', async () => {
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+      await refreshTransactions();
+      await settleRefresh();
+
+      markAttempted();
+      connectBank();
+      mockRefreshHandlers.queryAllBankEvents.mockClear();
+
+      await refreshTransactions();
+
+      expect(mockRefreshHandlers.queryAllBankEvents).toHaveBeenCalledWith([bank], HISTORY_SYNC_ID);
     });
   });
 
