@@ -1,18 +1,19 @@
-import type { BankFormData, BankManifest } from '@/modules/banks/types';
+import type { BankFormData, BankManifest, BankSetupError } from '@/modules/banks/types';
+import type { useBanks } from '@/modules/banks/use-banks';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
 import '@test/i18n';
 
 const { setMessage, setupBank, validate } = vi.hoisted(() => ({
   setMessage: vi.fn(),
-  setupBank: vi.fn(),
+  setupBank: vi.fn<ReturnType<typeof useBanks>['setupBank']>(),
   validate: vi.fn(),
 }));
 
@@ -76,7 +77,7 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should save the entry and emit added with the connection identity', async () => {
-    setupBank.mockResolvedValue(true);
+    setupBank.mockResolvedValue(ok(true));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setupBank).toHaveBeenCalledWith(createForm());
@@ -91,27 +92,38 @@ describe('bankConnectionFormDialog', () => {
     expect(setupBank).not.toHaveBeenCalled();
   });
 
-  it('should map an api credential error onto the credentials field', async () => {
-    setupBank.mockRejectedValue(new ApiValidationError(JSON.stringify({ api_secret: ['wrong'] })));
+  it('should map a credential slot error onto its credentials field and leave other fields as they are', async () => {
+    setupBank.mockResolvedValue(err<BankSetupError>({ errors: { api_secret: ['wrong'], name: ['taken'] }, type: 'fields' }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setMessage).not.toHaveBeenCalled();
-    expect(wrapper.find('[data-testid=form-stub]').text()).toContain('"credentials.api_secret":["wrong"]');
+    expect(JSON.parse(wrapper.find('[data-testid=form-stub]').text())).toEqual({ 'credentials.api_secret': ['wrong'], 'name': ['taken'] });
     expect(wrapper.emitted('added')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('should show a message for a plain error, such as the bank rejecting the credentials', async () => {
-    setupBank.mockRejectedValue(new Error('Qonto rejected the credentials'));
+  it('should keep the dialog open and show a message when the bank rejects the request', async () => {
+    setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
       description: 'bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials',
     }));
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('should keep the dialog open without a message when the backend answers false', async () => {
+    setupBank.mockResolvedValue(ok(false));
+    wrapper = createWrapper(createForm());
+    await confirm();
+    expect(setMessage).not.toHaveBeenCalled();
+    expect(wrapper.emitted('added')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('should name the bank by its display name once its manifest is loaded', async () => {
     useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
-    setupBank.mockRejectedValue(new Error('Qonto rejected the credentials'));
+    setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({

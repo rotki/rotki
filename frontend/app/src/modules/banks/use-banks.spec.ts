@@ -1,4 +1,4 @@
-import type { BankConnection, BankManifest } from '@/modules/banks/types';
+import type { BankConnection, BankManifest, BankSetupError } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
@@ -104,8 +104,8 @@ describe('useBanks', () => {
   });
 
   it('should add through PUT and edit through PATCH, dropping an unchanged new name', async () => {
-    addBank.mockResolvedValue(true);
-    editBank.mockResolvedValue(true);
+    addBank.mockResolvedValue(ok(true));
+    editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
     const credentials = { api_key: 'login' };
 
@@ -120,13 +120,51 @@ describe('useBanks', () => {
     expect(getBanks).toHaveBeenCalledTimes(3);
   });
 
-  it('should let a setup error propagate so the dialog can map it onto fields', async () => {
-    addBank.mockRejectedValue(new Error('bank said no'));
+  it('should send only the credentials that were filled in when editing, so a blank slot keeps its stored value', async () => {
+    editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
-    await expect(banks.setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'x', newName: '' }))
-      .rejects
-      .toThrow('bank said no');
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: '  ' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Renamed',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: {}, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: 'new-secret' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Qonto main',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'Qonto main', newName: undefined });
+  });
+
+  it('should return the accepted setup and refresh the connections and balances', async () => {
+    useBankConnectionsStore().setConnections([connection]);
+    addBank.mockResolvedValue(ok(true));
+    const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
+    await flushPromises();
+    expect(outcome).toEqual(ok(true));
+    expect(getBanks).toHaveBeenCalledOnce();
+    expect(queryBankBalances).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['a refused setup', err<BankSetupError>({ message: 'bank said no', type: 'rejected' })],
+    ['a false answer', ok(false)],
+  ])('should hand back %s untouched, without notifying or refreshing', async (_case, answer) => {
+    useBankConnectionsStore().setConnections([connection]);
+    addBank.mockResolvedValue(answer);
+    const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'x', newName: '' });
+    await flushPromises();
+    expect(outcome).toEqual(answer);
     expect(notifyError).not.toHaveBeenCalled();
+    expect(getBanks).not.toHaveBeenCalled();
+    expect(queryBankBalances).not.toHaveBeenCalled();
   });
 
   it('should notify instead of throwing when removal fails', async () => {

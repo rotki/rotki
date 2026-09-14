@@ -1,3 +1,4 @@
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { z } from 'zod';
 import { AssetBalances } from '@/modules/balances/types/balances';
 
@@ -70,6 +71,17 @@ export interface BankConnectionPayload extends BankConnectionIdentity {
 export interface BankConnectionEditPayload extends BankConnectionPayload {
   readonly newName?: string;
 }
+
+/**
+ * Why the backend refused to add or edit a connection.
+ *
+ * @remarks
+ * `fields` carries errors keyed by payload field, or by credential slot for a credential error.
+ * `rejected` is a message for the request as a whole, such as the bank refusing the credentials.
+ */
+export type BankSetupError =
+  | { readonly type: 'fields'; readonly errors: ValidationErrors }
+  | { readonly type: 'rejected'; readonly message: string };
 
 export interface BankSyncPayload {
   readonly location?: string;
