@@ -1,8 +1,9 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
-import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
 
@@ -62,5 +63,22 @@ describe('createEventsStatusHandler', () => {
 
     // The store refuses the update but keeps the entry, whose seeded range would overwrite this.
     expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toStrictEqual([100, 200]);
+  });
+
+  it('should publish a bank location frame on the bank activity, not the exchange one', async () => {
+    const qonto = { location: 'qonto', name: 'rotki Solutions GmbH' };
+    useLocationStore().$patch({ allLocations: { qonto: { image: 'qonto.svg', isBank: true } } });
+    useEventsQueryStatusStore().initializeQueryStatus([qonto], { extend: true });
+    const handler = createEventsStatusHandler();
+
+    await handler.handle({
+      eventType: 'history_query',
+      ...qonto,
+      period: [100, 200],
+      status: HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE,
+    });
+
+    expect(get(readActivityDetail(bankEventsActivity, qonto))?.period).toStrictEqual([100, 200]);
+    expect(get(readActivityDetail(exchangeEventsActivity, qonto))).toBeUndefined();
   });
 });
