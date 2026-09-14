@@ -4067,7 +4067,7 @@
         "return": "Return a receipt token to a protocol to reclaim the underlying asset.",
         "self_transaction": "A transaction you sent to your own address.",
         "send": "Send crypto out as a payment or expense, with nothing tradeable received back.",
-        "spam": "Spam or phishing tokens sent to you. Ignored in accounting.",
+        "spam": "Spam, phishing or dust sent to you. Counted in accounting like any other receive.",
         "stake_deposit": "Stake assets into a protocol or validator.",
         "stake_exit": "Exit a staking position, withdrawing the staked principal.",
         "staking_reward": "Receive staking rewards. Taxed as income.",
