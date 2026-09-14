@@ -1,77 +1,82 @@
-import type { ComputedRef, EffectScope } from 'vue';
-import type { HistoricalBalanceSeriesPayload } from './types';
+import type { EffectScope, Ref } from 'vue';
+import type { PreparedBucket } from './accounting-overlay-helpers';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { bigNumberify } from '@rotki/common';
+import { type BigNumber, bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
-import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
-import { ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountingOverlaySparkline } from './use-accounting-overlay-sparkline';
 
-const { runTaskMock, fetchSeries } = vi.hoisted(() => ({
-  runTaskMock: vi.fn(),
-  fetchSeries: vi.fn<(payload: HistoricalBalanceSeriesPayload) => Promise<{ taskId: number }>>(),
-}));
+const seriesFor = vi.fn<(locationLabel: string, asset: string) => Promise<PreparedBucket[] | undefined>>();
 
-const flags = reactive<{ allowed: boolean; visible: boolean }>({ allowed: true, visible: true });
+const event = createMock<HistoryEventEntry>({ asset: 'ETH', identifier: 1, locationLabel: '0xA', timestamp: 250_000 });
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
-  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
-vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
-  useHistoricalBalancesApi: (): { fetchHistoricalBalanceSeries: typeof fetchSeries } => ({ fetchHistoricalBalanceSeries: fetchSeries }),
-}));
-vi.mock('@/modules/premium/use-feature-access', async importOriginal => ({
-  ...await importOriginal<Record<string, unknown>>(),
-  useFeatureAccess: (): { allowed: ComputedRef<boolean> } => ({ allowed: computed<boolean>(() => flags.allowed) }),
-}));
-vi.mock('@/modules/assets/amount-display', () => ({
-  useAmountDisplaySettings: (): { shouldShowAmount: ComputedRef<boolean> } => ({ shouldShowAmount: computed<boolean>(() => flags.visible) }),
-}));
+function series(): PreparedBucket[] {
+  return [{
+    location: 'ethereum',
+    protocol: null,
+    times: [100, 200, 300],
+    values: [bigNumberify('5'), bigNumberify('7'), bigNumberify('9')],
+  }];
+}
 
 let scope: EffectScope;
+
+function create(enabled: Ref<boolean>, balance: Ref<BigNumber>): ReturnType<typeof useAccountingOverlaySparkline> {
+  const sparkline = scope.run(() => useAccountingOverlaySparkline(() => event, balance, { enabled, seriesFor }));
+  assert(sparkline);
+  return sparkline;
+}
 
 describe('useAccountingOverlaySparkline', () => {
   beforeEach(() => {
     scope = effectScope();
-    flags.allowed = true;
-    flags.visible = true;
-    fetchSeries.mockReset().mockResolvedValue({ taskId: 1 });
-    runTaskMock.mockReset().mockResolvedValue(ok({ processingRequired: false, entries: [{
-      location: 'ethereum',
-      locationLabel: '0xA',
-      asset: 'ETH',
-      protocol: null,
-      times: [100, 200, 300],
-      values: ['5', '7', '9'],
-    }] }));
+    seriesFor.mockReset().mockResolvedValue(series());
   });
 
   afterEach(() => scope.stop());
 
-  it('should defer the series until an eligible visible menu opens and end at the exact snapshot', async () => {
-    const open = ref<boolean>(false);
-    const event = createMock<HistoryEventEntry>({ identifier: 1, asset: 'ETH', locationLabel: '0xA', timestamp: 250_000 });
-    const points = scope.run(() => useAccountingOverlaySparkline(() => event, open, bigNumberify('0')));
-    assert(points);
+  it('should end the shared series on the exact snapshot rather than the series value', async () => {
+    const { points } = create(ref<boolean>(true), ref<BigNumber>(bigNumberify('0')));
     await flushPromises();
-    expect(fetchSeries).not.toHaveBeenCalled();
-    flags.allowed = false;
-    set(open, true);
-    await flushPromises();
-    expect(fetchSeries).not.toHaveBeenCalled();
-    flags.allowed = true;
-    flags.visible = false;
-    await flushPromises();
-    expect(fetchSeries).not.toHaveBeenCalled();
-    flags.visible = true;
-    await flushPromises();
-    expect(fetchSeries).toHaveBeenCalledExactlyOnceWith({ asset: 'ETH', locationLabel: '0xA', toTimestamp: 250 });
+
+    expect(seriesFor).toHaveBeenCalledExactlyOnceWith('0xA', 'ETH');
     expect(get(points)).toEqual([{ time: 100, value: 5 }, { time: 200, value: 7 }, { time: 250, value: 0 }]);
-    set(open, false);
+  });
+
+  it('should not request the series while the chart is not allowed', async () => {
+    const enabled = ref<boolean>(false);
+    const { points } = create(enabled, ref<BigNumber>(bigNumberify('0')));
     await flushPromises();
-    set(open, true);
+    expect(seriesFor).not.toHaveBeenCalled();
+    expect(get(points)).toEqual([]);
+
+    set(enabled, true);
     await flushPromises();
-    expect(fetchSeries).toHaveBeenCalledOnce();
+    expect(seriesFor).toHaveBeenCalledOnce();
+  });
+
+  it('should report loading until the series arrives', async () => {
+    let resolveSeries: (buckets: PreparedBucket[]) => void = () => {};
+    seriesFor.mockReturnValueOnce(new Promise<PreparedBucket[]>((resolve) => {
+      resolveSeries = resolve;
+    }));
+    const { loading } = create(ref<boolean>(true), ref<BigNumber>(bigNumberify('0')));
+    await flushPromises();
+    expect(get(loading)).toBe(true);
+
+    resolveSeries(series());
+    await flushPromises();
+    expect(get(loading)).toBe(false);
+  });
+
+  it('should move the endpoint with a refreshed snapshot without refetching', async () => {
+    const balance = ref<BigNumber>(bigNumberify('0'));
+    const { points } = create(ref<boolean>(true), balance);
+    await flushPromises();
+
+    set(balance, bigNumberify('4'));
+    expect(get(points).at(-1)).toEqual({ time: 250, value: 4 });
+    expect(seriesFor).toHaveBeenCalledOnce();
   });
 });
