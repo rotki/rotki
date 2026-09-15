@@ -29,7 +29,7 @@ Changelog
 * :bug:`-` The Help menu's logs directory entry now opens the directory rotki is actually logging to. If you had set a custom log directory it opened the default one instead, so being told to check the logs sent you to a folder with nothing in it.
 * :bug:`-` Logging in again takes the balance snapshot your net worth graph is built from, when one is due by your balance save frequency. Since 1.44.0 that snapshot was only taken if you left rotki open for ten minutes or synced your history, so opening rotki for a quick look and closing it left a gap in the graph.
 * :bug:`-` The buttons that ignore or unignore the selected assets in the asset manager, in non-fungible balances and in the blockchain accounts selection mode are labelled "Ignore" and "Unignore" again, and their tooltips say what they do. They read "Exclude" and "Include" and claimed to add or remove actions from the profit and loss report, which is not what they do to an asset.
-* :bug:`13132` Refreshing Frankencoin savings balances failed when one address held savings while others did not.
+* :bug:`13132` Refreshing Frankencoin savings balances will now work properly when one address holds savings while others do not.
 
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
