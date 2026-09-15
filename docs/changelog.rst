@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Correctly decode temporary SOL wrapping and unwrapping in Jupiter swaps, avoiding duplicate transfers and reporting the swap and fees in SOL instead of WSOL.
 * :bug:`-` The description of the spam event action no longer claims such events are ignored in accounting. They are counted like any other receive, so marking dust as spam keeps balances adding up.
 * :bug:`-` Undelegating, withdrawing and bridging GRT back to Ethereum through a The Graph vesting contract on Arbitrum One are now decoded for the tracked beneficiary instead of showing up as gas-only transactions.
 * :feature:`-` rotki now tells you when a chain's transactions can not be queried because a paid Etherscan API key is required, and queries Etherscan first on such chains when a paid key is configured.
