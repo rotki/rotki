@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import Notification from '@/modules/core/notifications/Notification.vue';
-import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { TAB_ORDER, useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
 
@@ -19,10 +18,8 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 const {
   allNotifications,
   close,
-  hasRunningTasks,
   initialAppear,
   messageOverflow,
-  modelPendingTasksExpanded,
   modelSelectedTab,
   remove,
   selectedNotifications,
@@ -84,12 +81,11 @@ const {
         </div>
       </div>
 
-      <ReuseNoMessages v-if="!hasRunningTasks && allNotifications.length === 0" />
+      <ReuseNoMessages v-if="allNotifications.length === 0" />
       <div
         v-else
         class="flex flex-col h-[calc(100%-133px)]"
       >
-        <PendingTasks v-model="modelPendingTasksExpanded" />
         <div class="border-b border-default mx-4">
           <RuiTabs
             v-model="modelSelectedTab"

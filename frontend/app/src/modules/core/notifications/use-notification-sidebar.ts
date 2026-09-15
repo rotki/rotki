@@ -4,7 +4,6 @@ import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 export const TabCategory = {
   ERROR: 'error',
@@ -29,9 +28,6 @@ const TAB_FILTERS: Partial<Record<TabCategory, (item: NotificationData) => boole
   [TabCategory.REMINDER]: (item: NotificationData) => item.severity === Severity.REMINDER,
 };
 
-/** How long the pending-task list stays expanded after the last task finishes. */
-const COLLAPSE_DEBOUNCE = 1000;
-
 interface UseNotificationSidebarOptions {
   /** Two-way binding for the drawer; closing the sidebar writes `false` to it. */
   display: Ref<boolean>;
@@ -44,8 +40,6 @@ interface UseNotificationSidebarReturn {
   allNotifications: Readonly<Ref<NotificationData[]>>;
   /** Closes the drawer. */
   close: () => void;
-  /** Whether any task is currently running. */
-  hasRunningTasks: ComputedRef<boolean>;
   /**
    * Whether newly rendered rows should appear without waiting to be scrolled into view.
    *
@@ -57,8 +51,6 @@ interface UseNotificationSidebarReturn {
   initialAppear: Readonly<Ref<boolean>>;
   /** Whether notifications were dropped because the store was full. */
   messageOverflow: Readonly<Ref<boolean>>;
-  /** Whether the pending-task list is expanded. */
-  modelPendingTasksExpanded: Ref<boolean>;
   /** The selected tab. */
   modelSelectedTab: Ref<TabCategory>;
   /** Dismisses a single notification. */
@@ -92,14 +84,12 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const { t } = useI18n({ useScope: 'global' });
 
   const modelSelectedTab = shallowRef<TabCategory>(TabCategory.VIEW_ALL);
-  const modelPendingTasksExpanded = shallowRef<boolean>(false);
   const initialAppear = shallowRef<boolean>(false);
 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
   const { markAllRead, remove } = notificationStore;
   const { show } = useConfirmStore();
-  const { isActive: hasRunningTasks } = useTaskCenter();
   const { silent, toggle: toggleSilent } = useSilentNotifications();
 
   const tabCategoriesLabel = computed<Record<TabCategory, string>>(() => ({
@@ -153,13 +143,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     }, clear);
   }
 
-  function collapsePendingTasksWhenIdle(running: boolean): void {
-    if (!running)
-      set(modelPendingTasksExpanded, false);
-  }
-
-  watchDebounced(hasRunningTasks, collapsePendingTasksWhenIdle, { debounce: COLLAPSE_DEBOUNCE });
-
   function trackRowAppearance(
     [currentY, currentTab, currentNotifications]: [number, TabCategory, NotificationData[]],
     [, previousTab, previousNotifications]: [number, TabCategory, NotificationData[]],
@@ -182,10 +165,8 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   return {
     allNotifications,
     close,
-    hasRunningTasks,
     initialAppear: readonly(initialAppear),
     messageOverflow,
-    modelPendingTasksExpanded,
     modelSelectedTab,
     remove,
     selectedNotifications,

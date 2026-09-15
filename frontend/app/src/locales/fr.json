@@ -2402,9 +2402,6 @@
     "select_collection": "Sélectionner la collection",
     "upgrade": "Affichage de {limit} NFT. Pour en voir plus, veuillez passer à {link}"
   },
-  "no_task_running": {
-    "description": "Aucune tâche en attente"
-  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "Prix personnalisé",

@@ -8,7 +8,6 @@ import NotificationSidebar from '@/modules/core/notifications/NotificationSideba
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 
 interface MockedDependencies {
-  isActive?: Ref<boolean>;
   silent?: Ref<boolean>;
 }
 
@@ -17,7 +16,6 @@ const { deps, toggleSilent } = vi.hoisted(() => {
   return { deps, toggleSilent: vi.fn(async () => Promise.resolve()) };
 });
 
-let isActive: Ref<boolean>;
 let silent: Ref<boolean>;
 
 vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
@@ -26,10 +24,6 @@ vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
     resetSchedule: vi.fn(),
     shouldSuppress: vi.fn(() => false),
   })),
-}));
-
-vi.mock('@/modules/task-center/use-task-center', () => ({
-  useTaskCenter: (): Record<string, unknown> => ({ isActive: deps.isActive }),
 }));
 
 vi.mock('@/modules/core/notifications/use-silent-notifications', () => ({
@@ -63,7 +57,6 @@ function createWrapper(notifications: NotificationData[] = []): VueWrapper {
       plugins: [pinia],
       stubs: {
         LazyLoader: passThrough,
-        PendingTasks: true,
         RouterLink: passThrough,
         RuiNavigationDrawer: passThrough,
       },
@@ -77,9 +70,7 @@ function createWrapper(notifications: NotificationData[] = []): VueWrapper {
 describe('modules/core/notifications/NotificationSidebar.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isActive = ref<boolean>(false);
     silent = ref<boolean>(false);
-    deps.isActive = isActive;
     deps.silent = silent;
   });
 

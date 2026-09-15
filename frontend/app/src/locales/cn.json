@@ -2193,9 +2193,6 @@
     },
     "upgrade": "显示 {limit} 个 NFT。要查看更多,请升级到 {link}"
   },
-  "no_task_running": {
-    "description": "没有待处理的任务"
-  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "自定义价格",

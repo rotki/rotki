@@ -13,6 +13,8 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useCoreScroll } from '@/modules/shell/layout/use-core-scroll';
 import { initGraph } from '@/modules/statistics/init-graph';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
+import TaskDock from '@/modules/task-center/components/TaskDock.vue';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -49,6 +51,9 @@ const busyMessage = computed<string>(() =>
 
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
+
+/** The task dock shows whenever work is active, and the scroll-to-top button stacks above it. */
+const { isActive: taskDockVisible } = useTaskCenter();
 
 const { isXlAndDown } = useBreakpoint();
 const { applySelected, dismissAll } = useSettingsSuggestions();
@@ -158,7 +163,8 @@ onBeforeMount(() => {
         <RuiButton
           v-if="shouldShowScrollToTopButton"
           color="primary"
-          class="fixed bottom-4 right-4 z-[6]"
+          class="fixed right-4 z-[6]"
+          :class="taskDockVisible ? 'bottom-20' : 'bottom-4'"
           variant="fab"
           size="lg"
           icon
@@ -167,6 +173,7 @@ onBeforeMount(() => {
           <RuiIcon name="lu-arrow-up" />
         </RuiButton>
       </Transition>
+      <TaskDock />
     </div>
   </div>
 </template>
