@@ -73,6 +73,8 @@ dependencies = [
     "pandas==3.0.3",
     "mcp==1.28.1",
     "eth-account",
+    # fints 5 depends on lxml, which enables the GIL in free-threaded Python.
+    "fints==4.2.3",
 ]
 
 [project.urls]

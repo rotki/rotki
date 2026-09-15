@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { BankConnection, BankFormData } from '@/modules/banks/types';
+import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { emptyCredentials } from '@/modules/banks/bank-connection-form';
+import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
@@ -22,6 +23,7 @@ definePage({
 });
 
 const bank = ref<BankFormData>();
+const authentication = ref<BankAuthenticationRequest>();
 const syncing = ref<string[]>([]);
 const sort = ref<DataTableSortColumn<BankConnection>>({
   column: 'name',
@@ -94,6 +96,16 @@ function editBank(row: BankConnection): void {
     name: row.name,
     newName: row.name,
   });
+}
+
+function authenticate(row: BankConnection): void {
+  if (row.syncStatus.authChallenge) {
+    set(authentication, {
+      challenge: row.syncStatus.authChallenge,
+      location: row.location,
+      name: row.name,
+    });
+  }
 }
 
 async function sync(row: BankConnection): Promise<void> {
@@ -191,7 +203,9 @@ watch(route, async (route) => {
         </template>
         <template #item.actions="{ row }">
           <BankConnectionActions
+            :authentication-required="!!row.syncStatus.authChallenge"
             :syncing="isSyncing(row)"
+            @authenticate="authenticate(row)"
             @sync="sync(row)"
             @edit="editBank(row)"
             @delete="showRemoveConfirmation(row)"
@@ -203,6 +217,10 @@ watch(route, async (route) => {
     <BankConnectionFormDialog
       v-model="bank"
       @added="highlight($event)"
+    />
+    <BankAuthenticationDialog
+      v-model="authentication"
+      @authenticated="refreshBankConnections()"
     />
   </TablePageLayout>
 </template>

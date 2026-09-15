@@ -109,6 +109,7 @@ LOCATION_DETAILS: dict = {
     Location.KUSAMA: {'image': 'kusama.svg'},
     Location.SOLANA: {'image': 'solana.svg'},
     Location.QONTO: {'image': 'qonto.svg'},
+    Location.FINTS: {'icon': 'lu-landmark'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:

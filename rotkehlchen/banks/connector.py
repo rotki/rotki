@@ -14,7 +14,7 @@ from collections import defaultdict
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from rotkehlchen.banks.errors import BankAuthExpired, BankError
+from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
 from rotkehlchen.banks.normalization import (
     BankAccount,
     BankTransaction,
@@ -27,7 +27,14 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    ExchangeApiCredentials,
+    ExchangeAuthCredentials,
+    Location,
+    Timestamp,
+)
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -69,6 +76,35 @@ class BankConnector(ExchangeInterface, ABC):
             database=database,
             msg_aggregator=msg_aggregator,
         )
+
+    @classmethod
+    def api_credentials_from_values(
+            cls,
+            name: str,
+            location: Location,
+            values: dict[str, str],
+            current: ExchangeAuthCredentials | None = None,
+    ) -> ExchangeApiCredentials:
+        """Pack manifest fields into the credential table's existing three columns."""
+        api_key = values.get('api_key', current.api_key if current is not None else None)
+        api_secret = values.get(
+            'api_secret',
+            current.api_secret.decode()
+            if current is not None and current.api_secret is not None else None,
+        )
+        passphrase = values.get('passphrase', current.passphrase if current is not None else None)
+        assert api_key is not None and api_secret is not None, 'manifest validation guarantees these'  # noqa: E501
+        return ExchangeApiCredentials(
+            name=name,
+            location=location,
+            api_key=ApiKey(api_key),
+            api_secret=ApiSecret(api_secret.encode()),
+            passphrase=passphrase,
+        )
+
+    def answer_authentication(self, response: str | None) -> None:
+        """Continue an interactive authentication request. Static connectors never use it."""
+        raise BankError(f'{self.manifest.display_name} has no pending authentication request')
 
     # ---- what a connector implements ----
 
@@ -165,6 +201,8 @@ class BankConnector(ExchangeInterface, ABC):
     def validate_api_key(self) -> tuple[bool, str]:
         try:
             self.query_accounts()
+        except BankMFARequired:
+            raise
         except BankAuthExpired as e:
             return False, f'{self.manifest.display_name} rejected the credentials: {e!s}'
         except RemoteError as e:
@@ -176,6 +214,8 @@ class BankConnector(ExchangeInterface, ABC):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         try:
             accounts = self.query_accounts()
+        except BankMFARequired:
+            raise
         except RemoteError as e:
             return None, f'Failed to query {self.manifest.display_name} balances. {e!s}'
 

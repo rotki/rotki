@@ -3,6 +3,7 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.banks.errors import BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.errors.misc import InputError, RemoteError
@@ -32,7 +33,7 @@ class BanksService:
             name: str,
             location: Location,
             credentials: dict[str, str],
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         try:
             result, msg = self.rotkehlchen.bank_manager.setup_bank(
                 name=name,
@@ -40,11 +41,31 @@ class BanksService:
                 credentials=BankCredentialInput(values=credentials),
                 database=self.rotkehlchen.data.db,
             )
+        except BankMFARequired as e:
+            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
         except InputError as e:
             return None, str(e), HTTPStatus.BAD_REQUEST
         if not result:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
+
+    def answer_authentication(
+            self,
+            name: str,
+            location: Location,
+            response: str | None,
+    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+        try:
+            result, message = self.rotkehlchen.bank_manager.answer_bank_authentication(
+                name=name,
+                location=location,
+                response=response,
+            )
+        except BankMFARequired as e:
+            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+        except RemoteError as e:
+            return None, str(e), HTTPStatus.CONFLICT
+        return (True, '', HTTPStatus.OK) if result else (None, message, HTTPStatus.CONFLICT)
 
     def edit_bank(
             self,
@@ -75,6 +96,8 @@ class BanksService:
     def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
+        except BankMFARequired as e:
+            return {'result': e.challenge.serialize(), 'message': '', 'status_code': HTTPStatus.ACCEPTED}  # noqa: E501
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except InputError as e:
@@ -100,10 +123,16 @@ class BanksService:
         error_msg = ''
         banks = manager.connected_banks.get(location, []) if location is not None else list(manager.iterate_banks())  # noqa: E501
         for bank in banks:
-            balances, msg = bank.query_balances(ignore_cache=ignore_cache)
+            try:
+                balances, msg = bank.query_balances(ignore_cache=ignore_cache)
+            except BankMFARequired as e:
+                manager.sync_status[bank.location_id()].auth_challenge = e.challenge
+                error_msg += f'{bank.manifest.display_name} {bank.name} requires authentication. '
+                continue
             if balances is None:
                 error_msg += msg
                 continue
+            manager.sync_status[bank.location_id()].auth_challenge = None
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}
             key = str(bank.location)
