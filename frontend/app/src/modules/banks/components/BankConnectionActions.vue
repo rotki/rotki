@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
-const { syncing = false } = defineProps<{
+const { authenticationRequired = false, syncing = false } = defineProps<{
+  authenticationRequired?: boolean;
   syncing?: boolean;
 }>();
 
 const emit = defineEmits<{
+  authenticate: [];
   sync: [];
   edit: [];
   delete: [];
@@ -16,6 +18,23 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div class="flex items-center justify-center gap-1">
+    <RuiTooltip
+      v-if="authenticationRequired"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          color="warning"
+          data-testid="bank-authenticate"
+          @click="emit('authenticate')"
+        >
+          <RuiIcon name="lu-shield-check" />
+        </RuiButton>
+      </template>
+      {{ t('bank_settings.sync.failed') }}
+    </RuiTooltip>
     <RuiTooltip :open-delay="400">
       <template #activator>
         <RuiButton

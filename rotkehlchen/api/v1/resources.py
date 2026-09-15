@@ -46,6 +46,7 @@ from rotkehlchen.api.v1.schemas import (
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTaskSchema,
+    BankAuthenticationSchema,
     BankBalanceQuerySchema,
     BankLocationWithNameSchema,
     BanksResourceAddSchema,
@@ -1037,6 +1038,17 @@ class SupportedBanksResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_supported_banks()
+
+
+class BankAuthenticationResource(BaseMethodView):
+    """Continue a TAN, challenge, or decoupled app-approval request."""
+
+    post_schema = BankAuthenticationSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, name: str, location: Location, response: str | None) -> Response:
+        return self.rest_api.answer_bank_authentication(name, location, response)
 
 
 class BankSyncResource(BaseMethodView):

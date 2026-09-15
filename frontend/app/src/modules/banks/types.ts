@@ -7,6 +7,7 @@ const BankSecretField = z.object({
   slot: z.string(),
   label: z.string(),
   description: z.string(),
+  secret: z.boolean(),
 });
 
 const BankAuthStep = z.object({
@@ -35,7 +36,21 @@ export const BankManifests = z.array(BankManifest);
 
 export type BankManifests = z.infer<typeof BankManifests>;
 
+export const BankAuthChallenge = z.object({
+  primitive: z.enum(['otp input', 'app approval poll', 'challenge display']),
+  prompt: z.string(),
+  challenge: z.string().nullable(),
+  challengeHtml: z.string().nullable(),
+  challengeData: z.string().nullable(),
+  challengeMimeType: z.string().nullable(),
+});
+
+export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
+
+export type BankSetupResult = boolean | BankAuthChallenge;
+
 const BankSyncStatus = z.object({
+  authChallenge: BankAuthChallenge.nullable(),
   running: z.boolean(),
   lastSyncTs: z.number().nullable(),
   lastError: z.string().nullable(),
@@ -61,6 +76,10 @@ export type BankBalancesByLocation = z.infer<typeof BankBalancesByLocation>;
 export interface BankConnectionIdentity {
   readonly location: string;
   readonly name: string;
+}
+
+export interface BankAuthenticationRequest extends BankConnectionIdentity {
+  readonly challenge: BankAuthChallenge;
 }
 
 export interface BankConnectionPayload extends BankConnectionIdentity {
