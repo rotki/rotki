@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -53,6 +54,7 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -206,9 +208,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     entry=entry,
                     error=str(e),
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Failed to deserialize a Bitstamp balance. '
                     'Check logs for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
             except UnknownAsset as e:
@@ -409,8 +412,9 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError as e:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying Bitstamp crypto transactions: {msg}',
+                    NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                 )
                 raise RemoteError(msg) from e
 
@@ -628,12 +632,14 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             raw_result_type_filter = USER_TRANSACTION_TRADE_TYPE
             response_case = 'trades'
             case_pretty = 'trade'
+            record = UserMessageRecord.TRADE
             deserialization_method = self._deserialize_trade
         elif case == 'asset_movements':
             endpoint = 'user_transactions'
             raw_result_type_filter = USER_TRANSACTION_ASSET_MOVEMENT_TYPE
             response_case = 'asset_movements'
             case_pretty = 'asset movement'
+            record = UserMessageRecord.ASSET_MOVEMENT
             deserialization_method = self._deserialize_asset_movement_from_user_transaction
         else:
             raise AssertionError(f'Unexpected Bitstamp case: {case}.')
@@ -665,8 +671,9 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError as e:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying Bitstamp trades: {msg}',
+                    NetworkFailure(record=record, error=str(e)),
                 )
                 raise RemoteError(msg) from e
 
@@ -698,9 +705,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                         raw_result=raw_result,
                         error=msg,
                     )
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Failed to deserialize a Bitstamp {case_pretty}. '
                         f'Check logs for details. Ignoring it.',
+                        BadData(record=record, error=msg),
                     )
                     continue
 

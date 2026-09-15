@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -46,6 +47,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -343,7 +345,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     event_queue.flush(page_events)
         except KeyError as e:
             msg = f'Error processing independentreserve trades response. Missing key: {e!s}.'
-            self.msg_aggregator.add_error(msg)
+            self.add_classified_error(msg, BadData(record=UserMessageRecord.TRADE, error=str(e)))
             raise RemoteError(msg) from e
 
         return events
@@ -393,9 +395,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing an IndependentReserve trade. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.TRADE, error=str(e)),
                 )
                 log.error(
                     'Error processing an IndependentReserve trade',
@@ -431,7 +434,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     f'Error processing IndependentReserve transactions response. '
                     f'Missing key: {e!s}.'
                 )
-                self.msg_aggregator.add_error(msg)
+                self.add_classified_error(
+                    msg,
+                    BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
+                )
                 raise RemoteError(msg) from e
 
             account_movements: list[AssetMovement] = []
@@ -454,9 +460,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Failed to deserialize an IndependentReserve deposit/withdrawal. '
                         'Check logs for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                     )
                     log.error(
                         'Error processing an IndependentReserve deposit/withdrawal.',

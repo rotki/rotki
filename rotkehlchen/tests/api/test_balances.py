@@ -733,9 +733,9 @@ def test_balance_snapshot_error_message(
         'data': {
             'value': 'binance account API request failed. Could not reach binance due to Made a booboo',  # noqa: E501
             'verbosity': 'error',
-            'key': None,
-            'subject': None,
-            'fields': None,
+            'key': 'network',
+            'subject': 'binance',
+            'fields': {'record': 'balance', 'error': 'Made a booboo'},
         },
     }
     assert websocket_connection.messages_num() == 1

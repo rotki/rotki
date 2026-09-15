@@ -16,6 +16,7 @@ lint:
 	if [ $$pyright_status -ne 0 ] || [ $$pylint_status -ne 0 ]; then exit 1; fi
 	python tools/lint_checksum_addresses.py
 	python tools/lint_new_logging_fstrings.py
+	python -m tools.lint_user_message_classification
 
 
 format:
