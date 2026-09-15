@@ -51,12 +51,17 @@ def test_supported_banks_and_locations(rotkehlchen_api_server: APIServer) -> Non
     result = assert_proper_sync_response_with_result(
         requests.get(api_url_for(rotkehlchen_api_server, 'supportedbanksresource')),
     )
-    assert [m['location'] for m in result] == ['qonto']
+    assert [m['location'] for m in result] == ['qonto', 'fints']
     manifest = result[0]
     assert manifest['access_tier'] == 'official api'
     assert manifest['auth_flow'] == [{'primitive': 'static secret'}]
     assert [s['slot'] for s in manifest['secrets']] == ['api_key', 'api_secret']
     assert len(manifest['setup_notes']) > 0
+    fints = result[1]
+    assert fints['access_tier'] == 'fints'
+    assert [field['slot'] for field in fints['secrets']] == [
+        'bank_code', 'endpoint', 'username', 'pin',
+    ]
 
     locations = assert_proper_sync_response_with_result(
         requests.get(api_url_for(rotkehlchen_api_server, 'locationresource')),
@@ -64,6 +69,7 @@ def test_supported_banks_and_locations(rotkehlchen_api_server: APIServer) -> Non
     assert locations['qonto']['is_bank'] is True
     assert 'exchange_details' not in locations['qonto']
     assert locations['qonto']['bank_details'] == manifest
+    assert locations['fints']['bank_details'] == fints
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -101,7 +107,12 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
             'name': 'Qonto 1',
             'location': 'qonto',
             'display_name': 'Qonto',
-            'sync_status': {'running': False, 'last_sync_ts': None, 'last_error': None},
+            'sync_status': {
+                'running': False,
+                'last_sync_ts': None,
+                'last_error': None,
+                'auth_challenge': None,
+            },
         }]
         connector = rotki.bank_manager.get_bank(name='Qonto 1', location=Location.QONTO)
         assert connector is not None

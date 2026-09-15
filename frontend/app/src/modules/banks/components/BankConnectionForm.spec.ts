@@ -17,8 +17,8 @@ const manifest: BankManifest = {
   location: 'qonto',
   maintainer: 'rotki',
   secrets: [
-    { description: 'The organization login', label: 'Login', slot: 'api_key' },
-    { description: 'The secret key', label: 'Secret key', slot: 'api_secret' },
+    { description: 'The organization login', label: 'Login', secret: false, slot: 'api_key' },
+    { description: 'The secret key', label: 'Secret key', secret: true, slot: 'api_secret' },
   ],
   setupNotes: ['Only one key per organization'],
   version: '1.0.0',

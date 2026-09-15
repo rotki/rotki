@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { BankConnectionIdentity, BankFormData, BankSetupError } from '@/modules/banks/types';
+import type { BankAuthChallenge, BankConnectionIdentity, BankFormData, BankSetupError } from '@/modules/banks/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
@@ -18,9 +18,11 @@ const emit = defineEmits<{
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
+const authChallenge = ref<BankAuthChallenge>();
+const authResponse = ref<string>('');
 const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form');
 
-const { setupBank } = useBanks();
+const { answerBankAuthentication, setupBank } = useBanks();
 const { bankNameFor } = useBankConnectionsStore();
 const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
@@ -53,13 +55,18 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
 
 async function save(): Promise<void> {
   assert(isDefined(modelValue));
-  if (!get(form)?.validate())
+  if (!isDefined(get(authChallenge)) && !get(form)?.validate())
     return;
 
   set(submitting, true);
   set(errorMessages, {});
   const payload = get(modelValue);
-  const outcome = await setupBank(payload);
+  const outcome = isDefined(get(authChallenge))
+    ? await answerBankAuthentication(
+        { location: payload.location, name: payload.name },
+        get(authResponse) || undefined,
+      )
+    : await setupBank(payload);
   set(submitting, false);
 
   if (!outcome.ok) {
@@ -67,16 +74,24 @@ async function save(): Promise<void> {
     return;
   }
 
-  if (outcome.value) {
-    if (payload.mode !== 'edit')
-      emit('added', { location: payload.location, name: payload.name });
-    set(modelValue, undefined);
+  if (outcome.value !== true) {
+    set(authChallenge, outcome.value);
+    return;
   }
+  if (payload.mode !== 'edit')
+    emit('added', { location: payload.location, name: payload.name });
+  set(modelValue, undefined);
+  set(authChallenge, undefined);
+  set(authResponse, '');
 }
 
 watch(modelValue, (value) => {
-  if (!value)
+  if (!value) {
     set(errorMessages, {});
+    set(authChallenge, undefined);
+    set(authResponse, '');
+    set(stateUpdated, false);
+  }
 });
 </script>
 
@@ -90,8 +105,39 @@ watch(modelValue, (value) => {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
+    <div
+      v-if="authChallenge"
+      class="flex flex-col gap-4"
+      data-testid="bank-auth-challenge"
+    >
+      <RuiAlert type="info">
+        {{ authChallenge.challenge ?? authChallenge.prompt }}
+      </RuiAlert>
+      <img
+        v-if="authChallenge.challengeData && authChallenge.challengeMimeType"
+        :src="`data:${authChallenge.challengeMimeType};base64,${authChallenge.challengeData}`"
+        :alt="authChallenge.prompt"
+        class="max-w-full self-center"
+      />
+      <code
+        v-else-if="authChallenge.challengeData"
+        class="break-all"
+        data-testid="bank-auth-challenge-data"
+      >
+        {{ authChallenge.challengeData }}
+      </code>
+      <RuiTextField
+        v-if="authChallenge.primitive !== 'app approval poll'"
+        v-model="authResponse"
+        :label="authChallenge.prompt"
+        data-testid="bank-auth-response"
+      />
+      <p v-else>
+        {{ authChallenge.prompt }}
+      </p>
+    </div>
     <BankConnectionForm
-      v-if="modelValue"
+      v-else-if="modelValue"
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"

@@ -2246,6 +2246,10 @@ class BanksResourceEditSchema(BankLocationWithNameSchema):
     credentials = BankCredentialsField(load_default=dict)
 
 
+class BankAuthenticationSchema(BankLocationWithNameSchema):
+    response = EmptyAsNoneStringField(load_default=None)
+
+
 class BankSyncSchema(AsyncQueryArgumentSchema):
     location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
     name = EmptyAsNoneStringField(load_default=None)

@@ -197,6 +197,7 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.equities',
   'backend_mappings.trade_location.ethereum',
   'backend_mappings.trade_location.external',
+  'backend_mappings.trade_location.fints',
   'backend_mappings.trade_location.ftx',
   'backend_mappings.trade_location.ftxus',
   'backend_mappings.trade_location.gate',

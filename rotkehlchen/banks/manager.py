@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.banks.constants import SUPPORTED_BANKS
+from rotkehlchen.banks.errors import BankAuthChallenge, BankError, BankMFARequired
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -48,12 +49,16 @@ class BankSyncStatus:
     running: bool = False
     last_sync_ts: Timestamp | None = None
     last_error: str | None = None
+    auth_challenge: BankAuthChallenge | None = None
 
     def serialize(self) -> dict[str, Any]:
         return {
             'running': self.running,
             'last_sync_ts': self.last_sync_ts,
             'last_error': self.last_error,
+            'auth_challenge': (
+                self.auth_challenge.serialize() if self.auth_challenge is not None else None
+            ),
         }
 
 
@@ -96,6 +101,7 @@ class BankManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.connected_banks: dict[Location, list[BankConnector]] = defaultdict(list)
+        self.pending_setups: dict[ExchangeLocationID, BankConnector] = {}
         self.sync_status: dict[ExchangeLocationID, BankSyncStatus] = defaultdict(BankSyncStatus)
         self.msg_aggregator = msg_aggregator
         # serializes registry mutations together with their DB persistence, like the
@@ -147,6 +153,10 @@ class BankManager:
             msg_aggregator=self.msg_aggregator,
         )
 
+    @staticmethod
+    def _location_id(name: str, location: Location) -> ExchangeLocationID:
+        return ExchangeLocationID(location=location, name=name)
+
     def setup_bank(
             self,
             name: str,
@@ -164,10 +174,21 @@ class BankManager:
         if self.get_bank(name=name, location=location) is not None:
             return False, f'{location!s} bank connection {name} already exists'
 
-        api_credentials = credentials.to_exchange_credentials(name=name, location=location)
+        connector_class = self._connector_class(location)
+        try:
+            api_credentials = connector_class.api_credentials_from_values(
+                name=name,
+                location=location,
+                values=credentials.values,
+            )
+        except BankError as e:
+            return False, str(e)
         bank = self._instantiate(api_credentials, database)
         try:
             valid, message = bank.validate_api_key()
+        except BankMFARequired:
+            self.pending_setups[self._location_id(name=name, location=location)] = bank
+            raise
         except RemoteError as e:
             valid, message = False, str(e)
         if not valid:
@@ -179,6 +200,43 @@ class BankManager:
                 return False, f'{location!s} bank connection {name} already exists'
             database.add_bank_credentials(api_credentials)
             self.connected_banks[location].append(bank)
+        return True, ''
+
+    def answer_bank_authentication(
+            self,
+            name: str,
+            location: Location,
+            response: str | None,
+    ) -> tuple[bool, str]:
+        """Resume a pending connector challenge and finish setup when it was an add flow."""
+        location_id = self._location_id(name=name, location=location)
+        pending_setup = self.pending_setups.get(location_id)
+        bank = pending_setup or self.get_bank(name=name, location=location)
+        if bank is None:
+            return False, f'{location!s} bank connection {name} has no pending authentication'
+
+        try:
+            bank.answer_authentication(response)
+        except BankMFARequired as e:
+            self.sync_status[location_id].auth_challenge = e.challenge
+            raise
+        self.sync_status[location_id].auth_challenge = None
+        if pending_setup is None:
+            return True, ''
+
+        valid, message = bank.validate_api_key()
+        if not valid:
+            return False, message
+        assert self.database is not None, 'authentication answered before login'
+        with self.registry_lock:
+            self.database.add_bank_credentials(ExchangeApiCredentials(
+                name=bank.name,
+                location=bank.location,
+                api_key=bank.api_key,
+                api_secret=bank.secret,
+            ))
+            self.connected_banks[location].append(bank)
+            self.pending_setups.pop(location_id, None)
         return True, ''
 
     def edit_bank(
@@ -201,11 +259,16 @@ class BankManager:
         if new_name is not None and new_name != name and self.get_bank(new_name, location):
             return False, f'{location!s} bank connection {new_name} already exists'
 
-        auth = ExchangeAuthCredentials(
-            api_key=ApiKey(credentials.values['api_key']) if 'api_key' in credentials.values else None,  # noqa: E501
-            api_secret=ApiSecret(credentials.values['api_secret'].encode()) if 'api_secret' in credentials.values else None,  # noqa: E501
-            passphrase=credentials.values.get('passphrase'),
-        )
+        try:
+            packed = type(bank).api_credentials_from_values(
+                name=name,
+                location=location,
+                values=credentials.values,
+                current=ExchangeAuthCredentials(bank.api_key, bank.secret, None),
+            )
+        except BankError as e:
+            return False, str(e)
+        auth = ExchangeAuthCredentials(packed.api_key, packed.api_secret, packed.passphrase)
         credentials_changed = bank.edit_exchange_credentials(auth)
         if credentials_changed:
             try:
@@ -264,6 +327,7 @@ class BankManager:
     def delete_all_banks(self) -> None:
         """Forget every connection in memory. The DB is untouched (logout)."""
         self.connected_banks.clear()
+        self.pending_setups.clear()
         self.sync_status.clear()
 
     def initialize_banks(
@@ -304,6 +368,8 @@ class BankManager:
         for bank in banks:
             try:
                 self.sync_one(bank)
+            except BankMFARequired:
+                raise
             except RemoteError as e:
                 errors.append(f'{bank.manifest.display_name} {bank.name}: {e!s}')
         if len(errors) != 0:
@@ -318,10 +384,15 @@ class BankManager:
         status.running = True
         try:
             bank.query_history_events()
+        except BankMFARequired as e:
+            status.auth_challenge = e.challenge
+            status.last_error = None
+            raise
         except RemoteError as e:
             status.last_error = str(e)
             raise
         else:
+            status.auth_challenge = None
             status.last_error = None
             status.last_sync_ts = ts_now()
         finally:

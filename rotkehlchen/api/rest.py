@@ -855,6 +855,19 @@ class RestAPI:
         result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
+    def answer_bank_authentication(
+            self,
+            name: str,
+            location: Location,
+            response: str | None,
+    ) -> Response:
+        result, msg, status_code = self.banks_service.answer_authentication(
+            name=name,
+            location=location,
+            response=response,
+        )
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
     @async_api_call()
     def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
         return self.banks_service.sync_banks(location=location, name=name)

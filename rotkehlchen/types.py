@@ -848,6 +848,7 @@ class Location(DBCharEnumMixIn):
     ROBINHOOD = 63  # on-chain Robinhood chain events
     INK = 64  # on-chain Ink chain events
     QONTO = 65  # bank connector
+    FINTS = 66  # German FinTS/HBCI bank connector
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:

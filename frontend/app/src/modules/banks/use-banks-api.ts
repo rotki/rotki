@@ -1,15 +1,18 @@
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
+  BankAuthChallenge,
   type BankConnectionEditPayload,
   type BankConnectionIdentity,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
   type BankSetupError,
+  type BankSetupResult,
   type BankSyncPayload,
 } from '@/modules/banks/types';
 import { api } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
@@ -52,7 +55,8 @@ function toBankSetupError(cause: unknown, payload: BankConnectionPayload): BankS
 interface UseBanksApiReturn {
   getSupportedBanks: () => Promise<BankManifests>;
   getBanks: () => Promise<BankConnections>;
-  addBank: (payload: BankConnectionPayload) => ResultAsync<boolean, BankSetupError>;
+  addBank: (payload: BankConnectionPayload) => ResultAsync<BankSetupResult, BankSetupError>;
+  answerAuthentication: (payload: BankConnectionIdentity & { response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
   editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
   removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
@@ -76,8 +80,23 @@ export function useBanksApi(): UseBanksApiReturn {
     return BankConnections.parse(data);
   };
 
-  const addBank = async (payload: BankConnectionPayload): ResultAsync<boolean, BankSetupError> =>
-    fromAsync(async () => api.put<boolean>('/banks', payload), cause => toBankSetupError(cause, payload));
+  const parseSetupResult = (result: boolean | unknown): BankSetupResult =>
+    typeof result === 'boolean' ? result : BankAuthChallenge.parse(result);
+
+  const authStatuses = [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.BAD_REQUEST, HTTPStatus.CONFLICT];
+
+  const addBank = async (payload: BankConnectionPayload): ResultAsync<BankSetupResult, BankSetupError> =>
+    fromAsync(
+      async () => parseSetupResult(await api.put<boolean | unknown>('/banks', payload, { validStatuses: authStatuses })),
+      cause => toBankSetupError(cause, payload),
+    );
+
+  const answerAuthentication = async (
+    payload: BankConnectionIdentity & { response?: string },
+  ): ResultAsync<BankSetupResult, BankSetupError> => fromAsync(
+    async () => parseSetupResult(await api.post<boolean | unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
+    cause => ({ message: getErrorMessage(cause), type: 'rejected' }),
+  );
 
   const editBank = async (payload: BankConnectionEditPayload): ResultAsync<boolean, BankSetupError> =>
     fromAsync(
@@ -102,6 +121,7 @@ export function useBanksApi(): UseBanksApiReturn {
 
   return {
     addBank,
+    answerAuthentication,
     editBank,
     getBanks,
     getSupportedBanks,
