@@ -9,7 +9,6 @@ import { useNotificationsStore } from '@/modules/core/notifications/use-notifica
 import { TAB_ORDER, TabCategory, useNotificationSidebar } from './use-notification-sidebar';
 
 interface MockedDependencies {
-  isActive?: Ref<boolean>;
   silent?: Ref<boolean>;
 }
 
@@ -18,7 +17,6 @@ const { deps, toggleSilent } = vi.hoisted(() => {
   return { deps, toggleSilent: vi.fn(async () => Promise.resolve()) };
 });
 
-let isActive: Ref<boolean>;
 let silent: Ref<boolean>;
 
 vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
@@ -27,10 +25,6 @@ vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
     resetSchedule: vi.fn(),
     shouldSuppress: vi.fn(() => false),
   })),
-}));
-
-vi.mock('@/modules/task-center/use-task-center', () => ({
-  useTaskCenter: (): Record<string, unknown> => ({ isActive: deps.isActive }),
 }));
 
 vi.mock('@/modules/core/notifications/use-silent-notifications', () => ({
@@ -84,9 +78,7 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
   beforeEach(() => {
     activatePinia();
     vi.clearAllMocks();
-    isActive = ref<boolean>(false);
     silent = ref<boolean>(false);
-    deps.isActive = isActive;
     deps.silent = silent;
     set(display, true);
     set(scrollY, 0);
@@ -231,39 +223,6 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
       const { silent: isSilent } = sidebar();
 
       expect(get(isSilent)).toBe(true);
-    });
-  });
-
-  describe('the pending task list', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('should collapse it once the tasks have been idle long enough', async () => {
-      set(isActive, true);
-      const { modelPendingTasksExpanded } = sidebar();
-      set(modelPendingTasksExpanded, true);
-
-      set(isActive, false);
-      await nextTick();
-      await vi.advanceTimersByTimeAsync(1000);
-
-      expect(get(modelPendingTasksExpanded)).toBe(false);
-    });
-
-    it('should leave it expanded while tasks are still running', async () => {
-      const { modelPendingTasksExpanded } = sidebar();
-      set(modelPendingTasksExpanded, true);
-
-      set(isActive, true);
-      await nextTick();
-      await vi.advanceTimersByTimeAsync(1000);
-
-      expect(get(modelPendingTasksExpanded)).toBe(true);
     });
   });
 

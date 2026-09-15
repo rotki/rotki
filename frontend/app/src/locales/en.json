@@ -4922,9 +4922,6 @@
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
   },
-  "no_task_running": {
-    "description": "No Pending tasks"
-  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "Custom Price",
@@ -6382,6 +6379,12 @@
       "tx_decoding": "Transaction decoding",
       "tx_sync": "Transaction sync"
     }
+  },
+  "task_dock": {
+    "hide": "Hide background work",
+    "more": "+{count} more",
+    "queued": "Queued",
+    "show": "Show background work"
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"

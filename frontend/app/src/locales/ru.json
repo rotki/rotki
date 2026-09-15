@@ -3487,9 +3487,6 @@
     },
     "upgrade": "Отображается {limit} NFT. Чтобы просмотреть больше, пожалуйста, обновитесь до {link}"
   },
-  "no_task_running": {
-    "description": "Нет ожидающих задач"
-  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "Пользовательская цена",
