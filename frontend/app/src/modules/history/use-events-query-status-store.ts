@@ -9,7 +9,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
     || item.status === HistoryEventsQueryStatus.CANCELLED;
 
-  const { isAllFinished, markTerminal, queryStatus, removeQueryStatus, resetQueryStatus, stopSyncing, syncing }
+  const { isAllFinished, markTerminal, queryStatus, resetQueryStatus, stopSyncing, syncing }
     = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
 
   /**
@@ -83,10 +83,8 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     getQueryStatus,
     initializeQueryStatus,
     isAllFinished,
-    isStatusFinished,
     markLocationCancelled,
     queryStatus,
-    removeQueryStatus,
     resetQueryStatus,
     setQueryStatus,
     stopSyncing,

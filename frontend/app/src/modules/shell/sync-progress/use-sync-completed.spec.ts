@@ -1,12 +1,11 @@
 import { get, set } from '@vueuse/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
-import { SyncPhase } from '@/modules/shell/sync-progress/types';
 
-const phase = ref<SyncPhase>(SyncPhase.IDLE);
+const isSettled = ref<boolean>(false);
 
-vi.mock('@/modules/shell/sync-progress/use-sync-progress', () => ({
-  useSyncProgress: (): Record<string, unknown> => ({ phase }),
+vi.mock('@/modules/history/events/tx/use-sync-rollup', () => ({
+  useSyncRollup: (): Record<string, unknown> => ({ isSettled }),
 }));
 
 /**
@@ -22,7 +21,7 @@ async function freshUseSyncCompleted(): Promise<() => { syncCompleted: Ref<numbe
 
 describe('useSyncCompleted', () => {
   beforeEach(() => {
-    set(phase, SyncPhase.IDLE);
+    set(isSettled, false);
   });
 
   it('should start the completion counter at zero', async () => {
@@ -32,35 +31,36 @@ describe('useSyncCompleted', () => {
     expect(get(syncCompleted)).toBe(0);
   });
 
-  it('should bump the counter when the sync phase reaches complete', async () => {
+  it('should bump the counter when the refresh settles', async () => {
     const useSyncCompleted = await freshUseSyncCompleted();
     const { syncCompleted } = useSyncCompleted();
 
-    set(phase, SyncPhase.COMPLETE);
+    set(isSettled, true);
     await nextTick();
 
     expect(get(syncCompleted)).toBe(1);
   });
 
-  it('should not bump the counter for non-complete phase transitions', async () => {
+  it('should not bump the counter when a settled refresh starts working again', async () => {
+    set(isSettled, true);
     const useSyncCompleted = await freshUseSyncCompleted();
     const { syncCompleted } = useSyncCompleted();
 
-    set(phase, SyncPhase.SYNCING);
+    set(isSettled, false);
     await nextTick();
 
     expect(get(syncCompleted)).toBe(0);
   });
 
-  it('should bump once per transition into complete', async () => {
+  it('should bump once per transition into settled', async () => {
     const useSyncCompleted = await freshUseSyncCompleted();
     const { syncCompleted } = useSyncCompleted();
 
-    set(phase, SyncPhase.COMPLETE);
+    set(isSettled, true);
     await nextTick();
-    set(phase, SyncPhase.SYNCING);
+    set(isSettled, false);
     await nextTick();
-    set(phase, SyncPhase.COMPLETE);
+    set(isSettled, true);
     await nextTick();
 
     expect(get(syncCompleted)).toBe(2);

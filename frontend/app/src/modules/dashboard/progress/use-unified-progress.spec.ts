@@ -55,14 +55,6 @@ vi.mock('@/modules/dashboard/progress/use-balance-query-progress', () => ({
   useBalanceQueryProgress: (): object => ({ balanceProgress, isBalanceQuerying }),
 }));
 
-vi.mock('@/modules/history/events/use-history-events-status', () => ({
-  useHistoryEventsStatus: (): object => ({
-    refreshing: ref(false),
-    sectionLoading: ref(false),
-    shouldFetchEventsRegularly: ref(false),
-  }),
-}));
-
 vi.mock('@/modules/dashboard/progress/use-history-query-indicator-settings', () => ({
   useHistoryQueryIndicatorSettings: (): object => ({ dismissalThresholdMs, minOutOfSyncPeriodMs }),
 }));

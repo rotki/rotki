@@ -1,6 +1,5 @@
 import type { Ref } from 'vue';
-import { SyncPhase } from '@/modules/shell/sync-progress/types';
-import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
+import { useSyncRollup } from '@/modules/history/events/tx/use-sync-rollup';
 
 interface UseSyncCompletedReturn {
   /** Bumped once each time the aggregate history sync finishes; watch it to react. */
@@ -9,15 +8,15 @@ interface UseSyncCompletedReturn {
 
 /**
  * Emits a signal every time the aggregate history sync (tx query + exchange events +
- * decoding) transitions to complete. Shared so any number of consumers react off a
- * single, centrally checked completion instead of each watching the sync phase itself.
+ * decoding) settles. Shared so any number of consumers react off a single, centrally
+ * checked completion instead of each watching the refresh themselves.
  */
 export const useSyncCompleted = createSharedComposable((): UseSyncCompletedReturn => {
-  const { phase } = useSyncProgress();
+  const { isSettled } = useSyncRollup();
   const syncCompleted = ref<number>(0);
 
-  watch(phase, (current) => {
-    if (current === SyncPhase.COMPLETE)
+  watch(isSettled, (settled) => {
+    if (settled)
       set(syncCompleted, get(syncCompleted) + 1);
   });
 

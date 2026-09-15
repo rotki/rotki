@@ -63,16 +63,7 @@ interface EventProgressData {
   currentOperationData: HistoryQueryProgressOperationData;
 }
 
-/** Cancelled and failed are both terminal: no further progress is coming for that address. */
-function isTerminal(status: TxQueryStatusData): boolean {
-  return status.status === TransactionsQueryStatus.CANCELLED
-    || status.status === TransactionsQueryStatus.FAILED;
-}
-
 function isTransactionActive(status: TxQueryStatusData): boolean {
-  if (isTerminal(status))
-    return false;
-
   return !isTxQueryStatusFinished(status);
 }
 
