@@ -40,6 +40,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.SONIC: A_S,
         SupportedBlockchain.ROBINHOOD: A_ETH,
         SupportedBlockchain.INK: A_ETH,
+        SupportedBlockchain.LINEA: A_ETH,
         SupportedBlockchain.GNOSIS: A_XDAI,
         SupportedBlockchain.SCROLL: A_ETH,
         SupportedBlockchain.BINANCE_SC: A_BSC_BNB,

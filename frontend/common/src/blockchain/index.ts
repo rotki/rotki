@@ -18,6 +18,7 @@ export enum Blockchain {
   SONIC = 'sonic',
   ROBINHOOD = 'robinhood',
   INK = 'ink',
+  LINEA = 'linea',
   ZKSYNC_LITE = 'zksync_lite',
   HYPERLIQUID = 'hyperliquid',
 }

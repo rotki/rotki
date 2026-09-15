@@ -83,6 +83,7 @@ LOCATION_DETAILS: dict = {
     Location.SONIC: {'image': 'sonic.svg'},
     Location.ROBINHOOD: {'image': 'robinhood.svg'},
     Location.INK: {'image': 'ink.svg'},
+    Location.LINEA: {'image': 'linea.svg'},
     Location.AVALANCHE: {'image': 'avalanche.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},

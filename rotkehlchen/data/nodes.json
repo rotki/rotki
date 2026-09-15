@@ -1,218 +1,242 @@
 [
-    {
-        "name": "etherscan",
-        "endpoint": "",
-        "weight": 0.30,
-        "owned": false,
-        "active": true,
-        "blockchain": "ETH"
-    },
-    {
-        "name": "cloudflare",
-        "endpoint": "https://cloudflare-eth.com/",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "ETH"
-    },
-    {
-        "name": "flashbots",
-        "endpoint": "https://rpc.flashbots.net/",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "ETH"
-    },
-    {
-        "name": "ankr",
-        "endpoint": "https://rpc.ankr.com/eth",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "ETH"
-    },
-    {
-        "name": "myetherwallet",
-        "endpoint": "https://nodes.mewapi.io/rpc/eth",
-        "weight": 0.10,
-        "owned": false,
-        "active": true,
-        "blockchain": "ETH"
-    },
-    {
-        "name": "optimism etherscan",
-        "endpoint": "",
-        "weight": 0.40,
-        "owned": false,
-        "active": true,
-        "blockchain": "OPTIMISM"
-    },
-    {
-        "name": "optimism official",
-        "endpoint": "https://mainnet.optimism.io",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "OPTIMISM"
-    },
-    {
-        "name": "optimism blastapi",
-        "endpoint": "https://optimism-mainnet.public.blastapi.io",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "OPTIMISM"
-    },
-    {
-        "name": "optimism ankr",
-        "endpoint": "https://rpc.ankr.com/optimism",
-        "weight": 0.10,
-        "owned": false,
-        "active": true,
-        "blockchain": "OPTIMISM"
-    },
-    {
-        "name": "optimism 1rpc",
-        "endpoint": "https://1rpc.io/op",
-        "weight": 0.10,
-        "owned": false,
-        "active": true,
-        "blockchain": "OPTIMISM"
-    },
-    {
-        "name": "hyperliquid",
-        "endpoint": "https://rpc.hyperliquid.xyz/evm",
-        "weight": 0.40,
-        "owned": false,
-        "active": true,
-        "blockchain": "HYPERLIQUID"
-    },
-    {
-        "name": "hyperliquid drpc",
-        "endpoint": "https://hyperliquid.drpc.org",
-        "weight": 0.30,
-        "owned": false,
-        "active": true,
-        "blockchain": "HYPERLIQUID"
-    },
-    {
-        "name": "hyperliquid onfinality",
-        "endpoint": "https://hyperliquid.api.onfinality.io/evm/public",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "HYPERLIQUID"
-    },
-    {
-        "name": "monad official",
-        "endpoint": "https://rpc.monad.xyz",
-        "weight": 0.30,
-        "owned": false,
-        "active": true,
-        "blockchain": "MONAD"
-    },
-    {
-        "name": "monad drpc",
-        "endpoint": "https://monad-mainnet.drpc.org",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "MONAD"
-    },
-    {
-        "name": "monad onfinality",
-        "endpoint": "https://monad-mainnet.api.onfinality.io/public",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "MONAD"
-    },
-    {
-        "name": "monad monadinfra",
-        "endpoint": "https://rpc-mainnet.monadinfra.com",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "MONAD"
-    },
-    {
-        "name": "sonic official",
-        "endpoint": "https://rpc.soniclabs.com",
-        "weight": 0.30,
-        "owned": false,
-        "active": true,
-        "blockchain": "SONIC"
-    },
-    {
-        "name": "sonic drpc",
-        "endpoint": "https://sonic.drpc.org",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "SONIC"
-    },
-    {
-        "name": "sonic onfinality",
-        "endpoint": "https://sonic-mainnet.api.onfinality.io/public",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "SONIC"
-    },
-    {
-        "name": "sonic publicnode",
-        "endpoint": "https://sonic-rpc.publicnode.com",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "SONIC"
-    },
-    {
-        "name": "robinhood official",
-        "endpoint": "https://rpc.mainnet.chain.robinhood.com",
-        "weight": 0.30,
-        "owned": false,
-        "active": true,
-        "blockchain": "ROBINHOOD"
-    },
-    {
-        "name": "robinhood publicnode",
-        "endpoint": "https://robinhood-rpc.publicnode.com",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "ROBINHOOD"
-    },
-    {
-        "name": "robinhood ordofi",
-        "endpoint": "https://rpc.ordofi.network",
-        "weight": 0.25,
-        "owned": false,
-        "active": true,
-        "blockchain": "ROBINHOOD"
-    },
-    {
-        "name": "robinhood nodeflare",
-        "endpoint": "https://rpc.nodeflare.app/robinhood/public",
-        "weight": 0.20,
-        "owned": false,
-        "active": true,
-        "blockchain": "ROBINHOOD"
-    },
-    {
-        "name": "ink gelato",
-        "endpoint": "https://rpc-gel.inkonchain.com",
-        "weight": 0.5,
-        "owned": false,
-        "active": true,
-        "blockchain": "INK"
-    },
-    {
-        "name": "ink pocket",
-        "endpoint": "https://ink.api.pocket.network",
-        "weight": 0.5,
-        "owned": false,
-        "active": true,
-        "blockchain": "INK"
-    }
+  {
+    "name": "ankr",
+    "endpoint": "https://rpc.ankr.com/eth",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "ETH"
+  },
+  {
+    "name": "cloudflare",
+    "endpoint": "https://cloudflare-eth.com/",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "ETH"
+  },
+  {
+    "name": "etherscan",
+    "endpoint": "",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "ETH"
+  },
+  {
+    "name": "flashbots",
+    "endpoint": "https://rpc.flashbots.net/",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "ETH"
+  },
+  {
+    "name": "myetherwallet",
+    "endpoint": "https://nodes.mewapi.io/rpc/eth",
+    "weight": 0.1,
+    "owned": false,
+    "active": true,
+    "blockchain": "ETH"
+  },
+  {
+    "name": "hyperliquid",
+    "endpoint": "https://rpc.hyperliquid.xyz/evm",
+    "weight": 0.4,
+    "owned": false,
+    "active": true,
+    "blockchain": "HYPERLIQUID"
+  },
+  {
+    "name": "hyperliquid drpc",
+    "endpoint": "https://hyperliquid.drpc.org",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "HYPERLIQUID"
+  },
+  {
+    "name": "hyperliquid onfinality",
+    "endpoint": "https://hyperliquid.api.onfinality.io/evm/public",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "HYPERLIQUID"
+  },
+  {
+    "name": "ink gelato",
+    "endpoint": "https://rpc-gel.inkonchain.com",
+    "weight": 0.5,
+    "owned": false,
+    "active": true,
+    "blockchain": "INK"
+  },
+  {
+    "name": "ink pocket",
+    "endpoint": "https://ink.api.pocket.network",
+    "weight": 0.5,
+    "owned": false,
+    "active": true,
+    "blockchain": "INK"
+  },
+  {
+    "name": "linea blockpi",
+    "endpoint": "https://linea.blockpi.network/v1/rpc/public",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "LINEA"
+  },
+  {
+    "name": "linea drpc",
+    "endpoint": "https://linea.drpc.org",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "LINEA"
+  },
+  {
+    "name": "linea official",
+    "endpoint": "https://rpc.linea.build",
+    "weight": 0.4,
+    "owned": false,
+    "active": true,
+    "blockchain": "LINEA"
+  },
+  {
+    "name": "monad drpc",
+    "endpoint": "https://monad-mainnet.drpc.org",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "MONAD"
+  },
+  {
+    "name": "monad monadinfra",
+    "endpoint": "https://rpc-mainnet.monadinfra.com",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "MONAD"
+  },
+  {
+    "name": "monad official",
+    "endpoint": "https://rpc.monad.xyz",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "MONAD"
+  },
+  {
+    "name": "monad onfinality",
+    "endpoint": "https://monad-mainnet.api.onfinality.io/public",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "MONAD"
+  },
+  {
+    "name": "optimism 1rpc",
+    "endpoint": "https://1rpc.io/op",
+    "weight": 0.1,
+    "owned": false,
+    "active": true,
+    "blockchain": "OPTIMISM"
+  },
+  {
+    "name": "optimism ankr",
+    "endpoint": "https://rpc.ankr.com/optimism",
+    "weight": 0.1,
+    "owned": false,
+    "active": true,
+    "blockchain": "OPTIMISM"
+  },
+  {
+    "name": "optimism blastapi",
+    "endpoint": "https://optimism-mainnet.public.blastapi.io",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "OPTIMISM"
+  },
+  {
+    "name": "optimism etherscan",
+    "endpoint": "",
+    "weight": 0.4,
+    "owned": false,
+    "active": true,
+    "blockchain": "OPTIMISM"
+  },
+  {
+    "name": "optimism official",
+    "endpoint": "https://mainnet.optimism.io",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "OPTIMISM"
+  },
+  {
+    "name": "robinhood nodeflare",
+    "endpoint": "https://rpc.nodeflare.app/robinhood/public",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "ROBINHOOD"
+  },
+  {
+    "name": "robinhood official",
+    "endpoint": "https://rpc.mainnet.chain.robinhood.com",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "ROBINHOOD"
+  },
+  {
+    "name": "robinhood ordofi",
+    "endpoint": "https://rpc.ordofi.network",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "ROBINHOOD"
+  },
+  {
+    "name": "robinhood publicnode",
+    "endpoint": "https://robinhood-rpc.publicnode.com",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "ROBINHOOD"
+  },
+  {
+    "name": "sonic drpc",
+    "endpoint": "https://sonic.drpc.org",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "SONIC"
+  },
+  {
+    "name": "sonic official",
+    "endpoint": "https://rpc.soniclabs.com",
+    "weight": 0.3,
+    "owned": false,
+    "active": true,
+    "blockchain": "SONIC"
+  },
+  {
+    "name": "sonic onfinality",
+    "endpoint": "https://sonic-mainnet.api.onfinality.io/public",
+    "weight": 0.25,
+    "owned": false,
+    "active": true,
+    "blockchain": "SONIC"
+  },
+  {
+    "name": "sonic publicnode",
+    "endpoint": "https://sonic-rpc.publicnode.com",
+    "weight": 0.2,
+    "owned": false,
+    "active": true,
+    "blockchain": "SONIC"
+  }
 ]

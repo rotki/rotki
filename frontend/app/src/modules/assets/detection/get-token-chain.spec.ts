@@ -9,6 +9,7 @@ const allEvmChains: EvmChainEntries = [
   { id: 146, label: 'Sonic', name: 'sonic' },
   { id: 4663, label: 'Robinhood', name: 'robinhood' },
   { id: 57073, label: 'Ink', name: 'ink' },
+  { id: 59144, label: 'Linea', name: 'linea' },
   { id: 999, label: 'Hyperliquid', name: 'hyperliquid' },
 ];
 
@@ -23,6 +24,18 @@ describe('getTokenChain', () => {
     );
 
     expect(chain).toBe('monad');
+  });
+
+  it('should resolve the evm chain name from a Linea token identifier', () => {
+    const chain = getTokenChain(
+      {
+        tokenIdentifier: 'eip155:59144/erc20:0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f',
+        tokenKind: NewDetectedTokenKind.EVM,
+      },
+      allEvmChains,
+    );
+
+    expect(chain).toBe('linea');
   });
 
   it('should resolve the evm chain name from a Sonic token identifier', () => {

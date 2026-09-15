@@ -16,9 +16,10 @@ SupportedL2WithL1FeesType = Literal[
     SupportedBlockchain.BASE,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.INK,
+    SupportedBlockchain.LINEA,
 ]
 
-L2ChainIdsWithL1FeesType = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL, ChainID.INK]
+L2ChainIdsWithL1FeesType = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL, ChainID.INK, ChainID.LINEA]  # noqa: E501
 L2_CHAINIDS_WITH_L1_FEES: set[L2ChainIdsWithL1FeesType] = set(typing.get_args(L2ChainIdsWithL1FeesType))  # noqa: E501
 
 

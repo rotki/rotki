@@ -23,6 +23,8 @@ from rotkehlchen.chain.hyperliquid.decoding.decoder import HyperliquidTransactio
 from rotkehlchen.chain.hyperliquid.transactions import HyperliquidTransactions
 from rotkehlchen.chain.ink.decoding.decoder import InkTransactionDecoder
 from rotkehlchen.chain.ink.transactions import InkTransactions
+from rotkehlchen.chain.linea.decoding.decoder import LineaTransactionDecoder
+from rotkehlchen.chain.linea.transactions import LineaTransactions
 from rotkehlchen.chain.monad.decoding.decoder import MonadTransactionDecoder
 from rotkehlchen.chain.monad.transactions import MonadTransactions
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
@@ -465,6 +467,7 @@ def get_decoded_events_of_transaction(
         ChainID.SONIC: (SonicTransactions, SonicTransactionDecoder),
         ChainID.ROBINHOOD: (RobinhoodTransactions, RobinhoodTransactionDecoder),
         ChainID.INK: (InkTransactions, InkTransactionDecoder),
+        ChainID.LINEA: (LineaTransactions, LineaTransactionDecoder),
         ChainID.HYPERLIQUID: (HyperliquidTransactions, HyperliquidTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)

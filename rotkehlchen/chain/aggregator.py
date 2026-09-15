@@ -156,6 +156,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
     from rotkehlchen.chain.ink.manager import InkManager
+    from rotkehlchen.chain.linea.manager import LineaManager
     from rotkehlchen.chain.manager import (
         ChainManager,
         ChainManagerWithNodesMixin,
@@ -273,6 +274,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.SONIC: (BeetsV2Balances, BeetsV3Balances),
     ChainID.ROBINHOOD: (),
     ChainID.INK: (),
+        ChainID.LINEA: (),
 }
 
 
@@ -297,6 +299,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             sonic_manager: SonicManager,
             robinhood_manager: RobinhoodManager,
             ink_manager: InkManager,
+            linea_manager: LineaManager,
             kusama_manager: SubstrateManager,
             polkadot_manager: SubstrateManager,
             avalanche_manager: AvalancheManager,
@@ -328,6 +331,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.sonic = sonic_manager
         self.robinhood = robinhood_manager
         self.ink = ink_manager
+        self.linea = linea_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -363,6 +367,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.sonic_lock = Semaphore()
         self.robinhood_lock = Semaphore()
         self.ink_lock = Semaphore()
+        self.linea_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
         # Guards every iteration/mutation of self.balances and self.totals: per-chain

@@ -90,6 +90,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://monadscan.com/token/',
     transaction: 'https://monadscan.com/tx/',
   },
+  [Blockchain.LINEA]: {
+    address: 'https://lineascan.build/address/',
+    block: 'https://lineascan.build/block/',
+    token: 'https://lineascan.build/token/',
+    transaction: 'https://lineascan.build/tx/',
+  },
   [Blockchain.SONIC]: {
     address: 'https://sonicscan.org/address/',
     block: 'https://sonicscan.org/block/',

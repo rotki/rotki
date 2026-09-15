@@ -21,6 +21,7 @@ pub enum SupportedBlockchain {
     Sonic,
     Robinhood,
     Ink,
+    Linea,
     Optimism,
     PolygonPos,
     Scroll,
@@ -49,6 +50,7 @@ impl SupportedBlockchain {
             Self::Sonic => "SONIC",
             Self::Robinhood => "ROBINHOOD",
             Self::Ink => "INK",
+            Self::Linea => "LINEA",
             Self::Optimism => "OPTIMISM",
             Self::PolygonPos => "POLYGON_POS",
             Self::Scroll => "SCROLL",
@@ -65,6 +67,7 @@ impl SupportedBlockchain {
             | Self::Scroll
             | Self::Robinhood
             | Self::Ink
+            | Self::Linea
             | Self::ZksyncLite => "ETH",
             Self::PolygonPos => "eip155:137/erc20:0x0000000000000000000000000000000000001010",
             Self::Gnosis => "XDAI",
@@ -93,6 +96,7 @@ impl SupportedBlockchain {
             146 => Some(Self::Sonic),
             4663 => Some(Self::Robinhood),
             57073 => Some(Self::Ink),
+            59144 => Some(Self::Linea),
             999 => Some(Self::Hyperliquid),
             8453 => Some(Self::Base),
             42161 => Some(Self::ArbitrumOne),
@@ -168,6 +172,7 @@ mod tests {
         assert_eq!(SupportedBlockchain::Sonic.native_token_id(), "S");
         assert_eq!(SupportedBlockchain::Robinhood.native_token_id(), "ETH");
         assert_eq!(SupportedBlockchain::Ink.native_token_id(), "ETH");
+        assert_eq!(SupportedBlockchain::Linea.native_token_id(), "ETH");
         assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
     }
 
@@ -177,6 +182,7 @@ mod tests {
         assert_eq!(SupportedBlockchain::Sonic.as_str(), "SONIC");
         assert_eq!(SupportedBlockchain::Robinhood.as_str(), "ROBINHOOD");
         assert_eq!(SupportedBlockchain::Ink.as_str(), "INK");
+        assert_eq!(SupportedBlockchain::Linea.as_str(), "LINEA");
         assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
     }
 }

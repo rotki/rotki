@@ -5,6 +5,7 @@ from rotkehlchen.constants.assets import (
     A_WETH_ARB,
     A_WETH_BASE,
     A_WETH_INK,
+    A_WETH_LINEA,
     A_WETH_OPT,
     A_WETH_ROBINHOOD,
     A_WETH_SCROLL,
@@ -29,4 +30,5 @@ CHAIN_ID_TO_WETH_MAPPING: Final = {
     ChainID.BASE: A_WETH_BASE,
     ChainID.ROBINHOOD: A_WETH_ROBINHOOD,
     ChainID.INK: A_WETH_INK,
+    ChainID.LINEA: A_WETH_LINEA,
 }

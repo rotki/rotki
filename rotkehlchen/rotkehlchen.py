@@ -42,6 +42,8 @@ from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 from rotkehlchen.chain.ink.manager import InkManager
 from rotkehlchen.chain.ink.node_inquirer import InkInquirer
+from rotkehlchen.chain.linea.manager import LineaManager
+from rotkehlchen.chain.linea.node_inquirer import LineaInquirer
 from rotkehlchen.chain.monad.manager import MonadManager
 from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
 from rotkehlchen.chain.optimism.manager import OptimismManager
@@ -583,6 +585,16 @@ class Rotkehlchen:
             ),
             ink_manager=InkManager(
                 node_inquirer=InkInquirer(
+                    task_supervisor=self.task_supervisor,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            linea_manager=LineaManager(
+                node_inquirer=LineaInquirer(
                     task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,

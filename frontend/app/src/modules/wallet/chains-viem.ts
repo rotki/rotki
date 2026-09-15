@@ -1,5 +1,5 @@
 import type { Chain } from '@/modules/wallet/viem-client';
-import { arbitrum, base, bsc, gnosis, hyperEvm, mainnet, monad, optimism, polygon, scroll } from 'viem/chains';
+import { arbitrum, base, bsc, gnosis, hyperEvm, linea, mainnet, monad, optimism, polygon, scroll } from 'viem/chains';
 
 /**
  * The viem {@link Chain} objects for the chains rotki's wallet stack supports.
@@ -30,6 +30,7 @@ export const SUPPORTED_WALLET_NETWORKS: readonly Chain[] = [
   scroll,
   monad,
   hyperEvm,
+  linea,
 ] as const;
 
 export function getWalletNetwork(chainId: bigint): Chain | undefined {

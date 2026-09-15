@@ -33,6 +33,8 @@ from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 from rotkehlchen.chain.ink.manager import InkManager
 from rotkehlchen.chain.ink.node_inquirer import InkInquirer
+from rotkehlchen.chain.linea.manager import LineaManager
+from rotkehlchen.chain.linea.node_inquirer import LineaInquirer
 from rotkehlchen.chain.monad.manager import MonadManager
 from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
@@ -120,6 +122,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.ROBINHOOD
     elif klass == InkInquirer:
         blockchain = SupportedBlockchain.INK
+    elif klass == LineaInquirer:
+        blockchain = SupportedBlockchain.LINEA
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -288,6 +292,11 @@ def fixture_ink_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='linea_accounts')
+def fixture_linea_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -303,6 +312,7 @@ def fixture_blockchain_accounts(
         sonic_accounts: list[ChecksumEvmAddress],
         robinhood_accounts: list[ChecksumEvmAddress],
         ink_accounts: list[ChecksumEvmAddress],
+        linea_accounts: list[ChecksumEvmAddress],
         zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
@@ -325,6 +335,7 @@ def fixture_blockchain_accounts(
         sonic=tuple(sonic_accounts),
         robinhood=tuple(robinhood_accounts),
         ink=tuple(ink_accounts),
+        linea=tuple(linea_accounts),
         zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
@@ -812,6 +823,16 @@ def fixture_robinhood_manager(robinhood_inquirer):
     return RobinhoodManager(node_inquirer=robinhood_inquirer)
 
 
+@pytest.fixture(name='linea_manager_connect_at_start')
+def fixture_linea_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
 @pytest.fixture(name='ink_manager_connect_at_start')
 def fixture_ink_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
@@ -846,6 +867,32 @@ def fixture_ink_inquirer(
 @pytest.fixture(name='ink_manager')
 def fixture_ink_manager(ink_inquirer):
     return InkManager(node_inquirer=ink_inquirer)
+
+
+@pytest.fixture(name='linea_inquirer')
+def fixture_linea_inquirer(
+        linea_manager_connect_at_start,
+        task_supervisor,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=LineaInquirer,
+            class_path='rotkehlchen.chain.linea.node_inquirer.LineaInquirer',
+            manager_connect_at_start=linea_manager_connect_at_start,
+            task_supervisor=task_supervisor,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='linea_manager')
+def fixture_linea_manager(linea_inquirer):
+    return LineaManager(node_inquirer=linea_inquirer)
 
 
 @pytest.fixture(name='gnosis_manager_connect_at_start')
@@ -1212,6 +1259,7 @@ def fixture_blockchain(
         sonic_manager,
         robinhood_manager,
         ink_manager,
+        linea_manager,
         gnosis_manager,
         scroll_manager,
         binance_sc_manager,
@@ -1256,6 +1304,7 @@ def fixture_blockchain(
         sonic_manager=sonic_manager,
         robinhood_manager=robinhood_manager,
         ink_manager=ink_manager,
+        linea_manager=linea_manager,
         gnosis_manager=gnosis_manager,
         scroll_manager=scroll_manager,
         binance_sc_manager=binance_sc_manager,

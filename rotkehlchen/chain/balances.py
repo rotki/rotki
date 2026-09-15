@@ -49,6 +49,7 @@ class BlockchainBalances:
     sonic: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     robinhood: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     ink: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    linea: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)

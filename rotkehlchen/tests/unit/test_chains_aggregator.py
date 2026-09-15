@@ -105,6 +105,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
           (SupportedBlockchain.SONIC, everywhere_addy, None),
         (SupportedBlockchain.ROBINHOOD, everywhere_addy, None),
         (SupportedBlockchain.INK, everywhere_addy, None),
+        (SupportedBlockchain.LINEA, everywhere_addy, None),
     ]
 
     for chain, addy, label in addies_to_start_with:
@@ -145,6 +146,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
               sonic_addresses=[everywhere_addy, addy_eoa_3],
             robinhood_addresses=[everywhere_addy, addy_eoa_3],
             ink_addresses=[everywhere_addy, addy_eoa_3],
+            linea_addresses=[everywhere_addy, addy_eoa_3],
         )
 
         blockchain.detect_evm_accounts()
@@ -162,6 +164,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
     assert set(blockchain.accounts.sonic) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.robinhood) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.ink) == {addy_eoa_3, everywhere_addy}
+    assert set(blockchain.accounts.linea) == {addy_eoa_3, everywhere_addy}
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
@@ -183,6 +186,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
               (SupportedBlockchain.SONIC, addy_eoa_3, label2),
             (SupportedBlockchain.ROBINHOOD, addy_eoa_3, label2),
             (SupportedBlockchain.INK, addy_eoa_3, label2),
+            (SupportedBlockchain.LINEA, addy_eoa_3, label2),
           )
     ]
 
@@ -212,6 +216,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
               SupportedBlockchain.SONIC,
             SupportedBlockchain.ROBINHOOD,
             SupportedBlockchain.INK,
+            SupportedBlockchain.LINEA,
         ) for account in raw_accounts.get(chain)
     ]
 
