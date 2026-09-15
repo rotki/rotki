@@ -15,13 +15,6 @@ describe('useEventsQueryStatusStore', () => {
     setActivePinia(createPinia());
   });
 
-  it('should mark started/finished statuses correctly', () => {
-    const store = useEventsQueryStatusStore();
-    expect(store.isStatusFinished(data('eth', 'a', HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED))).toBe(false);
-    expect(store.isStatusFinished(data('eth', 'a', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED))).toBe(true);
-    expect(store.isStatusFinished(data('eth', 'a', HistoryEventsQueryStatus.CANCELLED))).toBe(true);
-  });
-
   it('should initialize a started status for each location and begin syncing', () => {
     const store = useEventsQueryStatusStore();
     store.initializeQueryStatus([{ location: 'eth', name: 'a' }, { location: 'btc', name: 'b' }]);

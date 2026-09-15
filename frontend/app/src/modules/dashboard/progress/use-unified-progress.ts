@@ -6,7 +6,6 @@ import { type BalanceQueryProgress, useBalanceQueryProgress } from '@/modules/da
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/use-history-query-indicator-settings';
 import { type HistoryQueryProgress, useHistoryQueryProgress } from '@/modules/dashboard/progress/use-history-query-progress';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
@@ -24,10 +23,7 @@ interface UseUnifiedProgressReturn {
   processing: Ref<boolean>;
   processingMessage: ComputedRef<string>;
   processingPercentage: ComputedRef<number>;
-  refreshing: ComputedRef<boolean>;
   resetQueryStatus: () => void;
-  sectionLoading: ComputedRef<boolean>;
-  shouldFetchEventsRegularly: ComputedRef<boolean>;
   showIdleMessage: ComputedRef<boolean>;
   transactionStatusSummary: Ref<TransactionStatus | undefined>;
   queryStatus: Ref<QueryStatusDismissal>;
@@ -69,7 +65,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   } = useTransactionStatusCheck();
 
   const { balanceProgress, isBalanceQuerying } = useBalanceQueryProgress();
-  const { refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
   const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
 
   const historyStore = useHistoryStore();
@@ -166,10 +161,7 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     processingMessage,
     processingPercentage,
     queryStatus,
-    refreshing,
     resetQueryStatus,
-    sectionLoading,
-    shouldFetchEventsRegularly,
     showIdleMessage,
     transactionStatusSummary,
   };

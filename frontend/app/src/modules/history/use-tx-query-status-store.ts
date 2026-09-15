@@ -298,7 +298,6 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     initializeQueryStatus,
     isAddressCancelled,
     isAllFinished,
-    isStatusFinished,
     markAddressCancelled,
     markAddressFailed,
     queryStatus,

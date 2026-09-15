@@ -14,13 +14,11 @@ import {
   LocationStatus,
   type ProtocolCacheProgress,
   SyncPhase,
-  type SyncProgressState,
 } from './types';
-import { isChainSettled, settledAddresses, useChainProgress } from './use-chain-progress';
+import { isChainSettled, useChainProgress } from './use-chain-progress';
 import { type SyncWarning, SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {
-  state: ComputedRef<SyncProgressState>;
   chains: ComputedRef<ChainProgress[]>;
   locations: ComputedRef<LocationProgress[]>;
   decoding: ComputedRef<DecodingProgress[]>;
@@ -38,9 +36,6 @@ interface UseSyncProgressReturn {
   completedChains: ComputedRef<number>;
   totalLocations: ComputedRef<number>;
   completedLocations: ComputedRef<number>;
-  totalAccounts: ComputedRef<number>;
-  uniqueAddresses: ComputedRef<number>;
-  completedAccounts: ComputedRef<number>;
   warnings: ComputedRef<SyncWarning[]>;
   hasWarnings: ComputedRef<boolean>;
 }
@@ -71,12 +66,6 @@ function mapLocationStatus(data: HistoryEventsQueryData): LocationProgress {
   };
 }
 
-/**
- * Weights for calculating overall sync progress.
- * Transactions have the highest weight (50%) as they're the most time-consuming operation.
- * Events (exchange history) have medium weight (30%) as they involve external API calls.
- * Decoding has the lowest weight (20%) as it's a local operation that's typically fast.
- */
 /** Locations in the order the panel lists them: what is running, then what is still to come. */
 const STATUS_PRIORITY: Record<LocationProgress['status'], number> = {
   [LocationStatus.QUERYING]: 0,
@@ -141,10 +130,9 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   /**
    * Decoding and protocol cache are per-chain and, like the transaction status above, are reported
-   * by the backend rather than derived from work we submitted. Excluding them here matters for more
-   * than the row: decoding carries 20% of `overallProgress`, so a chain the user switched off would
-   * otherwise keep a fifth of the bar from completing. Only chain-level rules apply - neither
-   * message carries an address.
+   * by the backend rather than derived from work we submitted, so a chain the user switched off can
+   * still appear in them and has to be dropped here. Only chain-level rules apply: neither message
+   * carries an address.
    */
   const decoding = computed<DecodingProgress[]>(() =>
     get(rawDecodingStatus)
@@ -181,19 +169,6 @@ export function useSyncProgress(): UseSyncProgressReturn {
     get(locations).filter(l => l.status === LocationStatus.COMPLETE || l.status === LocationStatus.CANCELLED).length,
   );
 
-  const totalAccounts = computed<number>(() =>
-    get(chains).reduce((sum, c) => sum + c.total, 0),
-  );
-
-  const uniqueAddresses = computed<number>(() => {
-    const allAddresses = get(chains).flatMap(c => c.addresses.map(a => a.address.toLowerCase()));
-    return new Set(allAddresses).size;
-  });
-
-  const completedAccounts = computed<number>(() =>
-    get(chains).reduce((sum, chain) => sum + settledAddresses(chain), 0),
-  );
-
   const overallProgress = rollup.progress;
 
   /**
@@ -224,28 +199,9 @@ export function useSyncProgress(): UseSyncProgressReturn {
     get(hasCancelledChains) || get(hasCancelledLocations) || get(hasCancelledDecoding) || get(hasCancelledProtocolCache),
   );
 
-  const state = computed<SyncProgressState>(() => ({
-    canDismiss: get(canDismiss),
-    chains: get(chains),
-    completedAccounts: get(completedAccounts),
-    completedChains: get(completedChains),
-    completedLocations: get(completedLocations),
-    decoding: get(decoding),
-    hasWarnings: get(hasWarnings),
-    isActive: get(isActive),
-    locations: get(locations),
-    overallProgress: get(overallProgress),
-    phase: get(phase),
-    protocolCache: get(protocolCache),
-    totalAccounts: get(totalAccounts),
-    totalChains: get(totalChains),
-    totalLocations: get(totalLocations),
-  }));
-
   return {
     canDismiss,
     chains,
-    completedAccounts,
     completedChains,
     completedLocations,
     decoding,
@@ -260,11 +216,8 @@ export function useSyncProgress(): UseSyncProgressReturn {
     overallProgress,
     phase,
     protocolCache,
-    state,
-    totalAccounts,
     totalChains,
     totalLocations,
-    uniqueAddresses,
     warnings,
   };
 }

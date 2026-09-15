@@ -79,28 +79,3 @@ export const SyncPhase = {
 } as const;
 
 export type SyncPhase = (typeof SyncPhase)[keyof typeof SyncPhase];
-
-export interface SyncProgressState {
-  phase: SyncPhase;
-  overallProgress: number;
-
-  chains: ChainProgress[];
-  totalChains: number;
-  completedChains: number;
-
-  locations: LocationProgress[];
-  totalLocations: number;
-  completedLocations: number;
-
-  decoding: DecodingProgress[];
-
-  protocolCache: ProtocolCacheProgress[];
-
-  totalAccounts: number;
-  completedAccounts: number;
-
-  isActive: boolean;
-  canDismiss: boolean;
-
-  hasWarnings: boolean;
-}

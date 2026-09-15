@@ -369,10 +369,9 @@ describe('useSyncProgress', () => {
       ]);
       disableChains({ [SETTING_POLYGON]: [] });
 
-      const { chains, completedChains, totalAccounts, totalChains } = useSyncProgress();
+      const { chains, completedChains, totalChains } = useSyncProgress();
       expect(get(totalChains)).toBe(1);
       expect(get(completedChains)).toBe(1);
-      expect(get(totalAccounts)).toBe(1);
       expect(get(chains).map(chain => chain.chain)).toEqual([SETTING_ETH]);
     });
 
@@ -385,9 +384,8 @@ describe('useSyncProgress', () => {
       expect(WIRE_ADDRESS.toLowerCase()).toBe(SETTING_ADDRESS);
       disableChains({ [SETTING_ETH]: [SETTING_ADDRESS] });
 
-      const { chains, totalAccounts, totalChains } = useSyncProgress();
+      const { chains, totalChains } = useSyncProgress();
       expect(get(totalChains)).toBe(1);
-      expect(get(totalAccounts)).toBe(1);
       expect(get(chains)[0].addresses.map(a => a.address)).toEqual(['0x111']);
     });
 
@@ -447,30 +445,6 @@ describe('useSyncProgress', () => {
       expect(get(totalLocations)).toBe(2);
       expect(get(completedLocations)).toBe(1);
     });
-
-    it('should count accounts correctly', () => {
-      setupTxStore([
-        createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-        createEvmTxStatus('0x333', 'optimism', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
-
-      const { totalAccounts, completedAccounts } = useSyncProgress();
-      expect(get(totalAccounts)).toBe(3);
-      expect(get(completedAccounts)).toBe(2);
-    });
-
-    it('should count unique addresses correctly', () => {
-      setupTxStore([
-        createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x111', 'optimism', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-        createEvmTxStatus('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
-
-      const { uniqueAddresses, totalAccounts } = useSyncProgress();
-      expect(get(totalAccounts)).toBe(3);
-      expect(get(uniqueAddresses)).toBe(2);
-    });
   });
 
   describe('cancellation handling', () => {
@@ -493,20 +467,6 @@ describe('useSyncProgress', () => {
       const { completedLocations, totalLocations } = useSyncProgress();
       expect(get(totalLocations)).toBe(2);
       expect(get(completedLocations)).toBe(2);
-    });
-
-    it('should count cancelled accounts in completedAccounts', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-        createEvmTxStatus('0x456', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
-
-      const txStore = useTxQueryStatusStore();
-      txStore.markAddressCancelled({ address: '0x123', chain: 'eth' });
-
-      const { completedAccounts, totalAccounts } = useSyncProgress();
-      expect(get(totalAccounts)).toBe(2);
-      expect(get(completedAccounts)).toBe(2);
     });
 
     it('should sort cancelled locations between pending and complete', () => {
@@ -612,38 +572,6 @@ describe('useSyncProgress', () => {
 
       const { canDismiss } = useSyncProgress();
       expect(get(canDismiss)).toBe(true);
-    });
-  });
-
-  describe('state object', () => {
-    /**
-     * The two halves still have separate sources: the lists and counts come from the websocket
-     * status stores, the rollup from the ledger. Seed both, or the object is half populated.
-     */
-    it('should aggregate all computed values', async () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
-      await submitRefresh({ eth: { '0x123': 'running' } });
-
-      const { state } = useSyncProgress();
-      const stateValue = get(state);
-
-      expect(stateValue).toMatchObject({
-        canDismiss: false,
-        completedAccounts: 0,
-        completedChains: 0,
-        completedLocations: 0,
-        isActive: true,
-        phase: SyncPhase.SYNCING,
-        totalAccounts: 1,
-        totalChains: 1,
-        totalLocations: 0,
-      });
-      expect(stateValue.chains).toHaveLength(1);
-      expect(stateValue.locations).toHaveLength(0);
-      expect(stateValue.decoding).toHaveLength(0);
-      expect(stateValue.protocolCache).toHaveLength(0);
     });
   });
 });

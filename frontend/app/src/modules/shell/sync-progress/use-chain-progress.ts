@@ -76,12 +76,8 @@ function toAddressProgress(data: TxQueryStatusData): AddressProgress {
 
 /**
  * Addresses that will not change again: succeeded, cancelled or failed.
- *
- * Exported because "terminal counts as done" was written out by hand at three separate call sites,
- * so adding a terminal state fixed some of them and silently left the others behind: the sync
- * banner sat at 93% forever while the chain list it summarised had already settled.
  */
-export function settledAddresses(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed'>): number {
+function settledAddresses(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed'>): number {
   return chain.completed + chain.cancelled + chain.failed;
 }
 
