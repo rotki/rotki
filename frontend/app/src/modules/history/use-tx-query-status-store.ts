@@ -83,17 +83,14 @@ export function isTxQueryStatusFinished(item: TxQueryStatusData): boolean {
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
   const createKey = ({ address, chain }: ChainAddress): string => address + chain.toLowerCase();
 
-  const isStatusFinished = isTxQueryStatusFinished;
-
   const {
-    isAllFinished,
     markTerminal,
     queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
     stopSyncing,
     syncing,
-  } = createQueryStatusState<TxQueryStatusData>(isStatusFinished, createKey);
+  } = createQueryStatusState<TxQueryStatusData>(createKey);
 
   /**
    * Seed the panel with the addresses a sync is about to query.
@@ -297,7 +294,6 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     getQueryStatus,
     initializeQueryStatus,
     isAddressCancelled,
-    isAllFinished,
     markAddressCancelled,
     markAddressFailed,
     queryStatus,

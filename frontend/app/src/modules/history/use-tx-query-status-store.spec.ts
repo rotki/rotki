@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
-import { type TxQueryStatusData, useTxQueryStatusStore } from './use-tx-query-status-store';
+import { isTxQueryStatusFinished, type TxQueryStatusData, useTxQueryStatusStore } from './use-tx-query-status-store';
 
 const mockMillisecondsToSeconds = vi.hoisted(() => vi.fn().mockReturnValue(1000));
 
@@ -15,6 +15,11 @@ function hasPeriodsFields(status: TxQueryStatusData): status is TxQueryStatusDat
   originalPeriodStart?: number;
 } {
   return status.subtype !== 'bitcoin';
+}
+
+/** Whether every stored entry has reached a state the shared finished predicate accepts. */
+function allFinished(store: ReturnType<typeof useTxQueryStatusStore>): boolean {
+  return Object.values(get(store.queryStatus)).every(isTxQueryStatusFinished);
 }
 
 describe('store/history/query-status/tx-query-status', () => {
@@ -642,9 +647,9 @@ describe('store/history/query-status/tx-query-status', () => {
 
       store.markAddressFailed({ address: '0x123', chain: 'gnosis' });
 
-      // `isAllFinished` is vacuously true with no entry, so the existence check carries the test.
+      // `allFinished` is vacuously true with no entry, so the existence check carries the test.
       expect(get(store.queryStatus)['0x123gnosis']).toBeDefined();
-      expect(get(store.isAllFinished)).toBe(true);
+      expect(allFinished(store)).toBe(true);
     });
   });
 
@@ -698,7 +703,7 @@ describe('store/history/query-status/tx-query-status', () => {
     });
   });
 
-  describe('isAllFinished', () => {
+  describe('isTxQueryStatusFinished over stored entries', () => {
     it('should return true when all EVM statuses are finished', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
@@ -719,7 +724,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'evm',
       });
 
-      expect(get(store.isAllFinished)).toBe(true);
+      expect(allFinished(store)).toBe(true);
     });
 
     it('should return false when any EVM status is not finished', () => {
@@ -742,7 +747,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'evm',
       });
 
-      expect(get(store.isAllFinished)).toBe(false);
+      expect(allFinished(store)).toBe(false);
     });
 
     it('should settle bitcoin on DECODING_FINISHED', () => {
@@ -756,7 +761,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      expect(get(store.isAllFinished)).toBe(false);
+      expect(allFinished(store)).toBe(false);
 
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
@@ -765,7 +770,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      expect(get(store.isAllFinished)).toBe(true);
+      expect(allFinished(store)).toBe(true);
     });
 
     it('should settle bitcoin on QUERYING_FINISHED when no decode follows', () => {
@@ -780,7 +785,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      expect(get(store.isAllFinished)).toBe(true);
+      expect(allFinished(store)).toBe(true);
     });
 
     it('should treat CANCELLED as finished', () => {
@@ -797,7 +802,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
       store.markAddressCancelled({ address: '0x123', chain: 'eth' });
 
-      expect(get(store.isAllFinished)).toBe(true);
+      expect(allFinished(store)).toBe(true);
     });
   });
 
