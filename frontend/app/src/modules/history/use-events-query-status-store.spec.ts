@@ -23,8 +23,6 @@ describe('useEventsQueryStatusStore', () => {
     const status = get(store.queryStatus);
     expect(Object.keys(status)).toHaveLength(2);
     expect(status.etha.status).toBe(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED);
-    expect(store.isAllFinished).toBeDefined();
-    expect(get(store.isAllFinished)).toBe(false);
   });
 
   it('should keep a finished exchange untouched when extending', () => {
@@ -53,7 +51,6 @@ describe('useEventsQueryStatusStore', () => {
     store.initializeQueryStatus([{ location: 'eth', name: 'a' }]);
     store.setQueryStatus(data('eth', 'a', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED));
     expect(get(store.queryStatus).etha.status).toBe(HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED);
-    expect(get(store.isAllFinished)).toBe(true);
   });
 
   it('should not overwrite a cancelled entry', () => {

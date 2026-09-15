@@ -5,12 +5,8 @@ import { createQueryStatusState } from '@/modules/history/create-query-status-st
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
   const createKey = ({ location, name }: Pick<HistoryEventsQueryData, 'location' | 'name'>): string => location + name;
 
-  const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
-    item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
-    || item.status === HistoryEventsQueryStatus.CANCELLED;
-
-  const { isAllFinished, markTerminal, queryStatus, resetQueryStatus, stopSyncing, syncing }
-    = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
+  const { markTerminal, queryStatus, resetQueryStatus, stopSyncing, syncing }
+    = createQueryStatusState<HistoryEventsQueryData>(createKey);
 
   /**
    * Seed the panel with the exchanges a sync is about to query.
@@ -82,7 +78,6 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   return {
     getQueryStatus,
     initializeQueryStatus,
-    isAllFinished,
     markLocationCancelled,
     queryStatus,
     resetQueryStatus,
