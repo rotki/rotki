@@ -88,7 +88,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
 
         amounts = []
         for address, savings_result, interest_result in zip(
-            addresses,
+            active_addresses,
             results[::2],
             results[1::2],
             strict=True,
