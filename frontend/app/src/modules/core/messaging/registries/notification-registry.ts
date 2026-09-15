@@ -2,7 +2,6 @@ import type { MessageHandlerRegistry } from '../interfaces';
 import { createSolanaTokensHandler } from '@/modules/assets/admin/solana-token-migration/solana-tokens-migration-handler';
 import { createBinancePairsMissingHandler } from '../handlers/binance-pairs-missing';
 import { createGnosisPaySessionHandler } from '../handlers/gnosis-pay-session';
-import { createLegacyHandler } from '../handlers/legacy';
 import { createMissingApiKeyHandler } from '../handlers/missing-api-key';
 import { createMoneriumSessionHandler } from '../handlers/monerium-session';
 import { createNoAvailableIndexersHandler } from '../handlers/no-available-indexers';
@@ -11,6 +10,7 @@ import { createPremiumStatusHandler } from '../handlers/premium-status';
 import { createSnapshotErrorHandler } from '../handlers/snapshot-error';
 import { createUnmatchedAssetMovementsHandler } from '../handlers/unmatched-asset-movements';
 import { createUnmatchedBridgeTransactionsHandler } from '../handlers/unmatched-bridge-transactions';
+import { createUserMessageHandler } from '../handlers/user-message';
 import { SocketMessageType } from '../types/base';
 
 export function createNotificationRegistry(
@@ -21,7 +21,6 @@ export function createNotificationRegistry(
   | typeof SocketMessageType.BALANCES_SNAPSHOT_ERROR
   | typeof SocketMessageType.BINANCE_PAIRS_MISSING
   | typeof SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED
-  | typeof SocketMessageType.LEGACY
   | typeof SocketMessageType.MISSING_API_KEY
   | typeof SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED
   | typeof SocketMessageType.NO_AVAILABLE_INDEXERS
@@ -30,6 +29,7 @@ export function createNotificationRegistry(
   | typeof SocketMessageType.SOLANA_TOKENS_MIGRATION
   | typeof SocketMessageType.UNMATCHED_ASSET_MOVEMENTS
   | typeof SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS
+  | typeof SocketMessageType.USER_MESSAGE
 > {
   const missingApiKeyHandler = createMissingApiKeyHandler(t, router);
   const binancePairsMissingHandler = createBinancePairsMissingHandler(t, router);
@@ -38,7 +38,6 @@ export function createNotificationRegistry(
     [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: createSnapshotErrorHandler(t),
     [SocketMessageType.BINANCE_PAIRS_MISSING]: binancePairsMissingHandler,
     [SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED]: createGnosisPaySessionHandler(t, router),
-    [SocketMessageType.LEGACY]: createLegacyHandler(t),
     [SocketMessageType.MISSING_API_KEY]: missingApiKeyHandler,
     [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(t, router),
     [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(t, router),
@@ -47,5 +46,6 @@ export function createNotificationRegistry(
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),
     [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(t, router),
+    [SocketMessageType.USER_MESSAGE]: createUserMessageHandler(t),
   };
 }

@@ -23,7 +23,7 @@ All messages sent by the backend via websockets are stringified json and they ha
 ::
 
     {
-        "type": "legacy",
+        "type": "user_message",
         "data": "{"some": 1, "data": 2}"
     }
 
@@ -34,22 +34,31 @@ Messages
 ************
 
 
-Legacy messages
+User messages
 ====================
 
-The messages sent by rotki via the ``MessagesAggregator`` can be found in this type. The format is
+The errors and warnings sent by rotki via the ``MessagesAggregator`` can be found in this type. The format is
 
 
 ::
 
     {
-        "type": "legacy",
-        "data": "{"verbosity": "warning", "value": "A warning"}"
+        "type": "user_message",
+        "data": {
+            "verbosity": "error",
+            "value": "Failed to deserialize a kucoin balance. Ignoring it.",
+            "key": "bad_data",
+            "subject": "kucoin",
+            "fields": {"record": "balance", "error": "Missing key: amount"}
+        }
     }
 
 
 - ``verbosity``: The verbosity of the message. Can be one of ``"warning"`` or ``"error"``.
 - ``value``: A string with the contents of the message.
+- ``key``: Why the message happened, e.g. ``"bad_data"``, ``"network"`` or ``"price"``. ``null`` when the emitter has not classified the message.
+- ``subject``: The location the message is about, e.g. ``"kucoin"``. ``null`` when not given.
+- ``fields``: The data specific to ``key``, e.g. ``record`` and ``error`` for ``"bad_data"``. ``null`` when the message is not classified.
 
 
 Balance snapshot errors

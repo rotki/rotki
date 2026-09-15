@@ -5,12 +5,23 @@ const MESSAGE_ERROR = 'error';
 
 const MessageVerbosity = z.enum([MESSAGE_WARNING, MESSAGE_ERROR]);
 
-export const LegacyMessageData = z.object({
+/**
+ * A bare `add_error` / `add_warning` from the backend.
+ *
+ * @remarks
+ * `key` (why it happened), `subject` (the location it happened to) and `fields` (the family's
+ * unrendered data) are null until an emitter classifies itself. They are accepted here and not
+ * yet read.
+ */
+export const UserMessageData = z.object({
+  fields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).nullish(),
+  key: z.string().nullish(),
+  subject: z.string().nullish(),
   value: z.string(),
   verbosity: MessageVerbosity,
 });
 
-export type LegacyMessageData = z.infer<typeof LegacyMessageData>;
+export type UserMessageData = z.infer<typeof UserMessageData>;
 
 export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
@@ -26,7 +37,6 @@ export const SocketMessageType = {
   GNOSISPAY_SESSIONKEY_EXPIRED: 'gnosispay_sessionkey_expired',
   HISTORY_EVENTS_STATUS: 'history_events_status',
   INTERNAL_TX_FIXED: 'internal_tx_fixed',
-  LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
   MONERIUM_SESSIONKEY_EXPIRED: 'monerium_sessionkey_expired',
   NEGATIVE_BALANCE_DETECTED: 'negative_balance_detected',
@@ -40,6 +50,7 @@ export const SocketMessageType = {
   TRANSACTION_STATUS: 'transaction_status',
   UNMATCHED_ASSET_MOVEMENTS: 'unmatched_asset_movements',
   UNMATCHED_BRIDGE_TRANSACTIONS: 'unmatched_bridge_transactions',
+  USER_MESSAGE: 'user_message',
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];

@@ -1,10 +1,10 @@
 import type { NotificationHandler } from '../interfaces';
 import { NotificationCategory, Priority, Severity } from '@rotki/common';
-import { type LegacyMessageData, MESSAGE_WARNING } from '../types/base';
+import { MESSAGE_WARNING, type UserMessageData } from '../types/base';
 import { createNotificationHandler } from '../utils/handler-factories';
 
 /**
- * Renders a bare `add_error` / `add_warning` string from the backend.
+ * Renders a backend `add_error` / `add_warning` user message.
  *
  * @remarks
  * The lane never interrupts. It carries no type, group or actionability, so all ~150 backend
@@ -14,8 +14,8 @@ import { createNotificationHandler } from '../utils/handler-factories';
  * warrant an interrupt earns it by getting a structured `WSMessageType`, not by being a longer
  * string. `Priority.BULK` is what keeps the lane silent: raise it and all ~190 strings toast again.
  */
-export function createLegacyHandler(t: ReturnType<typeof useI18n>['t']): NotificationHandler<LegacyMessageData> {
-  return createNotificationHandler<LegacyMessageData>(({ value, verbosity }) => ({
+export function createUserMessageHandler(t: ReturnType<typeof useI18n>['t']): NotificationHandler<UserMessageData> {
+  return createNotificationHandler<UserMessageData>(({ value, verbosity }) => ({
     category: NotificationCategory.DEFAULT,
     message: value,
     priority: Priority.BULK,

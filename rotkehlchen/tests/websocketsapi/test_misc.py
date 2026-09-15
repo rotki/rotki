@@ -2,6 +2,7 @@ import asyncio
 import json
 import platform
 from contextlib import suppress
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock
 
 import pytest
@@ -13,8 +14,14 @@ from rotkehlchen.api.asgi import (
     AsgiWebsocketSubscriber,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord, WSMessageType
 from rotkehlchen.concurrency import spawn, wait
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.types import Location
+from rotkehlchen.user_messages import BadData, MessagesAggregator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _send_stuff(msg_aggregator, websocket_connection, string_len):
@@ -58,11 +65,11 @@ def test_requeue_undelivered_messages():
     and are dropped otherwise"""
     msg_aggregator = MessagesAggregator()
     msg_aggregator.requeue_undelivered(json.dumps({
-        'type': 'legacy',
+        'type': 'user_message',
         'data': {'verbosity': 'error', 'value': 'an error'},
     }))
     msg_aggregator.requeue_undelivered(json.dumps({
-        'type': 'legacy',
+        'type': 'user_message',
         'data': {'verbosity': 'warning', 'value': 'a warning'},
     }))
     msg_aggregator.requeue_undelivered(snapshot_error_msg := json.dumps({
@@ -77,6 +84,116 @@ def test_requeue_undelivered_messages():
 
     assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg]
     assert msg_aggregator.consume_warnings() == ['a warning']
+
+
+def test_polling_fallback_keeps_the_envelope() -> None:
+    """Without a socket a user message is queued with its full envelope for the messages
+    endpoint, so its classification survives, while tests, tools and logout still read
+    the rendered text from the same queue."""
+    msg_aggregator = MessagesAggregator()
+    msg_aggregator.add_error(
+        msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
+        classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
+        subject=Location.KUCOIN,
+    )
+    msg_aggregator.add_warning('a warning')
+
+    assert msg_aggregator.consume_error_payloads() == [{
+        'type': 'user_message',
+        'data': {
+            'verbosity': 'error',
+            'value': msg,
+            'key': 'bad_data',
+            'subject': 'kucoin',
+            'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+        },
+    }]
+    assert msg_aggregator.consume_errors() == []  # the payload read drained the queue
+    assert msg_aggregator.consume_warnings() == ['a warning']
+
+
+def test_failed_broadcast_falls_back_by_message_class() -> None:
+    """A broadcast that fails queues a user message with its envelope and an error-class
+    message as it was sent, and drops anything else, the same policy requeue_undelivered
+    applies to a client that disconnected."""
+    def fail_delivery(
+            failure_callback: Callable | None = None,
+            failure_callback_args: dict[str, Any] | None = None,
+            **_kwargs: Any,
+    ) -> None:
+        if failure_callback is not None:
+            failure_callback(**(failure_callback_args or {}))
+
+    msg_aggregator = MessagesAggregator()
+    msg_aggregator.rotki_notifier = Mock(broadcast=Mock(side_effect=fail_delivery))
+    msg_aggregator.add_error('an error')
+    msg_aggregator.add_message(WSMessageType.PROGRESS_UPDATES, {'total': 10, 'processed': 5})
+    msg_aggregator.add_message(
+        WSMessageType.BALANCE_SNAPSHOT_ERROR,
+        snapshot_error := {'location': 'kraken', 'error': 'oops'},
+    )
+
+    assert msg_aggregator.consume_error_payloads() == [
+        {'type': 'user_message', 'data': {
+            'verbosity': 'error',
+            'value': 'an error',
+            'key': None,
+            'subject': None,
+            'fields': None,
+        }},
+        {'type': 'balance_snapshot_error', 'data': snapshot_error},
+    ]
+
+
+def test_user_message_carries_its_classification():
+    """The declared family, subject and unrendered fields reach the wire, and are sent as
+    null when the emitter did not classify itself.
+
+    Sending null rather than omitting the keys is the point: an unclassified message stays
+    visibly unclassified in a capture, instead of looking exactly like a message predating
+    the field. The payload is asserted after process_result and json.dumps because that is
+    where a value neither can handle would be swallowed -- broadcast logs and falls back to
+    polling rather than raising, so a bad `fields` value fails silently.
+    """
+    msg_aggregator = MessagesAggregator()
+    msg_aggregator.rotki_notifier = (notifier := Mock())
+
+    msg_aggregator.add_error(
+        msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
+        classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
+        subject=Location.KUCOIN,
+    )
+    assert json.loads(json.dumps(process_result(
+        notifier.broadcast.call_args.kwargs['to_send_data'],
+    ))) == {
+        'verbosity': 'error',
+        'value': msg,
+        'key': 'bad_data',
+        'subject': 'kucoin',
+        'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+    }
+
+    msg_aggregator.add_warning('an emitter that has not been classified yet')
+    assert notifier.broadcast.call_args.kwargs['to_send_data'] == {
+        'verbosity': 'warning',
+        'value': 'an emitter that has not been classified yet',
+        'key': None,
+        'subject': None,
+        'fields': None,
+    }
+
+
+def test_a_family_cannot_be_emitted_without_its_required_data() -> None:
+    """The data a family promises is required to construct it, not merely documented.
+
+    mypy is the gate that matters, since it fails at the call site. This pins the same
+    guarantee at runtime so that turning a family into a plain class, or giving a required
+    field a default to quiet something, cannot drop it silently: a BAD_DATA message with
+    no `record` would collapse a failed trade and a failed balance into the same row.
+    """
+    with pytest.raises(TypeError):
+        # pylint: disable-next=no-value-for-parameter
+        BadData(record=UserMessageRecord.BALANCE)  # type: ignore[call-arg]  # `error` is not optional
 
 
 def test_disconnect_deauthorized_drops_only_revoked_connections():
@@ -107,7 +224,7 @@ def test_disconnect_deauthorized_drops_only_revoked_connections():
         ungated.close_callback.assert_not_called()
 
         # and the revoked one receives nothing more, even before its close lands
-        notifier.broadcast(message_type='legacy', to_send_data={'value': 'after'})
+        notifier.broadcast(message_type='user_message', to_send_data={'value': 'after'})
         loop.run_until_complete(asyncio.sleep(0))  # send() enqueues via the loop too
         assert revoked.queue.qsize() == 0
         assert live.queue.qsize() == 1

@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.user_messages import MessagesAggregator
+    from rotkehlchen.user_messages import MessageClassification, MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -618,6 +618,16 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             details=details,
             location=self.location,
         )
+
+    def add_classified_error(self, msg: str, classification: MessageClassification) -> None:
+        """Send a classified error about this exchange, with its location as the subject.
+
+        The subject keeps failures of different exchanges from collapsing into one row, so
+        it is filled in here rather than left for each emitter to remember. It is the
+        location and not the instance name: unreadable data or an unreachable remote is the
+        same problem for every instance of an exchange.
+        """
+        self.msg_aggregator.add_error(msg, classification=classification, subject=self.location)
 
 
 class ExchangeInterface(ExchangeWithoutApiSecret):

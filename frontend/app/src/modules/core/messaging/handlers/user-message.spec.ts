@@ -1,12 +1,12 @@
 import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { describe, expect, it } from 'vitest';
-import { createLegacyHandler } from '@/modules/core/messaging/handlers/legacy';
+import { createUserMessageHandler } from '@/modules/core/messaging/handlers/user-message';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
-describe('createLegacyHandler', () => {
+describe('createUserMessageHandler', () => {
   it('should map an error to a bulk error notification with the backend title', async () => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
     const result = await handler.handle({ value: 'Failed to query kraken balances', verbosity: 'error' });
 
@@ -20,7 +20,7 @@ describe('createLegacyHandler', () => {
   });
 
   it('should map a warning to its own severity and title', async () => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
     const result = await handler.handle({ value: 'Ignoring it.', verbosity: 'warning' });
 
@@ -32,7 +32,7 @@ describe('createLegacyHandler', () => {
   });
 
   it.each(['error', 'warning'] as const)('should leave display unset for a %s', async (verbosity) => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
     const result = await handler.handle({ value: 'Skipping balance result.', verbosity });
 
@@ -40,7 +40,7 @@ describe('createLegacyHandler', () => {
   });
 
   it.each(['error', 'warning'] as const)('should not reach the popup queue for a %s', async (verbosity) => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
     const result = await handler.handle({ value: 'Check logs for details.', verbosity });
 

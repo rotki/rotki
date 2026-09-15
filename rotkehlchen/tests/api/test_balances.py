@@ -729,10 +729,13 @@ def test_balance_snapshot_error_message(
     assert websocket_connection.messages_num() == 2
     msg = websocket_connection.pop_message()
     assert msg == {
-        'type': 'legacy',
+        'type': 'user_message',
         'data': {
             'value': 'binance account API request failed. Could not reach binance due to Made a booboo',  # noqa: E501
             'verbosity': 'error',
+            'key': None,
+            'subject': None,
+            'fields': None,
         },
     }
     assert websocket_connection.messages_num() == 1
