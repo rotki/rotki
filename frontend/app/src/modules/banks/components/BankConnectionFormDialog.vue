@@ -3,6 +3,7 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
 import { assert } from '@rotki/common';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -21,6 +22,7 @@ const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form');
 
 const { setupBank } = useBanks();
+const { manifestFor } = useBankConnectionsStore();
 const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -74,7 +76,7 @@ async function save(): Promise<void> {
 
     if (typeof errors === 'string') {
       setMessage({
-        description: t('bank_settings.errors.setup_message', { bank: payload.location, error: errors }),
+        description: t('bank_settings.errors.setup_message', { bank: manifestFor(payload.location)?.displayName ?? payload.location, error: errors }),
         title: t('bank_settings.errors.setup_title'),
       });
     }

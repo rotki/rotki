@@ -1,6 +1,7 @@
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { flushPromises } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -119,6 +120,29 @@ describe('useBanks', () => {
     expect(getBanks).toHaveBeenCalledTimes(3);
   });
 
+  it('should send only the credentials that were filled in when editing, so a blank slot keeps its stored value', async () => {
+    editBank.mockResolvedValue(true);
+    const banks = useBanks();
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: '  ' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Renamed',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: {}, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
+
+    await banks.setupBank({
+      credentials: { api_key: '', api_secret: 'new-secret' },
+      location: 'qonto',
+      mode: 'edit',
+      name: 'Qonto main',
+      newName: 'Qonto main',
+    });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'Qonto main', newName: undefined });
+  });
+
   it('should let a setup error propagate so the dialog can map it onto fields', async () => {
     addBank.mockRejectedValue(new Error('bank said no'));
     const banks = useBanks();
@@ -133,6 +157,15 @@ describe('useBanks', () => {
     const banks = useBanks();
     expect(await banks.removeBank(connection)).toBe(false);
     expect(notifyError).toHaveBeenCalledOnce();
+  });
+
+  it('should leave balances alone when the backend refuses the removal', async () => {
+    useBankConnectionsStore().setConnections([connection]);
+    removeBank.mockResolvedValue(false);
+    const banks = useBanks();
+    expect(await banks.removeBank(connection)).toBe(false);
+    await flushPromises();
+    expect(queryBankBalances).not.toHaveBeenCalled();
   });
 
   it('should sync the picked connection through the bank events activity and refresh the status', async () => {

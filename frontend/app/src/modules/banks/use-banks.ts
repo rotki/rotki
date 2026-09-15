@@ -90,10 +90,14 @@ export function useBanks(): UseBanksReturn {
     });
   };
 
+  /** A blank credential in an edit means "keep the stored one", which the backend only accepts as an absent slot. */
+  const filledCredentials = (credentials: Record<string, string>): Record<string, string> =>
+    Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
+
   const setupBank = async (form: BankFormData): Promise<boolean> => {
     const { credentials, location, mode, name, newName } = form;
     const success = mode === 'edit'
-      ? await api.editBank({ credentials, location, name, newName: newName === name ? undefined : newName })
+      ? await api.editBank({ credentials: filledCredentials(credentials), location, name, newName: newName === name ? undefined : newName })
       : await api.addBank({ credentials, location, name });
     if (success) {
       await refreshBankConnections();
@@ -105,9 +109,10 @@ export function useBanks(): UseBanksReturn {
   const removeBank = async (connection: BankConnectionIdentity): Promise<boolean> => {
     try {
       const success = await api.removeBank(connection);
-      if (success)
+      if (success) {
         await refreshBankConnections();
-      startPromise(fetchBankBalances());
+        startPromise(fetchBankBalances());
+      }
       return success;
     }
     catch (error: unknown) {
