@@ -8,15 +8,20 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 from urllib.parse import urlparse
 
+from fints.exceptions import FinTSClientPINError, FinTSConnectionError
+from fints.models import SEPAAccount
+
+from rotkehlchen.banks.fints import Fints
 from rotkehlchen.banks.qonto import Qonto
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ApiSecret, Location
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -39,7 +44,7 @@ class FixtureTransport:
     def force(self, status_code: int, text: str, headers: dict[str, str] | None = None) -> None:
         self.forced_response = MockResponse(status_code=status_code, text=text, headers=headers)
 
-    def __call__(self, url: str, params: dict[str, Any] | None = None, **kwargs: Any) -> MockResponse:  # noqa: E501
+    def __call__(self, url: str, params: dict[str, Any] | None = None, **kwargs: Any) -> Any:
         path = urlparse(url).path
         self.requests.append((path, dict(params or {})))
         if self.forced_response is not None:
@@ -104,6 +109,80 @@ class QontoFixtureTransport(FixtureTransport):
         }))
 
 
+class FinTSFixtureTransport(FixtureTransport):
+    """A deterministic python-fints client factory backed by redacted fixtures."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.data = json.loads(
+            (BANK_FIXTURES_DIR / 'fints' / 'accounts.json').read_text(encoding='utf8'),
+        )
+        self.product_ids: list[str] = []
+        self.restored_client_data: list[bytes | None] = []
+        self.init_tan_response: Any = None
+
+    def __call__(self, *args: Any, **kwargs: Any) -> FinTSFixtureTransport:
+        if (product_id := kwargs.get('product_id')) is not None:
+            self.product_ids.append(product_id)
+        self.restored_client_data.append(kwargs.get('from_data'))
+        return self
+
+    def __enter__(self) -> None:
+        return None
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def deconstruct(self, including_private: bool = False) -> bytes:
+        return b'fixture-client-state-private' if including_private else b'fixture-client-state'
+
+    def _raise_forced(self) -> None:
+        if self.forced_response is None:
+            return
+        if self.forced_response.status_code in (401, 403):
+            raise FinTSClientPINError('credentials rejected')
+        if self.forced_response.status_code >= 500:
+            raise FinTSConnectionError('endpoint unavailable')
+
+    def get_sepa_accounts(self) -> list[SEPAAccount]:
+        self.requests.append(('accounts', {}))
+        self._raise_forced()
+        return [SEPAAccount(
+            row['iban'], row['bic'], row['accountnumber'], row['subaccount'], row['blz'],
+        ) for row in self.data['accounts']]
+
+    def get_balance(self, account: SEPAAccount) -> SimpleNamespace:
+        self.requests.append(('balance', {'account': account.iban}))
+        self._raise_forced()
+        row = next(row for row in self.data['accounts'] if row['iban'] == account.iban)
+        return SimpleNamespace(amount=SimpleNamespace(
+            amount=FVal(row['balance']),
+            currency=row['currency'],
+        ))
+
+    def get_transactions(
+            self,
+            account: SEPAAccount,
+            start_date=None,
+            end_date=None,
+            include_pending: bool = False,
+    ) -> list[SimpleNamespace]:
+        params = {
+            'account': account.iban,
+            'end_date': end_date,
+            'include_pending': include_pending,
+        }
+        if start_date is not None:
+            params['start_date'] = start_date
+        self.requests.append(('transactions', params))
+        self._raise_forced()
+        return [SimpleNamespace(data={
+            **row,
+            'date': datetime.fromisoformat(row['date']).date(),
+            'amount': SimpleNamespace(amount=FVal(row['amount']), currency=row['currency']),
+        }) for row in self.data['transactions'] if start_date is None or datetime.fromisoformat(row['date']).date() >= start_date]  # noqa: E501
+
+
 @dataclass
 class BankConnectorKit:
     location: Location
@@ -112,16 +191,26 @@ class BankConnectorKit:
     expected_balances: dict[Any, FVal]  # asset -> amount the fixtures add up to
     expected_event_count: int  # final transactions in the fixtures
     cursor_param: str  # the request parameter an incremental sync must carry
-    per_page_param: str = 'per_page'
+    per_page_param: str | None = 'per_page'
     page_param: str = 'page'
     small_page_size: int = 5  # a page size that forces pagination over the fixtures
     extra_ctor_kwargs: dict[str, Any] = field(default_factory=dict)
+    credential_values: dict[str, str] = field(default_factory=lambda: {
+        'api_key': 'test-login',
+        'api_secret': 'test-secret',
+    })
 
     def create(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> BankConnector:
-        return self.connector_class(
+        credentials = self.connector_class.api_credentials_from_values(
             name=f'{self.location!s}1',
-            api_key=ApiKey('test-login'),
-            secret=ApiSecret(b'test-secret'),
+            location=self.location,
+            values=self.credential_values,
+        )
+        assert credentials.api_secret is not None
+        return self.connector_class(
+            name=credentials.name,
+            api_key=credentials.api_key,
+            secret=credentials.api_secret,
             database=database,
             msg_aggregator=msg_aggregator,
             **self.extra_ctor_kwargs,
@@ -145,8 +234,26 @@ BANK_KITS: list[BankConnectorKit] = [
         expected_event_count=28,
         cursor_param='updated_at_from',
     ),
+    BankConnectorKit(
+        location=Location.FINTS,
+        connector_class=Fints,
+        create_transport=FinTSFixtureTransport,
+        expected_balances={A_EUR: FVal('1250')},
+        expected_event_count=3,
+        cursor_param='start_date',
+        per_page_param=None,
+        extra_ctor_kwargs={'product_id': '0123456789012345678901234'},
+        credential_values={
+            'bank_code': '12030000',
+            'endpoint': 'https://bank.example/fints',
+            'username': 'test-login',
+            'pin': 'test-secret',
+        },
+    ),
 ]
 
 
 def patch_bank_transport(connector: BankConnector, transport: FixtureTransport) -> _patch:
+    if isinstance(connector, Fints):
+        return patch.object(connector, 'client_factory', transport)
     return patch.object(connector.session, 'get', side_effect=transport)

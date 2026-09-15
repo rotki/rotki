@@ -58,6 +58,34 @@ QONTO_MANIFEST: Final = BankManifest(
     ),
 )
 
+FINTS_MANIFEST: Final = BankManifest(
+    location=Location.FINTS,
+    display_name='FinTS/HBCI',
+    access_tier=BankAccessTier.FINTS,
+    capabilities=frozenset({BankCapability.BALANCES, BankCapability.TRANSACTIONS}),
+    auth_flow=(
+        AuthStep(primitive=AuthPrimitive.USERNAME_PASSWORD),
+        AuthStep(primitive=AuthPrimitive.OTP_INPUT, prompt='Enter the TAN shown by your bank'),
+        AuthStep(primitive=AuthPrimitive.APP_APPROVAL_POLL, timeout_seconds=300),
+        AuthStep(primitive=AuthPrimitive.CHALLENGE_DISPLAY, prompt='Complete the bank challenge and enter its TAN'),  # noqa: E501
+    ),
+    secrets=(
+        SecretField(slot='bank_code', label='Bank code (BLZ)', secret=False),
+        SecretField(slot='endpoint', label='FinTS endpoint', description='The HTTPS PIN/TAN URL published by your bank', secret=False),  # noqa: E501
+        SecretField(slot='username', label='Online banking username', secret=False),
+        SecretField(slot='pin', label='Online banking PIN'),
+    ),
+    maintainer='rotki',
+    version='1.0.0',
+    docs_url='https://python-fints.readthedocs.io/en/latest/quickstart.html',
+    setup_notes=(
+        'Enter the eight-digit BLZ and the HTTPS FinTS PIN/TAN endpoint published by your bank.',
+        'rotki connects directly from this machine. The PIN and reusable FinTS state stay in the encrypted user database.',  # noqa: E501
+        'Only settled balances and booked transactions are read; rotki never initiates payments.',
+    ),
+)
+
 BANK_MANIFESTS: Final = {
     Location.QONTO: QONTO_MANIFEST,
+    Location.FINTS: FINTS_MANIFEST,
 }

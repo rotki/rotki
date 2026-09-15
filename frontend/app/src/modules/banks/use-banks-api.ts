@@ -1,19 +1,23 @@
 import {
+  BankAuthChallenge,
   type BankConnectionEditPayload,
   type BankConnectionIdentity,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
+  type BankSetupResult,
   type BankSyncPayload,
 } from '@/modules/banks/types';
 import { api } from '@/modules/core/api/rotki-api';
+import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 interface UseBanksApiReturn {
   getSupportedBanks: () => Promise<BankManifests>;
   getBanks: () => Promise<BankConnections>;
-  addBank: (payload: BankConnectionPayload) => Promise<boolean>;
+  addBank: (payload: BankConnectionPayload) => Promise<BankSetupResult>;
+  answerAuthentication: (payload: BankConnectionIdentity & { response?: string }) => Promise<BankSetupResult>;
   editBank: (payload: BankConnectionEditPayload) => Promise<boolean>;
   removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
@@ -37,8 +41,18 @@ export function useBanksApi(): UseBanksApiReturn {
     return BankConnections.parse(data);
   };
 
-  const addBank = async (payload: BankConnectionPayload): Promise<boolean> =>
-    api.put<boolean>('/banks', payload);
+  const parseSetupResult = (result: boolean | unknown): BankSetupResult =>
+    typeof result === 'boolean' ? result : BankAuthChallenge.parse(result);
+
+  const authStatuses = [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.BAD_REQUEST, HTTPStatus.CONFLICT];
+
+  const addBank = async (payload: BankConnectionPayload): Promise<BankSetupResult> => parseSetupResult(
+    await api.put<boolean | unknown>('/banks', payload, { validStatuses: authStatuses }),
+  );
+
+  const answerAuthentication = async (payload: BankConnectionIdentity & { response?: string }): Promise<BankSetupResult> => parseSetupResult(
+    await api.post<boolean | unknown>('/banks/auth', payload, { validStatuses: authStatuses }),
+  );
 
   const editBank = async (payload: BankConnectionEditPayload): Promise<boolean> =>
     api.patch<boolean>('/banks', payload, { filterEmptyProperties: { removeEmptyString: true } });
@@ -60,6 +74,7 @@ export function useBanksApi(): UseBanksApiReturn {
 
   return {
     addBank,
+    answerAuthentication,
     editBank,
     getBanks,
     getSupportedBanks,

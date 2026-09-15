@@ -4,8 +4,10 @@ Every connector maps bank responses onto these so that callers (the exchange man
 API, the UI) can react uniformly without knowing the bank. They subclass RemoteError so
 that all the existing exchange error handling keeps working unchanged.
 """
+from dataclasses import dataclass
 from typing import Any
 
+from rotkehlchen.banks.manifest import AuthPrimitive  # noqa: TC001  # serialized at runtime
 from rotkehlchen.errors.misc import RemoteError
 
 
@@ -18,9 +20,34 @@ class BankAuthExpired(BankError):
     connector's auth flow (for a static secret: enter a new key)."""
 
 
+@dataclass(frozen=True)
+class BankAuthChallenge:
+    """A connector-independent interactive authentication prompt."""
+    primitive: AuthPrimitive
+    prompt: str
+    challenge: str | None = None
+    challenge_html: str | None = None
+    challenge_data: str | None = None
+    challenge_mime_type: str | None = None
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            'primitive': self.primitive.serialize(),
+            'prompt': self.prompt,
+            'challenge': self.challenge,
+            'challenge_html': self.challenge_html,
+            'challenge_data': self.challenge_data,
+            'challenge_mime_type': self.challenge_mime_type,
+        }
+
+
 class BankMFARequired(BankError):
     """The bank demands a second factor before it serves data. The connector's auth flow
     says which primitive (otp input, app approval, challenge) satisfies it."""
+
+    def __init__(self, challenge: BankAuthChallenge) -> None:
+        super().__init__(challenge.prompt)
+        self.challenge = challenge
 
 
 class BankRateLimited(BankError):

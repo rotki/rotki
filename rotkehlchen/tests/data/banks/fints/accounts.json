@@ -1,0 +1,10 @@
+{
+  "accounts": [
+    {"iban": "DE02120300000000202051", "bic": "BYLADEM1001", "accountnumber": "202051", "subaccount": null, "blz": "12030000", "balance": "1250.00", "currency": "EUR"}
+  ],
+  "transactions": [
+    {"date": "2026-08-01", "amount": "1500.00", "currency": "EUR", "applicant_name": "Employer GmbH", "applicant_iban": "DE11111111111111111111", "purpose": "Salary", "purpose_code": "SALA", "bank_reference": "REF-1"},
+    {"date": "2026-08-03", "amount": "-200.00", "currency": "EUR", "applicant_name": "Landlord", "applicant_iban": "DE22222222222222222222", "purpose": "Rent", "purpose_code": "ESDD", "bank_reference": "REF-2"},
+    {"date": "2026-08-04", "amount": "-50.00", "currency": "EUR", "applicant_name": "Shop", "applicant_iban": null, "purpose": "Card purchase", "purpose_code": "CCRD", "bank_reference": "REF-3"}
+  ]
+}

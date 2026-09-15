@@ -7,15 +7,12 @@ secrets it stores in which credential slot, and the user-facing setup notes.
 """
 from dataclasses import dataclass, field
 from enum import auto
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.types import Location
-
-CredentialSlot = Literal['api_key', 'api_secret', 'passphrase']
-CREDENTIAL_SLOTS: Final = ('api_key', 'api_secret', 'passphrase')
 
 
 class BankAccessTier(SerializableEnumNameMixin):
@@ -60,17 +57,24 @@ class AuthStep:
 
 @dataclass(frozen=True)
 class SecretField:
-    """A credential the user enters at setup, and the slot it is stored in.
+    """A credential or connection value the user enters at setup.
 
-    Slots are the columns of the user_credentials table, so the setup UI can render the
-    field generically while the storage stays the one every exchange already uses.
+    ``slot`` is the connector-facing name. Connectors may pack these values into the existing
+    encrypted credential columns, allowing protocols that need more than three inputs without
+    introducing another storage model.
     """
-    slot: CredentialSlot
+    slot: str
     label: str  # what the bank calls it, e.g. "Login" / "Secret key"
     description: str = ''
+    secret: bool = True
 
     def serialize(self) -> dict[str, Any]:
-        return {'slot': self.slot, 'label': self.label, 'description': self.description}
+        return {
+            'slot': self.slot,
+            'label': self.label,
+            'description': self.description,
+            'secret': self.secret,
+        }
 
 
 @dataclass(frozen=True)
@@ -99,11 +103,6 @@ class BankManifest:
         slots = [secret.slot for secret in self.secrets]
         if len(slots) != len(set(slots)):
             raise ValueError(f'credential slots must be unique, got {slots}')
-        for slot in slots:
-            if slot not in CREDENTIAL_SLOTS:
-                raise ValueError(f'unknown credential slot {slot}')
-        if 'api_key' not in slots:
-            raise ValueError('the api_key slot is required: it is the credential identity')
         uses_static_secret = any(s.primitive == AuthPrimitive.STATIC_SECRET for s in self.auth_flow)  # noqa: E501
         if uses_static_secret and len(self.secrets) == 0:
             raise ValueError('a static_secret auth flow needs at least one secret field')

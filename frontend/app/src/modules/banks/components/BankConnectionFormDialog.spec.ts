@@ -8,14 +8,15 @@ import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionF
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import '@test/i18n';
 
-const { setMessage, setupBank, validate } = vi.hoisted(() => ({
+const { answerBankAuthentication, setMessage, setupBank, validate } = vi.hoisted(() => ({
+  answerBankAuthentication: vi.fn(),
   setMessage: vi.fn(),
   setupBank: vi.fn(),
   validate: vi.fn(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
-  useBanks: (): Record<string, unknown> => ({ setupBank }),
+  useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, setupBank }),
 }));
 
 vi.mock('@/modules/core/common/use-message-store', () => ({
@@ -105,5 +106,50 @@ describe('bankConnectionFormDialog', () => {
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
       description: 'bank_settings.errors.setup_message::qonto, Qonto rejected the credentials',
     }));
+  });
+
+  it('should display and answer a TAN challenge without restarting setup', async () => {
+    setupBank.mockResolvedValue({
+      challenge: 'Enter TAN',
+      challengeData: null,
+      challengeHtml: null,
+      challengeMimeType: null,
+      primitive: 'otp input',
+      prompt: 'Enter TAN',
+    });
+    answerBankAuthentication.mockResolvedValue(true);
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+    expect(wrapper.find('[data-testid=bank-auth-challenge]').text()).toContain('Enter TAN');
+    await wrapper.find('[data-testid=bank-auth-response] input').setValue('123456');
+    await confirm();
+
+    expect(setupBank).toHaveBeenCalledOnce();
+    expect(answerBankAuthentication).toHaveBeenCalledWith(
+      { location: 'qonto', name: 'Qonto main' },
+      '123456',
+    );
+    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+  });
+
+  it('should discard a pending challenge when the dialog is cancelled', async () => {
+    setupBank.mockResolvedValue({
+      challenge: 'Enter TAN',
+      challengeData: null,
+      challengeHtml: null,
+      challengeMimeType: null,
+      primitive: 'otp input',
+      prompt: 'Enter TAN',
+    });
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+    wrapper.findComponent(BigDialogStub).vm.$emit('cancel');
+    await wrapper.setProps({ modelValue: undefined });
+    await wrapper.setProps({ modelValue: { ...createForm(), name: 'Another bank' } });
+
+    expect(wrapper.find('[data-testid=bank-auth-challenge]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=form-stub]').exists()).toBe(true);
   });
 });

@@ -102,17 +102,31 @@ defineExpose({
       data-testid="bank-connection-name"
     />
 
-    <RuiRevealableTextField
+    <template
       v-for="secret in manifest?.secrets ?? []"
       :key="secret.slot"
-      v-model="form.state.credentials[secret.slot]"
-      variant="outlined"
-      color="primary"
-      :label="secret.label"
-      :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
-      :error-messages="form.errors(`credentials.${secret.slot}`)"
-      :data-testid="`bank-connection-secret-${secret.slot}`"
-    />
+    >
+      <RuiRevealableTextField
+        v-if="secret.secret"
+        v-model="form.state.credentials[secret.slot]"
+        variant="outlined"
+        color="primary"
+        :label="secret.label"
+        :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
+        :error-messages="form.errors(`credentials.${secret.slot}`)"
+        :data-testid="`bank-connection-secret-${secret.slot}`"
+      />
+      <RuiTextField
+        v-else
+        v-model="form.state.credentials[secret.slot]"
+        variant="outlined"
+        color="primary"
+        :label="secret.label"
+        :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
+        :error-messages="form.errors(`credentials.${secret.slot}`)"
+        :data-testid="`bank-connection-secret-${secret.slot}`"
+      />
+    </template>
 
     <RuiAlert
       v-if="manifest && manifest.setupNotes.length > 0"

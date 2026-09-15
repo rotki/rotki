@@ -1,9 +1,10 @@
-import type { BankConnection, BankManifest } from '@/modules/banks/types';
+import type { BankAuthChallenge, BankConnection, BankManifest } from '@/modules/banks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
+import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
@@ -40,7 +41,7 @@ const manifest: BankManifest = {
   docsUrl: 'https://docs.qonto.com',
   location: 'qonto',
   maintainer: 'rotki',
-  secrets: [{ description: '', label: 'Login', slot: 'api_key' }, { description: '', label: 'Secret', slot: 'api_secret' }],
+  secrets: [{ description: '', label: 'Login', secret: false, slot: 'api_key' }, { description: '', label: 'Secret', secret: true, slot: 'api_secret' }],
   setupNotes: [],
   version: '1.0.0',
 };
@@ -49,7 +50,7 @@ const connection: BankConnection = {
   displayName: 'Qonto',
   location: 'qonto',
   name: 'Qonto main',
-  syncStatus: { lastError: 'boom', lastSyncTs: 1757595000, running: false },
+  syncStatus: { authChallenge: null, lastError: 'boom', lastSyncTs: 1757595000, running: false },
 };
 
 describe('banks page', () => {
@@ -62,6 +63,7 @@ describe('banks page', () => {
         plugins: [pinia],
         stubs: {
           BankConnectionFormDialog: true,
+          BankAuthenticationDialog: true,
           DateDisplay: true,
           LocationDisplay: true,
           RouterLink: true,
@@ -123,6 +125,31 @@ describe('banks page', () => {
     wrapper.findComponent(BankConnectionActions).vm.$emit('sync');
     await flushPromises();
     expect(syncBanks).toHaveBeenCalledWith({ location: 'qonto', name: 'Qonto main' });
+  });
+
+  it('should open authentication for a connection with a pending challenge', async () => {
+    const challenge: BankAuthChallenge = {
+      challenge: 'Approve access',
+      challengeData: null,
+      challengeHtml: null,
+      challengeMimeType: null,
+      primitive: 'app approval poll',
+      prompt: 'Approve access',
+    };
+    useBankConnectionsStore().setConnections([{
+      ...connection,
+      syncStatus: { ...connection.syncStatus, authChallenge: challenge },
+    }]);
+    wrapper = createWrapper();
+    await flushPromises();
+
+    wrapper.findComponent(BankConnectionActions).vm.$emit('authenticate');
+    await nextTick();
+    expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({
+      challenge,
+      location: 'qonto',
+      name: 'Qonto main',
+    });
   });
 
   it('should edit a connection with its name and empty credentials, and confirm before removing', async () => {
