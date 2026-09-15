@@ -1,6 +1,7 @@
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { useMoneriumOAuth } from './use-monerium-auth';
 
 const getStatus = vi.fn();
@@ -31,6 +32,7 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
 }));
 
 async function parkSharedInstanceThenResetMocks(): Promise<void> {
+  setActivePinia(createPinia());
   set(logged, false);
   set(allowed, false);
   await flushPromises();
@@ -196,6 +198,35 @@ describe('useMoneriumOAuth', () => {
       await flushPromises();
 
       await expect(completeOAuth('a', 'r')).rejects.toThrow('oauth failed');
+    });
+  });
+
+  describe('the expired-session row', () => {
+    function raisedKinds(): string[] {
+      return get(useRaisedConditionsStore().conditions).map(({ kind }) => kind);
+    }
+
+    beforeEach(() => {
+      const { raise } = useRaisedConditionsStore();
+      raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
+      raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+      getStatus.mockResolvedValue({ authenticated: true });
+    });
+
+    it('should come down once the user authenticates again, so a later disconnect does not bring it back', async () => {
+      completeOAuthApi.mockResolvedValue({ message: 'ok' });
+
+      await useMoneriumOAuth().completeOAuth('a', 'r');
+
+      expect(raisedKinds()).toEqual([RaisedConditionKind.GNOSIS_PAY_SESSION]);
+    });
+
+    it('should stay when the authentication fails', async () => {
+      completeOAuthApi.mockRejectedValue(new Error('oauth failed'));
+
+      await expect(useMoneriumOAuth().completeOAuth('a', 'r')).rejects.toThrow('oauth failed');
+
+      expect(raisedKinds()).toEqual([RaisedConditionKind.MONERIUM_SESSION, RaisedConditionKind.GNOSIS_PAY_SESSION]);
     });
   });
 

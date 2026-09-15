@@ -37,7 +37,7 @@ export function createOraclePenalizedHandler(
       message: reason === 'timeout'
         ? t('notification_messages.oracle_penalized.message_timeout', props)
         : t('notification_messages.oracle_penalized.message_errors', props),
-      priority: Priority.ACTION,
+      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: t('notification_messages.oracle_penalized.title', props),
     };

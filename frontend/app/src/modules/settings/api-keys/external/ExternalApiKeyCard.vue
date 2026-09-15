@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { ExternalServiceKey } from '@/modules/integrations/types';
 import type { ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useServiceKeyHandler } from '@/modules/settings/api-keys/external/use-service-key-handler';
-import { useServiceKeyNotifications } from '@/modules/settings/api-keys/external/use-service-key-notifications';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -17,29 +15,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, useApiKey, confirmDelete, loading, save } = useExternalApiKeys();
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
-const { dismissCategory, dismissNamedService } = useServiceKeyNotifications();
 
 const key = useApiKey(() => service.name);
 const status = actionStatus(() => service.name);
-
-/** Clears the notification that asked for this key, the way the service's notification is filed. */
-function dismissKeyRequest(): void {
-  const { dismissal } = service;
-  if (!dismissal)
-    return;
-
-  if ('category' in dismissal)
-    dismissCategory(dismissal.category);
-  else
-    dismissNamedService(service.name);
-}
-
-async function saveKey(payload: ExternalServiceKey): Promise<void> {
-  if (service.dismissal)
-    await save(payload, dismissKeyRequest);
-  else
-    await save(payload);
-}
 </script>
 
 <template>
@@ -81,7 +59,7 @@ async function saveKey(payload: ExternalServiceKey): Promise<void> {
       :hint="t(service.hint)"
       :loading="loading"
       :status="status"
-      @save="saveKey($event)"
+      @save="save($event)"
     >
       <i18n-t
         v-if="service.link"

@@ -37,18 +37,6 @@ vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   }),
 }));
 
-vi.mock('@/modules/history/events/use-history-events-status', () => ({
-  useHistoryEventsStatus: (): object => ({ processing: ref(false) }),
-}));
-
-vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
-  useUnmatchedAssetMovements: (): object => ({ autoMatchLoading: ref(false) }),
-}));
-
-vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
-  useUnmatchedBridgeTransactions: (): object => ({ autoMatchLoading: ref(false) }),
-}));
-
 vi.mock('vue-router', () => ({
   useRouter: (): object => ({ push: state.push }),
 }));
@@ -89,28 +77,26 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     set(state.checking, false);
   });
 
-  it('should show the category count when there is something to act on', () => {
+  it('should name what needs attention without a badge, since the header already counts it', () => {
     set(state.categoryCount, 3);
 
     const wrapper = mountCenter();
 
-    expect(wrapper.find('[data-testid=actions-center-button-count]').text()).toBe('3');
-    expect(wrapper.text()).toContain('action_center.button');
+    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.subtitle::3');
+    expect(wrapper.findComponent({ name: 'RuiBadge' }).props('modelValue')).toBe(false);
   });
 
-  it('should stay countless and quiet while the counts are still pending', () => {
+  it('should stay quiet while the counts are still pending', () => {
     set(state.checking, true);
 
     const wrapper = mountCenter();
 
-    expect(wrapper.find('[data-testid=actions-center-button-count]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.button_checking');
   });
 
   it('should report all clear once a scan has landed with nothing to do', () => {
     const wrapper = mountCenter();
 
-    expect(wrapper.find('[data-testid=actions-center-button-count]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.button_clear');
   });
 
@@ -122,11 +108,20 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     expect(menu.find('[data-testid=actions-center-button]').exists()).toBe(true);
   });
 
-  it('should scan as soon as the history work is settled, including immediately on a page opened against an already-synced session', () => {
+  it('should refresh the undecoded breakdown on mount and leave the scan to the global center', () => {
     mountCenter();
 
-    expect(state.refreshAll).toHaveBeenCalledOnce();
     expect(state.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledOnce();
+    expect(state.refreshAll).not.toHaveBeenCalled();
+  });
+
+  it('should re-scan when asked from the panel', async () => {
+    const wrapper = mountCenter();
+    const list = await openMenu(wrapper);
+
+    list.vm.$emit('refresh');
+
+    expect(state.refreshAll).toHaveBeenCalledOnce();
   });
 
   it('should forward a dialog target and close the menu', async () => {
@@ -151,7 +146,6 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     list.vm.$emit('open', { kind: 'pin', panel: toPinned(PinnedNames.DATA_ISSUES, {}) });
     await nextTick();
 
-    // The panel is pinned, focused and the rail revealed, without leaving the page.
     expect(get(store.pinnedPanels).map(panel => panel.name)).toEqual([PinnedNames.DATA_ISSUES]);
     expect(get(store.activePinnedId)).toBe(PinnedNames.DATA_ISSUES);
     expect(get(store.showPinned)).toBe(true);

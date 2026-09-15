@@ -9,6 +9,7 @@ const { item } = defineProps<{
 
 const emit = defineEmits<{
   action: [item: ActionItem<TTarget>];
+  option: [target: TTarget];
 }>();
 
 const SEVERITY_COLORS: Record<ActionSeverity, ContextColorsType | undefined> = {
@@ -75,6 +76,31 @@ const lockedHint = computed<string>(() => item.minimumTier
       <p class="text-caption text-rui-text-secondary">
         {{ item.locked ? lockedHint : item.description }}
       </p>
+      <div
+        v-if="!item.locked && item.options.length > 0"
+        class="flex flex-wrap gap-x-3 -ml-1.5"
+      >
+        <RuiButton
+          v-for="option in item.options"
+          :key="option.id"
+          size="sm"
+          variant="text"
+          :color="option.danger ? 'error' : undefined"
+          class="!px-1.5 !py-0.5 !text-caption"
+          :class="{ '!text-rui-text-secondary': !option.danger }"
+          data-testid="actions-center-row-option"
+          :data-key="option.id"
+          @click="emit('option', option.target)"
+        >
+          <template #prepend>
+            <RuiIcon
+              :name="option.icon"
+              size="14"
+            />
+          </template>
+          {{ option.label }}
+        </RuiButton>
+      </div>
     </div>
 
     <RuiTooltip

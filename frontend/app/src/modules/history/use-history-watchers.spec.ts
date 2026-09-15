@@ -57,14 +57,6 @@ vi.mock('@/modules/history/balances/use-historical-balances', () => ({
   })),
 }));
 
-const mockRemoveMatching = vi.fn();
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn((): { removeMatching: (predicate: (n: unknown) => boolean) => void } => ({
-    removeMatching: mockRemoveMatching,
-  })),
-}));
-
 const mockConnectedExchanges = ref<string[]>([]);
 
 vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', () => ({
@@ -74,14 +66,6 @@ vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', () => ({
   } => ({
     $id: 'exchanges',
     connectedExchanges: mockConnectedExchanges,
-  })),
-}));
-
-const mockCurrentRoute = ref<{ name: string }>({ name: '/' });
-
-vi.mock('vue-router', () => ({
-  useRouter: vi.fn((): { currentRoute: Ref<{ name: string }> } => ({
-    currentRoute: mockCurrentRoute,
   })),
 }));
 
@@ -112,7 +96,6 @@ describe('useHistoryWatchers', () => {
     set(mockEventsVersion, 0);
     set(mockHasUnprocessedModifications, false);
     set(mockConnectedExchanges, []);
-    set(mockCurrentRoute, { name: '/' });
 
     scope = effectScope();
   });
@@ -185,30 +168,6 @@ describe('useHistoryWatchers', () => {
       expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
       expect(mockTriggerAssetMovementAutoMatching).not.toHaveBeenCalled();
       expect(mockTriggerBridgeAutoMatching).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('route watcher', () => {
-    it('should remove matching notifications when navigating to history events', async () => {
-      setupWatchers();
-      await nextTick();
-
-      set(mockCurrentRoute, { name: '/history/events/' });
-      await nextTick();
-
-      expect(mockRemoveMatching).toHaveBeenCalled();
-    });
-
-    it('should not remove notifications when navigating to other routes', async () => {
-      setupWatchers();
-      await nextTick();
-
-      vi.clearAllMocks();
-
-      set(mockCurrentRoute, { name: '/dashboard/' });
-      await nextTick();
-
-      expect(mockRemoveMatching).not.toHaveBeenCalled();
     });
   });
 

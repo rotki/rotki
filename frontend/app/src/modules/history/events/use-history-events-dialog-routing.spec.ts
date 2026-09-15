@@ -1,9 +1,9 @@
 import type { EffectScope } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
-import { useHistoryEventsDialogRouting } from '@/modules/history/events/use-history-events-dialog-routing';
+import { historyDialogRoute, isRoutableDialogType, useHistoryEventsDialogRouting } from '@/modules/history/events/use-history-events-dialog-routing';
 
 const route = reactive<{ query: LocationQuery }>({ query: {} });
 const replace = vi.fn<(to: unknown) => Promise<void>>();
@@ -60,4 +60,29 @@ describe('modules/history/events/use-history-events-dialog-routing', () => {
     expect(show).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
   });
+
+  it.each([
+    [DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES, 'openCustomizedEventDuplicatesDialog'],
+    [DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS, 'openMatchBridgesDialog'],
+  ])('should route to the history page with the query that opens %s', async (type, key) => {
+    route.query = historyQuery(type);
+
+    const show = setup();
+    await flushPromises();
+
+    expect(Object.keys(route.query)).toEqual([key]);
+    expect(show).toHaveBeenCalledExactlyOnceWith({ type });
+  });
+
+  it('should tell a dialog a route can open apart from one it cannot', () => {
+    expect(isRoutableDialogType(DIALOG_TYPES.INTERNAL_TX_CONFLICTS)).toBe(true);
+    expect(isRoutableDialogType(DIALOG_TYPES.ADD_TRANSACTION)).toBe(false);
+  });
 });
+
+/** The query `historyDialogRoute` builds, so a spec can feed it back to the page that reads it. */
+function historyQuery(type: Parameters<typeof historyDialogRoute>[0]): LocationQuery {
+  const target = historyDialogRoute(type);
+  assert(typeof target === 'object' && 'query' in target && target.query !== undefined);
+  return Object.fromEntries(Object.entries(target.query).map(([key, value]) => [key, String(value)]));
+}

@@ -1,14 +1,9 @@
-import type { Router } from 'vue-router';
-import { assert, NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
-import { mockT } from '@test/i18n';
-import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMoneriumSessionHandler } from '@/modules/core/messaging/handlers/monerium-session';
-import { createNotification } from '@/modules/core/notifications/notification-utils';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const mockRefreshStatus = vi.fn();
+const mockRefreshStatus = vi.fn<() => Promise<void>>();
 const mockSetStatus = vi.fn();
-const mockPush = vi.fn();
 
 vi.mock('@/modules/integrations/monerium/use-monerium-auth', () => ({
   useMoneriumOAuth: vi.fn(() => ({
@@ -17,38 +12,38 @@ vi.mock('@/modules/integrations/monerium/use-monerium-auth', () => ({
   })),
 }));
 
-const router = createMock<Router>({ push: mockPush });
-
 describe('createMoneriumSessionHandler', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockRefreshStatus.mockResolvedValue(undefined);
   });
 
-  it('should build a warning notification with a re-authenticate action', async () => {
-    const handler = createMoneriumSessionHandler(mockT, router);
+  it('should raise the expired-session row and create no notification', async () => {
+    const handler = createMoneriumSessionHandler();
+
     const result = await handler.handle({ error: 'session expired' });
 
-    assert(result);
-    expect(result.category).toBe(NotificationCategory.DEFAULT);
-    expect(result.severity).toBe(Severity.WARNING);
-    expect(result.message).toBe('session expired');
-    expect(createNotification(1, result).display).toBe(true);
+    expect(result).toBeNull();
+    expect(useRaisedConditionsStore().conditions).toEqual([{ kind: RaisedConditionKind.MONERIUM_SESSION }]);
   });
 
-  it('should share the group of the authentication flow, so a re-authentication replaces it', async () => {
-    const handler = createMoneriumSessionHandler(mockT, router);
-    const result = await handler.handle({ error: 'session expired' });
+  it('should clear the local authentication state before refreshing it', async () => {
+    const handler = createMoneriumSessionHandler();
 
-    assert(result);
-    expect(result.group).toBe(NotificationGroup.MONERIUM_AUTH);
-  });
-
-  it('should clear the local authentication state before notifying', async () => {
-    const handler = createMoneriumSessionHandler(mockT, router);
     await handler.handle({ error: 'session expired' });
 
     expect(mockSetStatus).toHaveBeenCalledWith({ authenticated: false });
     expect(mockRefreshStatus).toHaveBeenCalledOnce();
+    expect(mockSetStatus.mock.invocationCallOrder[0]).toBeLessThan(mockRefreshStatus.mock.invocationCallOrder[0]);
+  });
+
+  it('should keep the row raised when the status refresh fails', async () => {
+    mockRefreshStatus.mockRejectedValue(new Error('offline'));
+    const handler = createMoneriumSessionHandler();
+
+    await handler.handle({ error: 'session expired' });
+
+    expect(useRaisedConditionsStore().conditions).toEqual([{ kind: RaisedConditionKind.MONERIUM_SESSION }]);
   });
 });

@@ -154,7 +154,6 @@ describe('useNotificationDispatcher', () => {
 
     notify({
       action: { action: vi.fn, label: 'Action' },
-      i18nParam: { choice: 0, message: '', props: {} },
       message: 'action-msg',
       priority: Priority.ACTION,
       title: 'action',

@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
-import type { ActionItem } from '@/modules/core/action-center/types';
+import type { ActionCenterSection, ActionItem } from '@/modules/core/action-center/types';
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 
 const {
@@ -8,11 +8,14 @@ const {
   cleared,
   clearHint,
   count,
-  items,
+  items = [],
   refreshing = false,
+  sections = [],
 } = defineProps<{
   /** the rows worth showing, in the order they should appear */
-  items: ActionItem<TTarget>[];
+  items?: ActionItem<TTarget>[];
+  /** rows grouped under headings; when there are any they are shown instead of `items` */
+  sections?: ActionCenterSection<TTarget>[];
   /** categories with nothing pending, rendered as the checked strip */
   cleared: ActionItem<TTarget>[];
   /** how many categories are actually asking for something (drives the subtitle) */
@@ -87,8 +90,30 @@ const subtitle = computed<string>(() => {
       </RuiButton>
     </div>
 
+    <template v-if="sections.length > 0">
+      <section
+        v-for="section in sections"
+        :key="section.id"
+        data-testid="actions-center-section"
+        :data-key="section.id"
+      >
+        <h6 class="px-4 pt-3 text-caption font-medium uppercase text-rui-text-secondary">
+          {{ section.title }}
+        </h6>
+        <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
+          <ActionCenterRow
+            v-for="item in section.items"
+            :key="item.id"
+            :item="item"
+            @action="emit('open', $event.target)"
+            @option="emit('open', $event)"
+          />
+        </div>
+      </section>
+    </template>
+
     <div
-      v-if="items.length > 0"
+      v-else-if="items.length > 0"
       class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
     >
       <ActionCenterRow
@@ -96,6 +121,7 @@ const subtitle = computed<string>(() => {
         :key="item.id"
         :item="item"
         @action="emit('open', $event.target)"
+        @option="emit('open', $event)"
       />
     </div>
 

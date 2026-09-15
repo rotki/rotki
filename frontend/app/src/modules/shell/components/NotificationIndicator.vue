@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
-import { useNotificationBadge } from '@/modules/shell/components/use-notification-badge';
 
 defineProps<{
   visible: boolean;
@@ -10,44 +10,40 @@ defineProps<{
 const emit = defineEmits<{
   click: [];
 }>();
-const { actionCount, color: badgeColor, hasUnread, text: badgeText, visible: badgeVisible } = useNotificationBadge();
-
-function click() {
-  emit('click');
-}
-
-const { silent } = useSilentNotifications();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { hasUnread } = storeToRefs(useNotificationsStore());
+
+const { silent } = useSilentNotifications();
+
 /**
- * Says what the badge means, since a dot says nothing on its own.
+ * Says what the dot means, since a dot says nothing on its own.
  *
  * @remarks
- * Doubles as the button's accessible name: the count reaches a screen reader as a bare number and
- * the dot does not reach it at all, so without this the badge is a purely visual signal.
+ * Doubles as the button's accessible name: the dot does not reach a screen reader at all, so
+ * without this it is a purely visual signal.
  */
 const tooltip = computed<string>(() => {
   if (get(silent))
     return t('notification_indicator.tooltip_silent');
-
-  const count = get(actionCount);
-  if (count > 0)
-    return t('notification_indicator.tooltip_action', { count }, count);
 
   if (get(hasUnread))
     return t('notification_indicator.tooltip_unread');
 
   return t('notification_indicator.tooltip');
 });
+
+function click(): void {
+  emit('click');
+}
 </script>
 
 <template>
   <RuiBadge
-    :text="badgeText"
-    :dot="!badgeText"
-    :model-value="badgeVisible"
-    :color="badgeColor"
+    :model-value="hasUnread"
+    dot
+    color="primary"
     placement="top"
     size="sm"
     offset-y="14"

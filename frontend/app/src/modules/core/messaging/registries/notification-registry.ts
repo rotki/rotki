@@ -31,21 +31,18 @@ export function createNotificationRegistry(
   | typeof SocketMessageType.UNMATCHED_ASSET_MOVEMENTS
   | typeof SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS
 > {
-  const missingApiKeyHandler = createMissingApiKeyHandler(t, router);
-  const binancePairsMissingHandler = createBinancePairsMissingHandler(t, router);
-
   return {
     [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: createSnapshotErrorHandler(t),
-    [SocketMessageType.BINANCE_PAIRS_MISSING]: binancePairsMissingHandler,
-    [SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED]: createGnosisPaySessionHandler(t, router),
+    [SocketMessageType.BINANCE_PAIRS_MISSING]: createBinancePairsMissingHandler(t, router),
+    [SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED]: createGnosisPaySessionHandler(),
     [SocketMessageType.LEGACY]: createLegacyHandler(t),
-    [SocketMessageType.MISSING_API_KEY]: missingApiKeyHandler,
-    [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(t, router),
-    [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(t, router),
+    [SocketMessageType.MISSING_API_KEY]: createMissingApiKeyHandler(),
+    [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(),
+    [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(),
     [SocketMessageType.ORACLE_PENALIZED]: createOraclePenalizedHandler(t, router),
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
-    [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),
-    [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(t, router),
+    [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(),
+    [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(),
   };
 }

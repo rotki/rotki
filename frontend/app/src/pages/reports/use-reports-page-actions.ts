@@ -75,7 +75,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
           end: formatDate(period.end),
           start: formatDate(period.start),
         }),
-        priority: Priority.ACTION,
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('profit_loss_reports.notification.title'),
       });

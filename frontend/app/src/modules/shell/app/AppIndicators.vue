@@ -5,6 +5,7 @@ import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibilit
 import UserNotesIndicator from '@/modules/notes/UserNotesIndicator.vue';
 import GetPremiumButton from '@/modules/premium/GetPremiumButton.vue';
 import PrivacyModeDropdown from '@/modules/settings/PrivacyModeDropdown.vue';
+import GlobalActionCenter from '@/modules/shell/action-center/GlobalActionCenter.vue';
 import SyncIndicator from '@/modules/shell/cloud-sync/SyncIndicator.vue';
 import AppUpdateIndicator from '@/modules/shell/components/AppUpdateIndicator.vue';
 import BackButton from '@/modules/shell/components/BackButton.vue';
@@ -49,6 +50,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
       v-if="isSmAndUp"
       :dark-mode-enabled="isDark"
     />
+    <GlobalActionCenter />
     <NotificationIndicator
       :visible="showNotificationBar"
       @click="showNotificationBar = !showNotificationBar"

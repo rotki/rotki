@@ -1,5 +1,4 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { NotificationGroup } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,7 +10,6 @@ const { spies } = vi.hoisted(() => ({
     triggerBridgeMatching: vi.fn(),
     getBridgeMatches: vi.fn(),
     unlinkBridgeTransaction: vi.fn(),
-    removeMatching: vi.fn<(predicate: (n: { group?: string }) => boolean) => void>(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
@@ -41,7 +39,6 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
     '@/modules/core/common/logging/error-handling',
   )).getErrorMessage,
   useNotifications: (): object => ({
-    removeMatching: spies.removeMatching,
     showErrorMessage: spies.showErrorMessage,
     showSuccessMessage: spies.showSuccessMessage,
   }),
@@ -101,27 +98,15 @@ describe('use-unmatched-bridge-transactions', () => {
   }
 
   describe('fetchUnmatchedBridgeTransactions', () => {
-    it('should clear the unmatched-bridges notification when the unmatched list becomes empty', async () => {
+    it('should empty the unmatched list when the backend reports no legs', async () => {
       spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([]);
       const { useUnmatchedBridgeTransactions } = await importFresh();
-      const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+      const { fetchUnmatchedBridgeTransactions, unmatchedCount } = useUnmatchedBridgeTransactions();
 
       await fetchUnmatchedBridgeTransactions(false);
 
-      expect(spies.removeMatching).toHaveBeenCalledTimes(1);
-      const [predicate] = spies.removeMatching.mock.calls[0];
-      expect(predicate({ group: NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS })).toBe(true);
-      expect(predicate({ group: 'OTHER' })).toBe(false);
-    });
-
-    it('should not clear the notification when fetching the ignored list', async () => {
-      spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([]);
-      const { useUnmatchedBridgeTransactions } = await importFresh();
-      const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
-
-      await fetchUnmatchedBridgeTransactions(true);
-
-      expect(spies.removeMatching).not.toHaveBeenCalled();
+      expect(get(unmatchedCount)).toBe(0);
+      expect(spies.fetchHistoryEvents).not.toHaveBeenCalled();
     });
 
     it('should expand reported legs to events with direction and bridge extra data', async () => {
@@ -143,7 +128,6 @@ describe('use-unmatched-bridge-transactions', () => {
 
       await fetchUnmatchedBridgeTransactions(false);
 
-      expect(spies.removeMatching).not.toHaveBeenCalled();
       expect(get(unmatchedTransactions)).toHaveLength(1);
       expect(get(unmatchedTransactions)[0]).toMatchObject({
         asset: 'ETH',

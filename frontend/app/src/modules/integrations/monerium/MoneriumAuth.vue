@@ -49,9 +49,7 @@ const cardAction = computed<ServiceKeyAction>(() => ({
 /**
  * Every notification raised here is a step of the same connection flow - opening the browser,
  * the outcome of the callback, a disconnect - so they all share one group. The dispatcher then
- * replaces the entry of the previous step instead of leaving a trail of stale ones behind, and
- * the same group carries the session-expired warning, which a successful re-authentication is
- * meant to clear.
+ * replaces the entry of the previous step instead of leaving a trail of stale ones behind.
  */
 function notifyAuthStep(payload: Notification): void {
   notify({
@@ -65,9 +63,9 @@ function notifyAuthStep(payload: Notification): void {
  * A successful authorization already reports itself where the user is looking: the card flips to
  * the connected state naming the account. Saying it again in the notification area would leave an
  * entry to dismiss for something already on screen, so success instead clears the flow's own
- * trail - the "opening browser" step, and the session-expired warning that shares this group and
- * is exactly what the re-authentication just resolved. One call is enough because a group holds a
- * single entry: the dispatcher replaces it rather than appending.
+ * trail, such as the "opening browser" step. One call is enough because a group holds a single
+ * entry: the dispatcher replaces it rather than appending. An expired session is an action center
+ * row, not part of this group, and leaves once the status reads authenticated.
  */
 function clearAuthNotifications(): void {
   removeMatching(({ group }) => group === NotificationGroup.MONERIUM_AUTH);

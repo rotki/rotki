@@ -8,9 +8,8 @@ import { usePremium } from '@/modules/premium/use-premium';
  * Reports a change in premium status.
  *
  * @remarks
- * The two branches carry different priorities because they are different kinds of message. Becoming
- * active confirms something the user just did, so it interrupts once and goes; becoming inactive is
- * a condition that stays true until they renew, so it is sticky and reaches the "Needs action" tab.
+ * Only a change is reported, in either direction, so a session that starts and stays without premium
+ * hears nothing. Becoming inactive is an error so it stands out in the drawer, not a warning.
  */
 export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<PremiumStatusUpdateData> {
   const premium = usePremium();
@@ -38,7 +37,7 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
           message: reason ?? (expired
             ? t('notification_messages.premium.inactive.expired_message')
             : t('notification_messages.premium.inactive.network_problem_message')),
-          priority: Priority.ACTION,
+          priority: Priority.HIGH,
           severity: Severity.ERROR,
           title: t('notification_messages.premium.inactive.title'),
         };

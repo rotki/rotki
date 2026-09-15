@@ -1,9 +1,7 @@
-import { NotificationGroup } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -22,8 +20,6 @@ export function useHistoryWatchers(): void {
   const { triggerBridgeAutoMatching } = useUnmatchedBridgeTransactions();
   const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-  const { removeMatching } = useNotifications();
-  const router = useRouter();
 
   const processingDebounced = useRefWithDebounce(processing, 500);
 
@@ -60,15 +56,6 @@ export function useHistoryWatchers(): void {
       await triggerHistoricalBalancesProcessing();
       await triggerAssetMovementAutoMatching();
       await triggerBridgeAutoMatching();
-    }
-  });
-
-  watchImmediate(router.currentRoute, (to) => {
-    if (to.name === '/history/events/') {
-      removeMatching(
-        notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS
-          || notification.group === NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS,
-      );
     }
   });
 }

@@ -6,7 +6,7 @@ import { createNotification } from '@/modules/core/notifications/notification-ut
 import { createGroupUpdateStrategy } from './group-update';
 
 describe('createGroupUpdateStrategy', () => {
-  const group = `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`;
+  const group = `${NotificationGroup.ORACLE_PENALIZED}:coingecko`;
 
   let cooldown: UseNotificationCooldownReturn;
   let strategy: NotificationStrategy;
@@ -14,7 +14,6 @@ describe('createGroupUpdateStrategy', () => {
   beforeEach(() => {
     cooldown = {
       recordDisplay: vi.fn(),
-      resetSchedule: vi.fn(),
       shouldSuppress: vi.fn(() => false),
     };
     strategy = createGroupUpdateStrategy(cooldown);
@@ -79,7 +78,7 @@ describe('createGroupUpdateStrategy', () => {
   });
 
   it('should keep separate subjects of the same group apart', () => {
-    const other = `${NotificationGroup.NO_AVAILABLE_INDEXERS}:binance_sc`;
+    const other = `${NotificationGroup.ORACLE_PENALIZED}:cryptocompare`;
     const existing = [createNotification(1, { group, message: 'optimism', title: 'test' })];
 
     const result = strategy.process({ group: other, message: 'binance', title: 'test' }, context(existing));

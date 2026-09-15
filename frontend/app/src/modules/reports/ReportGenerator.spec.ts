@@ -16,7 +16,7 @@ const mocks = await vi.hoisted(async () => {
   };
 });
 
-vi.mock('@/modules/dashboard/progress/use-transaction-status-check', () => ({
+vi.mock('@/modules/history/sync-status/use-transaction-status-check', () => ({
   useTransactionStatusCheck: (): Record<string, unknown> => ({ isOutOfSync: mocks.isOutOfSync, processing: mocks.processing }),
 }));
 

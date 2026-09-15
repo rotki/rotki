@@ -15,7 +15,7 @@ export function createBinancePairsMissingHandler(t: ReturnType<typeof useI18n>['
     },
     category: NotificationCategory.DEFAULT,
     message: t('notification_messages.binance_pairs_missing.message', { name }),
-    priority: Priority.ACTION,
+    priority: Priority.HIGH,
     severity: Severity.WARNING,
     title: t('notification_messages.binance_pairs_missing.title'),
   }));

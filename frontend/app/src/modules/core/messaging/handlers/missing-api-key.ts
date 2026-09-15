@@ -1,171 +1,20 @@
-import type { RouteLocationRaw } from 'vue-router';
-import type { NotificationHandler } from '../interfaces';
+import type { MessageHandler } from '../interfaces';
 import type { MissingApiKey } from '@/modules/core/messaging/types';
-import { type NotificationAction, NotificationCategory, NotificationGroup, Priority, Severity, toHumanReadable } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
-import { type MessageKey, msg } from '@/message-key';
-import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { createNotificationHandler } from '@/modules/core/messaging/utils';
-import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {
-  return Array.prototype.includes.call(SUPPRESSIBLE_SERVICES, service);
-}
+/**
+ * Raises the action center row for a service whose key a query asked for.
+ *
+ * @remarks
+ * Creates no notification: the row is the only place a missing key is shown, and it leaves once a
+ * key is saved for the service. The backend already skips the services the user suppressed.
+ */
+export function createMissingApiKeyHandler(): MessageHandler<MissingApiKey> {
+  const { raise } = useRaisedConditionsStore();
 
-export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
-  const { openUrl } = useInterop();
-  const { update } = useSettingsOperations();
-  const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');
-  const { show } = useConfirmStore();
-
-  /**
-   * The offers that apply to this service: opening the settings page that holds the key, reordering
-   * the transaction indexers, fetching a key, and suppressing the message for good.
-   *
-   * @remarks
-   * Etherscan is the one service never offered a "get a key" link. It ships with a packaged
-   * fallback key, so it keeps working without one; every other service here, blockscout included,
-   * has no default and rejects keyless queries on its PRO endpoints.
-   */
-  function buildActions(service: MissingApiKey['service'], route?: RouteLocationRaw, external?: string): NotificationAction[] {
-    const actions: NotificationAction[] = [];
-
-    const isEtherscan = service === SuppressibleMissingKeyService.ETHERSCAN;
-    const isBlockscout = service === SuppressibleMissingKeyService.BLOCKSCOUT;
-
-    if (route) {
-      actions.push({
-        action: async () => router.push(route),
-        label: t('notification_messages.missing_api_key.action'),
-        persist: true,
-      });
-    }
-
-    // Both etherscan and blockscout are transaction indexers, so offer to change the order.
-    if (isEtherscan || isBlockscout) {
-      actions.push({
-        action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
-        icon: 'lu-settings',
-        label: t('notification_messages.missing_api_key.change_indexer_order'),
-        persist: true,
-      });
-    }
-
-    const needsAUserSuppliedKey = external && !isEtherscan;
-    if (needsAUserSuppliedKey) {
-      actions.push({
-        action: async () => openUrl(external),
-        icon: 'lu-external-link',
-        label: t('notification_messages.missing_api_key.get_key'),
-        persist: true,
-      });
-    }
-
-    // "Do not show again" action - adds service to suppress list with confirmation
-    if (isSuppressibleService(service)) {
-      const serviceName = toHumanReadable(service, 'capitalize');
-      actions.push({
-        action: async () => {
-          show(
-            {
-              message: t('notification_messages.missing_api_key.suppress_confirm.message', { service: serviceName }),
-              title: t('notification_messages.missing_api_key.suppress_confirm.title'),
-            },
-            async () => {
-              const currentList = get(suppressMissingKeyMsgServices);
-              if (!currentList.includes(service)) {
-                await update({ suppressMissingKeyMsgServices: [...currentList, service] });
-              }
-            },
-          );
-        },
-        icon: 'lu-bell-off',
-        danger: true,
-        label: t('notification_messages.missing_api_key.do_not_show_again'),
-      });
-    }
-
-    return actions;
-  }
-
-  /**
-   * Builds the notification for a missing key, grouped per service.
-   *
-   * @remarks
-   * The group has to carry the service: without one these stack unbounded for the callers with no
-   * once-per-session guard, and with a shared one two services collapse into a single entry.
-   */
-  return createNotificationHandler<MissingApiKey>((data) => {
-    const { service } = data;
-    const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
-
-    const actions = buildActions(service, route, external);
-
-    const metadata = {
-      ...data,
-      service: toHumanReadable(service, 'capitalize'),
-    };
-
-    const serviceConfig: Record<string, {
-      category: NotificationCategory;
-      messageKey: MessageKey;
-      titleKey: MessageKey;
-    }> = {
-      [SuppressibleMissingKeyService.BEACONCHAIN]: {
-        category: NotificationCategory.BEACONCHAIN,
-        messageKey: msg.$t('notification_messages.missing_api_key.beaconchain.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.beaconchain.title'),
-      },
-      [SuppressibleMissingKeyService.BLOCKSCOUT]: {
-        category: NotificationCategory.BLOCKSCOUT,
-        messageKey: msg.$t('notification_messages.missing_api_key.blockscout.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.blockscout.title'),
-      },
-      [SuppressibleMissingKeyService.ETHERSCAN]: {
-        category: NotificationCategory.ETHERSCAN,
-        messageKey: msg.$t('notification_messages.missing_api_key.etherscan.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.etherscan.title'),
-      },
-      [SuppressibleMissingKeyService.HELIUS]: {
-        category: NotificationCategory.HELIUS,
-        messageKey: msg.$t('notification_messages.missing_api_key.helius.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.helius.title'),
-      },
-      [SuppressibleMissingKeyService.THEGRAPH]: {
-        category: NotificationCategory.THEGRAPH,
-        messageKey: msg.$t('notification_messages.missing_api_key.thegraph.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.thegraph.title'),
-      },
-    };
-
-    const config = serviceConfig[service] || serviceConfig[SuppressibleMissingKeyService.ETHERSCAN];
-    const { category, messageKey, titleKey } = config;
-    const theGraphWarning = service === SuppressibleMissingKeyService.THEGRAPH;
-
-    const isBeaconchain = service === SuppressibleMissingKeyService.BEACONCHAIN;
-
-    return {
-      action: actions,
-      category,
-      display: isBeaconchain ? false : undefined,
-      group: `${NotificationGroup.MISSING_API_KEY}:${service}`,
-      i18nParam: {
-        choice: 0,
-        message: messageKey,
-        props: {
-          ...metadata,
-          url: external ?? '',
-          ...(theGraphWarning && { docsUrl: externalLinks.usageGuideSection.theGraphApiKey }),
-        },
-      },
-      message: '',
-      priority: Priority.ACTION,
-      severity: isBeaconchain ? Severity.INFO : Severity.WARNING,
-      title: t(titleKey, metadata),
-    };
+  return createConditionalHandler<MissingApiKey>(({ location, service }) => {
+    raise({ kind: RaisedConditionKind.MISSING_API_KEY, location, service });
+    return null;
   });
 }

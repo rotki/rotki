@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ActionCenterList from '@/modules/core/action-center/ActionCenterList.vue';
-import { type ActionItem, ActionSeverity, type ActionTarget } from '@/modules/core/action-center/types';
+import { type ActionCenterSection, type ActionItem, ActionSeverity, type ActionTarget } from '@/modules/core/action-center/types';
 
 function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   const target: ActionTarget = { kind: 'route', to: { name: '/balances/blockchain/' } };
@@ -16,6 +16,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     loading: false,
     locked: false,
     minimumTier: null,
+    options: [],
     severity: ActionSeverity.WARNING,
     target,
     title: 'Unmatched bridge transactions',
@@ -25,6 +26,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
 
 interface ListProps {
   items: ActionItem[];
+  sections: ActionCenterSection[];
   cleared: ActionItem[];
   count: number;
   checking?: boolean;
@@ -119,5 +121,58 @@ describe('modules/core/action-center/ActionCenterList', () => {
     expect(checking.text()).not.toContain('action_center.subtitle_checking');
     expect(clear.text()).toContain('your history is clean');
     expect(clear.text()).not.toContain('action_center.subtitle_clear');
+  });
+
+  it('should group rows under their section headings, in the order the sections come', () => {
+    const wrapper = mountList({
+      items: [createItem({ id: 'ignored-flat-row' })],
+      sections: [
+        { id: 'history', items: [createItem({ id: 'undecoded' })], title: 'History' },
+        {
+          id: 'chains',
+          items: [createItem({ id: 'no-available-indexers-base' }), createItem({ id: 'no-available-indexers-gnosis' })],
+          title: 'Chains & nodes',
+        },
+      ],
+    });
+
+    const sections = wrapper.findAll('[data-testid=actions-center-section]');
+    expect(sections.map(section => section.attributes('data-key'))).toEqual(['history', 'chains']);
+    expect(sections[1].text()).toContain('Chains & nodes');
+    expect(sections[1].findAll('[data-testid=actions-center-row]')).toHaveLength(2);
+    expect(wrapper.find('[data-testid=actions-center-row][data-key="ignored-flat-row"]').exists()).toBe(false);
+  });
+
+  it('should hand a sectioned row target up the same way as a flat one', async () => {
+    const target: ActionTarget = { kind: 'run', run: (): void => {} };
+    const wrapper = mountList({
+      items: [],
+      sections: [{ id: 'assets', items: [createItem({ id: 'missing-exchange-mappings', target })], title: 'Assets' }],
+    });
+
+    await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
+
+    expect(wrapper.emitted('open')).toEqual([[target]]);
+  });
+
+  describe('a row option', () => {
+    const guide: ActionTarget = { kind: 'external', url: 'https://docs.rotki.com' };
+    const item = createItem({ options: [{ icon: 'lu-book-open', id: 'guide', label: 'Guide', target: guide }] });
+
+    it('should hand its target up as an open from a flat list', async () => {
+      const wrapper = mountList({ items: [item] });
+
+      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+
+      expect(wrapper.emitted('open')).toEqual([[guide]]);
+    });
+
+    it('should hand its target up as an open from a section', async () => {
+      const wrapper = mountList({ items: [], sections: [{ id: 'integrations', items: [item], title: 'Integrations' }] });
+
+      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+
+      expect(wrapper.emitted('open')).toEqual([[guide]]);
+    });
   });
 });

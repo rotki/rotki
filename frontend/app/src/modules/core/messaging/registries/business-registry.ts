@@ -23,7 +23,7 @@ export function createBusinessRegistry(
   const newTokenDetectedHandler = createNewTokenDetectedHandler(t, router);
   const accountingRuleConflictHandler = createAccountingRuleConflictHandler(t, router);
   const calendarReminderHandler = createCalendarReminderHandler(t, router);
-  const exchangeUnknownAssetHandler = createExchangeUnknownAssetHandler(t, router);
+  const exchangeUnknownAssetHandler = createExchangeUnknownAssetHandler();
 
   return {
     [SocketMessageType.ACCOUNTING_RULE_CONFLICT]: accountingRuleConflictHandler,

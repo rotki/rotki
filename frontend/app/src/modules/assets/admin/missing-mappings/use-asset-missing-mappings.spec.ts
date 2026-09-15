@@ -7,14 +7,19 @@ import { useAssetMissingMappings } from './use-asset-missing-mappings';
 
 let mappings: Ref<Collection<MissingMapping>>;
 
-const { getData, refetch, remove } = vi.hoisted(() => ({
+const { getData, refetch, refreshCount, remove } = vi.hoisted(() => ({
   getData: vi.fn(),
   refetch: vi.fn(async () => Promise.resolve()),
+  refreshCount: vi.fn(async () => Promise.resolve()),
   remove: vi.fn(async () => Promise.resolve()),
 }));
 
 vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-db', () => ({
   useMissingMappingsDB: (): Record<string, unknown> => ({ getData, remove }),
+}));
+
+vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-count', () => ({
+  useMissingMappingsCount: (): Record<string, unknown> => ({ refresh: refreshCount }),
 }));
 
 vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-fields', () => ({
@@ -102,6 +107,23 @@ describe('modules/assets/admin/missing-mappings/useAssetMissingMappings', () => 
 
       expect(remove).toHaveBeenCalledWith({ identifier: 'XBT', location: 'kraken' });
       expect(refetch).toHaveBeenCalledOnce();
+    });
+
+    it('should re-read the count the action center shows, after the row is dropped', async () => {
+      const order: string[] = [];
+      remove.mockImplementation(async () => {
+        order.push('remove');
+        return Promise.resolve();
+      });
+      refreshCount.mockImplementation(async () => {
+        order.push('count');
+        return Promise.resolve();
+      });
+
+      const { onAddComplete } = page();
+      await onAddComplete({ asset: 'BTC', location: 'kraken', locationSymbol: 'XBT' });
+
+      expect(order).toEqual(['remove', 'count']);
     });
 
     it('should record an all-exchanges mapping against no location', async () => {

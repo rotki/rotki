@@ -785,17 +785,6 @@
   "notification_indicator": {
     "tooltip": "Notificaciones"
   },
-  "notification_messages": {
-    "missing_api_key": {
-      "action": "Introducir clave",
-      "change_indexer_order": "Cambiar orden del indexador",
-      "etherscan": {
-        "message": "rotki está usando {service} sin una clave API configurada, lo que puede ralentizar las consultas. Puedes añadir una clave API para un mejor rendimiento, o ajustar el orden del indexador para priorizar un servicio diferente.",
-        "title": "{service} clave API"
-      },
-      "get_key": "Obtener clave API"
-    }
-  },
   "notification_sidebar": {
     "clear_tooltip": "Limpiar todas las notificaciones",
     "no_messages": "Sin mensajes",

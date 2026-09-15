@@ -2,7 +2,6 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import { NotificationGroup } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -50,7 +49,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { removeMatching, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { getAssetInfo } = useAssetInfoRetrieval();
   const { statusOf, submitTask } = useNativeTask();
   const { useIsActive } = useTaskCenter();
@@ -80,10 +79,6 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const unmatchedCount = computed<number>(() => get(unmatchedMovements).length);
   const ignoredCount = computed<number>(() => get(ignoredMovements).length);
 
-  function clearUnmatchedAssetMovementsNotification(): void {
-    removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
-  }
-
   const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
@@ -95,8 +90,6 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       if (groupIdentifiers.length === 0) {
         set(movementsRef, []);
-        if (!isIgnored)
-          clearUnmatchedAssetMovementsNotification();
         return;
       }
 

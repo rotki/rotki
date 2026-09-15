@@ -1,18 +1,6 @@
 import type { ExternalServiceName } from '@/modules/integrations/types';
-import { NotificationCategory } from '@rotki/common';
 import { blockscoutLink, etherscanLink, externalLinks, heliusLink } from '@shared/external-links';
 import { type MessageKey, msg } from '@/message-key';
-
-/**
- * How saving a key clears the notification that asked for it.
- *
- * @remarks
- * A service that owns a notification category is dismissed by that category. One whose notification
- * sits in a shared category is found by the service name the message interpolates.
- */
-type KeyRequestDismissal =
-  | { readonly category: NotificationCategory }
-  | { readonly byServiceName: true };
 
 /** One external service whose api key is entered through a plain key card. */
 export interface ExternalApiKeyService {
@@ -25,7 +13,6 @@ export interface ExternalApiKeyService {
   /** Where a key is obtained; a service without one shows no link. */
   readonly link?: string;
   readonly roundedIcon?: boolean;
-  readonly dismissal?: KeyRequestDismissal;
 }
 
 export const EXTERNAL_API_KEY_SERVICES = {
@@ -39,7 +26,6 @@ export const EXTERNAL_API_KEY_SERVICES = {
   },
   beaconchain: {
     description: msg.$t('external_services.beaconchain.description'),
-    dismissal: { category: NotificationCategory.BEACONCHAIN },
     hint: msg.$t('external_services.beaconchain.hint'),
     image: 'beaconchain.svg',
     link: 'https://beaconcha.in/user/settings',
@@ -88,7 +74,6 @@ export const EXTERNAL_API_KEY_SERVICES = {
   },
   etherscan: {
     description: msg.$t('external_services.etherscan.description'),
-    dismissal: { category: NotificationCategory.ETHERSCAN },
     hint: msg.$t('external_services.etherscan.hint'),
     image: 'etherscan.svg',
     link: etherscanLink,
@@ -97,7 +82,6 @@ export const EXTERNAL_API_KEY_SERVICES = {
   },
   helius: {
     description: msg.$t('external_services.helius.description'),
-    dismissal: { category: NotificationCategory.HELIUS },
     hint: msg.$t('external_services.helius.hint'),
     image: 'helius.svg',
     link: heliusLink,
@@ -122,7 +106,6 @@ export const EXTERNAL_API_KEY_SERVICES = {
   },
   thegraph: {
     description: msg.$t('external_services.thegraph.description'),
-    dismissal: { byServiceName: true },
     hint: msg.$t('external_services.thegraph.hint'),
     image: 'thegraph.svg',
     link: externalLinks.applyTheGraphApiKey,

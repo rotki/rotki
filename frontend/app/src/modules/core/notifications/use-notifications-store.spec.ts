@@ -8,7 +8,6 @@ const { mockRecordDisplay } = vi.hoisted(() => ({ mockRecordDisplay: vi.fn() }))
 vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
   useNotificationCooldown: vi.fn(() => ({
     recordDisplay: mockRecordDisplay,
-    resetSchedule: vi.fn(),
     shouldSuppress: vi.fn(() => false),
   })),
 }));
@@ -146,17 +145,17 @@ describe('useNotificationsStore', () => {
     expect(get(data)[0].display).toBe(false);
   });
 
-  it('should record the display of a grouped notification against its schedule', () => {
+  it('should record the display of a grouped notification against its cooldown', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
-    const group = `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`;
+    const group = `${NotificationGroup.ORACLE_PENALIZED}:coingecko`;
 
     store.add([
       createNotification(store.getNextId(), testPayload({ group, message: 'msg', title: 'title' })),
     ]);
     store.displayed([get(data)[0].id]);
 
-    // The schedule advances when the user actually sees the popup, not when it is created.
+    // The cooldown starts when the user actually sees the popup, not when it is created.
     expect(mockRecordDisplay).toHaveBeenCalledWith(group);
   });
 
@@ -183,6 +182,36 @@ describe('useNotificationsStore', () => {
 
     expect(mockRecordDisplay).not.toHaveBeenCalled();
     expect(get(data)[0].display).toBe(true);
+  });
+
+  it('should report something unread as soon as a notification arrives, whatever its priority', () => {
+    const store = useNotificationsStore();
+    const { hasUnread } = storeToRefs(store);
+
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', priority: Priority.BULK, title: 'title' }))]);
+
+    expect(get(hasUnread)).toBe(true);
+  });
+
+  it('should report nothing unread once the drawer has been read', () => {
+    const store = useNotificationsStore();
+    const { hasUnread } = storeToRefs(store);
+
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', priority: Priority.HIGH, title: 'title' }))]);
+    store.markAllRead();
+
+    expect(get(hasUnread)).toBe(false);
+  });
+
+  it('should report something unread again when a notification arrives after the drawer was read', () => {
+    const store = useNotificationsStore();
+    const { hasUnread } = storeToRefs(store);
+
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'first', title: 'title' }))]);
+    store.markAllRead();
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'second', title: 'title' }))]);
+
+    expect(get(hasUnread)).toBe(true);
   });
 
   it('should do nothing when no ids were displayed', () => {

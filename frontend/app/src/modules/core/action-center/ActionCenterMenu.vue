@@ -1,10 +1,20 @@
 <script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
+
 const open = defineModel<boolean>({ default: false });
 
-const { checking = false, count } = defineProps<{
-  /** how many categories are asking for something: the badge, and whether there is one */
+const { badge = false, checking = false, count } = defineProps<{
+  /** how many categories are asking for something */
   count: number;
   checking?: boolean;
+  /**
+   * Shows the count on the trigger.
+   *
+   * @remarks
+   * Only the global trigger carries it: two badges counting the same rows are how the numbers
+   * start to disagree, so a scoped view shows the state without the number.
+   */
+  badge?: boolean;
 }>();
 
 defineSlots<{
@@ -14,9 +24,30 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const tooltip = computed<string>(() => checking
-  ? t('action_center.button_checking')
-  : t('action_center.button_clear'));
+/**
+ * Names the trigger's state, and doubles as its accessible name.
+ *
+ * @remarks
+ * A badge reaches a screen reader as a bare number, so the count is spelled out here.
+ */
+const tooltip = computed<string>(() => {
+  if (count > 0)
+    return t('action_center.subtitle', { count }, count);
+  return checking ? t('action_center.button_checking') : t('action_center.button_clear');
+});
+
+/**
+ * The trigger's icon, which never spins.
+ *
+ * @remarks
+ * The task dock and the sync indicator already carry the motion, so a third spinner here would only
+ * add noise.
+ */
+const icon = computed<RuiIcons>(() => {
+  if (count > 0)
+    return 'lu-triangle-alert';
+  return checking ? 'lu-circle-dashed' : 'lu-circle-check';
+});
 </script>
 
 <template>
@@ -26,36 +57,7 @@ const tooltip = computed<string>(() => checking
     :class-names="{ menu: 'w-[36rem] max-w-[90vw]' }"
   >
     <template #activator="{ attrs }">
-      <RuiButton
-        v-if="count > 0"
-        size="lg"
-        variant="outlined"
-        color="warning"
-        class="!rounded-full !bg-rui-warning/10 [&>span]:!hidden lg:[&>span]:!inline"
-        data-testid="actions-center-button"
-        v-bind="attrs"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-triangle-alert"
-            size="18"
-          />
-        </template>
-
-        {{ t('action_center.button') }}
-
-        <template #append>
-          <span
-            class="ml-1 min-w-5 px-1.5 rounded-full bg-rui-warning text-white text-caption font-medium leading-5 text-center"
-            data-testid="actions-center-button-count"
-          >
-            {{ count }}
-          </span>
-        </template>
-      </RuiButton>
-
       <RuiTooltip
-        v-else
         :options="{ placement: 'bottom' }"
         :open-delay="400"
       >
@@ -64,14 +66,23 @@ const tooltip = computed<string>(() => checking
             variant="text"
             icon
             size="lg"
-            class="!text-rui-text-secondary"
+            :class="count > 0 ? '!text-rui-warning' : '!text-rui-text-secondary'"
             data-testid="actions-center-button"
             :aria-label="tooltip"
             v-bind="attrs"
           >
-            <!-- static icon on purpose: the sync panel and the pending-task list already
-                 carry the motion, a third spinner here would only add noise -->
-            <RuiIcon :name="checking ? 'lu-circle-dashed' : 'lu-circle-check'" />
+            <RuiBadge
+              :model-value="badge && count > 0"
+              :text="count.toString()"
+              color="warning"
+              placement="top"
+              size="sm"
+              offset-y="4"
+              offset-x="-4"
+              data-testid="actions-center-button-badge"
+            >
+              <RuiIcon :name="icon" />
+            </RuiBadge>
           </RuiButton>
         </template>
         {{ tooltip }}

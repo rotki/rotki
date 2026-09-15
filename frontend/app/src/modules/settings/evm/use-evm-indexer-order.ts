@@ -2,9 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
-import { NotificationGroup, notificationGroupOf } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
@@ -53,7 +51,6 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
   const { defaultEvmIndexerOrder, evmIndexersOrder } = useEvmIndexerSettings();
   const { update: updateSettings } = useSettingsOperations();
   const { useApiKey } = useExternalApiKeys();
-  const { resetSchedule } = useNotificationCooldown();
 
   const defaultOrderState = useSettingModel('defaultEvmIndexerOrder', { debounce: 0 });
   const chainOrdersState = useSettingModel('evmIndexersOrder', { debounce: 0 });
@@ -102,18 +99,8 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
     indexer => !!(indexer === EvmIndexer.ETHERSCAN ? get(etherscanApiKey) : get(blockscoutApiKey)),
   ));
 
-  /**
-   * Let the no-indexer warnings interrupt again after the user reorders indexers. Every entry is
-   * cleared rather than just the edited chain's, because the default order applies to each chain
-   * that has no override of its own.
-   */
-  function forgetNoIndexerSchedule(): void {
-    resetSchedule(group => notificationGroupOf(group) === NotificationGroup.NO_AVAILABLE_INDEXERS);
-  }
-
   async function persistChainOrders(orders: Record<string, PrioritizedListId[]>): Promise<void> {
     await updateSettings({ evmIndexersOrder: toEvmChainNameKeys(orders, getEvmChainName) });
-    forgetNoIndexerSchedule();
   }
 
   async function addChain(chain: ChainItem): Promise<void> {
@@ -136,7 +123,6 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
   function updateDefaultOrder(value: PrioritizedListId[]): void {
     set(localDefaultOrder, value);
     set(defaultOrderState.model, value.filter(isEvmIndexer));
-    forgetNoIndexerSchedule();
   }
 
   function updateChainOrder(chainId: string, value: PrioritizedListId[]): void {
@@ -144,7 +130,6 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
     set(localChainOrders, orders);
     set(pendingChainName, getChainName(chainId));
     set(chainOrdersState.model, toEvmChainNameKeys(orders, getEvmChainName));
-    forgetNoIndexerSchedule();
   }
 
   /** The keyed indexer the api-key prompt refers to, for routing to its settings row. */

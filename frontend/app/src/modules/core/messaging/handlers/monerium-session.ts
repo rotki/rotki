@@ -1,43 +1,26 @@
 import type { MessageHandler } from '../interfaces';
 import type { MoneriumSessionKeyExpiredData } from '@/modules/core/messaging/types';
-import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { createNotificationHandler } from '@/modules/core/messaging/utils';
+import { createConditionalHandler } from '@/modules/core/messaging/utils';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 /**
- * Notifies the user that the Monerium session expired and offers to reauthenticate.
+ * Raises the action center row for an expired Monerium session.
  *
  * @remarks
- * The status is set to unauthenticated before the refresh rather than left to it. The backend may
- * already have dropped the credentials (`invalid_grant`), and the refresh is a round trip, so
- * without the local write the UI would keep claiming a live session for its duration.
+ * Creates no notification. The status is set to unauthenticated before the refresh rather than left
+ * to it: the backend may already have dropped the credentials (`invalid_grant`), and the refresh is
+ * a round trip, so without the local write the UI would keep claiming a live session for its
+ * duration. The row is raised before the refresh too, so a failed refresh cannot lose it.
  */
-export function createMoneriumSessionHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
-): MessageHandler<MoneriumSessionKeyExpiredData> {
+export function createMoneriumSessionHandler(): MessageHandler<MoneriumSessionKeyExpiredData> {
   const { refreshStatus, setStatus } = useMoneriumOAuth();
+  const { raise } = useRaisedConditionsStore();
 
-  return createNotificationHandler<MoneriumSessionKeyExpiredData>(async (data) => {
+  return createConditionalHandler<MoneriumSessionKeyExpiredData>(async () => {
     setStatus({ authenticated: false });
+    raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
     await refreshStatus();
-
-    return {
-      action: {
-        action: async () => router.push({
-          name: '/api-keys/external/',
-          query: { service: 'monerium' },
-        }),
-        icon: 'lu-arrow-right',
-        label: t('external_services.actions.reauthenticate'),
-        persist: true,
-      },
-      category: NotificationCategory.DEFAULT,
-      group: NotificationGroup.MONERIUM_AUTH,
-      message: data.error,
-      priority: Priority.ACTION,
-      severity: Severity.WARNING,
-      title: t('notification_messages.monerium_session_key_expired.title'),
-    };
+    return null;
   });
 }
