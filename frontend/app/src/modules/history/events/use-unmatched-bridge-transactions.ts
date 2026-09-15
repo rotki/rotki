@@ -3,7 +3,6 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
-import { NotificationGroup } from '@rotki/common';
 import { isErr, map as mapResult } from 'plainfp/result';
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -113,7 +112,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { removeMatching, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { statusOf, submitTask, useIsActive } = useNativeTask();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
@@ -134,10 +133,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   const unmatchedCount = computed<number>(() => get(unmatchedTransactions).length);
   const ignoredCount = computed<number>(() => get(ignoredTransactions).length);
 
-  function clearUnmatchedBridgeTransactionsNotification(): void {
-    removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS);
-  }
-
   const fetchUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
@@ -149,8 +144,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
       if (legs.length === 0) {
         set(transactionsRef, []);
-        if (!isIgnored)
-          clearUnmatchedBridgeTransactionsNotification();
         return;
       }
 

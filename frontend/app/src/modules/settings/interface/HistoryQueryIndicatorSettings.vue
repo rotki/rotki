@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
+import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import HistoryQueryIndicatorDismissalThresholdSetting from './HistoryQueryIndicatorDismissalThresholdSetting.vue';
@@ -7,7 +7,7 @@ import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndica
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { resetQueryStatus } = useUnifiedProgress();
+const { resetQueryStatus } = useHistorySyncStatus();
 
 const showSuccess = ref<boolean>(false);
 let successTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -62,6 +62,7 @@ onUnmounted(() => {
             variant="outlined"
             color="secondary"
             :disabled="showSuccess"
+            data-testid="history-query-indicator-reset"
             @click="handleReset()"
           >
             {{ t('frontend_settings.history_query_indicator.reset_dismissal_status.button') }}

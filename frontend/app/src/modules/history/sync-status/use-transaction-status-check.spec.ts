@@ -23,7 +23,7 @@ vi.mock('@/modules/history/use-history-store', () => ({
   useHistoryStore: (): object => ({ transactionStatusSummary }),
 }));
 
-vi.mock('@/modules/dashboard/progress/use-history-query-indicator-settings', () => ({
+vi.mock('@/modules/history/sync-status/use-history-query-indicator-settings', () => ({
   useHistoryQueryIndicatorSettings: (): object => ({ minOutOfSyncPeriodMs }),
 }));
 

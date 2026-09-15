@@ -316,14 +316,88 @@
     }
   },
   "action_center": {
-    "button": "Actions needed",
     "button_checking": "Checking for actions",
     "button_clear": "All clear",
     "cleared": "Checked:",
+    "dismiss": "Dismiss",
     "locked": "Premium",
     "locked_hint": "This requires the {tier} tier.",
     "locked_hint_generic": "This requires a premium subscription.",
     "rescan": "Re-scan",
+    "rows": {
+      "assets": {
+        "missing_mappings": {
+          "action": "Add mappings",
+          "description": "Some exchange assets have no mapping in rotki, so their balances and history are skipped.",
+          "title": "Unmapped exchange assets"
+        }
+      },
+      "chains": {
+        "do_not_show_again": "Do not show again for this chain",
+        "no_indexers": {
+          "action": "Configure indexers",
+          "description": "No indexer could serve {chain}, so its transactions were not queried.",
+          "title": "No indexer for {chain}"
+        },
+        "paid_key_required": {
+          "action": "Enter Etherscan key",
+          "description": "The free Etherscan tier does not cover {chain}, so its transactions need a paid key.",
+          "title": "{chain} needs a paid Etherscan key"
+        },
+        "suppress_confirm": {
+          "message": "{chain} will no longer be reported when no indexer can serve it. You can re-enable it from the EVM settings page.",
+          "title": "Stop reporting {chain}?"
+        }
+      },
+      "history": {
+        "sync": {
+          "action": "Go to history events",
+          "description": "Completed on {date}. Protocol balances may be stale or missing until history is refreshed.",
+          "description_long": "Completed on {date}. Some balances may not show until history is fully processed.",
+          "description_never": "rotki fetches and decodes your full history on this device, which can take a while for active multi-chain addresses.",
+          "description_updated": "Some balances may not show until history is processed again.",
+          "title": "History last synced {time}",
+          "title_never": "History not downloaded yet",
+          "title_synced": "History synced",
+          "title_updated": "rotki was updated"
+        }
+      },
+      "integrations": {
+        "gnosis_pay_session": {
+          "description": "Sign in again to keep importing Gnosis Pay transactions.",
+          "title": "Gnosis Pay session expired"
+        },
+        "missing_api_key": {
+          "action": "Enter key",
+          "change_indexer_order": "Change indexer order",
+          "description": "A query needed a {service} key and ran without one, so it may be slow or incomplete.",
+          "description_beaconchain": "A {service} key adds block production history and staking analytics.",
+          "description_blockscout": "{service} is one of your transaction indexers and needs a key, so its queries are skipped. Add a key, or put another indexer first.",
+          "description_etherscan": "{service} runs without a key of your own, which may slow down queries. Add a key, or put another indexer first.",
+          "description_helius": "Solana transaction queries are slow without a {service} key.",
+          "description_thegraph": "{location} data cannot be queried without a {service} key authorized for it.",
+          "do_not_show_again": "Do not show again",
+          "get_key": "Get API key",
+          "guide": "Read the guide",
+          "suppress_confirm": {
+            "message": "A missing {service} key will no longer be reported. You can re-enable it in Settings > General > External Service Settings.",
+            "title": "Stop reporting this key?"
+          },
+          "title": "{service} API key",
+          "title_location": "{service} API key for {location}"
+        },
+        "monerium_session": {
+          "description": "Sign in again to keep importing Monerium activity.",
+          "title": "Monerium session expired"
+        }
+      }
+    },
+    "sections": {
+      "assets": "Assets",
+      "chains": "Chains & nodes",
+      "history": "History",
+      "integrations": "Integrations & keys"
+    },
     "subtitle": "{count} category needs your attention | {count} categories need your attention",
     "subtitle_checking": "Checking for anything that needs your attention.",
     "subtitle_clear": "Everything has been checked.",
@@ -2467,14 +2541,6 @@
     "exchange_balances": {
       "refresh": "Refresh {exchange} balances"
     },
-    "history_query_indicator": {
-      "go_to_history_events": "Go to history events",
-      "incomplete_decoding": "The last event query completed {time}. Due to incomplete event processing, protocol balances may not reflect the latest state. Navigate to history events to begin processing.",
-      "just_updated": "The application has recently been updated. Some balances may not display until transaction processing is fully complete. Navigate to history events to begin processing.",
-      "last_queried": "The last event query completed {time}. Protocol balances may be stale or missing if the transaction history has not been refreshed recently. Navigate to history events to begin refreshing them.",
-      "last_queried_long": "Some balances may not display until transaction processing is fully complete. Navigate to history events to begin processing.",
-      "never_queried": "Your transaction history has not been downloaded yet. rotki is local-first: it fetches and decodes your full on-chain history on your device, which can take a while for active multi-chain addresses. Navigate to history events to start."
-    },
     "holdings": {
       "add": {
         "bank": "Bank",
@@ -3246,11 +3312,11 @@
       "subtitle": "Indexers are used to query history events. Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
       "suppressed_no_indexer_chains": {
         "error": "Failed to update suppressed chains.",
-        "hint": "Select chains to silence the \"No indexers available\" notification. Remove a chain to start showing notifications again.",
+        "hint": "Select chains that should not be reported when no indexer can serve them. Remove a chain to report it again.",
         "label": "Suppressed chains",
-        "subtitle": "Manage the chains for which the \"No indexers available\" notification is silenced.",
+        "subtitle": "Manage the chains the action center does not report when no indexer can serve them.",
         "success": "Suppressed chains updated",
-        "title": "Suppressed \"No indexers available\" notifications"
+        "title": "Suppressed \"No indexer\" reports"
       },
       "title": "Indexer Order"
     }
@@ -3622,7 +3688,7 @@
     "history_query_indicator": {
       "dismissal_threshold": {
         "label": "Dismissal threshold (hours)",
-        "subtitle": "The time in hours after dismissing the indicator before it can be shown again",
+        "subtitle": "The time in hours a dismissed history sync row stays set aside before it counts in the action center again",
         "title": "Dismissal Threshold",
         "validation": {
           "error": "Failed to set the dismissal threshold"
@@ -3630,7 +3696,7 @@
       },
       "min_out_of_sync_period": {
         "label": "Minimum out of sync period (hours)",
-        "subtitle": "The minimum time in hours that blockchain data must be out of sync before showing the query indicator",
+        "subtitle": "The minimum time in hours that history must be out of sync before the action center reports it",
         "title": "Minimum Out of Sync Period",
         "validation": {
           "error": "Failed to set the minimum out of sync period"
@@ -3638,11 +3704,11 @@
       },
       "reset_dismissal_status": {
         "button": "Reset dismissal status",
-        "subtitle": "Click the button to reset the dismissal status. All query progress indicators will be shown again immediately.",
+        "subtitle": "Click the button to reset the dismissal status. A dismissed history sync row counts in the action center again immediately.",
         "success": "Dismissal status has been reset successfully",
         "title": "Reset dismissal status"
       },
-      "title": "Progress Query Indicator on Dashboard"
+      "title": "History Sync Reminder"
     },
     "newly_detected_tokens": {
       "max_count": {
@@ -3855,10 +3921,10 @@
         "clear_all": "Clear all",
         "error": "Error updating suppressed services",
         "label": "Suppressed services",
-        "subtitle": "Select services for which you don't want to receive notifications about missing API keys.",
+        "subtitle": "Select services whose missing API key the action center should not report.",
         "success": "Suppressed services updated successfully",
         "suppress_all": "Suppress all",
-        "title": "Suppress missing API key notifications"
+        "title": "Suppress missing API key reports"
       },
       "title": "External service settings",
       "validation": {
@@ -5019,7 +5085,6 @@
   },
   "notification_indicator": {
     "tooltip": "Notifications",
-    "tooltip_action": "{count} notification needs your attention | {count} notifications need your attention",
     "tooltip_silent": "Notifications (silent)",
     "tooltip_unread": "Notifications, something new arrived"
   },
@@ -5058,61 +5123,10 @@
       "message_old": "Gnosis Pay replaced your Safe in its security migration. You track only the new Safe. Add the previous Safe {address} to keep its historical activity.",
       "title": "Gnosis Pay Safe migration"
     },
-    "gnosis_pay_session_key_expired": {
-      "title": "Gnosis Pay session key expired"
-    },
-    "missing_api_key": {
-      "action": "Enter key",
-      "beaconchain": {
-        "message": "If you have a Beaconcha.in API key, you can add it to retrieve block production history and improved staking analytics. Press @.quote:notification_messages.missing_api_key.action to add it in the app.",
-        "title": "{service} API key"
-      },
-      "blockscout": {
-        "message": "rotki is using {service} as a transaction indexer but it requires an API key, so its queries are being skipped. Add an API key for {service}, or adjust the indexer order to prioritize a different service.",
-        "title": "{service} API key"
-      },
-      "change_indexer_order": "Change indexer order",
-      "do_not_show_again": "Do not show again",
-      "etherscan": {
-        "message": "rotki is using {service} without an API key configured, which may slow down queries. You can add an API key for better performance, or adjust the indexer order to prioritize a different service.",
-        "title": "{service} API key"
-      },
-      "get_key": "Get API key",
-      "helius": {
-        "message": "Transaction queries for Solana will be slow because you don't have a Helius API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
-        "title": "{service} API key for Solana"
-      },
-      "suppress_confirm": {
-        "message": "Missing API key notifications for {service} will be suppressed. You can re-enable it later in Settings > General > External Service Settings.",
-        "title": "Suppress notification?"
-      },
-      "thegraph": {
-        "message": "rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
-        "title": "{service} API key for {location}"
-      }
-    },
-    "monerium_session_key_expired": {
-      "title": "Monerium session key expired"
-    },
     "new_detected_token": {
       "action": "See more",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
       "title": "New Token Detected|New Tokens Detected"
-    },
-    "no_available_indexers": {
-      "action": "Configure indexers",
-      "do_not_show_again": "Do not show again for this chain",
-      "enter_key": "Enter Etherscan key",
-      "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
-      "paid_key_required": {
-        "message": "rotki could not query {chain} transactions from any indexer. Etherscan's free tier does not cover {chain} and the free alternatives no longer do either, so a paid Etherscan API key is needed to query {chain} transactions. The queries will resume once a key is added.",
-        "title": "{chain} transactions need a paid Etherscan key"
-      },
-      "suppress_confirm": {
-        "message": "Future \"No indexers available\" notifications for {chain} will be suppressed. You can re-enable them later from the EVM settings page.",
-        "title": "Suppress notifications for {chain}?"
-      },
-      "title": "No indexers available"
     },
     "oracle_penalized": {
       "action": "Configure price oracles",
@@ -5142,20 +5156,6 @@
       "action": "Migrate tokens",
       "message": "Tokens with these identifiers are missing some fields and need to be migrated manually:\n {tokens}",
       "title": "Solana Tokens Migration"
-    },
-    "unknown_asset_mapping": {
-      "message": "We could not find a mapping for {groupCount} exchange assets",
-      "title": "Missing mappings for some exchanges"
-    },
-    "unmatched_asset_movements": {
-      "action": "Review",
-      "message": "{count} asset movement could not be automatically matched with a corresponding on-chain event. Please review and match manually.|{count} asset movements could not be automatically matched with corresponding on-chain events. Please review and match them manually.",
-      "title": "Unmatched Asset Movement|Unmatched Asset Movements"
-    },
-    "unmatched_bridge_transactions": {
-      "action": "Review",
-      "message": "{count} bridge transaction could not be automatically matched with its counterpart event. Please review and match manually.|{count} bridge transactions could not be automatically matched with their counterpart events. Please review and match them manually.",
-      "title": "Unmatched Bridge Transaction|Unmatched Bridge Transactions"
     }
   },
   "notification_popup": {
@@ -5176,7 +5176,6 @@
     },
     "tabs": {
       "error": "Error",
-      "needs_action": "Needs Action",
       "reminder": "Reminder",
       "view_all": "View All"
     },

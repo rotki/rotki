@@ -84,7 +84,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
       <ReuseOptionBlock
         :title="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.title')"
         :description="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.description')"
-        :button-text="t('notification_messages.missing_api_key.action')"
+        :button-text="t('external_services.actions.enter_api_key')"
         :route="{
           name: '/api-keys/external/',
           query: { service: 'beaconchain' },
@@ -93,7 +93,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
     </div>
     <template v-else>
       <ReuseOptionBlock
-        :button-text="t('notification_messages.missing_api_key.action')"
+        :button-text="t('external_services.actions.enter_api_key')"
         :route="{
           name: '/api-keys/external/',
           query: { service },

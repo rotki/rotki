@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 import { type ActionItem, ActionSeverity, type ActionTarget } from '@/modules/core/action-center/types';
 
@@ -16,6 +16,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     loading: false,
     locked: false,
     minimumTier: null,
+    options: [],
     severity: ActionSeverity.WARNING,
     target,
     title: 'Unmatched asset movements',
@@ -38,6 +39,37 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
 
     expect(wrapper.emitted('action')).toEqual([[item]]);
+  });
+
+  it('should list no options for a row that has none', () => {
+    expect(mountRow(createItem()).find('[data-testid=actions-center-row-option]').exists()).toBe(false);
+  });
+
+  it('should list the options in order and hand the chosen one\'s target up, not the main action', async () => {
+    const guide: ActionTarget = { kind: 'external', url: 'https://docs.rotki.com' };
+    const wrapper = mountRow(createItem({
+      options: [
+        { icon: 'lu-book-open', id: 'guide', label: 'Guide', target: guide },
+        { danger: true, icon: 'lu-bell-off', id: 'do-not-show-again', label: 'Silence', target: { kind: 'run', run: vi.fn() } },
+      ],
+    }));
+
+    const options = wrapper.findAll('[data-testid=actions-center-row-option]');
+    expect(options.map(option => option.attributes('data-key'))).toEqual(['guide', 'do-not-show-again']);
+
+    await options[0].trigger('click');
+
+    expect(wrapper.emitted('option')).toEqual([[guide]]);
+    expect(wrapper.emitted('action')).toBeUndefined();
+  });
+
+  it('should hide the options of a locked row along with its action', () => {
+    const wrapper = mountRow(createItem({
+      locked: true,
+      options: [{ icon: 'lu-book-open', id: 'guide', label: 'Guide', target: { kind: 'external', url: 'https://docs.rotki.com' } }],
+    }));
+
+    expect(wrapper.find('[data-testid=actions-center-row-option]').exists()).toBe(false);
   });
 
   it('should replace the action with a premium gate when locked', () => {

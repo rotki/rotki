@@ -67,7 +67,7 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
         eventId: identifier,
       },
       message,
-      priority: Priority.ACTION,
+      priority: Priority.HIGH,
       severity: Severity.REMINDER,
       title,
     };

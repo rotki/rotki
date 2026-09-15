@@ -117,7 +117,7 @@ describe('moneriumAuth', () => {
     expect(mockRemoveMatching).toHaveBeenCalledOnce();
     const [predicate] = mockRemoveMatching.mock.calls[0];
     expect(predicate({ group: NotificationGroup.MONERIUM_AUTH })).toBe(true);
-    expect(predicate({ group: NotificationGroup.MISSING_API_KEY })).toBe(false);
+    expect(predicate({ group: NotificationGroup.ORACLE_PENALIZED })).toBe(false);
     expect(predicate({})).toBe(false);
   });
 

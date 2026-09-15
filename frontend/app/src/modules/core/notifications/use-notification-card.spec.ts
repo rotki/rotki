@@ -1,4 +1,4 @@
-import { type NotificationAction, NotificationCategory, type NotificationData, Priority, Severity } from '@rotki/common';
+import { type NotificationAction, NotificationCategory, type NotificationData, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { NOTIFICATION_MAX_HEIGHT, useNotificationCard } from './use-notification-card';
@@ -125,28 +125,6 @@ describe('modules/core/notifications/useNotificationCard', () => {
     });
   });
 
-  describe('marking what needs the user', () => {
-    it('should rail a notification that only the user can resolve', () => {
-      const { actionRailClass } = card(notification({ priority: Priority.ACTION }));
-
-      expect(get(actionRailClass)).toBe('border-l-4 !border-l-rui-primary');
-    });
-
-    it.each([Priority.HIGH, Priority.NORMAL, Priority.BULK])('should leave a %s notification unrailed', (priority) => {
-      const { actionRailClass } = card(notification({ priority }));
-
-      expect(get(actionRailClass)).toBe('');
-    });
-
-    it('should rail on priority rather than on carrying a button', () => {
-      const withButton = card(notification({ action: { action: vi.fn(), label: 'Retry' }, priority: Priority.HIGH }));
-      const withoutButton = card(notification({ priority: Priority.ACTION }));
-
-      expect(get(withButton.actionRailClass)).toBe('');
-      expect(get(withoutButton.actionRailClass)).not.toBe('');
-    });
-  });
-
   describe('when the notification arrived', () => {
     it('should report the date in milliseconds', () => {
       const date = new Date('2026-03-04T05:06:07Z');
@@ -220,22 +198,6 @@ describe('modules/core/notifications/useNotificationCard', () => {
       await copy();
 
       expect(copyToClipboard).toHaveBeenCalledWith('boom');
-    });
-
-    it('should resolve the translation parameters before copying', async () => {
-      const { copy } = card(notification({
-        i18nParam: {
-          choice: 1,
-          message: 'notification_messages.missing_api_key',
-          props: { location: 'ethereum', service: 'etherscan', url: 'https://example.com' },
-        },
-        message: 'the untranslated message',
-      }));
-      await copy();
-
-      expect(copyToClipboard).toHaveBeenCalledWith(
-        'notification_messages.missing_api_key::ethereum, etherscan, https://example.com',
-      );
     });
   });
 

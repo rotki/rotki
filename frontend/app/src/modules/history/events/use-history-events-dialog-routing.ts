@@ -1,5 +1,6 @@
 import type { ShallowRef } from 'vue';
-import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
+import type { RouteLocationRaw } from 'vue-router';
+import { DIALOG_TYPES, type DialogShowOptions, type DialogType } from '@/modules/history/events/dialog-types';
 
 /**
  * Query keys other pages navigate here with to land on a particular dialog, e.g. a decoding-status
@@ -15,11 +16,23 @@ const QUERY_TO_DIALOG = {
   openMatchBridgesDialog: { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS },
 } as const satisfies Record<string, DialogShowOptions>;
 
-/** A query key the history events page turns into an open dialog. */
 type DialogQueryKey = keyof typeof QUERY_TO_DIALOG;
+
+/** A dialog another page can land on by navigating to the history events page. */
+export type RoutableDialogType = (typeof QUERY_TO_DIALOG)[DialogQueryKey]['type'];
 
 function isDialogQueryKey(key: string): key is DialogQueryKey {
   return key in QUERY_TO_DIALOG;
+}
+
+export function isRoutableDialogType(type: DialogType): type is RoutableDialogType {
+  return Object.values(QUERY_TO_DIALOG).some(options => options.type === type);
+}
+
+/** The route that lands on the history events page with the given dialog open. */
+export function historyDialogRoute(type: RoutableDialogType): RouteLocationRaw {
+  const key = Object.keys(QUERY_TO_DIALOG).filter(isDialogQueryKey).find(candidate => QUERY_TO_DIALOG[candidate].type === type);
+  return { name: '/history/events/', query: key ? { [key]: 'true' } : {} };
 }
 
 interface DialogOpener {

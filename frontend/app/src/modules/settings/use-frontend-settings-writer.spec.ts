@@ -21,18 +21,17 @@ describe('useFrontendSettingsWriter', () => {
     expect(getCurrentInstance()).toBeNull();
 
     const { updateFrontendSetting } = useFrontendSettingsWriter();
-    const status = await updateFrontendSetting({ notificationSchedule: {} });
+    const status = await updateFrontendSetting({ suppressNoIndexerChains: [] });
 
     expect(status.success).toBe(true);
   });
 
   it('should send only the changed keys, not the whole blob', async () => {
-    const schedule = { 'NO_AVAILABLE_INDEXERS:optimism': { lastShown: 1, shownCount: 1 } };
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
-    await updateFrontendSetting({ notificationSchedule: schedule });
+    await updateFrontendSetting({ suppressNoIndexerChains: ['optimism'] });
 
-    expect(mockPatchFrontendSettings).toHaveBeenCalledWith({ notificationSchedule: schedule });
+    expect(mockPatchFrontendSettings).toHaveBeenCalledWith({ suppressNoIndexerChains: ['optimism'] });
   });
 
   it('should add nothing to the payload, the schema version included', async () => {
@@ -44,19 +43,18 @@ describe('useFrontendSettingsWriter', () => {
   });
 
   it('should apply the patch to the repo once it is persisted', async () => {
-    const schedule = { 'MISSING_API_KEY:blockscout': { lastShown: 2, shownCount: 1 } };
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
-    await updateFrontendSetting({ notificationSchedule: schedule });
+    await updateFrontendSetting({ suppressNoIndexerChains: ['blockscout'] });
 
-    expect(useSettingsRepo().frontend.notificationSchedule).toStrictEqual(schedule);
+    expect(useSettingsRepo().frontend.suppressNoIndexerChains).toStrictEqual(['blockscout']);
   });
 
   it('should report a failure instead of throwing', async () => {
     mockPatchFrontendSettings.mockRejectedValue(new Error('backend is down'));
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
-    const status = await updateFrontendSetting({ notificationSchedule: {} });
+    const status = await updateFrontendSetting({ suppressNoIndexerChains: [] });
 
     expect(status).toStrictEqual({ message: 'backend is down', success: false });
   });
@@ -65,9 +63,9 @@ describe('useFrontendSettingsWriter', () => {
     mockPatchFrontendSettings.mockRejectedValue(new Error('backend is down'));
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
-    await updateFrontendSetting({ notificationSchedule: { 'MISSING_API_KEY:blockscout': { lastShown: 2, shownCount: 1 } } });
+    await updateFrontendSetting({ suppressNoIndexerChains: ['optimism'] });
 
-    expect(useSettingsRepo().frontend.notificationSchedule).toStrictEqual({});
+    expect(useSettingsRepo().frontend.suppressNoIndexerChains).toStrictEqual([]);
   });
 
   /**

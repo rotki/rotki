@@ -1,5 +1,4 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { type NotificationData, NotificationGroup } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,7 +10,6 @@ const { spies } = vi.hoisted(() => ({
     triggerAssetMovementMatching: vi.fn(),
     getAssetMovementMatches: vi.fn(),
     unlinkAssetMovement: vi.fn(),
-    removeMatching: vi.fn<(predicate: (n: NotificationData) => boolean) => void>(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
@@ -42,7 +40,6 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
     '@/modules/core/common/logging/error-handling',
   )).getErrorMessage,
   useNotifications: (): object => ({
-    removeMatching: spies.removeMatching,
     showErrorMessage: spies.showErrorMessage,
     showSuccessMessage: spies.showSuccessMessage,
   }),
@@ -104,41 +101,29 @@ describe('use-unmatched-asset-movements', () => {
     return import('@/modules/history/events/use-unmatched-asset-movements');
   }
 
-  describe('fetchUnmatchedAssetMovements clears stale notification', () => {
-    it('should clear the unmatched-movements notification when the unmatched list becomes empty', async () => {
+  describe('fetchUnmatchedAssetMovements', () => {
+    it('should empty the unmatched count without loading events when the backend reports none', async () => {
       spies.getUnmatchedAssetMovements.mockResolvedValueOnce([]);
       const { useUnmatchedAssetMovements } = await importFresh();
-      const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+      const { fetchUnmatchedAssetMovements, unmatchedCount } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(false);
 
-      expect(spies.removeMatching).toHaveBeenCalledTimes(1);
-      const predicate = spies.removeMatching.mock.calls[0][0];
-      expect(predicate(createMock<NotificationData>({ group: NotificationGroup.UNMATCHED_ASSET_MOVEMENTS }))).toBe(true);
-      expect(predicate(createMock<NotificationData>())).toBe(false);
+      expect(get(unmatchedCount)).toBe(0);
+      expect(spies.fetchHistoryEvents).not.toHaveBeenCalled();
     });
 
-    it('should not clear the notification when fetching the ignored list', async () => {
-      spies.getUnmatchedAssetMovements.mockResolvedValueOnce([]);
-      const { useUnmatchedAssetMovements } = await importFresh();
-      const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
-
-      await fetchUnmatchedAssetMovements(true);
-
-      expect(spies.removeMatching).not.toHaveBeenCalled();
-    });
-
-    it('should not clear the notification when there are still unmatched movements', async () => {
+    it('should count the movements the backend still reports as unmatched', async () => {
       spies.getUnmatchedAssetMovements.mockResolvedValueOnce(['group-a']);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{ entry: { asset: 'ETH', groupIdentifier: 'group-a' } }],
       });
       const { useUnmatchedAssetMovements } = await importFresh();
-      const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+      const { fetchUnmatchedAssetMovements, unmatchedCount } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(false);
 
-      expect(spies.removeMatching).not.toHaveBeenCalled();
+      expect(get(unmatchedCount)).toBe(1);
     });
 
     /** A failed fetch leaves no movements behind, and must not leave the list loading forever. */

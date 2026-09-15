@@ -1,12 +1,10 @@
 import type { ExternalServiceKeys } from '@/modules/integrations/types';
-import { NotificationGroup } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDelete, mockQuery, mockResetSchedule, mockSet, mockShow } = vi.hoisted(() => ({
+const { mockDelete, mockQuery, mockSet, mockShow } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
   mockQuery: vi.fn(),
-  mockResetSchedule: vi.fn(),
   mockSet: vi.fn(),
   mockShow: vi.fn(),
 }));
@@ -23,25 +21,16 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: vi.fn(() => ({ show: mockShow })),
 }));
 
-vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
-  useNotificationCooldown: vi.fn(() => ({
-    recordDisplay: vi.fn(),
-    resetSchedule: mockResetSchedule,
-    shouldSuppress: vi.fn(() => false),
-  })),
-}));
-
-const keys: ExternalServiceKeys = {};
+const withBlockscout: ExternalServiceKeys = { blockscout: { apiKey: 'new-key' } };
 
 describe('useExternalApiKeys', () => {
   let api: Awaited<typeof import('@/modules/settings/api-keys/external/use-external-api-keys')>;
 
   beforeEach(async () => {
     setActivePinia(createPinia());
-    mockDelete.mockReset().mockResolvedValue(keys);
-    mockQuery.mockReset().mockResolvedValue(keys);
-    mockSet.mockReset().mockResolvedValue(keys);
-    mockResetSchedule.mockReset();
+    mockDelete.mockReset().mockResolvedValue({});
+    mockQuery.mockReset().mockResolvedValue({});
+    mockSet.mockReset().mockResolvedValue(withBlockscout);
     mockShow.mockReset();
 
     // The composable is shared, so each case needs a fresh module instance to get its own state.
@@ -49,58 +38,34 @@ describe('useExternalApiKeys', () => {
     api = await import('@/modules/settings/api-keys/external/use-external-api-keys');
   });
 
-  /** The reset is scoped to one service, so run its predicate against a few group keys. */
-  function resetTargets(): string[] {
-    expect(mockResetSchedule).toHaveBeenCalledTimes(1);
-    const predicate = mockResetSchedule.mock.calls[0][0];
-    return [
-      `${NotificationGroup.MISSING_API_KEY}:blockscout`,
-      `${NotificationGroup.MISSING_API_KEY}:etherscan`,
-      `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`,
-    ].filter(group => predicate(group));
-  }
-
-  it('should let the missing-key warning interrupt again after a key is saved', async () => {
-    const { save } = api.useExternalApiKeys();
+  it('should expose a saved key, which is what takes down its missing-key row', async () => {
+    const { getApiKey, save } = api.useExternalApiKeys();
 
     await save({ apiKey: 'new-key', name: 'blockscout' });
 
-    expect(resetTargets()).toStrictEqual([`${NotificationGroup.MISSING_API_KEY}:blockscout`]);
+    expect(getApiKey('blockscout')).toBe('new-key');
   });
 
-  it('should let the missing-key warning interrupt again after a key is deleted', async () => {
-    const { confirmDelete } = api.useExternalApiKeys();
-
-    confirmDelete('blockscout');
-    await mockShow.mock.calls[0][1]();
-
-    expect(resetTargets()).toStrictEqual([`${NotificationGroup.MISSING_API_KEY}:blockscout`]);
-  });
-
-  it('should not reset the schedule when saving the key fails', async () => {
+  it('should keep the key unchanged and report the error when saving fails', async () => {
     mockSet.mockRejectedValue(new Error('rejected'));
-    const { save } = api.useExternalApiKeys();
+    const { actionStatus, getApiKey, save } = api.useExternalApiKeys();
 
     await save({ apiKey: 'new-key', name: 'blockscout' });
 
-    expect(mockResetSchedule).not.toHaveBeenCalled();
+    expect(getApiKey('blockscout')).toBe('');
+    expect(get(actionStatus('blockscout'))?.success).toBeFalsy();
   });
 
-  it('should not reset the schedule when deleting the key fails', async () => {
-    mockDelete.mockRejectedValue(new Error('rejected'));
-    const { confirmDelete } = api.useExternalApiKeys();
+  it('should ask before deleting a key, and delete it only once confirmed', async () => {
+    const { confirmDelete, getApiKey, save } = api.useExternalApiKeys();
+    await save({ apiKey: 'new-key', name: 'blockscout' });
 
     confirmDelete('blockscout');
+    expect(mockDelete).not.toHaveBeenCalled();
+
     await mockShow.mock.calls[0][1]();
 
-    expect(mockResetSchedule).not.toHaveBeenCalled();
-  });
-
-  it('should not reset the schedule merely for asking to delete a key', () => {
-    const { confirmDelete } = api.useExternalApiKeys();
-
-    confirmDelete('blockscout');
-
-    expect(mockResetSchedule).not.toHaveBeenCalled();
+    expect(mockDelete).toHaveBeenCalledWith('blockscout');
+    expect(getApiKey('blockscout')).toBe('');
   });
 });

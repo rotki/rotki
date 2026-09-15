@@ -65,7 +65,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
       },
       category: NotificationCategory.DEFAULT,
       message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(location), name }),
-      priority: Priority.ACTION,
+      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: t('actions.bank_events.authentication.title'),
     });

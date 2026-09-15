@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IndexerOrderSetting from '@/modules/settings/evm/IndexerOrderSetting.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const chains: EvmChainInfo[] = [
   {
@@ -223,6 +224,19 @@ describe('indexerOrderSetting', () => {
     await nextTick();
 
     expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should keep the rows of chains no indexer served through a reorder, since the backend reports a chain only once', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT], { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] });
+    const conditions = useRaisedConditionsStore();
+    conditions.raise({ chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
+
+    defaultList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    await selectTab('gnosis');
+    chainList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    await flushPromises();
+
+    expect(get(conditions.conditions)).toEqual([{ chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false }]);
   });
 
   it('should persist the remaining overrides when a chain is removed', async () => {

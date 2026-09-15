@@ -1,51 +1,21 @@
 import type { MessageHandler } from '../interfaces';
 import type { UnmatchedAssetMovementsData } from '@/modules/core/messaging/types';
-import {
-  type Notification,
-  NotificationCategory,
-  NotificationGroup,
-  Priority,
-  Severity,
-} from '@rotki/common';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 
-export function createUnmatchedAssetMovementsHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
-): MessageHandler<UnmatchedAssetMovementsData> {
-  const { removeMatching } = useNotifications();
+/**
+ * Re-reads the unmatched asset movements the action center row counts, once the backend reports
+ * that matching changed them.
+ *
+ * @remarks
+ * Creates no notification. The message carries a count, but the row counts the list itself, so the
+ * list is what gets refreshed.
+ */
+export function createUnmatchedAssetMovementsHandler(): MessageHandler<UnmatchedAssetMovementsData> {
+  const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 
-  return {
-    async handle(data: UnmatchedAssetMovementsData): Promise<Notification | null> {
-      removeMatching(
-        notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS,
-      );
-
-      const currentName = get(router.currentRoute).name;
-      if (data.count === 0 || currentName === '/history/events/') {
-        return null;
-      }
-
-      return {
-        action: {
-          action: async () =>
-            router.push({
-              name: '/history/events/',
-              query: { openMatchAssetMovementsDialog: 'true' },
-            }),
-          label: t('notification_messages.unmatched_asset_movements.action'),
-          persist: true,
-        },
-        category: NotificationCategory.DEFAULT,
-        display: false,
-        group: NotificationGroup.UNMATCHED_ASSET_MOVEMENTS,
-        message: t('notification_messages.unmatched_asset_movements.message', {
-          count: data.count,
-        }),
-        priority: Priority.ACTION,
-        severity: Severity.WARNING,
-        title: t('notification_messages.unmatched_asset_movements.title', data.count),
-      };
-    },
-  };
+  return createConditionalHandler<UnmatchedAssetMovementsData>(async () => {
+    await fetchUnmatchedAssetMovements();
+    return null;
+  });
 }

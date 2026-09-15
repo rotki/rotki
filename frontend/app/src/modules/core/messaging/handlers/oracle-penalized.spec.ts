@@ -20,7 +20,7 @@ describe('createOraclePenalizedHandler', () => {
     const result = await handler.handle({ oracle: 'coingecko', penaltyDuration: 1800, reason: 'timeout' });
 
     expect(result.severity).toBe(Severity.WARNING);
-    expect(result.priority).toBe(Priority.ACTION);
+    expect(result.priority).toBe(Priority.HIGH);
     expect(result.display).toBeUndefined();
     expect(result.message).toContain('message_timeout');
     expect(result.message).not.toContain('message_errors');

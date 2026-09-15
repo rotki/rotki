@@ -1,27 +1,20 @@
-import type { NotificationHandler } from '../interfaces';
+import type { MessageHandler } from '../interfaces';
 import type { GnosisPaySessionKeyExpiredData } from '@/modules/core/messaging/types';
-import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { createNotificationHandler } from '@/modules/core/messaging/utils';
+import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-export function createGnosisPaySessionHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
-): NotificationHandler<GnosisPaySessionKeyExpiredData> {
-  return createNotificationHandler<GnosisPaySessionKeyExpiredData>(data => ({
-    action: {
-      action: async () => router.push({
-        name: '/api-keys/external/',
-        query: { service: 'gnosis_pay' },
-      }),
-      icon: 'lu-arrow-right',
-      label: t('external_services.actions.reauthenticate'),
-      persist: true,
-    },
-    category: NotificationCategory.DEFAULT,
-    group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED,
-    message: data.error,
-    priority: Priority.ACTION,
-    severity: Severity.WARNING,
-    title: t('notification_messages.gnosis_pay_session_key_expired.title'),
-  }));
+/**
+ * Raises the action center row for an expired Gnosis Pay session.
+ *
+ * @remarks
+ * Creates no notification. No route reports whether a session is valid, so the row stays raised
+ * until a sign-in is verified, which is what clears it.
+ */
+export function createGnosisPaySessionHandler(): MessageHandler<GnosisPaySessionKeyExpiredData> {
+  const { raise } = useRaisedConditionsStore();
+
+  return createConditionalHandler<GnosisPaySessionKeyExpiredData>(() => {
+    raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+    return null;
+  });
 }

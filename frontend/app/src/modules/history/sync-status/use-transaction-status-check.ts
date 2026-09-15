@@ -1,8 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import { get } from '@vueuse/shared';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useHistoryQueryIndicatorSettings } from '@/modules/history/sync-status/use-history-query-indicator-settings';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
 const SECONDS_TO_MS = 1_000;

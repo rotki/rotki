@@ -2437,15 +2437,6 @@
       "message": "L'adresse suivante a été ajoutée à {chain}: {addresses}|Les adresses suivantes ont été ajoutées à {chain}: {addresses}",
       "title": "Adresse ajoutée à {chain}|Adresses ajoutées à {chain}"
     },
-    "missing_api_key": {
-      "action": "Entrer la clé",
-      "change_indexer_order": "Modifier l'ordre de l'indexeur",
-      "etherscan": {
-        "message": "rotki utilise {service} sans clé API configurée, ce qui peut ralentir les requêtes. Vous pouvez ajouter une clé API pour de meilleures performances, ou ajuster l'ordre de l'indexeur pour prioriser un autre service.",
-        "title": "Clé API {service}"
-      },
-      "get_key": "Obtenir la clé API"
-    },
     "new_detected_token": {
       "action": "Voir plus",
       "message": "Un nouveau token avec l'identifiant {identifier} a été détecté à partir du traitement des événements et des requêtes.|{count} nouveaux tokens ont été détectés à partir du traitement des événements et des requêtes.",

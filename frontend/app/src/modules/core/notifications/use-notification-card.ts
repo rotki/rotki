@@ -1,5 +1,5 @@
 import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
-import { type NotificationAction, type NotificationData, Priority, Severity } from '@rotki/common';
+import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { arrayify } from '@/modules/core/common/data/array';
 
@@ -24,16 +24,6 @@ interface UseNotificationCardReturn {
   color: ComputedRef<string>;
   /** Tinted card background matching {@link UseNotificationCardReturn.color}. */
   colorBgClass: ComputedRef<string>;
-  /**
-   * Left rail marking a notification only the user can resolve, or empty for the rest.
-   *
-   * @remarks
-   * Actionability is its own axis, so it gets its own channel rather than repainting the card:
-   * colour stays severity. Keyed on `Priority.ACTION` rather than on carrying a button, so the
-   * rail, the bell's count and the "Needs action" tab all mean the same thing; a button is
-   * already visible on its own.
-   */
-  actionRailClass: ComputedRef<string>;
   /** Puts the message on the clipboard, resolving the i18n parameters first. */
   copy: () => Promise<void>;
   /**
@@ -81,7 +71,6 @@ export function useNotificationCard(
 ): UseNotificationCardReturn {
   const { dismiss, height } = options;
 
-  const { t } = useI18n({ useScope: 'global' });
   const { copy: copyToClipboard } = useClipboard();
 
   const expanded = shallowRef<boolean>(false);
@@ -123,10 +112,6 @@ export function useNotificationCard(
         return '';
     }
   });
-
-  const actionRailClass = computed<string>(() =>
-    toValue(notification).priority === Priority.ACTION ? 'border-l-4 !border-l-rui-primary' : '',
-  );
 
   const colorBgClass = computed<string>(() => {
     switch (get(color)) {
@@ -188,17 +173,7 @@ export function useNotificationCard(
   });
 
   async function copy(): Promise<void> {
-    const { i18nParam, message } = toValue(notification);
-    let messageText = message;
-
-    if (i18nParam) {
-      messageText = t(i18nParam.message, {
-        location: i18nParam.props.location,
-        service: i18nParam.props.service,
-        url: i18nParam.props.url,
-      });
-    }
-    await copyToClipboard(messageText);
+    await copyToClipboard(toValue(notification).message);
   }
 
   function doAction(action: NotificationAction): void {
@@ -220,7 +195,6 @@ export function useNotificationCard(
   }
 
   return {
-    actionRailClass,
     actions,
     buttonClicked,
     circleBgClass,

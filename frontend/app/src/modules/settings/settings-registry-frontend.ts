@@ -138,11 +138,6 @@ export const frontendRegistry = {
       titleKey: msg.$t('general_settings.nft_setting.label.include_nfts_subtitle'),
     },
   }),
-  /**
-   * Machine state written by the notification nag schedule rather than a setting the user edits, so
-   * it carries neither an anchor nor a search row.
-   */
-  notificationSchedule: frontend('notificationSchedule'),
   notifyNewNfts: frontend('notifyNewNfts', { anchor: SettingsHighlightIds.NFT_IMAGE_RENDERING }),
   passwordConfirmationInterval: frontend('passwordConfirmationInterval', { anchor: SettingsHighlightIds.PASSWORD_CONFIRMATION }),
   persistPrivacySettings: frontend('persistPrivacySettings', {

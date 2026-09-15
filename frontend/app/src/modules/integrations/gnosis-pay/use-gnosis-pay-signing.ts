@@ -1,9 +1,10 @@
+import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
-import { type MaybePromise, NotificationGroup } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -60,9 +61,10 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { removeMatching, showErrorMessage } = useNotifications();
+  const { showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
+  const { clear } = useRaisedConditionsStore();
 
   const { walletMode } = storeToRefs(useWalletStore());
   const injectedWallet = useInjectedWallet();
@@ -95,13 +97,14 @@ Issued At: ${issuedAt}`;
   }
 
   /**
-   * Drops the session-expired warning once the backend has accepted the signature. Nothing else in
-   * this flow writes to that group - progress goes to the task centre and failures to the message
-   * dialog - so the warning is never superseded the way a grouped notification would be, and would
-   * otherwise sit in the list still offering to re-authenticate a session that is now valid.
+   * Takes down the expired-session row once the backend has accepted the signature.
+   *
+   * @remarks
+   * A verified sign-in is the only evidence the session is valid again: no route reports a session's
+   * state, so without this the row would keep offering to re-authenticate a session that works.
    */
-  function clearSessionExpiredWarning(): void {
-    removeMatching(({ group }) => group === NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED);
+  function clearSessionExpiredCondition(): void {
+    clear(({ kind }) => kind === RaisedConditionKind.GNOSIS_PAY_SESSION);
   }
 
   /**
@@ -174,7 +177,7 @@ Issued At: ${issuedAt}`;
 
       if (verifyOutcome.value) {
         set(signInSuccess, true);
-        clearSessionExpiredWarning();
+        clearSessionExpiredCondition();
         if (onSignInComplete)
           await onSignInComplete();
       }

@@ -8,7 +8,6 @@ import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue
 import DashboardLocations from '@/modules/dashboard/holdings/components/DashboardLocations.vue';
 import NftBalanceTable from '@/modules/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
-import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
@@ -79,7 +78,6 @@ watch(width, (newWidth) => {
         :messages="activeDashboardMessages"
         @dismiss="dismissedMessage = true"
       />
-      <DashboardProgressIndicator />
     </div>
     <div
       class="container"

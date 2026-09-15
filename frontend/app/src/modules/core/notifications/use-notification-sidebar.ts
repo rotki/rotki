@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { type NotificationData, Priority, Severity } from '@rotki/common';
+import { type NotificationData, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
@@ -7,7 +7,6 @@ import { useSilentNotifications } from '@/modules/core/notifications/use-silent-
 
 export const TabCategory = {
   ERROR: 'error',
-  NEEDS_ACTION: 'needs_action',
   REMINDER: 'reminder',
   VIEW_ALL: 'view_all',
 } as const;
@@ -17,14 +16,12 @@ export type TabCategory = (typeof TabCategory)[keyof typeof TabCategory];
 /** Order the tabs appear in, which is not the declaration order of {@link TabCategory}. */
 export const TAB_ORDER: TabCategory[] = [
   TabCategory.VIEW_ALL,
-  TabCategory.NEEDS_ACTION,
   TabCategory.REMINDER,
   TabCategory.ERROR,
 ];
 
 const TAB_FILTERS: Partial<Record<TabCategory, (item: NotificationData) => boolean>> = {
   [TabCategory.ERROR]: (item: NotificationData) => item.severity === Severity.ERROR,
-  [TabCategory.NEEDS_ACTION]: (item: NotificationData) => item.priority === Priority.ACTION,
   [TabCategory.REMINDER]: (item: NotificationData) => item.severity === Severity.REMINDER,
 };
 
@@ -94,7 +91,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
 
   const tabCategoriesLabel = computed<Record<TabCategory, string>>(() => ({
     [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
-    [TabCategory.NEEDS_ACTION]: t('notification_sidebar.tabs.needs_action'),
     [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
     [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
   }));

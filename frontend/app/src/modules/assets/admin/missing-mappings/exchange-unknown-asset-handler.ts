@@ -1,38 +1,24 @@
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
 import type { ExchangeUnknownAssetData } from '@/modules/core/messaging/types/business-types';
-import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { pick } from 'es-toolkit';
+import { useMissingMappingsCount } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-count';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
-import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
+import { createConditionalHandler } from '@/modules/core/messaging/utils';
 
-export function createExchangeUnknownAssetHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
-): MessageHandler<ExchangeUnknownAssetData> {
-  const { count, put } = useMissingMappingsDB();
+/**
+ * Records an exchange asset rotki could not map, which the action center counts from the table.
+ *
+ * @remarks
+ * Creates no notification. The backend repeats the report on every query cycle, and the table's
+ * unique index rejects a repeat, which the conditional handler absorbs.
+ */
+export function createExchangeUnknownAssetHandler(): MessageHandler<ExchangeUnknownAssetData> {
+  const { put } = useMissingMappingsDB();
+  const { refresh } = useMissingMappingsCount();
 
-  return createStateWithNotificationHandler<ExchangeUnknownAssetData, number>(
-    async (data) => {
-      const mapping = pick(data, ['identifier', 'location', 'name', 'details']);
-
-      await put(mapping); // This will be caught by the factory's error handling
-      return count();
-    },
-    async (data, groupCount) => ({
-      action: {
-        action: async () => router.push({
-          name: '/asset-manager/more/missing-mappings/',
-        }),
-        icon: 'lu-cable',
-        label: t('asset_management.cex_mapping.add_mapping'),
-      },
-      category: NotificationCategory.DEFAULT,
-      group: NotificationGroup.MISSING_EXCHANGE_MAPPING,
-      groupCount,
-      message: t('notification_messages.unknown_asset_mapping.message', { groupCount }),
-      priority: Priority.ACTION,
-      severity: Severity.WARNING,
-      title: t('notification_messages.unknown_asset_mapping.title'),
-    }),
-  );
+  return createConditionalHandler<ExchangeUnknownAssetData>(async (data) => {
+    await put(pick(data, ['identifier', 'location', 'name', 'details']));
+    await refresh();
+    return null;
+  });
 }

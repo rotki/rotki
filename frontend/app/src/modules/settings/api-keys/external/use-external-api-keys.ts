@@ -1,13 +1,12 @@
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { ConfirmationMessage } from '@/modules/history/events/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/modules/integrations/types';
-import { NotificationGroup, toCapitalCase } from '@rotki/common';
+import { toCapitalCase } from '@rotki/common';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
 
 function getName(name: ExternalServiceName, _chain?: string): string {
@@ -39,7 +38,6 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
 
   const { show } = useConfirmStore();
   const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
-  const { resetSchedule } = useNotificationCooldown();
 
   const { logged } = storeToRefs(useSessionAuthStore());
 
@@ -99,21 +97,12 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     });
   }
 
-  /**
-   * Let the missing-key warning for a service interrupt again once its key changes. The backed-off
-   * schedule was earned against the old state, and the new key may still be rejected.
-   */
-  function forgetMissingKeySchedule(name: string): void {
-    resetSchedule(group => group === `${NotificationGroup.MISSING_API_KEY}:${name}`);
-  }
-
   async function save(payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> {
     const { name } = payload;
     resetStatus(name);
     try {
       set(loading, true);
       set(keys, await setExternalServices([payload]));
-      forgetMissingKeySchedule(name);
 
       const serviceName = toCapitalCase(name.split('_').join(' '));
 
@@ -142,7 +131,6 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     set(loading, true);
     try {
       set(keys, await deleteExternalServices(name));
-      forgetMissingKeySchedule(name);
     }
     catch (error: unknown) {
       setStatus(name, {

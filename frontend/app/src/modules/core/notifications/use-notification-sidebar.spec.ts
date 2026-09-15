@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationData, Priority, Severity } from '@rotki/common';
+import { NotificationCategory, type NotificationData, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
 import { setActivePinia, storeToRefs } from 'pinia';
@@ -92,7 +92,6 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
     it('should show the tabs in the order the drawer lays them out', () => {
       expect(TAB_ORDER).toEqual([
         TabCategory.VIEW_ALL,
-        TabCategory.NEEDS_ACTION,
         TabCategory.REMINDER,
         TabCategory.ERROR,
       ]);
@@ -109,10 +108,10 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
   describe('filtering by tab', () => {
     const error = notification({ id: 1, severity: Severity.ERROR });
     const reminder = notification({ id: 2, severity: Severity.REMINDER });
-    const needsAction = notification({ id: 3, priority: Priority.ACTION, severity: Severity.INFO });
+    const info = notification({ id: 3, severity: Severity.INFO });
 
     beforeEach(() => {
-      seed([error, reminder, needsAction]);
+      seed([error, reminder, info]);
     });
 
     it('should hold everything back on the view-all tab', () => {
@@ -124,7 +123,6 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
     it.each([
       [TabCategory.ERROR, 1],
       [TabCategory.REMINDER, 2],
-      [TabCategory.NEEDS_ACTION, 3],
     ])('should show only what the %s tab admits', (tab, expectedId) => {
       const { modelSelectedTab, selectedNotifications } = sidebar();
       set(modelSelectedTab, tab);

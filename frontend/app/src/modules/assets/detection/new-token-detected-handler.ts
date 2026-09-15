@@ -41,7 +41,7 @@ export function createNewTokenDetectedHandler(
           },
           count,
         ),
-        priority: Priority.ACTION,
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('notification_messages.new_detected_token.title', count),
       };

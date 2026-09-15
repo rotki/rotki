@@ -4,6 +4,7 @@ import type { Filters } from '@/modules/assets/admin/missing-mappings/use-missin
 import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { MissingMapping } from '@/modules/user-data/schemas';
+import { useMissingMappingsCount } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-count';
 import {
   type MissingMappingsRequestPayload,
   useMissingMappingsDB,
@@ -59,6 +60,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
   const modelMapping = ref<CexMapping>();
 
   const { getData, remove } = useMissingMappingsDB();
+  const { refresh: refreshCount } = useMissingMappingsCount();
   const fields = useMissingMappingsFields();
 
   const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
@@ -115,7 +117,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
       identifier: item.locationSymbol,
       location: item.location ?? '',
     });
-    await refetch();
+    await Promise.all([refetch(), refreshCount()]);
   }
 
   return {

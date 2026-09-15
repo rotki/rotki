@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type NotificationData, Severity } from '@rotki/common';
-import MissingKeyNotification from '@/modules/core/notifications/MissingKeyNotification.vue';
 import { useNotificationCard } from '@/modules/core/notifications/use-notification-card';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
@@ -23,7 +22,6 @@ function dismiss(id: number): void {
 }
 
 const {
-  actionRailClass,
   actions,
   buttonClicked,
   circleBgClass,
@@ -46,7 +44,6 @@ const {
   <RuiCard
     :class="[
       colorBgClass,
-      actionRailClass,
       {
         '!rounded-none': popup,
       },
@@ -105,14 +102,7 @@ const {
           'max-h-[calc(100vh-15rem)] overflow-auto': popup && expanded,
         }"
       >
-        <MissingKeyNotification
-          v-if="notification.i18nParam"
-          :params="notification.i18nParam"
-        />
-        <div
-          v-else
-          :title="notification.message"
-        >
+        <div :title="notification.message">
           {{ notification.message }}
         </div>
       </div>

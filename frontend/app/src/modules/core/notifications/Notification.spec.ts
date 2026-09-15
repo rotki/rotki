@@ -70,17 +70,4 @@ describe('modules/core/notifications/Notification.vue', () => {
     expect(error.text()).toContain('common.actions.copy');
     expect(info.text()).not.toContain('common.actions.copy');
   });
-
-  it('should render the missing key notice instead of the raw message', () => {
-    const wrapper = createWrapper(notification({
-      i18nParam: {
-        choice: 1,
-        message: 'notification_messages.missing_api_key',
-        props: { location: 'ethereum', service: 'etherscan', url: 'https://example.com' },
-      },
-      message: 'the untranslated message',
-    }));
-
-    expect(wrapper.text()).not.toContain('the untranslated message');
-  });
 });

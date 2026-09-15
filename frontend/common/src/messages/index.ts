@@ -19,25 +19,18 @@ export enum NotificationGroup {
   ASSET_SEARCH_ERROR = 'ASSET_SEARCH_ERROR',
   BEACONCHAIN_RATE_LIMITED = 'BEACONCHAIN_RATE_LIMITED',
   DESERIALIZATION_ERROR = 'DESERIALIZATION_ERROR',
-  HISTORICAL_BALANCES = 'HISTORICAL_BALANCES',
-  MISSING_EXCHANGE_MAPPING = 'MISSING_EXCHANGE_MAPPING',
-  GNOSIS_PAY_SESSION_EXPIRED = 'GNOSIS_PAY_SESSION_EXPIRED',
   INTERNAL_TX_CONFLICT_RESOLUTION = 'INTERNAL_TX_CONFLICT_RESOLUTION',
-  MISSING_API_KEY = 'MISSING_API_KEY',
   MONERIUM_AUTH = 'MONERIUM_AUTH',
-  NO_AVAILABLE_INDEXERS = 'NO_AVAILABLE_INDEXERS',
   ORACLE_PENALIZED = 'ORACLE_PENALIZED',
-  UNMATCHED_ASSET_MOVEMENTS = 'UNMATCHED_ASSET_MOVEMENTS',
-  UNMATCHED_BRIDGE_TRANSACTIONS = 'UNMATCHED_BRIDGE_TRANSACTIONS',
 }
 
 /**
  * A notification group, optionally narrowed to a single subject.
  *
  * Some groups cover a whole class of notifications that must not collapse into each other: one
- * chain missing its indexers is a different problem from another chain missing its indexers, and
- * both need their own entry with their own actions. Those append a discriminator
- * (`NO_AVAILABLE_INDEXERS:binance_sc`) so the grouping stays per subject.
+ * oracle being penalized is a different event from another oracle being penalized, and both need
+ * their own entry. Those append a discriminator (`ORACLE_PENALIZED:coingecko`) so the grouping
+ * stays per subject.
  */
 export type NotificationGroupKey = NotificationGroup | `${NotificationGroup}:${string}`;
 
@@ -54,13 +47,8 @@ export function notificationGroupOf(key: string): NotificationGroup | undefined 
 
 export const NotificationCategory = {
   ADDRESS_MIGRATION: 'address_migration',
-  BEACONCHAIN: 'beaconchain',
-  BLOCKSCOUT: 'blockscout',
   CALENDAR_REMINDER: 'calendar_reminder',
   DEFAULT: 'default',
-  ETHERSCAN: 'etherscan',
-  HELIUS: 'helius',
-  THEGRAPH: 'thegraph',
 } as const;
 
 export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];
@@ -79,12 +67,6 @@ export interface NotificationAction {
   readonly danger?: boolean;
 }
 
-export interface I18nParam {
-  message: string;
-  choice: number;
-  props: Record<string, string>;
-}
-
 interface NotificationBase {
   readonly title: string;
   readonly message: string;
@@ -93,7 +75,6 @@ interface NotificationBase {
   readonly action?: NotificationAction | NotificationAction[];
   readonly group?: NotificationGroupKey;
   readonly groupCount?: number;
-  readonly i18nParam?: I18nParam;
   readonly priority?: Priority;
   readonly extras?: Record<string, unknown>;
 }

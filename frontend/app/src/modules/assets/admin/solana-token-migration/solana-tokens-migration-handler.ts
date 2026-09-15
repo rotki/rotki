@@ -25,7 +25,7 @@ export function createSolanaTokensHandler(
       message: t('notification_messages.solana_tokens_migration.message', {
         tokens: data.identifiers.map(item => `- ${item}`).join('\n'),
       }),
-      priority: Priority.ACTION,
+      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: t('notification_messages.solana_tokens_migration.title'),
     }),

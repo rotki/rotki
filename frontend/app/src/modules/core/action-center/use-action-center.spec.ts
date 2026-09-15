@@ -22,6 +22,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     loading: false,
     locked: false,
     minimumTier: null,
+    options: [],
     severity: ActionSeverity.WARNING,
     target: { kind: 'run', run: (): void => {} },
     title: 'An item',
