@@ -51,6 +51,34 @@ const KINDS: readonly KindDescriptor[] = [
   { groupTitle: t => t('task_center.group.other'), kind: Kind.OTHER },
 ];
 
+/**
+ * The kinds long enough to name the dock's pill, in the order the pill picks between them.
+ *
+ * @remarks
+ * Separate from {@link KINDS} on purpose. That order ranks balance refreshes first because it drives
+ * group ordering and the header caption, while the pill names the work a user waits minutes or hours
+ * on. A short kind still gets its row in the panel; it only never becomes the pill's primary job.
+ * Their progress units differ (leaves for a history refresh, events for historical balances), so the
+ * pill shows one job's count rather than adding them up.
+ */
+const GLOBAL_KINDS: readonly ActivityKind[] = [
+  Kind.HISTORY_SYNC,
+  Kind.REDECODE,
+  Kind.REPULLING,
+  Kind.ETH_BLOCK_DECODING,
+  Kind.HISTORICAL_BALANCES,
+  Kind.PNL_REPORT,
+  Kind.PROTOCOL_CACHE,
+  Kind.PRICES,
+  Kind.CSV_IMPORT,
+];
+
+/** Where a kind ranks among the long kinds (lower first), or `undefined` for a short kind. */
+export function globalKindRank(kind: ActivityKind): number | undefined {
+  const index = GLOBAL_KINDS.indexOf(kind);
+  return index === -1 ? undefined : index;
+}
+
 const KIND_ORDER: readonly ActivityKind[] = KINDS.map(descriptor => descriptor.kind);
 const GROUP_TITLE = new Map(KINDS.map(descriptor => [descriptor.kind, descriptor.groupTitle]));
 
