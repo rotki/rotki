@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -54,6 +55,7 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -354,9 +356,10 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing a gemini balance. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 log.error('Error processing a gemini balance', error=msg)
                 continue
@@ -432,8 +435,9 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             )
             raise
         except RemoteError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Got remote error while querying Gemini for trades: {e!s}',
+                NetworkFailure(record=UserMessageRecord.TRADE, error=str(e)),
             )
             raise
         return trades
@@ -503,9 +507,10 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Failed to deserialize a gemini trade. '
                         'Check logs for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.TRADE, error=str(e)),
                     )
                     log.error(
                         'Error processing a gemini trade.',
@@ -563,9 +568,10 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing a gemini deposit/withdrawal. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                 )
                 log.error(
                     'Error processing a gemini deposit_withdrawal',

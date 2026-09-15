@@ -5,7 +5,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { SocketMessageType } from '@/modules/core/messaging/types';
+import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 
 const { mockConsumeMessages } = vi.hoisted((): { mockConsumeMessages: ReturnType<typeof vi.fn> } => ({
   mockConsumeMessages: vi.fn(),
@@ -113,6 +115,7 @@ describe('useMessageHandling', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    set(storeToRefs(useNotificationsStore()).data, []);
   });
 
   it('should notify the user and run token detection', async () => {
@@ -161,10 +164,17 @@ describe('useMessageHandling', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('should consume polling messages via the legacy fallback', async () => {
+  it('should notify once for a user message polled twice, then for the warning', async () => {
+    const userError = {
+      type: SocketMessageType.USER_MESSAGE,
+      data: { verbosity: 'error', value: 'an error', key: null, subject: null, fields: null },
+    };
     mockConsumeMessages.mockResolvedValue({
-      errors: ['plain error', 'plain error'],
-      warnings: ['a warning'],
+      errors: [userError, userError],
+      warnings: [{
+        type: SocketMessageType.USER_MESSAGE,
+        data: { verbosity: 'warning', value: 'a warning', key: null, subject: null, fields: null },
+      }],
     });
 
     const { consume } = setup();
@@ -172,19 +182,15 @@ describe('useMessageHandling', () => {
 
     await consume();
 
-    // duplicate error is de-duplicated, so one error + one warning notification
-    expect(notify).toHaveBeenCalledTimes(2);
-    const severities = vi.mocked(notify).mock.calls.map(([n]) => n.message);
-    expect(severities).toContain('plain error');
-    expect(severities).toContain('a warning');
+    expect(vi.mocked(notify).mock.calls.map(([n]) => n.message)).toEqual(['an error', 'a warning']);
   });
 
   it('should route a valid typed polling message to its handler', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [JSON.stringify({
+      errors: [{
         type: SocketMessageType.EVM_ACCOUNTS_DETECTION,
         data: [{ address: '0xdead', chain: 'optimism' }],
-      })],
+      }],
       warnings: [],
     });
 
@@ -204,9 +210,35 @@ describe('useMessageHandling', () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
-  it('should fall back to the legacy handler for schema-invalid json', async () => {
+  it('should drop a polled message that fails the schema and still show the rest', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [JSON.stringify({ unexpected: true })],
+      errors: [
+        { unexpected: true },
+        { type: SocketMessageType.USER_MESSAGE, data: { verbosity: 'error', value: 'valid', key: null, subject: null, fields: null } },
+      ],
+      warnings: [],
+    });
+
+    const { consume } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await consume();
+
+    expect(vi.mocked(notify).mock.calls.map(([n]) => n.message)).toEqual(['valid']);
+  });
+
+  it('should render a polled classified user message as its value', async () => {
+    mockConsumeMessages.mockResolvedValue({
+      errors: [{
+        type: SocketMessageType.USER_MESSAGE,
+        data: {
+          verbosity: 'error',
+          value: 'Failed to deserialize a kucoin balance. Ignoring it.',
+          key: 'bad_data',
+          subject: 'kucoin',
+          fields: { record: 'balance', error: 'Missing key: amount' },
+        },
+      }],
       warnings: [],
     });
 
@@ -216,6 +248,25 @@ describe('useMessageHandling', () => {
     await consume();
 
     expect(notify).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(notify).mock.calls[0][0].message).toBe('Failed to deserialize a kucoin balance. Ignoring it.');
+  });
+
+  it('should skip a polled user message whose text is already a notification', async () => {
+    set(storeToRefs(useNotificationsStore()).data, [createNotification(1, { message: 'already shown', title: 'backend' })]);
+    mockConsumeMessages.mockResolvedValue({
+      errors: [{
+        type: SocketMessageType.USER_MESSAGE,
+        data: { verbosity: 'error', value: 'already shown', key: null, subject: null, fields: null },
+      }],
+      warnings: [],
+    });
+
+    const { consume } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await consume();
+
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('should notify when message consumption fails', async () => {

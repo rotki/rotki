@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
@@ -30,6 +31,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
+from rotkehlchen.user_messages import BadData, MissingPrice
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -206,9 +208,10 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 try:
                     aust_usd_price = Inquirer.find_usd_price(asset=A_AUST)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error processing ICONOMI balance entry due to inability to '
                         f'query USD price: {e!s}. Skipping balance entry',
+                        MissingPrice(asset=A_AUST.identifier, timestamp=None),
                     )
                     continue
 
@@ -289,9 +292,10 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     )
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Error processing an iconomi transaction. Check logs '
                         'for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.TRADE, error=str(e)),
                     )
                     log.error(msg='Error processing an iconomi transaction', error=msg, trade=tx)
 

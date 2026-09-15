@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -57,6 +58,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, MissingPrice, NetworkFailure
 from rotkehlchen.utils.misc import (
     timestamp_to_iso8601,
     ts_ms_to_sec,
@@ -277,9 +279,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 try:
                     usd_price = Inquirer.find_usd_price(asset)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error processing Bit2me balance entry for {asset_symbol} due to '
                         f'inability to query USD price: {e!s}. Skipping balance entry',
+                        MissingPrice(asset=asset.identifier, timestamp=None),
                     )
                     continue
 
@@ -289,8 +292,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 )
             except DeserializationError as e:
                 log.error('Error processing Bit2me balance entry %s. %s', balance_entry, e)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to deserialize a Bit2me balance. {e!s}. Check logs for details.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
 
@@ -364,7 +368,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 end_ts=end_ts,
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query {self.name} transactions. {e!s}')
+            self.add_classified_error(
+                f'Failed to query {self.name} transactions. {e!s}',
+                NetworkFailure(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
+            )
             raise
 
         if event_queue is None:
@@ -402,7 +409,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         try:
             transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query {self.name} transactions. {e!s}')
+            self.add_classified_error(
+                f'Failed to query {self.name} transactions. {e!s}',
+                NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
+            )
             return []
 
         return self._build_asset_movements(transactions, start_ts, end_ts)
@@ -416,8 +426,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         try:
             transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Failed to query {self.name} brokerage transactions. {e!s}',
+                NetworkFailure(record=UserMessageRecord.TRADE, error=str(e)),
             )
             return []
 
@@ -432,7 +443,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         try:
             transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query {self.name} EARN transactions. {e!s}')
+            self.add_classified_error(
+                f'Failed to query {self.name} EARN transactions. {e!s}',
+                NetworkFailure(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
+            )
             return []
 
         return self._build_earn_movements(transactions, start_ts, end_ts)
@@ -446,7 +460,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         try:
             transactions = self._query_transactions(start_ts=start_ts, end_ts=end_ts)
         except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query {self.name} airdrop transactions. {e!s}')  # noqa: E501
+            self.add_classified_error(
+                f'Failed to query {self.name} airdrop transactions. {e!s}',
+                NetworkFailure(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
+            )
             return []
 
         return self._build_airdrops(transactions, start_ts, end_ts)
@@ -463,9 +480,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 movement_events = self._deserialize_asset_movement(raw_transaction)
             except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
                 log.error('Failed to deserialize Bit2me transaction', error=str(e), raw_transaction=raw_transaction)  # noqa: E501
-                self.msg_aggregator.add_error(
-                    f'Failed to process a {self.name} transaction. Check logs for details.',
-                )
+                msg = f'Failed to process a {self.name} transaction. Check logs for details.'
+                if isinstance(e, DeserializationError):
+                    self.add_classified_error(msg, BadData(
+                        record=UserMessageRecord.ASSET_MOVEMENT,
+                        error=str(e),
+                    ))
+                else:
+                    self.msg_aggregator.add_error(msg)
                 continue
 
             if movement_events is None:
@@ -494,9 +516,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 trade_events = self._deserialize_brokerage_trade(raw_transaction)
             except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
                 log.error('Failed to deserialize Bit2me brokerage trade', error=str(e), raw_transaction=raw_transaction)  # noqa: E501
-                self.msg_aggregator.add_error(
-                    f'Failed to process a {self.name} brokerage trade. Check logs for details.',
-                )
+                msg = f'Failed to process a {self.name} brokerage trade. Check logs for details.'
+                if isinstance(e, DeserializationError):
+                    self.add_classified_error(
+                        msg,
+                        BadData(record=UserMessageRecord.TRADE, error=str(e)),
+                    )
+                else:
+                    self.msg_aggregator.add_error(msg)
                 continue
 
             if trade_events and start_ts <= ts_ms_to_sec(trade_events[0].timestamp) <= end_ts:
@@ -573,11 +600,15 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 })
                 response_data = jsonloads_dict(response.text)
             except RemoteError as e:
-                self.msg_aggregator.add_error(f'Failed to query {self.name} trade history. {e!s}')
+                self.add_classified_error(
+                    f'Failed to query {self.name} trade history. {e!s}',
+                    NetworkFailure(record=UserMessageRecord.TRADE, error=str(e)),
+                )
                 raise
             except JSONDecodeError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'{self.name} returned invalid JSON for trades. {e!s}',
+                    BadData(record=UserMessageRecord.TRADE, error=str(e)),
                 )
                 raise RemoteError(f'{self.name} returned invalid JSON for trades') from e
 
@@ -588,9 +619,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     page_events.extend(self._deserialize_trade(raw_trade))
                 except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
                     log.error('Failed to deserialize Bit2me trade', error=str(e), raw_trade=raw_trade)  # noqa: E501
-                    self.msg_aggregator.add_error(
-                        f'Failed to process a {self.name} trade. Check logs for details.',
-                    )
+                    msg = f'Failed to process a {self.name} trade. Check logs for details.'
+                    if isinstance(e, DeserializationError):
+                        self.add_classified_error(msg, BadData(
+                            record=UserMessageRecord.TRADE,
+                            error=str(e),
+                        ))
+                    else:
+                        self.msg_aggregator.add_error(msg)
 
             if event_queue is None:
                 swap_events.extend(page_events)

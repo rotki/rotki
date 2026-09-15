@@ -7577,14 +7577,33 @@ Querying messages to show to the user
 
       {
           "result": {
-              "errors": ["Something bad happened", "Another bad thing happened"],
-              "warnings": ["An asset could not be queried", "Can not reach kraken"]
+              "errors": [
+                  {
+                      "type": "user_message",
+                      "data": {
+                          "verbosity": "error",
+                          "value": "Failed to deserialize a kucoin balance. Ignoring it.",
+                          "key": "bad_data",
+                          "subject": "kucoin",
+                          "fields": {"record": "balance", "error": "Missing key: amount"}
+                      }
+                  },
+                  {"type": "balance_snapshot_error", "data": {"location": "kraken", "error": "Could not reach kraken"}}
+              ],
+              "warnings": [
+                  {
+                      "type": "user_message",
+                      "data": {"verbosity": "warning", "value": "An asset could not be queried", "key": null, "subject": null, "fields": null}
+                  }
+              ]
           },
           "message": ""
       }
 
-   :resjson list[string] errors: A list of strings denoting errors that need to be shown to the user.
-   :resjson list[string] warnings: A list of strings denoting warnings that need to be shown to the user.
+   :resjson list[object] errors: The errors that need to be shown to the user. Each entry is a message in the same ``{"type": ..., "data": ...}`` shape the websocket sends, queued here because it could not be delivered over a websocket.
+   :resjson list[object] warnings: The warnings that need to be shown to the user, in the same shape.
+
+   A ``user_message`` message carries ``verbosity`` (``"error"`` or ``"warning"``) and ``value``, the rendered text. It also carries ``key`` (why it happened, e.g. ``"bad_data"``, ``"network"``), ``subject`` (the location it happened to, e.g. ``"kucoin"``) and ``fields`` (the data specific to that key). These three are ``null`` for a message that has not been classified.
 
    :statuscode 200: Messages popped and read successfully.
    :statuscode 500: Internal rotki error.

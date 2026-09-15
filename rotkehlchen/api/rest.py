@@ -1800,8 +1800,8 @@ class RestAPI:
         )
 
     def get_messages(self) -> Response:
-        warnings = self.rotkehlchen.msg_aggregator.consume_warnings()
-        errors = self.rotkehlchen.msg_aggregator.consume_errors()
+        warnings = self.rotkehlchen.msg_aggregator.consume_warning_payloads()
+        errors = self.rotkehlchen.msg_aggregator.consume_error_payloads()
         result = {'warnings': warnings, 'errors': errors}
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_coinex
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -48,6 +49,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -237,9 +239,10 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 asset = asset_from_coinex(balance['ccy'])
             except (DeserializationError, KeyError) as e:
                 log.error('Failed to deserialize CoinEx balance %s. %s', balance, e)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Failed to deserialize a CoinEx balance entry. '
                     'Check logs for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
             except UnknownAsset as e:
@@ -271,7 +274,10 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             raw_markets = self._api_query(endpoint='/spot/market', signed=False)['data']
         except RemoteError as e:
             log.error('Failed to query CoinEx markets due to %s', e)
-            self.msg_aggregator.add_error(f'Got remote error while querying CoinEx markets: {e!s}')
+            self.add_classified_error(
+                f'Got remote error while querying CoinEx markets: {e!s}',
+                NetworkFailure(record=UserMessageRecord.MARKET, error=str(e)),
+            )
             raise
 
         for entry in raw_markets:
@@ -403,6 +409,10 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[T]:
         results: list[T] = []
         page = 1
+        record = (
+            UserMessageRecord.TRADE if endpoint == '/spot/finished-order'
+            else UserMessageRecord.ASSET_MOVEMENT
+        )
         while True:
             query_options = options.copy()
             query_options['page'] = page
@@ -411,7 +421,10 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 response = self._api_query(endpoint=endpoint, options=query_options)
             except RemoteError as e:
                 log.error('CoinEx %s query failed due to a remote error: %s', endpoint, e)
-                self.msg_aggregator.add_error(f'Got remote error while querying CoinEx: {e!s}')
+                self.add_classified_error(
+                    f'Got remote error while querying CoinEx: {e!s}',
+                    NetworkFailure(record=record, error=str(e)),
+                )
                 raise
 
             if not isinstance(data := response['data'], list):
@@ -427,7 +440,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error('CoinEx %s %s: %s', endpoint, msg, entry)
-                    self.msg_aggregator.add_error(msg)
+                    self.add_classified_error(msg, BadData(record=record, error=str(e)))
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
