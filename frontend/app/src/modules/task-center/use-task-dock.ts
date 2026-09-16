@@ -1,8 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
-import { globalKindRank } from '@/modules/task-center/core/kinds';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { someInSubtree } from '@/modules/task-center/core/tree';
-import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
+import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
 import { type PendingJob, usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -30,29 +29,6 @@ interface UseTaskDockReturn {
   visible: ComputedRef<boolean>;
   /** Whether the panel is open; the pill and the panel header both toggle it. */
   modelExpanded: Ref<boolean>;
-  /** Every job in flight, as the panel lists them. */
-  jobs: ComputedRef<PendingJob[]>;
-  /** The tree the panel's rows walk. */
-  children: ComputedRef<ReadonlyMap<ActivityId, Activity[]>>;
-  /** Leaves across every job in flight, for the panel header. */
-  steps: ComputedRef<ActivitySteps>;
-  /** Overall progress across every job, for the panel header. */
-  percentage: ComputedRef<number>;
-  /** The job the pill names, or `undefined` while everything is still queued. */
-  primary: ComputedRef<PendingJob | undefined>;
-  /** Whether {@link primary} is a kind the pill names; only such a job gets its title, a determinate ring and a count. */
-  isPrimaryRanked: ComputedRef<boolean>;
-  /**
-   * The count the pill shows for {@link primary}.
-   *
-   * @remarks
-   * A job with children counts its subtree's leaves. A single activity has no leaves to count, so it
-   * uses the steps it reports itself: counted as one leaf it would read "0 of 1" beside a percentage
-   * that says otherwise. `undefined` for an unranked job, or a ranked one that reports no steps.
-   */
-  primarySteps: ComputedRef<ActivitySteps | undefined>;
-  /** Jobs in flight besides {@link primary}. */
-  otherJobs: ComputedRef<number>;
   /** Settled jobs with a failure anywhere in their subtree, not yet acknowledged. */
   failed: ComputedRef<Activity[]>;
   /** Settled jobs with a failure the user has acknowledged; kept reachable until the job reruns. */
@@ -68,60 +44,29 @@ interface UseTaskDockReturn {
   holdPeek: (held: boolean) => void;
 }
 
-function rankOf(job: PendingJob): number {
-  return globalKindRank(job.activity.kind) ?? Number.POSITIVE_INFINITY;
-}
-
 function isFailed(activity: Activity): boolean {
   return activity.status === ActivityStatus.FAILED;
 }
 
 /**
- * State for the corner dock: a pill naming the work in flight, and a panel listing it.
+ * What the corner dock is showing, and whether its panel is open.
  *
  * @remarks
- * The pill names one job rather than a total. Kinds report progress in different units, so a
- * combined figure would compare leaves with events, and averaging percentages makes the bar jump
- * whenever a job starts or ends. The primary job is the best-ranked job by `globalKindRank`, which
- * ranks the data a user waits to look at; with none of those running it is the first job in
- * flight, and the pill describes it generically rather than naming upkeep such as a price refresh.
- *
- * Once a run settles, the dock reports its outcome, and every rule is bound to state rather than a
- * timer. A clean run peeks a summary and hides. A failure stays until acknowledged, then shrinks
+ * While work runs the dock is working; what it names is `useDockPrimary`'s concern and what it
+ * lists is {@link usePendingJobs}'s. Once a run settles, the dock reports its outcome, and every
+ * rule is bound to state rather than a timer. A clean run peeks a summary and hides. A failure stays until acknowledged, then shrinks
  * to an icon rather than vanishing, so a dismissed failure can still be reopened. Either clears on
  * its own when the job is rerun, because a rerun puts the same record back to PENDING. Only jobs
  * seen running are reported, so work that settled before the dock saw it does not resurface.
  */
 export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const { isActive, model } = useTaskCenter();
-  const { children, jobs, percentage, steps } = usePendingJobs();
+  const { children, jobs } = usePendingJobs();
 
   const modelExpanded = shallowRef<boolean>(false);
   const tracked = shallowRef<ReadonlySet<ActivityId>>(new Set());
   const acknowledged = shallowRef<ReadonlySet<ActivityId>>(new Set());
   const peeking = shallowRef<boolean>(false);
-
-  const primary = computed<PendingJob | undefined>(() => get(jobs).reduce<PendingJob | undefined>(
-    (best, job) => (best === undefined || rankOf(job) < rankOf(best) ? job : best),
-    undefined,
-  ));
-
-  const isPrimaryRanked = computed<boolean>(() => {
-    const job = get(primary);
-    return job !== undefined && Number.isFinite(rankOf(job));
-  });
-
-  const primarySteps = computed<ActivitySteps | undefined>(() => {
-    const job = get(primary);
-    if (job === undefined || !get(isPrimaryRanked))
-      return undefined;
-
-    const hasChildren = (get(children).get(job.activity.id)?.length ?? 0) > 0;
-    const count = hasChildren ? job.steps : job.activity.steps;
-    return count && count.total > 0 ? count : undefined;
-  });
-
-  const otherJobs = computed<number>(() => Math.max(get(jobs).length - 1, 0));
 
   const settled = computed<Activity[]>(() => {
     const ids = get(tracked);
@@ -240,20 +185,12 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   return {
     acknowledge,
-    children,
     dismissed,
     failed,
     finished,
     holdPeek,
-    isPrimaryRanked,
-    jobs,
     modelExpanded,
-    otherJobs,
-    percentage,
-    primary,
-    primarySteps,
     state,
-    steps,
     visible,
   };
 });

@@ -3,31 +3,18 @@ import type { Activity } from '@/modules/task-center/core/types';
 import CollapsedPendingTasks from '@/modules/core/notifications/CollapsedPendingTasks.vue';
 import PendingTaskNode from '@/modules/core/notifications/PendingTaskNode.vue';
 import { useCancelConfirmation } from '@/modules/task-center/use-cancel-confirmation';
+import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
+import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
 import { useTaskDockCaption } from '@/modules/task-center/use-task-dock-caption';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const {
-  acknowledge,
-  children,
-  dismissed,
-  failed,
-  finished,
-  holdPeek,
-  isPrimaryRanked,
-  jobs,
-  modelExpanded,
-  otherJobs,
-  percentage,
-  primary,
-  primarySteps,
-  state,
-  steps,
-  visible,
-} = useTaskDock();
+const { acknowledge, dismissed, failed, finished, holdPeek, modelExpanded, state, visible } = useTaskDock();
+const { children, jobs, percentage, steps } = usePendingJobs();
+const { isPrimaryRanked, otherJobs, primary, primarySteps } = useDockPrimary(jobs, children);
 const { confirmCancel } = useCancelConfirmation();
-const caption = useTaskDockCaption();
+const caption = useTaskDockCaption(jobs, children);
 
 const now = useTimestamp({ interval: 1000 });
 
