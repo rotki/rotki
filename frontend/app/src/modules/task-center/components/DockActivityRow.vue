@@ -83,12 +83,15 @@ const count = computed<string>(() => (steps && steps.total > 0
   : t('percentage_display.value', { value: percentage })));
 
 const reasonColor = computed<string>(() => (get(isFailed) ? 'text-rui-error' : 'text-rui-warning'));
+
+/** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
+const compact = computed<boolean>(() => nested && isTerminalStatus(activity.status) && !activity.reason && !steps);
 </script>
 
 <template>
   <div
-    class="flex items-start gap-2.5 py-1.5 px-1 rounded"
-    :class="{ 'bg-rui-error/5': isFailed && !steps }"
+    class="flex items-start gap-2.5 px-1 rounded"
+    :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps }]"
     data-testid="dock-activity-row"
   >
     <RuiProgress

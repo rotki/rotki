@@ -82,6 +82,43 @@ export function globalKindRank(kind: ActivityKind): number | undefined {
   return index === -1 ? undefined : index;
 }
 
+/**
+ * The kinds a bulk stop may interrupt: every producer of them only reads, syncs or rebuilds a cache,
+ * so stopping one leaves the data as it was before it started, and running it again finishes it.
+ *
+ * @remarks
+ * Chosen per kind, so a kind is only here when all of its producers are safe. `PRICES` is left out
+ * because it also saves and removes manual prices, `PNL_REPORT` because it also imports report
+ * data, `STAKING` because it also adds validators, and `MANUAL_BALANCES` because it also saves them.
+ * Work that deletes before it re-derives declares `resets`, which excludes it whatever its kind.
+ */
+const SAFE_TO_STOP_KINDS: ReadonlySet<ActivityKind> = new Set([
+  Kind.ALL_BALANCES,
+  Kind.BLOCKCHAIN_BALANCES,
+  Kind.EXCHANGE_BALANCES,
+  Kind.BANK_BALANCES,
+  Kind.NFT_BALANCES,
+  Kind.EXCHANGE_SAVINGS,
+  Kind.TOKEN_DETECTION,
+  Kind.HISTORY_SYNC,
+  Kind.TX_SYNC,
+  Kind.TX_DECODING,
+  Kind.ETH_BLOCK_DECODING,
+  Kind.EXCHANGE_EVENTS,
+  Kind.BANK_EVENTS,
+  Kind.ONLINE_EVENTS,
+  Kind.PROTOCOL_CACHE,
+  Kind.HISTORICAL_BALANCES,
+  Kind.LIQUIDITY_POOLS,
+  Kind.LIQUITY,
+  Kind.AIRDROPS,
+]);
+
+/** Whether a bulk stop may interrupt work of this kind. See {@link SAFE_TO_STOP_KINDS}. */
+export function isSafeToStop(kind: ActivityKind): boolean {
+  return SAFE_TO_STOP_KINDS.has(kind);
+}
+
 const KIND_ORDER: readonly ActivityKind[] = KINDS.map(descriptor => descriptor.kind);
 const GROUP_TITLE = new Map(KINDS.map(descriptor => [descriptor.kind, descriptor.groupTitle]));
 

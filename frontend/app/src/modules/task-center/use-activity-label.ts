@@ -8,15 +8,22 @@ interface UseActivityLabelReturn {
    */
   subtitleOf: (activity: Activity) => string | undefined;
   /**
-   * What a row calls the activity: its subtitle when nested under a parent, its title otherwise.
+   * What a row calls the activity: what it acts on when nested under a parent, its title otherwise.
    *
    * @remarks
-   * Under a parent the subtitle is the identity. Every chain and account in one flow carries the
-   * same title, so a child of "History refresh" reads as "Ethereum" rather than "Transaction sync /
-   * Ethereum", where only the second half distinguishes it from its siblings.
+   * Under a parent, the siblings share the title and the verb ("Refreshing Ethereum", "Refreshing
+   * Gnosis" and so on under "Refreshing 21 chains"), so only the thing each acts on tells them apart. That is
+   * read from the subtitle's params, most specific first (see {@link IDENTITY_PARAMS}); a subtitle
+   * with none of them is shown whole.
    */
   labelOf: (activity: Activity, nested: boolean) => string;
 }
+
+/**
+ * The subtitle params that name what an activity acts on, most specific first: an account under a
+ * chain carries both `address` and `chain`, and the address is what differs between siblings.
+ */
+const IDENTITY_PARAMS = ['address', 'xpub', 'validator', 'chain', 'location', 'exchange', 'bank', 'source', 'protocol', 'asset'] as const;
 
 /** Resolves activity text for display, in the current language and privacy mode. */
 export function useActivityLabel(): UseActivityLabelReturn {
@@ -60,8 +67,28 @@ export function useActivityLabel(): UseActivityLabelReturn {
     return resolveText(t, displaySubtitle(activity.subtitle));
   }
 
+  /**
+   * The name of what an activity acts on, from its subtitle params, with its `account` beside it
+   * when there is one ("Kraken (main)"), since two accounts on one exchange are otherwise the same.
+   */
+  function identityOf(activity: Activity): string | undefined {
+    const subtitle = displaySubtitle(activity.subtitle);
+    if (subtitle === undefined || typeof subtitle === 'string')
+      return undefined;
+
+    const params = subtitle.params ?? {};
+    const key = IDENTITY_PARAMS.find(name => typeof params[name] === 'string' && params[name] !== '');
+    if (key === undefined)
+      return undefined;
+
+    const { account } = params;
+    return typeof account === 'string' && account !== '' ? `${String(params[key])} (${account})` : String(params[key]);
+  }
+
   function labelOf(activity: Activity, nested: boolean): string {
-    return nested ? subtitleOf(activity) ?? activity.title : activity.title;
+    if (!nested)
+      return activity.title;
+    return identityOf(activity) ?? subtitleOf(activity) ?? activity.title;
   }
 
   return { labelOf, subtitleOf };

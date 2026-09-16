@@ -8,8 +8,8 @@ import { useTaskOrchestrator } from './use-task-orchestrator';
 
 interface UseCancelConfirmationReturn {
   confirmCancel: (activity: Activity) => void;
-  /** Asks before stopping every cancellable activity at once. */
-  confirmCancelAll: () => void;
+  /** Asks before stopping several jobs at once. */
+  confirmCancelAll: (targets: Activity[], keptRunning: number) => void;
 }
 
 /**
@@ -23,7 +23,7 @@ interface UseCancelConfirmationReturn {
 export function useCancelConfirmation(): UseCancelConfirmationReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { activities } = useTaskOrchestrator();
-  const { cancel, cancelAll } = useTaskController();
+  const { cancel } = useTaskController();
   const confirmStore = useConfirmStore();
   const { dismiss, show } = confirmStore;
   const { confirmation, visible } = storeToRefs(confirmStore);
@@ -86,15 +86,27 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
     }, live, async () => cancel(activity));
   }
 
-  function confirmCancelAll(): void {
+  /**
+   * Asks before stopping several jobs at once, naming how many stop and how many keep running.
+   *
+   * @param targets - the jobs to stop; each cancel cascades to its subtree
+   * @param keptRunning - how many listed jobs are left running because stopping them is unsafe, said in the prompt so the user is not surprised that work goes on
+   */
+  function confirmCancelAll(targets: Activity[], keptRunning: number): void {
+    const ids = new Set(targets.map(target => target.id));
     const live = computed<boolean>(() => get(activities)
-      .some(item => item.cancellable && !isTerminalStatus(item.status)));
+      .some(item => ids.has(item.id) && !isTerminalStatus(item.status)));
+
+    const stops = t('task_dock.panel.stop_all_info', { count: targets.length }, targets.length);
+    const message = keptRunning > 0
+      ? `${stops} ${t('task_dock.panel.stop_all_kept', { count: keptRunning }, keptRunning)}`
+      : stops;
 
     confirmWhileLive({
-      message: t('task_dock.panel.stop_all_info'),
+      message,
       title: t('task_dock.panel.stop_all'),
       type: 'warning',
-    }, live, cancelAll);
+    }, live, async () => Promise.allSettled(targets.map(async target => cancel(target))));
   }
 
   return { confirmCancel, confirmCancelAll };

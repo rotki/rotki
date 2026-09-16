@@ -16,7 +16,7 @@ import {
 
 const activities = ref<Activity[]>([]);
 const confirmCancel = vi.fn<(activity: Activity) => void>();
-const confirmCancelAll = vi.fn<() => void>();
+const confirmCancelAll = vi.fn<(targets: Activity[], keptRunning: number) => void>();
 const rerun = vi.fn<(activity: Activity) => void>();
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
@@ -70,8 +70,12 @@ describe('taskDock', () => {
   });
 
   describe('the panel footer', () => {
-    it('should offer to stop everything while several jobs run, asking first', async () => {
-      set(activities, [...refresh(ActivityStatus.RUNNING), activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.RUNNING)]);
+    it('should offer to stop the jobs it may safely interrupt, naming how many data-changing jobs keep running', async () => {
+      set(activities, [
+        ...refresh(ActivityStatus.RUNNING),
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING),
+        activity(ActivityKind.ASSETS, 'update', ActivityStatus.RUNNING),
+      ]);
       const wrapper = createWrapper();
 
       await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
@@ -80,6 +84,18 @@ describe('taskDock', () => {
       await wrapper.find('[data-testid=dock-stop-all]').trigger('click');
 
       expect(confirmCancelAll).toHaveBeenCalledOnce();
+      const [targets, keptRunning] = confirmCancelAll.mock.calls[0] ?? [];
+      expect(targets?.map(target => target.kind).sort()).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC]);
+      expect(keptRunning).toBe(1);
+    });
+
+    it('should not offer stop all when only one of the running jobs is safe to interrupt', async () => {
+      set(activities, [...refresh(ActivityStatus.RUNNING), activity(ActivityKind.CSV_IMPORT, 'import', ActivityStatus.RUNNING)]);
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=dock-stop-all]').exists()).toBe(false);
     });
 
     it('should leave stopping a single job to its own row', async () => {

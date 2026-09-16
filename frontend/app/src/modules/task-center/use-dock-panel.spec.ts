@@ -119,6 +119,30 @@ describe('useDockPanel', () => {
       expect(get(panel().roots).map(root => root.kind)).toEqual([ActivityKind.HISTORY_SYNC, ActivityKind.BLOCKCHAIN_BALANCES]);
     });
 
+    it('should split running jobs into the ones a bulk stop may interrupt and the ones it leaves running', () => {
+      set(activities, [
+        ...balances(RUNNING, RUNNING, RUNNING, RUNNING),
+        activity(ActivityKind.CSV_IMPORT, 'import', RUNNING),
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', RUNNING),
+      ]);
+      const { stoppable, unstoppable } = panel();
+
+      expect(get(stoppable).map(root => root.kind).sort()).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC]);
+      expect(get(unstoppable).map(root => root.kind)).toEqual([ActivityKind.CSV_IMPORT]);
+    });
+
+    it('should leave running a job of a safe kind whose subtree deletes before re-deriving', () => {
+      const refreshId = makeActivityId(ActivityKind.HISTORY_SYNC, 'refresh');
+      set(activities, [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', RUNNING),
+        activity(ActivityKind.TX_DECODING, 'redecode', RUNNING, refreshId, { resets: true }),
+      ]);
+      const { stoppable, unstoppable } = panel();
+
+      expect(get(stoppable)).toEqual([]);
+      expect(get(unstoppable).map(root => root.id)).toEqual([refreshId]);
+    });
+
     it('should offer nothing to retry while work still runs, even with a leaf already failed', () => {
       set(activities, balances(RUNNING, COMPLETE, FAILED, RUNNING));
 

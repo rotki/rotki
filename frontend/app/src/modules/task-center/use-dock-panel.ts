@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
-import { groupTitle } from '@/modules/task-center/core/kinds';
+import { groupTitle, isSafeToStop } from '@/modules/task-center/core/kinds';
 import { type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, type ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
@@ -29,6 +29,10 @@ interface UseDockPanelReturn {
   /** Failed leaves the orchestrator can run again, while the dock reports failures. */
   retryable: ComputedRef<Activity[]>;
   retryFailed: () => void;
+  /** Listed jobs a bulk stop may interrupt without leaving data half-written. See `isSafeToStop`. */
+  stoppable: ComputedRef<Activity[]>;
+  /** Listed jobs a bulk stop leaves running, because interrupting them could leave data half-written. */
+  unstoppable: ComputedRef<Activity[]>;
 }
 
 function isFailed(activity: Activity): boolean {
@@ -107,5 +111,17 @@ export function useDockPanel(
       rerun(leaf);
   }
 
-  return { retryable, retryFailed, roots, sections, summary, tally, title, total };
+  /** Safe to stop as a whole: its kind only reads or syncs, and nothing in it deletes before re-deriving. */
+  const isStoppable = (root: Activity): boolean => isSafeToStop(root.kind)
+    && !someInSubtree(toValue(children), root, activity => activity.resets === true);
+
+  const running = computed<Activity[]>(() => (get(state) === DockState.WORKING
+    ? get(roots).filter(root => root.cancellable)
+    : []));
+
+  const stoppable = computed<Activity[]>(() => get(running).filter(isStoppable));
+
+  const unstoppable = computed<Activity[]>(() => get(running).filter(root => !isStoppable(root)));
+
+  return { retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
 }
