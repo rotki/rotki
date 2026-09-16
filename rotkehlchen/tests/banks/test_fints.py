@@ -6,9 +6,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fints.client import NeedRetryResponse, NeedTANResponse
+from fints.exceptions import (
+    FinTSClientPINError,
+    FinTSClientTemporaryAuthError,
+    FinTSDialogInitError,
+)
 
 from rotkehlchen.api.services.banks import BanksService
-from rotkehlchen.banks.errors import BankError, BankMFARequired
+from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
 from rotkehlchen.banks.fints import (
     Fints,
     FinTSProductRegistrationError,
@@ -115,6 +120,16 @@ class UnregisteredProductTransport(FinTSFixtureTransport):
         raise FinTSProductRegistrationError('code 9078')
 
 
+class FailedInitializationTransport(FinTSFixtureTransport):
+    def __init__(self, error: Exception, response_code: str) -> None:
+        super().__init__()
+        self.error = error
+        self.last_response_code = response_code
+
+    def __enter__(self) -> None:
+        raise self.error
+
+
 def create_fints(database, messages, transport: FinTSFixtureTransport) -> Fints:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
@@ -177,6 +192,44 @@ def test_product_registration_response_aborts_the_dialog() -> None:
         )
 
     assert dialog.open is False
+
+
+@pytest.mark.parametrize(('error', 'response_code', 'expected_exception', 'message'), [
+    (
+        FinTSClientPINError('generic library message'),
+        '9942',
+        BankAuthExpired,
+        r'rejected FinTS authentication \(response code 9942\)',
+    ),
+    (
+        FinTSClientTemporaryAuthError('generic library message'),
+        '3938',
+        BankAuthExpired,
+        r'temporarily blocked \(response code 3938\)',
+    ),
+    (
+        FinTSDialogInitError('generic library message'),
+        '9800',
+        BankError,
+        r'could not be initialized \(response code 9800\)',
+    ),
+])
+def test_initialization_errors_preserve_safe_response_code(
+        database,
+        function_scope_messages_aggregator,
+        error: Exception,
+        response_code: str,
+        expected_exception: type[BankError],
+        message: str,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        FailedInitializationTransport(error=error, response_code=response_code),
+    )
+
+    with pytest.raises(expected_exception, match=message):
+        connector.query_accounts()
 
 
 def test_fints_endpoint_whitespace_is_removed() -> None:
