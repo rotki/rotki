@@ -1,5 +1,4 @@
-//! Docker config layering for the five core tunables entrypoint.py exposed
-//! (Phase 2, Work item 2).
+//! Docker config layering for backend tunables.
 //!
 //! Precedence: **JSON file > env > built-in default**. The `rotki_config.json`
 //! file is a top-priority admin override, matching both the desktop app
@@ -42,10 +41,31 @@ pub const DEFAULT_HTTP_PORT: u16 = 80;
 /// Env var that overrides the external port without rewriting the CMD.
 const HTTP_PORT_ENV: &str = "ROTKI_HTTP_PORT";
 
-/// The five tunables after resolution, ready to drop into `ServiceLayout`.
+/// Backend log destination, configured only in Docker mode.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum LogTarget {
+    #[default]
+    File,
+    Stdout,
+}
+
+fn parse_logtarget(raw: &str) -> Result<Option<LogTarget>, String> {
+    match raw.trim() {
+        "" => Ok(None),
+        "file" => Ok(Some(LogTarget::File)),
+        "stdout" => Ok(Some(LogTarget::Stdout)),
+        _ => Err(format!(
+            "invalid LOGTARGET={raw:?}: expected file or stdout"
+        )),
+    }
+}
+
+/// The tunables after resolution, ready to drop into `ServiceLayout`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tunables {
     pub log_level: String,
+    pub log_target: LogTarget,
     pub log_from_other_modules: bool,
     pub max_logfiles_num: Option<u32>,
     pub max_size_in_mb_all_logs: Option<u32>,
@@ -57,6 +77,7 @@ pub struct Tunables {
 #[serde(default)]
 pub struct FileConfig {
     pub loglevel: Option<String>,
+    pub logtarget: Option<LogTarget>,
     pub logfromothermodules: Option<bool>,
     pub max_logfiles_num: Option<u32>,
     pub max_size_in_mb_all_logs: Option<u32>,
@@ -67,6 +88,7 @@ pub struct FileConfig {
 #[derive(Clone, Debug, Default)]
 pub struct EnvConfig {
     pub loglevel: Option<String>,
+    pub logtarget: Option<LogTarget>,
     pub logfromothermodules: Option<bool>,
     pub max_logfiles_num: Option<u32>,
     pub max_size_in_mb_all_logs: Option<u32>,
@@ -114,6 +136,13 @@ impl EnvConfig {
         warn_on_legacy_names();
         Ok(Self {
             loglevel: env_string("LOGLEVEL"),
+            logtarget: match std::env::var("LOGTARGET") {
+                Ok(raw) => parse_logtarget(&raw)?,
+                Err(std::env::VarError::NotPresent) => None,
+                Err(std::env::VarError::NotUnicode(_)) => {
+                    return Err("LOGTARGET is not valid UTF-8".into())
+                }
+            },
             logfromothermodules: env_bool("LOGFROMOTHERMODULES")?,
             max_logfiles_num: env_u32("MAX_LOGFILES_NUM")?,
             max_size_in_mb_all_logs: env_u32("MAX_SIZE_IN_MB_ALL_LOGS")?,
@@ -183,6 +212,10 @@ pub fn resolve_port(cli: Option<u16>, layered: bool) -> Result<u16, String> {
 /// Fold the layers per field (**file > env > default**) and log each resolved
 /// value with its source.
 pub fn resolve(env: EnvConfig, file: FileConfig) -> Tunables {
+    let (log_target, src) = pick([(file.logtarget, Source::File), (env.logtarget, Source::Env)]);
+    let log_target = log_target.unwrap_or_default();
+    info!(value = ?log_target, source = %src, "resolved logtarget");
+
     let (log_level, src) = pick([(file.loglevel, Source::File), (env.loglevel, Source::Env)]);
     let log_level = log_level.unwrap_or_else(|| DEFAULT_LOG_LEVEL.to_string());
     info!(value = %log_level, source = %src, "resolved loglevel");
@@ -213,6 +246,7 @@ pub fn resolve(env: EnvConfig, file: FileConfig) -> Tunables {
     info!(value = ?sqlite_instructions, source = %src, "resolved sqlite_instructions");
 
     Tunables {
+        log_target,
         log_level,
         log_from_other_modules,
         max_logfiles_num,
@@ -325,6 +359,58 @@ fn parse_bool(name: &str, raw: &str) -> Result<Option<bool>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn logtarget_file_beats_env_beats_default() {
+        assert_eq!(
+            resolve(EnvConfig::default(), FileConfig::default()).log_target,
+            LogTarget::File
+        );
+        assert_eq!(
+            resolve(
+                EnvConfig {
+                    logtarget: Some(LogTarget::Stdout),
+                    ..Default::default()
+                },
+                FileConfig::default(),
+            )
+            .log_target,
+            LogTarget::Stdout
+        );
+        for (file_target, env_target) in [
+            (LogTarget::File, LogTarget::Stdout),
+            (LogTarget::Stdout, LogTarget::File),
+        ] {
+            assert_eq!(
+                resolve(
+                    EnvConfig {
+                        logtarget: Some(env_target),
+                        ..Default::default()
+                    },
+                    FileConfig {
+                        logtarget: Some(file_target),
+                        ..Default::default()
+                    },
+                )
+                .log_target,
+                file_target
+            );
+        }
+    }
+
+    #[test]
+    fn logtarget_validates_env_and_json() {
+        assert_eq!(parse_logtarget(" ").unwrap(), None);
+        for (raw, target) in [("file", LogTarget::File), ("stdout", LogTarget::Stdout)] {
+            assert_eq!(parse_logtarget(raw).unwrap(), Some(target));
+            let file: FileConfig =
+                serde_json::from_value(serde_json::json!({"logtarget": raw})).unwrap();
+            assert_eq!(file.logtarget, Some(target));
+        }
+        assert!(parse_logtarget("stderr").is_err());
+        assert!(serde_json::from_str::<FileConfig>(r#"{"logtarget":"stderr"}"#).is_err());
+        assert!(serde_json::from_str::<FileConfig>(r#"{"logtarget":true}"#).is_err());
+    }
 
     #[test]
     fn file_beats_env_beats_default() {

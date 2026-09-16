@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`13142` Docker users can now keep health checks from trusted external monitoring services out of access logs.
+* :feature:`13141` Docker users can now view rotki logs through ``docker logs`` or ``kubectl logs`` without managing separate log files. File logging remains the default.
 * :feature:`-` Qonto business accounts can now be connected to rotki under API Keys -> Banks, using an API key. Balances are pulled directly from Qonto into your net worth and the full transaction history into your history.
 * :feature:`13104` Birdeye can now be used as a current and historical price oracle. It prices Solana and EVM tokens by address, which helps with meme coins the other oracles do not know, and needs a Birdeye API key set under API Keys -> External Services.
 * :bug:`-` Pressing save in a form now moves the cursor to the first field that needs fixing. In a long form that field is often off screen, or inside a collapsed section, so a save the form rejected could look like a save that did nothing at all.

@@ -329,7 +329,8 @@ pub struct ServiceLayout {
     /// crate; `None` inherits the supervisor's cwd.
     pub colibri_cwd: Option<PathBuf>,
     pub data_dir: PathBuf,
-    pub logs_dir: PathBuf,
+    /// File logging directory, or None to send backend logs to stdout.
+    pub logs_dir: Option<PathBuf>,
     pub core_port: u16,
     pub colibri_port: u16,
     pub mcp_port: u16,
@@ -363,7 +364,6 @@ pub struct ServiceLayout {
 pub fn core_args(layout: &ServiceLayout) -> Vec<String> {
     // `rotkehlchen.log` is the conventional core log name the desktop app's log
     // viewer expects; colibri's is `colibri.log` (set in colibri_args).
-    let core_log = layout.logs_dir.join("rotkehlchen.log");
     let mut args = vec![
         "--rest-api-port".to_string(),
         layout.core_port.to_string(),
@@ -373,11 +373,21 @@ pub fn core_args(layout: &ServiceLayout) -> Vec<String> {
         layout.api_host.clone(),
         "--data-dir".to_string(),
         layout.data_dir.to_string_lossy().into_owned(),
-        "--logfile".to_string(),
-        core_log.to_string_lossy().into_owned(),
         "--loglevel".to_string(),
         layout.log_level.clone(),
     ];
+
+    if let Some(logs_dir) = &layout.logs_dir {
+        args.extend([
+            "--logfile".to_string(),
+            logs_dir
+                .join("rotkehlchen.log")
+                .to_string_lossy()
+                .into_owned(),
+        ]);
+    } else {
+        args.extend(["--logtarget".to_string(), "stdout".to_string()]);
+    }
 
     // The layered tunables (same order as entrypoint.py): the bool only adds its
     // flag when true; the numerics add `flag value` only when set.
@@ -409,14 +419,21 @@ pub fn core_args(layout: &ServiceLayout) -> Vec<String> {
 
 /// The mode-independent argument vector for `colibri`.
 pub fn colibri_args(layout: &ServiceLayout) -> Vec<String> {
-    let colibri_log = layout.logs_dir.join("colibri.log");
     let mut args = vec![
         format!("--data-directory={}", layout.data_dir.to_string_lossy()),
-        format!("--logfile-path={}", colibri_log.to_string_lossy()),
         format!("--port={}", layout.colibri_port),
         format!("--log-level={}", layout.log_level),
         format!("--api-cors={}", layout.api_cors),
     ];
+
+    if let Some(logs_dir) = &layout.logs_dir {
+        args.push(format!(
+            "--logfile-path={}",
+            logs_dir.join("colibri.log").to_string_lossy()
+        ));
+    } else {
+        args.push("--log-to-stdout".to_string());
+    }
 
     // The log-rotation tunables apply to colibri's logfile too, so forward the
     // same values core gets rather than leaving colibri on its built-in
@@ -536,7 +553,7 @@ mod tests {
             core_cwd: None,
             colibri_cwd: None,
             data_dir: PathBuf::from("/data"),
-            logs_dir: PathBuf::from("/logs"),
+            logs_dir: Some(PathBuf::from("/logs")),
             core_port: DEFAULT_CORE_PORT,
             colibri_port: DEFAULT_COLIBRI_PORT,
             mcp_port: DEFAULT_MCP_PORT,
@@ -551,6 +568,46 @@ mod tests {
             sleep_secs: None,
             disable_task_manager: false,
         }
+    }
+
+    #[test]
+    fn backend_log_destinations() {
+        let mut layout = sample_layout(Launcher::binary("core"), Launcher::binary("colibri"));
+        assert_eq!(
+            flag_value(&core_args(&layout), "--logfile"),
+            Some(
+                layout
+                    .logs_dir
+                    .as_ref()
+                    .unwrap()
+                    .join("rotkehlchen.log")
+                    .to_string_lossy()
+                    .as_ref()
+            )
+        );
+        assert_eq!(
+            eq_flag_value(&colibri_args(&layout), "--logfile-path"),
+            Some(
+                layout
+                    .logs_dir
+                    .as_ref()
+                    .unwrap()
+                    .join("colibri.log")
+                    .to_string_lossy()
+                    .as_ref()
+            )
+        );
+        assert!(!colibri_args(&layout)
+            .iter()
+            .any(|arg| arg == "--log-to-stdout"));
+
+        layout.logs_dir = None;
+        let core = core_args(&layout);
+        let colibri = colibri_args(&layout);
+        assert_eq!(flag_value(&core, "--logtarget"), Some("stdout"));
+        assert_eq!(flag_value(&core, "--logfile"), None);
+        assert!(colibri.iter().any(|arg| arg == "--log-to-stdout"));
+        assert_eq!(eq_flag_value(&colibri, "--logfile-path"), None);
     }
 
     #[test]

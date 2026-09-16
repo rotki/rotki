@@ -1,6 +1,7 @@
 import logging.config
 import re
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
@@ -134,9 +135,20 @@ class PywsgiFilter(logging.Filter):
         return True
 
 
+class StdoutFormatter(logging.Formatter):
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: N802
+        return datetime.fromtimestamp(record.created, tz=UTC).isoformat(
+            timespec='microseconds',
+        ).replace('+00:00', 'Z')
+
+
 def configure_logging(args: argparse.Namespace) -> None:
     loglevel = args.loglevel
     formatters = {
+        'stdout': {
+            '()': StdoutFormatter,
+            'format': '%(asctime)s [core] %(levelname)s %(name)s %(message)s',
+        },
         'default': {
             'format': '[%(asctime)s] %(levelname)s %(name)s %(message)s',
             'datefmt': '%d/%m/%Y %H:%M:%S %Z',
@@ -145,8 +157,9 @@ def configure_logging(args: argparse.Namespace) -> None:
     handlers = {
         'console': {
             'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',
             'level': loglevel,
-            'formatter': 'default',
+            'formatter': 'stdout',
         },
     }
 

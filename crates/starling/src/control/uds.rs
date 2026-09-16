@@ -204,7 +204,7 @@ mod tests {
             core_cwd: None,
             colibri_cwd: None,
             data_dir: PathBuf::from("/data"),
-            logs_dir: PathBuf::from("/logs"),
+            logs_dir: Some(PathBuf::from("/logs")),
             core_port: 4242,
             colibri_port: 4343,
             mcp_port: 4445,
