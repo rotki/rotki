@@ -1267,11 +1267,11 @@ wheels = [
 
 [[package]]
 name = "mt-940"
-version = "5.1.1"
+version = "4.30.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7a/c5/df189987c640f6557a9dcf536d0e055e9aa427fb9c0ffa4837174415b224/mt_940-5.1.1.tar.gz", hash = "sha256:8257d61811c05df80236514a85c52142aa1e8403198542a6267f75158303d9cc", size = 36138, upload-time = "2026-09-07T14:51:05.621Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/bd/11a984d1896516b4cb45df899b1f9d520df1a5e51a7f5b92ad35f5c2a560/mt-940-4.30.0.tar.gz", hash = "sha256:da14e2ec84d6c6e85604d2a6b8a800b08ec6000351acde501c41eb662819295c", size = 21828, upload-time = "2023-04-13T11:06:15.264Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/82/f143a9160b65d7dc35b91284c6c11e28a09b8565866e02efd67a96bf2df5/mt_940-5.1.1-py3-none-any.whl", hash = "sha256:fa33e23e0dacd949500b485a9b3857f414ee2f76cb5478ca0724d9fcf485cbde", size = 38423, upload-time = "2026-09-07T14:51:04.206Z" },
+    { url = "https://files.pythonhosted.org/packages/49/86/c0baa3dcac450f784f776e5f245805da14c12f5caa26bfbb03710eb46582/mt_940-4.30.0-py2.py3-none-any.whl", hash = "sha256:66fa0c1e942478fd7970b791be017b1ca46556f54d44115008f3982e97ae0a9b", size = 20351, upload-time = "2023-04-13T11:06:13.252Z" },
 ]
 
 [[package]]
@@ -2153,6 +2153,7 @@ dependencies = [
     { name = "maxminddb" },
     { name = "mcp" },
     { name = "more-itertools" },
+    { name = "mt-940" },
     { name = "oauthlib" },
     { name = "packaging" },
     { name = "pandas" },
@@ -2264,6 +2265,7 @@ requires-dist = [
     { name = "maxminddb", specifier = "==3.1.1" },
     { name = "mcp", specifier = "==1.28.1" },
     { name = "more-itertools", specifier = "==10.6.0" },
+    { name = "mt-940", specifier = "==4.30.0" },
     { name = "oauthlib", specifier = "==3.3.1" },
     { name = "packaging", specifier = "==25.0" },
     { name = "pandas", specifier = "==3.0.3" },

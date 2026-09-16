@@ -3,7 +3,7 @@ import base64
 import json
 from collections import defaultdict
 from contextvars import ContextVar
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import urlparse
@@ -537,6 +537,9 @@ class Fints(BankConnector):
             reference = data.get('purpose') or data.get('transaction_details') or data.get('extra_details') or None  # noqa: E501
             counterparty_name = data.get('applicant_name') or None
             counterparty_account = data.get('applicant_iban') or data.get('applicant_bin') or None
+            identity_counterparty = (
+                f'{counterparty_account or ""}{counterparty_name or ""}' or None
+            )
             identity = content_hash_id(
                 account.identifier,
                 booking_date.isoformat(),
@@ -544,8 +547,8 @@ class Fints(BankConnector):
                 amount.currency,
                 data.get('bank_reference'),
                 data.get('customer_reference'),
-                counterparty_name,
-                counterparty_account,
+                identity_counterparty,
+                None,
                 reference,
                 duplicate_index,
             )
@@ -580,12 +583,18 @@ class Fints(BankConnector):
             raise BankError(
                 f'FinTS account {account.identifier} is not present in account discovery',
             )
-        start_date = datetime.fromtimestamp(updated_since, tz=UTC).date() if updated_since is not None else None  # noqa: E501
+        end_date = datetime.now(tz=UTC).date()
+        if updated_since is not None:
+            start_date = datetime.fromtimestamp(updated_since, tz=UTC).date()
+        elif self.bank_code == ING_BANK_CODE:
+            start_date = end_date - timedelta(days=90)
+        else:
+            start_date = None
         operation = f'transactions:{account.identifier}:{start_date or "all"}'
         transactions = self._execute(operation, {
             'account': self._serialize_account(sepa_account),
             'start_date': start_date.isoformat() if start_date is not None else None,
-            'end_date': datetime.now(tz=UTC).date().isoformat(),
+            'end_date': end_date.isoformat(),
         })
         occurrences: defaultdict[str, int] = defaultdict(int)
         result = []
