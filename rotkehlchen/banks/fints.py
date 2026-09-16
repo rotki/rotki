@@ -68,6 +68,7 @@ DIRECT_DEBIT_CODES: Final = frozenset({'DD', 'ESDD', 'BBDD', 'NDDT'})
 CARD_CODES: Final = frozenset({'CCRD', 'DCCT', 'POS', 'NPOS'})
 FEE_CODES: Final = frozenset({'CHRG', 'FEE', 'NCHG', 'NCOM'})
 INTEREST_CODES: Final = frozenset({'INTR', 'NINT'})
+ING_BANK_CODE: Final = '50010517'
 
 
 class FinTSProductRegistrationError(FinTSClientError):
@@ -76,6 +77,14 @@ class FinTSProductRegistrationError(FinTSClientError):
 
 class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
     last_response_code: str | None = None
+
+    def _is_ing(self) -> bool:
+        return self.bank_identifier.bank_code == ING_BANK_CODE
+
+    def is_tan_media_required(self) -> bool:
+        if self._is_ing():
+            return False
+        return super().is_tan_media_required()
 
     def _process_response(self, dialog: Any, segment: Any, response: Any) -> None:
         if (
@@ -89,6 +98,8 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
             raise FinTSProductRegistrationError(
                 'The bank rejected the FinTS product registration (code 9078)',
             )
+        if response.code == '3920' and self._is_ing():
+            return
         super()._process_response(dialog, segment, response)
 
 
