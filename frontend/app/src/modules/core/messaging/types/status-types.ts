@@ -180,12 +180,10 @@ const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
 });
 
-export const HistoricalBalanceProcessingData = z.object({
+const HistoricalBalanceProcessingData = z.object({
   processed: z.number(),
   total: z.number(),
 });
-
-export type HistoricalBalanceProcessingData = z.infer<typeof HistoricalBalanceProcessingData>;
 
 const NegativeBalanceBucket = z.object({
   asset: z.string(),

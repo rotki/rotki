@@ -1083,8 +1083,7 @@
   },
   "collapsed_pending_tasks": {
     "cancel_task": "Annuler tâche",
-    "cancel_task_info": "Cette action va laisser le processus en cours d'exécution ({title}) dans un état non fini, êtes-vous sûr de vouloir l'annuler?",
-    "title": "{count} tâche en attente | {count} tâches en attente"
+    "cancel_task_info": "Cette action va laisser le processus en cours d'exécution ({title}) dans un état non fini, êtes-vous sûr de vouloir l'annuler?"
   },
   "common": {
     "account": "Compte",
