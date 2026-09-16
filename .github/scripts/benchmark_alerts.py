@@ -7,11 +7,12 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 # Keep the generated Markdown small enough to fit in a single Discord message.
 MAX_ALERTS = 20
 SCRIPT_PREFIX = 'window.BENCHMARK_DATA = '
+MIN_RUNNER_CHANGE_ALERTS: Final = 3
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,24 @@ def _format_value(bench: dict[str, Any]) -> str:
     return f'`{value}` {unit}'.rstrip()
 
 
+def _machine(bench: dict[str, Any]) -> tuple[str, int] | None:
+    """Read hardware persisted in github-action-benchmark's supported extra field."""
+    if not isinstance(extra := bench.get('extra'), str):
+        return None
+    try:
+        machine = json.loads(extra.partition('\nmachine: ')[2])
+    except json.JSONDecodeError:
+        return None
+
+    if (
+            isinstance(machine, dict) and
+            isinstance(cpu_model := machine.get('cpu_model'), str) and cpu_model.strip() and
+            isinstance(logical_cpus := machine.get('logical_cpus'), int) and logical_cpus > 0
+    ):
+        return cpu_model.strip(), logical_cpus
+    return None
+
+
 def _find_alerts(
         current: list[dict[str, Any]],
         previous_suite: dict[str, Any],
@@ -65,6 +84,7 @@ def _find_alerts(
         if isinstance(bench, dict) and 'name' in bench
     }
     alerts = []
+    compared = 0
     for current_bench in current:
         if (previous_bench := previous_by_name.get(current_bench.get('name'))) is None:
             continue
@@ -77,6 +97,7 @@ def _find_alerts(
         ):
             continue
 
+        compared += 1
         if previous_value == 0:
             ratio = 1 if current_value == 0 else float('inf')
         else:
@@ -88,6 +109,19 @@ def _find_alerts(
                 previous=previous_bench,
                 ratio=ratio,
             ))
+
+    # Require a broad slowdown and known, changed hardware for every affected benchmark.
+    if len(alerts) >= MIN_RUNNER_CHANGE_ALERTS and len(alerts) * 2 >= compared and all(
+            (current_machine := _machine(alert.current)) is not None and
+            (previous_machine := _machine(alert.previous)) is not None and
+            current_machine != previous_machine
+            for alert in alerts
+    ):
+        logger.info(
+            'Suppressing %s/%s benchmark alerts: runner CPU model or logical CPU count changed',
+            len(alerts), compared,
+        )
+        return []
 
     return sorted(alerts, key=lambda alert: alert.ratio, reverse=True)
 

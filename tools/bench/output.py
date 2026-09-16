@@ -1,14 +1,14 @@
 """Result metadata collection and JSON/markdown emitters"""
+import json
+import os
 import platform
 import subprocess  # noqa: S404
 import sys
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def _git(repo_root: Path, *args: str) -> str:
@@ -21,6 +21,20 @@ def _git(repo_root: Path, *args: str) -> str:
     ).stdout.strip()
 
 
+def collect_machine() -> dict[str, Any]:
+    """Identify the Linux runner's hardware, excluding per-job hostnames and CPU frequency."""
+    try:
+        cpuinfo = Path('/proc/cpuinfo').read_text(encoding='utf8')
+    except OSError:
+        return {}
+
+    for line in cpuinfo.splitlines():
+        key, _, value = line.partition(':')
+        if key.strip() == 'model name':
+            return {'cpu_model': value.strip(), 'logical_cpus': os.cpu_count()}
+    return {}
+
+
 def collect_meta(repo_root: Path) -> dict[str, Any]:
     return {
         'commit': _git(repo_root, 'rev-parse', 'HEAD'),
@@ -29,6 +43,7 @@ def collect_meta(repo_root: Path) -> dict[str, Any]:
         'db_version': ROTKEHLCHEN_DB_VERSION,
         'python': sys.version.split()[0],
         'platform': platform.platform(),
+        'machine': collect_machine(),
         'ts': datetime.now(tz=UTC).isoformat(timespec='seconds'),
     }
 
@@ -47,7 +62,10 @@ def render_run_table(results: dict[str, dict[str, Any]]) -> str:
     return '\n'.join(lines)
 
 
-def to_gha_benchmark(results: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+def to_gha_benchmark(
+        results: dict[str, dict[str, Any]],
+        machine: dict[str, Any],
+) -> list[dict[str, Any]]:
     """Convert a `run` result to github-action-benchmark's
     customSmallerIsBetter format: one datapoint per profile/operation."""
     return [
@@ -55,7 +73,10 @@ def to_gha_benchmark(results: dict[str, dict[str, Any]]) -> list[dict[str, Any]]
             'name': f'{profile}/{op}',
             'unit': 'ms',
             'value': summary['median_ms'],
-            'extra': f'min {summary["min_ms"]}ms, stddev {summary["stddev_ms"]}ms',
+            'extra': (
+                f'min {summary["min_ms"]}ms, stddev {summary["stddev_ms"]}ms'
+                f'\nmachine: {json.dumps(machine, sort_keys=True)}'
+            ),
         }
         for profile, ops in results.items()
         for op, summary in ops.items()
