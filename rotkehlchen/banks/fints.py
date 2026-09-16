@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import requests
 from fints.client import FinTS3PinTanClient, NeedRetryResponse, NeedTANResponse
 from fints.exceptions import (
+    FinTSClientError,
     FinTSClientPINError,
     FinTSClientTemporaryAuthError,
     FinTSConnectionError,
@@ -67,6 +68,20 @@ FEE_CODES: Final = frozenset({'CHRG', 'FEE', 'NCHG', 'NCOM'})
 INTEREST_CODES: Final = frozenset({'INTR', 'NINT'})
 
 
+class FinTSProductRegistrationError(FinTSClientError):
+    """The bank rejected rotki's FinTS product registration ID."""
+
+
+class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
+    def _process_response(self, dialog: Any, segment: Any, response: Any) -> None:
+        if response.code == '9078':
+            dialog.open = False
+            raise FinTSProductRegistrationError(
+                'The bank rejected the FinTS product registration (code 9078)',
+            )
+        super()._process_response(dialog, segment, response)
+
+
 class Fints(BankConnector):
     manifest = FINTS_MANIFEST
 
@@ -84,7 +99,7 @@ class Fints(BankConnector):
         self._set_configuration(api_key)
         self._validate_connection(self.bank_code, self.endpoint)
         self.product_id = product_id if product_id is not None else FINTS_PRODUCT_ID
-        self.client_factory = client_factory or FinTS3PinTanClient
+        self.client_factory = client_factory or RotkiFinTS3PinTanClient
         self._client_data: bytes | None = None
         self._pending: dict[str, Any] | None = None
         self._completed: dict[str, Any] = {}
@@ -143,6 +158,8 @@ class Fints(BankConnector):
         bank_code, endpoint, username = (
             str(configuration[key]) for key in ('bank_code', 'endpoint', 'username')
         )
+        bank_code = bank_code.strip()
+        endpoint = endpoint.strip()
         cls._validate_connection(bank_code, endpoint)
         pin = values.get(
             'pin',
@@ -309,6 +326,10 @@ class Fints(BankConnector):
                         request=operation_request,
                         during_initialization=False,
                     )
+        except FinTSProductRegistrationError as e:
+            raise BankError(
+                "The bank does not recognize rotki's FinTS product registration yet (code 9078)",
+            ) from e
         except (FinTSClientPINError, FinTSClientTemporaryAuthError, FinTSDialogInitError) as e:
             raise BankAuthExpired('The FinTS username or PIN was rejected by the bank') from e
         except (FinTSConnectionError, requests.exceptions.RequestException) as e:

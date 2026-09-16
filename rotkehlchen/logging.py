@@ -11,7 +11,34 @@ PYWSGI_RE = re.compile(r'\[(.*)\] ')
 
 TRACE = logging.DEBUG - 5
 
-SENSITIVE_KEYS: Final = frozenset(('password', 'new_password', 'old_password'))
+REDACTED_VALUE: Final = '[REDACTED]'
+SENSITIVE_KEYS: Final = frozenset({
+    'api_key',
+    'api_secret',
+    'credentials',
+    'new_password',
+    'old_password',
+    'passphrase',
+    'password',
+    'pin',
+    'secret',
+    'token',
+    'username',
+})
+
+
+def _redact_sensitive_data(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            key: REDACTED_VALUE
+            if str(key).lower() in SENSITIVE_KEYS else _redact_sensitive_data(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_data(item) for item in value)
+    return value
 
 
 def add_logging_level(
@@ -95,18 +122,8 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         - prepends the current task's thread name to the log message
         """
         msg = str(given_msg)
-        if (
-                'json_data' in kwargs and
-                isinstance((data := kwargs['json_data']), dict) and
-                len(sensitive_found := SENSITIVE_KEYS & data.keys()) > 0
-        ):
-            sanitized_data = kwargs['json_data'].copy()
-            for key in sensitive_found:
-                sanitized_data[key] = '[REDACTED]'
-
-            kwargs['json_data'] = sanitized_data
-
-        msg = threading.current_thread().name + ': ' + msg + ','.join(f' {k}={v}' for k, v in kwargs.items())  # noqa: E501
+        sanitized_kwargs = _redact_sensitive_data(dict(kwargs))
+        msg = threading.current_thread().name + ': ' + msg + ','.join(f' {k}={v}' for k, v in sanitized_kwargs.items())  # noqa: E501
         return msg, {}
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
@@ -142,6 +159,12 @@ class StdoutFormatter(logging.Formatter):
         ).replace('+00:00', 'Z')
 
 
+class SensitiveProtocolFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        """FinTS wire dumps contain login identifiers and must never reach a log handler."""
+        return record.name != 'fints.connection'
+
+
 def configure_logging(args: argparse.Namespace) -> None:
     loglevel = args.loglevel
     formatters = {
@@ -160,6 +183,7 @@ def configure_logging(args: argparse.Namespace) -> None:
             'stream': 'ext://sys.stdout',
             'level': loglevel,
             'formatter': 'stdout',
+            'filters': ['sensitive_protocol'],
         },
     }
 
@@ -191,6 +215,7 @@ def configure_logging(args: argparse.Namespace) -> None:
             'backupCount': backups_num,
             'level': loglevel,
             'formatter': 'default',
+            'filters': ['sensitive_protocol'],
             'encoding': 'utf-8',
         }
     else:
@@ -199,6 +224,9 @@ def configure_logging(args: argparse.Namespace) -> None:
     filters = {
         'pywsgi': {
             '()': PywsgiFilter,
+        },
+        'sensitive_protocol': {
+            '()': SensitiveProtocolFilter,
         },
     }
     loggers: dict[str, Any] = {
