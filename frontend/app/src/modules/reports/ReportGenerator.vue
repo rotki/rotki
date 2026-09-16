@@ -5,11 +5,11 @@ import { startPromise } from '@shared/utils';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
+import { useSyncRollup } from '@/modules/history/events/tx/use-sync-rollup';
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
 import ReportDebugMenu from '@/modules/reports/ReportDebugMenu.vue';
 import { useBinanceMarketCheck } from '@/modules/reports/use-binance-market-check';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
-import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
 
 const emit = defineEmits<{
   'generate': [data: ProfitLossReportPeriod];
@@ -20,7 +20,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { isOutOfSync, processing } = useTransactionStatusCheck();
-const { overallProgress } = useSyncProgress();
+const { progress: overallProgress } = useSyncRollup();
 const { refreshTransactions } = useHistoryTransactions();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 

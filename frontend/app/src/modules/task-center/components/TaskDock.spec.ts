@@ -34,6 +34,10 @@ vi.mock('@/modules/task-center/use-task-controller', () => ({
   useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
 }));
 
+vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
+  useExternalApiKeys: (): { loading: Ref<boolean>; useApiKey: () => Ref<string> } => ({ loading: ref(false), useApiKey: () => ref('') }),
+}));
+
 function activity(kind: ActivityKind, name: string, status: ActivityStatus, parent?: ActivityId, rerunnable = false): Activity {
   return {
     cancellable: true,
@@ -67,6 +71,19 @@ describe('taskDock', () => {
     setActivePinia(createPinia());
     set(activities, []);
     vi.clearAllMocks();
+  });
+
+  it('should explain a history sync while one runs, and say nothing of it for other work', async () => {
+    set(activities, refresh(ActivityStatus.RUNNING));
+    const wrapper = createWrapper();
+    await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+    expect(wrapper.find('[data-testid=dock-sync-hint]').exists()).toBe(true);
+
+    set(activities, [activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING)]);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=dock-sync-hint]').exists()).toBe(false);
   });
 
   describe('the panel footer', () => {

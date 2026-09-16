@@ -4310,38 +4310,6 @@
       "uploading": "Загрузка базы данных..."
     }
   },
-  "sync_progress": {
-    "chains_label": "сеть | сетей",
-    "complete": "Синхронизация завершена",
-    "completed_chains": "{count} сеть завершена | {count} сетей завершено",
-    "completed_decoding": "{count} сеть декодирована | {count} сетей декодировано",
-    "completed_locations": "{count} местоположение завершено | {count} местоположений завершено",
-    "completed_protocol_cache": "{count} протокол обновлен | {count} протоколов обновлено",
-    "decoding": "Декодирование",
-    "decoding_label": "сетей декодировано",
-    "events": "События",
-    "locations_label": "местоположение | местоположений",
-    "period": {
-      "beginning": "Начало"
-    },
-    "protocol_cache": "Кэш протокола",
-    "protocol_cache_label": "протоколов обновлено",
-    "protocol_cache_progress": "{processed}/{total} пулов",
-    "show_more": "Показать еще {count}...",
-    "status": {
-      "complete": "Завершено",
-      "decoding": "Декодирование",
-      "pending": "Ожидание",
-      "querying": "Запрос",
-      "querying_event_type": "Запрос {type}",
-      "querying_internal": "Запрос внутренних txs",
-      "querying_tokens": "Запрос переводов токенов",
-      "querying_transactions": "Запрос транзакций",
-      "refreshing": "Обновление"
-    },
-    "title": "Синхронизация истории",
-    "transactions": "Транзакции"
-  },
   "tag_creator": {
     "labels": {
       "background": "Фон",

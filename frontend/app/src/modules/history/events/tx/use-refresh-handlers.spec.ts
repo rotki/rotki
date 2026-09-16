@@ -7,7 +7,6 @@ import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useModuleEnabled } from '@/modules/session/use-module-enabled';
-import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 import { useRefreshHandlers } from './use-refresh-handlers';
 
 const mockNotifyError = vi.fn();
@@ -79,32 +78,27 @@ describe('useRefreshHandlers', () => {
   });
 
   describe('queryOnlineEvent', () => {
-    it('should add a warning instead of notifying on ApiKeyMissingError', async () => {
+    it('should fail a missing API key with a message naming the key to add, and not notify it', async () => {
       const error = new ApiKeyMissingError('Querying beaconcha.in failed due to missing API key');
       runTaskResult.mockResolvedValueOnce(err(TaskFailed({ cause: error, message: error.message })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
-      await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
+      const outcome = await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 
-      const warnings = useSyncWarningsStore();
-      expect(get(warnings.warnings)).toHaveLength(1);
-      expect(get(warnings.warnings)[0]).toMatchObject({
-        key: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
-        source: SyncWarningSource.ONLINE_EVENTS,
-      });
-      expect(get(warnings.warnings)[0].message).toContain('warning.missing_api_key.beaconchain');
-      expect(get(warnings.warnings)[0].message).toContain('query_type.block_productions');
+      assert(isErr(outcome));
+      expect(outcome.error.message).toContain('warning.missing_api_key.beaconchain');
+      expect(outcome.error.message).toContain('query_type.block_productions');
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should notifyError on a generic failure (no warning added)', async () => {
+    it('should notify a generic failure and keep its own message', async () => {
       runTaskResult.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
-      await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
+      const outcome = await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 
-      const warnings = useSyncWarningsStore();
-      expect(get(warnings.warnings)).toEqual([]);
+      assert(isErr(outcome));
+      expect(outcome.error.message).toBe('boom');
       expect(mockNotifyError).toHaveBeenCalledOnce();
     });
 
@@ -126,26 +120,7 @@ describe('useRefreshHandlers', () => {
       const { queryOnlineEvent } = useRefreshHandlers();
       await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 
-      const warnings = useSyncWarningsStore();
-      expect(get(warnings.warnings)).toEqual([]);
       expect(mockNotifyError).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('resetOnlineWarnings', () => {
-    it('should clear the warnings store', () => {
-      const warningsStore = useSyncWarningsStore();
-      warningsStore.addWarning({
-        key: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
-        message: 'x',
-        source: SyncWarningSource.ONLINE_EVENTS,
-      });
-      expect(get(warningsStore.warnings)).toHaveLength(1);
-
-      const { resetOnlineWarnings } = useRefreshHandlers();
-      resetOnlineWarnings();
-
-      expect(get(warningsStore.warnings)).toEqual([]);
     });
   });
 });

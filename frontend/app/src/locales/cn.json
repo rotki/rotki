@@ -2676,39 +2676,6 @@
       "title": "强制推 | 强制拉"
     }
   },
-  "sync_progress": {
-    "chains_label": "链 | 链",
-    "complete": "同步完成",
-    "completed_chains": "{count} 条链已完成 | {count} 条链已完成",
-    "completed_decoding": "{count} 条链已解码 | {count} 条链已解码",
-    "completed_locations": "{count} 个位置已完成 | {count} 个位置已完成",
-    "completed_protocol_cache": "{count} 个协议已刷新 | {count} 个协议已刷新",
-    "decoding": "解码中",
-    "decoding_label": "链已解码",
-    "decoding_progress": "{processed}/{total} 交易",
-    "events": "事件",
-    "locations_label": "位置 | 位置",
-    "period": {
-      "beginning": "开始"
-    },
-    "protocol_cache": "协议缓存",
-    "protocol_cache_label": "协议已刷新",
-    "protocol_cache_progress": "{processed}/{total} 池",
-    "show_more": "显示更多 {count} 个...",
-    "status": {
-      "complete": "完成",
-      "decoding": "解码中",
-      "pending": "等待中",
-      "querying": "查询中",
-      "querying_event_type": "查询 {type}",
-      "querying_internal": "查询内部交易",
-      "querying_tokens": "查询代币转账",
-      "querying_transactions": "查询交易",
-      "refreshing": "刷新中"
-    },
-    "title": "同步历史记录",
-    "transactions": "交易"
-  },
   "tag_creator": {
     "labels": {
       "background": "背景",

@@ -552,37 +552,6 @@
     "force_save": "Εξαναγκαστική αποθήκευση",
     "ignore_errors_label": "Αγνόηση σφαλμάτων"
   },
-  "sync_progress": {
-    "chains_label": "αλυσίδα | αλυσίδες",
-    "complete": "Συγχρονισμός Ολοκληρώθηκε",
-    "completed_chains": "{count} αλυσίδα ολοκληρώθηκε | {count} αλυσίδες ολοκληρώθηκαν",
-    "completed_decoding": "{count} αλυσίδα αποκωδικοποιήθηκε | {count} αλυσίδες αποκωδικοποιήθηκαν",
-    "completed_locations": "{count} τοποθεσία ολοκληρώθηκε | {count} τοποθεσίες ολοκληρώθηκαν",
-    "completed_protocol_cache": "{count} πρωτόκολλο ανανεώθηκε | {count} πρωτόκολλα ανανεώθηκαν",
-    "decoding": "Αποκωδικοποίηση",
-    "decoding_label": "αλυσίδες αποκωδικοποιημένες",
-    "events": "Συμβάντα",
-    "locations_label": "τοποθεσία | τοποθεσίες",
-    "period": {
-      "beginning": "Αρχή"
-    },
-    "protocol_cache": "Κρυφή Μνήμη Πρωτοκόλλου",
-    "protocol_cache_label": "πρωτόκολλα ανανεώθηκαν",
-    "show_more": "Εμφάνιση {count} περισσότερων...",
-    "status": {
-      "complete": "Ολοκληρώθηκε",
-      "decoding": "Αποκωδικοποίηση",
-      "pending": "Σε αναμονή",
-      "querying": "Αναζήτηση",
-      "querying_event_type": "Αναζήτηση {type}",
-      "querying_internal": "Αναζήτηση εσωτερικών txs",
-      "querying_tokens": "Αναζήτηση μεταφορών token",
-      "querying_transactions": "Αναζήτηση συναλλαγών",
-      "refreshing": "Ανανέωση"
-    },
-    "title": "Συγχρονισμός Ιστορικού",
-    "transactions": "Συναλλαγές"
-  },
   "task_center": {
     "activity": {
       "accounting_rules": {

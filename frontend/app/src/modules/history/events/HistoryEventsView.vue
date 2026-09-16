@@ -47,8 +47,6 @@ const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
   mainPage?: boolean;
 }>();
 
-const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/shell/sync-progress/components/SyncProgressPanel.vue'));
-
 const { t } = useI18n({ useScope: 'global' });
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
@@ -60,7 +58,6 @@ const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
 
 const tableHeightOffset = useHistoryEventsTableHeight(
-  useTemplateRef<ComponentPublicInstance>('syncProgressPanel'),
   useTemplateRef<ComponentPublicInstance>('tableActions'),
   useTemplateRef<ComponentPublicInstance>('filtersChips'),
 );
@@ -196,11 +193,6 @@ useHistoryEventsDialogRouting(dialogContainer);
 
 <template>
   <div>
-    <SyncProgressPanel
-      v-if="mainPage"
-      ref="syncProgressPanel"
-      class="-mt-4 mb-4"
-    />
     <TablePageLayout
       :hide-header="!mainPage"
       :child="!mainPage"

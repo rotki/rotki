@@ -1,12 +1,12 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
-import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, mapError, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { onlineEventsActivity } from '@/modules/history/events/tx/sync-activity';
@@ -15,7 +15,6 @@ import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-a
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -23,7 +22,6 @@ interface UseRefreshHandlersReturn {
   queryAllBankEvents: (banks: BankConnectionIdentity[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
   queryAllExchangeEvents: (exchanges: Exchange[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
   queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId) => Promise<Result<void, TaskError>>;
-  resetOnlineWarnings: () => void;
 }
 
 export function useRefreshHandlers(): UseRefreshHandlersReturn {
@@ -32,7 +30,6 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
   const { queryAllBankEvents, queryAllExchangeEvents } = useEventsRefreshSources();
-  const { addWarning, resetWarnings } = useSyncWarningsStore();
   const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
   const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
@@ -108,27 +105,25 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       lane: onlineEventsActivity.laneOf?.({ queryType }),
       parent,
       rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<boolean>(
-          async () => queryOnlineHistoryEvents({ asyncQuery: true, queryType }),
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapError(
+        mapResult(
+          await runTask<boolean>(
+            async () => queryOnlineHistoryEvents({ asyncQuery: true, queryType }),
+          ),
+          () => {},
         ),
-        () => {},
+        error => (isActionable(error) && error.cause instanceof ApiKeyMissingError
+          ? TaskFailed({ cause: error.cause, message: buildMissingApiKeyMessage(queryType) })
+          : error),
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.online_events.refresh'), { queryType: queryTypeLabel(queryType) }),
       title: t('task_center.group.online_events'),
     });
 
-    // The backend's ApiKeyMissingError rides on the tagged error's `cause`; narrow to read it.
+    // A missing key is not notified: the failed row in the task dock already says which key to add.
     if (isErr(outcome) && isActionable(outcome.error)) {
       logger.error(outcome.error.message);
-      if (outcome.error.cause instanceof ApiKeyMissingError) {
-        addWarning({
-          key: queryType,
-          message: buildMissingApiKeyMessage(queryType),
-          source: SyncWarningSource.ONLINE_EVENTS,
-        });
-      }
-      else {
+      if (!(outcome.error.cause instanceof ApiKeyMissingError)) {
         notifyError(
           t('actions.online_events.error.title'),
           t('actions.online_events.error.description', {
@@ -142,14 +137,9 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     return outcome;
   };
 
-  const resetOnlineWarnings = (): void => {
-    resetWarnings();
-  };
-
   return {
     queryAllBankEvents,
     queryAllExchangeEvents,
     queryOnlineEvent,
-    resetOnlineWarnings,
   };
 }
