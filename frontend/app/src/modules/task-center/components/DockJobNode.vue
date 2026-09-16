@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import PendingTask from '@/modules/core/notifications/PendingTask.vue';
-import { someInSubtree, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
+import DockActivityRow from '@/modules/task-center/components/DockActivityRow.vue';
+import DockOutcomeSummary from '@/modules/task-center/components/DockOutcomeSummary.vue';
+import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
+import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 
 const { activity, children, depth = 0, dismissible = false, now } = defineProps<{
@@ -16,6 +18,7 @@ const { activity, children, depth = 0, dismissible = false, now } = defineProps<
 const emit = defineEmits<{
   cancel: [activity: Activity];
   dismiss: [activity: Activity];
+  retry: [activity: Activity];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -34,19 +37,11 @@ const descendants = computed<Activity[]>(() => children.get(activity.id) ?? []);
 
 const isParent = computed<boolean>(() => get(descendants).length > 0);
 
-/** A parent counts its subtree's leaves, so its ring and its "4 of 11" agree. */
+/** A parent counts its subtree's leaves, so its bar and its "4 of 11" agree. */
 const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtreeSteps(children, activity) : undefined));
 
 /** A parent rolls its subtree up, giving each leaf fractional credit for its own progress. */
 const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(children, activity) : activity.percentage));
-
-/**
- * A parent's stop control ends its whole subtree, because `orchestrator.cancel` cascades: the
- * settle walks the children, each of which walks its own. Until that landed this row deliberately
- * rendered no control at all — cancelling a parent settled its row and stopped nothing, since the
- * handle only aborts a backend task id an umbrella never has.
- */
-const cancellable = computed<boolean>(() => activity.cancellable);
 
 /**
  * A parent completes once its children settle, however they settled, so its own COMPLETE would
@@ -59,6 +54,27 @@ const outcomeStatus = computed<ActivityStatus | undefined>(() => {
     && someInSubtree(children, activity, child => child.status === ActivityStatus.FAILED);
   return failedBeneath ? ActivityStatus.FAILED : undefined;
 });
+
+/**
+ * The failed leaves of a settled job, shown under it while it stays folded.
+ *
+ * @remarks
+ * Folding keeps a 21-chain job to one row, but a failure is the one part a reader has to act on,
+ * so it should not take a click to find. Only a settled job surfaces them: while work runs a leaf
+ * can still fail, and rows appearing under a job mid-run would jump the list.
+ */
+const failedLeaves = computed<Activity[]>(() => {
+  if (!get(isParent) || !isTerminalStatus(activity.status))
+    return [];
+  return subtreeLeaves(children, activity).filter(leaf => leaf.status === ActivityStatus.FAILED);
+});
+
+const hiddenCount = computed<number>(() => (get(steps)?.total ?? 0) - get(failedLeaves).length);
+
+/** A settled parent's leaves by status, which its row shows in place of a tally that is now always full. */
+const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTerminalStatus(activity.status)
+  ? tallyStatuses(subtreeLeaves(children, activity).map(leaf => leaf.status))
+  : undefined));
 </script>
 
 <template>
@@ -84,30 +100,38 @@ const outcomeStatus = computed<ActivityStatus | undefined>(() => {
         class="w-6 shrink-0"
       />
 
-      <PendingTask
-        class="flex-1 min-w-0 py-1.5"
+      <DockActivityRow
+        class="flex-1 min-w-0"
         :activity="activity"
         :now="now"
         :percentage="percentage"
         :steps="steps"
-        :cancellable="cancellable"
+        :cancellable="activity.cancellable"
         :dismissible="dismissible"
         :outcome-status="outcomeStatus"
         :nested="depth > 0"
         @cancel="emit('cancel', $event)"
         @dismiss="emit('dismiss', $event)"
-      />
+        @retry="emit('retry', $event)"
+      >
+        <template
+          v-if="leafTally"
+          #summary
+        >
+          <DockOutcomeSummary :tally="leafTally" />
+        </template>
+      </DockActivityRow>
     </div>
 
     <!--
-      16px of indent per level, not 24. The drawer is 400px and a history refresh nests three deep,
+      16px of indent per level, not 24. The panel is 400px and a history refresh nests three deep,
       so the wider step spent a fifth of the width on guide lines and truncated the labels instead.
     -->
     <div
       v-if="isParent && expanded"
       class="flex flex-col ml-2 pl-2 border-l border-default"
     >
-      <PendingTaskNode
+      <DockJobNode
         v-for="child in descendants"
         :key="child.id"
         :activity="child"
@@ -115,7 +139,49 @@ const outcomeStatus = computed<ActivityStatus | undefined>(() => {
         :now="now"
         :depth="depth + 1"
         @cancel="emit('cancel', $event)"
+        @retry="emit('retry', $event)"
       />
+    </div>
+    <div
+      v-else-if="failedLeaves.length > 0"
+      class="flex flex-col ml-2 pl-2 border-l border-default"
+      data-testid="dock-failed-leaves"
+    >
+      <div
+        v-for="leaf in failedLeaves"
+        :key="leaf.id"
+        class="flex items-start gap-1"
+      >
+        <div class="w-6 shrink-0" />
+        <DockActivityRow
+          class="flex-1 min-w-0"
+          :activity="leaf"
+          :now="now"
+          :percentage="leaf.percentage"
+          :cancellable="false"
+          nested
+          @retry="emit('retry', $event)"
+        />
+      </div>
+      <!-- The same spacers a row has before its label, so the button's text lines up with the labels above it. -->
+      <div
+        v-if="hiddenCount > 0"
+        class="flex items-center gap-1"
+      >
+        <div class="w-6 shrink-0" />
+        <div class="flex items-center gap-2.5 px-1">
+          <div class="w-4 shrink-0" />
+          <RuiButton
+            class="-ml-2"
+            variant="text"
+            size="sm"
+            data-testid="dock-show-all"
+            @click="expanded = true"
+          >
+            {{ t('task_dock.panel.show_all', { count: hiddenCount }, hiddenCount) }}
+          </RuiButton>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -6,6 +6,7 @@ import {
   rollupPercentage,
   rollupStatus,
   statusRank,
+  tallyStatuses,
 } from './status';
 import { ActivityStatus } from './types';
 
@@ -57,5 +58,16 @@ describe('task-center status helpers', () => {
     expect(rollupStatus([ActivityStatus.COMPLETE, ActivityStatus.SKIPPED])).toBe(ActivityStatus.COMPLETE);
     expect(rollupStatus([ActivityStatus.SKIPPED, ActivityStatus.FAILED])).toBe(ActivityStatus.FAILED);
     expect(rollupStatus([ActivityStatus.SKIPPED, ActivityStatus.RUNNING])).toBe(ActivityStatus.RUNNING);
+  });
+
+  it('should count each status, reporting zero for the ones absent', () => {
+    expect(tallyStatuses([ActivityStatus.COMPLETE, ActivityStatus.FAILED, ActivityStatus.COMPLETE])).toEqual({
+      [ActivityStatus.CANCELLED]: 0,
+      [ActivityStatus.COMPLETE]: 2,
+      [ActivityStatus.FAILED]: 1,
+      [ActivityStatus.PENDING]: 0,
+      [ActivityStatus.RUNNING]: 0,
+      [ActivityStatus.SKIPPED]: 0,
+    });
   });
 });

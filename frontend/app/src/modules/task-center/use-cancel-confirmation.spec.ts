@@ -10,6 +10,7 @@ import { useCancelConfirmation } from './use-cancel-confirmation';
 
 const activities = ref<Activity[]>([]);
 const cancel = vi.fn();
+const cancelAll = vi.fn();
 const dismiss = vi.fn();
 
 /**
@@ -29,7 +30,7 @@ vi.mock('./use-task-orchestrator', () => ({
 }));
 
 vi.mock('./use-task-controller', () => ({
-  useTaskController: (): { cancel: (activity: Activity) => Promise<void> } => ({ cancel }),
+  useTaskController: (): { cancel: (activity: Activity) => Promise<void>; cancelAll: () => Promise<void> } => ({ cancel, cancelAll }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -234,5 +235,41 @@ describe('useCancelConfirmation', () => {
 
     expect(dismiss).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  describe('stopping everything', () => {
+    it('should stop every cancellable activity when the user confirms', async () => {
+      useCancelConfirmation().confirmCancelAll();
+
+      expect(show).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'task_dock.panel.stop_all' }),
+        expect.any(Function),
+        expect.any(Function),
+      );
+
+      await show.mock.calls[0][1]();
+
+      expect(cancelAll).toHaveBeenCalledOnce();
+    });
+
+    it('should stop nothing when the user backs out', () => {
+      useCancelConfirmation().confirmCancelAll();
+
+      dismissDialog();
+
+      expect(cancelAll).not.toHaveBeenCalled();
+    });
+
+    it('should dismiss itself once nothing cancellable is left running', async () => {
+      vi.useFakeTimers();
+      useCancelConfirmation().confirmCancelAll();
+
+      set(activities, [activity(ActivityStatus.COMPLETE)]);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(dismiss).toHaveBeenCalledOnce();
+      vi.useRealTimers();
+    });
   });
 });

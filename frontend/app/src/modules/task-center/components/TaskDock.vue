@@ -1,50 +1,36 @@
 <script setup lang="ts">
-import type { Activity } from '@/modules/task-center/core/types';
-import CollapsedPendingTasks from '@/modules/core/notifications/CollapsedPendingTasks.vue';
-import PendingTaskNode from '@/modules/core/notifications/PendingTaskNode.vue';
+import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
+import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
+import DockPill from '@/modules/task-center/components/DockPill.vue';
 import { useCancelConfirmation } from '@/modules/task-center/use-cancel-confirmation';
-import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
+import { useDockPanel } from '@/modules/task-center/use-dock-panel';
 import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
+import { useTaskController } from '@/modules/task-center/use-task-controller';
 import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
-import { useTaskDockCaption } from '@/modules/task-center/use-task-dock-caption';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { acknowledge, dismissed, failed, finished, holdPeek, modelExpanded, state, visible } = useTaskDock();
-const { children, jobs, percentage, steps } = usePendingJobs();
-const { isPrimaryRanked, otherJobs, primary, primarySteps } = useDockPrimary(jobs, children);
-const { confirmCancel } = useCancelConfirmation();
-const caption = useTaskDockCaption(jobs, children);
+const { acknowledge, holdPeek, modelExpanded, state, visible } = useTaskDock();
+const { children, jobs } = usePendingJobs();
+const { retryable, retryFailed, roots, sections, summary, tally, title, total } = useDockPanel(jobs, children);
+const { confirmCancel, confirmCancelAll } = useCancelConfirmation();
+const { rerun } = useTaskController();
 
 const now = useTimestamp({ interval: 1000 });
 
-const isWorking = computed<boolean>(() => get(state) === DockState.WORKING);
-
-/** The jobs in flight while working; once the run settles, the jobs whose outcome is being reported. */
-const panelRoots = computed<Activity[]>(() => {
-  switch (get(state)) {
-    case DockState.WORKING:
-      return get(jobs).map(job => job.activity);
-    case DockState.FAILED:
-      return get(failed);
-    case DockState.DISMISSED:
-      return get(dismissed);
-    case DockState.DONE:
-      return get(finished);
-    default:
-      return [];
-  }
-});
-
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
-const showPanel = computed<boolean>(() => get(modelExpanded) && get(panelRoots).length > 0);
-
-const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(primary)?.percentage ?? -1) >= 0);
+const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
 const isFailed = computed<boolean>(() => get(state) === DockState.FAILED);
 
-/** Acknowledged failures keep only the icon on the pill, so they stay reachable without holding the corner. */
-const isIconOnly = computed<boolean>(() => get(state) === DockState.DISMISSED);
+/**
+ * A bulk action earns the footer only when it acts on more than one thing; with a single job or a
+ * single failure, that row's own control does the same.
+ */
+const canStopAll = computed<boolean>(() => get(state) === DockState.WORKING
+  && get(jobs).filter(job => job.activity.cancellable).length > 1);
+
+const canRetryAll = computed<boolean>(() => get(retryable).length > 1);
 
 function toggle(): void {
   set(modelExpanded, !get(modelExpanded));
@@ -66,108 +52,73 @@ function toggle(): void {
       class="w-[25rem] max-w-full flex flex-col gap-2 shadow-lg"
       data-testid="task-dock-panel"
     >
-      <CollapsedPendingTasks
-        v-if="isWorking"
-        v-model="modelExpanded"
-        :count="jobs.length"
-        :steps="steps"
-        :percentage="percentage"
+      <DockPanelHeader
+        :title="title"
+        :summary="summary"
+        :tally="tally"
+        :total="total"
+        @collapse="modelExpanded = false"
       />
-      <div
-        v-else
-        class="flex justify-between items-center gap-2"
-      >
-        <div class="font-medium leading-5 truncate">
-          {{ caption }}
-        </div>
-        <RuiButton
-          class="-m-1 shrink-0"
-          variant="text"
-          icon
-          size="sm"
-          :aria-label="t('pending_task.collapse')"
-          @click="modelExpanded = false"
+      <div class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1">
+        <div
+          v-for="section in sections"
+          :key="section.key"
+          class="flex flex-col"
         >
-          <RuiIcon name="lu-chevron-up" />
-        </RuiButton>
+          <div
+            v-if="section.title"
+            class="pt-2 pb-1 text-xs font-medium uppercase tracking-wide text-rui-text-secondary"
+            data-testid="dock-section-title"
+          >
+            {{ section.title }}
+          </div>
+          <div class="flex flex-col divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
+            <DockJobNode
+              v-for="root in section.roots"
+              :key="root.id"
+              :activity="root"
+              :children="children"
+              :now="now"
+              :dismissible="isFailed"
+              @cancel="confirmCancel($event)"
+              @dismiss="acknowledge($event.id)"
+              @retry="rerun($event)"
+            />
+          </div>
+        </div>
       </div>
-      <div class="flex flex-col divide-y divide-rui-grey-200 dark:divide-rui-grey-800 max-h-[50vh] overflow-y-auto">
-        <PendingTaskNode
-          v-for="root in panelRoots"
-          :key="root.id"
-          :activity="root"
-          :children="children"
-          :now="now"
-          :dismissible="isFailed"
-          @cancel="confirmCancel($event)"
-          @dismiss="acknowledge($event.id)"
-        />
+      <div
+        v-if="canStopAll || canRetryAll"
+        class="flex justify-end border-t border-default pt-2"
+      >
+        <RuiButton
+          v-if="canRetryAll"
+          variant="text"
+          color="primary"
+          size="sm"
+          data-testid="dock-retry-failed"
+          @click="retryFailed()"
+        >
+          {{ t('task_dock.panel.retry_failed', { count: retryable.length }, retryable.length) }}
+        </RuiButton>
+        <RuiButton
+          v-else
+          variant="text"
+          color="primary"
+          size="sm"
+          data-testid="dock-stop-all"
+          @click="confirmCancelAll()"
+        >
+          {{ t('task_dock.panel.stop_all') }}
+        </RuiButton>
       </div>
     </RuiCard>
 
-    <button
-      type="button"
-      class="flex items-center gap-2 max-w-full rounded-full border border-default bg-white dark:bg-rui-grey-900 shadow-md py-1.5 text-sm"
-      :class="isIconOnly ? 'px-1.5' : 'pl-2 pr-3'"
-      :aria-expanded="showPanel"
-      :aria-label="showPanel ? t('task_dock.hide') : t('task_dock.show')"
-      :data-state="state"
-      data-testid="task-dock-pill"
-      @click="toggle()"
-    >
-      <RuiIcon
-        v-if="isFailed || isIconOnly"
-        name="lu-circle-x"
-        size="20"
-        class="text-rui-error shrink-0"
-      />
-      <RuiIcon
-        v-else-if="state === DockState.DONE"
-        name="lu-check"
-        size="20"
-        class="text-rui-success shrink-0"
-      />
-      <RuiProgress
-        v-else-if="hasDeterminateRing"
-        color="primary"
-        variant="determinate"
-        circular
-        :value="primary?.percentage"
-        size="20"
-        thickness="2"
-      />
-      <RuiProgress
-        v-else
-        color="primary"
-        variant="indeterminate"
-        circular
-        size="20"
-        thickness="2"
-      />
-      <span
-        class="truncate font-medium"
-        :class="{ 'sr-only': isIconOnly }"
-        aria-live="polite"
-        data-testid="task-dock-caption"
-      >
-        {{ caption }}
-      </span>
-      <template v-if="isWorking">
-        <span
-          v-if="primarySteps"
-          class="text-rui-text-secondary tabular-nums shrink-0"
-          data-testid="task-dock-steps"
-        >
-          {{ t('pending_task.steps', { current: primarySteps.current, total: primarySteps.total }) }}
-        </span>
-        <span
-          v-if="otherJobs > 0"
-          class="text-rui-text-secondary shrink-0"
-          data-testid="task-dock-more"
-        >
-          {{ t('task_dock.more', { count: otherJobs }) }}
-        </span>
-      </template>
-    </button>
+    <DockPill
+      :jobs="jobs"
+      :children="children"
+      :expanded="showPanel"
+      @toggle="toggle()"
+    />
   </div>
 </template>
