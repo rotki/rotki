@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fints.client import NeedRetryResponse, NeedTANResponse
+from fints.client import FinTS3PinTanClient, NeedRetryResponse, NeedTANResponse
 from fints.exceptions import (
     FinTSClientPINError,
     FinTSClientTemporaryAuthError,
@@ -192,6 +192,42 @@ def test_product_registration_response_aborts_the_dialog() -> None:
         )
 
     assert dialog.open is False
+
+
+def test_ing_uses_one_step_authentication() -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    client.bank_identifier = SimpleNamespace(bank_code='50010517')
+
+    with patch.object(FinTS3PinTanClient, '_process_response') as process_response:
+        client._process_response(  # pylint: disable=protected-access
+            dialog=SimpleNamespace(open=True),
+            segment=None,
+            response=SimpleNamespace(code='3920'),
+        )
+
+    process_response.assert_not_called()
+    assert client.last_response_code == '3920'
+    assert client.is_tan_media_required() is False
+
+
+def test_other_banks_process_tan_mechanisms_normally() -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    client.bank_identifier = SimpleNamespace(bank_code='12030000')
+    dialog = SimpleNamespace(open=True)
+    response = SimpleNamespace(code='3920')
+
+    with (
+        patch.object(FinTS3PinTanClient, '_process_response') as process_response,
+        patch.object(FinTS3PinTanClient, 'is_tan_media_required', return_value=True),
+    ):
+        client._process_response(  # pylint: disable=protected-access
+            dialog=dialog,
+            segment=None,
+            response=response,
+        )
+        assert client.is_tan_media_required() is True
+
+    process_response.assert_called_once_with(dialog, None, response)
 
 
 @pytest.mark.parametrize(('error', 'response_code', 'expected_exception', 'message'), [
