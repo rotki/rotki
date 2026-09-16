@@ -50,7 +50,7 @@ def run_command(args: argparse.Namespace) -> None:
     args.output.write_text(json.dumps(payload, indent=2), encoding='utf-8')
     if args.gha_output is not None:
         args.gha_output.write_text(
-            json.dumps(to_gha_benchmark(results), indent=2),
+            json.dumps(to_gha_benchmark(results, payload['meta']['machine']), indent=2),
             encoding='utf-8',
         )
     table = render_run_table(results)
