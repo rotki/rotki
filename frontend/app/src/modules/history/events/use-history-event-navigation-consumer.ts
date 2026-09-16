@@ -14,6 +14,24 @@ import {
 const historyEventsName = '/history/events/';
 
 /**
+ * Whether a navigation request names a specific event to highlight.
+ *
+ * @remarks
+ * A request that names none carries only its target group, and the group itself is then
+ * highlighted instead. Every highlight the query can carry has to be listed here: one left out
+ * makes its request look group-only and adds a second, conflicting highlight to the route.
+ */
+export function hasEventHighlight(request: HistoryEventNavigationRequest): boolean {
+  return [
+    request.highlightedAssetMovement,
+    request.highlightedAccountingEvent,
+    request.highlightedPotentialMatch,
+    request.highlightedNegativeBalanceEvent,
+    request.highlightedInternalTxConflict,
+  ].some(Boolean);
+}
+
+/**
  * Sets up watchers that consume pending navigation requests.
  * Should be called once from HistoryEventsView to handle navigation
  * from any producer (e.g., MatchAssetMovementsPinned, external packages).
@@ -94,6 +112,10 @@ export function useHistoryEventNavigationConsumer(
 
   /**
    * Build highlight query params from a navigation request.
+   *
+   * @remarks
+   * A request that names no event falls back to highlighting the whole group, so landing on the
+   * page still points at what the navigation was for.
    */
   function buildHighlightQuery(
     request: HistoryEventNavigationRequest,
@@ -116,7 +138,7 @@ export function useHistoryEventNavigationConsumer(
     if (request.highlightedInternalTxConflict)
       query.highlightedInternalTxConflict = request.highlightedInternalTxConflict;
 
-    if (Object.keys(query).length === 1)
+    if (!hasEventHighlight(request))
       query.highlightedGroupIdentifier = request.targetGroupIdentifier;
 
     if (request.assetFilter)

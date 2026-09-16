@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
-import { humanizeStrategy } from '@/modules/history/data-issues/transforms';
+import { humanizeStrategy, strategyMessageKey } from '@/modules/history/data-issues/transforms';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const { items } = defineProps<{
@@ -12,6 +12,11 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+function getStrategyLabel(strategy: string): string {
+  const key = strategyMessageKey(strategy);
+  return key ? t(key) : humanizeStrategy(strategy);
+}
 
 function isFailure(item: RemediationTimelineItem): boolean {
   return item.success === false || item.result === 'redecoding_failed';
@@ -56,7 +61,7 @@ function getResultText(item: RemediationTimelineItem): string | undefined {
         />
         <div class="flex flex-col">
           <span class="text-body-2 font-medium">
-            {{ humanizeStrategy(item.strategy) }}
+            {{ getStrategyLabel(item.strategy) }}
           </span>
           <span
             v-if="getResultText(item)"

@@ -2,7 +2,7 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
-import { describeIssue, humanizeStrategy, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { describeIssue, humanizeStrategy, relatedEventRoute, strategyMessageKey, toTimelineItems } from '@/modules/history/data-issues/transforms';
 
 function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   return {
@@ -33,6 +33,20 @@ describe('data-issues transforms', () => {
 
     it('should leave an empty string untouched', () => {
       expect(humanizeStrategy('')).toBe('');
+    });
+
+    it('should not translate, so the label follows the caller locale', () => {
+      expect(humanizeStrategy('redecode_customized_transactions')).toBe('Redecode customized transactions');
+    });
+  });
+
+  describe('strategyMessageKey', () => {
+    it('should name the key for a strategy that has a written label', () => {
+      expect(strategyMessageKey('redecode_customized_transactions')).toBe('data_issues.detail.checked_customizations');
+    });
+
+    it('should leave a strategy with no written label to the humanized fallback', () => {
+      expect(strategyMessageKey('reprocess_event')).toBeUndefined();
     });
   });
 

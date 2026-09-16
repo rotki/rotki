@@ -5,8 +5,7 @@ import type {
 } from '@/modules/history/data-issues/types';
 import { fromNullable, getOr } from 'plainfp/option';
 import { pipe } from 'plainfp/pipe';
-import { i18n } from '@/i18n';
-import { msg } from '@/message-key';
+import { type MessageKey, msg } from '@/message-key';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import {
   type AutoRemediationAttempt,
@@ -22,14 +21,24 @@ import {
  * (`Reprocess event`).
  */
 export function humanizeStrategy(strategy: string): string {
-  if (strategy === 'redecode_customized_transactions') {
-    const { t } = i18n.global;
-    return t('data_issues.detail.checked_customizations');
-  }
   const normalized = strategy.replaceAll(/[_-]+/g, ' ').trim();
   if (normalized.length === 0)
     return strategy;
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+/**
+ * The translated label for a strategy, for the few that have one.
+ *
+ * @remarks
+ * Returns a key rather than a translation so the label resolves in the component, through its own
+ * `t`, and follows a locale change. Strategies with no entry fall back to
+ * {@link humanizeStrategy}.
+ */
+export function strategyMessageKey(strategy: string): MessageKey | undefined {
+  return strategy === 'redecode_customized_transactions'
+    ? msg.$t('data_issues.detail.checked_customizations')
+    : undefined;
 }
 
 /**
