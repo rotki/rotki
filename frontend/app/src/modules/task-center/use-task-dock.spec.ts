@@ -69,61 +69,12 @@ describe('useTaskDock', () => {
     scope = undefined;
   });
 
-  describe('the primary job', () => {
-    it('should name the long job even when a short job is listed ahead of it', () => {
-      set(activities, [
-        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING),
-        activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING),
-        activity(ActivityKind.TX_SYNC, 'eth', ActivityStatus.RUNNING, refreshId),
-      ]);
-
-      const { otherJobs, primary, primarySteps } = dock();
-
-      expect(get(primary)?.activity.kind).toBe(ActivityKind.HISTORY_SYNC);
-      expect(get(otherJobs)).toBe(1);
-      expect(get(primarySteps)).toEqual({ current: 0, total: 1 });
-    });
-
-    it('should never name upkeep work ahead of a ranked job', () => {
-      set(activities, [
-        activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING),
-        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING),
-      ]);
-
-      expect(get(dock().primary)?.activity.kind).toBe(ActivityKind.BLOCKCHAIN_BALANCES);
-    });
-
-    it('should fall back to the first job, neither ranked nor counted, when only upkeep runs', () => {
-      set(activities, [{ ...activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING), steps: { current: 1, total: 3 } }]);
-
-      const { isPrimaryRanked, primary, primarySteps } = dock();
-
-      expect(get(primary)?.activity.kind).toBe(ActivityKind.PRICES);
-      expect(get(isPrimaryRanked)).toBe(false);
-      expect(get(primarySteps)).toBeUndefined();
-    });
-
-    it('should count a single ranked activity by the steps it reports, not as one leaf', () => {
-      set(activities, [{ ...activity(ActivityKind.HISTORICAL_BALANCES, 'range', ActivityStatus.RUNNING), steps: { current: 1, total: 3 } }]);
-
-      expect(get(dock().primarySteps)).toEqual({ current: 1, total: 3 });
-    });
-
-    it('should show no count for a single ranked activity that reports no steps', () => {
-      set(activities, [activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.RUNNING)]);
-
-      const { isPrimaryRanked, primarySteps } = dock();
-
-      expect(get(isPrimaryRanked)).toBe(true);
-      expect(get(primarySteps)).toBeUndefined();
-    });
-
-    it('should name nothing while everything is still queued, yet stay visible', () => {
+  describe('visibility', () => {
+    it('should be working and visible while everything is still queued', () => {
       set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.PENDING)]);
 
-      const { primary, state, visible } = dock();
+      const { state, visible } = dock();
 
-      expect(get(primary)).toBeUndefined();
       expect(get(state)).toBe(DockState.WORKING);
       expect(get(visible)).toBe(true);
     });

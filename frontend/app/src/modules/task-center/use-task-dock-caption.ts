@@ -1,7 +1,9 @@
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { subtreeLeaves } from '@/modules/task-center/core/tree';
-import { type Activity, ActivityStatus } from '@/modules/task-center/core/types';
+import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
+import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
 import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
 
 function isFailed(activity: Activity): boolean {
@@ -15,14 +17,20 @@ function isFailed(activity: Activity): boolean {
  * A failed job is described by its failed leaves, not blamed as a whole. One failed chain of 21
  * names that chain, several are counted against the same leaves the running pill counted, and a job
  * whose failure sits on a parent rather than a leaf falls back to its own title.
+ *
+ * Takes the jobs and tree the dock already holds rather than building its own copy of them.
  */
-export function useTaskDockCaption(): ComputedRef<string> {
+export function useTaskDockCaption(
+  jobs: MaybeRefOrGetter<PendingJob[]>,
+  children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
+): ComputedRef<string> {
   const { t } = useI18n({ useScope: 'global' });
-  const { children, dismissed, failed, finished, isPrimaryRanked, primary, state } = useTaskDock();
+  const { dismissed, failed, finished, state } = useTaskDock();
+  const { isPrimaryRanked, primary } = useDockPrimary(jobs, children);
   const { labelOf } = useActivityLabel();
 
   function failedJob(root: Activity): string {
-    const leaves = subtreeLeaves(get(children), root);
+    const leaves = subtreeLeaves(toValue(children), root);
     const failedLeaves = leaves.filter(isFailed);
     const hasChildren = leaves.length > 1 || leaves[0]?.id !== root.id;
 
