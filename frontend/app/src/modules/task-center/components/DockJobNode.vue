@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import DockActivityRow from '@/modules/task-center/components/DockActivityRow.vue';
 import DockOutcomeSummary from '@/modules/task-center/components/DockOutcomeSummary.vue';
+import DockSkippedGroup from '@/modules/task-center/components/DockSkippedGroup.vue';
 import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
+import { arrangeChildren, type DockChildEntry } from '@/modules/task-center/dock-children';
 
 const { activity, children, depth = 0, dismissible = false, now } = defineProps<{
   activity: Activity;
@@ -34,6 +36,13 @@ const { t } = useI18n({ useScope: 'global' });
 const expanded = ref<boolean>(false);
 
 const descendants = computed<Activity[]>(() => children.get(activity.id) ?? []);
+
+/** The unfolded children, sorted and with shared skips grouped once the job settles. */
+const entries = computed<DockChildEntry[]>(() => arrangeChildren(
+  get(descendants),
+  isTerminalStatus(activity.status),
+  child => (children.get(child.id)?.length ?? 0) === 0,
+));
 
 const isParent = computed<boolean>(() => get(descendants).length > 0);
 
@@ -131,16 +140,31 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
       v-if="isParent && expanded"
       class="flex flex-col ml-2 pl-2 border-l border-default"
     >
-      <DockJobNode
-        v-for="child in descendants"
-        :key="child.id"
-        :activity="child"
-        :children="children"
-        :now="now"
-        :depth="depth + 1"
-        @cancel="emit('cancel', $event)"
-        @retry="emit('retry', $event)"
-      />
+      <template
+        v-for="entry in entries"
+        :key="entry.type === 'node' ? entry.activity.id : entry.key"
+      >
+        <DockJobNode
+          v-if="entry.type === 'node'"
+          :activity="entry.activity"
+          :children="children"
+          :now="now"
+          :depth="depth + 1"
+          @cancel="emit('cancel', $event)"
+          @retry="emit('retry', $event)"
+        />
+        <div
+          v-else
+          class="flex items-start gap-1"
+        >
+          <div class="w-6 shrink-0" />
+          <DockSkippedGroup
+            class="flex-1 min-w-0"
+            :activities="entry.activities"
+            :reason="entry.reason"
+          />
+        </div>
+      </template>
     </div>
     <div
       v-else-if="failedLeaves.length > 0"

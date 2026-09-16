@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupTitle, kindRank } from './kinds';
+import { groupTitle, isSafeToStop, kindRank } from './kinds';
 import { type Activity, ActivitySourceType, ActivityStatus, ActivityKind as Kind, makeActivityId } from './types';
 
 const t = (key: string): string => key;
@@ -33,5 +33,13 @@ describe('task-center kinds', () => {
       title: 'Fallback title',
     };
     expect(groupTitle(Kind.DB_UPGRADE, [activity], t)).toBe('Fallback title');
+  });
+
+  it('should allow a bulk stop of refreshes and syncs, and never of work that writes or deletes data', () => {
+    for (const kind of [Kind.BLOCKCHAIN_BALANCES, Kind.HISTORY_SYNC, Kind.PROTOCOL_CACHE, Kind.HISTORICAL_BALANCES])
+      expect(isSafeToStop(kind), kind).toBe(true);
+
+    for (const kind of [Kind.REDECODE, Kind.ASSETS, Kind.CSV_IMPORT, Kind.ACCOUNTS, Kind.PURGE, Kind.DB_UPGRADE, Kind.DATA_MIGRATION, Kind.PRICES, Kind.PNL_REPORT, Kind.STAKING, Kind.MANUAL_BALANCES, Kind.MODULE_TOGGLE])
+      expect(isSafeToStop(kind), kind).toBe(false);
   });
 });

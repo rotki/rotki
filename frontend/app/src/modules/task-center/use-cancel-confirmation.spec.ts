@@ -9,8 +9,7 @@ import {
 import { useCancelConfirmation } from './use-cancel-confirmation';
 
 const activities = ref<Activity[]>([]);
-const cancel = vi.fn();
-const cancelAll = vi.fn();
+const cancel = vi.fn<(activity: Activity) => Promise<void>>();
 const dismiss = vi.fn();
 
 /**
@@ -30,7 +29,7 @@ vi.mock('./use-task-orchestrator', () => ({
 }));
 
 vi.mock('./use-task-controller', () => ({
-  useTaskController: (): { cancel: (activity: Activity) => Promise<void>; cancelAll: () => Promise<void> } => ({ cancel, cancelAll }),
+  useTaskController: (): { cancel: typeof cancel } => ({ cancel }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -237,34 +236,52 @@ describe('useCancelConfirmation', () => {
     vi.useRealTimers();
   });
 
-  describe('stopping everything', () => {
-    it('should stop every cancellable activity when the user confirms', async () => {
-      useCancelConfirmation().confirmCancelAll();
+  describe('stopping several jobs', () => {
+    const second = (): Activity => ({ ...activity(ActivityStatus.RUNNING), id: makeActivityId(ActivityKind.TX_SYNC, 'gnosis') });
+
+    it('should stop exactly the jobs it was given when the user confirms', async () => {
+      const targets = [activity(ActivityStatus.RUNNING), second()];
+      set(activities, targets);
+      useCancelConfirmation().confirmCancelAll(targets, 0);
 
       expect(show).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'task_dock.panel.stop_all' }),
+        expect.objectContaining({ message: 'task_dock.panel.stop_all_info::2', title: 'task_dock.panel.stop_all' }),
         expect.any(Function),
         expect.any(Function),
       );
 
       await show.mock.calls[0][1]();
 
-      expect(cancelAll).toHaveBeenCalledOnce();
+      expect(cancel.mock.calls.map(([target]) => target)).toEqual(targets);
+    });
+
+    it('should say how many data-changing jobs keep running', () => {
+      const targets = [activity(ActivityStatus.RUNNING), second()];
+      useCancelConfirmation().confirmCancelAll(targets, 1);
+
+      expect(show).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'task_dock.panel.stop_all_info::2 task_dock.panel.stop_all_kept::1' }),
+        expect.any(Function),
+        expect.any(Function),
+      );
+      dismissDialog();
     });
 
     it('should stop nothing when the user backs out', () => {
-      useCancelConfirmation().confirmCancelAll();
+      useCancelConfirmation().confirmCancelAll([activity(ActivityStatus.RUNNING), second()], 0);
 
       dismissDialog();
 
-      expect(cancelAll).not.toHaveBeenCalled();
+      expect(cancel).not.toHaveBeenCalled();
     });
 
-    it('should dismiss itself once nothing cancellable is left running', async () => {
+    it('should dismiss itself once the jobs it names have settled, whatever else still runs', async () => {
       vi.useFakeTimers();
-      useCancelConfirmation().confirmCancelAll();
+      const other = { ...activity(ActivityStatus.RUNNING), id: makeActivityId(ActivityKind.ASSETS, 'update') };
+      set(activities, [activity(ActivityStatus.RUNNING), other]);
+      useCancelConfirmation().confirmCancelAll([activity(ActivityStatus.RUNNING)], 1);
 
-      set(activities, [activity(ActivityStatus.COMPLETE)]);
+      set(activities, [activity(ActivityStatus.COMPLETE), other]);
       await nextTick();
       await vi.advanceTimersByTimeAsync(1000);
 

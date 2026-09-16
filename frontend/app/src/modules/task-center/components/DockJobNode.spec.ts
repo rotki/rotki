@@ -181,6 +181,25 @@ describe('dockJobNode', () => {
       expect(wrapper.text()).toContain('pending_task.steps::1, 2');
     });
 
+    it('should list an unfolded job\'s failure first and fold skips that share a reason into one row', async () => {
+      const wrapper = mountTree([
+        activity('run', { kind: ActivityKind.BLOCKCHAIN_BALANCES, status: ActivityStatus.COMPLETE, subtitle: undefined, title: 'Blockchain balances' }),
+        activity('eth', { parent: id('run'), status: ActivityStatus.COMPLETE }),
+        activity('bch', { parent: id('run'), reason: 'no accounts', status: ActivityStatus.SKIPPED }),
+        activity('eth2', { parent: id('run'), reason: 'unreachable', status: ActivityStatus.FAILED }),
+        activity('ksm', { parent: id('run'), reason: 'no accounts', status: ActivityStatus.SKIPPED }),
+      ]);
+
+      await wrapper.find('[aria-expanded]').trigger('click');
+
+      const rowLabels = wrapper.findAll('[data-testid=dock-activity-row] .truncate').map(label => label.text());
+      expect(rowLabels.slice(1)).toEqual(['eth2', 'eth']);
+      const group = wrapper.find('[data-testid=dock-skipped-group]');
+      expect(group.text()).toContain('task_dock.panel.skipped_count::2');
+      expect(group.text()).toContain('no accounts');
+      expect(group.find('[data-testid=dock-skipped-names]').text()).toBe('bch, ksm');
+    });
+
     it('should offer dismiss on the job row only', () => {
       expect(mountTree(settled(ActivityStatus.COMPLETE), { dismissible: true }).findAll('[data-testid=dismiss-activity]')).toHaveLength(1);
     });

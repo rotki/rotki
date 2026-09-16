@@ -12,7 +12,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { acknowledge, holdPeek, modelExpanded, state, visible } = useTaskDock();
 const { children, jobs } = usePendingJobs();
-const { retryable, retryFailed, roots, sections, summary, tally, title, total } = useDockPanel(jobs, children);
+const { retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { confirmCancel, confirmCancelAll } = useCancelConfirmation();
 const { rerun } = useTaskController();
 
@@ -25,10 +25,10 @@ const isFailed = computed<boolean>(() => get(state) === DockState.FAILED);
 
 /**
  * A bulk action earns the footer only when it acts on more than one thing; with a single job or a
- * single failure, that row's own control does the same.
+ * single failure, that row's own control does the same. Stop all counts only the jobs it may
+ * safely interrupt.
  */
-const canStopAll = computed<boolean>(() => get(state) === DockState.WORKING
-  && get(jobs).filter(job => job.activity.cancellable).length > 1);
+const canStopAll = computed<boolean>(() => get(stoppable).length > 1);
 
 const canRetryAll = computed<boolean>(() => get(retryable).length > 1);
 
@@ -107,7 +107,7 @@ function toggle(): void {
           color="primary"
           size="sm"
           data-testid="dock-stop-all"
-          @click="confirmCancelAll()"
+          @click="confirmCancelAll(stoppable, unstoppable.length)"
         >
           {{ t('task_dock.panel.stop_all') }}
         </RuiButton>

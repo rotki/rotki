@@ -137,6 +137,16 @@ describe('dockActivityRow', () => {
       expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
     });
 
+    it('should take less room for a settled child with nothing but its name, and the usual room otherwise', () => {
+      const row = (partial: Partial<Activity>): string[] => createWrapper({ activity: activity(partial), nested: true })
+        .find('[data-testid=dock-activity-row]')
+        .classes();
+
+      expect(row({ status: ActivityStatus.COMPLETE })).toContain('py-0.5');
+      expect(row({ reason: 'no accounts', status: ActivityStatus.SKIPPED })).toContain('py-1.5');
+      expect(row({ status: ActivityStatus.RUNNING })).toContain('py-1.5');
+    });
+
     it('should keep a settled parent\'s tally as text, with no bar', () => {
       const wrapper = createWrapper({
         activity: activity({ status: ActivityStatus.COMPLETE }),
