@@ -1,5 +1,6 @@
 """FinTS-specific session and interactive authentication behavior."""
 from contextlib import contextmanager
+from datetime import timedelta
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -11,6 +12,7 @@ from fints.exceptions import (
     FinTSClientTemporaryAuthError,
     FinTSDialogInitError,
 )
+from fints.utils import mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
 from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
@@ -42,6 +44,56 @@ FINTS_VALUES = {
 ])
 def test_mt940_transaction_kinds(code: str, expected_kind: BankTransactionKind) -> None:
     assert Fints._transaction_kind({'id': code}) == expected_kind
+
+
+def test_mt940_keeps_iban_separate_from_applicant_name() -> None:
+    transactions = mt940_to_array(
+        ':20:START\n'
+        ':25:123456789\n'
+        ':28C:1/1\n'
+        ':60F:C260916EUR10,00\n'
+        ':61:2609160916D10,00NTRFNONREF\n'
+        ':86:020?00UEBERWEISUNG?31DE02120300000000202051?32Eleftherios Karapetsas\n'
+        ':62F:C260916EUR0,00\n',
+    )
+
+    assert transactions[0].data['applicant_iban'] == 'DE02120300000000202051'
+    assert transactions[0].data['applicant_name'] == 'Eleftherios Karapetsas'
+
+
+def test_mt940_parser_fix_preserves_transaction_identity(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        transport := FinTSFixtureTransport(),
+    )
+    account = connector.query_accounts()[0]
+    parsed_transaction = SimpleNamespace(data={
+        'date': (booking_date := transport.get_transactions(
+            connector._accounts[account.identifier],  # pylint: disable=protected-access
+        )[0].data['date']),
+        'amount': (amount := SimpleNamespace(amount='-10', currency='EUR')),
+        'applicant_iban': 'DE02120300000000202051',
+        'applicant_name': 'Eleftherios Karapetsas',
+    })
+    legacy_transaction = SimpleNamespace(data={
+        'date': booking_date,
+        'amount': amount,
+        'applicant_name': 'DE02120300000000202051Eleftherios Karapetsas',
+    })
+
+    assert connector._deserialize_transaction(  # pylint: disable=protected-access
+        transaction=parsed_transaction,
+        account=account,
+        duplicate_index=0,
+    ).source_id == connector._deserialize_transaction(  # pylint: disable=protected-access
+        transaction=legacy_transaction,
+        account=account,
+        duplicate_index=0,
+    ).source_id
 
 
 class FixtureTANResponse(NeedTANResponse):
@@ -208,6 +260,34 @@ def test_ing_uses_one_step_authentication() -> None:
     process_response.assert_not_called()
     assert client.last_response_code == '3920'
     assert client.is_tan_media_required() is False
+
+
+def test_ing_initial_transaction_sync_requests_full_available_history(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    transport = FinTSFixtureTransport()
+    credentials = Fints.api_credentials_from_values(
+        name='ING',
+        location=Location.FINTS,
+        values={**FINTS_VALUES, 'bank_code': '50010517'},
+    )
+    assert credentials.api_secret is not None
+    connector = Fints(
+        name=credentials.name,
+        api_key=credentials.api_key,
+        secret=credentials.api_secret,
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+        product_id=PRODUCT_ID,
+        client_factory=transport,
+    )
+
+    account = connector.query_accounts()[0]
+    connector.query_transactions(account=account, updated_since=None)
+
+    params = next(params for request, params in transport.requests if request == 'transactions')
+    assert params['end_date'] - params['start_date'] == timedelta(days=90)
 
 
 def test_other_banks_process_tan_mechanisms_normally() -> None:

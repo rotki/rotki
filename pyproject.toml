@@ -75,6 +75,8 @@ dependencies = [
     "eth-account",
     # fints 5 depends on lxml, which enables the GIL in free-threaded Python.
     "fints==4.2.3",
+    # mt-940 5 puts the ?31 IBAN field into applicant_name instead of applicant_iban.
+    "mt-940==4.30.0",
 ]
 
 [project.urls]
