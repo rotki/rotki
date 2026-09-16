@@ -15,7 +15,9 @@ import {
 } from '@/modules/task-center/core/types';
 
 const activities = ref<Activity[]>([]);
-const confirmCancel = vi.fn();
+const confirmCancel = vi.fn<(activity: Activity) => void>();
+const confirmCancelAll = vi.fn<() => void>();
+const rerun = vi.fn<(activity: Activity) => void>();
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { isActive: ComputedRef<boolean>; model: ComputedRef<ActivityModel> } => {
@@ -25,17 +27,21 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 }));
 
 vi.mock('@/modules/task-center/use-cancel-confirmation', () => ({
-  useCancelConfirmation: (): { confirmCancel: (activity: Activity) => void } => ({ confirmCancel }),
+  useCancelConfirmation: (): { confirmCancel: typeof confirmCancel; confirmCancelAll: typeof confirmCancelAll } => ({ confirmCancel, confirmCancelAll }),
 }));
 
-function activity(kind: ActivityKind, name: string, status: ActivityStatus, parent?: ActivityId): Activity {
+vi.mock('@/modules/task-center/use-task-controller', () => ({
+  useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
+}));
+
+function activity(kind: ActivityKind, name: string, status: ActivityStatus, parent?: ActivityId, rerunnable = false): Activity {
   return {
     cancellable: true,
     id: makeActivityId(kind, name),
     kind,
     parent,
     percentage: -1,
-    rerunnable: false,
+    rerunnable,
     source: { type: ActivitySourceType.NATIVE },
     status,
     subtitle: name,
@@ -60,7 +66,85 @@ describe('taskDock', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     set(activities, []);
-    confirmCancel.mockClear();
+    vi.clearAllMocks();
+  });
+
+  describe('the panel footer', () => {
+    it('should offer to stop everything while several jobs run, asking first', async () => {
+      set(activities, [...refresh(ActivityStatus.RUNNING), activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.RUNNING)]);
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      expect(wrapper.find('[data-testid=dock-retry-failed]').exists()).toBe(false);
+
+      await wrapper.find('[data-testid=dock-stop-all]').trigger('click');
+
+      expect(confirmCancelAll).toHaveBeenCalledOnce();
+    });
+
+    it('should leave stopping a single job to its own row', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=dock-stop-all]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=cancel-activity]').exists()).toBe(true);
+    });
+
+    it('should offer to retry every failed leaf once the run settles with several, instead of stopping', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+      const settledRun = [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE),
+        activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true),
+        activity(ActivityKind.TX_SYNC, 'gnosis', ActivityStatus.FAILED, refreshId, true),
+      ];
+
+      set(activities, settledRun);
+      await nextTick();
+      await nextTick();
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=dock-stop-all]').exists()).toBe(false);
+      const retry = wrapper.find('[data-testid=dock-retry-failed]');
+      expect(retry.text()).toBe('task_dock.panel.retry_failed::2');
+
+      await retry.trigger('click');
+
+      expect(rerun).toHaveBeenCalledTimes(2);
+    });
+
+    it('should leave retrying a single failure to its own row', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      set(activities, [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE),
+        activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true),
+      ]);
+      await nextTick();
+      await nextTick();
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=dock-retry-failed]').exists()).toBe(false);
+    });
+
+    it('should rerun a failed leaf from its own row', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      set(activities, [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE),
+        activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true),
+      ]);
+      await nextTick();
+      await nextTick();
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      await wrapper.find('[data-testid=retry-activity]').trigger('click');
+
+      expect(rerun).toHaveBeenCalledOnce();
+    });
   });
 
   it('should render nothing while no work is running or queued', () => {

@@ -1,3 +1,4 @@
+import type { ComputedRef } from 'vue';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { isTerminalStatus } from './core/status';
@@ -7,28 +8,39 @@ import { useTaskOrchestrator } from './use-task-orchestrator';
 
 interface UseCancelConfirmationReturn {
   confirmCancel: (activity: Activity) => void;
+  /** Asks before stopping every cancellable activity at once. */
+  confirmCancelAll: () => void;
 }
 
 /**
- * Asks before cancelling an activity, and gets out of the way if the work settles first.
+ * Asks before cancelling, and gets out of the way if the work settles first.
  *
- * The self-dismiss is the whole reason this is not two lines in the component: the dialog names
- * one activity, and work in a task panel finishes on its own schedule. Leaving it up asks the user
- * to confirm cancelling something that already completed, and confirming it would then cancel
- * nothing — `orchestrator.cancel` refuses a terminal id.
+ * The self-dismiss is the whole reason this is not two lines in the component: work in a task panel
+ * finishes on its own schedule. Leaving the dialog up asks the user to confirm cancelling something
+ * that already completed, and confirming it would then cancel nothing, since `orchestrator.cancel`
+ * refuses a terminal id.
  */
 export function useCancelConfirmation(): UseCancelConfirmationReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { activities } = useTaskOrchestrator();
-  const { cancel } = useTaskController();
+  const { cancel, cancelAll } = useTaskController();
   const confirmStore = useConfirmStore();
   const { dismiss, show } = confirmStore;
   const { confirmation, visible } = storeToRefs(confirmStore);
 
-  function confirmCancel(activity: Activity): void {
-    const live = computed<boolean>(() => get(activities)
-      .some(item => item.id === activity.id && !isTerminalStatus(item.status)));
-
+  /**
+   * Shows `message`, runs `onConfirm` if accepted, and closes the dialog on its own once `live`
+   * turns false.
+   *
+   * @remarks
+   * The close is debounced because a settle emits more than once in quick succession (the status,
+   * then the ledger write), and the dialog should not blink shut on the first of them.
+   */
+  function confirmWhileLive(
+    message: { message: string; title: string; type: 'warning' },
+    live: ComputedRef<boolean>,
+    onConfirm: () => Promise<unknown>,
+  ): void {
     const stops: (() => void)[] = [];
     let done = false;
     const stop = (): void => {
@@ -37,11 +49,6 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
         off();
     };
 
-    /**
-     * Closes the dialog once the work it asks about has settled, debounced because a settle emits
-     * more than once in quick succession — the status, then the ledger write — and the dialog
-     * should not blink shut on the first of them.
-     */
     const dismissWhenSettled = useDebounceFn(async () => {
       if (done)
         return;
@@ -55,14 +62,6 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
         startPromise(dismissWhenSettled());
     }, { immediate: true }));
 
-    const message = {
-      message: t('collapsed_pending_tasks.cancel_task_info', {
-        title: resolveText(t, activity.subtitle) ?? activity.title,
-      }),
-      title: t('collapsed_pending_tasks.cancel_task'),
-      type: 'warning' as const,
-    };
-
     stops.push(watch([visible, confirmation], ([shown, current]) => {
       if (!shown || toRaw(current) !== message)
         stop();
@@ -70,9 +69,33 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
 
     show(message, async () => {
       stop();
-      await cancel(activity);
+      await onConfirm();
     }, stop);
   }
 
-  return { confirmCancel };
+  function confirmCancel(activity: Activity): void {
+    const live = computed<boolean>(() => get(activities)
+      .some(item => item.id === activity.id && !isTerminalStatus(item.status)));
+
+    confirmWhileLive({
+      message: t('collapsed_pending_tasks.cancel_task_info', {
+        title: resolveText(t, activity.subtitle) ?? activity.title,
+      }),
+      title: t('collapsed_pending_tasks.cancel_task'),
+      type: 'warning',
+    }, live, async () => cancel(activity));
+  }
+
+  function confirmCancelAll(): void {
+    const live = computed<boolean>(() => get(activities)
+      .some(item => item.cancellable && !isTerminalStatus(item.status)));
+
+    confirmWhileLive({
+      message: t('task_dock.panel.stop_all_info'),
+      title: t('task_dock.panel.stop_all'),
+      type: 'warning',
+    }, live, cancelAll);
+  }
+
+  return { confirmCancel, confirmCancelAll };
 }

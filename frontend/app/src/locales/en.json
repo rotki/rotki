@@ -2122,9 +2122,7 @@
   },
   "collapsed_pending_tasks": {
     "cancel_task": "Cancel task",
-    "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?",
-    "steps": "{current} of {total} steps done",
-    "title": "{count} job running | {count} jobs running"
+    "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?"
   },
   "common": {
     "account": "Account",
@@ -5350,6 +5348,7 @@
     "collapse": "Collapse",
     "dismiss": "Dismiss",
     "expand": "Expand",
+    "retry": "Retry",
     "status": {
       "cancelled": "Cancelled",
       "done": "Done",
@@ -6477,6 +6476,28 @@
     "failed_leaves": "{title}: {failed} of {total} failed",
     "hide": "Hide background work",
     "more": "+{count} more",
+    "panel": {
+      "detail": {
+        "failed": "{count} failed",
+        "running": "{count} running"
+      },
+      "outcome": {
+        "cancelled": "{count} cancelled",
+        "done": "{count} done",
+        "failed": "{count} failed",
+        "skipped": "{count} skipped"
+      },
+      "retry_failed": "Retry {count} failed | Retry {count} failed",
+      "settled": "{settled} of {total} finished",
+      "show_all": "Show {count} more | Show {count} more",
+      "stop_all": "Stop all",
+      "stop_all_info": "This stops every running and queued task and leaves each one unfinished. Are you sure?",
+      "title": {
+        "finished": "Finished",
+        "problems": "Finished with problems",
+        "working": "Working"
+      }
+    },
     "queued": "Queued",
     "show": "Show background work",
     "updating": "Updating data"

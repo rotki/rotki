@@ -44,6 +44,23 @@ export function isTerminalStatus(status: ActivityStatus): boolean {
     || status === Status.SKIPPED;
 }
 
+/** How many activities are in each status. Every status has an entry, zero when absent. */
+export type StatusTally = Record<ActivityStatus, number>;
+
+export function tallyStatuses(statuses: ActivityStatus[]): StatusTally {
+  const tally: StatusTally = {
+    [Status.CANCELLED]: 0,
+    [Status.COMPLETE]: 0,
+    [Status.FAILED]: 0,
+    [Status.PENDING]: 0,
+    [Status.RUNNING]: 0,
+    [Status.SKIPPED]: 0,
+  };
+  for (const status of statuses)
+    tally[status] += 1;
+  return tally;
+}
+
 /** Naive step percentage, rounded; {@link INDETERMINATE} when the total is unknown. */
 export function percentageFromSteps(processed: number, total: number): number {
   return total > 0 ? Math.round((processed / total) * 100) : INDETERMINATE;
