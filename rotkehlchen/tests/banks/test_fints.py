@@ -1,11 +1,13 @@
 """FinTS-specific session and interactive authentication behavior."""
 from contextlib import contextmanager
+from http import HTTPStatus
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fints.client import NeedRetryResponse, NeedTANResponse
 
+from rotkehlchen.api.services.banks import BanksService
 from rotkehlchen.banks.errors import BankError, BankMFARequired
 from rotkehlchen.banks.fints import (
     Fints,
@@ -16,7 +18,7 @@ from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
-from rotkehlchen.types import Location
+from rotkehlchen.types import ExchangeApiCredentials, Location
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {
@@ -213,6 +215,9 @@ def test_tan_challenges_resume_the_paused_dialog(
     assert 'secret-pin' not in session
 
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
+        with pytest.raises(BankMFARequired) as exc_info:
+            connector.query_accounts()
+        assert exc_info.value.challenge.primitive == primitive
         connector.answer_authentication(answer or None)
     assert transport.answers == [answer]
     assert len(connector.query_accounts()) == 1
@@ -264,7 +269,7 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
     connector = create_fints(
         database,
         function_scope_messages_aggregator,
-        transport := AuthenticationTransport(challenge),
+        AuthenticationTransport(challenge),
     )
     manager = BankManager(function_scope_messages_aggregator)
     manager.connected_banks[Location.FINTS].append(connector)
@@ -273,13 +278,52 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
         manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
     assert manager.sync_status[connector.location_id()].auth_challenge is not None
 
+    restored_transport = AuthenticationTransport(challenge)
+    restored = create_fints(database, function_scope_messages_aggregator, restored_transport)
+    restored_manager = BankManager(function_scope_messages_aggregator)
+    credentials = ExchangeApiCredentials(
+        name=restored.name,
+        location=restored.location,
+        api_key=restored.api_key,
+        api_secret=restored.secret,
+    )
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
-        assert manager.answer_bank_authentication(
-            name=connector.name,
-            location=Location.FINTS,
+        with patch.object(restored_manager, '_instantiate', return_value=restored):
+            restored_manager.initialize_banks(
+                credentials={Location.FINTS: [credentials]},
+                database=database,
+            )
+        assert restored_manager.sync_status[restored.location_id()].auth_challenge is not None
+        assert restored_manager.answer_bank_authentication(
+            name=restored.name,
+            location=restored.location,
             response='123456',
         ) == (True, '')
-    assert transport.answers == ['123456']
-    assert manager.sync_status[connector.location_id()].auth_challenge is None
+    assert restored_transport.answers == ['123456']
+    status = restored_manager.sync_status[restored.location_id()]
+    assert status.auth_challenge is None
+    assert status.last_sync_ts is not None
+    assert any(request == 'transactions' for request, _params in restored_transport.requests)
 
-    manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+
+def test_sync_requiring_authentication_has_no_success_result(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(FixtureTANResponse()),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[Location.FINTS].append(connector)
+
+    rotki = MagicMock()
+    rotki.bank_manager = manager
+    result = BanksService(rotki).sync_banks(
+        location=Location.FINTS,
+        name=connector.name,
+    )
+
+    assert result['result'] is None
+    assert result['status_code'] == HTTPStatus.ACCEPTED

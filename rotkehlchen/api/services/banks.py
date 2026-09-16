@@ -96,8 +96,8 @@ class BanksService:
     def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
-        except BankMFARequired as e:
-            return {'result': e.challenge.serialize(), 'message': '', 'status_code': HTTPStatus.ACCEPTED}  # noqa: E501
+        except BankMFARequired:
+            return {'result': None, 'message': '', 'status_code': HTTPStatus.ACCEPTED}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except InputError as e:

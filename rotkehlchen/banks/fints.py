@@ -2,6 +2,7 @@
 import base64
 import json
 from collections import defaultdict
+from contextvars import ContextVar
 from datetime import UTC, date, datetime
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final
@@ -59,6 +60,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.exchange import HistoryEventQueue
     from rotkehlchen.user_messages import MessagesAggregator
 
 SESSION_VERSION: Final = 1
@@ -104,6 +106,7 @@ class Fints(BankConnector):
         self._pending: dict[str, Any] | None = None
         self._completed: dict[str, Any] = {}
         self._accounts: dict[str, SEPAAccount] = {}
+        self._history_sync_active = ContextVar[bool]('fints_history_sync_active', default=False)
         self._restore_session()
 
     def _set_configuration(self, api_key: ApiKey) -> None:
@@ -248,6 +251,7 @@ class Fints(BankConnector):
             operation: str,
             request: dict[str, Any],
             during_initialization: bool,
+            resume_history: bool | None = None,
     ) -> None:
         self._pending = {
             'operation': operation,
@@ -256,9 +260,33 @@ class Fints(BankConnector):
             'decoupled': bool(response.decoupled),
             'during_initialization': during_initialization,
             'request': request,
+            'resume_history': (
+                self._history_sync_active.get() if resume_history is None else resume_history
+            ),
         }
         self._save_state(client)
         raise BankMFARequired(self._challenge(response))
+
+    def _pending_response(self) -> NeedTANResponse:
+        if self._pending is None:
+            raise BankError('FinTS has no pending authentication request')
+        try:
+            retry = NeedRetryResponse.from_data(base64.b64decode(
+                self._pending['retry'],
+                validate=True,
+            ))
+            if not isinstance(retry, NeedTANResponse):
+                raise TypeError('FinTS only exposes TAN retries here')
+            retry.decoupled = self._pending['decoupled']
+        except (KeyError, TypeError, ValueError) as e:
+            raise BankError('The saved FinTS authentication request is invalid or expired') from e
+        return retry
+
+    def pending_authentication(self) -> BankAuthChallenge | None:
+        return self._challenge(self._pending_response()) if self._pending is not None else None
+
+    def pending_authentication_resumes_history(self) -> bool:
+        return self._pending is not None and self._pending.get('resume_history') is True
 
     @staticmethod
     def _serialize_account(account: SEPAAccount) -> dict[str, str | None]:
@@ -303,7 +331,7 @@ class Fints(BankConnector):
         if operation in self._completed:
             return self._completed.pop(operation)
         if self._pending is not None:
-            raise BankError('Complete the pending FinTS authentication request first')
+            raise BankMFARequired(self._challenge(self._pending_response()))
 
         client = self._new_client()
         operation_request = request or {}
@@ -348,9 +376,7 @@ class Fints(BankConnector):
         client = self._new_client()
         pending = self._pending
         try:
-            retry = NeedRetryResponse.from_data(base64.b64decode(pending['retry'], validate=True))
-            assert isinstance(retry, NeedTANResponse), 'FinTS only exposes TAN retries here'
-            retry.decoupled = pending['decoupled']
+            retry = self._pending_response()
             if retry.decoupled is False and not response:
                 raise BankError('A TAN is required to complete the FinTS authentication')
             with client.resume_dialog(base64.b64decode(pending['dialog'], validate=True)):
@@ -362,6 +388,7 @@ class Fints(BankConnector):
                         operation=pending['operation'],
                         request=pending['request'],
                         during_initialization=pending['during_initialization'],
+                        resume_history=pending.get('resume_history') is True,
                     )
                 if pending['during_initialization']:
                     result = self._run_operation(
@@ -376,6 +403,7 @@ class Fints(BankConnector):
                             operation=pending['operation'],
                             request=pending['request'],
                             during_initialization=False,
+                            resume_history=pending.get('resume_history') is True,
                         )
         except (KeyError, TypeError, ValueError) as e:
             raise BankError('The saved FinTS authentication request is invalid or expired') from e
@@ -390,6 +418,22 @@ class Fints(BankConnector):
         self._pending = None
         self._completed[operation] = result
         self._save_state(client)
+
+    def _query_into_queue(
+            self,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+            force_refresh: bool,
+    ) -> Timestamp:
+        token = self._history_sync_active.set(True)
+        try:
+            return super()._query_into_queue(
+                end_ts=end_ts,
+                event_queue=event_queue,
+                force_refresh=force_refresh,
+            )
+        finally:
+            self._history_sync_active.reset(token)
 
     @staticmethod
     def _account_identifier(account: SEPAAccount) -> str:
