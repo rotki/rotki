@@ -291,11 +291,17 @@ struct Cli {
     /// Additional CIDRs to trust as reverse-proxy hops when resolving the client
     /// IP for the access log (repeatable, e.g. `--trusted-proxy 198.51.100.0/24`).
     ///
-    /// Private and loopback peers are always trusted, which covers the documented
-    /// deployment (an authenticating proxy on the container network). This is only
-    /// needed when that proxy sits on a *public* address, otherwise its forwarded
-    /// headers are ignored and its own address is logged instead.
-    #[arg(long = "trusted-proxy", value_name = "CIDR")]
+    /// Private and loopback peers are always trusted for forwarded headers.
+    /// Successful (2xx) GET/HEAD requests from these CIDRs (and loopback) to
+    /// `/health`, `/api/1/ping` and `/colibri/health` are left out of the access log.
+    /// Private addresses must be listed explicitly for this, unlike for forwarded
+    /// headers. The environment variable accepts a comma-separated list.
+    #[arg(
+        long = "trusted-proxy",
+        value_name = "CIDR",
+        env = "ROTKI_TRUSTED_PROXIES",
+        value_delimiter = ','
+    )]
     trusted_proxies: Vec<String>,
 
     /// uid the backends (and starling itself) drop to in docker mode when
@@ -977,10 +983,6 @@ async fn main() -> std::process::ExitCode {
                 // Electron, which a log line would corrupt.
                 enabled: docker,
                 trusted_proxies,
-                // Keep the container's own HEALTHCHECK out of the log; at the
-                // default 30s interval it would otherwise add ~2900 identical
-                // entries a day and bury the real traffic.
-                probe_user_agent: Some(starling_core::PROBE_USER_AGENT.to_string()),
             },
             // Both modes: docker's HEALTHCHECK probes it, and the e2e harness
             // gates the suite on it (embedded starling boots idle, so a route
@@ -1217,6 +1219,29 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trusted_proxies_accept_env_and_cli_lists() {
+        let expected: Vec<String> = std::env::var("ROTKI_TRUSTED_PROXIES")
+            .map(|value| value.split(',').map(String::from).collect())
+            .unwrap_or_default();
+        assert_eq!(
+            Cli::try_parse_from(["starling"]).unwrap().trusted_proxies,
+            expected
+        );
+        assert_eq!(
+            Cli::try_parse_from([
+                "starling",
+                "--trusted-proxy",
+                "10.20.1.2,10.30.0.0/24",
+                "--trusted-proxy",
+                "2001:db8::7",
+            ])
+            .unwrap()
+            .trusted_proxies,
+            ["10.20.1.2", "10.30.0.0/24", "2001:db8::7"],
+        );
+    }
 
     #[test]
     fn control_is_enabled_only_in_docker_with_a_session_key() {

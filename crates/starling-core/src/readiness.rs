@@ -48,14 +48,8 @@ pub async fn wait_ready(readiness: &Readiness, name: &str) -> Result<()> {
     }
 }
 
-/// `User-Agent` sent on every probe.
-///
-/// Docker's `HEALTHCHECK` runs `starling healthcheck` on an interval, and that
-/// probe goes *through* the proxy, so without a way to recognize it, the access
-/// log fills with one self-inflicted entry per interval and drowns the real
-/// traffic. The proxy skips requests carrying this agent, but only from a
-/// loopback peer, so an external client cannot silence its own entries by
-/// sending the same header.
+/// `User-Agent` sent on every probe for identification by upstream services.
+/// Access-log exclusion uses the health route and socket peer, not this header.
 pub const PROBE_USER_AGENT: &str = "starling-healthcheck";
 
 /// Issue a minimal `GET` and check the status line for `200`. Public so the
