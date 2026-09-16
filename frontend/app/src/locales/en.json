@@ -6151,53 +6151,6 @@
       "uploading": "Uploading database..."
     }
   },
-  "sync_progress": {
-    "chains_label": "chain | chains",
-    "complete": "Sync Complete",
-    "complete_cancelled": "Sync Cancelled",
-    "complete_with_warnings": "Sync Complete with warnings",
-    "completed_chains": "{count} chain complete | {count} chains complete",
-    "completed_decoding": "{count} chain decoded | {count} chains decoded",
-    "completed_locations": "{count} location complete | {count} locations complete",
-    "completed_protocol_cache": "{count} protocol refreshed | {count} protocols refreshed",
-    "decoding": "Decoding",
-    "decoding_label": "chains decoded",
-    "decoding_progress": "{processed}/{total} txns",
-    "events": "Events",
-    "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready.",
-    "explanation_etherscan_hint": "A personal (free) Etherscan API key speeds this up significantly.",
-    "finished_chains": "{count} chain finished | {count} chains finished",
-    "finished_decoding": "{count} chain decoding finished | {count} chains decoding finished",
-    "finished_locations": "{count} location finished | {count} locations finished",
-    "finished_protocol_cache": "{count} protocol finished | {count} protocols finished",
-    "locations_label": "location | locations",
-    "period": {
-      "beginning": "Beginning"
-    },
-    "protocol_cache": "Protocol Cache",
-    "protocol_cache_label": "protocols refreshed",
-    "protocol_cache_progress": "{processed}/{total} pools",
-    "show_more": "Show {count} more...",
-    "status": {
-      "cancelled": "Cancelled",
-      "complete": "Complete",
-      "decoding": "Decoding",
-      "failed": "Failed",
-      "pending": "Pending",
-      "querying": "Querying",
-      "querying_event_type": "Querying {type}",
-      "querying_internal": "Querying internal txs",
-      "querying_tokens": "Querying token transfers",
-      "querying_transactions": "Querying transactions",
-      "refreshing": "Refreshing"
-    },
-    "title": "Syncing History",
-    "transactions": "Transactions",
-    "warnings": {
-      "chain_failed": "{chain}: {count} address could not be queried | {chain}: {count} addresses could not be queried",
-      "title": "Warnings"
-    }
-  },
   "table_filter": {
     "field_kinds": {
       "asset": "asset",
@@ -6435,6 +6388,16 @@
     }
   },
   "task_dock": {
+    "detail": {
+      "beginning": "Beginning",
+      "cache": "{protocol} on {chain}: {processed} of {total}",
+      "cache_more": "+{count} more",
+      "decoding": "Decoding",
+      "querying_event_type": "Querying {type}",
+      "querying_internal": "Querying internal transactions",
+      "querying_tokens": "Querying token transfers",
+      "querying_transactions": "Querying transactions"
+    },
     "done": "{title} finished",
     "done_count": "{count} job finished | {count} jobs finished",
     "failed": "{title} failed",
@@ -6470,6 +6433,11 @@
     },
     "queued": "Queued",
     "show": "Show background work",
+    "sync_hint": {
+      "add_key": "Add one",
+      "etherscan": "A personal (free) Etherscan API key speeds this up significantly.",
+      "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready."
+    },
     "updating": "Updating data"
   },
   "task_manager": {

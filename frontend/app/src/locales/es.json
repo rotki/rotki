@@ -857,37 +857,6 @@
       "title": "Forzar subida | Forzar bajada"
     }
   },
-  "sync_progress": {
-    "chains_label": "cadena | cadenas",
-    "complete": "Sincronización Completa",
-    "completed_chains": "{count} cadena completa | {count} cadenas completas",
-    "completed_decoding": "{count} cadena decodificada | {count} cadenas decodificadas",
-    "completed_locations": "{count} ubicación completa | {count} ubicaciones completas",
-    "completed_protocol_cache": "{count} protocolo actualizado | {count} protocolos actualizados",
-    "decoding": "Decodificación",
-    "decoding_label": "cadenas decodificadas",
-    "events": "Eventos",
-    "locations_label": "ubicación | ubicaciones",
-    "period": {
-      "beginning": "Inicio"
-    },
-    "protocol_cache": "Caché de Protocolo",
-    "protocol_cache_label": "protocolos actualizados",
-    "show_more": "Mostrar {count} más...",
-    "status": {
-      "complete": "Completo",
-      "decoding": "Decodificando",
-      "pending": "Pendiente",
-      "querying": "Consultando",
-      "querying_event_type": "Consultando {type}",
-      "querying_internal": "Consultando txs internas",
-      "querying_tokens": "Consultando transferencias de tokens",
-      "querying_transactions": "Consultando transacciones",
-      "refreshing": "Actualizando"
-    },
-    "title": "Sincronizando Historial",
-    "transactions": "Transacciones"
-  },
   "tag_creator": {
     "labels": {
       "background": "Fondo",

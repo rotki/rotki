@@ -83,9 +83,20 @@ export function readActivityDetail<TSubject, TKey extends readonly (string | num
   descriptor: ActivityDescriptor<TSubject, TKey, TDetail>,
   subject: TSubject,
 ): ComputedRef<TDetail | undefined> {
+  return computed<TDetail | undefined>(() => peekActivityDetail(descriptor, subject));
+}
+
+/**
+ * {@link readActivityDetail}'s value rather than a ref, for a caller already inside a computed or a
+ * render, where making a ref per call would only be thrown away. Still reactive in that context,
+ * since it reads the channel's ref.
+ */
+export function peekActivityDetail<TSubject, TKey extends readonly (string | number)[], TDetail>(
+  descriptor: ActivityDescriptor<TSubject, TKey, TDetail>,
+  subject: TSubject,
+): TDetail | undefined {
   const { details } = useActivityDetail();
-  const id = descriptor.id(subject);
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the channel holds `unknown` by design; the descriptor pairs the writer and this reader
-  return computed<TDetail | undefined>(() => get(details)[id] as TDetail | undefined);
+  return get(details)[descriptor.id(subject)] as TDetail | undefined;
 }

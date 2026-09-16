@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
+import DockActivityDetail from '@/modules/task-center/components/DockActivityDetail.vue';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { type Activity, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
@@ -141,6 +142,7 @@ const compact = computed<boolean>(() => nested && isTerminalStatus(activity.stat
       >
         {{ secondary }}
       </div>
+      <DockActivityDetail :activity="activity" />
       <div
         v-if="activity.reason"
         class="text-xs leading-4 break-words"

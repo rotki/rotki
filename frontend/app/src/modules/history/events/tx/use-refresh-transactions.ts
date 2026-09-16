@@ -60,7 +60,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     shouldNotRefresh,
   } = useHistoryRefreshPolicy();
   const { pending: accountsPending } = useAccountLoadState();
-  const { queryAllBankEvents, queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
+  const { queryAllBankEvents, queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -73,10 +73,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   function initializeRefresh(targets: RefreshTargets, wave: RefreshWave): void {
     const continuation = wave === RefreshWave.CONTINUATION;
 
-    if (!continuation) {
+    if (!continuation)
       resetQueryStatus();
-      resetOnlineWarnings();
-    }
 
     if (!(targets.accounts.length > 0 || targets.exchanges.length > 0 || targets.banks.length > 0)) {
       return;
