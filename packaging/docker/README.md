@@ -174,9 +174,38 @@ logs` is a mix of access lines and backend logs. Analyzers skip lines they canno
 parse, so feeding them the whole stream works, but filter it first if you want a
 clean access log.
 
-The container's own periodic health probe is excluded, so it does not bury real
-traffic. The byte count is the number of bytes actually sent, so it stays correct
-for compressed responses.
+Health probes are excluded from access logs under these rules:
+
+- Only successful (2xx) `GET` and `HEAD` requests to `/health`, `/api/1/ping`,
+  and `/colibri/health` qualify. Query strings do not affect the check.
+- The socket peer must be loopback or explicitly listed in `ROTKI_TRUSTED_PROXIES`
+  or `--trusted-proxy`. Private probe addresses must also be listed explicitly.
+- Use the source address seen by the container after any NAT. `X-Forwarded-For`
+  and `X-Real-IP` never qualify a request for exclusion.
+- No particular `User-Agent` is required, so a successful
+  `docker exec <container> curl localhost/health` is also unlogged.
+- Successful GET/HEAD health requests forwarded through a listed proxy are also
+  excluded, including requests from other clients.
+- Failed probes, other methods and other routes remain logged normally.
+
+For external probes, configure Kubernetes node or load-balancer addresses using
+an environment variable, without replacing the image's command. For example,
+in a Kubernetes container specification:
+
+```yaml
+env:
+  - name: ROTKI_TRUSTED_PROXIES
+    value: "10.20.1.2,10.30.0.0/24,2001:db8::7"
+```
+
+The variable accepts comma-separated IPv4/IPv6 addresses or CIDRs. The CLI option
+`--trusted-proxy` accepts the same values and can be repeated; CLI values override
+the environment list. These entries also trust forwarded headers, as described
+below. Private peers are trusted for forwarded headers by default, but that alone
+does not suppress their health logs.
+
+The byte count is the number of bytes actually sent, so it stays correct for
+compressed responses.
 
 ### Client IPs behind a reverse proxy
 

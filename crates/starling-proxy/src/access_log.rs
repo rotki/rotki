@@ -39,7 +39,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::extract::ConnectInfo;
-use axum::http::{header, HeaderMap, Request};
+use axum::http::{header, HeaderMap, Method, Request};
 
 /// A parsed CIDR block, used to extend the default trusted-hop set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -214,36 +214,19 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
-/// Whether this request is the container's own periodic health probe, which
-/// should not be logged.
-///
-/// Docker's `HEALTHCHECK` fires on an interval (every 30s by default) and goes
-/// through the proxy, so logging it buries real traffic under thousands of
-/// identical daily entries, the same reason operators special-case monitoring
-/// endpoints in nginx.
-///
-/// Both conditions must hold: the agent matches *and* the peer is loopback. The
-/// agent alone would let any client suppress its own entries by copying a header
-/// value that is visible in our source; requiring loopback means only something
-/// already inside the container (or on the host's own stack) can be skipped.
-/// Note this checks the real socket peer, never a forwarded address, so a
-/// spoofed `X-Forwarded-For: 127.0.0.1` cannot reach it either.
-pub fn is_self_probe(
+/// Skip health routes only for loopback or explicitly configured proxy/probe peers.
+/// Forwarded headers never qualify a request for exclusion.
+fn is_health_probe(
     peer: Option<SocketAddr>,
-    headers: &HeaderMap,
-    probe_agent: Option<&str>,
+    method: &Method,
+    path: &str,
+    trusted: &[Cidr],
 ) -> bool {
-    let Some(expected) = probe_agent else {
-        return false;
-    };
-    let from_loopback = peer.map(|addr| addr.ip().is_loopback()).unwrap_or(false);
-    if !from_loopback {
-        return false;
-    }
-    headers
-        .get(header::USER_AGENT)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|agent| agent == expected)
+    matches!(*method, Method::GET | Method::HEAD)
+        && matches!(path, "/health" | "/api/1/ping" | "/colibri/health")
+        && peer.is_some_and(|addr| {
+            addr.ip().is_loopback() || trusted.iter().any(|cidr| cidr.contains(addr.ip()))
+        })
 }
 
 /// A header value for the log, or `-` when absent/unprintable (CLF's "empty").
@@ -272,10 +255,11 @@ pub struct RequestLine {
     line: String,
     referer: String,
     user_agent: String,
+    health_probe: bool,
 }
 
 /// The access log's policy: whether to log at all, whose forwarded headers to
-/// believe, and which agent identifies our own health probe.
+/// believe, and which external peers may send unlogged health probes.
 #[derive(Clone, Debug, Default)]
 pub struct AccessLog {
     /// Whether to emit anything. **False in embedded mode**, where the proxy only
@@ -284,15 +268,12 @@ pub struct AccessLog {
     /// so writing to it would corrupt the protocol. Docker sets this true.
     pub enabled: bool,
     /// Extra CIDRs to believe as reverse-proxy hops, on top of private/loopback.
+    /// Also permits health-route log exclusion for these socket peers.
     pub trusted_proxies: Vec<Cidr>,
-    /// `User-Agent` of our own health probe, skipped when it comes from loopback.
-    pub probe_user_agent: Option<String>,
 }
 
 impl AccessLog {
-    /// Capture the request, or `None` when it should not produce a log line -
-    /// either logging is disabled entirely, or this is the container's own
-    /// health probe.
+    /// Capture the request, or `None` when logging is disabled.
     pub fn capture<B>(&self, req: &Request<B>) -> Option<RequestLine> {
         if !self.enabled {
             return None;
@@ -302,9 +283,6 @@ impl AccessLog {
             .get::<ConnectInfo<SocketAddr>>()
             .map(|ConnectInfo(addr)| *addr);
         let headers = req.headers();
-        if is_self_probe(peer, headers, self.probe_user_agent.as_deref()) {
-            return None;
-        }
         let client = client_ip(peer, headers, &self.trusted_proxies)
             .map(|ip| ip.to_string())
             .unwrap_or_else(|| "-".to_string());
@@ -314,6 +292,12 @@ impl AccessLog {
             .map(|pq| pq.as_str())
             .unwrap_or("/");
         Some(RequestLine {
+            health_probe: is_health_probe(
+                peer,
+                req.method(),
+                req.uri().path(),
+                &self.trusted_proxies,
+            ),
             client,
             line: format!("{} {} {:?}", req.method(), path, req.version()),
             referer: escape_quoted(quoted(headers, header::REFERER)),
@@ -323,11 +307,13 @@ impl AccessLog {
 }
 
 impl RequestLine {
-    /// Render the combined-format line for `resp`.
+    /// Render the combined-format line, excluding successful trusted health probes.
     ///
-    /// `$body_bytes_sent` comes from `Content-Length`; a streamed response
-    /// without one logs `-`, which is CLF's value for "unknown".
-    pub fn finish(&self, status: u16, bytes: u64) -> String {
+    /// `bytes` is the response body byte count tallied while streaming.
+    pub fn finish(&self, status: u16, bytes: u64) -> Option<String> {
+        if self.health_probe && (200..300).contains(&status) {
+            return None;
+        }
         let mut out = String::with_capacity(160);
         // `-` twice: RFC 1413 ident and HTTP auth user, neither of which applies
         // (rotki authenticates with a session cookie, not Basic auth).
@@ -342,7 +328,7 @@ impl RequestLine {
             self.referer,
             self.user_agent,
         );
-        out
+        Some(out)
     }
 }
 
@@ -376,9 +362,12 @@ impl LogOnBodyEnd {
 
 impl Drop for LogOnBodyEnd {
     fn drop(&mut self) {
-        let line = self
+        let Some(line) = self
             .entry
-            .finish(self.status, self.bytes.load(AtomicOrdering::Relaxed));
+            .finish(self.status, self.bytes.load(AtomicOrdering::Relaxed))
+        else {
+            return;
+        };
         // Bare line, no tracing decoration: this is the format log analyzers
         // parse. `println!` writes the whole line under one stdout lock.
         println!("{line}");
@@ -596,65 +585,60 @@ mod tests {
     }
 
     #[test]
-    fn enabled_still_skips_the_health_probe() {
+    fn health_probe_exclusion_is_scoped_to_routes_and_socket_peers() {
         let policy = AccessLog {
             enabled: true,
-            probe_user_agent: Some("starling-healthcheck".to_string()),
-            ..Default::default()
+            trusted_proxies: vec![
+                Cidr::parse("10.20.0.0/16").unwrap(),
+                Cidr::parse("2001:db8::7").unwrap(),
+            ],
         };
-        assert!(policy
-            .capture(&request(
-                "127.0.0.1:5555",
-                &[("user-agent", "starling-healthcheck")]
-            ))
-            .is_none());
-    }
-
-    #[test]
-    fn loopback_health_probe_is_skipped() {
-        let hdrs = headers(&[("user-agent", "starling-healthcheck")]);
-        assert!(is_self_probe(
-            peer("127.0.0.1:5555"),
-            &hdrs,
-            Some("starling-healthcheck")
-        ));
-    }
-
-    #[test]
-    fn remote_client_cannot_suppress_itself_with_the_probe_agent() {
-        // The agent string is visible in our source, so it must not be sufficient
-        // on its own, a non-loopback peer is always logged.
-        let hdrs = headers(&[("user-agent", "starling-healthcheck")]);
-        assert!(!is_self_probe(
-            peer("203.0.113.7:5555"),
-            &hdrs,
-            Some("starling-healthcheck")
-        ));
-        // Nor can a forwarded loopback claim reach the check: it reads the real
-        // socket peer, never the header chain.
-        let spoofed = headers(&[
-            ("user-agent", "starling-healthcheck"),
-            ("x-forwarded-for", "127.0.0.1"),
-        ]);
-        assert!(!is_self_probe(
-            peer("203.0.113.7:5555"),
-            &spoofed,
-            Some("starling-healthcheck")
-        ));
-    }
-
-    #[test]
-    fn ordinary_loopback_traffic_is_still_logged() {
-        // Only the probe agent is skipped, not everything from localhost.
-        let hdrs = headers(&[("user-agent", "curl/8.5.0")]);
-        assert!(!is_self_probe(
-            peer("127.0.0.1:5555"),
-            &hdrs,
-            Some("starling-healthcheck")
-        ));
-        // And with no probe agent configured, nothing is skipped.
-        let probe = headers(&[("user-agent", "starling-healthcheck")]);
-        assert!(!is_self_probe(peer("127.0.0.1:5555"), &probe, None));
+        for (addr, trusted) in [
+            ("127.0.0.1:5555", true),
+            ("[::1]:5555", true),
+            ("10.20.1.2:5555", true),
+            ("[2001:db8::7]:5555", true),
+            ("10.21.1.2:5555", false),
+            ("203.0.113.7:5555", false),
+        ] {
+            for (path, health) in [
+                ("/health", true),
+                ("/api/1/ping?probe=1", true),
+                ("/colibri/health", true),
+                ("/api/1/users", false),
+                ("/health/extra", false),
+                ("/health/", false),
+                ("//health", false),
+            ] {
+                for agent in [None, Some("kube-probe/1.35"), Some("starling-healthcheck")] {
+                    let mut req = request(
+                        addr,
+                        &[("x-forwarded-for", "127.0.0.1"), ("x-real-ip", "10.20.1.2")],
+                    );
+                    *req.uri_mut() = path.parse().unwrap();
+                    if let Some(agent) = agent {
+                        req.headers_mut()
+                            .insert(header::USER_AGENT, agent.parse().unwrap());
+                    }
+                    for method in [Method::GET, Method::HEAD, Method::POST, Method::OPTIONS] {
+                        *req.method_mut() = method.clone();
+                        let entry = policy.capture(&req).expect("logging is enabled");
+                        for status in [200, 204, 299, 301, 400, 405, 500, 502, 503] {
+                            assert_eq!(
+                                entry.finish(status, 0).is_none(),
+                                trusted
+                                    && health
+                                    && matches!(method, Method::GET | Method::HEAD)
+                                    && (200..300).contains(&status),
+                                "{addr} {method} {path} {agent:?} {status}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let req = Request::builder().uri("/health").body(()).unwrap();
+        assert!(policy.capture(&req).is_some());
     }
 
     #[test]
