@@ -1,12 +1,17 @@
 """FinTS-specific session and interactive authentication behavior."""
 from contextlib import contextmanager
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 from fints.client import NeedRetryResponse, NeedTANResponse
 
-from rotkehlchen.banks.errors import BankMFARequired
-from rotkehlchen.banks.fints import Fints
+from rotkehlchen.banks.errors import BankError, BankMFARequired
+from rotkehlchen.banks.fints import (
+    Fints,
+    FinTSProductRegistrationError,
+    RotkiFinTS3PinTanClient,
+)
 from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
@@ -103,6 +108,11 @@ class InitializationAuthenticationTransport(FinTSFixtureTransport):
         return object()
 
 
+class UnregisteredProductTransport(FinTSFixtureTransport):
+    def __enter__(self) -> None:
+        raise FinTSProductRegistrationError('code 9078')
+
+
 def create_fints(database, messages, transport: FinTSFixtureTransport) -> Fints:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
@@ -139,6 +149,43 @@ def test_product_id_and_client_state_are_used_on_every_dialog(
     restored = create_fints(database, function_scope_messages_aggregator, restored_transport)
     restored.query_accounts()
     assert restored_transport.restored_client_data[0] == b'fixture-client-state-private'
+
+
+def test_unregistered_product_error_is_reported(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        UnregisteredProductTransport(),
+    )
+
+    with pytest.raises(BankError, match=r'does not recognize.*yet'):
+        connector.query_accounts()
+
+
+def test_product_registration_response_aborts_the_dialog() -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    with pytest.raises(FinTSProductRegistrationError):
+        client._process_response(  # pylint: disable=protected-access
+            dialog=(dialog := SimpleNamespace(open=True)),
+            segment=None,
+            response=SimpleNamespace(code='9078'),
+        )
+
+    assert dialog.open is False
+
+
+def test_fints_endpoint_whitespace_is_removed() -> None:
+    credentials = Fints.api_credentials_from_values(
+        name='FinTS 1',
+        location=Location.FINTS,
+        values={**FINTS_VALUES, 'endpoint': ' https://bank.example/fints '},
+    )
+
+    assert 'https://bank.example/fints' in credentials.api_key
+    assert ' https://bank.example/fints ' not in credentials.api_key
 
 
 @pytest.mark.parametrize(('challenge', 'primitive', 'answer'), [
