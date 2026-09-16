@@ -14,7 +14,12 @@ from collections import defaultdict
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
+from rotkehlchen.banks.errors import (
+    BankAuthChallenge,
+    BankAuthExpired,
+    BankError,
+    BankMFARequired,
+)
 from rotkehlchen.banks.normalization import (
     BankAccount,
     BankTransaction,
@@ -105,6 +110,14 @@ class BankConnector(ExchangeInterface, ABC):
     def answer_authentication(self, response: str | None) -> None:
         """Continue an interactive authentication request. Static connectors never use it."""
         raise BankError(f'{self.manifest.display_name} has no pending authentication request')
+
+    def pending_authentication(self) -> BankAuthChallenge | None:
+        """Return a resumable authentication challenge restored with the connector."""
+        return None
+
+    def pending_authentication_resumes_history(self) -> bool:
+        """Return whether answering the pending challenge must continue a history sync."""
+        return False
 
     # ---- what a connector implements ----
 

@@ -214,6 +214,9 @@ class BankManager:
         bank = pending_setup or self.get_bank(name=name, location=location)
         if bank is None:
             return False, f'{location!s} bank connection {name} has no pending authentication'
+        resume_history = (
+            pending_setup is None and bank.pending_authentication_resumes_history()
+        )
 
         try:
             bank.answer_authentication(response)
@@ -222,6 +225,8 @@ class BankManager:
             raise
         self.sync_status[location_id].auth_challenge = None
         if pending_setup is None:
+            if resume_history:
+                self.sync_one(bank)
             return True, ''
 
         valid, message = bank.validate_api_key()
@@ -347,6 +352,16 @@ class BankManager:
                 bank = self._instantiate(entry, database)
                 with self.registry_lock:
                     self.connected_banks[location].append(bank)
+                try:
+                    if (challenge := bank.pending_authentication()) is not None:
+                        self.sync_status[bank.location_id()].auth_challenge = challenge
+                except BankError as e:
+                    log.warning(
+                        'Could not restore pending authentication for %s bank %s: %s',
+                        location,
+                        entry.name,
+                        e,
+                    )
 
     def query_bank_history_events(self, location: Location | None, name: str | None) -> None:
         """Sync the history of one connection, of every connection at a location, or of all.
