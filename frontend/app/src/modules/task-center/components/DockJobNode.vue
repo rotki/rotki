@@ -7,12 +7,14 @@ import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/m
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { arrangeChildren, type DockChildEntry } from '@/modules/task-center/dock-children';
 
-const { activity, children, depth = 0, dismissible = false, now } = defineProps<{
+const { activity, children, depth = 0, dismissible = false, now, parent } = defineProps<{
   activity: Activity;
   /** The whole tree, passed down rather than looked up per node. */
   children: ReadonlyMap<ActivityId, Activity[]>;
   now: number;
   depth?: number;
+  /** The node this one is unfolded under; absent for a job. */
+  parent?: Activity;
   /** Offers a dismiss control on this row only; the outcome it reports covers the whole subtree. */
   dismissible?: boolean;
 }>();
@@ -118,7 +120,7 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
         :cancellable="activity.cancellable"
         :dismissible="dismissible"
         :outcome-status="outcomeStatus"
-        :nested="depth > 0"
+        :parent="parent"
         @cancel="emit('cancel', $event)"
         @dismiss="emit('dismiss', $event)"
         @retry="emit('retry', $event)"
@@ -150,6 +152,7 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
           :children="children"
           :now="now"
           :depth="depth + 1"
+          :parent="activity"
           @cancel="emit('cancel', $event)"
           @retry="emit('retry', $event)"
         />
@@ -183,7 +186,7 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
           :now="now"
           :percentage="leaf.percentage"
           :cancellable="false"
-          nested
+          :parent="activity"
           @retry="emit('retry', $event)"
         />
       </div>

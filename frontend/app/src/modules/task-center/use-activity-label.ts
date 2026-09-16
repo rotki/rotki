@@ -14,9 +14,10 @@ interface UseActivityLabelReturn {
    * Under a parent, the siblings share the title and the verb ("Refreshing Ethereum", "Refreshing
    * Gnosis" and so on under "Refreshing 21 chains"), so only the thing each acts on tells them apart. That is
    * read from the subtitle's params, most specific first (see {@link IDENTITY_PARAMS}); a subtitle
-   * with none of them is shown whole.
+   * with none of them is shown whole. So is one whose identity is its parent's: a chain's decode
+   * names only the chain, and under that chain's row it would read as the chain again.
    */
-  labelOf: (activity: Activity, nested: boolean) => string;
+  labelOf: (activity: Activity, nested: boolean, parent?: Activity) => string;
 }
 
 /**
@@ -85,10 +86,13 @@ export function useActivityLabel(): UseActivityLabelReturn {
     return typeof account === 'string' && account !== '' ? `${String(params[key])} (${account})` : String(params[key]);
   }
 
-  function labelOf(activity: Activity, nested: boolean): string {
+  function labelOf(activity: Activity, nested: boolean, parent?: Activity): string {
     if (!nested)
       return activity.title;
-    return identityOf(activity) ?? subtitleOf(activity) ?? activity.title;
+
+    const identity = identityOf(activity);
+    const sharesParentIdentity = identity !== undefined && parent !== undefined && identity === identityOf(parent);
+    return (sharesParentIdentity ? undefined : identity) ?? subtitleOf(activity) ?? activity.title;
   }
 
   return { labelOf, subtitleOf };

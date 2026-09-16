@@ -6,8 +6,13 @@ import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { type Activity, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 
-const { activity, cancellable, dismissible = false, nested = false, now, outcomeStatus, percentage, steps } = defineProps<{
+const { activity, cancellable, dismissible = false, now, outcomeStatus, parent, percentage, steps } = defineProps<{
   activity: Activity;
+  /**
+   * The row this one sits under; absent for a job. A child row is labelled by what it acts on, since
+   * the job above it already names the work, and says more when that is only what its parent names.
+   */
+  parent?: Activity;
   /** Ticks once a second, owned by the panel so one timer serves every row. */
   now: number;
   /** 0-100, or `-1` for indeterminate. Parents pass their subtree's; leaves their own. */
@@ -19,8 +24,6 @@ const { activity, cancellable, dismissible = false, nested = false, now, outcome
   dismissible?: boolean;
   /** The status the row reports, when it differs from the activity's own; a parent passes its subtree's failure. */
   outcomeStatus?: ActivityStatus;
-  /** A child row: the job above it already names the work, so its own label is enough. */
-  nested?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -47,9 +50,11 @@ const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
   warning: 'text-rui-warning',
 };
 
-const label = computed<string>(() => labelOf(activity, nested));
+const nested = computed<boolean>(() => parent !== undefined);
 
-const secondary = computed<string | undefined>(() => (nested ? undefined : subtitleOf(activity)));
+const label = computed<string>(() => labelOf(activity, get(nested), parent));
+
+const secondary = computed<string | undefined>(() => (get(nested) ? undefined : subtitleOf(activity)));
 
 const status = computed<ActivityStatus>(() => outcomeStatus ?? activity.status);
 
@@ -86,7 +91,7 @@ const count = computed<string>(() => (steps && steps.total > 0
 const reasonColor = computed<string>(() => (get(isFailed) ? 'text-rui-error' : 'text-rui-warning'));
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
-const compact = computed<boolean>(() => nested && isTerminalStatus(activity.status) && !activity.reason && !steps);
+const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !activity.reason && !steps);
 </script>
 
 <template>
