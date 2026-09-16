@@ -85,6 +85,32 @@ export function someInSubtree(
 }
 
 /**
+ * The leaves of a subtree, `root` itself when it has no children. The nodes {@link subtreeSteps}
+ * counts, for a caller that needs to know which ones.
+ */
+export function subtreeLeaves(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): Activity[] {
+  const leaves: Activity[] = [];
+  const seen = new Set<ActivityId>();
+  const stack: Activity[] = [root];
+
+  while (stack.length > 0) {
+    const activity = stack.pop();
+    if (activity === undefined || seen.has(activity.id))
+      continue;
+
+    seen.add(activity.id);
+    const descendants = children.get(activity.id);
+
+    if (descendants === undefined || descendants.length === 0)
+      leaves.push(activity);
+    else
+      stack.push(...descendants);
+  }
+
+  return leaves;
+}
+
+/**
  * How much of a subtree is done, counted in **leaves**.
  *
  * @remarks

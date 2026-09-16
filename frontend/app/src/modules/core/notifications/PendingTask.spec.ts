@@ -204,4 +204,17 @@ describe('pendingTask', () => {
   it('should render no cancel control when the caller withholds it', () => {
     expect(createWrapper({ cancellable: false }).find('button').exists()).toBe(false);
   });
+
+  it('should offer no dismiss control unless the caller asks for one', () => {
+    expect(createWrapper().find('[data-testid=dismiss-activity]').exists()).toBe(false);
+  });
+
+  it('should emit dismiss with its activity when the dismiss control is clicked', async () => {
+    const failed = activity({ status: ActivityStatus.FAILED });
+    const wrapper = createWrapper({ activity: failed, dismissible: true });
+
+    await wrapper.find('[data-testid=dismiss-activity]').trigger('click');
+
+    expect(wrapper.emitted('dismiss')).toEqual([[failed]]);
+  });
 });

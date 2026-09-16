@@ -5291,6 +5291,7 @@
   },
   "pending_task": {
     "collapse": "Collapse",
+    "dismiss": "Dismiss",
     "expand": "Expand",
     "status": {
       "cancelled": "Cancelled",
@@ -6412,10 +6413,17 @@
     }
   },
   "task_dock": {
+    "done": "{title} finished",
+    "done_count": "{count} job finished | {count} jobs finished",
+    "failed": "{title} failed",
+    "failed_count": "{count} job failed | {count} jobs failed",
+    "failed_leaf": "Failed: {label}",
+    "failed_leaves": "{title}: {failed} of {total} failed",
     "hide": "Hide background work",
     "more": "+{count} more",
     "queued": "Queued",
-    "show": "Show background work"
+    "show": "Show background work",
+    "updating": "Updating data"
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"

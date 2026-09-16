@@ -102,6 +102,27 @@ describe('pendingTaskNode', () => {
     expect(wrapper.emitted('cancel')).toHaveLength(1);
   });
 
+  describe('the outcome of a settled parent', () => {
+    function settled(parent: ActivityStatus): VueWrapper {
+      const activities = [
+        activity('refresh', { kind: ActivityKind.HISTORY_SYNC, status: parent, subtitle: undefined, title: 'History refresh' }),
+        activity('ethereum', { parent: id('refresh'), status: parent }),
+        activity('0xaa', { parent: id('ethereum'), status: ActivityStatus.COMPLETE }),
+        activity('0xbb', { parent: id('ethereum'), status: ActivityStatus.FAILED }),
+      ];
+      const { children, roots } = buildTree(activities, (a, b) => a.id.localeCompare(b.id));
+      return mount(PendingTaskNode, { props: { activity: roots[0], children, now: NOW } });
+    }
+
+    it('should report a failure anywhere beneath a completed parent, not a success', () => {
+      expect(settled(ActivityStatus.COMPLETE).find('[data-testid=activity-outcome]').attributes('aria-label')).toBe('pending_task.status.failed');
+    });
+
+    it('should keep reporting a cancelled parent as cancelled, whatever failed beneath it', () => {
+      expect(settled(ActivityStatus.CANCELLED).find('[data-testid=activity-outcome]').attributes('aria-label')).toBe('pending_task.status.cancelled');
+    });
+  });
+
   it('should bubble a leaf cancel up to the panel', async () => {
     const { children, root } = tree();
     const chain = children.get(root.id)?.[0];

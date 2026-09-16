@@ -223,13 +223,14 @@ export async function apiAddEtherscanKey(
 }
 
 /**
- * Waits for all running tasks to complete by checking the task dock's pill, which is rendered
- * whenever any work is running or queued. Uses polling with expect().toPass() instead of hardcoded
- * delays.
+ * Waits for all running tasks to complete by checking the task dock's pill in its working state,
+ * which it holds whenever any work is running or queued. The pill itself can stay on screen after
+ * that, reporting a finished run or a failure, so its presence alone is not the signal. Uses polling
+ * with expect().toPass() instead of hardcoded delays.
  */
 export async function waitForNoRunningTasks(page: Page, timeout: number = 180000): Promise<void> {
   const { expect } = await import('@playwright/test');
-  const indicator = page.locator('[data-testid=task-dock-pill]');
+  const indicator = page.locator('[data-testid=task-dock-pill][data-state=working]');
 
   // Poll until the indicator is detached and stays detached
   await expect(async () => {

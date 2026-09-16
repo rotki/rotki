@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree, someInSubtree, subtreeProgress, subtreeSteps } from './tree';
+import { buildTree, someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from './tree';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from './types';
 
 function activity(id: string, status: ActivityStatus, parent?: string, startedAt?: number): Activity {
@@ -138,6 +138,26 @@ describe('someInSubtree', () => {
     ], byId);
 
     expect(someInSubtree(children, roots[0], isRunning)).toBe(false);
+  });
+});
+
+describe('subtreeLeaves', () => {
+  it('should return the leaves at every depth, skipping the parents above them', () => {
+    const { children, roots } = buildTree([
+      activity('umbrella', ActivityStatus.COMPLETE),
+      activity('eth', ActivityStatus.COMPLETE, 'umbrella'),
+      activity('eth-a', ActivityStatus.FAILED, 'eth'),
+      activity('eth-b', ActivityStatus.COMPLETE, 'eth'),
+      activity('btc', ActivityStatus.COMPLETE, 'umbrella'),
+    ], byId);
+
+    expect(subtreeLeaves(children, roots[0]).map(leaf => leaf.id).sort()).toEqual([id('btc'), id('eth-a'), id('eth-b')]);
+  });
+
+  it('should return a childless root as its own leaf', () => {
+    const { children, roots } = buildTree([activity('solo', ActivityStatus.FAILED)], byId);
+
+    expect(subtreeLeaves(children, roots[0]).map(leaf => leaf.id)).toEqual([id('solo')]);
   });
 });
 
