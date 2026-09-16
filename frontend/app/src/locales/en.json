@@ -1864,6 +1864,10 @@
     "header": {
       "last_sync": "Last sync"
     },
+    "history_limit": {
+      "message": "This bank makes transactions available automatically only from {date}. rotki will retrieve all available history and keep it updated from now on. Earlier transactions cannot be retrieved from the bank and must be added manually if needed.",
+      "title": "Limited bank history"
+    },
     "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
     "sync": {
       "failed": "Last sync failed",

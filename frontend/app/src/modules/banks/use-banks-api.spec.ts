@@ -14,7 +14,7 @@ const wireManifest = {
   docs_url: 'https://docs.qonto.com',
   location: 'qonto',
   maintainer: 'rotki',
-  secrets: [{ description: 'The organization login', label: 'Login', slot: 'api_key' }],
+  secrets: [{ description: 'The organization login', label: 'Login', secret: true, slot: 'api_key' }],
   setup_notes: ['Only one key per organization'],
   version: '1.0.0',
 };
@@ -31,14 +31,14 @@ describe('useBanksApi', () => {
   it('should parse the bank connections with their sync status', async () => {
     server.use(http.get(`${backendUrl}/api/1/banks`, () => HttpResponse.json({
       message: '',
-      result: [{ display_name: 'Qonto', location: 'qonto', name: 'main', sync_status: { last_error: 'boom', last_sync_ts: 10, running: false } }],
+      result: [{ display_name: 'Qonto', location: 'qonto', name: 'main', sync_status: { auth_challenge: null, last_error: 'boom', last_sync_ts: 10, running: false } }],
     })));
 
     expect(await useBanksApi().getBanks()).toEqual([{
       displayName: 'Qonto',
       location: 'qonto',
       name: 'main',
-      syncStatus: { lastError: 'boom', lastSyncTs: 10, running: false },
+      syncStatus: { authChallenge: null, lastError: 'boom', lastSyncTs: 10, running: false },
     }]);
   });
 
@@ -46,12 +46,12 @@ describe('useBanksApi', () => {
     let body: unknown;
     server.use(http.put(`${backendUrl}/api/1/banks`, async ({ request }) => {
       body = await request.json();
-      return HttpResponse.json({ message: '', result: true });
+      return HttpResponse.json({ message: '', result: { history_start_ts: 1_700_000_000, success: true } });
     }));
 
     const outcome = await useBanksApi().addBank({ credentials: { api_key: 'login', api_secret: 'secret' }, location: 'qonto', name: 'main' });
 
-    expect(outcome).toEqual(ok(true));
+    expect(outcome).toEqual(ok({ historyStartTs: 1_700_000_000, success: true }));
     expect(body).toEqual({ credentials: { api_key: 'login', api_secret: 'secret' }, location: 'qonto', name: 'main' });
   });
 

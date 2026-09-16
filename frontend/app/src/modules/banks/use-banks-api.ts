@@ -8,6 +8,7 @@ import {
   BankManifests,
   type BankSetupError,
   type BankSetupResult,
+  BankSetupSuccess,
   type BankSyncPayload,
 } from '@/modules/banks/types';
 import { api } from '@/modules/core/api/rotki-api';
@@ -80,21 +81,25 @@ export function useBanksApi(): UseBanksApiReturn {
     return BankConnections.parse(data);
   };
 
-  const parseSetupResult = (result: boolean | unknown): BankSetupResult =>
-    typeof result === 'boolean' ? result : BankAuthChallenge.parse(result);
+  const parseSetupResult = (result: unknown): BankSetupResult => {
+    if (result === true)
+      return true;
+    const success = BankSetupSuccess.safeParse(result);
+    return success.success ? success.data : BankAuthChallenge.parse(result);
+  };
 
   const authStatuses = [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.BAD_REQUEST, HTTPStatus.CONFLICT];
 
   const addBank = async (payload: BankConnectionPayload): ResultAsync<BankSetupResult, BankSetupError> =>
     fromAsync(
-      async () => parseSetupResult(await api.put<boolean | unknown>('/banks', payload, { validStatuses: authStatuses })),
+      async () => parseSetupResult(await api.put<unknown>('/banks', payload, { validStatuses: authStatuses })),
       cause => toBankSetupError(cause, payload),
     );
 
   const answerAuthentication = async (
     payload: BankConnectionIdentity & { response?: string },
   ): ResultAsync<BankSetupResult, BankSetupError> => fromAsync(
-    async () => parseSetupResult(await api.post<boolean | unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
+    async () => parseSetupResult(await api.post<unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
     cause => ({ message: getErrorMessage(cause), type: 'rejected' }),
   );
 

@@ -1,5 +1,6 @@
 import type { BankAuthChallenge, BankAuthenticationRequest } from '@/modules/banks/types';
 import { flushPromises, mount } from '@vue/test-utils';
+import { ok } from 'plainfp/result';
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
@@ -38,7 +39,7 @@ const request: BankAuthenticationRequest = {
 
 describe('bankAuthenticationDialog', () => {
   it('should answer a connected bank challenge and close after success', async () => {
-    answerBankAuthentication.mockResolvedValue(true);
+    answerBankAuthentication.mockResolvedValue(ok(true));
     const wrapper = mount(BankAuthenticationDialog, {
       global: { stubs: { BigDialog: BigDialogStub } },
       props: { modelValue: request },
@@ -58,7 +59,7 @@ describe('bankAuthenticationDialog', () => {
       ...request.challenge,
       primitive: 'app approval poll',
     };
-    answerBankAuthentication.mockResolvedValue(nextChallenge);
+    answerBankAuthentication.mockResolvedValue(ok(nextChallenge));
     const wrapper = mount(BankAuthenticationDialog, {
       global: { stubs: { BigDialog: BigDialogStub } },
       props: { modelValue: { ...request, challenge: nextChallenge } },

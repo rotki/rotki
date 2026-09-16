@@ -47,7 +47,18 @@ export const BankAuthChallenge = z.object({
 
 export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
 
-export type BankSetupResult = boolean | BankAuthChallenge;
+export const BankSetupSuccess = z.object({
+  success: z.literal(true),
+  historyStartTs: z.number().nullable(),
+});
+
+export type BankSetupSuccess = z.infer<typeof BankSetupSuccess>;
+
+export type BankSetupResult = true | BankSetupSuccess | BankAuthChallenge;
+
+export function isBankSetupComplete(result: BankSetupResult): result is true | BankSetupSuccess {
+  return result === true || 'success' in result;
+}
 
 const BankSyncStatus = z.object({
   authChallenge: BankAuthChallenge.nullable(),

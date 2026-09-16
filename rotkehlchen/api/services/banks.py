@@ -6,12 +6,14 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.banks.errors import BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.fval import FVal
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import Location
@@ -27,6 +29,17 @@ class BanksService:
 
     def get_banks(self) -> list[dict[str, Any]]:
         return self.rotkehlchen.bank_manager.get_connected_banks_info()
+
+    @staticmethod
+    def _setup_success(bank: BankConnector) -> dict[str, Any]:
+        retention_days = bank.history_retention_days()
+        return {
+            'success': True,
+            'history_start_ts': (
+                ts_now() - retention_days * DAY_IN_SECONDS
+                if retention_days is not None else None
+            ),
+        }
 
     def setup_bank(
             self,
@@ -47,7 +60,9 @@ class BanksService:
             return None, str(e), HTTPStatus.BAD_REQUEST
         if not result:
             return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+        if (bank := self.rotkehlchen.bank_manager.get_bank(name=name, location=location)) is None:
+            raise AssertionError('successful bank setup did not register the connection')
+        return self._setup_success(bank), msg, HTTPStatus.OK
 
     def answer_authentication(
             self,
@@ -55,8 +70,10 @@ class BanksService:
             location: Location,
             response: str | None,
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+        manager = self.rotkehlchen.bank_manager
+        completes_setup = manager.get_bank(name=name, location=location) is None
         try:
-            result, message = self.rotkehlchen.bank_manager.answer_bank_authentication(
+            result, message = manager.answer_bank_authentication(
                 name=name,
                 location=location,
                 response=response,
@@ -65,7 +82,13 @@ class BanksService:
             return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
         except RemoteError as e:
             return None, str(e), HTTPStatus.CONFLICT
-        return (True, '', HTTPStatus.OK) if result else (None, message, HTTPStatus.CONFLICT)
+        if result is False:
+            return None, message, HTTPStatus.CONFLICT
+        if completes_setup:
+            if (bank := manager.get_bank(name=name, location=location)) is None:
+                raise AssertionError('successful bank setup authentication did not register it')
+            return self._setup_success(bank), '', HTTPStatus.OK
+        return True, '', HTTPStatus.OK
 
     def edit_bank(
             self,

@@ -119,6 +119,10 @@ class BankConnector(ExchangeInterface, ABC):
         """Return whether answering the pending challenge must continue a history sync."""
         return False
 
+    def history_retention_days(self) -> int | None:
+        """Return the history window advertised by the bank, or None when it is unlimited."""
+        return None
+
     # ---- what a connector implements ----
 
     @abstractmethod

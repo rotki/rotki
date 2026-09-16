@@ -19,6 +19,7 @@ const {
   getBanks,
   getSupportedBanks,
   notifyError,
+  notifyInfo,
   queryAllBankEvents,
   queryBankBalances,
   removeBank,
@@ -30,6 +31,7 @@ const {
   getBanks: vi.fn(),
   getSupportedBanks: vi.fn(),
   notifyError: vi.fn(),
+  notifyInfo: vi.fn(),
   queryAllBankEvents: vi.fn(),
   queryBankBalances: vi.fn(),
   removeBank: vi.fn(),
@@ -49,7 +51,7 @@ vi.mock('@/modules/banks/use-banks-api', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError }),
+  useNotifications: (): Record<string, unknown> => ({ notifyError, notifyInfo }),
 }));
 
 vi.mock('@/modules/history/events/tx/use-bank-events-refresh', () => ({
@@ -107,7 +109,7 @@ describe('useBanks', () => {
   });
 
   it('should add through PUT and edit through PATCH, dropping an unchanged new name', async () => {
-    addBank.mockResolvedValue(ok(true));
+    addBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
     editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
     const credentials = { api_key: 'login' };
@@ -148,17 +150,20 @@ describe('useBanks', () => {
 
   it('should return the accepted setup and refresh the connections and balances', async () => {
     useBankConnectionsStore().setConnections([connection]);
-    addBank.mockResolvedValue(ok(true));
+    const success = { historyStartTs: 1_700_000_000, success: true };
+    addBank.mockResolvedValue(ok(success));
     const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
     await flushPromises();
-    expect(outcome).toEqual(ok(true));
-    expect(getBanks).toHaveBeenCalledOnce();
+    expect(outcome).toEqual(ok(success));
+    expect(getBanks).toHaveBeenCalledTimes(3);
     expect(queryBankBalances).toHaveBeenCalledOnce();
+    expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
+    expect(notifyInfo).toHaveBeenCalledOnce();
   });
 
   it.each([
     ['a refused setup', err<BankSetupError>({ message: 'bank said no', type: 'rejected' })],
-    ['a false answer', ok(false)],
+    ['an authentication challenge', ok({ challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter TAN' })],
   ])('should hand back %s untouched, without notifying or refreshing', async (_case, answer) => {
     useBankConnectionsStore().setConnections([connection]);
     addBank.mockResolvedValue(answer);
