@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep, UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_gate
 from rotkehlchen.concurrency import result_of, spawn, wait
 from rotkehlchen.constants.misc import ZERO
@@ -59,6 +59,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, MissingPrice, NetworkFailure
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -260,9 +261,10 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Error processing Gate balance entry due to inability to '
                     f'query price: {e!s}. Skipping balance entry',
+                    MissingPrice(asset=asset.identifier, timestamp=None),
                 )
                 continue
 
@@ -300,12 +302,16 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
             except RemoteError as e:
                 log.error('Failed to query Gate trades due to %s', e)
-                self.msg_aggregator.add_error(f'Failed to query Gate trades due to {e!s}')
+                self.add_classified_error(
+                    f'Failed to query Gate trades due to {e!s}',
+                    NetworkFailure(record=UserMessageRecord.TRADE, error=str(e)),
+                )
                 raise
 
             if not isinstance(raw_data, list):
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     msg := f'Gate trades response is not a list: {raw_data}',
+                    BadData(record=UserMessageRecord.TRADE, error=msg),
                 )
                 raise RemoteError(msg)
 
@@ -451,14 +457,16 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                 except RemoteError as e:
                     log.error('Failed to query Gate %s due to %s', query_for, e)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Failed to query Gate {query_for!s} due to {e!s}',
+                        NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                     )
                     raise
 
                 if not isinstance(result, list):
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         msg := f'Gate {query_for!s} response is not a list: {result}',
+                        BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=msg),
                     )
                     raise RemoteError(msg)
 

@@ -13,7 +13,7 @@ from uuid import uuid4
 import requests
 from rsqlite import IntegrityError
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry, UserMessageRecord, WSMessageType
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
@@ -70,6 +70,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import AuthFailure, BadData, LocalDbProblem, NetworkFailure
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -101,6 +102,13 @@ BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS: Final = 30 * DAY_IN_SECONDS
 # Convert API has 30-day max interval constraint
 CONVERT_API_TIME_DELTA: Final = 30 * DAY_IN_SECONDS
 CONVERT_API_MAX_LIMIT: Final = 1000
+
+OPERATION_TYPE_TO_RECORD: Final = {
+    'convert trade': UserMessageRecord.TRADE,
+    'fiat payment': UserMessageRecord.TRADE,
+    'fiat deposit/withdrawal': UserMessageRecord.ASSET_MOVEMENT,
+    'deposit/withdrawal': UserMessageRecord.ASSET_MOVEMENT,
+}
 
 V3_METHODS: Final = (
     'account',
@@ -247,9 +255,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         try:
             self._symbols_to_pair = query_binance_exchange_pairs(location=self.location)
         except InputError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Binance exchange couldnt be properly initialized. '
                 f'Missing the exchange markets. {e!s}',
+                LocalDbProblem(entry=UserMessageEntry.MARKET),
             )
             self._symbols_to_pair = {}
 
@@ -723,11 +732,18 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         },
                     )
                 except (RemoteError, BinancePermissionError) as e:
-                    self.msg_aggregator.add_error(
+                    msg = (
                         f'Failed to query binance flexible lending interest history between '
                         f'{timestamp_to_date(query_start_ts)} and '
-                        f'{timestamp_to_date(query_end_ts)}. {e!s}',
+                        f'{timestamp_to_date(query_end_ts)}. {e!s}'
                     )
+                    if isinstance(e, BinancePermissionError):
+                        self.add_classified_error(msg, AuthFailure(service=self.name))
+                    else:
+                        self.add_classified_error(msg, NetworkFailure(
+                            record=UserMessageRecord.HISTORY_EVENT,
+                            error=str(e),
+                        ))
                     return True
 
                 for entry in response:
@@ -739,15 +755,17 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         timestamp = TimestampMS(entry['time'])
                         notes = f'Interest paid from {entry["type"]} {entry["asset"]} savings'
                     except KeyError as e:
-                        self.msg_aggregator.add_error(
+                        self.add_classified_error(
                             f'Missing key entry for {e!s} in {self.name} {entry}. '
                             f'Ignoring its lending interest history query.',
+                            BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                         )
                         continue
                     except DeserializationError as e:
-                        self.msg_aggregator.add_error(
+                        self.add_classified_error(
                             f'Error at deserializing {self.name} asset. {e!s}. '
                             f'Ignoring its lending interest history query.',
+                            BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                         )
                         continue
 
@@ -791,11 +809,18 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     additional_options={'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE},
                 )
             except (RemoteError, BinancePermissionError) as e:
-                self.msg_aggregator.add_error(
+                msg = (
                     f'Failed to query binance locked lending interest history between '
                     f'{timestamp_to_date(query_start_ts)} and '
-                    f'{timestamp_to_date(query_end_ts)}. {e!s}',
+                    f'{timestamp_to_date(query_end_ts)}. {e!s}'
                 )
+                if isinstance(e, BinancePermissionError):
+                    self.add_classified_error(msg, AuthFailure(service=self.name))
+                else:
+                    self.add_classified_error(msg, NetworkFailure(
+                        record=UserMessageRecord.HISTORY_EVENT,
+                        error=str(e),
+                    ))
                 return True
 
             for entry in response:
@@ -807,15 +832,17 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     timestamp = TimestampMS(entry['time'])
                     notes = f'Interest paid from locked {entry["asset"]} savings'
                 except KeyError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Missing key entry for {e!s} in {self.name} {entry}. '
                         f'Ignoring its lending interest history query.',
+                        BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                     )
                     continue
                 except DeserializationError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error at deserializing {self.name} asset. {e!s}. '
                         f'Ignoring its lending interest history query.',
+                        BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                     )
                     continue
 
@@ -891,9 +918,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 balances[asset] += amount
 
         except KeyError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'At {self.name} futures balance query did not find expected key '
                 f'{e!s}. Skipping futures query...',
+                BadData(record=UserMessageRecord.BALANCE, error=str(e)),
             )
 
         return balances
@@ -949,9 +977,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 balances[asset] += amount
 
         except KeyError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'At {self.name} margin futures balance query did not find '
                 f'expected key {e!s}. Skipping margin futures query...',
+                BadData(record=UserMessageRecord.BALANCE, error=str(e)),
             )
 
         return balances
@@ -1002,9 +1031,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 for asset_name, asset_amount in entry['share']['asset'].items():
                     process_pool_asset(asset_name, FVal(asset_amount))
         except (KeyError, AttributeError) as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'At {self.name} pool balances got unexpected data format. '
                 f'Skipping them in the balance query. Check logs for details',
+                BadData(record=UserMessageRecord.BALANCE, error=str(e)),
             )
             if isinstance(e, KeyError):
                 msg = f'Missing key {e!s}'
@@ -1043,7 +1073,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f'{self.name} account API request failed. '
                 f'Could not reach binance due to {e!s}'
             )
-            self.msg_aggregator.add_error(msg)
+            self.add_classified_error(
+                msg,
+                NetworkFailure(record=UserMessageRecord.BALANCE, error=str(e)),
+            )
             return None, msg
 
         returned_balances = self.balances_from_amounts(amounts)
@@ -1236,9 +1269,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error processing a {self.name} trade. Check logs '
                         f'for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.TRADE, error=msg),
                     )
                     log.error(
                         'Error processing a %s trade',
@@ -1386,9 +1420,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error processing a {self.location!s} {operation_type}. Check logs '
                         f'for details. Ignoring it.',
+                        BadData(record=OPERATION_TYPE_TO_RECORD[operation_type], error=msg),
                     )
                     log.error(
                         f'Error processing a {self.location!s} {operation_type}',

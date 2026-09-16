@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.banks.connector import BankConnector
 from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchemaDrift
@@ -48,6 +49,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -174,6 +177,11 @@ class Qonto(BankConnector):
             f'Qonto returned an unknown transaction {field} "{value}" for {self.name}. '
             f'Transactions with it may be incomplete until rotki learns about it. '
             f'Please report this so the connector can be updated.',
+            classification=BadData(
+                record=UserMessageRecord.TRANSACTION,
+                error=f'Unknown transaction {field}',
+            ),
+            subject=Location.QONTO,
         )
 
     # ---- deserialization ----

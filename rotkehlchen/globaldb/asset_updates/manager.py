@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import requests
 import rsqlite
 
+from rotkehlchen.api.websockets.typedefs import (
+    UserMessageEntry,
+    UserMessageFeature,
+    UserMessageRecord,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
@@ -19,6 +24,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.utils import initialize_globaldb
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import BadData, LocalDbProblem, UnknownAssetSeen, Unsupported
 from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.network import query_file
 
@@ -351,6 +357,7 @@ class AssetsUpdater:
                         f'Failed to add asset {remote_asset_data.identifier} in the '
                         f'DB during the v{version} assets update. Skipping entry. '
                         f'Error: {e!s}',
+                        classification=LocalDbProblem(entry=UserMessageEntry.ASSET_UPDATE),
                     )
                 return  # fail or succeed continue to next entry
 
@@ -374,6 +381,7 @@ class AssetsUpdater:
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
                         f'the DB during the v{version} assets update. Skipping entry. '
                         f'Error: {e!s}',
+                        classification=LocalDbProblem(entry=UserMessageEntry.ASSET_UPDATE),
                     )
                 return  # fail or succeed continue to next entry
 
@@ -447,6 +455,7 @@ class AssetsUpdater:
                         self.msg_aggregator.add_warning(
                             f'Skipping entry during assets update to v{version} due '
                             f'to a deserialization error. {e!s}',
+                            classification=BadData(record=UserMessageRecord.ASSET_UPDATE, error=str(e)),  # noqa: E501
                         )
 
                     if remote_asset_data is not None:
@@ -470,6 +479,7 @@ class AssetsUpdater:
                         self.msg_aggregator.add_warning(
                             f'Skipping entry during assets collection update to v{version} due '
                             f'to a deserialization error. {e!s}',
+                            classification=BadData(record=UserMessageRecord.ASSET_UPDATE, error=str(e)),  # noqa: E501
                         )
                 else:
                     assert update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS
@@ -484,15 +494,21 @@ class AssetsUpdater:
                         self.msg_aggregator.add_warning(
                             f'Skipping entry during assets collection multimapping update due '
                             f'to a deserialization error. {e!s}',
+                            classification=BadData(record=UserMessageRecord.ASSET_UPDATE, error=str(e)),  # noqa: E501
                         )
                     except UnknownAsset as e:
                         self.msg_aggregator.add_warning(
                             f'Tried to add unknown asset {e.identifier} to collection of assets. Skipping',  # noqa: E501
+                            classification=UnknownAssetSeen(identifier=e.identifier),
                         )
         except ValueError:
             self.msg_aggregator.add_error(
                 f'Last entry of update {update_file_type} has an odd number of '
                 f'lines. Skipping. Report this to the developers',
+                classification=BadData(
+                    record=UserMessageRecord.ASSET_UPDATE,
+                    error='Odd number of lines',
+                ),
             )
 
         # at the very end update the current version in the DB
@@ -663,6 +679,7 @@ class AssetsUpdater:
                     self.msg_aggregator.add_warning(
                         f'Skipping assets update {version} since it requires a min schema of '
                         f'{min_schema_version}. Please upgrade rotki to get this assets update',
+                        classification=Unsupported(feature=UserMessageFeature.ASSET_UPDATE_SCHEMA),
                     )
                     break  # get out of the loop
 
@@ -673,6 +690,7 @@ class AssetsUpdater:
                         f'while the local DB schema version is {local_schema_version}. '
                         f'You will have to follow an alternative method to '
                         f'obtain the assets of this update. Easiest would be to reset global DB.',
+                        classification=Unsupported(feature=UserMessageFeature.ASSET_UPDATE_SCHEMA),
                     )
                     continue
             except KeyError as e:

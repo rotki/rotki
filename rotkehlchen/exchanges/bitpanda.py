@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -41,6 +42,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
 )
 from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.user_messages import BadData, NetworkFailure, UnknownAssetSeen
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -91,8 +93,9 @@ class Bitpanda(ExchangeWithoutApiSecret):
             wallets, _, _ = self._api_query('wallets')
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Failed to query Bitpanda wallets at first connection. {e!s}',
+                NetworkFailure(record=UserMessageRecord.WALLET, error=str(e)),
             )
             return
 
@@ -120,9 +123,10 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing Bitpanda wallets query. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.WALLET, error=str(e)),
                 )
                 log.error(
                     'Error processing bitpanda wallet entry at first connection',
@@ -191,9 +195,10 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 asset_id = entry['attributes']['cryptocoin_id']
                 asset = self.cryptocoin_map.get(asset_id)
             if asset is None:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'While deserializing Bitpanda fiat transaction, could not find '
                     f'bitpanda asset with id {asset_id} in the mapping',
+                    UnknownAssetSeen(identifier=str(asset_id)),
                 )
                 return []
             amount = deserialize_fval(entry['attributes']['amount'])
@@ -207,7 +212,10 @@ class Bitpanda(ExchangeWithoutApiSecret):
             if isinstance(e, KeyError):
                 msg = f'Missing key {msg} for wallet transaction entry'
 
-            self.msg_aggregator.add_error(f'Error processing bitpanda wallet transaction entry due to {msg}')  # noqa: E501
+            self.add_classified_error(
+                f'Error processing bitpanda wallet transaction entry due to {msg}',
+                BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
+            )
             log.error(
                 'Error processing bitpanda wallet transaction entry',
                 error=msg,
@@ -257,18 +265,20 @@ class Bitpanda(ExchangeWithoutApiSecret):
             cryptocoin_id = entry['attributes']['cryptocoin_id']
             crypto_asset = self.cryptocoin_map.get(cryptocoin_id)
             if crypto_asset is None:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'While deserializing a trade, could not find bitpanda cryptocoin '
                     f'with id {cryptocoin_id} in the mapping. Skipping trade.',
+                    UnknownAssetSeen(identifier=str(cryptocoin_id)),
                 )
                 return []
 
             fiat_id = entry['attributes']['fiat_id']
             fiat_asset = self.fiat_map.get(fiat_id)
             if fiat_asset is None:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'While deserializing a trade, could not find bitpanda fiat '
                     f'with id {fiat_id} in the mapping. Skipping trade.',
+                    UnknownAssetSeen(identifier=str(fiat_id)),
                 )
                 return []
 
@@ -302,7 +312,10 @@ class Bitpanda(ExchangeWithoutApiSecret):
             if isinstance(e, KeyError):
                 msg = f'Missing key {msg} for trade entry'
 
-            self.msg_aggregator.add_error(f'Error processing bitpanda trade due to {msg}')
+            self.add_classified_error(
+                f'Error processing bitpanda trade due to {msg}',
+                BadData(record=UserMessageRecord.TRADE, error=str(e)),
+            )
             log.error(
                 'Error processing bitpanda trade entry',
                 error=msg,
@@ -474,9 +487,10 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing Bitpanda balance. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 log.error(
                     'Error processing bitpanda balance',

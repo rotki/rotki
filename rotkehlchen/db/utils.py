@@ -1,10 +1,11 @@
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Union
 
 from eth_utils import is_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
@@ -342,6 +343,18 @@ DBTupleType = Literal[
     'solana_instruction',
     'solana_instruction_account',
 ]
+# Every solana part is a piece of a stored transaction, so they share its group
+TUPLE_TYPE_ENTRIES: Final[dict[DBTupleType, UserMessageEntry]] = {
+    'margin_position': UserMessageEntry.MARGIN_POSITION,
+    'evm_transaction': UserMessageEntry.TRANSACTION,
+    'evm_internal_transaction': UserMessageEntry.TRANSACTION,
+    'zksynclite_transaction': UserMessageEntry.TRANSACTION,
+    'evm_transactions_authorization': UserMessageEntry.TRANSACTION,
+    'solana_transaction': UserMessageEntry.TRANSACTION,
+    'solana_account_key': UserMessageEntry.TRANSACTION,
+    'solana_instruction': UserMessageEntry.TRANSACTION,
+    'solana_instruction_account': UserMessageEntry.TRANSACTION,
+}
 
 
 def db_tuple_to_str(
