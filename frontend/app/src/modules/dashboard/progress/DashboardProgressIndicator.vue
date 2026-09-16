@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import type { HistoricalBalanceProcessingData } from '@/modules/core/messaging/types/status-types';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
-import HistoricalBalanceProcessingSection from '@/modules/dashboard/progress/components/HistoricalBalanceProcessingSection.vue';
-import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { isMajorOrMinorUpdate } from './is-major-or-minor-update';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -17,50 +11,32 @@ const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
 
-const { useActivity, useWorkStatus } = useTaskCenter();
-const historicalBalanceActivity = useActivity(ActivityKind.HISTORICAL_BALANCES);
-const historicalBalanceStatus = useWorkStatus(ActivityKind.HISTORICAL_BALANCES);
-const isHistoricalBalanceProcessing = computed<boolean>(() => get(historicalBalanceStatus).running);
-const historicalBalancePercentage = computed<number>(() => get(historicalBalanceActivity)?.percentage ?? 0);
-const historicalBalanceProgress = computed<HistoricalBalanceProcessingData | undefined>(() => {
-  const steps = get(historicalBalanceActivity)?.steps;
-  return steps ? { processed: steps.current, total: steps.total } : undefined;
-});
-
 const {
-  balanceProgress,
   dismissalThresholdMs,
-  hasTxAccounts,
   hasUndecodedTransactions,
-  historyProgress,
   isNeverQueried,
   lastQueriedDisplay,
   lastQueriedTimestamp,
   longQuery,
   navigateToHistory,
   processing,
-  processingMessage,
-  processingPercentage,
   queryStatus,
   showIdleMessage,
   transactionStatusSummary,
 } = useUnifiedProgress();
 
-const historyStatusDismissedRecently = computed(() => {
-  const now = Date.now();
-  const dismissalMs = get(dismissalThresholdMs);
-  const { lastDismissedTs } = get(queryStatus);
-  return now - lastDismissedTs < dismissalMs;
-});
+const dismissedRecently = computed<boolean>(() => Date.now() - get(queryStatus).lastDismissedTs < get(dismissalThresholdMs));
 
-const balanceStatusDismissedRecently = computed(() => {
-  const now = Date.now();
-  const dismissalMs = get(dismissalThresholdMs);
-  const { lastBalanceProgressDismissedTs } = get(queryStatus);
-  return now - lastBalanceProgressDismissedTs < dismissalMs;
-});
+/**
+ * The banner says what state history was left in, never how work in flight is going: that is the
+ * task dock's. So it steps aside while history is being queried, rather than reporting stale state.
+ */
+const showSection = logicAnd(
+  useRefWithDebounce(logicAnd(showIdleMessage, logicNot(processing)), 300),
+  logicNot(dismissedRecently),
+);
 
-function dismissHistoryProgress(): void {
+function dismiss(): void {
   set(queryStatus, {
     ...get(queryStatus),
     lastDismissedTs: Date.now(),
@@ -68,42 +44,13 @@ function dismissHistoryProgress(): void {
   });
 }
 
-function dismissBalanceProgress(): void {
-  set(queryStatus, {
-    ...get(queryStatus),
-    lastBalanceProgressDismissedTs: Date.now(),
-    lastUsedVersion: get(appVersion),
-  });
-}
-
-const hasHistoryProgress = logicAnd(hasTxAccounts, historyProgress, processing);
-
-const showHistoryProgress = logicAnd(
-  useRefWithDebounce(logicOr(hasHistoryProgress, showIdleMessage), 300),
-  logicNot(historyStatusDismissedRecently),
-);
-
-const showBalanceProgress = logicAnd(
-  useRefWithDebounce(logicAnd(balanceProgress), 300),
-  logicNot(balanceStatusDismissedRecently),
-);
-
-const showHistoricalBalanceProgress = useRefWithDebounce(isHistoricalBalanceProcessing, 300);
-
-const showSection = logicOr(
-  showHistoryProgress,
-  showBalanceProgress,
-  showHistoricalBalanceProgress,
-);
-
 onMounted(async () => {
   const currentVersion = get(appVersion);
   const lastVersion = get(queryStatus, 'lastUsedVersion');
 
-  // If it's a major or minor update, reset dismissal timestamps
+  // If it's a major or minor update, reset the dismissal
   if (isMajorOrMinorUpdate(currentVersion, lastVersion)) {
     set(queryStatus, {
-      lastBalanceProgressDismissedTs: 0,
       lastDismissedTs: 0,
       lastUsedVersion: currentVersion,
     });
@@ -111,14 +58,12 @@ onMounted(async () => {
     return;
   }
 
-  // If version is the same or just a patch update, keep existing dismissal state
   if (currentVersion === lastVersion) {
     return;
   }
 
-  // Update version but keep dismissal timestamps for patch updates
+  // Update version but keep the dismissal for patch updates
   set(queryStatus, {
-    lastBalanceProgressDismissedTs: get(queryStatus, 'lastBalanceProgressDismissedTs') || 0,
     lastDismissedTs: get(queryStatus, 'lastDismissedTs') || 0,
     lastUsedVersion: currentVersion,
   });
@@ -139,33 +84,7 @@ onMounted(async () => {
       class="w-full px-4 py-2 border-b border-default bg-white dark:bg-dark-elevated text-sm text-rui-text-secondary flex items-center justify-between gap-4"
     >
       <div class="flex items-center gap-2">
-        <!-- Balance Query Section -->
-
-        <BalanceQuerySection
-          v-if="showBalanceProgress && balanceProgress && processingMessage"
-          :progress="balanceProgress"
-          :processing-message="processingMessage"
-          :processing-percentage="processingPercentage"
-        />
-
-        <!-- History Query Section -->
-        <HistoryQuerySection
-          v-else-if="showHistoryProgress && historyProgress && processingMessage"
-          :progress="historyProgress"
-          :processing-message="processingMessage"
-          :processing-percentage="processingPercentage"
-        />
-
-        <!-- Historical Balance Processing Section -->
-        <HistoricalBalanceProcessingSection
-          v-else-if="showHistoricalBalanceProgress && historicalBalanceProgress"
-          :progress="historicalBalanceProgress"
-          :percentage="historicalBalancePercentage"
-        />
-
-        <!-- Idle State Section -->
         <IdleQuerySection
-          v-else-if="showIdleMessage"
           :just-updated="justUpdated"
           :is-never-queried="isNeverQueried"
           :long-query="longQuery"
@@ -178,7 +97,6 @@ onMounted(async () => {
 
       <div class="flex gap-2">
         <RuiButton
-          v-if="!balanceProgress"
           variant="text"
           size="sm"
           color="primary"
@@ -190,7 +108,7 @@ onMounted(async () => {
           variant="text"
           icon
           size="sm"
-          @click="showBalanceProgress ? dismissBalanceProgress() : dismissHistoryProgress()"
+          @click="dismiss()"
         >
           <RuiIcon name="lu-x" />
         </RuiButton>
