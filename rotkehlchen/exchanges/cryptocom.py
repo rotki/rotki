@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -48,6 +49,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -320,9 +322,10 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 details='balance query',
             )
         except DeserializationError as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Error processing {self.name} {instrument_name} balance result due to inability '
                 f'to deserialize asset amount due to {e!s}. Skipping balance result.',
+                BadData(record=UserMessageRecord.BALANCE, error=str(e)),
             )
 
         return existing_balances
@@ -459,25 +462,36 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-trades
         """
         options[page_key] = initial_page
+        record = (
+            UserMessageRecord.TRADE if query_type == 'trade' else UserMessageRecord.ASSET_MOVEMENT
+        )
         events: list[HistoryBaseEntry] = []
         while True:
             try:
                 result = self._process_response(self._api_query(method=method, options=options))
             except RemoteError as e:
-                self.msg_aggregator.add_error(f'Failed to query {self.name} {query_type}s: {e!s}')
+                self.add_classified_error(
+                    f'Failed to query {self.name} {query_type}s: {e!s}',
+                    NetworkFailure(record=record, error=str(e)),
+                )
                 raise
 
             if result.code != API_SUCCESS_CODE or result.result is None:
                 msg = f'Failed to query {self.name} {query_type}s: {result.message}'
                 log.error(msg)
-                self.msg_aggregator.add_error(msg)
+                self.add_classified_error(msg, NetworkFailure(record=record, error=msg))
                 raise RemoteError(msg)
 
             page_events: list[HistoryBaseEntry] = []
             for raw_asset_movement in (raw_list := result.result.get(result_key, [])):
                 try:
                     page_events.extend(deserialize_fn(raw_asset_movement))
-                except (DeserializationError, UnknownAsset, KeyError) as e:
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='trade' if query_type == 'trade' else 'deposit/withdrawal',
+                    )
+                except (DeserializationError, KeyError) as e:
                     msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
                     log.error(
                         'Error processing %s %s: %s due to %s',
@@ -486,9 +500,10 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                         raw_asset_movement,
                         msg,
                     )
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Failed to deserialize a {self.name} {query_type}. '
                         f'Check the logs for details.',
+                        BadData(record=record, error=msg),
                     )
 
             if event_queue is None:

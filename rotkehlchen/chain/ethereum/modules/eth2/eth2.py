@@ -5,6 +5,7 @@ from collections import defaultdict
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
@@ -35,6 +36,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei, ts_now, ts_sec_to_ms
@@ -1073,6 +1075,7 @@ class Eth2(EthereumModule):
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for address {address} due to {e!s}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
+                classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error=str(e)),
             )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)

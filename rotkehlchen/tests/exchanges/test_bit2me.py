@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
@@ -390,7 +391,7 @@ def test_bit2me_query_balances(bit2me):
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_bit2me_query_balances_unknown_asset(bit2me):
     """Test that if a Bit2me balance query returns unknown asset no exception
-    is raised and a warning is logged."""
+    is raised and the asset is reported for mapping instead of as a user message."""
     response = BIT2ME_BALANCES_RESPONSE.replace(
         '"currency": "BTC"', '"currency": "UNKNOWN_ASSET_XYZ"',
     )
@@ -406,6 +407,10 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
     assert len(balances) == 2
     assert A_EUR in balances
     assert A_ETH in balances
+    assert [
+        (message.message_type, message.data.get('identifier'))
+        for message in bit2me.msg_aggregator.rotki_notifier.messages
+    ] == [(WSMessageType.EXCHANGE_UNKNOWN_ASSET, 'UNKNOWN_ASSET_XYZ')]
 
 
 def test_bit2me_query_deposits_withdrawals(bit2me):

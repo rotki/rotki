@@ -11,13 +11,18 @@ describe('composables/api/session/index', () => {
   });
 
   describe('consumeMessages', () => {
-    it('should fetch and returns messages', async () => {
+    it('should fetch the queued messages as camelCased websocket-shaped objects', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
             result: {
-              errors: ['Error 1', 'Error 2'],
-              warnings: ['Warning 1'],
+              errors: [
+                { type: 'user_message', data: { verbosity: 'error', value: 'Error 1', key: 'local_db', subject: null, fields: { entry: 'tag' } } },
+                { type: 'balance_snapshot_error', data: { location: 'kraken', error_message: 'oops' } },
+              ],
+              warnings: [
+                { type: 'user_message', data: { verbosity: 'warning', value: 'Warning 1', key: 'local_db', subject: null, fields: { entry: 'tag' } } },
+              ],
             },
             message: '',
           })),
@@ -26,8 +31,13 @@ describe('composables/api/session/index', () => {
       const { consumeMessages } = useSessionApi();
       const result = await consumeMessages();
 
-      expect(result.errors).toEqual(['Error 1', 'Error 2']);
-      expect(result.warnings).toEqual(['Warning 1']);
+      expect(result.errors).toEqual([
+        { type: 'user_message', data: { verbosity: 'error', value: 'Error 1', key: 'local_db', subject: null, fields: { entry: 'tag' } } },
+        { type: 'balance_snapshot_error', data: { location: 'kraken', errorMessage: 'oops' } },
+      ]);
+      expect(result.warnings).toEqual([
+        { type: 'user_message', data: { verbosity: 'warning', value: 'Warning 1', key: 'local_db', subject: null, fields: { entry: 'tag' } } },
+      ]);
     });
 
     it('should handle empty messages', async () => {

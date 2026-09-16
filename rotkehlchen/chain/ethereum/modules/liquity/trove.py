@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -14,6 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei
 
@@ -182,6 +184,7 @@ class Liquity(EthereumModule):
                     self.msg_aggregator.add_warning(
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {e!s}.',
+                        classification=BadData(record=UserMessageRecord.POSITION, error=str(e)),
                     )
         return GetPositionsResult(
             balances=data,

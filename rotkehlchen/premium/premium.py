@@ -24,7 +24,11 @@ import requests
 from packaging.version import InvalidVersion, Version
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
-from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    DBUploadStatusStep,
+    UserMessageRecord,
+    WSMessageType,
+)
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
@@ -38,6 +42,7 @@ from rotkehlchen.errors.api import (
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import is_production, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -1143,7 +1148,10 @@ def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[
         msg = str(e)
         if isinstance(e, KeyError):  # that's a bad error that needs action on our side
             msg = f'missing key {msg} from the premium limits response. Report this to rotki devs.'
-            premium.msg_aggregator.add_error(msg)  # make sure users see this error
+            premium.msg_aggregator.add_error(  # make sure users see this error
+                msg,
+                classification=BadData(record=UserMessageRecord.PREMIUM_LIMITS, error=msg),
+            )
 
         log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
         return limit_type.get_free_limit(), False

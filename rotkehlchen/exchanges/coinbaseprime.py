@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -47,6 +48,7 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import (
     iso8601ts_to_timestamp,
     timestamp_to_iso8601,
@@ -414,6 +416,7 @@ class Coinbaseprime(ExchangeInterface):
         - RemoteError
         """
         result: list[HistoryEvent | AssetMovement | SwapEvent] = []
+        record = UserMessageRecord.TRADE if method == 'orders' else UserMessageRecord.HISTORY_EVENT
         while True:
             response = self._api_query(
                 module='portfolios',
@@ -431,8 +434,9 @@ class Coinbaseprime(ExchangeInterface):
                     else:
                         page_events.extend(events)
                 except DeserializationError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Failed to process coinbase prime event due to {e}. Skipping entry...',
+                        BadData(record=record, error=str(e)),
                     )
 
             result.extend(page_events)

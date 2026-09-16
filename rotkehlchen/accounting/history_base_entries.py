@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.rules import AccountingRulesManager
+from rotkehlchen.api.websockets.typedefs import UserMessageFeature
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -15,6 +16,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.user_messages import Unsupported
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -83,6 +85,7 @@ class EventsAccountant:
                 self.pot.database.msg_aggregator.add_warning(
                     f'Multi trade events are not supported in accounting yet, so the '
                     f'multi trade with identifier {group_id} is not included in the report.',
+                    classification=Unsupported(feature=UserMessageFeature.MULTI_TRADE),
                 )
             self.pot.events_skipped_no_rule += 1
             log.debug(

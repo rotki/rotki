@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import content_hash
 
+from rotkehlchen.api.websockets.typedefs import UserMessageOperation
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -30,6 +31,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, TokenKind
+from rotkehlchen.user_messages import Internal
 from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -196,6 +198,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
                 f'{context.tx_log.address} for {context.transaction}. '
                 f'This should never happen. Please, '
                 f"open an issue in rotki's github repository.",
+                classification=Internal(operation=UserMessageOperation.TRANSACTION_DECODING),
             )
             return None
 

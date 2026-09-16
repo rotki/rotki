@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    ProgressUpdateSubType,
+    UserMessageEntry,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
@@ -91,6 +95,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import LocalDbProblem, UnknownAssetSeen
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -1775,6 +1780,7 @@ class DBHistoryEvents:
             self.db.msg_aggregator.add_error(
                 'Could not deserialize one or more history event(s). '
                 'Try redecoding the event(s) or check the logs for more details.',
+                classification=LocalDbProblem(entry=UserMessageEntry.HISTORY_EVENT),
             )
 
         # Determine which of the returned groups have any ignored assets. We do this as
@@ -2085,6 +2091,7 @@ class DBHistoryEvents:
                 self.db.msg_aggregator.add_error(
                     f'Found asset {asset_id} in the base history events table and '
                     f'is not in the assets database. {e!s}',
+                    classification=UnknownAssetSeen(identifier=asset_id[0]),
                 )
         return assets
 

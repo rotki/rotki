@@ -13,6 +13,7 @@ from substrateinterface.transport import HttpTransport
 from websocket import WebSocketException
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.concurrency import cancellable_sleep
@@ -27,6 +28,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .types import (
@@ -236,6 +238,10 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'is not synced with the chain. Node last block is {last_block}, '
                 f'expected last block is {metadata_last_block}. '
                 f'Balances and other queries may be incorrect.',
+                classification=NetworkFailure(
+                    record=UserMessageRecord.NODE,
+                    error='Node is not synced with the chain',
+                ),
             )
 
         return last_block

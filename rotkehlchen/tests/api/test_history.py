@@ -156,9 +156,9 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
         ('NOTAREALASSET', 'asset movement'),
         ('IDONTEXIST', 'asset movement'),
     ])
-    # kraken ledger entries with unknown assets remain legacy error messages
+    # kraken ledger entries with unknown assets remain user messages
     assert sorted(
-        msg['data']['value'] for msg in non_status_messages if msg['type'] == 'legacy'
+        msg['data']['value'] for msg in non_status_messages if msg['type'] == 'user_message'
     ) == sorted([
         "Failed to read ledger event from kraken {'refid': 'D3', 'time': 1408994442, 'type': 'deposit', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '10', 'fee': '0', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided.",  # noqa: E501
         "Failed to read ledger event from kraken {'refid': 'W3', 'time': 1408994442, 'type': 'withdrawal', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '-10', 'fee': '0.11', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided.",  # noqa: E501
