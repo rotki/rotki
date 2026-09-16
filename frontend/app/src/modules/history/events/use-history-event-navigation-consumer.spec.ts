@@ -1,6 +1,7 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, EffectScope, Ref } from 'vue';
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import type { HistoryEventNavigationRequest } from '@/modules/history/events/use-history-event-navigation';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -90,6 +91,37 @@ describe('use-history-event-navigation-consumer', () => {
       total: 100,
     }));
   }
+
+  describe('hasEventHighlight', () => {
+    async function importHasEventHighlight(): Promise<typeof import('./use-history-event-navigation-consumer')['hasEventHighlight']> {
+      vi.resetModules();
+      return (await import('./use-history-event-navigation-consumer')).hasEventHighlight;
+    }
+
+    it.each<[string, HistoryEventNavigationRequest]>([
+      ['an asset movement', { highlightedAssetMovement: 1, targetGroupIdentifier: 'group-1' }],
+      ['an accounting event', { highlightedAccountingEvent: 2, targetGroupIdentifier: 'group-1' }],
+      ['a potential match', { highlightedPotentialMatch: 3, targetGroupIdentifier: 'group-1' }],
+      ['a negative balance event', { highlightedNegativeBalanceEvent: 4, targetGroupIdentifier: 'group-1' }],
+      ['an internal tx conflict', { highlightedInternalTxConflict: 'conflict-1', targetGroupIdentifier: 'group-1' }],
+    ])('should report %s as an event highlight', async (_name, request) => {
+      const hasEventHighlight = await importHasEventHighlight();
+
+      expect(hasEventHighlight(request)).toBe(true);
+    });
+
+    it('should report a request carrying only its target group as no event highlight', async () => {
+      const hasEventHighlight = await importHasEventHighlight();
+
+      expect(hasEventHighlight({ targetGroupIdentifier: 'group-1' })).toBe(false);
+    });
+
+    it('should not count a filter or a fallback as an event highlight', async () => {
+      const hasEventHighlight = await importHasEventHighlight();
+
+      expect(hasEventHighlight({ assetFilter: 'ETH', preserveFilters: true, targetGroupIdentifier: 'group-1' })).toBe(false);
+    });
+  });
 
   describe('composable-based navigation', () => {
     it('should resolve position, calculate page, and navigate with asset movement highlight', async () => {

@@ -1,6 +1,7 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
+import { logger } from '@/modules/core/common/logging/logging';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 
 export const DecodingComparisonEvent = z.object({
@@ -32,6 +33,25 @@ export const TransactionDecodingComparison = z.object({
 export type TransactionDecodingComparison = z.infer<typeof TransactionDecodingComparison>;
 
 /**
+ * The stored comparisons of one attempt, skipping any that no longer parse.
+ *
+ * @remarks
+ * These snapshots were serialised by whichever backend version wrote the attempt, so an older
+ * one can be missing a field this schema requires. Failing there would reject the whole
+ * `GET /data_issues` response and empty the inbox over one stale attempt, so a transaction that
+ * does not parse is dropped and logged rather than thrown - the review then shows the
+ * transactions that did survive. This is not a licence to paper over a schema that never matched
+ * its endpoint: a comparison the current backend writes must parse.
+ */
+const StoredComparisons = z.array(z.unknown()).transform(stored => stored.flatMap((comparison) => {
+  const parsed = TransactionDecodingComparison.safeParse(comparison);
+  if (parsed.success)
+    return [parsed.data];
+  logger.warn('dropping a stored decoding comparison that no longer parses', parsed.error);
+  return [];
+}));
+
+/**
  * A single auto-remediation attempt. The backend currently records at least the
  * strategy and its outcome; timestamps/attributions may be added later, so the
  * schema stays permissive (extra keys are preserved, rendered when present).
@@ -49,7 +69,7 @@ export const AutoRemediationAttempt = z.looseObject({
   strategy: z.string(),
   success: z.boolean().optional(),
   timestamp: z.number().optional(),
-  transactions: z.array(TransactionDecodingComparison).optional().catch(undefined),
+  transactions: StoredComparisons.optional(),
 });
 
 export type AutoRemediationAttempt = z.infer<typeof AutoRemediationAttempt>;

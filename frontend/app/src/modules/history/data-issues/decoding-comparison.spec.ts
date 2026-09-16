@@ -1,3 +1,4 @@
+import { bigNumberify } from '@rotki/common';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { assert, describe, expect, it } from 'vitest';
 import { diffDecodingEvents } from '@/modules/history/data-issues/decoding-comparison';
@@ -18,11 +19,24 @@ describe('diffDecodingEvents', () => {
     expect(diffDecodingEvents({ ...transaction, decodedEvents: [{ ...saved, customized: false, eventSubtype: 'none' }] })[0]?.status).toBe('unchanged');
   });
 
-  it('should keep a removed event separate from a later added event', () => {
+  it('should pair an amount edit that also shifted the order instead of splitting it in two', () => {
     const transaction = createDecodingComparison();
     const decoded = transaction.decodedEvents[0];
     assert(decoded);
-    expect(diffDecodingEvents({ ...transaction, decodedEvents: [{ ...decoded, sequenceIndex: 8 }] }).map(diff => diff.status)).toEqual(['removed', 'added']);
+    const result = diffDecodingEvents({ ...transaction, decodedEvents: [{ ...decoded, sequenceIndex: 8 }] });
+    expect(result.map(diff => diff.status)).toEqual(['modified']);
+    expect(result[0]?.fields).toEqual(['amount', 'balanceEffect', 'sequenceIndex', 'userNotes']);
+  });
+
+  it('should split rather than guess when several candidates share the asset and type', () => {
+    const transaction = createDecodingComparison();
+    const decoded = transaction.decodedEvents[0];
+    assert(decoded);
+    const result = diffDecodingEvents({
+      ...transaction,
+      decodedEvents: [{ ...decoded, sequenceIndex: 8 }, { ...decoded, amount: bigNumberify(3), balanceEffect: bigNumberify(-3), sequenceIndex: 9 }],
+    });
+    expect(result.map(diff => diff.status)).toEqual(['removed', 'added', 'added']);
   });
 
   it('should match unchanged events before pairing by order', () => {

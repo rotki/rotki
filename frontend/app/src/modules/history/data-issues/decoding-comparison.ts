@@ -41,12 +41,36 @@ function changedFields(saved: DecodingComparisonEvent, decoded: DecodingComparis
 }
 
 /**
- * Matches identical events first, then shifted notes edits, then same-asset events at the same order.
+ * The one remaining event that could still be this saved event, if there is exactly one.
+ *
+ * @remarks
+ * Asset and type are what makes two events the same event here, since everything else about them
+ * is what the comparison is meant to show. Several candidates mean the pairing would be a guess,
+ * so none is returned and they stay separate additions and removals.
+ */
+function soleCandidate(
+  saved: DecodingComparisonEvent,
+  unmatched: Set<DecodingComparisonEvent>,
+): DecodingComparisonEvent | undefined {
+  const candidates = [...unmatched].filter(event =>
+    event.asset === saved.asset && event.eventType === saved.eventType);
+  return candidates.length === 1 ? candidates[0] : undefined;
+}
+
+/**
+ * Matches identical events first, then shifted notes edits, then same-asset events at the same
+ * order, and finally the one remaining candidate of the same asset and type.
  *
  * @remarks
  * Customization markers are provenance, not event differences. Unmatched events stay separate
  * additions/removals; array positions are not event identities. An otherwise identical event with
  * a changed sequence index and notes is shown as a modification.
+ *
+ * The last pass exists because a customization commonly edits an amount *and* shifts the index,
+ * which the earlier passes both miss: the pair would then render as a removal plus an addition,
+ * each carrying its own balance effect, and read as a net double change. It pairs only when a
+ * single candidate of that asset and type is left, so an ambiguous set still splits rather than
+ * guessing.
  */
 export function diffDecodingEvents(transaction: TransactionDecodingComparison): DecodingEventDiff[] {
   const unmatched = new Set(transaction.decodedEvents);
@@ -64,6 +88,15 @@ export function diffDecodingEvents(transaction: TransactionDecodingComparison): 
     const decoded = [...unmatched].find(event =>
       changedFields(saved, event).every(field => field === 'sequenceIndex' || field === 'userNotes'))
     ?? [...unmatched].find(event => event.sequenceIndex === saved.sequenceIndex && event.asset === saved.asset);
+    if (decoded) {
+      matches.set(saved, decoded);
+      unmatched.delete(decoded);
+    }
+  }
+  for (const saved of transaction.savedEvents) {
+    if (matches.has(saved))
+      continue;
+    const decoded = soleCandidate(saved, unmatched);
     if (decoded) {
       matches.set(saved, decoded);
       unmatched.delete(decoded);
