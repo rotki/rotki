@@ -343,7 +343,7 @@ describe('taskDock', () => {
       expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.failed::pnl-report title');
     });
 
-    it('should name a finished job on the pill, then hide', async () => {
+    it('should keep naming a finished job on the pill until its row is dismissed, then shrink to a check', async () => {
       vi.useFakeTimers();
       set(activities, refresh(ActivityStatus.RUNNING));
       const wrapper = createWrapper();
@@ -351,13 +351,17 @@ describe('taskDock', () => {
       set(activities, refresh(ActivityStatus.COMPLETE));
       await nextTick();
       await nextTick();
+      await vi.advanceTimersByTimeAsync(60000);
 
-      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('done');
+      const pill = wrapper.find('[data-testid=task-dock-pill]');
+      expect(pill.attributes('data-state')).toBe('done');
       expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.done::history-sync title');
 
-      await vi.advanceTimersByTimeAsync(6000);
+      await pill.trigger('click');
+      await wrapper.find('[data-testid=dismiss-activity]').trigger('click');
 
-      expect(wrapper.find('[data-testid=task-dock-pill]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('dismissed');
+      expect(wrapper.find('[data-testid=task-dock-caption]').classes()).toContain('sr-only');
     });
   });
 });

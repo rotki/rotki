@@ -18,16 +18,19 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { state } = useTaskDock();
+const { dismissedFailure, state } = useTaskDock();
 const { isPrimaryRanked, otherJobs, primary, primarySteps } = useDockPrimary(() => jobs, () => children);
 const caption = useTaskDockCaption(() => jobs, () => children);
 
 const isWorking = computed<boolean>(() => get(state) === DockState.WORKING);
 
-const isFailed = computed<boolean>(() => get(state) === DockState.FAILED);
-
-/** Acknowledged failures keep only the icon on the pill, so they stay reachable without holding the corner. */
+/** Dismissed outcomes keep only the icon on the pill, so they stay reachable without holding the corner. */
 const isIconOnly = computed<boolean>(() => get(state) === DockState.DISMISSED);
+
+/** A failure marks the pill whether it is still reported or already dismissed. */
+const showsFailure = computed<boolean>(() => get(state) === DockState.FAILED || (get(isIconOnly) && get(dismissedFailure)));
+
+const showsSuccess = computed<boolean>(() => get(state) === DockState.DONE || (get(isIconOnly) && !get(dismissedFailure)));
 
 const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(primary)?.percentage ?? -1) >= 0);
 </script>
@@ -44,13 +47,13 @@ const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(
     @click="emit('toggle')"
   >
     <RuiIcon
-      v-if="isFailed || isIconOnly"
+      v-if="showsFailure"
       name="lu-circle-x"
       size="20"
       class="text-rui-error shrink-0"
     />
     <RuiIcon
-      v-else-if="state === DockState.DONE"
+      v-else-if="showsSuccess"
       name="lu-check"
       size="20"
       class="text-rui-success shrink-0"

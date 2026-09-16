@@ -52,7 +52,7 @@ export function useDockPanel(
   children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
 ): UseDockPanelReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { dismissed, failed, finished, state } = useTaskDock();
+  const { dismissed, dismissedFailure, failed, finished, state } = useTaskDock();
   const { rerun } = useTaskController();
 
   const hasFailure = (root: Activity): boolean => someInSubtree(toValue(children), root, isFailed);
@@ -92,7 +92,8 @@ export function useDockPanel(
 
   const total = computed<number>(() => get(leaves).length);
 
-  const reportsFailure = computed<boolean>(() => get(state) === DockState.FAILED || get(state) === DockState.DISMISSED);
+  const reportsFailure = computed<boolean>(() => get(state) === DockState.FAILED
+    || (get(state) === DockState.DISMISSED && get(dismissedFailure)));
 
   const title = computed<string>(() => {
     if (get(state) === DockState.WORKING)
