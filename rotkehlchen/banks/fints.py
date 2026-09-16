@@ -75,7 +75,15 @@ class FinTSProductRegistrationError(FinTSClientError):
 
 
 class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
+    last_response_code: str | None = None
+
     def _process_response(self, dialog: Any, segment: Any, response: Any) -> None:
+        if (
+            isinstance(response.code, str) and
+            len(response.code) == 4 and
+            response.code.isdecimal()
+        ):
+            self.last_response_code = response.code
         if response.code == '9078':
             dialog.open = False
             raise FinTSProductRegistrationError(
@@ -224,6 +232,11 @@ class Fints(BankConnector):
         )
 
     @staticmethod
+    def _response_code_suffix(client: FinTS3PinTanClient) -> str:
+        code = getattr(client, 'last_response_code', None)
+        return f' (response code {code})' if isinstance(code, str) and len(code) == 4 and code.isdecimal() else ''  # noqa: E501
+
+    @staticmethod
     def _challenge(response: NeedTANResponse) -> BankAuthChallenge:
         matrix = response.challenge_matrix
         if response.decoupled:
@@ -358,8 +371,18 @@ class Fints(BankConnector):
             raise BankError(
                 "The bank does not recognize rotki's FinTS product registration yet (code 9078)",
             ) from e
-        except (FinTSClientPINError, FinTSClientTemporaryAuthError, FinTSDialogInitError) as e:
-            raise BankAuthExpired('The FinTS username or PIN was rejected by the bank') from e
+        except FinTSClientPINError as e:
+            raise BankAuthExpired(
+                f'The bank rejected FinTS authentication{self._response_code_suffix(client)}',
+            ) from e
+        except FinTSClientTemporaryAuthError as e:
+            raise BankAuthExpired(
+                f'The FinTS access is temporarily blocked{self._response_code_suffix(client)}',
+            ) from e
+        except FinTSDialogInitError as e:
+            raise BankError(
+                f'The FinTS dialog could not be initialized{self._response_code_suffix(client)}',
+            ) from e
         except (FinTSConnectionError, requests.exceptions.RequestException) as e:
             raise RemoteError(f'Could not connect to the FinTS endpoint: {e!s}') from e
         except FinTSUnsupportedOperation as e:
