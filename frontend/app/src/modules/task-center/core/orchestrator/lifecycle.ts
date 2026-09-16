@@ -2,6 +2,7 @@ import type { ActivitySpec, ReportProgress } from './spec';
 import { err, type Result } from 'plainfp/result';
 import { type ResultAsync, retry, timeout } from 'plainfp/result-async';
 import { hasTag } from 'plainfp/tagged';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { isTerminalStatus } from '../status';
 import { type ActivityId, type ActivityStatus, ActivityStatus as Status } from '../types';
@@ -93,7 +94,9 @@ export function terminalReason(
  * Run a spec's body under its declared timeout and retry policy, as a value.
  *
  * The catch is not defensive dressing: a producer's `ResultAsync` should never reject, and one
- * that does would otherwise leave its activity RUNNING for the life of the process.
+ * that does would otherwise leave its activity RUNNING for the life of the process. What it threw
+ * becomes the failure's reason, since a rejected backend request is the usual cause and its message
+ * is the only account of what went wrong.
  */
 export async function runActivity(
   spec: ActivitySpec,
@@ -110,6 +113,6 @@ export async function runActivity(
     return await (spec.retry ? retry(runOnce, spec.retry) : runOnce());
   }
   catch (error) {
-    return err(TaskFailed({ cause: error, message: 'Unexpected error' }));
+    return err(TaskFailed({ cause: error, message: getErrorMessage(error) }));
   }
 }
