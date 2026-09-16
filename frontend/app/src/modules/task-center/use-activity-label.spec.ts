@@ -57,6 +57,15 @@ describe('useActivityLabel', () => {
     expect(useActivityLabel().labelOf(exchange, true)).toBe('Kraken (main)');
   });
 
+  it('should show the whole subtitle when the only thing it names is what its parent names', () => {
+    const chain = activity({ key: msg.$t('task_center.activity.tx_sync.chain'), params: { chain: 'Ethereum' } });
+    const decode = activity({ key: msg.$t('task_center.activity.tx_decoding.chain'), params: { chain: 'Ethereum' } });
+    const { labelOf } = useActivityLabel();
+
+    expect(labelOf(decode, true, chain)).toBe('task_center.activity.tx_decoding.chain::Ethereum');
+    expect(labelOf(decode, true)).toBe('Ethereum');
+  });
+
   it('should show the whole subtitle when it names nothing to act on', () => {
     const detect = activity({ key: msg.$t('task_center.activity.accounts.detect') });
 

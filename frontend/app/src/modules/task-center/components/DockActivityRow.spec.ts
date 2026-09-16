@@ -60,7 +60,7 @@ describe('dockActivityRow', () => {
     });
 
     it('should show only its own identity when nested', () => {
-      const text = createWrapper({ activity: activity({ subtitle: 'Ethereum' }), nested: true }).text();
+      const text = createWrapper({ activity: activity({ subtitle: 'Ethereum' }), parent: activity({ title: 'History refresh' }) }).text();
 
       expect(text).toContain('Ethereum');
       expect(text).not.toContain('Transaction sync');
@@ -138,7 +138,7 @@ describe('dockActivityRow', () => {
     });
 
     it('should take less room for a settled child with nothing but its name, and the usual room otherwise', () => {
-      const row = (partial: Partial<Activity>): string[] => createWrapper({ activity: activity(partial), nested: true })
+      const row = (partial: Partial<Activity>): string[] => createWrapper({ activity: activity(partial), parent: activity() })
         .find('[data-testid=dock-activity-row]')
         .classes();
 
