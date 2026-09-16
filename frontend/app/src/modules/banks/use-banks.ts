@@ -10,14 +10,17 @@ import {
   type BankSetupError,
   type BankSetupResult,
   type BankSyncPayload,
+  isBankSetupComplete,
 } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
+import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
+import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
@@ -46,9 +49,24 @@ export function useBanks(): UseBanksReturn {
   const store = useBankConnectionsStore();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { banks: bankLocations } = storeToRefs(useLocationStore());
-  const { notifyError } = useNotifications();
+  const { notifyError, notifyInfo } = useNotifications();
+  const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { submitTask } = useNativeTask();
   const { queryAllBankEvents } = useBankEventsRefresh();
+
+  function notifyHistoryLimit(result: BankSetupResult): void {
+    if (result === true || !('success' in result) || result.historyStartTs === null)
+      return;
+    notifyInfo(
+      t('bank_settings.history_limit.title'),
+      t('bank_settings.history_limit.message', {
+        date: displayDateFormatter.format(
+          new Date(result.historyStartTs * 1000),
+          get(dateDisplayFormat),
+        ),
+      }),
+    );
+  }
 
   const refreshSupportedBanks = async (): Promise<void> => {
     try {
@@ -100,6 +118,18 @@ export function useBanks(): UseBanksReturn {
     });
   };
 
+  const resolveSyncTargets = ({ location, name }: BankSyncPayload): BankConnectionIdentity[] =>
+    get(store.connections)
+      .filter(connection => location === undefined || connection.location === location)
+      .filter(connection => name === undefined || connection.name === name)
+      .map(connection => ({ location: connection.location, name: connection.name }));
+
+  const syncBanks = async (payload: BankSyncPayload = {}): Promise<boolean> => {
+    const outcomes = await queryAllBankEvents(resolveSyncTargets(payload));
+    await refreshBankConnections();
+    return outcomes.length > 0 && outcomes.every(outcome => isOk(outcome));
+  };
+
   /** A blank credential in an edit means "keep the stored one", which the backend only accepts as an absent slot. */
   const filledCredentials = (credentials: Record<string, string>): Record<string, string> =>
     Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
@@ -107,11 +137,18 @@ export function useBanks(): UseBanksReturn {
   const setupBank = async (form: BankFormData): ResultAsync<BankSetupResult, BankSetupError> => {
     const { credentials, location, mode, name, newName } = form;
     const outcome = mode === 'edit'
-      ? await api.editBank({ credentials: filledCredentials(credentials), location, name, newName: newName === name ? undefined : newName })
+      ? mapResult(
+          await api.editBank({ credentials: filledCredentials(credentials), location, name, newName: newName === name ? undefined : newName }),
+          (): true => true,
+        )
       : await api.addBank({ credentials, location, name });
-    if (outcome.ok && outcome.value === true) {
+    if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
+      if (mode === 'add') {
+        notifyHistoryLimit(outcome.value);
+        startPromise(syncBanks({ location, name }));
+      }
     }
     return outcome;
   };
@@ -121,9 +158,13 @@ export function useBanks(): UseBanksReturn {
     response?: string,
   ): ResultAsync<BankSetupResult, BankSetupError> => {
     const outcome = await api.answerAuthentication({ ...connection, response });
-    if (outcome.ok && outcome.value === true) {
+    if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
+      if (outcome.value !== true) {
+        notifyHistoryLimit(outcome.value);
+        startPromise(syncBanks(connection));
+      }
     }
     return outcome;
   };
@@ -144,18 +185,6 @@ export function useBanks(): UseBanksReturn {
       );
       return false;
     }
-  };
-
-  const resolveSyncTargets = ({ location, name }: BankSyncPayload): BankConnectionIdentity[] =>
-    get(store.connections)
-      .filter(connection => location === undefined || connection.location === location)
-      .filter(connection => name === undefined || connection.name === name)
-      .map(connection => ({ location: connection.location, name: connection.name }));
-
-  const syncBanks = async (payload: BankSyncPayload = {}): Promise<boolean> => {
-    const outcomes = await queryAllBankEvents(resolveSyncTargets(payload));
-    await refreshBankConnections();
-    return outcomes.length > 0 && outcomes.every(outcome => isOk(outcome));
   };
 
   return {

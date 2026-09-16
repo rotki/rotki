@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BankAuthenticationRequest } from '@/modules/banks/types';
+import { type BankAuthenticationRequest, isBankSetupComplete } from '@/modules/banks/types';
 import { useBanks } from '@/modules/banks/use-banks';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -26,13 +26,20 @@ async function confirm(): Promise<void> {
   set(submitting, true);
   try {
     const result = await answerBankAuthentication(request, get(response) || undefined);
-    if (result === true) {
+    if (result.ok && isBankSetupComplete(result.value)) {
       set(modelValue, undefined);
       set(response, '');
       emit('authenticated');
     }
+    else if (result.ok) {
+      set(modelValue, { ...request, challenge: result.value });
+    }
     else {
-      set(modelValue, { ...request, challenge: result });
+      throw new Error(
+        result.error.type === 'rejected'
+          ? result.error.message
+          : Object.values(result.error.errors).flat().join(', '),
+      );
     }
   }
   catch (error: unknown) {

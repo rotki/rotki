@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { BankAuthChallenge, BankConnectionIdentity, BankFormData, BankSetupError } from '@/modules/banks/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
+import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -74,7 +74,7 @@ async function save(): Promise<void> {
     return;
   }
 
-  if (outcome.value !== true) {
+  if (!isBankSetupComplete(outcome.value)) {
     set(authChallenge, outcome.value);
     return;
   }

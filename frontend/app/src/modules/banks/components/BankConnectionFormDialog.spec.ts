@@ -78,7 +78,7 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should save the entry and emit added with the connection identity', async () => {
-    setupBank.mockResolvedValue(ok(true));
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setupBank).toHaveBeenCalledWith(createForm());
@@ -113,8 +113,15 @@ describe('bankConnectionFormDialog', () => {
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('should keep the dialog open without a message when the backend answers false', async () => {
-    setupBank.mockResolvedValue(ok(false));
+  it('should keep the dialog open without a message when the backend requests authentication', async () => {
+    setupBank.mockResolvedValue(ok({
+      challenge: 'Enter TAN',
+      challengeData: null,
+      challengeHtml: null,
+      challengeMimeType: null,
+      primitive: 'otp input',
+      prompt: 'Enter TAN',
+    }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setMessage).not.toHaveBeenCalled();
@@ -133,15 +140,15 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should display and answer a TAN challenge without restarting setup', async () => {
-    setupBank.mockResolvedValue({
+    setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,
       primitive: 'otp input',
       prompt: 'Enter TAN',
-    });
-    answerBankAuthentication.mockResolvedValue(true);
+    }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -158,14 +165,14 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should discard a pending challenge when the dialog is cancelled', async () => {
-    setupBank.mockResolvedValue({
+    setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,
       primitive: 'otp input',
       prompt: 'Enter TAN',
-    });
+    }));
     wrapper = createWrapper(createForm());
 
     await confirm();

@@ -12,6 +12,7 @@ from fints.exceptions import (
     FinTSClientTemporaryAuthError,
     FinTSDialogInitError,
 )
+from fints.parser import FinTS3Parser
 from fints.utils import mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
@@ -288,6 +289,25 @@ def test_ing_initial_transaction_sync_requests_full_available_history(
 
     params = next(params for request, params in transport.requests if request == 'transactions')
     assert params['end_date'] - params['start_date'] == timedelta(days=90)
+
+
+def test_initial_transaction_sync_uses_bank_parameter_retention(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    transport = FinTSFixtureTransport()
+    connector = create_fints(database, function_scope_messages_aggregator, transport)
+    account = connector.query_accounts()[0]
+    client = SimpleNamespace(bpd=FinTS3Parser().parse_message(
+        b"HIKAZS:11:6:5+1+2+1+60:J:J'",
+    ))
+
+    connector._update_retention_days(client)  # pylint: disable=protected-access
+    connector.query_transactions(account=account, updated_since=None)
+
+    params = next(params for request, params in transport.requests if request == 'transactions')
+    assert connector.history_retention_days() == 60
+    assert params['end_date'] - params['start_date'] == timedelta(days=60)
 
 
 def test_other_banks_process_tan_mechanisms_normally() -> None:

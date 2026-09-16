@@ -43,7 +43,10 @@ def _add_qonto(server: APIServer, name: str = 'Qonto 1') -> None:
         'name': name,
         'credentials': {'api_key': 'login', 'api_secret': 'secret'},
     })
-    assert_simple_ok_response(response)
+    assert assert_proper_sync_response_with_result(response) == {
+        'success': True,
+        'history_start_ts': None,
+    }
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

@@ -19,7 +19,10 @@ from fints.exceptions import (
     FinTSError,
     FinTSUnsupportedOperation,
 )
+from fints.fields import DataElementField, DataElementGroupField
+from fints.formals import DataElementGroup
 from fints.models import SEPAAccount
+from fints.segments.base import ParameterSegment
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.banks.connector import BankConnector
@@ -75,6 +78,25 @@ class FinTSProductRegistrationError(FinTSClientError):
     """The bank rejected rotki's FinTS product registration ID."""
 
 
+class AccountTransactionsParameters(DataElementGroup):
+    """The history capabilities a bank advertises in its HIKAZS parameter segment."""
+    storage_period = DataElementField(type='num', max_length=4, _d='Speicherzeitraum')
+    entry_count_allowed = DataElementField(type='jn', _d='Eingabe Anzahl Einträge erlaubt')
+    all_accounts_allowed = DataElementField(type='jn', _d='Alle Konten erlaubt')
+
+
+class HIKAZS5(ParameterSegment):
+    parameter = DataElementGroupField(type=AccountTransactionsParameters, _d='Parameter Kontoumsätze/Zeitraum')  # noqa: E501
+
+
+class HIKAZS6(HIKAZS5):
+    pass
+
+
+class HIKAZS7(HIKAZS5):
+    pass
+
+
 class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
     last_response_code: str | None = None
 
@@ -125,6 +147,7 @@ class Fints(BankConnector):
         self._pending: dict[str, Any] | None = None
         self._completed: dict[str, Any] = {}
         self._accounts: dict[str, SEPAAccount] = {}
+        self._retention_days: int | None = 90 if self.bank_code == ING_BANK_CODE else None
         self._history_sync_active = ContextVar[bool]('fints_history_sync_active', default=False)
         self._restore_session()
 
@@ -233,7 +256,7 @@ class Fints(BankConnector):
             raise BankError(
                 "rotki's 25-character FinTS product registration ID is not configured",
             )
-        return self.client_factory(
+        client = self.client_factory(
             self.bank_code,
             self.username,
             self.secret.decode(),
@@ -241,6 +264,20 @@ class Fints(BankConnector):
             product_id=self.product_id,
             from_data=self._client_data,
         )
+        self._update_retention_days(client)
+        return client
+
+    def _update_retention_days(self, client: FinTS3PinTanClient) -> None:
+        if (
+                (bpd := getattr(client, 'bpd', None)) is not None and
+                (segment := bpd.find_segment_highest_version('HIKAZS', (5, 6, 7))) is not None and
+                isinstance(period := segment.parameter.storage_period, int) and
+                period > 0
+        ):
+            self._retention_days = period
+
+    def history_retention_days(self) -> int | None:
+        return self._retention_days
 
     @staticmethod
     def _response_code_suffix(client: FinTS3PinTanClient) -> str:
@@ -401,6 +438,7 @@ class Fints(BankConnector):
         except FinTSError as e:
             raise BankError(f'The FinTS operation failed: {e!s}') from e
         self._pending = None
+        self._update_retention_days(client)
         self._save_state(client)
         return result
 
@@ -586,8 +624,8 @@ class Fints(BankConnector):
         end_date = datetime.now(tz=UTC).date()
         if updated_since is not None:
             start_date = datetime.fromtimestamp(updated_since, tz=UTC).date()
-        elif self.bank_code == ING_BANK_CODE:
-            start_date = end_date - timedelta(days=90)
+        elif (retention_days := self.history_retention_days()) is not None:
+            start_date = end_date - timedelta(days=retention_days)
         else:
             start_date = None
         operation = f'transactions:{account.identifier}:{start_date or "all"}'

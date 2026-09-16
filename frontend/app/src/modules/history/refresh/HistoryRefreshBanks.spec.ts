@@ -11,7 +11,7 @@ const main: BankConnectionIdentity = { location: 'qonto', name: 'rotki Solutions
 const side: BankConnectionIdentity = { location: 'qonto', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
-  return { ...identity, displayName: 'Qonto', syncStatus: { lastError: null, lastSyncTs: null, running: false } };
+  return { ...identity, displayName: 'Qonto', syncStatus: { authChallenge: null, lastError: null, lastSyncTs: null, running: false } };
 }
 
 describe('historyRefreshBanks', () => {

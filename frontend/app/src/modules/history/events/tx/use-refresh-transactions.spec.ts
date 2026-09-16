@@ -413,7 +413,7 @@ describe('useRefreshTransactions', () => {
 
     function connectBank(): void {
       useBankConnectionsStore().setConnections([
-        { ...bank, displayName: 'Qonto', syncStatus: { lastError: null, lastSyncTs: null, running: false } },
+        { ...bank, displayName: 'Qonto', syncStatus: { authChallenge: null, lastError: null, lastSyncTs: null, running: false } },
       ]);
     }
 
