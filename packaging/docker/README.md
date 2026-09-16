@@ -30,6 +30,28 @@ docker run -p 8080:80 \
 
 The web UI is then on <http://localhost:8080>.
 
+### Backend logs on stdout
+
+File logging under `/logs` remains the default. To send both Python backend and
+Colibri logs to `docker logs` (or `kubectl logs`), set `LOGTARGET=stdout`:
+
+```bash
+docker run -p 8080:80 \
+  -v ~/.rotki/data:/data \
+  -e LOGLEVEL=info \
+  -e LOGTARGET=stdout \
+  rotki/rotki
+```
+
+In stdout mode, `--logs-dir` is optional and ignored: no writable log directory
+or `/logs` mount is needed, and starling does not change its ownership. Configure
+collection, retention, and rotation in Docker or your orchestrator; backend
+log-file rotation settings do not apply to stdout. Service diagnostics use UTC
+ISO 8601 timestamps with fractional seconds, no ANSI colors, and `[core]`,
+`[colibri]`, or `[starling]` labels, including third-party library messages.
+Starling diagnostics remain on stderr; Docker collects both streams. HTTP access
+logs retain the NCSA combined format described below.
+
 ### Hardened run
 
 None of these can be baked into the image, they are runtime flags:
@@ -85,6 +107,7 @@ Every resolved value is logged at startup with the layer it came from, so
 | Variable | Default | Meaning |
 |---|---|---|
 | `ROTKI_HTTP_PORT` | `80` | Port starling serves on *inside* the container |
+| `LOGTARGET` | `file` | Backend log destination: `file` or `stdout` (JSON key: `logtarget`) |
 | `LOGLEVEL` | `critical` | Backend log level |
 | `LOGFROMOTHERMODULES` | `false` | Include third-party library logs |
 | `MAX_LOGFILES_NUM` | backend default | Rotated log files to keep |

@@ -976,7 +976,7 @@ impl<S: Spawner> Controller<S> {
             self.layout.data_dir = PathBuf::from(dir);
         }
         if let Some(dir) = options.log_directory {
-            self.layout.logs_dir = PathBuf::from(dir);
+            self.layout.logs_dir = Some(PathBuf::from(dir));
         }
         if let Some(flag) = options.log_from_other_modules {
             self.layout.log_from_other_modules = flag;
@@ -1173,7 +1173,7 @@ mod tests {
             core_cwd: None,
             colibri_cwd: None,
             data_dir: PathBuf::from("/data"),
-            logs_dir: PathBuf::from("/logs"),
+            logs_dir: Some(PathBuf::from("/logs")),
             core_port: 4242,
             colibri_port: 4343,
             mcp_port: 4445,

@@ -126,6 +126,38 @@ pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
     Ok(())
 }
 
+struct ServiceTime;
+
+impl tracing_subscriber::fmt::time::FormatTime for ServiceTime {
+    fn format_time(&self, writer: &mut tracing_subscriber::fmt::format::Writer<'_>) -> fmt::Result {
+        tracing_subscriber::fmt::time::SystemTime.format_time(writer)?;
+        write!(writer, " [colibri]")
+    }
+}
+
+fn stdout_format(
+) -> tracing_subscriber::fmt::format::Format<tracing_subscriber::fmt::format::Compact, ServiceTime>
+{
+    tracing_subscriber::fmt::format()
+        .compact()
+        .with_target(false)
+        .with_ansi(false)
+        .with_timer(ServiceTime)
+}
+
+fn log_file(args: &Args) -> Option<FileRotate<AppendCount>> {
+    if args.log_to_stdout {
+        return None;
+    }
+    Some(FileRotate::new(
+        args.logfile_path.clone(),
+        AppendCount::new(args.max_logfiles_num),
+        ContentLimit::BytesSurpassed(10usize.pow(6) * args.max_size_in_mb),
+        Compression::None,
+        None,
+    ))
+}
+
 // Configure logging for the app. We allow logging to a system file
 // or to the stdout. If logs are stored in files they are rotated
 // based on size and there is a max of `max_logfiles_num` files saved.
@@ -134,15 +166,7 @@ pub fn config_logging(args: Args) {
     CURRENT_LOG_LEVEL.store(args.log_level as usize, Ordering::Relaxed);
     let _ = LOG_FILTER_RELOAD_HANDLE.set(reload_handle);
 
-    let log_to_file = FileRotate::new(
-        args.logfile_path.clone(),
-        AppendCount::new(args.max_logfiles_num),
-        ContentLimit::BytesSurpassed(10usize.pow(6) * args.max_size_in_mb),
-        Compression::None,
-        None,
-    );
-
-    if !args.log_to_stdout {
+    if let Some(log_to_file) = log_file(&args) {
         let fmt_layer = tracing_subscriber::fmt::layer()
             .with_target(false)
             .with_ansi(false)
@@ -150,9 +174,7 @@ pub fn config_logging(args: Args) {
             .compact();
         Registry::default().with(filter).with(fmt_layer).init();
     } else {
-        let fmt_layer = tracing_subscriber::fmt::layer()
-            .with_target(false)
-            .compact();
+        let fmt_layer = tracing_subscriber::fmt::layer().event_format(stdout_format());
         Registry::default().with(filter).with(fmt_layer).init();
     }
 }
@@ -161,6 +183,40 @@ pub fn config_logging(args: Args) {
 mod tests {
     use super::{log_filter, RotkiLogLevel};
     use tracing::Level;
+
+    #[test]
+    fn stdout_logging_does_not_create_log_files() {
+        let directory = std::env::temp_dir().join(format!("colibri-stdout-{}", std::process::id()));
+        assert!(!directory.exists());
+        assert!(super::log_file(&crate::args::Args {
+            data_directory: directory.clone(),
+            logfile_path: directory.join("logs/colibri.log"),
+            port: 0,
+            log_to_stdout: true,
+            max_logfiles_num: 5,
+            max_size_in_mb: 50,
+            log_level: RotkiLogLevel::Info,
+            api_cors: vec![],
+        })
+        .is_none());
+        let output = tempfile::NamedTempFile::new().unwrap();
+        let subscriber = tracing_subscriber::fmt()
+            .event_format(super::stdout_format())
+            .with_writer(output.reopen().unwrap())
+            .finish();
+        tracing::subscriber::with_default(subscriber, || {
+            tracing::info!("stdout logging works without a log directory");
+            tracing::info!(target: "reqwest", status = 200, "dependency message");
+        });
+        let output = std::fs::read_to_string(output.path()).unwrap();
+        assert_eq!(output.lines().count(), 2);
+        for line in output.lines() {
+            assert!(line.contains("[colibri]"));
+            assert!(!line.contains('\x1b'));
+            assert!(line.contains("Z [colibri]"));
+        }
+        assert!(!directory.exists());
+    }
 
     #[test]
     fn debug_logging_keeps_dependencies_at_info() {

@@ -51,6 +51,18 @@ mod privsep;
 #[cfg(target_os = "linux")]
 mod reaper;
 
+fn resolve_logs_dir(
+    target: config::LogTarget,
+    directory: Option<PathBuf>,
+) -> Result<Option<PathBuf>, &'static str> {
+    match target {
+        config::LogTarget::Stdout => Ok(None),
+        config::LogTarget::File => directory
+            .map(Some)
+            .ok_or("--logs-dir is required for file logging"),
+    }
+}
+
 /// Default core log level when Electron passes none (matches the core backend).
 const DEFAULT_LOG_LEVEL: &str = "critical";
 
@@ -216,7 +228,7 @@ struct Cli {
     #[arg(long)]
     data_dir: Option<PathBuf>,
 
-    /// Directory for service log files. Required to run the supervisor.
+    /// Directory for service log files. Required for file logging.
     #[arg(long)]
     logs_dir: Option<PathBuf>,
 
@@ -379,12 +391,25 @@ fn http_control_methods() -> Vec<&'static str> {
         .collect()
 }
 
+struct ServiceTime;
+
+impl tracing_subscriber::fmt::time::FormatTime for ServiceTime {
+    fn format_time(
+        &self,
+        writer: &mut tracing_subscriber::fmt::format::Writer<'_>,
+    ) -> std::fmt::Result {
+        tracing_subscriber::fmt::time::SystemTime.format_time(writer)?;
+        write!(writer, " [starling]")
+    }
+}
+
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
     // Logs go to stderr, never stdout: stdout is the private NDJSON control
     // channel and any stray bytes would corrupt it (§S7). Electron pipes this
     // stderr into its own log so supervisor diagnostics are not lost.
     tracing_subscriber::fmt()
+        .with_timer(ServiceTime)
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .with_env_filter(
@@ -413,10 +438,8 @@ async fn main() -> std::process::ExitCode {
     // These are clap-optional so subcommands need not supply them, but the
     // supervisor cannot run without them. clap's `subcommand_negates_reqs` does
     // not negate derive-required args reliably, so enforce them here.
-    let (Some(core_binary), Some(colibri_binary), Some(logs_dir)) =
-        (cli.core_binary, cli.colibri_binary, cli.logs_dir)
-    else {
-        error!("missing required arguments: --core-binary, --colibri-binary, --logs-dir");
+    let (Some(core_binary), Some(colibri_binary)) = (cli.core_binary, cli.colibri_binary) else {
+        error!("missing required arguments: --core-binary, --colibri-binary");
         return std::process::ExitCode::FAILURE;
     };
 
@@ -494,10 +517,19 @@ async fn main() -> std::process::ExitCode {
     } else {
         config::Tunables {
             log_level: DEFAULT_LOG_LEVEL.to_string(),
+            log_target: config::LogTarget::File,
             log_from_other_modules: false,
             max_logfiles_num: None,
             max_size_in_mb_all_logs: None,
             sqlite_instructions: None,
+        }
+    };
+
+    let logs_dir = match resolve_logs_dir(tunables.log_target, cli.logs_dir) {
+        Ok(directory) => directory,
+        Err(err) => {
+            error!(%err);
+            return std::process::ExitCode::FAILURE;
         }
     };
 
@@ -593,7 +625,7 @@ async fn main() -> std::process::ExitCode {
         }
         let plan = privsep::plan(cli.run_as_uid, cli.run_as_gid);
         let run_as = if let privsep::Plan::Separate(run_as) = plan {
-            for dir in [&data_dir, &logs_dir] {
+            for dir in std::iter::once(&data_dir).chain(logs_dir.as_ref()) {
                 if let Err(err) = privsep::adopt(dir, run_as) {
                     error!(%err, path = %dir.display(), "failed to adopt volume ownership");
                     return std::process::ExitCode::FAILURE;
@@ -1241,6 +1273,23 @@ mod tests {
             .trusted_proxies,
             ["10.20.1.2", "10.30.0.0/24", "2001:db8::7"],
         );
+    }
+
+    #[test]
+    fn stdout_needs_no_log_directory() {
+        use config::LogTarget;
+        assert_eq!(resolve_logs_dir(LogTarget::Stdout, None).unwrap(), None);
+        assert_eq!(
+            resolve_logs_dir(LogTarget::Stdout, Some(PathBuf::from("/logs"))).unwrap(),
+            None
+        );
+        assert!(resolve_logs_dir(LogTarget::File, None).is_err());
+        let directory = PathBuf::from("/logs");
+        assert_eq!(
+            resolve_logs_dir(LogTarget::File, Some(directory.clone())).unwrap(),
+            Some(directory)
+        );
+        assert!(Cli::try_parse_from(["starling", "--logtarget", "stdout"]).is_err());
     }
 
     #[test]

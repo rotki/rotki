@@ -138,6 +138,10 @@ The mutable backend tunables (log level, logfile counts, sqlite instructions, â€
 are deliberately **not** CLI args - the renderer sends them in `start`/`restart`,
 so they live in one place instead of being mirrored on both the CLI and the RPC.
 
+Docker backend logging uses `LOGTARGET=file|stdout` (default `file`), overridden
+by `logtarget` in `/config/rotki_config.json`. With `stdout`, `--logs-dir` is
+optional and ignored. See the [Docker configuration](../../packaging/docker/README.md#configuration).
+
 Exit codes: `0` clean, `1` a service crashed, `3` data directory already in use.
 
 ## Tests
