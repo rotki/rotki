@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import type { Activity, ActivityId, ActivitySteps } from '@/modules/task-center/core/types';
 import PendingTask from '@/modules/core/notifications/PendingTask.vue';
-import { subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
+import { someInSubtree, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
+import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 
-const { activity, children, depth = 0, now } = defineProps<{
+const { activity, children, depth = 0, dismissible = false, now } = defineProps<{
   activity: Activity;
   /** The whole tree, passed down rather than looked up per node. */
   children: ReadonlyMap<ActivityId, Activity[]>;
   now: number;
   depth?: number;
+  /** Offers a dismiss control on this row only; the outcome it reports covers the whole subtree. */
+  dismissible?: boolean;
 }>();
 
 const emit = defineEmits<{
   cancel: [activity: Activity];
+  dismiss: [activity: Activity];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -44,6 +47,18 @@ const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(child
  * handle only aborts a backend task id an umbrella never has.
  */
 const cancellable = computed<boolean>(() => activity.cancellable);
+
+/**
+ * A parent completes once its children settle, however they settled, so its own COMPLETE would
+ * show a success check beside a failed chain. A completed parent reports a failure anywhere
+ * beneath it instead; a cancelled one keeps saying so, since the user stopped it.
+ */
+const outcomeStatus = computed<ActivityStatus | undefined>(() => {
+  const failedBeneath = get(isParent)
+    && activity.status === ActivityStatus.COMPLETE
+    && someInSubtree(children, activity, child => child.status === ActivityStatus.FAILED);
+  return failedBeneath ? ActivityStatus.FAILED : undefined;
+});
 </script>
 
 <template>
@@ -76,8 +91,11 @@ const cancellable = computed<boolean>(() => activity.cancellable);
         :percentage="percentage"
         :steps="steps"
         :cancellable="cancellable"
+        :dismissible="dismissible"
+        :outcome-status="outcomeStatus"
         :nested="depth > 0"
         @cancel="emit('cancel', $event)"
+        @dismiss="emit('dismiss', $event)"
       />
     </div>
 

@@ -1,6 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
 import { assembleActivityModel } from '@/modules/task-center/core/model';
 import {
@@ -45,6 +45,13 @@ function activity(kind: ActivityKind, name: string, status: ActivityStatus, pare
 
 const refreshId = makeActivityId(ActivityKind.HISTORY_SYNC, 'refresh');
 
+function refresh(status: ActivityStatus, chain: ActivityStatus = status): Activity[] {
+  return [
+    activity(ActivityKind.HISTORY_SYNC, 'refresh', status),
+    activity(ActivityKind.TX_SYNC, 'ethereum', chain, refreshId),
+  ];
+}
+
 function createWrapper(): VueWrapper {
   return mount(TaskDock);
 }
@@ -70,15 +77,37 @@ describe('taskDock', () => {
 
     const wrapper = createWrapper();
 
+    expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('working');
     expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('history-sync title');
     expect(wrapper.find('[data-testid=task-dock-steps]').text()).toBe('pending_task.steps::1, 2');
     expect(wrapper.find('[data-testid=task-dock-more]').text()).toBe('task_dock.more::1');
   });
 
-  it('should count a single long activity on the pill by its own steps', () => {
-    set(activities, [{ ...activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING), percentage: 33, steps: { current: 1, total: 3 } }]);
+  it('should count a single ranked activity on the pill by its own steps', () => {
+    set(activities, [{ ...activity(ActivityKind.HISTORICAL_BALANCES, 'range', ActivityStatus.RUNNING), percentage: 33, steps: { current: 1, total: 3 } }]);
 
     expect(createWrapper().find('[data-testid=task-dock-steps]').text()).toBe('pending_task.steps::1, 3');
+  });
+
+  it('should name the balance refresh over a price refresh, as the login load runs them', () => {
+    set(activities, [
+      activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING),
+      activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING),
+    ]);
+
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('blockchain-balances title');
+    expect(wrapper.find('[data-testid=task-dock-more]').text()).toBe('task_dock.more::1');
+  });
+
+  it('should describe upkeep generically, without a count, while nothing ranked runs', () => {
+    set(activities, [{ ...activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING), percentage: 33, steps: { current: 1, total: 3 } }]);
+
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.updating');
+    expect(wrapper.find('[data-testid=task-dock-steps]').exists()).toBe(false);
   });
 
   /**
@@ -124,5 +153,111 @@ describe('taskDock', () => {
     await wrapper.find('[data-testid=cancel-activity]').trigger('click');
 
     expect(confirmCancel).toHaveBeenCalledOnce();
+  });
+
+  describe('once the run settles', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function settle(wrapper: VueWrapper, next: Activity[]): Promise<void> {
+      set(activities, next);
+      await nextTick();
+      await nextTick();
+      await wrapper.vm.$nextTick();
+    }
+
+    it('should shrink a dismissed failure to an icon that reopens it, with nothing left to dismiss', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      await wrapper.find('[data-testid=dismiss-activity]').trigger('click');
+
+      const pill = wrapper.find('[data-testid=task-dock-pill]');
+      expect(pill.attributes('data-state')).toBe('dismissed');
+      expect(wrapper.find('[data-testid=task-dock-caption]').classes()).toContain('sr-only');
+      expect(wrapper.find('[data-testid=task-dock-panel]').exists()).toBe(false);
+
+      await pill.trigger('click');
+      const panel = wrapper.find('[data-testid=task-dock-panel]');
+      expect(panel.text()).toContain('history-sync title');
+      expect(panel.find('[data-testid=dismiss-activity]').exists()).toBe(false);
+    });
+
+    it('should list a failed job in the panel until its own row is dismissed', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+
+      const pill = wrapper.find('[data-testid=task-dock-pill]');
+      expect(pill.attributes('data-state')).toBe('failed');
+
+      await pill.trigger('click');
+      const panel = wrapper.find('[data-testid=task-dock-panel]');
+      expect(panel.text()).toContain('history-sync title');
+      expect(panel.findAll('[data-testid=dismiss-activity]')).toHaveLength(1);
+
+      await wrapper.find('[aria-label="pending_task.collapse"]').trigger('click');
+      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('failed');
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      await wrapper.find('[data-testid=dismiss-activity]').trigger('click');
+      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('dismissed');
+    });
+
+    it('should name the one failed leaf rather than blame the whole job', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.failed_leaf::ethereum');
+    });
+
+    it('should count failed leaves against every leaf of the job when several failed', async () => {
+      const runId = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'run');
+      const balances = (run: ActivityStatus, eth: ActivityStatus, sonic: ActivityStatus, gnosis: ActivityStatus): Activity[] => [
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'run', run),
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', eth, runId),
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'sonic', sonic, runId),
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'gnosis', gnosis, runId),
+      ];
+      const { COMPLETE, FAILED, RUNNING } = ActivityStatus;
+      set(activities, balances(RUNNING, RUNNING, RUNNING, RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, balances(COMPLETE, COMPLETE, FAILED, FAILED));
+
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.failed_leaves::2, blockchain-balances title, 3');
+    });
+
+    it('should name the job when the failure sits on the job itself, not on a leaf', async () => {
+      set(activities, [activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.RUNNING)]);
+      const wrapper = createWrapper();
+
+      await settle(wrapper, [activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.FAILED)]);
+
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.failed::pnl-report title');
+    });
+
+    it('should name a finished job on the pill, then hide', async () => {
+      vi.useFakeTimers();
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      set(activities, refresh(ActivityStatus.COMPLETE));
+      await nextTick();
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('done');
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.done::history-sync title');
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(wrapper.find('[data-testid=task-dock-pill]').exists()).toBe(false);
+    });
   });
 });

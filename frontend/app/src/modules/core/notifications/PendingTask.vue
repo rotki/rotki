@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { useScramble } from '@/modules/settings/use-scramble';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type Activity, ActivityStatus, type ActivitySteps, type ActivityText, resolveText } from '@/modules/task-center/core/types';
+import { type Activity, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
+import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 
-const { activity, cancellable, nested = false, now, percentage, steps } = defineProps<{
+const { activity, cancellable, dismissible = false, nested = false, now, outcomeStatus, percentage, steps } = defineProps<{
   activity: Activity;
+  /** The status the outcome chip reports, when it differs from the activity's own; a parent passes its subtree's failure. */
+  outcomeStatus?: ActivityStatus;
   /** Ticks once a second, owned by the panel so one timer serves every row. */
   now: number;
   /** 0-100, or `-1` for indeterminate. Parents pass their subtree's; leaves their own. */
@@ -15,66 +17,24 @@ const { activity, cancellable, nested = false, now, percentage, steps } = define
   steps?: ActivitySteps;
   /** Decided by the caller — a parent is not cancellable until cancel cascades. */
   cancellable: boolean;
+  /** Whether the row offers to dismiss the outcome it reports; the caller decides which outcomes stay until dismissed. */
+  dismissible?: boolean;
   /** A child row: the job above it already names the work, so its own label is enough. */
   nested?: boolean;
 }>();
 
 const emit = defineEmits<{
   cancel: [activity: Activity];
+  dismiss: [activity: Activity];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { scrambleAddress } = useScramble();
+const { labelOf, subtitleOf } = useActivityLabel();
 
-/**
- * Rewrites a param that may hold one address or several.
- *
- * @remarks
- * A batch joins several addresses into one string, so each is scrambled separately and the
- * separators put back verbatim. `scrambleAddress` returns its input unchanged while privacy mode
- * is off, so this needs no condition of its own.
- *
- * @param value - a subtitle param, which is only rewritten when it is a string
- * @returns the value with each address replaced
- */
-function scrambleAddresses(value: unknown): unknown {
-  if (typeof value !== 'string')
-    return value;
+const label = computed<string>(() => labelOf(activity, nested));
 
-  return value
-    .split(/([\s,]+)/)
-    .map(part => (/^[\s,]*$/.test(part) ? part : scrambleAddress(part)))
-    .join('');
-}
-
-/**
- * The subtitle with its address param scrambled, before {@link resolveText} interpolates it —
- * afterwards nothing can tell the address apart from the wording around it. Every producer that
- * carries an address passes it as `address`, so that is the one key rewritten.
- */
-const displaySubtitle = computed<ActivityText | undefined>(() => {
-  const value = activity.subtitle;
-  if (value === undefined || typeof value === 'string' || value.params?.address === undefined)
-    return value;
-
-  return { ...value, params: { ...value.params, address: scrambleAddresses(value.params.address) } };
-});
-
-// Resolved here rather than at submit time, so a language change updates work already in flight.
-const subtitle = computed<string | undefined>(() => resolveText(t, get(displaySubtitle)));
-
-/**
- * What this row is called: its subtitle when nested under a parent, its title otherwise.
- *
- * @remarks
- * Under a parent the subtitle is the identity. Every chain and account in one flow carries the same
- * title, so a child of "History refresh" reads as "Ethereum" rather than "Transaction sync /
- * Ethereum", where only the second half distinguishes it from its siblings.
- */
-const label = computed<string>(() => (nested ? get(subtitle) ?? activity.title : activity.title));
-
-const secondary = computed<string | undefined>(() => (nested ? undefined : get(subtitle)));
+const secondary = computed<string | undefined>(() => (nested ? undefined : subtitleOf(activity)));
 
 const isRunning = computed<boolean>(() => activity.status === ActivityStatus.RUNNING);
 
@@ -100,7 +60,7 @@ const meta = computed<string | undefined>(() => {
   return parts.length > 0 ? parts.join(' · ') : undefined;
 });
 
-const outcome = computed<ActivityOutcome>(() => activityOutcome(activity.status));
+const outcome = computed<ActivityOutcome>(() => activityOutcome(outcomeStatus ?? activity.status));
 
 /**
  * The status word, plus the producer's reason when there is one ("Skipped: disabled in settings").
@@ -216,5 +176,17 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
       </template>
       {{ t('collapsed_pending_tasks.cancel_task') }}
     </RuiTooltip>
+
+    <RuiButton
+      v-if="dismissible"
+      variant="text"
+      color="primary"
+      class="shrink-0"
+      size="sm"
+      data-testid="dismiss-activity"
+      @click="emit('dismiss', activity)"
+    >
+      {{ t('pending_task.dismiss') }}
+    </RuiButton>
   </div>
 </template>

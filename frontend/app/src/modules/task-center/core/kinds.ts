@@ -52,28 +52,31 @@ const KINDS: readonly KindDescriptor[] = [
 ];
 
 /**
- * The kinds long enough to name the dock's pill, in the order the pill picks between them.
+ * The kinds the dock's pill names, in the order it picks between them.
  *
  * @remarks
- * Separate from {@link KINDS} on purpose. That order ranks balance refreshes first because it drives
- * group ordering and the header caption, while the pill names the work a user waits minutes or hours
- * on. A short kind still gets its row in the panel; it only never becomes the pill's primary job.
- * Their progress units differ (leaves for a history refresh, events for historical balances), so the
- * pill shows one job's count rather than adding them up.
+ * Ranked by the data a user opens the app to look at, not by how long the work takes. Upkeep that
+ * only feeds that data (prices, the protocol cache, block decoding, token detection) is left out, so
+ * it adds to "+N more" and never becomes the caption while one of these runs.
+ *
+ * Separate from {@link KINDS}, whose order drives the panel's groups. Progress units differ between
+ * these kinds (leaves for a history refresh, events for historical balances), so the pill shows one
+ * job's count rather than adding them up.
  */
 const GLOBAL_KINDS: readonly ActivityKind[] = [
   Kind.HISTORY_SYNC,
   Kind.REDECODE,
   Kind.REPULLING,
-  Kind.ETH_BLOCK_DECODING,
+  Kind.ALL_BALANCES,
+  Kind.BLOCKCHAIN_BALANCES,
+  Kind.EXCHANGE_BALANCES,
+  Kind.BANK_BALANCES,
   Kind.HISTORICAL_BALANCES,
   Kind.PNL_REPORT,
-  Kind.PROTOCOL_CACHE,
-  Kind.PRICES,
   Kind.CSV_IMPORT,
 ];
 
-/** Where a kind ranks among the long kinds (lower first), or `undefined` for a short kind. */
+/** Where a kind ranks among the kinds the pill names (lower first), or `undefined` for one it never names. */
 export function globalKindRank(kind: ActivityKind): number | undefined {
   const index = GLOBAL_KINDS.indexOf(kind);
   return index === -1 ? undefined : index;

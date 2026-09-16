@@ -14,7 +14,7 @@ import { useCoreScroll } from '@/modules/shell/layout/use-core-scroll';
 import { initGraph } from '@/modules/statistics/init-graph';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -52,8 +52,8 @@ const busyMessage = computed<string>(() =>
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
-/** The task dock shows whenever work is active, and the scroll-to-top button stacks above it. */
-const { isActive: taskDockVisible } = useTaskCenter();
+/** The scroll-to-top button stacks above the task dock whenever the dock is on screen. */
+const { visible: taskDockVisible } = useTaskDock();
 
 const { isXlAndDown } = useBreakpoint();
 const { applySelected, dismissAll } = useSettingsSuggestions();
