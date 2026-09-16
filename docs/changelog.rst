@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Pasting a date into a date and time field, such as the one in the add event form, now works when the text leaves out the seconds or milliseconds, uses ISO format, carries a timezone, or is a unix timestamp. Text that is not a date shows a message instead of doing nothing.
 * :bug:`-` Clicking an amount to copy it now copies the full decimal number, such as ``0.000000001``, instead of scientific notation like ``1e-9`` for very small or very large amounts.
 * :bug:`-` Correctly decode temporary SOL wrapping and unwrapping in Jupiter swaps, avoiding duplicate transfers and reporting the swap and fees in SOL instead of WSOL.
 * :bug:`-` The description of the spam event action no longer claims such events are ignored in accounting. They are counted like any other receive, so marking dust as spam keeps balances adding up.
