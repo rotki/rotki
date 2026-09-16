@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
-import { subtreeLeaves } from '@/modules/task-center/core/tree';
+import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
@@ -49,18 +49,26 @@ export function useTaskDockCaption(
       : t('task_dock.failed_count', { count: roots.length }, roots.length);
   }
 
+  function successes(roots: Activity[]): string {
+    return roots.length === 1
+      ? t('task_dock.done', { title: roots[0].title })
+      : t('task_dock.done_count', { count: roots.length }, roots.length);
+  }
+
+  /** Dismissed jobs are described by their failures when they hold any, the way the icon they shrink to is. */
+  function dismissedCaption(): string {
+    const withFailure = get(dismissed).filter(root => someInSubtree(toValue(children), root, isFailed));
+    return withFailure.length > 0 ? failures(withFailure) : successes(get(dismissed));
+  }
+
   return computed<string>(() => {
     switch (get(state)) {
       case DockState.FAILED:
         return failures(get(failed));
       case DockState.DISMISSED:
-        return failures(get(dismissed));
-      case DockState.DONE: {
-        const roots = get(finished);
-        return roots.length === 1
-          ? t('task_dock.done', { title: roots[0].title })
-          : t('task_dock.done_count', { count: roots.length }, roots.length);
-      }
+        return dismissedCaption();
+      case DockState.DONE:
+        return successes(get(finished));
       case DockState.WORKING:
       case undefined: {
         const job = get(primary);

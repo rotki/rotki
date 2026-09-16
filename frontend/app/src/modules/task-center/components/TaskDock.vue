@@ -10,7 +10,7 @@ import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { acknowledge, holdPeek, modelExpanded, state, visible } = useTaskDock();
+const { acknowledge, holdInteraction, modelExpanded, state, visible } = useTaskDock();
 const { children, jobs } = usePendingJobs();
 const { retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { confirmCancel, confirmCancelAll } = useCancelConfirmation();
@@ -21,7 +21,8 @@ const now = useTimestamp({ interval: 1000 });
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
-const isFailed = computed<boolean>(() => get(state) === DockState.FAILED);
+/** Reported outcomes stay until dismissed, failed or not; once dismissed they are only reopened. */
+const isReporting = computed<boolean>(() => get(state) === DockState.FAILED || get(state) === DockState.DONE);
 
 /**
  * A bulk action earns the footer only when it acts on more than one thing; with a single job or a
@@ -41,10 +42,10 @@ function toggle(): void {
   <div
     v-if="visible"
     class="fixed bottom-4 right-4 z-[7] flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]"
-    @mouseenter="holdPeek(true)"
-    @mouseleave="holdPeek(false)"
-    @focusin="holdPeek(true)"
-    @focusout="holdPeek(false)"
+    @mouseenter="holdInteraction(true)"
+    @mouseleave="holdInteraction(false)"
+    @focusin="holdInteraction(true)"
+    @focusout="holdInteraction(false)"
   >
     <RuiCard
       v-if="showPanel"
@@ -79,7 +80,7 @@ function toggle(): void {
               :activity="root"
               :children="children"
               :now="now"
-              :dismissible="isFailed"
+              :dismissible="isReporting"
               @cancel="confirmCancel($event)"
               @dismiss="acknowledge($event.id)"
               @retry="rerun($event)"

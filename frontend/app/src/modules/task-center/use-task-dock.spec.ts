@@ -95,34 +95,35 @@ describe('useTaskDock', () => {
       vi.useRealTimers();
     });
 
-    it('should peek a summary of a clean run, then hide', async () => {
+    it('should keep reporting a clean run, however long it is left, until it is dismissed', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
-      const { finished, state, visible } = dock();
+      const { acknowledge, dismissedFailure, finished, state } = dock();
 
       await transition(refresh(ActivityStatus.COMPLETE));
+      await vi.advanceTimersByTimeAsync(60000);
 
       expect(get(state)).toBe(DockState.DONE);
       expect(get(finished).map(root => root.id)).toEqual([refreshId]);
 
-      await vi.advanceTimersByTimeAsync(6000);
+      acknowledge(refreshId);
 
-      expect(get(visible)).toBe(false);
+      expect(get(state)).toBe(DockState.DISMISSED);
+      expect(get(dismissedFailure)).toBe(false);
     });
 
-    it('should keep the summary while held, and hide once released', async () => {
+    it('should replace a clean run, dismissed or not, once a new run starts', async () => {
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
       set(activities, refresh(ActivityStatus.RUNNING));
-      const { holdPeek, state } = dock();
+      const { acknowledge, dismissed, finished, state } = dock();
 
       await transition(refresh(ActivityStatus.COMPLETE));
-      holdPeek(true);
-      await vi.advanceTimersByTimeAsync(20000);
+      acknowledge(refreshId);
+      await transition([...refresh(ActivityStatus.COMPLETE), report(ActivityStatus.RUNNING)]);
+      await transition([...refresh(ActivityStatus.COMPLETE), report(ActivityStatus.COMPLETE)]);
 
       expect(get(state)).toBe(DockState.DONE);
-
-      holdPeek(false);
-      await vi.advanceTimersByTimeAsync(6000);
-
-      expect(get(state)).toBeUndefined();
+      expect(get(finished).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT]);
+      expect(get(dismissed)).toEqual([]);
     });
 
     it('should report a failure anywhere in a job\'s subtree until acknowledged, then keep it as dismissed', async () => {
@@ -136,7 +137,6 @@ describe('useTaskDock', () => {
       expect(get(failed).map(root => root.id)).toEqual([refreshId]);
 
       acknowledge(refreshId);
-      await vi.advanceTimersByTimeAsync(60000);
 
       expect(get(state)).toBe(DockState.DISMISSED);
       expect(get(failed)).toEqual([]);
@@ -162,23 +162,24 @@ describe('useTaskDock', () => {
       expect(get(modelExpanded)).toBe(false);
     });
 
-    it('should clear a dismissed failure once the job reruns cleanly', async () => {
+    it('should report a dismissed failure afresh as done once the job reruns cleanly', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
-      const { acknowledge, state } = dock();
+      const { acknowledge, dismissed, state } = dock();
 
       await transition(refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
       acknowledge(refreshId);
       await transition(refresh(ActivityStatus.RUNNING));
       await transition(refresh(ActivityStatus.COMPLETE));
-      await vi.advanceTimersByTimeAsync(6000);
 
-      expect(get(state)).toBeUndefined();
+      expect(get(state)).toBe(DockState.DONE);
+      expect(get(dismissed)).toEqual([]);
     });
 
-    it('should return to the dismissed failure after peeking another job\'s clean run', async () => {
+    it('should keep a dismissed failure through another job\'s clean run, and return to it once that is dismissed', async () => {
       const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      const reportId = makeActivityId(ActivityKind.PNL_REPORT, 'report');
       set(activities, refresh(ActivityStatus.RUNNING));
-      const { acknowledge, state } = dock();
+      const { acknowledge, dismissedFailure, state } = dock();
 
       await transition(refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
       acknowledge(refreshId);
@@ -187,7 +188,56 @@ describe('useTaskDock', () => {
 
       expect(get(state)).toBe(DockState.DONE);
 
-      await vi.advanceTimersByTimeAsync(6000);
+      acknowledge(reportId);
+
+      expect(get(state)).toBe(DockState.DISMISSED);
+      expect(get(dismissedFailure)).toBe(true);
+    });
+
+    async function dismissedFailure(): Promise<ReturnType<typeof useTaskDock>> {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const docked = dock();
+      await transition(refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+      docked.acknowledge(refreshId);
+      await nextTick();
+      return docked;
+    }
+
+    it('should go away once everything is dismissed and it sits collapsed and untouched long enough, and not before', async () => {
+      const { dismissed, state } = await dismissedFailure();
+
+      await vi.advanceTimersByTimeAsync(9000);
+      expect(get(state)).toBe(DockState.DISMISSED);
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(get(state)).toBeUndefined();
+      expect(get(dismissed)).toEqual([]);
+    });
+
+    it('should hold off going away while the dismissed dock is hovered, and wait the full time again once it is left', async () => {
+      const { holdInteraction, state } = await dismissedFailure();
+
+      await vi.advanceTimersByTimeAsync(9000);
+      holdInteraction(true);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(60000);
+      expect(get(state)).toBe(DockState.DISMISSED);
+
+      holdInteraction(false);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(9000);
+      expect(get(state)).toBe(DockState.DISMISSED);
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(get(state)).toBeUndefined();
+    });
+
+    it('should never go away while the dismissed dock\'s panel is open', async () => {
+      const { modelExpanded, state } = await dismissedFailure();
+
+      set(modelExpanded, true);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(60000);
 
       expect(get(state)).toBe(DockState.DISMISSED);
     });
@@ -250,16 +300,28 @@ describe('useTaskDock', () => {
       vi.useRealTimers();
     });
 
-    it('should close once the work has been idle long enough', async () => {
+    it('should close once the work goes idle with nothing to report, as after a cancelled run', async () => {
+      set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING)]);
+      const { modelExpanded } = dock();
+      set(modelExpanded, true);
+
+      set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.CANCELLED)]);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should stay open over a clean run\'s outcome once the work goes idle, however long it is left', async () => {
       set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING)]);
       const { modelExpanded } = dock();
       set(modelExpanded, true);
 
       set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE)]);
       await nextTick();
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(60000);
 
-      expect(get(modelExpanded)).toBe(false);
+      expect(get(modelExpanded)).toBe(true);
     });
 
     it('should stay open while work is still active', async () => {
