@@ -132,6 +132,20 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, skippedId)?.reason).toBe('disabled in settings');
   });
 
+  it('should carry the thrown message onto an activity whose producer throws instead of returning an error', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const id = orchestrator.submit({
+      id: makeActivityId(Kind.OTHER, 'throws'),
+      kind: Kind.OTHER,
+      run: async () => Promise.reject(new Error('Chain eth2 is not supported')),
+      title: 'throws',
+    });
+    await flush();
+
+    expect(byId(orchestrator, id)?.status).toBe(Status.FAILED);
+    expect(byId(orchestrator, id)?.reason).toBe('Chain eth2 is not supported');
+  });
+
   it('should leave a success and a cancellation without a reason', async () => {
     const orchestrator = createTaskOrchestrator();
     const done = controllable('r3');
