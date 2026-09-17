@@ -125,8 +125,20 @@ const showLocationLabel = computed<boolean>(() => {
     />
 
     <div class="ml-3 min-w-0">
-      <div class="font-medium uppercase text-sm truncate">
-        {{ label ?? attrs.label }}
+      <div class="flex items-center gap-1 min-w-0">
+        <div class="font-medium uppercase text-sm truncate">
+          {{ label ?? attrs.label }}
+        </div>
+        <div
+          v-if="eventStates.length > 0 && !hideStateChips"
+          class="flex gap-0.5 shrink-0"
+        >
+          <HistoryEventStateChip
+            v-for="state in eventStates"
+            :key="state"
+            :state="state"
+          />
+        </div>
       </div>
       <HistoryEventAccount
         v-if="showLocationLabel"
@@ -134,6 +146,7 @@ const showLocationLabel = computed<boolean>(() => {
         :location-label="event.locationLabel!"
         class="text-rui-text-secondary"
       />
+      <!-- Indented past the account line's avatar, so both hashes start at the same x. -->
       <HashLink
         v-if="legTxRef"
         :text="legTxRef"
@@ -141,17 +154,8 @@ const showLocationLabel = computed<boolean>(() => {
         :location="event.location"
         :truncate-length="6"
         class="text-xs text-rui-text-secondary"
+        :class="{ 'pl-7': showLocationLabel }"
       />
-      <div
-        v-if="eventStates.length > 0 && !hideStateChips"
-        class="flex flex-wrap gap-0.5"
-      >
-        <HistoryEventStateChip
-          v-for="state in eventStates"
-          :key="state"
-          :state="state"
-        />
-      </div>
     </div>
   </div>
 </template>
