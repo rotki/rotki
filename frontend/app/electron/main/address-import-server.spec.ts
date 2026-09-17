@@ -38,6 +38,7 @@ describe('addressImportServer', () => {
     });
     expect(res.status).toBe(400);
     expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Invalid content type' });
+    expect(server?.isListening()).toBe(true);
   });
 
   it('should invoke the callback with the parsed addresses', async () => {
@@ -62,6 +63,7 @@ describe('addressImportServer', () => {
     });
     expect(res.status).toBe(400);
     expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Malformed JSON' });
+    expect(server?.isListening()).toBe(true);
   });
 
   it('should reject an import payload without an addresses array', async () => {
@@ -75,6 +77,7 @@ describe('addressImportServer', () => {
     expect(res.status).toBe(400);
     expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Invalid request schema' });
     expect(cb).not.toHaveBeenCalled();
+    expect(server?.isListening()).toBe(true);
   });
 
   it('should return 404 for a non-whitelisted path', async () => {
