@@ -12,7 +12,8 @@ import { McpPrivacyModeEnum } from '@/modules/settings/types/mcp';
 import { PriceOracleEnum } from '@/modules/settings/types/price-oracle';
 
 export const OtherSettings = z.object({
-  frontendSettings: z.string().transform(parseFrontendSettings),
+  // Absent from the PUT /settings response, since the blob has its own resource
+  frontendSettings: z.record(z.string(), z.unknown()).transform(parseFrontendSettings).optional(),
   havePremium: z.boolean(),
   krakenAccountType: KrakenAccountType.optional(),
   premiumShouldSync: z.boolean(),
@@ -133,7 +134,6 @@ const Settings = z.object({
 
 const SettingsUpdate = z.object({
   ...Settings.shape,
-  frontendSettings: z.string(),
   mainCurrency: z.string(),
 });
 

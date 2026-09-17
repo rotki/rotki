@@ -157,14 +157,8 @@ export function useSavedViews(
    * Both settings are written in one call: the conversion has to be atomic, or a failure between
    * the two would either lose the filters or convert them twice.
    *
-   * Called when the views UI is opened, deliberately NOT when the composable mounts. Every
-   * frontend setting is stored as one blob, and a write sends `{...store, ...patch}`, so two
-   * writers whose requests overlap lose the earlier one's keys. Logging in fires a burst of such
-   * writes (the notification schedule, the last password confirmation), and a conversion running
-   * on mount lands in the middle of it: verified in the app, where the converted views appeared in
-   * the UI while the backend kept the legacy key, because a later write built from a snapshot
-   * taken before the conversion's response had landed. Opening a menu is a deliberate act, seconds
-   * away from that burst.
+   * Called when the views UI is opened, not on mount, so the one-shot conversion stays out of the
+   * burst of settings writes a login fires.
    *
    * Clearing the legacy key is what stops a second run, and that only lands with the write, so a
    * second trigger arriving while the first is still in flight is held off by `converting`.

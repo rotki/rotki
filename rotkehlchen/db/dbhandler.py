@@ -798,6 +798,44 @@ class DBHandler:
             )
         CachedSettings().update_entries(settings)
 
+    def patch_frontend_settings(
+            self,
+            write_cursor: DBCursor,
+            patch: dict[str, Any],
+            remove: list[str],
+    ) -> None:
+        """Merge patch into the frontend_settings blob, leaving keys neither argument names alone.
+
+        json_set replaces a top-level key wholesale; json_patch would merge record valued keys
+        (explorers, the themes) recursively. Key names are validated by the API schema, so the
+        paths need no quoting.
+        """
+        # Ensure the row holds a JSON object: a missing row, the '' default or invalid JSON would
+        # make json_set return NULL, and json_set/json_remove leave a non-object unchanged.
+        write_cursor.execute(
+            "INSERT INTO settings(name, value) VALUES('frontend_settings', '{}') "
+            "ON CONFLICT(name) DO UPDATE SET value='{}' WHERE value IS NULL "
+            "OR json_valid(value)=0 OR json_type(value)<>'object'",
+        )
+        if len(patch) > 0:
+            # json(?) keeps an object value an object instead of storing it as a string
+            write_cursor.execute(
+                'UPDATE settings SET value = json_set(value, '
+                f"{', '.join(['?, json(?)'] * len(patch))}) WHERE name='frontend_settings'",
+                [x for key, value in patch.items() for x in (f'$.{key}', json.dumps(value))],
+            )
+
+        if len(remove) > 0:
+            write_cursor.execute(
+                f"UPDATE settings SET value = json_remove(value, {', '.join(['?'] * len(remove))}) "  # noqa: E501
+                "WHERE name='frontend_settings'",
+                [f'$.{key}' for key in remove],
+            )
+
+        CachedSettings().update_entry('frontend_settings', write_cursor.execute(
+            "SELECT value FROM settings WHERE name='frontend_settings'",
+        ).fetchone()[0])
+
     def get_cache_for_api(self, cursor: DBCursor) -> dict[str, int]:
         """Returns a few key-value pairs that are used in the API
         from the `key_value_cache` table of the DB. Defaults to `Timestamp(0)` if not found"""

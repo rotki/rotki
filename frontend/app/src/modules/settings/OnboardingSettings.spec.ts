@@ -262,7 +262,9 @@ describe('onboarding-settings', () => {
         updateColibriConfiguration: updateColibriConfigurationMock,
         setSettings: vi.fn(),
         getSettings: vi.fn(),
+        getFrontendSettings: vi.fn(),
         getRawSettings: vi.fn(),
+        patchFrontendSettings: vi.fn(),
       });
 
       wrapper = await createWrapper();

@@ -1,4 +1,5 @@
 import dataclasses
+import json
 from dataclasses import fields
 from http import HTTPStatus
 from operator import itemgetter
@@ -150,6 +151,9 @@ def test_querying_settings(rotkehlchen_api_server: APIServer, username: str) -> 
     assert json_data['message'] == ''
     assert result['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in dataclasses.fields(DBSettings):
+        if setting.name == 'frontend_settings':
+            assert setting.name not in result
+            continue
         assert setting.name in result
 
     # Logout of the active user
@@ -205,8 +209,6 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = raw_value + 1
         elif setting == 'active_modules':
             value = ['makerdao_vaults']
-        elif setting == 'frontend_settings':
-            value = ''
         elif setting == 'ksm_rpc_endpoint':
             value = 'http://kusama.node.com:9933'
         elif setting == 'dot_rpc_endpoint':
@@ -922,3 +924,73 @@ def test_suppress_missing_key_msg_services_not_overwritten(
     assert result['ui_floating_precision'] == 4
     assert result['suppress_missing_key_msg_services'] == ['etherscan']
     assert CachedSettings().get_settings().suppress_missing_key_msg_services == [ExternalService.ETHERSCAN]  # noqa: E501
+
+
+def test_patch_frontend_settings(rotkehlchen_api_server: APIServer) -> None:
+    """Test the partial update of the frontend settings blob"""
+    def read_frontend() -> dict[str, Any]:
+        return assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+        ))
+
+    def patch_frontend(**kwargs: Any) -> dict[str, Any]:
+        """Patch, then read the persisted blob back"""
+        assert assert_proper_sync_response_with_result(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+            json=kwargs,
+        )) is True
+        return read_frontend()
+
+    # the blob starts out as the empty string, or with no row at all
+    assert patch_frontend(patch={'items_per_page': 10}) == {'items_per_page': 10}
+    assert patch_frontend() == {'items_per_page': 10}  # sending neither member is a no-op
+
+    # a record valued key is replaced wholesale, not merged into
+    assert patch_frontend(patch={'explorers': {
+        'eth': {'address': 'https://etherscan.io/address/', 'transaction': 'https://etherscan.io/tx/'},
+    }})['explorers']['eth']['address'] == 'https://etherscan.io/address/'
+    assert patch_frontend(patch={'explorers': {'eth': {'transaction': 'https://myexplorer.eth/'}}})['explorers'] == {  # noqa: E501
+        'eth': {'transaction': 'https://myexplorer.eth/'},
+    }
+
+    assert 'items_per_page' not in patch_frontend(remove=['items_per_page'])
+    assert patch_frontend(remove=['never_was_there']) == patch_frontend()  # removing an absent key
+
+    # a key the writing client does not know survives a write of another key
+    assert patch_frontend(patch={'a_key_from_the_future': {'nested': [1, 2]}, 'scramble_data': True})['a_key_from_the_future'] == {'nested': [1, 2]}  # noqa: E501
+    merged = patch_frontend(patch={'scramble_data': False})
+    assert merged['a_key_from_the_future'] == {'nested': [1, 2]}
+    assert merged['scramble_data'] is False
+
+    # GET reads from the DB, so check the cache separately
+    assert json.loads(CachedSettings().get_entry('frontend_settings')) == merged  # type: ignore[arg-type]  # it's a str
+
+    # a blob that is not a JSON object is reset by the patch. No endpoint writes one, so use the DB
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    for blob in ('null', '[1, 2]', 'not json at all', ''):
+        with db.user_write() as write_cursor:
+            write_cursor.execute(
+                "INSERT INTO settings(name, value) VALUES('frontend_settings', ?) "
+                'ON CONFLICT(name) DO UPDATE SET value=?', (blob, blob),
+            )
+
+        assert read_frontend() == {}
+        assert patch_frontend(patch={'items_per_page': 25}) == {'items_per_page': 25}
+
+
+def test_patch_frontend_settings_key_validation(rotkehlchen_api_server: APIServer) -> None:
+    """Keys with characters that would change a json path are rejected"""
+    for payload in (
+        {'patch': {'has.a.dot': 1}},
+        {'patch': {'has"a"quote': 1}},
+        {'patch': {'has[0]': 1}},
+        {'patch': {'': 1}},
+        {'remove': ['has.a.dot']},
+    ):
+        assert_error_response(
+            response=requests.patch(
+                api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+                json=payload,
+            ),
+            status_code=HTTPStatus.BAD_REQUEST,
+        )

@@ -241,6 +241,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+# Frontend settings keys become json paths, where '.', '[' or a quote would change what is selected
+FRONTEND_SETTINGS_KEY_RE: Final = r'^[A-Za-z_][A-Za-z0-9_]*$'
 
 
 def validate_predicate(
@@ -1748,7 +1750,7 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     date_display_format = EmptyAsNoneStringField(load_default=None)
     active_modules = fields.List(NonEmptyStringField(), load_default=None)
-    frontend_settings = EmptyAsNoneStringField(load_default=None)
+    # frontend_settings is written only through PATCH /settings/frontend
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1924,7 +1926,6 @@ class ModifiableSettingsSchema(Schema):
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
             active_modules=data['active_modules'],
-            frontend_settings=data['frontend_settings'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],
@@ -1969,6 +1970,19 @@ class ModifiableSettingsSchema(Schema):
 
 class EditSettingsSchema(Schema):
     settings = fields.Nested(ModifiableSettingsSchema, required=True)
+
+
+class PatchFrontendSettingsSchema(Schema):
+    """Partial update of the frontend_settings blob"""
+    patch = fields.Dict(
+        keys=fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        values=fields.Raw(allow_none=True),
+        load_default=dict,
+    )
+    remove = fields.List(
+        fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        load_default=list,
+    )
 
 
 class BaseUserSchema(Schema):

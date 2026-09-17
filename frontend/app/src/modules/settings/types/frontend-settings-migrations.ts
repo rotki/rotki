@@ -1,76 +1,135 @@
-import { isEmpty } from 'es-toolkit/compat';
-import { objectKeys } from '@/modules/core/common/data/array';
-import { logger } from '@/modules/core/common/logging/logging';
-import {
-  BalanceValueThreshold,
-  BalanceValueThresholdV0,
-  deserializeFrontendSettings,
-  FRONTEND_SETTINGS_SCHEMA_VERSION,
-} from '@/modules/settings/types/frontend-settings';
+import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
+
+/** The schema version the current code writes: the highest `to` in {@link MIGRATIONS}. */
+export const FRONTEND_SETTINGS_SCHEMA_VERSION = 2;
+
+/** A stored settings blob, in whatever shape the version that wrote it used. */
+export type SettingsBlob = Record<string, unknown>;
 
 /**
- * A settings blob as it came out of storage. Which fields it carries depends on the schema version
- * that wrote it, so it is deliberately not typed as the current FrontendSettings: that is what the
- * migrations are here to produce, and claiming it up front is what forced this file to override the
- * compiler at every field it touches.
+ * The keys to set and the keys to delete, in the shape the PATCH endpoint takes.
+ *
+ * @remarks
+ * A migration emits a patch rather than a rewritten blob, so keys this version does not declare
+ * survive.
  */
-type SettingsBlob = Record<string, unknown> & { schemaVersion?: unknown };
+export interface SettingsMigrationPatch {
+  patch: SettingsBlob;
+  remove: string[];
+}
 
-export function migrateSettingsIfNeeded(settings?: string): string | undefined {
-  if (settings === undefined || settings === '') {
+interface SettingsMigration {
+  /** The schema version reached once this migration has been applied. */
+  readonly to: number;
+  /**
+   * Whether the blob still holds the old shape.
+   *
+   * @remarks
+   * Keyed off the data, not `schemaVersion`: a blob built from patches may declare no version.
+   */
+  applies: (blob: SettingsBlob) => boolean;
+  migrate: (blob: SettingsBlob) => SettingsMigrationPatch;
+}
+
+const LEGACY_THRESHOLD_KEY = 'balanceUsdValueThreshold';
+const THRESHOLD_KEY = 'balanceValueThreshold';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Drops the entries a v0 threshold spelled out as `'0'`, which the sparse form leaves absent.
+ *
+ * @param value - the threshold as the old key held it, of unknown shape
+ */
+function toSparseThreshold(value: unknown): Record<string, string> {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '0'),
+  );
+}
+
+/**
+ * Every migration, oldest first.
+ *
+ * @remarks
+ * The v0 sparse conversion and the v1 rename are one entry because both trigger on the same key.
+ */
+const MIGRATIONS: SettingsMigration[] = [{
+  applies: (blob: SettingsBlob): boolean => LEGACY_THRESHOLD_KEY in blob,
+  migrate: (blob: SettingsBlob): SettingsMigrationPatch => ({
+    patch: { [THRESHOLD_KEY]: toSparseThreshold(blob[LEGACY_THRESHOLD_KEY]) },
+    remove: [LEGACY_THRESHOLD_KEY],
+  }),
+  to: 2,
+}];
+
+/**
+ * Collects what has to be written to bring a stored blob up to the current shape.
+ *
+ * @remarks
+ * The schema version is written alongside any migration, for a future one that cannot key off shape.
+ *
+ * @param blob - the stored settings, camelCased, as `GET /settings/frontend` served them
+ * @returns the keys to set and delete, or `undefined` when the blob is already current
+ */
+export function collectMigrationPatch(blob: SettingsBlob): SettingsMigrationPatch | undefined {
+  const applicable = MIGRATIONS.filter(migration => migration.applies(blob));
+  if (applicable.length === 0) {
     return undefined;
   }
 
-  const deserializedSettings = deserializeFrontendSettings(settings);
-  if (isEmpty(deserializedSettings)) {
-    return undefined;
-  }
-
-  const migratedSettings = applyMigrations(deserializedSettings);
-  return migratedSettings === undefined ? settings : JSON.stringify(migratedSettings);
+  return applicable.reduce<SettingsMigrationPatch>((collected, migration) => {
+    const { patch, remove } = migration.migrate({ ...blob, ...collected.patch });
+    return {
+      patch: { ...collected.patch, ...patch, schemaVersion: migration.to },
+      remove: [...collected.remove, ...remove],
+    };
+  }, { patch: {}, remove: [] });
 }
 
-export function applyMigrations(settings: SettingsBlob): SettingsBlob | undefined {
-  const schemaVersion = settings.schemaVersion;
-  if (schemaVersion === FRONTEND_SETTINGS_SCHEMA_VERSION) {
-    return undefined;
+/**
+ * Completes a stored blob for a session: fills a missing random default and collects what to write.
+ *
+ * @remarks
+ * The scramble multiplier defaults to a random value, so one the blob lacks is generated here and
+ * written back, keeping scrambled values stable across sessions.
+ *
+ * @param stored - the settings as `GET /settings/frontend` served them
+ * @returns the blob to parse, and the keys to persist, or no `write` when nothing is missing
+ */
+export function completeStoredSettings(stored: SettingsBlob): { settings: SettingsBlob; write?: SettingsMigrationPatch } {
+  const missingDefaults = 'scrambleMultiplier' in stored ? {} : { scrambleMultiplier: generateRandomScrambleMultiplier() };
+  const settings = { ...stored, ...missingDefaults };
+  const migration = collectMigrationPatch(settings);
+  const patch = { ...migration?.patch, ...missingDefaults };
+  const remove = migration?.remove ?? [];
+  if (Object.keys(patch).length === 0 && remove.length === 0) {
+    return { settings };
   }
-  logger.info('Applying frontend settings migrations');
-
-  let migratedSettings = settings;
-
-  // V0 → V1: Convert balanceUsdValueThreshold format (with all fields) to sparse format
-  if (schemaVersion === undefined) {
-    migratedSettings = applyV1Migrations(migratedSettings);
-  }
-
-  // V1 → V2: Rename balanceUsdValueThreshold to balanceValueThreshold
-  if (migratedSettings.schemaVersion === 1) {
-    migratedSettings = applyV2Migrations(migratedSettings);
-  }
-
-  return migratedSettings;
+  return { settings, write: { patch, remove } };
 }
 
-function applyV1Migrations(settings: SettingsBlob): SettingsBlob {
-  logger.info('migrating from v0 to v1');
-  const v0Threshold = BalanceValueThresholdV0.parse(settings.balanceUsdValueThreshold);
-  const v1Threshold = BalanceValueThreshold.parse({});
-  for (const key of objectKeys(v0Threshold ?? {})) {
-    const value = v0Threshold?.[key];
-    if (value !== undefined && value !== '0') {
-      v1Threshold[key] = value;
-    }
+/**
+ * Applies the migrations in memory, so a blob parses correctly whether or not the migration has been
+ * written back.
+ *
+ * @param blob - the stored settings, camelCased
+ * @returns the blob in the current shape, or the same object when nothing applied
+ */
+export function normalizeLegacyShapes(blob: SettingsBlob): SettingsBlob {
+  const migration = collectMigrationPatch(blob);
+  if (migration === undefined) {
+    return blob;
   }
-  settings.schemaVersion = 1;
-  settings.balanceUsdValueThreshold = v1Threshold;
-  return settings;
-}
 
-function applyV2Migrations(settings: SettingsBlob): SettingsBlob {
-  logger.info('migrating from v1 to v2');
-  settings.balanceValueThreshold = BalanceValueThreshold.parse(settings.balanceUsdValueThreshold ?? {});
-  delete settings.balanceUsdValueThreshold;
-  settings.schemaVersion = FRONTEND_SETTINGS_SCHEMA_VERSION;
-  return settings;
+  const normalized = { ...blob, ...migration.patch };
+  for (const key of migration.remove) {
+    delete normalized[key];
+  }
+  return normalized;
 }

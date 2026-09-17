@@ -13,6 +13,28 @@ No Available Indexers Websocket Message
 * **Changed Message**: ``no_available_indexers``
 * **Change**: The ``data`` object gained an optional ``reason`` key. When it is ``etherscan_paid_key_required`` the chain was refused by etherscan for the configured key and a paid etherscan API key is needed to query it.
 
+Frontend Settings Moved To Their Own Resource
+---------------------------------------------
+
+``frontend_settings`` is now read and written on its own resource, as JSON, and only ever merged, so a client no longer deletes keys it does not know.
+
+* **New Endpoint**: ``GET /api/(version)/settings/frontend``
+
+  - Returns the frontend settings as a JSON object. A stored blob that is absent, empty, or not a JSON object reads as ``{}``.
+
+* **New Endpoint**: ``PATCH /api/(version)/settings/frontend``
+
+  - Takes ``patch`` (keys to set) and ``remove`` (keys to delete) and applies them server-side, leaving other keys untouched. A key is replaced wholesale, not merged recursively. Key names must match ``[A-Za-z_][A-Za-z0-9_]*``.
+  - Answers ``true``. Read the result back with the GET above.
+
+* **Changed Endpoint**: ``GET /api/(version)/settings``
+
+  - ``frontend_settings`` is **no longer part of the response**. The same applies to the settings carried by ``PUT /settings``, by login and by account creation. Callers must read it from ``GET /settings/frontend``.
+
+* **Changed Endpoint**: ``PUT /api/(version)/settings``
+
+  - ``frontend_settings`` is **no longer accepted** and is rejected as an unknown field. ``PATCH /settings/frontend`` is the only way to write it.
+
 Asset Search NFT Handling
 -------------------------
 

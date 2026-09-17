@@ -1,7 +1,6 @@
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
-import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { PrivacyMode } from '@/modules/session/types';
@@ -115,7 +114,7 @@ describe('user-types', () => {
     const raw = {
       premiumShouldSync: true,
       havePremium: true,
-      frontendSettings: JSON.stringify(snakeCaseTransformer(frontendSettings)),
+      frontendSettings,
     };
 
     expect(OtherSettings.parse(raw)).toEqual({

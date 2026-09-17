@@ -1,7 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { assert } from '@rotki/common';
-import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
@@ -14,12 +13,8 @@ export interface UseFrontendSettingsWriterReturn {
 /**
  * Serialises every frontend-settings write, app-wide.
  *
- * The wire format is the whole settings blob, rebuilt from the repo, and the repo is only updated
- * once the request resolves. Two writes in flight at the same time would therefore both build the
- * blob from the pre-update repo, each carrying the other's stale value, and the later response
- * would win. That needs no unusual timing: any two settings changed within one round trip hit it,
- * including from different components, and it leaves the merged local repo looking correct while
- * the backend holds the loser.
+ * The repo is only updated once a request resolves, so two writes to the same key resolving out of
+ * order would leave it holding the value the backend did not keep.
  *
  * Module scope on purpose - the callers are separate composable instances and the queue has to be
  * shared by all of them.
@@ -43,20 +38,15 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
    * Persists a patch over the frontend settings blob.
    *
    * @remarks
-   * The repo is read inside the queued turn, so a write builds on whatever the previous one
-   * persisted rather than on a snapshot taken before it ran. Only the patch goes back to the repo:
-   * it runs the registry's post-persist effects and mirror syncs for the keys that actually changed.
+   * Sends only the changed keys, so keys a newer rotki wrote survive. The repo is merged from the
+   * payload rather than re-read, so post-persist effects run only for the changed keys.
    *
-   * @param payload - the keys to change, which are merged over the whole stored blob
+   * @param payload - the keys to change
    * @returns whether the write reached the backend, carrying its message when it did not
    */
   async function write(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     try {
-      const updatedSettings = { ...repo.frontend, ...payload };
-      await api.setSettings({
-        frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
-      });
-
+      await api.patchFrontendSettings(payload);
       repo.updateFrontend(payload);
 
       return {

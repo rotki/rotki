@@ -6,10 +6,11 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { useSessionSettings } from '@/modules/session/use-session-settings';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
-import { migrateSettingsIfNeeded } from '@/modules/settings/types/frontend-settings-migrations';
+import { completeStoredSettings } from '@/modules/settings/types/frontend-settings-migrations';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 import { SESSION_LANE } from '@/modules/task-center/core/orchestrator/spec';
@@ -51,7 +52,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const { submitTask } = useNativeTask();
   const { initialize } = useSessionSettings();
   const { authenticate: sessionAuthenticate, checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
-  const { getRawSettings, setSettings } = useSettingsApi();
+  const { getFrontendSettings, getRawSettings, patchFrontendSettings } = useSettingsApi();
   const { getExchanges } = useExchangeApi();
   const { resolveStoredCredentials } = useStoredCredentials();
   const assetSteps = useAssetUpdateSteps();
@@ -59,13 +60,25 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   /** The account `unlock` produced and `loadSession` consumes. One flow runs at a time. */
   let loaded: LoadedAccount | undefined;
 
-  async function migrateAndSaveSettings(frontendSettings?: string): Promise<string | undefined> {
-    const migrated = migrateSettingsIfNeeded(frontendSettings);
-    if (migrated) {
-      await setSettings({ frontendSettings: migrated });
-      return migrated;
+  /**
+   * Reads the frontend settings and persists what {@link completeStoredSettings} says is missing.
+   *
+   * @remarks
+   * Only logs on a failed write: parsing migrates in memory, so a login must not hinge on it.
+   */
+  async function loadFrontendSettings(): Promise<Record<string, unknown>> {
+    const { settings, write } = completeStoredSettings(await getFrontendSettings());
+    if (write === undefined) {
+      return settings;
     }
-    return frontendSettings;
+
+    try {
+      await patchFrontendSettings(write.patch, write.remove);
+    }
+    catch (error: unknown) {
+      logger.error('failed to write back the frontend settings', error);
+    }
+    return settings;
   }
 
   /** Maps a thrown failure to a typed error, and onto the store refs the conflict dialogs read. */
@@ -100,9 +113,17 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   }
 
   async function resumeSession(name: string): Promise<Result<LoadedAccount, UnlockError>> {
-    const [rawSettings, exchanges] = await Promise.all([getRawSettings(), getExchanges()]);
-    rawSettings.frontendSettings = await migrateAndSaveSettings(rawSettings.frontendSettings);
-    return ok({ exchanges, fetchData: true, settings: UserSettingsModel.parse(rawSettings), username: name });
+    const [rawSettings, frontendSettings, exchanges] = await Promise.all([
+      getRawSettings(),
+      loadFrontendSettings(),
+      getExchanges(),
+    ]);
+    return ok({
+      exchanges,
+      fetchData: true,
+      settings: UserSettingsModel.parse({ ...rawSettings, frontendSettings }),
+      username: name,
+    });
   }
 
   /**
@@ -133,10 +154,22 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     }
 
     await colibriLogin({ password: credentials.password, username: credentials.username });
-    const result = outcome.value;
-    result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
-    const account = UserAccount.parse(result);
+    const account = await parseAccount(outcome.value);
     return ok({ exchanges: account.exchanges, fetchData: true, settings: account.settings, username: name });
+  }
+
+  /**
+   * Parses a login or account-creation response, splicing in the frontend settings it lacks.
+   *
+   * @remarks
+   * Without them `initialize` skips the whole frontend hydration.
+   */
+  async function parseAccount(response: { exchanges: Exchange[]; settings: object }): Promise<UserAccount> {
+    const frontendSettings = await loadFrontendSettings();
+    return UserAccount.parse({
+      ...response,
+      settings: { ...response.settings, frontendSettings },
+    });
   }
 
   /**
@@ -263,7 +296,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
       if (!outcome.ok)
         return err({ kind: UnlockErrorKind.unknown, message: outcome.error.message });
 
-      const { exchanges, settings } = UserAccount.parse(outcome.value);
+      const { exchanges, settings } = await parseAccount(outcome.value);
       await colibriLogin({ password: payload.credentials.password, username: payload.credentials.username });
       const syncDatabase = payload.premiumSetup?.syncDatabase ?? false;
       loaded = {
