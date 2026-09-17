@@ -146,7 +146,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-        @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier })"
+        @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier, type: 'asset-movement' })"
       />
     </div>
   </div>
@@ -221,7 +221,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       @edit-event="emit('edit-event', $event)"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-      @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier })"
+      @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier, type: 'asset-movement' })"
     />
   </div>
 </template>

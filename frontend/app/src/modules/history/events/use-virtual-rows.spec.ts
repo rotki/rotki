@@ -268,8 +268,8 @@ describe('use-virtual-rows', () => {
 
     it('should flag the collapse row of a matched bridge subgroup as bridge', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      const depositLeg = createMockEvent({ eventSubtype: 'bridge', eventType: 'deposit', groupIdentifier: 'group1', identifier: 2, location: 'arbitrum_one' });
-      const withdrawalLeg = createMockEvent({ eventSubtype: 'bridge', eventType: 'withdrawal', groupIdentifier: 'group1', identifier: 3 });
+      const depositLeg = createMockEvent({ actualGroupIdentifier: 'arbitrum-tx', eventSubtype: 'bridge', eventType: 'deposit', groupIdentifier: 'group1', identifier: 2, location: 'arbitrum_one' });
+      const withdrawalLeg = createMockEvent({ actualGroupIdentifier: 'ethereum-tx', eventSubtype: 'bridge', eventType: 'withdrawal', groupIdentifier: 'group1', identifier: 3 });
 
       const groups = computed<HistoryEventEntry[]>(() => [group]);
       const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
@@ -287,6 +287,7 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', true);
+      expect(collapseRows[0]).toHaveProperty('unlinkIdentifier', 2);
 
       // both legs are marked as linked sub-events so per-leg chain/tx context is shown
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -296,8 +297,9 @@ describe('use-virtual-rows', () => {
 
     it('should not flag the collapse row of a plain swap subgroup as bridge', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      const swapSpend = createMockEvent({ eventSubtype: 'spend', groupIdentifier: 'group1', identifier: 2 });
-      const swapReceive = createMockEvent({ eventSubtype: 'receive', groupIdentifier: 'group1', identifier: 3 });
+      // A swap sharing a joined movement group carries the joined id too, and still cannot be unlinked
+      const swapSpend = createMockEvent({ actualGroupIdentifier: 'tx', eventSubtype: 'spend', groupIdentifier: 'group1', identifier: 2 });
+      const swapReceive = createMockEvent({ actualGroupIdentifier: 'tx', eventSubtype: 'receive', groupIdentifier: 'group1', identifier: 3 });
 
       const groups = computed<HistoryEventEntry[]>(() => [group]);
       const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
@@ -313,6 +315,7 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', false);
+      expect(collapseRows[0]).toHaveProperty('unlinkIdentifier', undefined);
 
       // plain swap legs share one transaction, so no linked sub-event marking
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');

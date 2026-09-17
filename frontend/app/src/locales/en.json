@@ -6426,6 +6426,7 @@
           "indexer_order_title": "Indexer Order"
         },
         "unlink": {
+          "bridge_message": "Are you sure you want to unlink this bridge transfer? Both legs are restored to how they were before matching and return to the unmatched bridge transactions, where automatic matching may link them again. A counterpart event that was created to complete the match is deleted.",
           "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",
           "title": "Unlink Matched Events"
         }
@@ -6682,6 +6683,7 @@
           }
         }
       },
+      "unlink_bridge_error": "Failed to unlink bridge transfer",
       "unlink_error": "Failed to unlink asset movement",
       "view": {
         "load_more": "Load more events ({length})"

@@ -96,6 +96,14 @@ export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): 
   });
 }
 
+/**
+ * The identifier of the bridge leg to unlink a joined matched-bridge subgroup by. Both legs carry
+ * the joined group id and the backend accepts either side, so the first matched one is enough.
+ */
+export function getMatchedBridgeLegId(events: HistoryEventEntry[]): number | undefined {
+  return events.find(event => event.eventSubtype === 'bridge' && !!event.actualGroupIdentifier)?.identifier;
+}
+
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.BITCOIN_EVENT;
 }

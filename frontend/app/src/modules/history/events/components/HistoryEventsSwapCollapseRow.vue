@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { eventCount, labelType, subgroupId } = defineProps<{
+const { canUnlink, eventCount, labelType, subgroupId } = defineProps<{
+  /** Whether this matched subgroup can be unlinked from here; the parent decides. */
+  canUnlink?: boolean;
   eventCount: number;
   labelType?: 'swap' | 'movement' | 'bridge';
   /**
@@ -64,7 +66,8 @@ const { isMdAndUp } = useBreakpoint();
     >
       <template #activator>
         <RuiButton
-          v-if="isMovement"
+          v-if="canUnlink"
+          data-testid="collapse-unlink"
           class="!h-6 [&>span]:!hidden md:[&>span]:!inline"
           variant="text"
           size="sm"
