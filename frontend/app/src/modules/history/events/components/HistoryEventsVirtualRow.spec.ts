@@ -216,6 +216,51 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
     expect(context.actions.toggleSwapExpanded).toHaveBeenCalledWith('group-1-3');
   });
 
+  it('should unlink a bridge transfer from its collapsed row', async () => {
+    const wrapper = mountRow({
+      events: subgroupEvents,
+      groupId: 'group-1',
+      index: 0,
+      swapKey: 'group-1-3',
+      type: 'swap-row',
+    });
+
+    const payload = { identifier: 3, type: 'bridge' } as const;
+    await wrapper.findComponent(HistoryEventsSwapItem).vm.$emit('unlink-event', payload);
+    expect(context.actions.unlinkEvent).toHaveBeenCalledWith(payload);
+  });
+
+  it('should unlink a bridge transfer from its expanded header by the matched leg', async () => {
+    const wrapper = mountRow({
+      bridge: true,
+      eventCount: 2,
+      groupId: 'group-1',
+      swapKey: 'group-1-3',
+      type: 'swap-collapse',
+      unlinkIdentifier: 4,
+    });
+
+    const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
+    expect(header.props('canUnlink')).toBe(true);
+    await header.vm.$emit('unlink-event');
+    expect(context.actions.unlinkEvent).toHaveBeenCalledWith({ identifier: 4, type: 'bridge' });
+  });
+
+  it('should not offer unlink on the header of a swap', async () => {
+    const wrapper = mountRow({
+      bridge: false,
+      eventCount: 2,
+      groupId: 'group-1',
+      swapKey: 'group-1-3',
+      type: 'swap-collapse',
+    });
+
+    const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
+    expect(header.props('canUnlink')).toBe(false);
+    await header.vm.$emit('unlink-event');
+    expect(context.actions.unlinkEvent).not.toHaveBeenCalled();
+  });
+
   it('should load more events for the row group', async () => {
     const wrapper = mountRow({ groupId: 'group-9', hiddenCount: 4, totalCount: 10, type: 'load-more' });
 

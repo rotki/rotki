@@ -32,10 +32,14 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/history/event-utils', () => ({
-  isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
-    event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
-}));
+vi.mock('@/modules/history/event-utils', async () => {
+  const actual = await vi.importActual<typeof import('@/modules/history/event-utils')>('@/modules/history/event-utils');
+  return {
+    getMatchedBridgeLegId: actual.getMatchedBridgeLegId,
+    isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
+      event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
+  };
+});
 
 // Create EvmHistoryEvent which has counterparty property
 function createMockEvent(overrides: Partial<EvmHistoryEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus }> = {}): HistoryEventEntry {
@@ -390,6 +394,24 @@ describe('useHistorySwapItem', () => {
       expect(get(spendEvents)[0].identifier).toBe(1);
       expect(get(receiveEvents)).toHaveLength(1);
       expect(get(receiveEvents)[0].identifier).toBe(2);
+    });
+
+    it('should unlink a joined bridge transfer by its matched leg', () => {
+      const events = ref([
+        createMockEvent({ eventSubtype: 'fee', identifier: 1 }),
+        createMockEvent({ actualGroupIdentifier: 'arbitrum-tx', eventSubtype: 'bridge', eventType: 'deposit', identifier: 2, location: 'arbitrum_one' }),
+        createMockEvent({ actualGroupIdentifier: 'ethereum-tx', eventSubtype: 'bridge', eventType: 'withdrawal', identifier: 3 }),
+      ]);
+      const { matchedBridgeLegId } = useHistorySwapItem({ events });
+
+      expect(get(matchedBridgeLegId)).toBe(2);
+    });
+
+    it('should not offer unlink for a swap inside a joined group', () => {
+      const events = ref(createSwapEvents().map(event => ({ ...event, actualGroupIdentifier: 'tx-123' })));
+      const { matchedBridgeLegId } = useHistorySwapItem({ events });
+
+      expect(get(matchedBridgeLegId)).toBeUndefined();
     });
   });
 

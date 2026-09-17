@@ -49,6 +49,8 @@ export type HistoryEventDeletePayload = HistoryEventIgnorePayload | HistoryEvent
 
 export interface HistoryEventUnlinkPayload {
   readonly identifier: number;
+  /** Which match the event belongs to, since each link type has its own unlink endpoint. */
+  readonly type: 'asset-movement' | 'bridge';
 }
 
 export interface HistoryEventsTableEmits {

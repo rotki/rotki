@@ -8,25 +8,23 @@ import type {
   HistoryEventEntry,
   HistoryEventRow,
 } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { Defaults } from '@/modules/core/common/defaults';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/modules/history/event-utils';
 import { useCompleteEvents } from '@/modules/history/events/use-complete-events';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useIgnore } from '@/modules/history/use-ignore';
 import { EditKind } from '@/modules/task-center/core/rerun/policy';
 import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
 
 interface UseHistoryEventsOperationsOptions {
-  /** Events per group identifier including ignored-asset ones, so redecode and unlink act on the full group rather than what the table shows. */
+  /** Events per group identifier including ignored-asset ones, so redecode acts on the full group rather than what the table shows. */
   completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   /** Flat list of all loaded events, scanned to find the highest sequence index within a group when suggesting the next one. */
   flattenedEvents: ComputedRef<HistoryEventEntry[]>;
@@ -42,8 +40,6 @@ interface UseHistoryEventsOperationsReturn {
   // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
-  confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;
-  unlinkGroup: (groupId: string) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
   confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
   redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
@@ -73,8 +69,6 @@ export function useHistoryEventsOperations(
   const { getChain } = useSupportedChains();
 
   const { deleteTransactions } = useHistoryEventsApi();
-  const { unlinkAssetMovement } = useAssetMovementMatchingApi();
-  const { refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
     toData: (item: HistoryEventEntry) => item.groupIdentifier,
@@ -149,37 +143,6 @@ export function useHistoryEventsOperations(
         emit('refresh');
         taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
       }
-    }
-  }
-
-  function confirmUnlink(payload: HistoryEventUnlinkPayload): void {
-    show({
-      message: t('transactions.events.confirmation.unlink.message'),
-      primaryAction: t('common.actions.confirm'),
-      title: t('transactions.events.confirmation.unlink.title'),
-    }, async () => onConfirmUnlink(payload));
-  }
-
-  async function onConfirmUnlink(payload: HistoryEventUnlinkPayload): Promise<void> {
-    try {
-      await unlinkAssetMovement(payload.identifier);
-      await refreshUnmatchedAssetMovements();
-      emit('refresh');
-      taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_UNLINKED });
-    }
-    catch (error: unknown) {
-      notifyError(
-        t('transactions.events.unlink_error'),
-        getErrorMessage(error),
-      );
-    }
-  }
-
-  function unlinkGroup(groupId: string): void {
-    const events = getGroupEvents(groupId);
-    const event = events.find(item => isAssetMovementEvent(item) && item.eventSubtype !== 'fee' && !!item.actualGroupIdentifier);
-    if (event) {
-      confirmUnlink({ identifier: event.identifier });
     }
   }
 
@@ -305,9 +268,7 @@ export function useHistoryEventsOperations(
     confirmDelete,
     confirmRedecode,
     confirmTxAndEventsDelete,
-    confirmUnlink,
     getItemClass,
-    unlinkGroup,
     hasCustomEvents: readonly(hasCustomEvents),
     redecode,
     redecodePayload: shallowReadonly(redecodePayload),

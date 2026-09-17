@@ -5,7 +5,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
+import { getMatchedBridgeLegId, isEventMissingAccountingRule } from '@/modules/history/event-utils';
 
 export interface UseHistorySwapItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
@@ -26,6 +26,8 @@ export interface UseHistorySwapItemReturn {
   toggleSelected: () => void;
   // Swap-specific
   isBridge: ComputedRef<boolean>;
+  /** The leg a matched bridge transfer is unlinked by; undefined for swaps, which cannot be unlinked. */
+  matchedBridgeLegId: ComputedRef<number | undefined>;
   spendEvents: ComputedRef<HistoryEventEntry[]>;
   receiveEvents: ComputedRef<HistoryEventEntry[]>;
   spendEvent: ComputedRef<HistoryEventEntry | undefined>;
@@ -83,6 +85,8 @@ export function useHistorySwapItem(
 
   // A joined matched-bridge subgroup: both legs carry the bridge subtype
   const isBridge = computed<boolean>(() => get(events).some(e => e.eventSubtype === 'bridge'));
+
+  const matchedBridgeLegId = computed<number | undefined>(() => getMatchedBridgeLegId(get(events)));
 
   // Separate spend and receive events. For matched bridge groups the source
   // chain deposit is the spend side and the destination chain withdrawal the
@@ -185,6 +189,7 @@ export function useHistorySwapItem(
     isReceiveHidden,
     isSelected,
     isSpendHidden,
+    matchedBridgeLegId,
     primaryEvent,
     receiveEvent,
     receiveEvents,

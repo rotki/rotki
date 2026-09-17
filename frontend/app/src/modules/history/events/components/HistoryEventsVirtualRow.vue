@@ -17,6 +17,11 @@ const { actions, display, highlight, lookups } = injectHistoryEventsRowContext()
 
 // Lifted to the top level so the template unwraps them; a ref nested in an object does not.
 const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display;
+
+function unlinkBridge(identifier?: number): void {
+  if (identifier !== undefined)
+    actions.unlinkEvent({ identifier, type: 'bridge' });
+}
 </script>
 
 <template>
@@ -78,6 +83,7 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display
     @edit-event="actions.editEvent($event, row.groupId)"
     @delete-event="actions.deleteEvents($event)"
     @show:missing-rule-action="actions.addMissingRule($event, row.groupId)"
+    @unlink-event="actions.unlinkEvent($event)"
     @refresh="actions.refresh()"
     @toggle-expand="actions.toggleSwapExpanded(row.swapKey)"
   />
@@ -88,6 +94,8 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display
     :event-count="row.eventCount"
     :subgroup-id="row.subgroupId"
     :label-type="row.bridge ? 'bridge' : undefined"
+    :can-unlink="row.unlinkIdentifier !== undefined && !hideActions"
+    @unlink-event="unlinkBridge(row.unlinkIdentifier)"
     @collapse="actions.toggleSwapExpanded(row.swapKey)"
   />
 
@@ -114,6 +122,7 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display
     v-else-if="row.type === 'matched-movement-collapse'"
     :event-count="row.eventCount"
     label-type="movement"
+    :can-unlink="!hideActions"
     @unlink-event="actions.unlinkGroup(row.groupId)"
     @collapse="actions.toggleMovementExpanded(row.movementKey)"
   />
