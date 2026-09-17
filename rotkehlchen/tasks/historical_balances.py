@@ -29,6 +29,7 @@ from rotkehlchen.history.data_issues.manager import (
     make_auto_remediation_attempt,
 )
 from rotkehlchen.history.data_issues.types import (
+    NegativeBalanceIssuePayload,
     RebasingQueryFailure,
     RebasingTokenIssuePayload,
     UnmatchedBridgeIssuePayload,
@@ -945,6 +946,21 @@ def _apply_to_buckets(
                 new_balance = onchain_balance
         elif new_balance < ZERO:
             assert event.identifier is not None, 'Processed history events should have identifiers'
+            payload: NegativeBalanceIssuePayload = {
+                'event_identifier': event.identifier,
+                'in_memory_negative_amount': str(new_balance),
+                'derived_balance_before_event': str(current_balance),
+            }
+            if (
+                isinstance(event, OnchainEvent) and
+                event.event_type == HistoryEventType.WITHDRAWAL and
+                event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
+                event.counterparty is not None and
+                any(str(loc) == event.counterparty for loc in ALL_SUPPORTED_EXCHANGES) and
+                Location.deserialize(event.counterparty) not in database.get_associated_locations()
+            ):
+                payload['reason'] = 'untracked_exchange'
+
             database.msg_aggregator.add_message(
                 message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
                 data={
@@ -962,11 +978,7 @@ def _apply_to_buckets(
                 location_label=bucket.location_label,
                 protocol=bucket.protocol,
                 asset=bucket.asset,
-                payload={
-                    'event_identifier': event.identifier,
-                    'in_memory_negative_amount': str(new_balance),
-                    'derived_balance_before_event': str(current_balance),
-                },
+                payload=payload,
                 ts_start=event.timestamp,
                 ts_end=event.timestamp,
             )

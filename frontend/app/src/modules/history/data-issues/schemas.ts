@@ -136,6 +136,7 @@ export const NegativeBalancePayload = z.object({
   derivedBalanceBeforeEvent: NumericString,
   eventIdentifier: z.number(),
   inMemoryNegativeAmount: NumericString,
+  reason: z.string().optional(),
 });
 
 export type NegativeBalancePayload = z.infer<typeof NegativeBalancePayload>;

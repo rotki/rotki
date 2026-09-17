@@ -44,6 +44,7 @@ class NegativeBalanceIssuePayload(BaseIssuePayload):
     event_identifier: int
     in_memory_negative_amount: str
     derived_balance_before_event: str
+    reason: NotRequired[Literal['untracked_exchange']]
 
 
 class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):

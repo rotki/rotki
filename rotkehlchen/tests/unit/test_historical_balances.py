@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.historical import HistoricalBalancesManager
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
@@ -18,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -31,6 +33,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import (
@@ -38,6 +41,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tasks.historical_balances import (
     Bucket,
     _get_rebasing_reconciliation_points,
@@ -47,6 +51,7 @@ from rotkehlchen.tasks.historical_balances import (
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
+    ApiKey,
     ChainID,
     EventMetricKey,
     EvmTransaction,
@@ -60,6 +65,7 @@ from rotkehlchen.utils.misc import ts_now
 pytestmark = pytest.mark.accounting_update
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -2350,6 +2356,132 @@ def test_retry_rebasing_issue_finishes_remediation_state(
     assert second_issue.state == IssueState.UNRESOLVED
     assert second_issue.auto_remediation_attempts[0]['reason'] == 'processing_already_running'
     assert second_issue.auto_remediation_attempts[0]['success'] is False
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+@pytest.mark.parametrize('remedy', ['track_exchange', 'receive_payment'])
+def test_untracked_kraken_withdrawal_negative_balance(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        remedy: str,
+) -> None:
+    """A decoded Kraken withdrawal needs exchange history or a received-payment classification."""
+    transaction = EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=18000000,
+        from_address=string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F'),
+        to_address=TEST_ADDR1,
+        value=10**18,
+        gas=21000,
+        gas_price=10**9,
+        gas_used=21000,
+        input_data=b'',
+        nonce=0,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor, [transaction], relevant_address=TEST_ADDR1,
+        )
+    events, _, _ = ethereum_transaction_decoder._decode_transaction(
+        transaction=transaction,
+        tx_receipt=EvmTxReceipt(
+            tx_hash=transaction.tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            contract_address=None,
+            status=True,
+            tx_type=0,
+            logs=[],
+        ),
+    )
+    assert len(events) == 1
+    withdrawal = events[0]
+    assert withdrawal.event_type == HistoryEventType.WITHDRAWAL
+    assert withdrawal.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert withdrawal.counterparty == CPT_KRAKEN
+    assert withdrawal.location_label == TEST_ADDR1
+    assert withdrawal.amount == ONE
+    with database.conn.read_ctx() as cursor:
+        withdrawal.identifier = cursor.execute(
+            'SELECT identifier FROM history_events WHERE group_identifier=?',
+            (withdrawal.group_identifier,),
+        ).fetchone()[0]
+
+    process_historical_balances(database, messages_aggregator)
+    issues_manager = DataIssuesManager(database)
+    issues = issues_manager.list_issues()
+    assert len(issues) == 1
+    assert issues[0].kind == IssueKind.NEGATIVE_BALANCE
+    assert issues[0].payload == {
+        'event_identifier': withdrawal.identifier,
+        'in_memory_negative_amount': '-1',
+        'derived_balance_before_event': '0',
+        'reason': 'untracked_exchange',
+    }
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM event_metrics').fetchone()[0] == 0
+
+    events_db = DBHistoryEvents(database)
+    if remedy == 'track_exchange':
+        database.add_exchange(
+            name='Kraken', location=Location.KRAKEN, api_key=ApiKey('test'), api_secret=None,
+        )
+        process_historical_balances(database, messages_aggregator)
+        assert 'reason' not in issues_manager.get_issue(issues[0].id).payload
+        with database.user_write() as write_cursor:
+            events_db.add_history_events(write_cursor, [HistoryEvent(
+                group_identifier='kraken-funding',
+                sequence_index=0,
+                timestamp=TimestampMS(withdrawal.timestamp - 2000),
+                location=Location.KRAKEN,
+                location_label='Kraken',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ), AssetMovement(
+                unique_id='kraken-withdrawal',
+                timestamp=TimestampMS(withdrawal.timestamp - 1000),
+                location=Location.KRAKEN,
+                location_label='Kraken',
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=ONE,
+                extra_data={'transaction_id': transaction.tx_hash.hex(), 'address': TEST_ADDR1},
+            )])
+        match_asset_movements(database)
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT type, subtype FROM history_events WHERE identifier=?',
+                (withdrawal.identifier,),
+            ).fetchone() == ('exchange transfer', 'receive')
+    else:
+        withdrawal.event_type = HistoryEventType.RECEIVE
+        withdrawal.event_subtype = HistoryEventSubType.PAYMENT
+        with database.user_write() as write_cursor:
+            events_db.edit_history_event(
+                write_cursor, withdrawal, mapping_state=HistoryMappingState.CUSTOMIZED,
+            )
+
+    issues_manager.resolve_manually(issues[0].id)
+    with patch.object(database.msg_aggregator, 'add_message') as msg_mock:
+        process_historical_balances(database, messages_aggregator)
+    assert WSMessageType.NEGATIVE_BALANCE_DETECTED not in [
+        call.kwargs['message_type'] for call in msg_mock.call_args_list
+    ]
+    assert issues_manager.get_issue(issues[0].id).state == IssueState.RESOLVED
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT metric_value FROM event_metrics WHERE event_identifier=? AND metric_key=?',
+            (withdrawal.identifier, EventMetricKey.BALANCE.serialize()),
+        ).fetchall() == [('1',)]
+        if remedy == 'track_exchange':
+            assert cursor.execute(
+                'SELECT metric_value FROM event_metrics WHERE location=? ORDER BY timestamp',
+                (Location.KRAKEN.serialize_for_db(),),
+            ).fetchall() == [('1',), ('0',)]
 
 
 def test_negative_balance_writes_data_issue(

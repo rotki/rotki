@@ -72,6 +72,23 @@ describe('data-issues transforms', () => {
       expect(result.amounts.before?.toString()).toBe('0');
     });
 
+    it('should explain an untracked exchange withdrawal and keep its balance and event details', () => {
+      const result = describeIssue(createIssue({
+        payload: {
+          derivedBalanceBeforeEvent: '0',
+          eventIdentifier: 42,
+          inMemoryNegativeAmount: '-1',
+          reason: 'untracked_exchange',
+        },
+      }));
+
+      expect(result.messageKey).toBe('data_issues.description.negative_balance_untracked_exchange');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.negative_balance_untracked_exchange');
+      expect(result.eventIdentifier).toBe(42);
+      expect(result.amounts.amount?.toString()).toBe('-1');
+      expect(result.amounts.before?.toString()).toBe('0');
+    });
+
     it('should describe a balance mismatch and link to the latest event when present', () => {
       const issue = createIssue({
         kind: IssueKind.CURRENT_BALANCE_MISMATCH,
