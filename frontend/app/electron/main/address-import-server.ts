@@ -71,7 +71,7 @@ export class AddressImportServer {
     res.end();
   }
 
-  private handleAddresses(req: IncomingMessage, res: ServerResponse, cb: AddressImportCallback) {
+  private handleAddresses(req: IncomingMessage, res: ServerResponse, cb: AddressImportCallback): void {
     if (req.headers['content-type'] !== AddressImportServer.applicationJson) {
       this.invalidRequest(res, HttpErrorMessage.INVALID_CONTENT_TYPE);
       return;
@@ -90,6 +90,7 @@ export class AddressImportServer {
         cb(payload.addresses);
         res.writeHead(HttpStatus.OK);
         res.end();
+        this.stop();
       }
       catch {
         this.invalidRequest(res, HttpErrorMessage.MALFORMED_JSON);
@@ -195,7 +196,6 @@ export class AddressImportServer {
     }
     else if (url === '/import' && req.method === 'POST') {
       this.handleAddresses(req, res, cb);
-      this.stop();
     }
     else if (await this.isAllowed(basePath, url)) {
       await this.serveFile(res, basePath, url);
