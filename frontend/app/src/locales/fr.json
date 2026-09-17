@@ -1298,7 +1298,6 @@
     },
     "manual_balances": {
       "add": "Ajouter un solde manuel",
-      "card_tooltip": "Valeur agrégée des soldes manuels entrés. Les soldes en fiat sont agrégés dans l'entrée de la banque.",
       "title": "manuel"
     },
     "snapshot": {
@@ -2911,7 +2910,6 @@
     "tooltip": "Paramètre de graphique d'actif"
   },
   "summary_card": {
-    "refresh_tooltip": "Rafraîchir les soldes de {name}",
     "title": "Soldes de {name}"
   },
   "sync_buttons": {

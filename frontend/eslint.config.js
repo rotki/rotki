@@ -190,6 +190,46 @@ export default rotki({
   },
 }, {
   /*
+   * Pure feature cores: plain functions over plain data, with the app reached only through ports a
+   * `use-*` adapter passes in. That is what lets their specs run without mounting, Pinia or
+   * `vi.mock`. Auto-imports never appear as import statements, so the globals rule is the half that
+   * catches a stray `computed(` or `get(`.
+   */
+  files: ['app/src/modules/balances/refresh/core/**/*.ts'],
+  rules: {
+    'no-restricted-globals': ['error', ...[
+      'computed',
+      'createSharedComposable',
+      'defineStore',
+      'get',
+      'logicAnd',
+      'logicNot',
+      'logicOr',
+      'reactive',
+      'ref',
+      'set',
+      'shallowRef',
+      'storeToRefs',
+      'toRef',
+      'toValue',
+      'useI18n',
+      'useRoute',
+      'useRouter',
+      'watch',
+      'watchEffect',
+    ].map(name => ({
+      message: 'A core module stays free of vue, stores and i18n. Take the value or the function through a port instead.',
+      name,
+    }))],
+    'no-restricted-imports': ['error', {
+      patterns: [{
+        group: ['vue', 'vue-*', '@vue/*', '@vueuse/*', 'pinia', 'vue-router', 'vue-i18n', '@/modules/**/use-*'],
+        message: 'A core module stays free of vue, stores and composables. Take the dependency through a port instead.',
+      }],
+    }],
+  },
+}, {
+  /*
    * A real-clock sleep in a unit spec is a race: it passes on an idle laptop, fails on a loaded CI
    * box, and costs its full duration regardless. Use `vi.advanceTimersByTimeAsync()`,
    * `vi.waitUntil`/`vi.waitFor`, or a promise the test resolves itself.

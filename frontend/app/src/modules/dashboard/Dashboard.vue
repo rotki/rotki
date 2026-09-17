@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
@@ -88,10 +87,8 @@ watch(width, (newWidth) => {
         </div>
         <Summary />
       </div>
-      <div class="flex items-center justify-end my-4">
-        <PriceRefresh />
-      </div>
       <DashboardAssetTable
+        class="mt-8"
         :title="t('common.assets')"
         :table-type="Type.ASSETS"
         :loading="isAnyLoading"

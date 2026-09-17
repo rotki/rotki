@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import DetectEvmAccounts from '@/modules/accounts/balances/DetectEvmAccounts.vue';
 import DetectTokenChainsSelection from '@/modules/accounts/balances/DetectTokenChainsSelection.vue';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
@@ -11,7 +12,7 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { handleBlockchainRefresh } = useBalanceRefresh();
+const { massDetectTokens } = useBalanceRefresh();
 const { show } = useConfirmStore();
 
 function redetectAllClicked(): void {
@@ -20,7 +21,7 @@ function redetectAllClicked(): void {
     title: t('account_balances.detect_tokens.confirmation.title'),
     type: 'info',
   }, () => {
-    handleBlockchainRefresh(undefined, true);
+    startPromise(massDetectTokens());
   });
 }
 </script>
