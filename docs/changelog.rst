@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Clicking an amount to copy it now copies the full decimal number, such as ``0.000000001``, instead of scientific notation like ``1e-9`` for very small or very large amounts.
 * :bug:`-` Correctly decode temporary SOL wrapping and unwrapping in Jupiter swaps, avoiding duplicate transfers and reporting the swap and fees in SOL instead of WSOL.
 * :bug:`-` The description of the spam event action no longer claims such events are ignored in accounting. They are counted like any other receive, so marking dust as spam keeps balances adding up.
 * :bug:`-` Undelegating, withdrawing and bridging GRT back to Ethereum through a The Graph vesting contract on Arbitrum One are now decoded for the tracked beneficiary instead of showing up as gas-only transactions.
