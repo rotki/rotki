@@ -2,28 +2,18 @@
 import type { RouteLocationRaw } from 'vue-router';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import NavigatorLink from '@/modules/shell/components/NavigatorLink.vue';
-import SummaryCardRefreshMenu from './SummaryCardRefreshMenu.vue';
 
 interface SummaryCardProps {
   name: string;
-  isLoading?: boolean;
-  canRefresh?: boolean;
   navigatesTo?: RouteLocationRaw;
 }
 
 const {
   name,
-  canRefresh = false,
-  isLoading = false,
   navigatesTo,
 } = defineProps<SummaryCardProps>();
 
-const emit = defineEmits<{
-  refresh: [source: string];
-}>();
-
 defineSlots<{
-  refreshMenu: () => any;
   default: () => any;
 }>();
 
@@ -46,24 +36,6 @@ const { t } = useI18n({ useScope: 'global' });
         >
           {{ t('summary_card.title', { name }) }}
         </NavigatorLink>
-        <div
-          v-if="canRefresh"
-          class="flex items-center -my-1"
-        >
-          <SummaryCardRefreshMenu
-            data-testid="account-balances-refresh-menu"
-            :tooltip="t('summary_card.refresh_tooltip', { name })"
-            :loading="isLoading"
-            @refresh="emit('refresh', name.toLowerCase())"
-          >
-            <template
-              v-if="$slots.refreshMenu"
-              #refreshMenu
-            >
-              <slot name="refreshMenu" />
-            </template>
-          </SummaryCardRefreshMenu>
-        </div>
       </CardTitle>
     </template>
     <div>

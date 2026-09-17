@@ -4,6 +4,8 @@ import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, 
 import dayjs from 'dayjs';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import ChainsUpdatedCaption from '@/modules/dashboard/components/ChainsUpdatedCaption.vue';
+import DashboardRefresh from '@/modules/dashboard/components/DashboardRefresh.vue';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
@@ -127,8 +129,11 @@ onMounted(() => {
     <div
       class="lg:col-span-4 flex flex-col justify-start lg:p-4"
     >
-      <div class="text-rui-text-secondary">
-        {{ t('overall_balances.total_balance') }}
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div class="text-rui-text-secondary">
+          {{ t('overall_balances.total_balance') }}
+        </div>
+        <DashboardRefresh />
       </div>
       <div
         class="font-medium"
@@ -169,6 +174,8 @@ onMounted(() => {
           <FiatDisplay :value="balanceDelta" />
         </span>
       </div>
+
+      <ChainsUpdatedCaption class="mt-2" />
     </div>
     <div class="lg:col-span-8 flex flex-col">
       <div class="flex justify-start lg:justify-end items-center md:pt-4 gap-4">

@@ -2503,8 +2503,26 @@
     },
     "manual_balances": {
       "add": "Add a manual balance",
-      "card_tooltip": "Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry.",
       "title": "manual"
+    },
+    "refresh": {
+      "balances": "Refresh balances",
+      "balances_hint": "Query your accounts, exchanges and banks, reload manual balances, then refresh prices",
+      "button": "Refresh",
+      "chains_updated": "Chains updated {time}",
+      "menu_tooltip": "More refresh options",
+      "prices_only": "Refresh prices only",
+      "prices_only_hint": "Revalue what you hold without querying your accounts",
+      "redetect": "Redetect tokens, then refresh",
+      "redetect_hint": "Slower: scans every account for new tokens first",
+      "source": {
+        "banks": "Banks",
+        "blockchain": "Blockchain accounts",
+        "exchanges": "Exchanges",
+        "manual": "Manual balances",
+        "title": "Refresh only one source, then prices"
+      },
+      "tooltip": "Query every account, exchange and bank, reload manual balances, then refresh prices"
     },
     "snapshot": {
       "convert_to_edit": {
@@ -6078,7 +6096,6 @@
     "tooltip": "Asset graph setting"
   },
   "summary_card": {
-    "refresh_tooltip": "Refresh {name} balances",
     "title": "{name} balances"
   },
   "swap_event_form": {

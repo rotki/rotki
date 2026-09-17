@@ -1194,7 +1194,6 @@
     },
     "manual_balances": {
       "add": "添加手动余额",
-      "card_tooltip": "手动输入余额的总值。法币余额在银行条目中汇总。",
       "title": "手册"
     },
     "snapshot": {
@@ -2663,7 +2662,6 @@
     "tooltip": "资产图表设置"
   },
   "summary_card": {
-    "refresh_tooltip": "刷新 {name} 余额",
     "title": "{name} 余额"
   },
   "sync_buttons": {

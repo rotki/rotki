@@ -9,7 +9,7 @@ const {
   connected,
   exchangeBalances,
   pushMock,
-  refreshBalance,
+  refreshConnectedExchangeBalances,
   refreshExchangeBalance,
   refreshExchangeSavings,
   routeRef,
@@ -22,7 +22,7 @@ const {
     connected,
     exchangeBalances,
     pushMock: vi.fn(async (): Promise<void> => {}),
-    refreshBalance: vi.fn(async (): Promise<void> => {}),
+    refreshConnectedExchangeBalances: vi.fn(async (): Promise<void> => {}),
     refreshExchangeBalance: vi.fn(async (): Promise<void> => {}),
     refreshExchangeSavings: vi.fn(async (): Promise<void> => {}),
     routeRef,
@@ -60,9 +60,9 @@ vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', async () =
 });
 
 vi.mock('@/modules/balances/use-balance-refresh', () => ({
-  useBalanceRefresh: (): { refreshBalance: typeof refreshBalance; refreshExchangeBalance: typeof refreshExchangeBalance } => ({
-    refreshBalance,
+  useBalanceRefresh: (): { refreshExchangeBalance: typeof refreshExchangeBalance; refreshExchangeBalances: typeof refreshConnectedExchangeBalances } => ({
     refreshExchangeBalance,
+    refreshExchangeBalances: refreshConnectedExchangeBalances,
   }),
 }));
 
@@ -252,7 +252,7 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
 
       await refreshExchangeBalances();
 
-      expect(refreshBalance).toHaveBeenCalledWith('exchange');
+      expect(refreshConnectedExchangeBalances).toHaveBeenCalledOnce();
       expect(refreshExchangeSavings).toHaveBeenCalledWith(true);
     });
 

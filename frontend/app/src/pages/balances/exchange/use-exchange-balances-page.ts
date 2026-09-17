@@ -39,7 +39,7 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
   const { getExchangeBalances } = useAggregatedBalances();
   const { refreshExchangeSavings } = useBinanceSavings();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-  const { refreshBalance, refreshExchangeBalance } = useBalanceRefresh();
+  const { refreshExchangeBalance, refreshExchangeBalances: refreshConnectedExchangeBalances } = useBalanceRefresh();
 
   /**
    * Seeded from the route once, and only ever the initially highlighted tab: the tabs are links, so
@@ -84,7 +84,7 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
   });
 
   async function refreshExchangeBalances(): Promise<void> {
-    await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
+    await Promise.all([refreshConnectedExchangeBalances(), refreshExchangeSavings(true)]);
   }
 
   /** Binance also has savings balances, which the generic refresh does not cover. */
