@@ -119,6 +119,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
                         event.counterparty = CPT_UNISWAP_V4
                         event.event_type = event_type
                         event.event_subtype = event_subtype
+                        event.extra_data = (event.extra_data or {}) | {'liquidity_pool': True}
                         event.notes = f'{verb} {{amount}} {self.node_inquirer.native_token.symbol} {from_to} {lp_str}'  # noqa: E501
                         deposit_withdraw_event = event
                     elif (
@@ -149,6 +150,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
                 to_event_subtype=event_subtype,
                 to_notes=f'{verb} {{amount}} {asset.symbol} {from_to} {lp_str}',  # amount is set when the action item is processed  # noqa: E501
                 to_counterparty=CPT_UNISWAP_V4,
+                extra_data={'liquidity_pool': True},
             ) for asset in (x for x in lp_assets if x != self.node_inquirer.native_token)],
         )
 

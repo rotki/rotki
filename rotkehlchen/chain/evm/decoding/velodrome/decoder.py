@@ -34,6 +34,8 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     COLLECT_LIQUIDITY_SIGNATURE,
     INCREASE_LIQUIDITY_SIGNATURE,
+    POOL_COLLECT_SIGNATURE,
+    POOL_MINT_SIGNATURE,
     SWAP_SIGNATURE as SWAP_CL,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
@@ -43,10 +45,8 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import (
     CL_GAUGE_DEPOSIT,
     CL_GAUGE_WITHDRAW,
     CL_POOL_BURN,
-    CL_POOL_COLLECT,
     CL_POOL_COLLECT_FEES,
     CL_POOL_FLASH,
-    CL_POOL_MINT,
     CLAIM_REWARDS_V2,
     DROME_ROTKI_ABI,
     REMOVE_LIQUIDITY_EVENT_V2,
@@ -89,9 +89,9 @@ log = RotkehlchenLogsAdapter(logger)
 # Log signatures emitted by concentrated liquidity (Slipstream) pools
 CL_POOL_TOPICS: Final = frozenset({
     SWAP_CL,
-    CL_POOL_MINT,
+    POOL_MINT_SIGNATURE,
     CL_POOL_BURN,
-    CL_POOL_COLLECT,
+    POOL_COLLECT_SIGNATURE,
     CL_POOL_FLASH,
     CL_POOL_COLLECT_FEES,
 })
@@ -448,9 +448,9 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         on the position manager, which reverts once a position has been burned.
         """
         if context.tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
-            is_deposit, pool_topic = True, CL_POOL_MINT
+            is_deposit, pool_topic = True, POOL_MINT_SIGNATURE
         elif context.tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
-            is_deposit, pool_topic = False, CL_POOL_COLLECT
+            is_deposit, pool_topic = False, POOL_COLLECT_SIGNATURE
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 

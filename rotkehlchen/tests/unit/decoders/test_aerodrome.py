@@ -12,8 +12,11 @@ from rotkehlchen.chain.base.modules.aerodrome.decoder import (
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext
-from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import COLLECT_LIQUIDITY_SIGNATURE
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CL_POOL_COLLECT, CPT_AERODROME
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
+    COLLECT_LIQUIDITY_SIGNATURE,
+    POOL_COLLECT_SIGNATURE,
+)
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import (
@@ -509,6 +512,7 @@ def test_slipstream_create_position(
             counterparty=CPT_AERODROME,
             address=pool,
             notes=f'Deposit {deposited_usdc} USDC to Aerodrome Slipstream LP {position_id}',
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -522,6 +526,7 @@ def test_slipstream_create_position(
             counterparty=CPT_AERODROME,
             address=pool,
             notes=f'Deposit {deposited_aero} AERO to Aerodrome Slipstream LP {position_id}',
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -607,6 +612,7 @@ def test_slipstream_exit_position(
             counterparty=CPT_AERODROME,
             address=pool,
             notes=f'Remove {withdrawn_avnt} AVNT from Aerodrome Slipstream LP {position_id}',
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=582,
@@ -620,6 +626,7 @@ def test_slipstream_exit_position(
             counterparty=CPT_AERODROME,
             address=pool,
             notes=f'Remove {withdrawn_usdc} USDC from Aerodrome Slipstream LP {position_id}',
+            extra_data={'liquidity_pool': True},
         ),
     ]
 
@@ -787,7 +794,7 @@ def test_slipstream_collect_uses_the_pool_amounts(
         log_index=10,
         address=(pool := make_evm_address()),
         topics=[
-            CL_POOL_COLLECT,
+            POOL_COLLECT_SIGNATURE,
             bytes.fromhex(SLIPSTREAM_NFPM[2:]).rjust(32, b'\x00'),
             (100).to_bytes(32, 'big'),
             (200).to_bytes(32, 'big'),

@@ -185,6 +185,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             notes='Deposit 0.999999999949533767 ETH to Uniswap V3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -198,6 +199,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             notes='Deposit 294.145955 USDC to Uniswap V3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -251,6 +253,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             notes='Remove 0.764522981784947382 ETH from Uniswap V3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -264,6 +267,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             notes='Remove 1028.82092 USDC from Uniswap V3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            extra_data={'liquidity_pool': True},
         ),
     ]
 

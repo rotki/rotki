@@ -14,8 +14,9 @@ from rotkehlchen.chain.evm.decoding.uniswap.utils import (
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     COLLECT_LIQUIDITY_SIGNATURE,
-    DECREASE_LIQUIDITY_SIGNATURE,
     INCREASE_LIQUIDITY_SIGNATURE,
+    POOL_COLLECT_SIGNATURE,
+    POOL_MINT_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
     decode_uniswap_v3_like_deposit_or_withdrawal,
@@ -24,12 +25,12 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     CPT_PROJECT_X,
     PROJECT_X_NFT_MANAGER,
-    PROJECT_X_NFT_MANAGER_ABI,
     PROJECT_X_SWAP_ROUTER,
 )
 
@@ -60,20 +61,6 @@ class ProjectXDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-
-    @staticmethod
-    def _fee_collection_count(all_logs: list[EvmTxReceiptLog]) -> int:
-        collect_count = 0
-        for tx_log in all_logs:
-            if tx_log.address != PROJECT_X_NFT_MANAGER or len(tx_log.topics) == 0:
-                continue
-
-            if tx_log.topics[0] == DECREASE_LIQUIDITY_SIGNATURE:
-                return 0
-            if tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
-                collect_count += 1
-
-        return collect_count
 
     def _get_transfer_token_data(
             self,
@@ -114,45 +101,52 @@ class ProjectXDecoder(EvmDecoderInterface):
         return token_data[0], token_data[1]
 
     def _decode_liquidity(self, context: DecoderContext) -> EvmDecodingOutput:
-        is_fee_collection = False
         if context.tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
             is_deposit = True
-            amount0_raw = int.from_bytes(context.tx_log.data[32:64])
-            amount1_raw = int.from_bytes(context.tx_log.data[64:96])
         elif context.tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
-            if (fee_collection_count := self._fee_collection_count(context.all_logs)) > 1:
-                return EvmDecodingOutput(matched_counterparty=CPT_PROJECT_X)
-
             is_deposit = False
-            is_fee_collection = fee_collection_count == 1
-            amount0_raw = int.from_bytes(context.tx_log.data[32:64])
-            amount1_raw = int.from_bytes(context.tx_log.data[64:96])
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        position_id = int.from_bytes(context.tx_log.topics[1])
+        amounts = (
+            int.from_bytes(context.tx_log.data[32:64]),
+            int.from_bytes(context.tx_log.data[64:96]),
+        )
         if (token_data := self._get_transfer_token_data(
-            all_logs=context.all_logs,
-            amounts=(amount0_raw, amount1_raw),
-            is_deposit=is_deposit,
-        )) is None:
-            try:
-                position = self.node_inquirer.call_contract(
-                    contract_address=PROJECT_X_NFT_MANAGER,
-                    abi=PROJECT_X_NFT_MANAGER_ABI,
-                    method_name='positions',
-                    arguments=[position_id],
-                    block_identifier=context.transaction.block_number,
-                )
-            except (RemoteError, BlockchainQueryError) as e:
-                log.error('Failed to query Project X position %s due to %s', position_id, e)
+            all_logs=context.all_logs, amounts=amounts, is_deposit=is_deposit,
+        )) is not None:
+            (token0_address, amount0_raw), (token1_address, amount1_raw) = token_data
+        else:
+            # Pool logs retain the token source after an NFT is burned, without archive state.
+            pool_topic = POOL_MINT_SIGNATURE if is_deposit else POOL_COLLECT_SIGNATURE
+            for tx_log in reversed(context.all_logs):
+                if (
+                    tx_log.log_index < context.tx_log.log_index and
+                    len(tx_log.topics) >= 2 and
+                    tx_log.topics[0] == pool_topic and
+                    bytes_to_address(tx_log.topics[1]) == PROJECT_X_NFT_MANAGER and
+                    (amount0_raw := int.from_bytes(tx_log.data[-64:-32])) <= amounts[0] and
+                    (amount1_raw := int.from_bytes(tx_log.data[-32:])) <= amounts[1] and
+                    (is_deposit or tx_log.data[:32] == context.tx_log.data[:32])
+                ):
+                    break
+            else:
+                log.error('Could not find Project X liquidity pool in %s', context.transaction.tx_hash.hex())  # noqa: E501
                 return DEFAULT_EVM_DECODING_OUTPUT
 
-            token0_address, token1_address = position[2], position[3]
-        else:
-            (token0_address, amount0_raw), (token1_address, amount1_raw) = token_data
+            try:
+                token0_address, token1_address = (
+                    deserialize_evm_address(self.node_inquirer.call_contract(
+                        contract_address=tx_log.address,
+                        abi=self.node_inquirer.contracts.abi('UNISWAP_V3_POOL'),
+                        method_name=method,
+                    )) for method in ('token0', 'token1')
+                )
+            except (RemoteError, BlockchainQueryError) as e:
+                log.error('Failed to query Project X pool tokens: %s', e)
+                return DEFAULT_EVM_DECODING_OUTPUT
 
-        decoding_output = decode_uniswap_v3_like_deposit_or_withdrawal(
+        return decode_uniswap_v3_like_deposit_or_withdrawal(
             context=context,
             is_deposit=is_deposit,
             counterparty=CPT_PROJECT_X,
@@ -160,35 +154,10 @@ class ProjectXDecoder(EvmDecoderInterface):
             token1_raw_address=token1_address,
             amount0_raw=amount0_raw,
             amount1_raw=amount1_raw,
-            position_id=position_id,
+            position_id=int.from_bytes(context.tx_log.topics[1]),
             evm_inquirer=self.node_inquirer,
             display_name='Project X',
         )
-        if is_fee_collection is False:
-            return decoding_output
-
-        notes = f'Collect {{amount}} {{symbol}} as Project X LP fees for position {position_id}'
-        for event in context.decoded_events:
-            if (
-                    event.event_type != HistoryEventType.WITHDRAWAL or
-                    event.event_subtype != HistoryEventSubType.WITHDRAW_FROM_PROTOCOL or
-                    event.counterparty != CPT_PROJECT_X
-            ):
-                continue
-
-            event.event_type = HistoryEventType.RECEIVE
-            event.event_subtype = HistoryEventSubType.REWARD
-            event.notes = notes.format(
-                amount=event.amount,
-                symbol=event.asset.symbol_or_name(),
-            )
-
-        for action_item in decoding_output.action_items:
-            action_item.to_event_type = HistoryEventType.RECEIVE
-            action_item.to_event_subtype = HistoryEventSubType.REWARD
-            action_item.to_notes = notes
-
-        return decoding_output
 
     def _lp_post_decoding(
             self,
@@ -205,7 +174,11 @@ class ProjectXDecoder(EvmDecoderInterface):
             token_name='Project X V3 Positions',
             display_name='Project X',
         )
-        if self._fee_collection_count(all_logs) <= 1:
+        if sum(
+            tx_log.address == PROJECT_X_NFT_MANAGER and
+            tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE
+            for tx_log in all_logs
+        ) <= 1:
             return decoded_events
 
         for event in decoded_events:
@@ -216,11 +189,13 @@ class ProjectXDecoder(EvmDecoderInterface):
             ):
                 continue
 
-            event.event_type = HistoryEventType.RECEIVE
-            event.event_subtype = HistoryEventSubType.REWARD
+            event.event_type = HistoryEventType.WITHDRAWAL
+            event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             event.counterparty = CPT_PROJECT_X
+            event.extra_data = (event.extra_data or {}) | {'liquidity_pool': True}
             event.notes = (
-                f'Collect {event.amount} {event.asset.symbol_or_name()} as Project X LP fees'
+                f'Collect {event.amount} {event.asset.symbol_or_name()} '
+                'from Project X LP positions'
             )
 
         return decoded_events

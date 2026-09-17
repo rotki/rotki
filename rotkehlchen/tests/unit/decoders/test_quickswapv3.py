@@ -112,6 +112,7 @@ def test_create_lp_position(
         notes=f'Deposit {deposit1_amount} USDC to Quickswap V3 LP 170082',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
@@ -125,6 +126,7 @@ def test_create_lp_position(
         notes=f'Deposit {deposit2_amount} $FRITH to Quickswap V3 LP 170082',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
@@ -173,6 +175,7 @@ def test_add_liquidity(
         notes=f'Deposit {deposit1_amount} USDC to Quickswap V3 LP 169502',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x74D1578E3Db15AE7605E1420dFC3801eEe98428e'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
@@ -186,6 +189,7 @@ def test_add_liquidity(
         notes=f'Deposit {deposit2_amount} FLIP to Quickswap V3 LP 169502',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x74D1578E3Db15AE7605E1420dFC3801eEe98428e'),
+        extra_data={'liquidity_pool': True},
     )]
 
 
@@ -221,6 +225,7 @@ def test_remove_liquidity(
         notes=f'Remove {withdraw1_amount} USDC from Quickswap V3 LP 170033',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
@@ -234,4 +239,5 @@ def test_remove_liquidity(
         notes=f'Remove {withdraw2_amount} QUICK from Quickswap V3 LP 170033',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45'),
+        extra_data={'liquidity_pool': True},
     )]

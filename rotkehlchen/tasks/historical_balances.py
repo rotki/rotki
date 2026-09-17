@@ -218,6 +218,7 @@ class Bucket(NamedTuple):
 
         if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
             event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
+            (event.extra_data or {}).get('liquidity_pool') is not True and
             counterparty not in (None, '') and
             (wallet_direction := event.maybe_get_direction(for_balance_tracking=True)) is not None
         ):
