@@ -117,6 +117,32 @@ describe('dockJobNode', () => {
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 
+    it('should keep a running parent\'s children in start order and in place as they finish, with no cap hiding the ones still working', async () => {
+      const done = ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6'].map(name => activity(name, {
+        parent: id('ethereum'),
+        ...(name === '0x4' ? { reason: 'no key', status: ActivityStatus.FAILED } : { status: ActivityStatus.COMPLETE }),
+      }));
+      const wrapper = mountTree([activity('ethereum'), ...done, activity('0xrun', { parent: id('ethereum') })], { depth: 1 });
+
+      await wrapper.find('[aria-expanded]').trigger('click');
+
+      const labels = wrapper.findAll('[data-testid=dock-activity-row] .truncate').map(label => label.text());
+      expect(labels.filter(label => label.startsWith('0x'))).toEqual(['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0xrun']);
+      expect(wrapper.find('[data-testid=dock-show-more-children]').exists()).toBe(false);
+    });
+
+    it('should put a job\'s sections and the sync hint in its row, aligned under the label', () => {
+      const wrapper = mountTree([
+        activity('refresh', { kind: ActivityKind.HISTORY_SYNC, subtitle: undefined, title: 'History refresh' }),
+        activity('ethereum', { parent: id('refresh') }),
+        activity('kraken', { id: makeActivityId(ActivityKind.EXCHANGE_EVENTS, 'kraken', 'main'), kind: ActivityKind.EXCHANGE_EVENTS, parent: id('refresh') }),
+      ]);
+
+      const row = wrapper.find('[data-testid=dock-activity-row]');
+      expect(row.find('[data-testid=dock-job-breakdown]').exists()).toBe(true);
+      expect(row.find('[data-testid=dock-sync-hint]').exists()).toBe(true);
+    });
+
     it('should surface no failed leaves while the job is still running', () => {
       const tree = running();
       tree[3] = { ...tree[3], status: ActivityStatus.FAILED };
@@ -198,6 +224,53 @@ describe('dockJobNode', () => {
       expect(group.text()).toContain('task_dock.panel.skipped_count::2');
       expect(group.text()).toContain('no accounts');
       expect(group.find('[data-testid=dock-skipped-names]').text()).toBe('bch, ksm');
+    });
+
+    it('should fold failed accounts that share a reason into one group with one reason and one retry for all', async () => {
+      const wrapper = mountTree([
+        activity('refresh', { kind: ActivityKind.HISTORY_SYNC, status: ActivityStatus.COMPLETE, subtitle: undefined, title: 'History refresh' }),
+        activity('gnosis', { parent: id('refresh'), reason: 'no API key', status: ActivityStatus.FAILED }),
+        activity('0xaa', { parent: id('gnosis'), reason: 'no API key', rerunnable: true, status: ActivityStatus.FAILED }),
+        activity('0xbb', { parent: id('gnosis'), reason: 'no API key', rerunnable: true, status: ActivityStatus.FAILED }),
+        activity('0xcc', { parent: id('gnosis'), reason: 'no API key', rerunnable: true, status: ActivityStatus.FAILED }),
+      ]);
+
+      const group = wrapper.find('[data-testid=dock-failed-group]');
+      expect(group.find('[data-testid=dock-failed-group-reason]').text()).toBe('no API key');
+      expect(group.findAll('[data-testid=activity-reason]')).toHaveLength(0);
+      expect(group.text()).toContain('0xbb');
+
+      await group.find('[data-testid=dock-failed-group-retry]').trigger('click');
+      expect(wrapper.emitted('retry')).toHaveLength(3);
+    });
+
+    it('should not repeat on a parent the reason a child beneath it already states', async () => {
+      const wrapper = mountTree([
+        activity('gnosis', { reason: 'no API key', status: ActivityStatus.FAILED }),
+        activity('0xaa', { parent: id('gnosis'), reason: 'no API key', status: ActivityStatus.FAILED }),
+        activity('0xbb', { parent: id('gnosis'), status: ActivityStatus.COMPLETE }),
+      ]);
+
+      await wrapper.find('[aria-expanded]').trigger('click');
+
+      expect(wrapper.findAll('[data-testid=activity-reason]').map(line => line.text())).toEqual(['no API key']);
+    });
+
+    it('should list five of a settled nested parent\'s children and the rest on request, but every child of a job', async () => {
+      const accounts = ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7'].map(name => activity(name, { parent: id('ethereum'), status: ActivityStatus.COMPLETE }));
+      const tree = [activity('ethereum', { status: ActivityStatus.COMPLETE }), ...accounts];
+
+      const nested = mountTree(tree, { depth: 1 });
+      await nested.find('[aria-expanded]').trigger('click');
+      expect(nested.findAll('[data-testid=dock-activity-row]')).toHaveLength(6);
+
+      await nested.find('[data-testid=dock-show-more-children]').trigger('click');
+      expect(nested.findAll('[data-testid=dock-activity-row]')).toHaveLength(8);
+
+      const job = mountTree(tree);
+      await job.find('[aria-expanded]').trigger('click');
+      expect(job.findAll('[data-testid=dock-activity-row]')).toHaveLength(8);
+      expect(job.find('[data-testid=dock-show-more-children]').exists()).toBe(false);
     });
 
     it('should offer dismiss on the job row only', () => {

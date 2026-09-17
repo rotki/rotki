@@ -107,16 +107,45 @@ describe('useDockPanel', () => {
       expect(get(panel().summary)).toBe(false);
     });
 
-    it('should list a running job that already has a failed leaf ahead of one listed before it', () => {
+    it('should list jobs in the order they started, not by kind, and not move one that fails', () => {
+      const history = makeActivityId(ActivityKind.HISTORY_SYNC, 'refresh');
+      const long = Date.now() - 60_000;
+      set(activities, [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', RUNNING, undefined, { startedAt: long + 1000 }),
+        activity(ActivityKind.TX_SYNC, 'eth', FAILED, history),
+        activity(ActivityKind.TX_SYNC, 'gnosis', RUNNING, history),
+        report(RUNNING),
+        ...balances(RUNNING, COMPLETE, RUNNING, RUNNING).map(item => ({ ...item, startedAt: long })),
+      ].map(item => (item.kind === ActivityKind.PNL_REPORT ? { ...item, startedAt: long + 2000 } : item)));
+
+      expect(get(panel().roots).map(root => root.kind)).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC, ActivityKind.PNL_REPORT]);
+    });
+
+    it('should keep a job that finishes mid-run where it was until the run ends', async () => {
+      const long = Date.now() - 60_000;
+      const pnl = (status: ActivityStatus): Activity => ({ ...report(status), startedAt: long });
+      const later = balances(RUNNING, RUNNING, RUNNING, RUNNING).map(item => ({ ...item, startedAt: long + 1000 }));
+      set(activities, [pnl(RUNNING), ...later]);
+      const { roots } = panel();
+      await nextTick();
+
+      await transition([pnl(COMPLETE), ...later]);
+
+      expect(get(roots).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT, ActivityKind.BLOCKCHAIN_BALANCES]);
+    });
+
+    it('should not list a job until it has run for a moment, unless it fails', async () => {
+      const long = Date.now() - 60_000;
       const history = makeActivityId(ActivityKind.HISTORY_SYNC, 'refresh');
       set(activities, [
-        ...balances(RUNNING, COMPLETE, RUNNING, RUNNING),
-        activity(ActivityKind.HISTORY_SYNC, 'refresh', RUNNING),
+        ...balances(RUNNING, RUNNING, RUNNING, RUNNING).map(item => ({ ...item, startedAt: long })),
+        activity(ActivityKind.PRICES, 'latest', RUNNING, undefined, { startedAt: Date.now() }),
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', RUNNING, undefined, { startedAt: Date.now() }),
         activity(ActivityKind.TX_SYNC, 'eth', FAILED, history),
         activity(ActivityKind.TX_SYNC, 'gnosis', RUNNING, history),
       ]);
 
-      expect(get(panel().roots).map(root => root.kind)).toEqual([ActivityKind.HISTORY_SYNC, ActivityKind.BLOCKCHAIN_BALANCES]);
+      expect(get(panel().roots).map(root => root.kind)).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC]);
     });
 
     it('should split running jobs into the ones a bulk stop may interrupt and the ones it leaves running', () => {
@@ -193,7 +222,7 @@ describe('useDockPanel', () => {
       expect(get(panel().sections).map(section => section.title)).toEqual([undefined, undefined]);
     });
 
-    it('should head a kind listed more than once, grouping its jobs together', () => {
+    it('should keep every job its own untitled section while work runs, so none moves to join its kind', () => {
       set(activities, [
         activity(ActivityKind.EXCHANGE_BALANCES, 'kraken', RUNNING),
         report(RUNNING),
@@ -202,9 +231,25 @@ describe('useDockPanel', () => {
 
       const sections = get(panel().sections);
 
-      expect(sections.map(section => section.roots.length)).toEqual([2, 1]);
-      expect(sections[0]?.title).toBeDefined();
-      expect(sections[1]?.title).toBeUndefined();
+      expect(sections.map(section => section.roots.length)).toEqual([1, 1, 1]);
+      expect(sections.map(section => section.title)).toEqual([undefined, undefined, undefined]);
+    });
+
+    it('should head a kind reported more than once, grouping its jobs together, once the run settles', async () => {
+      const jobs = (status: ActivityStatus): Activity[] => [
+        activity(ActivityKind.EXCHANGE_BALANCES, 'kraken', status),
+        report(status),
+        activity(ActivityKind.EXCHANGE_BALANCES, 'binance', status),
+      ];
+      set(activities, jobs(RUNNING));
+      const { sections } = panel();
+      await nextTick();
+
+      await transition(jobs(COMPLETE));
+
+      expect(get(sections).map(section => section.roots.length)).toEqual([2, 1]);
+      expect(get(sections)[0]?.title).toBeDefined();
+      expect(get(sections)[1]?.title).toBeUndefined();
     });
   });
 });

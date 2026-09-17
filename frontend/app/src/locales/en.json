@@ -6390,8 +6390,8 @@
   "task_dock": {
     "detail": {
       "beginning": "Beginning",
-      "cache": "{protocol} on {chain}: {processed} of {total}",
-      "cache_more": "+{count} more",
+      "cache_stopped": "Stopped",
+      "caches_filled": "{count} protocol cache filled | {count} protocol caches filled",
       "decoding": "Decoding",
       "querying_event_type": "Querying {type}",
       "querying_internal": "Querying internal transactions",
@@ -6407,6 +6407,7 @@
     "hide": "Hide background work",
     "more": "+{count} more",
     "panel": {
+      "breakdown_count": "{settled}/{total}",
       "detail": {
         "failed": "{count} failed",
         "running": "{count} running"

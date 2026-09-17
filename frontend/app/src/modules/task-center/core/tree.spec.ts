@@ -110,6 +110,55 @@ describe('subtreeSteps', () => {
     expect(subtreeSteps(children, roots[0])).toEqual({ current: 2, total: 3 });
   });
 
+  it('should count a chain in its accounts, leaving out the decode of another kind beneath it', () => {
+    const decode: Activity = { ...activity('decode', ActivityStatus.RUNNING, 'eth'), kind: ActivityKind.TX_DECODING };
+    const { children, roots } = buildTree([
+      activity('eth', ActivityStatus.RUNNING),
+      activity('eth-a', ActivityStatus.COMPLETE, 'eth'),
+      activity('eth-b', ActivityStatus.RUNNING, 'eth'),
+      decode,
+    ], byId);
+
+    expect(subtreeSteps(children, roots[0])).toEqual({ current: 1, total: 2 });
+  });
+
+  it('should count a job with no descendant of its own kind in leaves of every kind', () => {
+    const umbrella: Activity = { ...activity('umbrella', ActivityStatus.RUNNING), kind: ActivityKind.HISTORY_SYNC };
+    const decode: Activity = { ...activity('decode', ActivityStatus.COMPLETE, 'eth'), kind: ActivityKind.TX_DECODING };
+    const { children, roots } = buildTree([
+      umbrella,
+      { ...activity('eth', ActivityStatus.RUNNING), parent: umbrella.id },
+      activity('eth-a', ActivityStatus.COMPLETE, 'eth'),
+      decode,
+    ], byId);
+
+    expect(subtreeSteps(children, roots[0])).toEqual({ current: 2, total: 2 });
+  });
+
+  it('should count a run in its same-kind parents, crediting a running one with its own percentage', () => {
+    const balances = (name: string, status: ActivityStatus, parent?: string, percentage = -1): Activity => ({
+      ...activity(name, status),
+      id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, name),
+      kind: ActivityKind.BLOCKCHAIN_BALANCES,
+      parent: parent === undefined ? undefined : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, parent),
+      percentage,
+    });
+    const detection: Activity = {
+      ...activity('detect', ActivityStatus.COMPLETE),
+      kind: ActivityKind.TOKEN_DETECTION,
+      parent: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'),
+    };
+    const { children, roots } = buildTree([
+      balances('run', ActivityStatus.RUNNING),
+      balances('eth', ActivityStatus.RUNNING, 'run', 50),
+      balances('gnosis', ActivityStatus.COMPLETE, 'run'),
+      detection,
+    ], byId);
+
+    expect(subtreeSteps(children, roots[0])).toEqual({ current: 1, total: 2 });
+    expect(subtreeProgress(children, roots[0])).toBe(75);
+  });
+
   it('should not hang on a parent cycle', () => {
     const a = activity('a', ActivityStatus.RUNNING, 'b');
     const b = activity('b', ActivityStatus.RUNNING, 'a');

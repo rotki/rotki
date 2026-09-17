@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
+import { type ActivitySubject, activitySubject } from '@/modules/task-center/activity-subject';
 import DockActivityDetail from '@/modules/task-center/components/DockActivityDetail.vue';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type Activity, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
+import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 
-const { activity, cancellable, dismissible = false, now, outcomeStatus, parent, percentage, steps } = defineProps<{
+const { activity, dismissible = false, hideReason = false, now, outcomeStatus, parent, percentage, steps } = defineProps<{
   activity: Activity;
   /**
    * The row this one sits under; absent for a job. A child row is labelled by what it acts on, since
@@ -17,13 +21,14 @@ const { activity, cancellable, dismissible = false, now, outcomeStatus, parent, 
   now: number;
   /** 0-100, or `-1` for indeterminate. Parents pass their subtree's; leaves their own. */
   percentage: number;
-  /** Present for a parent: the leaf tally behind {@link percentage}. */
+  /** Present for a parent: the unit tally behind {@link percentage}. */
   steps?: ActivitySteps;
-  cancellable: boolean;
   /** Whether the row offers to dismiss the outcome it reports; the caller decides which outcomes stay until dismissed. */
   dismissible?: boolean;
   /** The status the row reports, when it differs from the activity's own; a parent passes its subtree's failure. */
   outcomeStatus?: ActivityStatus;
+  /** Leaves the reason line out, for a row whose reason is already stated once above it. The mark's label keeps it. */
+  hideReason?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -35,6 +40,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** Replaces the tally line when the row is not showing a progress bar; a settled job puts its outcome here. */
   summary?: () => unknown;
+  /** Extra lines under everything else, aligned with the label; a job puts its sections and hints here. */
+  details?: () => unknown;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -55,6 +62,19 @@ const nested = computed<boolean>(() => parent !== undefined);
 const label = computed<string>(() => labelOf(activity, get(nested), parent));
 
 const secondary = computed<string | undefined>(() => (get(nested) ? undefined : subtitleOf(activity)));
+
+const subject = computed<ActivitySubject | undefined>(() => activitySubject(activity));
+
+/** A nested account row is named by its address, so it gets the copy and explorer link an address has everywhere else. */
+const linkedAddress = computed<boolean>(() => get(nested) && get(subject)?.address !== undefined);
+
+/**
+ * The tally the row prints: a parent's leaf count, or a leaf's own steps.
+ *
+ * An account sync is left out, since its steps are seconds of the queried range; the range line
+ * already names those dates, and "86400 of 604800" would say nothing.
+ */
+const rowSteps = computed<ActivitySteps | undefined>(() => steps ?? (activity.kind === ActivityKind.TX_SYNC ? undefined : activity.steps));
 
 const status = computed<ActivityStatus>(() => outcomeStatus ?? activity.status);
 
@@ -84,20 +104,25 @@ const elapsed = computed<string | undefined>(() => {
 /** A bar earns its line only with a real number to fill it; indeterminate work says so with its mark. */
 const showMeter = computed<boolean>(() => get(isRunning) && percentage >= 0);
 
-const count = computed<string>(() => (steps && steps.total > 0
-  ? t('pending_task.steps', { current: steps.current, total: steps.total })
-  : t('percentage_display.value', { value: percentage })));
+const count = computed<string>(() => {
+  const tally = get(rowSteps);
+  return tally && tally.total > 0
+    ? t('pending_task.steps', { current: tally.current, total: tally.total })
+    : t('percentage_display.value', { value: percentage });
+});
 
 const reasonColor = computed<string>(() => (get(isFailed) ? 'text-rui-error' : 'text-rui-warning'));
 
+const reasonLine = computed<string | undefined>(() => (hideReason ? undefined : activity.reason));
+
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
-const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !activity.reason && !steps);
+const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
 </script>
 
 <template>
   <div
     class="flex items-start gap-2.5 px-1 rounded"
-    :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps }]"
+    :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps && !hideReason }]"
     data-testid="dock-activity-row"
   >
     <RuiProgress
@@ -133,12 +158,38 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
     </RuiTooltip>
 
     <div class="flex flex-col flex-1 min-w-0 gap-0.5">
-      <div
-        class="truncate text-sm leading-5"
-        :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': isTerminalStatus(activity.status) && !isFailed }]"
-        :title="label"
-      >
-        {{ label }}
+      <div class="flex items-center gap-1.5 min-w-0">
+        <ChainIcon
+          v-if="subject?.chain"
+          class="shrink-0"
+          :chain="subject.chain"
+          size="1rem"
+          data-testid="dock-subject-icon"
+        />
+        <LocationIcon
+          v-else-if="subject?.location"
+          class="shrink-0"
+          :item="subject.location"
+          icon
+          size="16px"
+          data-testid="dock-subject-icon"
+        />
+        <HashLink
+          v-if="linkedAddress && subject?.address"
+          class="min-w-0 text-sm"
+          :text="subject.address"
+          :location="subject.chain"
+          size="12"
+          data-testid="dock-subject-address"
+        />
+        <div
+          v-else
+          class="truncate text-sm leading-5"
+          :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': isTerminalStatus(activity.status) && !isFailed }]"
+          :title="label"
+        >
+          {{ label }}
+        </div>
       </div>
       <div
         v-if="secondary"
@@ -149,12 +200,12 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       </div>
       <DockActivityDetail :activity="activity" />
       <div
-        v-if="activity.reason"
+        v-if="reasonLine"
         class="text-xs leading-4 break-words"
         :class="reasonColor"
         data-testid="activity-reason"
       >
-        {{ activity.reason }}
+        {{ reasonLine }}
       </div>
       <div
         v-if="showMeter"
@@ -174,12 +225,13 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         name="summary"
       >
         <div
-          v-if="steps && steps.total > 0"
+          v-if="rowSteps && rowSteps.total > 0"
           class="text-xs leading-4 text-rui-text-secondary tabular-nums"
         >
-          {{ t('pending_task.steps', { current: steps.current, total: steps.total }) }}
+          {{ t('pending_task.steps', { current: rowSteps.current, total: rowSteps.total }) }}
         </div>
       </slot>
+      <slot name="details" />
     </div>
 
     <div class="flex items-center gap-1 shrink-0">
@@ -190,7 +242,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         {{ elapsed }}
       </span>
       <RuiTooltip
-        v-if="cancellable && !isTerminalStatus(activity.status)"
+        v-if="activity.cancellable && !isTerminalStatus(activity.status)"
         :options="{ placement: 'top' }"
         :open-delay="400"
       >

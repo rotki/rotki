@@ -5,6 +5,7 @@ import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-t
 import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { protocolCacheActivity, type ProtocolCacheDetail } from '@/modules/history/protocol-cache-activity';
+import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { type Activity, ActivityKind, activityParts, ActivityStatus } from '@/modules/task-center/core/types';
 import { peekActivityDetail } from '@/modules/task-center/use-activity-detail';
 
@@ -22,10 +23,16 @@ interface DockDetailCache {
   readonly total: number;
 }
 
-/** What a running row can say beyond its label and bar, from the detail its producer streams. */
+/** What a row can say beyond its label and bar, from the detail its producer streams. */
 export type DockDetail =
   | { readonly type: 'query'; readonly step: string | undefined; readonly period: DockDetailPeriod | undefined }
-  | { readonly type: 'caches'; readonly current: DockDetailCache; readonly more: number };
+  | {
+    readonly type: 'caches';
+    readonly filling: DockDetailCache[];
+    readonly filled: DockDetailCache[];
+    /** Left unfinished by work that has settled, cancelled or failed, so no longer filling. */
+    readonly stopped: DockDetailCache[];
+  };
 
 /** The step each transaction query status names, as an i18n key; `undefined` for a status that is not a step. */
 const SYNC_STEP: Record<TransactionsQueryStatus, MessageKey | undefined> = {
@@ -53,13 +60,40 @@ function syncPeriod(period: readonly [number, number] | undefined, windowEnd: nu
   return { from: cursor === 0 || cursor === start ? undefined : cursor, to: windowEnd ?? cursor };
 }
 
-/** The first cache still filling, and how many more are, or `undefined` when none is. */
-function cachesDetail(detail: ProtocolCacheDetail | undefined): DockDetail | undefined {
-  const filling = detail?.protocols.filter(row => row.processed < row.total) ?? [];
-  const [current] = filling;
-  if (current === undefined)
+/**
+ * Every cache the work has touched, split into full ones and unfinished ones, or `undefined` when
+ * there are none. An unfinished cache is filling while the work runs and stopped once it settles.
+ */
+function cachesDetail(rows: ProtocolCacheDetail['protocols'], running: boolean): DockDetail | undefined {
+  if (rows.length === 0)
     return undefined;
-  return { current, more: filling.length - 1, type: 'caches' };
+
+  const unfinished = rows.filter(row => row.processed < row.total);
+  return {
+    filled: rows.filter(row => row.processed >= row.total),
+    filling: running ? unfinished : [],
+    stopped: running ? [] : unfinished,
+    type: 'caches',
+  };
+}
+
+/**
+ * The protocol caches an activity has filled or is filling, read through the descriptor that
+ * published them; empty for a kind that fills none. A decode's subject is rebuilt for both cache
+ * variants and kept only where the descriptor mints the activity's own id.
+ */
+export function activityCaches(activity: Activity): ProtocolCacheDetail['protocols'] {
+  if (activity.kind === ActivityKind.PROTOCOL_CACHE)
+    return activity.id === protocolCacheActivity.id() ? peekActivityDetail(protocolCacheActivity, undefined)?.protocols ?? [] : [];
+
+  if (activity.kind !== ActivityKind.TX_DECODING)
+    return [];
+
+  const [chain] = activityParts(activity.id);
+  const subject = [false, true]
+    .map(ignoreCache => ({ chain: chain ?? '', ignoreCache }))
+    .find(candidate => decodeActivity.id(candidate) === activity.id);
+  return subject ? peekActivityDetail(decodeActivity, subject)?.protocols ?? [] : [];
 }
 
 /**
@@ -72,8 +106,9 @@ function cachesDetail(detail: ProtocolCacheDetail | undefined): DockDetail | und
  * subject rebuilt from the activity's id and kept only when the descriptor mints that same id, so a
  * chain-level row never picks up an account's detail by sharing a prefix.
  *
- * Only while the activity runs: the detail describes a query in flight, and a settled row has its
- * outcome to show instead.
+ * A query's step and range show only while the activity runs, since they describe a query in
+ * flight and a settled row has its outcome to show instead. The caches stay once it settles, as the
+ * record of what the work filled, the way the sync panel kept its completed list.
  */
 export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): ComputedRef<DockDetail | undefined> {
   const { t } = useI18n({ useScope: 'global' });
@@ -111,29 +146,18 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     };
   }
 
-  function decode(current: Activity): DockDetail | undefined {
-    const [chain] = activityParts(current.id);
-    const subject = [false, true]
-      .map(ignoreCache => ({ chain: chain ?? '', ignoreCache }))
-      .find(candidate => decodeActivity.id(candidate) === current.id);
-    return subject ? cachesDetail(peekActivityDetail(decodeActivity, subject)) : undefined;
-  }
-
-  function protocolCache(current: Activity): DockDetail | undefined {
-    return current.id === protocolCacheActivity.id() ? cachesDetail(peekActivityDetail(protocolCacheActivity, undefined)) : undefined;
-  }
-
-  /** The kinds whose producers stream detail, each read back through its own descriptor. */
-  const READERS: Partial<Record<ActivityKind, (current: Activity) => DockDetail | undefined>> = {
+  /** The kinds whose producers stream a query in flight, each read back through its own descriptor. */
+  const QUERY_READERS: Partial<Record<ActivityKind, (current: Activity) => DockDetail | undefined>> = {
     [ActivityKind.BANK_EVENTS]: events,
     [ActivityKind.EXCHANGE_EVENTS]: events,
-    [ActivityKind.PROTOCOL_CACHE]: protocolCache,
-    [ActivityKind.TX_DECODING]: decode,
     [ActivityKind.TX_SYNC]: accountSync,
   };
 
   return computed<DockDetail | undefined>(() => {
     const current = toValue(activity);
-    return current.status === ActivityStatus.RUNNING ? READERS[current.kind]?.(current) : undefined;
+    const cached = cachesDetail(activityCaches(current), !isTerminalStatus(current.status));
+    if (cached !== undefined)
+      return cached;
+    return current.status === ActivityStatus.RUNNING ? QUERY_READERS[current.kind]?.(current) : undefined;
   });
 }

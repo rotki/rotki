@@ -71,7 +71,7 @@ describe('useDockActivityDetail', () => {
     expect(get(detail)).toEqual({ period: { from: 1, to: 2 }, step: 'task_dock.detail.querying_event_type::Trades', type: 'query' });
   });
 
-  it('should name the first protocol cache a decode is still filling, and count the rest', () => {
+  it('should list every protocol cache a decode touched, split into filling and filled', () => {
     const decoding = { chain: 'eth', ignoreCache: false };
     publishActivityDetail(decodeActivity, decoding, {
       protocols: [
@@ -84,14 +84,48 @@ describe('useDockActivityDetail', () => {
     const detail = useDockActivityDetail(activity(decodeActivity.id(decoding), ActivityKind.TX_DECODING));
 
     expect(get(detail)).toEqual({
-      current: { chain: 'ethereum', processed: 18, protocol: 'curve', total: 44 },
-      more: 1,
+      filled: [{ chain: 'ethereum', processed: 44, protocol: 'aave', total: 44 }],
+      filling: [
+        { chain: 'ethereum', processed: 18, protocol: 'curve', total: 44 },
+        { chain: 'ethereum', processed: 0, protocol: 'yearn', total: 9 },
+      ],
+      stopped: [],
       type: 'caches',
     });
   });
 
-  it('should say nothing for a cache refresh whose caches are all full', () => {
+  it('should call a settled decode\'s unfinished caches stopped, not filling', () => {
+    const decoding = { chain: 'eth', ignoreCache: false };
+    publishActivityDetail(decodeActivity, decoding, {
+      protocols: [
+        { chain: 'ethereum', processed: 44, protocol: 'aave', total: 44 },
+        { chain: 'ethereum', processed: 18, protocol: 'curve', total: 44 },
+      ],
+    });
+
+    const detail = get(useDockActivityDetail(activity(decodeActivity.id(decoding), ActivityKind.TX_DECODING, ActivityStatus.CANCELLED)));
+
+    expect(detail?.type === 'caches' ? { filling: detail.filling, stopped: detail.stopped } : undefined).toEqual({
+      filling: [],
+      stopped: [{ chain: 'ethereum', processed: 18, protocol: 'curve', total: 44 }],
+    });
+  });
+
+  it('should keep a settled cache refresh\'s filled caches as its record', () => {
     publishActivityDetail(protocolCacheActivity, undefined, { protocols: [{ chain: 'ethereum', processed: 5, protocol: 'curve', total: 5 }] });
+
+    const detail = useDockActivityDetail(activity(protocolCacheActivity.id(), ActivityKind.PROTOCOL_CACHE, ActivityStatus.COMPLETE));
+
+    expect(get(detail)).toEqual({
+      filled: [{ chain: 'ethereum', processed: 5, protocol: 'curve', total: 5 }],
+      filling: [],
+      stopped: [],
+      type: 'caches',
+    });
+  });
+
+  it('should say nothing for a cache refresh that has touched no cache yet', () => {
+    publishActivityDetail(protocolCacheActivity, undefined, { protocols: [] });
 
     expect(get(useDockActivityDetail(activity(protocolCacheActivity.id(), ActivityKind.PROTOCOL_CACHE)))).toBeUndefined();
   });

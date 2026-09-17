@@ -111,12 +111,45 @@ export function subtreeLeaves(children: ReadonlyMap<ActivityId, Activity[]>, roo
 }
 
 /**
- * How much of a subtree is done, counted in **leaves**.
+ * The nodes a row counts: the deepest descendants of `root`'s own kind when it has any, its leaves otherwise.
  *
  * @remarks
- * Leaves are the only nodes that do work: an umbrella awaits its chains, a chain awaits its
- * accounts, and only the accounts talk to the backend. Counting rows instead would let every
- * intermediate node inflate the total.
+ * A parent is counted in the unit a reader names it by. A chain's sync is "3 of 5 accounts", not
+ * "4 of 6" with its decode folded in, because the accounts are the same kind as the chain and the
+ * decode is not. A run over several chains' balances counts chains, whatever detection each chain
+ * fanned into. A parent with no descendant of its own kind (a history refresh over chains,
+ * exchanges and queries) has no such unit and falls back to its leaves.
+ *
+ * "Deepest" is judged by direct children: a same-kind node counts unless one of its own children is
+ * of that kind too.
+ */
+function subtreeUnits(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): Activity[] {
+  const units: Activity[] = [];
+  const seen = new Set<ActivityId>([root.id]);
+  const stack: Activity[] = [...(children.get(root.id) ?? [])];
+
+  while (stack.length > 0) {
+    const activity = stack.pop();
+    if (activity === undefined || seen.has(activity.id))
+      continue;
+
+    seen.add(activity.id);
+    const descendants = children.get(activity.id) ?? [];
+    if (activity.kind === root.kind && !descendants.some(child => child.kind === root.kind))
+      units.push(activity);
+    stack.push(...descendants);
+  }
+
+  return units.length > 0 ? units : subtreeLeaves(children, root);
+}
+
+/**
+ * How much of a subtree is done, counted in the units {@link subtreeUnits} picks.
+ *
+ * @remarks
+ * Never intermediate rows: an umbrella awaits its chains and a chain awaits its accounts, so
+ * counting every row would let each level inflate the total. In a tree of one kind the units are
+ * exactly the leaves, the nodes that do the work.
  *
  * Not the same denominator as `Activity.percentage`, which the orchestrator derives from
  * **direct** children only (`projection.ts` `childProgress`). Two-level trees agree; at three
@@ -125,45 +158,19 @@ export function subtreeLeaves(children: ReadonlyMap<ActivityId, Activity[]>, roo
  *
  * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
  * @param root - the activity whose subtree is counted; counts as its own leaf when childless
- * @returns settled leaves over total leaves, both counted across the whole subtree
- *
- * Walked iteratively against a seen-set, since a malformed parent chain would otherwise recurse
- * forever, and a task panel is not where a producer's mistake should take the renderer down.
+ * @returns settled units over total units
  */
 export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps {
-  let current = 0;
-  let total = 0;
-
-  const seen = new Set<ActivityId>();
-  const stack: Activity[] = [root];
-
-  while (stack.length > 0) {
-    const activity = stack.pop();
-    if (activity === undefined || seen.has(activity.id))
-      continue;
-
-    seen.add(activity.id);
-    const descendants = children.get(activity.id);
-
-    if (descendants === undefined || descendants.length === 0) {
-      total += 1;
-      if (isTerminalStatus(activity.status))
-        current += 1;
-      continue;
-    }
-
-    stack.push(...descendants);
-  }
-
-  return { current, total };
+  const units = subtreeUnits(children, root);
+  return { current: units.filter(unit => isTerminalStatus(unit.status)).length, total: units.length };
 }
 
 /**
  * How far along a subtree is, 0-100, or {@link INDETERMINATE} when nothing in it can be quantified.
  *
  * @remarks
- * Same leaves as {@link subtreeSteps}, but fractional: a running leaf reporting 45% contributes
- * 0.45, not 0. An unquantifiable leaf contributes 0 and still counts toward the denominator, so
+ * Same units as {@link subtreeSteps}, but fractional: a running unit reporting 45% contributes
+ * 0.45, not 0. An unquantifiable unit contributes 0 and still counts toward the denominator, so
  * unknown work reads as unfinished rather than leaving the average.
  *
  * This is the number a bar or ring shows, {@link subtreeSteps} the number the text shows. Same
@@ -172,39 +179,23 @@ export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root
  *
  * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
  * @param root - the activity whose subtree is measured
- * @returns 0-100, or {@link INDETERMINATE} (-1) when no leaf anywhere reports a percentage
+ * @returns 0-100, or {@link INDETERMINATE} (-1) when no unit reports a percentage
  */
 export function subtreeProgress(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): number {
+  const units = subtreeUnits(children, root);
   let done = 0;
-  let total = 0;
   let quantifiable = 0;
 
-  const seen = new Set<ActivityId>();
-  const stack: Activity[] = [root];
-
-  while (stack.length > 0) {
-    const activity = stack.pop();
-    if (activity === undefined || seen.has(activity.id))
-      continue;
-
-    seen.add(activity.id);
-    const descendants = children.get(activity.id);
-
-    if (descendants !== undefined && descendants.length > 0) {
-      stack.push(...descendants);
-      continue;
-    }
-
-    total += 1;
-    if (isTerminalStatus(activity.status)) {
+  for (const unit of units) {
+    if (isTerminalStatus(unit.status)) {
       done += 1;
       quantifiable += 1;
     }
-    else if (activity.percentage >= 0) {
-      done += activity.percentage / 100;
+    else if (unit.percentage >= 0) {
+      done += unit.percentage / 100;
       quantifiable += 1;
     }
   }
 
-  return quantifiable === 0 || total === 0 ? INDETERMINATE : Math.round((done / total) * 100);
+  return quantifiable === 0 || units.length === 0 ? INDETERMINATE : Math.round((done / units.length) * 100);
 }

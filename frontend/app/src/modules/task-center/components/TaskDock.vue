@@ -2,8 +2,6 @@
 import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
 import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
 import DockPill from '@/modules/task-center/components/DockPill.vue';
-import DockSyncHint from '@/modules/task-center/components/DockSyncHint.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useCancelConfirmation } from '@/modules/task-center/use-cancel-confirmation';
 import { useDockPanel } from '@/modules/task-center/use-dock-panel';
 import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
@@ -14,7 +12,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { acknowledge, holdInteraction, modelExpanded, state, visible } = useTaskDock();
 const { children, jobs } = usePendingJobs();
-const { retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
+const { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { confirmCancel, confirmCancelAll } = useCancelConfirmation();
 const { rerun } = useTaskController();
 
@@ -23,21 +21,15 @@ const now = useTimestamp({ interval: 1000 });
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
-/** A history refresh is what the sync hint is about, so it shows only while one is listed as running. */
-const isSyncingHistory = computed<boolean>(() => get(state) === DockState.WORKING
-  && get(roots).some(root => root.kind === ActivityKind.HISTORY_SYNC));
-
 /** Reported outcomes stay until dismissed, failed or not; once dismissed they are only reopened. */
 const isReporting = computed<boolean>(() => get(state) === DockState.FAILED || get(state) === DockState.DONE);
 
 /**
- * A bulk action earns the footer only when it acts on more than one thing; with a single job or a
- * single failure, that row's own control does the same. Stop all counts only the jobs it may
- * safely interrupt.
+ * A bulk action earns the footer only when it acts on more than one thing; with a single job, a
+ * single failure or a single failure group, that row's own control does the same. Stop all counts
+ * only the jobs it may safely interrupt.
  */
 const canStopAll = computed<boolean>(() => get(stoppable).length > 1);
-
-const canRetryAll = computed<boolean>(() => get(retryable).length > 1);
 
 function toggle(): void {
   set(modelExpanded, !get(modelExpanded));
@@ -66,7 +58,6 @@ function toggle(): void {
         :total="total"
         @collapse="modelExpanded = false"
       />
-      <DockSyncHint v-if="isSyncingHistory" />
       <div class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1">
         <div
           v-for="section in sections"
