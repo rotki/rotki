@@ -10,7 +10,13 @@ from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.evm.decoding.zerox.utils import generate_settler_addresses
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
@@ -1912,6 +1918,11 @@ def test_swap_via_new_settler_ethereum(ethereum_inquirer, ethereum_accounts) -> 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder(
+        order={ChainID.ROBINHOOD: [EvmIndexer.BLOCKSCOUT]},
+    ),
+}])
 @pytest.mark.parametrize('robinhood_manager_connect_at_start', [(ROBINHOOD_MAINNET_NODE,)])
 @pytest.mark.parametrize(('robinhood_accounts', 'tx_hash', 'timestamp', 'gas', 'send_asset', 'send_amount', 'send_symbol', 'receive_asset', 'receive_amount', 'receive_symbol'), [  # noqa: E501
     pytest.param(

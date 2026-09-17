@@ -206,7 +206,10 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
         ),  # Etherscan only serves gnosis to paid api keys now, so blockscout goes first and etherscan stays as a fallback. Routescan does not support gnosis  # noqa: E501
         ChainID.MONAD: (EvmIndexer.ETHERSCAN,),  # Only etherscan (monadscan) is available for Monad  # noqa: E501
         ChainID.SONIC: (EvmIndexer.ETHERSCAN,),  # Only etherscan (sonicscan) is available for Sonic  # noqa: E501
-        ChainID.ROBINHOOD: (EvmIndexer.BLOCKSCOUT,),  # Etherscan and Routescan do not support Robinhood chain. Only the blockscout PRO api does  # noqa: E501
+        ChainID.ROBINHOOD: (
+            EvmIndexer.ETHERSCAN,
+            EvmIndexer.BLOCKSCOUT,
+        ),  # Routescan does not support Robinhood chain
         ChainID.INK: (EvmIndexer.BLOCKSCOUT,),
     },
 )

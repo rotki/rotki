@@ -228,6 +228,17 @@ def test_paid_etherscan_key_respects_a_custom_order() -> None:
         CachedSettings.evm_indexers_order_override_var.reset(token)
 
 
+def test_robinhood_uses_etherscan_before_blockscout() -> None:
+    inquirer = DummyEvmNodeInquirer()
+    inquirer.chain_id = ChainID.ROBINHOOD
+    inquirer.blockchain = SupportedBlockchain.ROBINHOOD
+
+    assert [name for name, _ in inquirer._get_indexers_in_order()] == [
+        EvmIndexer.ETHERSCAN,
+        EvmIndexer.BLOCKSCOUT,
+    ]
+
+
 def test_call_contract_indexers_forwards_block_identifier() -> None:
     """Regression test for historical eth_call via indexers executing at the latest block.
 
