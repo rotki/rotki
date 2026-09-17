@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
 from eth_abi.exceptions import DecodingError
 from web3.exceptions import Web3Exception
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    UserMessageOperation,
+    UserMessageRecord,
+    WSMessageType,
+)
 from rotkehlchen.assets.spam_assets import check_token_impersonates_dangerous_tokens
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
@@ -109,6 +113,7 @@ from rotkehlchen.types import (
     Location,
     TokenKind,
 )
+from rotkehlchen.user_messages import Internal, NetworkFailure
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import (
@@ -393,12 +398,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self.msg_aggregator.add_error(
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to asset mismatch: {e!s}',
+                classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
             )
             return
         except (NotERC721Conformant, NotERC20Conformant):
             self.msg_aggregator.add_error(
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to non conformant token',
+                classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
             )
             return
 
@@ -459,6 +466,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     f'Failed to update cache for {counterparty} due to a '
                     'network error. A re-decoding might be required if information '
                     'was not up to date.',
+                    classification=NetworkFailure(
+                        record=UserMessageRecord.PROTOCOL_CACHE,
+                        error=str(e),
+                    ),
                 )
                 return
 

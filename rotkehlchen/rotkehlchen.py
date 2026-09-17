@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry, WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
@@ -144,7 +144,12 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.user_messages import (
+    ROTKI_PREMIUM_SERVICE,
+    AuthFailure,
+    LocalDbProblem,
+    MessagesAggregator,
+)
 from rotkehlchen.utils.datadir import maybe_restructure_rotki_data_directory
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
@@ -213,6 +218,7 @@ class Rotkehlchen:
             self.msg_aggregator.add_warning(
                 'Your global database was left in an half-upgraded state. '
                 'Restored from the latest backup we could find',
+                classification=LocalDbProblem(entry=UserMessageEntry.DB_UPGRADE),
             )
         self.data = DataHandler(
             self.data_dir,
@@ -418,6 +424,7 @@ class Rotkehlchen:
             self.msg_aggregator.add_warning(
                 'Could not authenticate the rotki premium API keys found in the DB. '
                 f'Error: {e}. Check logs for more details',
+                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE),
             )
             # else let's just continue. User signed in successfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
@@ -732,6 +739,7 @@ class Rotkehlchen:
             notification_callback=lambda: self.msg_aggregator.add_warning(
                 'Data associated with invalid ERC721 assets is present in your database. '
                 'Please contact rotki support via our discord to resolve this issue.',
+                classification=LocalDbProblem(entry=UserMessageEntry.ASSET),
             ),
         )
 

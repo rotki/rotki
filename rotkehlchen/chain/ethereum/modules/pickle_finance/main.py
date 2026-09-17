@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -10,6 +11,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
@@ -124,6 +126,7 @@ class PickleFinance(EthereumModule):
                 except (DeserializationError, IndexError) as e:
                     self.msg_aggregator.add_error(
                         f'Failed to query dill information for address {address}. {e!s}',
+                        classification=BadData(record=UserMessageRecord.POSITION, error=str(e)),
                     )
 
         return api_output

@@ -1,15 +1,39 @@
 import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { createHandlerRegistry } from './handler-registry';
 import { WebsocketMessage } from './messages';
-import { MESSAGE_WARNING, SocketMessageType } from './types/base';
+import { SocketMessageType } from './types/base';
 import { handleMessageError } from './utils/error-handling';
+
+/**
+ * Validate one `{ type, data }` message, from the websocket or from the polling fallback.
+ *
+ * @returns The message, or undefined after logging it when it fails the schema.
+ */
+function parseMessage(raw: unknown): WebsocketMessage | undefined {
+  const parseResult = WebsocketMessage.safeParse(camelCaseTransformer(raw));
+  if (!parseResult.success) {
+    logger.warn('Invalid message format:', parseResult.error, raw);
+    return undefined;
+  }
+  return parseResult.data;
+}
+
+/**
+ * What makes two polled messages the same notification.
+ *
+ * @remarks
+ * A user message is identified by the text it renders, so it also matches a notification the
+ * websocket already delivered. Any other message is identified by its whole content.
+ */
+function pollingKey(message: WebsocketMessage): string {
+  return message.type === SocketMessageType.USER_MESSAGE ? message.data.value : JSON.stringify(message);
+}
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
@@ -27,15 +51,7 @@ export function useMessageHandling(): UseMessageHandling {
 
   let isRunning = false;
 
-  const handleMessage = async (data: string): Promise<void> => {
-    const parseResult = WebsocketMessage.safeParse(camelCaseTransformer(JSON.parse(data)));
-
-    if (!parseResult.success) {
-      logger.warn(`Invalid websocket message format:`, parseResult.error, data);
-      return;
-    }
-
-    const message = parseResult.data;
+  const route = async (message: WebsocketMessage): Promise<void> => {
     const handler = registry[message.type];
 
     if (!handler) {
@@ -50,37 +66,10 @@ export function useMessageHandling(): UseMessageHandling {
     }
   };
 
-  const handlePollingMessage = async (message: string, isWarning: boolean): Promise<void> => {
-    try {
-      const object = JSON.parse(message);
-      const parseResult = WebsocketMessage.safeParse(camelCaseTransformer(object));
-
-      if (parseResult.success) {
-        const handler = registry[parseResult.data.type];
-        if (handler) {
-          const result = await handler.handle(parseResult.data.data);
-          if (result)
-            notify(result);
-        }
-        else {
-          logger.error('no handler for message type:', parseResult.data.type);
-        }
-      }
-      else {
-        // Fallback to legacy handler for invalid message format
-        const handler = registry[SocketMessageType.LEGACY];
-        const result = await handler.handle({ value: message, verbosity: isWarning ? MESSAGE_WARNING : '' });
-        if (result)
-          notify(result);
-      }
-    }
-    catch {
-      // JSON parse failed, use legacy handler
-      const handler = registry[SocketMessageType.LEGACY];
-      const result = await handler.handle({ value: message, verbosity: isWarning ? MESSAGE_WARNING : '' });
-      if (result)
-        notify(result);
-    }
+  const handleMessage = async (data: string): Promise<void> => {
+    const message = parseMessage(JSON.parse(data));
+    if (message)
+      await route(message);
   };
 
   const consume = async (): Promise<void> => {
@@ -91,21 +80,16 @@ export function useMessageHandling(): UseMessageHandling {
     const title = t('actions.notifications.consume.message_title');
 
     try {
-      const messages = await backoff(3, async () => consumeMessages(), 10000);
-      const existing = get(notifications).map(({ message }) => message);
+      const { errors, warnings } = await backoff(3, async () => consumeMessages(), 10000);
+      const shown = new Set<string>(get(notifications).map(({ message }) => message));
 
-      const errors = messages.errors
-        .filter((error, ...args) => uniqueStrings(error, ...args) && !existing.includes(error));
+      for (const raw of [...errors, ...warnings]) {
+        const message = parseMessage(raw);
+        if (!message || shown.has(pollingKey(message)))
+          continue;
 
-      for (const message of errors) {
-        await handlePollingMessage(message, false);
-      }
-
-      const warnings = messages.warnings
-        .filter((warning, ...args) => uniqueStrings(warning, ...args) && !existing.includes(warning));
-
-      for (const message of warnings) {
-        await handlePollingMessage(message, true);
+        shown.add(pollingKey(message));
+        await route(message);
       }
     }
     catch (error: unknown) {

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { NewDetectedToken } from '@/modules/assets/detection/types';
 import { CalendarEventWithReminder } from '@/modules/calendar/types';
-import { LegacyMessageData, SocketMessageType } from './types/base';
+import { SocketMessageType, UserMessageData } from './types/base';
 import {
   AccountingRuleConflictData,
   ExchangeUnknownAssetData,
@@ -31,9 +31,9 @@ import {
   UnifiedTransactionStatusData,
 } from './types/status-types';
 
-const LegacyWebsocketMessage = z.object({
-  data: LegacyMessageData,
-  type: z.literal(SocketMessageType.LEGACY),
+const UserMessageWebsocketMessage = z.object({
+  data: UserMessageData,
+  type: z.literal(SocketMessageType.USER_MESSAGE),
 });
 
 const BalancesSnapshotErrorMessage = z.object({
@@ -167,7 +167,7 @@ const UnmatchedBridgeTransactionsMessage = z.object({
 });
 
 export const WebsocketMessage = z.discriminatedUnion('type', [
-  LegacyWebsocketMessage,
+  UserMessageWebsocketMessage,
   BalancesSnapshotErrorMessage,
   TransactionStatusMessage,
   HistoryEventsStatusMessage,

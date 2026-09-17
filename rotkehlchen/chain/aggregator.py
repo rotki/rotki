@@ -10,7 +10,7 @@ import requests
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import UserMessageOperation, WSMessageType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
@@ -123,6 +123,7 @@ from rotkehlchen.types import (
     Timestamp,
     TuplesOfBlockchainAddresses,
 )
+from rotkehlchen.user_messages import Internal
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
@@ -486,7 +487,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 **kwargs,
             )
         except (ModuleInitializationFailure, UnknownAsset, WrongAssetType) as e:
-            self.msg_aggregator.add_error(f'Failed to activate {module_name} due to: {e!s}')
+            self.msg_aggregator.add_error(
+                f'Failed to activate {module_name} due to: {e!s}',
+                classification=Internal(operation=UserMessageOperation.MODULE_ACTIVATION),
+            )
             return None
 
         self.eth_modules[module_name] = instance
@@ -1216,6 +1220,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     self.msg_aggregator.add_error(
                         f'The owner of a vault {address} was not in the tracked addresses.'
                         f' This should not happen and is probably a bug. Please report it.',
+                        classification=Internal(operation=UserMessageOperation.BALANCE_QUERY),
                     )
                 else:
                     eth_balances[address] += entry
