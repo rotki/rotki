@@ -47,6 +47,11 @@ export const BankAuthChallenge = z.object({
 
 export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
 
+/** Every challenge but an app approval is answered by typing what the bank generated. */
+export function challengeNeedsResponse(challenge: BankAuthChallenge): boolean {
+  return challenge.primitive !== 'app approval poll';
+}
+
 export const BankSetupSuccess = z.object({
   success: z.literal(true),
   historyStartTs: z.number().nullable(),

@@ -1,4 +1,4 @@
-import type { BankConnection, BankManifest, BankSetupError } from '@/modules/banks/types';
+import type { BankAuthenticationRequest, BankConnection, BankManifest, BankSetupError } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
@@ -108,21 +108,71 @@ describe('useBanks', () => {
     expect(store.manifestFor('qonto')).toEqual(manifest);
   });
 
-  it('should add through PUT and edit through PATCH, dropping an unchanged new name', async () => {
+  it('should add through PUT and edit through PATCH, dropping an unchanged new name and refreshing after each setup, balance query and sync', async () => {
     addBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
     editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
     const credentials = { api_key: 'login' };
 
     await banks.setupBank({ credentials, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
+    await flushPromises();
     expect(addBank).toHaveBeenCalledWith({ credentials, location: 'qonto', name: 'Qonto main' });
 
     await banks.setupBank({ credentials, location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Qonto main' });
+    await flushPromises();
     expect(editBank).toHaveBeenCalledWith({ credentials, location: 'qonto', name: 'Qonto main', newName: undefined });
 
     await banks.setupBank({ credentials, location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Renamed' });
+    await flushPromises();
     expect(editBank).toHaveBeenLastCalledWith({ credentials, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
-    expect(getBanks.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(getBanks).toHaveBeenCalledTimes(7);
+    expect(queryAllBankEvents).toHaveBeenCalledOnce();
+  });
+
+  describe('answering an authentication request', () => {
+    const challenge = { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter TAN' };
+
+    it('should send only the connection identity, whatever else the caller holds', async () => {
+      useBankConnectionsStore().setConnections([connection]);
+      answerAuthentication.mockResolvedValue(ok(true));
+
+      const request: BankAuthenticationRequest = { challenge, location: 'qonto', name: 'Qonto main' };
+      await useBanks().answerBankAuthentication(request, '123456');
+
+      expect(answerAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main', response: '123456' });
+    });
+
+    it('should refresh the connection and balances of an existing connection without starting another sync', async () => {
+      useBankConnectionsStore().setConnections([connection]);
+      answerAuthentication.mockResolvedValue(ok(true));
+
+      await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' }, '123456');
+      await flushPromises();
+
+      expect(getBanks).toHaveBeenCalledTimes(2);
+      expect(queryBankBalances).toHaveBeenCalledOnce();
+      expect(queryAllBankEvents).not.toHaveBeenCalled();
+      expect(notifyInfo).not.toHaveBeenCalled();
+    });
+
+    it('should sync a connection whose setup the answer completed', async () => {
+      useBankConnectionsStore().setConnections([connection]);
+      answerAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+
+      await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' }, '123456');
+      await flushPromises();
+
+      expect(queryAllBankEvents).toHaveBeenCalledExactlyOnceWith([{ location: 'qonto', name: 'Qonto main' }]);
+    });
+
+    it('should hand back a further challenge without refreshing', async () => {
+      answerAuthentication.mockResolvedValue(ok(challenge));
+
+      expect(await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' })).toEqual(ok(challenge));
+      await flushPromises();
+
+      expect(getBanks).not.toHaveBeenCalled();
+    });
   });
 
   it('should send only the credentials that were filled in when editing, so a blank slot keeps its stored value', async () => {

@@ -8,6 +8,8 @@ export interface FakeBankConnection {
   name: string;
   lastSyncTs?: number;
   lastError?: string;
+  /** The TAN prompt of a challenge the connection is waiting on. */
+  pendingTan?: string;
 }
 
 export interface FakeBankSetup {
@@ -24,6 +26,14 @@ export interface FakeBankSetup {
   /** Connection names whose sync task fails, with the message the backend would report. */
   failingSyncs?: Record<string, string>;
   /**
+   * Connection names whose sync the bank pauses for a TAN, with the TAN prompt.
+   *
+   * @remarks
+   * The backend ends such a sync with no result and no message, and reports the challenge only on the
+   * connection's sync status, so both are faked here.
+   */
+  pausedSyncs?: Record<string, string>;
+  /**
    * Makes adding a connection fail the way the backend does when Qonto rejects the key.
    *
    * @remarks
@@ -35,6 +45,7 @@ export interface FakeBankSetup {
 
 export interface BankRequests {
   added: Record<string, unknown>[];
+  authenticated: Record<string, unknown>[];
   edited: Record<string, unknown>[];
   removed: Record<string, unknown>[];
   synced: Record<string, unknown>[];
@@ -66,6 +77,16 @@ function toWireConnection(connection: FakeBankConnection): Record<string, unknow
     location: 'qonto',
     name: connection.name,
     sync_status: {
+      auth_challenge: connection.pendingTan
+        ? {
+            challenge: connection.pendingTan,
+            challenge_data: null,
+            challenge_html: null,
+            challenge_mime_type: null,
+            primitive: 'otp input',
+            prompt: connection.pendingTan,
+          }
+        : null,
       last_error: connection.lastError ?? null,
       last_sync_ts: connection.lastSyncTs ?? null,
       running: false,
@@ -117,7 +138,7 @@ export async function apiAddBankEvent(request: APIRequestContext, event: BankEve
  * the real backend, which serves the Qonto manifest without an account.
  */
 export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promise<BankRequests> {
-  const requests: BankRequests = { added: [], edited: [], removed: [], synced: [] };
+  const requests: BankRequests = { added: [], authenticated: [], edited: [], removed: [], synced: [] };
   let connections = [...setup.connections];
   let nextTaskId = FAKE_TASK_ID_START;
   const outcomes = new Map<number, { result: unknown; message: string }>();
@@ -164,8 +185,30 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/sync', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.synced.push(body);
-    const failure = setup.failingSyncs?.[String(body.name)];
+    const name = String(body.name);
+    const pausedTan = setup.pausedSyncs?.[name];
+    if (pausedTan) {
+      connections = connections.map(connection => connection.name === name ? { ...connection, pendingTan: pausedTan } : connection);
+      await fulfillJson(route, { task_id: startTask(null) });
+      return;
+    }
+    const failure = setup.failingSyncs?.[name];
     await fulfillJson(route, { task_id: failure ? startTask(null, failure) : startTask(true) });
+  });
+
+  await page.route('**/api/1/banks/auth', async (route) => {
+    const body = route.request().postDataJSON() ?? {};
+    requests.authenticated.push(body);
+    if (Object.keys(body).some(key => !['location', 'name', 'response'].includes(key))) {
+      await route.fulfill({
+        body: JSON.stringify({ message: JSON.stringify({ unknown: ['Unknown field.'] }), result: null }),
+        contentType: 'application/json',
+        status: 400,
+      });
+      return;
+    }
+    connections = connections.map(connection => connection.name === body.name ? { ...connection, pendingTan: undefined } : connection);
+    await fulfillJson(route, true);
   });
 
   await page.route('**/api/1/banks/balances**', async (route) => {

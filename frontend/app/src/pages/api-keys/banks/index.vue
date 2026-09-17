@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
+import type { BankAuthenticationRequest, BankConnection, BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { emptyCredentials } from '@/modules/banks/bank-connection-form';
@@ -24,6 +24,7 @@ definePage({
 
 const bank = ref<BankFormData>();
 const authentication = ref<BankAuthenticationRequest>();
+const requestedAuthentication = ref<BankConnectionIdentity>();
 const syncing = ref<string[]>([]);
 const sort = ref<DataTableSortColumn<BankConnection>>({
   column: 'name',
@@ -108,6 +109,23 @@ function authenticate(row: BankConnection): void {
   }
 }
 
+/**
+ * Opens the authentication a link asked for, once that connection is listed.
+ *
+ * @remarks
+ * The link can arrive before the connection list has loaded, so the request is held until the row
+ * exists. A connection whose challenge was already answered opens nothing.
+ */
+function openRequestedAuthentication([requested, connections]: [BankConnectionIdentity | undefined, BankConnection[]]): void {
+  if (!requested)
+    return;
+  const row = connections.find(connection => connection.location === requested.location && connection.name === requested.name);
+  if (!row)
+    return;
+  authenticate(row);
+  set(requestedAuthentication, undefined);
+}
+
 async function sync(row: BankConnection): Promise<void> {
   set(syncing, [...get(syncing), rowKey(row)]);
   try {
@@ -135,7 +153,13 @@ watch(route, async (route) => {
     addBank();
     await router.replace({ query: {} });
   }
+  else if (typeof query.authenticate === 'string' && typeof query.location === 'string') {
+    set(requestedAuthentication, { location: query.location, name: query.authenticate });
+    await router.replace({ query: {} });
+  }
 }, { immediate: true });
+
+watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate: true });
 </script>
 
 <template>
@@ -199,6 +223,14 @@ watch(route, async (route) => {
             >
               {{ t('bank_settings.sync.failed') }}
             </RuiChip>
+            <RuiChip
+              v-if="row.syncStatus.authChallenge"
+              color="warning"
+              size="sm"
+              data-testid="bank-auth-required"
+            >
+              {{ t('bank_settings.sync.authentication_required') }}
+            </RuiChip>
           </div>
         </template>
         <template #item.actions="{ row }">
@@ -218,9 +250,6 @@ watch(route, async (route) => {
       v-model="bank"
       @added="highlight($event)"
     />
-    <BankAuthenticationDialog
-      v-model="authentication"
-      @authenticated="refreshBankConnections()"
-    />
+    <BankAuthenticationDialog v-model="authentication" />
   </TablePageLayout>
 </template>

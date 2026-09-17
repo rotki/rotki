@@ -38,6 +38,7 @@ vi.mock('@/modules/banks/components/BankConnectionForm.vue', () => ({
 
 const BigDialogStub = defineComponent({
   emits: ['cancel', 'confirm'],
+  props: { action: { default: undefined, type: Object } },
   setup: (_props, { slots }) => (): VNode => h('div', slots.default?.()),
 });
 
@@ -162,6 +163,27 @@ describe('bankConnectionFormDialog', () => {
       '123456',
     );
     expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+  });
+
+  it('should switch Save to Continue for a TAN and not answer until one is typed', async () => {
+    setupBank.mockResolvedValue(ok({
+      challenge: 'Enter TAN',
+      challengeData: null,
+      challengeHtml: null,
+      challengeMimeType: null,
+      primitive: 'otp input',
+      prompt: 'Enter TAN',
+    }));
+    wrapper = createWrapper(createForm());
+    const action = (): Record<string, unknown> | undefined => wrapper.findComponent(BigDialogStub).props('action');
+
+    expect(action()).toEqual({ primary: 'common.actions.save' });
+    await confirm();
+    expect(action()).toEqual({ disabled: true, primary: 'bank_settings.authentication.continue' });
+
+    await confirm();
+    expect(answerBankAuthentication).not.toHaveBeenCalled();
+    expect(validate).toHaveBeenCalledOnce();
   });
 
   it('should discard a pending challenge when the dialog is cancelled', async () => {

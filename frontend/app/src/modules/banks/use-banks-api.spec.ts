@@ -111,6 +111,62 @@ describe('useBanksApi', () => {
     expect(outcome.error).toEqual({ message: 'required', type: 'rejected' });
   });
 
+  describe('answering an authentication request', () => {
+    const wireChallenge = {
+      challenge: 'Enter the TAN',
+      challenge_data: null,
+      challenge_html: null,
+      challenge_mime_type: null,
+      primitive: 'otp input',
+      prompt: 'Enter the TAN',
+    };
+
+    function answerWith(status: number, result: unknown, bodies: unknown[]): void {
+      server.use(http.post(`${backendUrl}/api/1/banks/auth`, async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({ message: '', result }, { status });
+      }));
+    }
+
+    it('should send only the connection identity and the response', async () => {
+      const bodies: unknown[] = [];
+      answerWith(200, true, bodies);
+
+      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '123456' });
+
+      expect(outcome).toEqual(ok(true));
+      expect(bodies).toEqual([{ location: 'fints', name: 'main', response: '123456' }]);
+    });
+
+    it('should hand back the next challenge when the bank asks again', async () => {
+      answerWith(202, { ...wireChallenge, primitive: 'app approval poll' }, []);
+
+      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main' });
+
+      assert(outcome.ok);
+      expect(outcome.value).toMatchObject({ challengeData: null, primitive: 'app approval poll', prompt: 'Enter the TAN' });
+    });
+
+    it('should hand back a completed setup with its history start', async () => {
+      answerWith(200, { history_start_ts: 1_700_000_000, success: true }, []);
+
+      expect(await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' }))
+        .toEqual(ok({ historyStartTs: 1_700_000_000, success: true }));
+    });
+
+    it('should report a refused answer as a rejection', async () => {
+      server.use(http.post(`${backendUrl}/api/1/banks/auth`, () => HttpResponse.json(
+        { message: 'The TAN was rejected by the bank', result: null },
+        { status: 409 },
+      )));
+
+      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' });
+
+      assert(!outcome.ok);
+      expect(outcome.error).toEqual({ message: 'The TAN was rejected by the bank', type: 'rejected' });
+    });
+  });
+
   it('should remove a connection by location and name', async () => {
     let body: unknown;
     server.use(http.delete(`${backendUrl}/api/1/banks`, async ({ request }) => {

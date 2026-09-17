@@ -2,12 +2,13 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<BankFormData | undefined>({ required: true });
 
@@ -35,6 +36,15 @@ const title = computed<string>(() => {
     : t('bank_settings.dialog.add.title');
 });
 
+const missingResponse = computed<boolean>(() => {
+  const challenge = get(authChallenge);
+  return !!challenge && challengeNeedsResponse(challenge) && get(authResponse).trim() === '';
+});
+
+const action = computed<BigDialogAction>(() => isDefined(authChallenge)
+  ? { disabled: get(missingResponse), primary: t('bank_settings.authentication.continue') }
+  : { primary: t('common.actions.save') });
+
 /** The api keys credential errors by slot; the form binds them at `credentials.<slot>`. */
 function toFieldErrors(errors: ValidationErrors, form: BankFormData): ValidationErrors {
   return Object.fromEntries(
@@ -55,7 +65,7 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
 
 async function save(): Promise<void> {
   assert(isDefined(modelValue));
-  if (!isDefined(get(authChallenge)) && !get(form)?.validate())
+  if (get(missingResponse) || (!isDefined(authChallenge) && !get(form)?.validate()))
     return;
 
   set(submitting, true);
@@ -64,7 +74,7 @@ async function save(): Promise<void> {
   const outcome = isDefined(get(authChallenge))
     ? await answerBankAuthentication(
         { location: payload.location, name: payload.name },
-        get(authResponse) || undefined,
+        get(authResponse).trim() || undefined,
       )
     : await setupBank(payload);
   set(submitting, false);
@@ -76,6 +86,7 @@ async function save(): Promise<void> {
 
   if (!isBankSetupComplete(outcome.value)) {
     set(authChallenge, outcome.value);
+    set(authResponse, '');
     return;
   }
   if (payload.mode !== 'edit')
@@ -99,43 +110,17 @@ watch(modelValue, (value) => {
   <BigDialog
     :display="!!modelValue"
     :title="title"
-    :action="{ primary: t('common.actions.save') }"
+    :action="action"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
-    <div
+    <BankAuthChallengeFields
       v-if="authChallenge"
-      class="flex flex-col gap-4"
-      data-testid="bank-auth-challenge"
-    >
-      <RuiAlert type="info">
-        {{ authChallenge.challenge ?? authChallenge.prompt }}
-      </RuiAlert>
-      <img
-        v-if="authChallenge.challengeData && authChallenge.challengeMimeType"
-        :src="`data:${authChallenge.challengeMimeType};base64,${authChallenge.challengeData}`"
-        :alt="authChallenge.prompt"
-        class="max-w-full self-center"
-      />
-      <code
-        v-else-if="authChallenge.challengeData"
-        class="break-all"
-        data-testid="bank-auth-challenge-data"
-      >
-        {{ authChallenge.challengeData }}
-      </code>
-      <RuiTextField
-        v-if="authChallenge.primitive !== 'app approval poll'"
-        v-model="authResponse"
-        :label="authChallenge.prompt"
-        data-testid="bank-auth-response"
-      />
-      <p v-else>
-        {{ authChallenge.prompt }}
-      </p>
-    </div>
+      v-model:response="authResponse"
+      :challenge="authChallenge"
+    />
     <BankConnectionForm
       v-else-if="modelValue"
       ref="form"
