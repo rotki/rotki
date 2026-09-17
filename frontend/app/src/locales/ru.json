@@ -1742,7 +1742,6 @@
   },
   "dashboard": {
     "blockchain_balances": {
-      "add": "Добавить блокчейн-адрес",
       "behaviour": {
         "only_refresh_balances": "Только обновить балансы",
         "redetect_tokens": "Переопределить токены и обновить балансы",
@@ -1753,13 +1752,10 @@
         "evm": "EVM адрес",
         "solana": "Solana адрес",
         "substrate": "Substrate адрес"
-      },
-      "title": "блокчейн"
+      }
     },
     "exchange_balances": {
-      "add": "Добавить биржу",
-      "refresh": "Обновить балансы {exchange}",
-      "title": "биржа"
+      "refresh": "Обновить балансы {exchange}"
     },
     "history_query_indicator": {
       "balance_status": {
@@ -1802,8 +1798,7 @@
       "title": "Обязательства"
     },
     "manual_balances": {
-      "add": "Добавить ручной баланс",
-      "title": "вручную"
+
     },
     "snapshot": {
       "convert_to_edit": {
@@ -4303,7 +4298,7 @@
     "tooltip": "Настройка графика актива"
   },
   "summary_card": {
-    "title": "Балансы {name}"
+
   },
   "swap_event_form": {
     "add_asset": "Добавить актив",

@@ -1,18 +1,22 @@
 <script setup lang="ts">
+import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue';
+import DashboardLocations from '@/modules/dashboard/holdings/components/DashboardLocations.vue';
 import NftBalanceTable from '@/modules/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
 import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
-import Summary from './summary/Summary.vue';
 
 const Type = DashboardTableType;
+
+/** A source kind picked in the legend, which narrows the location tiles. */
+const selectedKind = ref<SourceKind>();
 
 const dashboardWidth = ref<number>(0);
 const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
@@ -83,9 +87,12 @@ watch(width, (newWidth) => {
     >
       <div class="flex flex-wrap gap-6">
         <div class="w-full">
-          <OverallBalances />
+          <OverallBalances v-model:selected-kind="selectedKind" />
         </div>
-        <Summary />
+        <DashboardLocations
+          v-model:selected-kind="selectedKind"
+          class="w-full"
+        />
       </div>
       <DashboardAssetTable
         class="mt-8"
@@ -97,6 +104,7 @@ watch(width, (newWidth) => {
       <PoolTable class="mt-8" />
       <DashboardAssetTable
         v-if="aggregatedLiabilities.length > 0"
+        id="dashboard-liabilities"
         class="mt-8"
         :table-type="Type.LIABILITIES"
         :title="t('dashboard.liabilities.title')"

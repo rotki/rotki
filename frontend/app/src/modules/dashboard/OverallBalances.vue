@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
-import ChainsUpdatedCaption from '@/modules/dashboard/components/ChainsUpdatedCaption.vue';
-import DashboardRefresh from '@/modules/dashboard/components/DashboardRefresh.vue';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
+import AssetsBySource from '@/modules/dashboard/holdings/components/AssetsBySource.vue';
+import NetWorthHeadline from '@/modules/dashboard/NetWorthHeadline.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
 import { useNetWorthLoading } from '@/modules/dashboard/use-net-worth-loading';
 import { usePremium } from '@/modules/premium/use-premium';
@@ -15,10 +15,11 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { isPeriodAllowed } from '@/modules/settings/settings-utils';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
+
+const selectedKind = defineModel<SourceKind | undefined>('selectedKind');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -75,28 +76,6 @@ const percentage = computed<string>(() => {
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
 });
 
-const indicator = computed<string>(() => {
-  const delta = get(balanceDelta);
-  if (delta.isNegative())
-    return 'lu-arrow-down';
-
-  if (delta.isZero())
-    return 'lu-git-commit-horizontal';
-
-  return 'lu-arrow-up';
-});
-
-const balanceClass = computed<string>(() => {
-  const delta = get(balanceDelta);
-  if (delta.isNegative())
-    return '!text-rui-error-lighter';
-
-  if (delta.isZero())
-    return '!text-rui-grey-500';
-
-  return '!text-rui-success';
-});
-
 async function setTimeframe(value: TimeFrameSetting): Promise<void> {
   assert(value !== TimeFramePersist.REMEMBER);
   settingsRepo.updateSession({ timeframe: value });
@@ -126,58 +105,15 @@ onMounted(() => {
     class="overall-balances"
     :class-names="{ content: 'grid grid-cols-1 lg:grid-cols-12 p-2 gap-4 overflow-hidden' }"
   >
-    <div
-      class="lg:col-span-4 flex flex-col justify-start lg:p-4"
-    >
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div class="text-rui-text-secondary">
-          {{ t('overall_balances.total_balance') }}
-        </div>
-        <DashboardRefresh />
-      </div>
-      <div
-        class="font-medium"
-        data-testid="overall-balances-net-worth"
-      >
-        <RuiSkeletonLoader
-          v-if="loadingNetWorth"
-          class="my-[0.5rem] w-56 h-[2rem] sm:my-[0.75rem] sm:w-72 sm:h-[2.5rem]"
-          data-testid="overall-balances-net-worth-loading"
-        />
-        <FiatDisplay
-          v-else
-          class="text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]"
-          no-truncate
-          :value="totalNetWorth"
-        />
-      </div>
-
-      <RuiSkeletonLoader
-        v-if="isBusy"
-        class="w-48 h-8"
-        data-testid="overall-balances-delta-loading"
-      />
-      <div
-        v-else
-        :class="balanceClass"
-        class="flex items-center gap-2 rounded-full font-medium"
-      >
-        <RuiIcon
-          :name="indicator"
-          size="16"
-        />
-        <PercentageDisplay
-          class="pr-4"
-          :value="percentage"
-        />
-        <span class="whitespace-nowrap before:content-['('] after:content-[')']">
-          <FiatDisplay :value="balanceDelta" />
-        </span>
-      </div>
-
-      <ChainsUpdatedCaption class="mt-2" />
-    </div>
-    <div class="lg:col-span-8 flex flex-col">
+    <NetWorthHeadline
+      class="lg:col-span-4 lg:px-4 lg:pt-4"
+      :net-worth="totalNetWorth"
+      :balance-delta="balanceDelta"
+      :percentage="percentage"
+      :loading-net-worth="loadingNetWorth"
+      :busy="isBusy"
+    />
+    <div class="lg:col-span-8 lg:row-span-2 flex flex-col">
       <div class="flex justify-start lg:justify-end items-center md:pt-4 gap-4">
         <TimeframeSelector
           :model-value="timeframe"
@@ -229,5 +165,9 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <AssetsBySource
+      v-model:selected-kind="selectedKind"
+      class="lg:col-span-4 lg:col-start-1 lg:row-start-2 lg:px-4 lg:pb-4 self-start"
+    />
   </RuiCard>
 </template>

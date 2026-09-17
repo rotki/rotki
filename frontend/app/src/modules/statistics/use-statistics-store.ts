@@ -61,16 +61,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
     return items.reduce((sum, item) => sum.plus(item.value), Zero);
   }
 
+  /** NFT value in the main currency; the balances store holds it in USD. */
+  const nftValue = computed<BigNumber>(() => get(nonFungibleTotalValue).multipliedBy(getExchangeRate(get(currencySymbol), One)));
+
   const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
-    const aggregatedBalances = getBalances();
-    const totalLiabilities = getLiabilities();
-    const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
-    const mainCurrency = get(currencySymbol);
-    const rate = getExchangeRate(mainCurrency, One);
-    const assetValue = calculateSum(aggregatedBalances);
-    const liabilityValue = calculateSum(totalLiabilities);
-    // NFT value is still in USD, so we convert it
-    return assetValue.plus(nftTotal.multipliedBy(rate)).minus(liabilityValue);
+    const nftTotal = get(includeNft) ? get(nftValue) : Zero;
+    return calculateSum(getBalances()).plus(nftTotal).minus(calculateSum(getLiabilities()));
   });
 
   const totalNetWorth = calculateTotalValue(nftsInNetValue);
@@ -189,6 +185,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     getNetValue,
     netValue,
     netValueError,
+    nftValue,
     setNetValueError,
     useNetValue,
     overall,

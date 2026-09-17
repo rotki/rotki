@@ -76,8 +76,9 @@ export class BanksPage {
     return this.page.locator('[data-testid=bank-balances-card]');
   }
 
+  /** The dashboard's locations card, which holds a tile per place a balance is held. */
   dashboardCard(): Locator {
-    return this.page.locator('[data-testid=bank-balances]');
+    return this.page.locator('[data-testid=dashboard-locations]');
   }
 
   async visitHistory(): Promise<void> {

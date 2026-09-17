@@ -1177,24 +1177,20 @@
   },
   "dashboard": {
     "blockchain_balances": {
-      "add": "添加区块链地址",
       "behaviour": {
         "only_refresh_balances": "只刷新余额",
         "redetect_tokens": "重新检测代币并刷新余额",
         "title": "区块链刷新按钮行为"
-      },
-      "title": "区块链"
+      }
     },
     "exchange_balances": {
-      "add": "添加交易所",
-      "title": "交换"
+
     },
     "liabilities": {
       "title": "负债"
     },
     "manual_balances": {
-      "add": "添加手动余额",
-      "title": "手册"
+
     },
     "snapshot": {
       "delete": {
@@ -2662,7 +2658,7 @@
     "tooltip": "资产图表设置"
   },
   "summary_card": {
-    "title": "{name} 余额"
+
   },
   "sync_buttons": {
     "download_tooltip": "从服务器拉取保存的数据并替换你的本地数据库",

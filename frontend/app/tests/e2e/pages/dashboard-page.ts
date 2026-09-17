@@ -32,25 +32,15 @@ export class DashboardPage {
     );
   }
 
+  /**
+   * Totals per chain, read from the location tiles narrowed to blockchain holdings.
+   *
+   * @remarks
+   * A tile merges every source at one place, so the strip has to be narrowed first: otherwise a
+   * manual balance recorded at a chain location would be counted as an on-chain balance.
+   */
   async getBlockchainBalances(): Promise<Map<string, BigNumber>> {
-    await this.page.locator('[data-testid=blockchain-balances]').waitFor({ state: 'visible' });
-
-    const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-testid=blockchain-balance-summary]');
-    const count = await elements.count();
-
-    for (let i = 0; i < count; i++) {
-      const element = elements.nth(i);
-      const location = await element.getAttribute('data-location');
-      if (!location)
-        continue;
-
-      const amount = element.locator('[data-testid=display-amount]');
-      await expect(amount).not.toBeEmpty();
-      updateLocationBalance(await amount.textContent() ?? '0', balances, location);
-    }
-
-    return balances;
+    return this.getTileBalances('blockchain', 'data-chain');
   }
 
   async getNonFungibleBalances(): Promise<BigNumber> {
@@ -71,24 +61,43 @@ export class DashboardPage {
     return this.readAmount(displayAmount);
   }
 
+  /** Totals per location, read from the location tiles narrowed to manual balances. */
   async getLocationBalances(): Promise<Map<string, BigNumber>> {
-    await this.page.locator('[data-testid=manual-balances]').first().waitFor({ state: 'visible' });
+    return this.getTileBalances('manual', 'data-location');
+  }
+
+  /**
+   * Narrows the locations strip to one source kind and reads every tile in it.
+   *
+   * @param kind - the legend row to select, e.g. `blockchain`
+   * @param attribute - the tile attribute holding the key, `data-chain` or `data-location`
+   */
+  private async getTileBalances(kind: string, attribute: string): Promise<Map<string, BigNumber>> {
+    const legendRow = this.page.locator(`[data-testid=dashboard-source-legend-row][data-kind=${kind}]`);
+    await legendRow.waitFor({ state: 'visible' });
+    if (await legendRow.getAttribute('aria-pressed') !== 'true')
+      await legendRow.click();
+
+    const showMore = this.page.locator('[data-testid=dashboard-locations-more]');
+    if (await showMore.count() > 0 && (await showMore.textContent())?.includes('more'))
+      await showMore.click();
 
     const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-testid=manual-balance-summary]');
-    const count = await elements.count();
+    const tiles = this.page.locator('[data-testid=dashboard-location-tile]');
+    const count = await tiles.count();
 
     for (let i = 0; i < count; i++) {
-      const element = elements.nth(i);
-      const location = await element.getAttribute('data-location');
-      if (!location)
+      const tile = tiles.nth(i);
+      const key = await tile.getAttribute(attribute);
+      if (!key)
         continue;
 
-      const amount = element.locator('[data-testid=display-amount]');
+      const amount = tile.locator('[data-testid=display-amount]');
       await expect(amount).not.toBeEmpty();
-      updateLocationBalance(await amount.textContent() ?? '0', balances, location);
+      updateLocationBalance(await amount.textContent() ?? '0', balances, key);
     }
 
+    await legendRow.click();
     return balances;
   }
 

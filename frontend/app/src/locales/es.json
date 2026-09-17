@@ -485,10 +485,10 @@
   },
   "dashboard": {
     "blockchain_balances": {
-      "add": "Añade un dirección en la blockchain"
+
     },
     "exchange_balances": {
-      "add": "Añadir un exchange"
+
     },
     "snapshot": {
       "edit": {

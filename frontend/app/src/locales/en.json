@@ -2450,11 +2450,9 @@
   },
   "dashboard": {
     "bank_balances": {
-      "add": "Add a bank connection",
-      "title": "bank"
+
     },
     "blockchain_balances": {
-      "add": "Add blockchain address",
       "behaviour": {
         "only_refresh_balances": "Only refresh balances",
         "redetect_tokens": "Re-detect tokens and refresh balances",
@@ -2465,13 +2463,10 @@
         "evm": "EVM Address",
         "solana": "Solana Address",
         "substrate": "Substrate Address"
-      },
-      "title": "blockchain"
+      }
     },
     "exchange_balances": {
-      "add": "Add an exchange",
-      "refresh": "Refresh {exchange} balances",
-      "title": "exchange"
+      "refresh": "Refresh {exchange} balances"
     },
     "history_query_indicator": {
       "balance_status": {
@@ -2513,12 +2508,34 @@
         "querying_transactions_started": "Starting transaction query"
       }
     },
+    "holdings": {
+      "add": {
+        "bank": "Bank",
+        "exchange": "Exchange",
+        "manual": "Manual balance",
+        "title": "Add a source"
+      },
+      "kind": {
+        "bank": "Banks",
+        "blockchain": "Blockchain",
+        "exchange": "Exchanges",
+        "manual": "Manual",
+        "nft": "NFTs"
+      },
+      "legend_label": "Assets by source: {parts}",
+      "locations": {
+        "show_less": "Show less",
+        "show_more": "Show {count} more",
+        "title": "Locations"
+      },
+      "share_of_assets": "share of assets",
+      "title": "Assets by source"
+    },
     "liabilities": {
       "title": "Liabilities"
     },
     "manual_balances": {
-      "add": "Add a manual balance",
-      "title": "manual"
+
     },
     "refresh": {
       "balances": "Refresh balances",
@@ -6113,7 +6130,7 @@
     "tooltip": "Asset graph setting"
   },
   "summary_card": {
-    "title": "{name} balances"
+
   },
   "swap_event_form": {
     "add_asset": "Add asset",

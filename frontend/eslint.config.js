@@ -195,7 +195,10 @@ export default rotki({
    * `vi.mock`. Auto-imports never appear as import statements, so the globals rule is the half that
    * catches a stray `computed(` or `get(`.
    */
-  files: ['app/src/modules/balances/refresh/core/**/*.ts'],
+  files: [
+    'app/src/modules/balances/refresh/core/**/*.ts',
+    'app/src/modules/dashboard/holdings/core/**/*.ts',
+  ],
   rules: {
     'no-restricted-globals': ['error', ...[
       'computed',
