@@ -127,7 +127,7 @@ describe('banks page', () => {
     expect(syncBanks).toHaveBeenCalledWith({ location: 'qonto', name: 'Qonto main' });
   });
 
-  it('should open authentication for a connection with a pending challenge', async () => {
+  describe('a connection with a pending challenge', () => {
     const challenge: BankAuthChallenge = {
       challenge: 'Approve access',
       challengeData: null,
@@ -136,19 +136,39 @@ describe('banks page', () => {
       primitive: 'app approval poll',
       prompt: 'Approve access',
     };
-    useBankConnectionsStore().setConnections([{
-      ...connection,
-      syncStatus: { ...connection.syncStatus, authChallenge: challenge },
-    }]);
-    wrapper = createWrapper();
-    await flushPromises();
+    const waiting: BankConnection = { ...connection, syncStatus: { ...connection.syncStatus, authChallenge: challenge, lastError: null } };
 
-    wrapper.findComponent(BankConnectionActions).vm.$emit('authenticate');
-    await nextTick();
-    expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({
-      challenge,
-      location: 'qonto',
-      name: 'Qonto main',
+    it('should mark the row as needing authentication and open it from the row action', async () => {
+      useBankConnectionsStore().setConnections([waiting]);
+      wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=bank-auth-required]').exists()).toBe(true);
+      expect(wrapper.findComponent(BankConnectionActions).props('authenticationRequired')).toBe(true);
+      wrapper.findComponent(BankConnectionActions).vm.$emit('authenticate');
+      await nextTick();
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+    });
+
+    it('should open the authentication a link asks for once the connection is listed', async () => {
+      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      useBankConnectionsStore().setConnections([]);
+      wrapper = createWrapper();
+      await flushPromises();
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toBeUndefined();
+
+      useBankConnectionsStore().setConnections([waiting]);
+      await flushPromises();
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+    });
+
+    it('should open nothing when the linked connection has no challenge left', async () => {
+      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=bank-auth-required]').exists()).toBe(false);
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toBeUndefined();
     });
   });
 

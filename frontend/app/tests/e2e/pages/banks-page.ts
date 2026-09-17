@@ -61,6 +61,17 @@ export class BanksPage {
     await this.connectionRow(name).locator('[data-testid=bank-sync]').click();
   }
 
+  /** Follows the "Authenticate" action of the notification a sync paused for a TAN raises. */
+  async authenticateFromNotification(): Promise<void> {
+    const notification = this.page.locator('[data-id=notification]').filter({ hasText: 'Bank authentication required' });
+    await notification.getByRole('button', { name: 'Authenticate' }).click({ timeout: TIMEOUT_MEDIUM });
+  }
+
+  async answerTan(tan: string): Promise<void> {
+    await this.dialog().locator('[data-testid=bank-auth-response] input').fill(tan);
+    await this.save();
+  }
+
   balancesCard(): Locator {
     return this.page.locator('[data-testid=bank-balances-card]');
   }

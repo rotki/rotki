@@ -1,6 +1,8 @@
-import type { BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankAuthChallenge, BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
@@ -27,15 +29,53 @@ interface UseBankEventsRefreshReturn {
  */
 export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
+  const { notify, notifyError } = useNotifications();
   const { markLocationCancelled } = useEventsQueryStatusStore();
-  const { syncBanks } = useBanksApi();
+  const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
-  const { bankNameFor } = useBankConnectionsStore();
+  const store = useBankConnectionsStore();
+
+  /**
+   * The challenge a sync paused on, read from a fresh connection list.
+   *
+   * @remarks
+   * A sync the bank interrupts for a TAN finishes without a result or a message, which the task
+   * layer cannot tell apart from a backend cancellation. The connection's sync status is the only
+   * place the challenge is reported.
+   */
+  const pendingChallenge = async ({ location, name }: BankConnectionIdentity): Promise<BankAuthChallenge | undefined> => {
+    try {
+      const connections = await getBanks();
+      store.setConnections(connections);
+      return connections.find(connection => connection.location === location && connection.name === name)?.syncStatus.authChallenge ?? undefined;
+    }
+    catch (error: unknown) {
+      logger.error(error);
+      return undefined;
+    }
+  };
+
+  const notifyAuthenticationRequired = ({ location, name }: BankConnectionIdentity): void => {
+    notify({
+      action: {
+        action: async () => {
+          const { router } = await import('@/router');
+          await router.push({ name: '/api-keys/banks/', query: { authenticate: name, location } });
+        },
+        icon: 'lu-shield-check',
+        label: t('actions.bank_events.authentication.action'),
+      },
+      category: NotificationCategory.DEFAULT,
+      message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(location), name }),
+      priority: Priority.ACTION,
+      severity: Severity.WARNING,
+      title: t('actions.bank_events.authentication.title'),
+    });
+  };
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
-    const bankName = bankNameFor(location);
+    const bankName = store.bankNameFor(location);
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),
@@ -52,7 +92,10 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
     });
 
     if (isErr(outcome)) {
-      if (isCancellation(outcome.error)) {
+      if (hasTag(outcome.error, 'BackendCancelled') && await pendingChallenge(bank)) {
+        notifyAuthenticationRequired(bank);
+      }
+      else if (isCancellation(outcome.error)) {
         markLocationCancelled({ location, name });
       }
       else if (isActionable(outcome.error)) {

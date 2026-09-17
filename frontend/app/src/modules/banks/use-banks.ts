@@ -154,9 +154,10 @@ export function useBanks(): UseBanksReturn {
   };
 
   const answerBankAuthentication = async (
-    connection: BankConnectionIdentity,
+    { location, name }: BankConnectionIdentity,
     response?: string,
   ): ResultAsync<BankSetupResult, BankSetupError> => {
+    const connection = { location, name };
     const outcome = await api.answerAuthentication({ ...connection, response });
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();

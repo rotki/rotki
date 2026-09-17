@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
           <RuiIcon name="lu-shield-check" />
         </RuiButton>
       </template>
-      {{ t('bank_settings.sync.failed') }}
+      {{ t('bank_settings.authentication.tooltip') }}
     </RuiTooltip>
     <RuiTooltip :open-delay="400">
       <template #activator>

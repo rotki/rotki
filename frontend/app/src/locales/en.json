@@ -530,6 +530,11 @@
       }
     },
     "bank_events": {
+      "authentication": {
+        "action": "Authenticate",
+        "description": "{location} connection '{name}' needs you to confirm access before rotki can pull new transactions.",
+        "title": "Bank authentication required"
+      },
       "error": {
         "description": "Failed to sync bank transactions for {location} with name '{name}': {error}",
         "title": "Bank sync"
@@ -1824,6 +1829,11 @@
     "refresh_tooltip": "Query the current balances of every connected bank"
   },
   "bank_settings": {
+    "authentication": {
+      "continue": "Continue",
+      "response": "TAN",
+      "tooltip": "Complete the authentication your bank requested"
+    },
     "confirmation": {
       "message": "Are you sure you want to remove the {bank} connection named {name} from rotki? Its credentials and sync progress are deleted. Transactions already pulled are kept.",
       "title": "Confirmation Required"
@@ -1870,6 +1880,7 @@
     },
     "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
     "sync": {
+      "authentication_required": "Authentication required",
       "failed": "Last sync failed",
       "never": "Never synced",
       "tooltip": "Pull new transactions now"
