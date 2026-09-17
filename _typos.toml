@@ -5,6 +5,7 @@ extend-exclude = [
     "**/**/*.json",  # translation files, etc.
     "frontend/pnpm-lock.yaml",  # pnpm lockfile
     "*.db",  # skip db blobs
+    "rotkehlchen/banks/fints.py",  # fints has some German in it
 ]
 
 [default]
