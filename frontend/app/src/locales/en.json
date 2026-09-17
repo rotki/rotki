@@ -2794,6 +2794,7 @@
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
+      "negative_balance_untracked_exchange": "This event was decoded as a withdrawal from an exchange that you are not tracking in rotki, causing your {asset} balance to go negative to {amount} (it was {before} just before). Track the exchange and sync its history so rotki can match the withdrawal, or change this event to Receive / Payment if you want to record it as a received payment.",
       "rebasing_token_archive_node_unavailable": "rotki could not verify the historical balance of rebasing token {asset} because no archive node is available for this network. Configure an archive node and retry auto-remediation.",
       "rebasing_token_historical_balance_query_failed": "rotki could not verify the historical balance of rebasing token {asset} because the archive-node query failed. Check the configured node or retry auto-remediation later.",
       "rebasing_token_missing_transaction": "rotki could not verify the historical balance of rebasing token {asset} because its transaction block data is missing. Refresh the transaction history before retrying auto-remediation.",
@@ -2805,6 +2806,7 @@
     "description_short": {
       "current_balance_mismatch": "{asset} balance is off by {delta} from the on-chain amount.",
       "negative_balance": "{asset} balance went negative to {amount}, likely from a missing earlier transaction.",
+      "negative_balance_untracked_exchange": "{asset} balance went negative to {amount} because the exchange is not tracked. Track it and sync its history, or change the event to Receive / Payment.",
       "rebasing_token_archive_node_unavailable": "No archive node is available to verify the historical {asset} balance.",
       "rebasing_token_historical_balance_query_failed": "The historical on-chain query for {asset} failed.",
       "rebasing_token_missing_transaction": "Transaction block data is missing for the {asset} balance check.",

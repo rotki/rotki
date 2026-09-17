@@ -60,8 +60,12 @@ function describeNegativeBalance(issue: DataIssue): IssueDescription | undefined
     },
     asset: issue.asset ?? undefined,
     eventIdentifier: payload.eventIdentifier,
-    messageKey: msg.$t('data_issues.description.negative_balance'),
-    shortMessageKey: msg.$t('data_issues.description_short.negative_balance'),
+    messageKey: payload.reason === 'untracked_exchange'
+      ? msg.$t('data_issues.description.negative_balance_untracked_exchange')
+      : msg.$t('data_issues.description.negative_balance'),
+    shortMessageKey: payload.reason === 'untracked_exchange'
+      ? msg.$t('data_issues.description_short.negative_balance_untracked_exchange')
+      : msg.$t('data_issues.description_short.negative_balance'),
   };
 }
 
