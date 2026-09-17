@@ -1282,7 +1282,6 @@
   },
   "dashboard": {
     "blockchain_balances": {
-      "add": "Ajouter une adresse blockchain",
       "behaviour": {
         "only_refresh_balances": "Seulement rafraîchir les soldes",
         "redetect_tokens": "Ré-détecter les jetons et rafraîchir les soldes",
@@ -1290,15 +1289,13 @@
       }
     },
     "exchange_balances": {
-      "add": "Ajouter une bourse",
-      "title": "bourse"
+
     },
     "liabilities": {
       "title": "Passifs"
     },
     "manual_balances": {
-      "add": "Ajouter un solde manuel",
-      "title": "manuel"
+
     },
     "snapshot": {
       "convert_to_edit": {
@@ -2910,7 +2907,7 @@
     "tooltip": "Paramètre de graphique d'actif"
   },
   "summary_card": {
-    "title": "Soldes de {name}"
+
   },
   "sync_buttons": {
     "download_tooltip": "Tirer les données enregistrées depuis le serveur et remplacer votre base de données locale",

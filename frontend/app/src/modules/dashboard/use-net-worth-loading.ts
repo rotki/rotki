@@ -5,6 +5,9 @@ import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 /**
  * Whether the dashboard header has nothing to put in the net worth yet.
  *
+ * The source legend and the location tiles read it too: they break the same total down, so they
+ * wait for it rather than showing parts of a number that is still a skeleton.
+ *
  * The net worth is a sum, so it is zero until balances land and then climbs as each chain arrives.
  * Neither end of that is worth showing: a large "0.00" reads as a real balance, and a total that
  * ratchets from a fraction of itself is wrong for as long as it moves, with nothing on screen

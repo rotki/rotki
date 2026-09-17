@@ -58,6 +58,7 @@ describe('overallBalances', () => {
             props: { value: { required: true, type: Object } },
             template: '<span data-testid="fiat-display">{{ value.toString() }}</span>',
           },
+          AssetsBySource: true,
           ChainsUpdatedCaption: true,
           DashboardRefresh: true,
           NetWorthChart: true,
