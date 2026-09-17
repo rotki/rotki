@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { groupTitle, isSafeToStop } from '@/modules/task-center/core/kinds';
-import { type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
+import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, type ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
@@ -28,6 +28,8 @@ interface UseDockPanelReturn {
   summary: ComputedRef<boolean>;
   /** Failed leaves the orchestrator can run again, while the dock reports failures. */
   retryable: ComputedRef<Activity[]>;
+  /** Whether the footer's bulk retry adds anything over the rows and failure groups. */
+  canRetryAll: ComputedRef<boolean>;
   retryFailed: () => void;
   /** Listed jobs a bulk stop may interrupt without leaving data half-written. See `isSafeToStop`. */
   stoppable: ComputedRef<Activity[]>;
@@ -35,8 +37,16 @@ interface UseDockPanelReturn {
   unstoppable: ComputedRef<Activity[]>;
 }
 
+/** How long a job must run before the panel lists it, so upkeep that finishes at once never flashes a row. */
+const APPEAR_DELAY = 1000;
+
 function isFailed(activity: Activity): boolean {
   return activity.status === ActivityStatus.FAILED;
+}
+
+/** Oldest start first; a job not yet started goes last, in id order. */
+function byStart(a: Activity, b: Activity): number {
+  return ((a.startedAt ?? Number.MAX_SAFE_INTEGER) - (b.startedAt ?? Number.MAX_SAFE_INTEGER)) || a.id.localeCompare(b.id);
 }
 
 /**
@@ -44,8 +54,14 @@ function isFailed(activity: Activity): boolean {
  *
  * @remarks
  * Counts are leaves, the same unit the pill and each row count in, so "3 of 21 finished" in the
- * header adds up the rows beneath it. Jobs holding a failure sort first, so a mixed outcome is
- * never below the fold.
+ * header adds up the rows beneath it.
+ *
+ * Nothing moves while work runs. Jobs keep the order they started in, so a new one appends below
+ * rather than pushing the others down; a job that finishes stays where it is until the run ends
+ * rather than leaving a gap the rows below close; and a job only appears once it has run for
+ * {@link APPEAR_DELAY}, or failed, so work that is over in a moment never shows at all, nor turns up
+ * in the clean report at the end (unless it is all there is). Once listed, a job stays listed. Only
+ * a settled report reorders, failures first, so a mixed outcome is never below the fold.
  */
 export function useDockPanel(
   jobs: MaybeRefOrGetter<PendingJob[]>,
@@ -55,26 +71,71 @@ export function useDockPanel(
   const { dismissed, dismissedFailure, failed, finished, state } = useTaskDock();
   const { rerun } = useTaskController();
 
+  const now = useTimestamp({ interval: 250 });
+
+  /** Jobs the panel has listed during this stretch of work, which stay listed however briefly they ran. */
+  const shown = shallowRef<ReadonlySet<ActivityId>>(new Set());
+
   const hasFailure = (root: Activity): boolean => someInSubtree(toValue(children), root, isFailed);
+
+  /** Every job in flight, and every one this run finished, whatever the order they came in. */
+  function working(): Activity[] {
+    const all = [...toValue(jobs).map(job => job.activity), ...get(failed), ...get(finished)];
+    return all.filter((root, index) => all.findIndex(other => other.id === root.id) === index);
+  }
+
+  /** Whether a job has earned its row: listed before, holding a failure, or still going past the delay. A job with no start time cannot be timed, so it lists at once. */
+  function hasAppeared(root: Activity): boolean {
+    if (get(shown).has(root.id) || hasFailure(root))
+      return true;
+    if (isTerminalStatus(root.status))
+      return false;
+    return root.startedAt === undefined || get(now) - root.startedAt >= APPEAR_DELAY;
+  }
 
   function listed(): Activity[] {
     switch (get(state)) {
       case DockState.WORKING:
-        return toValue(jobs).map(job => job.activity);
+        return working().filter(hasAppeared);
       case DockState.FAILED:
         return get(failed);
       case DockState.DISMISSED:
         return get(dismissed);
-      case DockState.DONE:
-        return get(finished);
+      case DockState.DONE: {
+        const seen = get(finished).filter(root => get(shown).has(root.id));
+        return seen.length > 0 ? seen : get(finished);
+      }
       case undefined:
         return [];
     }
   }
 
-  const roots = computed<Activity[]>(() => [...listed()].sort((a, b) => Number(hasFailure(b)) - Number(hasFailure(a))));
+  const roots = computed<Activity[]>(() => {
+    const ordered = [...listed()].sort(byStart);
+    return get(state) === DockState.WORKING
+      ? ordered
+      : ordered.sort((a, b) => Number(hasFailure(b)) - Number(hasFailure(a)));
+  });
 
+  /** Remembers what was listed, and forgets it all once the dock has nothing left to show. */
+  function rememberShown(list: Activity[]): void {
+    if (get(state) === undefined) {
+      if (get(shown).size > 0)
+        set(shown, new Set());
+      return;
+    }
+    const added = list.filter(root => !get(shown).has(root.id));
+    if (added.length > 0)
+      set(shown, new Set([...get(shown), ...added.map(root => root.id)]));
+  }
+
+  watch(roots, rememberShown, { immediate: true });
+
+  /** While work runs every job is its own untitled section, so a second job of a kind appends below instead of joining the first. */
   const sections = computed<DockSection[]>(() => {
+    if (get(state) === DockState.WORKING)
+      return get(roots).map(root => ({ key: root.id, roots: [root] }));
+
     const byKind = new Map<ActivityKind, Activity[]>();
     for (const root of get(roots))
       byKind.set(root.kind, [...(byKind.get(root.kind) ?? []), root]);
@@ -107,6 +168,20 @@ export function useDockPanel(
     ? get(leaves).filter(leaf => isFailed(leaf) && leaf.rerunnable)
     : []));
 
+  /**
+   * Whether a bulk retry does more than a row already offers: it needs several retryable failures,
+   * and ones that do not all sit in a single failure group, since a group of failures sharing a
+   * reason under one job carries its own "retry all".
+   */
+  const canRetryAll = computed<boolean>(() => {
+    if (get(retryable).length < 2)
+      return false;
+    const groups = new Set(get(roots).flatMap(root => subtreeLeaves(toValue(children), root)
+      .filter(leaf => isFailed(leaf) && leaf.rerunnable)
+      .map(leaf => `${root.id}:${leaf.reason ?? ''}`)));
+    return groups.size > 1;
+  });
+
   function retryFailed(): void {
     for (const leaf of get(retryable))
       rerun(leaf);
@@ -124,5 +199,5 @@ export function useDockPanel(
 
   const unstoppable = computed<Activity[]>(() => get(running).filter(root => !isStoppable(root)));
 
-  return { retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
+  return { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
 }

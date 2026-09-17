@@ -32,7 +32,6 @@ function createWrapper(props: Partial<InstanceType<typeof DockActivityRow>['$pro
   return mount(DockActivityRow, {
     props: {
       activity: activity(),
-      cancellable: false,
       now: NOW,
       percentage: -1,
       ...props,
@@ -90,6 +89,38 @@ describe('dockActivityRow', () => {
       expect(text).toContain(ADDRESS);
     });
 
+    it('should show the chain icon of what the row acts on', () => {
+      const icon = createWrapper().findComponent({ name: 'ChainIcon' });
+
+      expect(icon.exists()).toBe(true);
+      expect(icon.props('chain')).toBe('ethereum');
+    });
+
+    it('should show the location icon of an exchange row', () => {
+      const wrapper = createWrapper({
+        activity: activity({ id: makeActivityId(ActivityKind.EXCHANGE_EVENTS, 'kraken', 'main'), kind: ActivityKind.EXCHANGE_EVENTS }),
+      });
+
+      expect(wrapper.findComponent({ name: 'LocationIcon' }).props('item')).toBe('kraken');
+      expect(wrapper.findComponent({ name: 'ChainIcon' }).exists()).toBe(false);
+    });
+
+    it('should show no subject icon for work that acts on no chain or location', () => {
+      const wrapper = createWrapper({ activity: activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES }) });
+
+      expect(wrapper.find('[data-testid=dock-subject-icon]').exists()).toBe(false);
+    });
+
+    it('should link a nested account row\'s address on its chain, and leave a top-level one as text', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS), subtitle: 'Account' });
+
+      const nested = createWrapper({ activity: account, parent: activity() }).findComponent({ name: 'HashLink' });
+      expect(nested.props('text')).toBe(ADDRESS);
+      expect(nested.props('location')).toBe('eth');
+
+      expect(createWrapper({ activity: account }).findComponent({ name: 'HashLink' }).exists()).toBe(false);
+    });
+
     it('should scramble every address when a batch joins several into one param', () => {
       const second = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
       useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
@@ -127,6 +158,25 @@ describe('dockActivityRow', () => {
 
     it('should put a leaf\'s own percentage beside the bar when it has no tally', () => {
       expect(createWrapper({ percentage: 40 }).find('[data-testid=activity-meter]').text()).toBe('percentage_display.value::40');
+    });
+
+    it('should count a leaf\'s own steps beside its bar, and once it settles', () => {
+      const decode = (status: ActivityStatus): Activity => activity({
+        id: makeActivityId(ActivityKind.TX_DECODING, 'eth', 'cached'),
+        kind: ActivityKind.TX_DECODING,
+        status,
+        steps: { current: 1234, total: 5000 },
+      });
+
+      expect(createWrapper({ activity: decode(ActivityStatus.RUNNING), percentage: 25 }).find('[data-testid=activity-meter]').text())
+        .toBe('pending_task.steps::1234, 5000');
+      expect(createWrapper({ activity: decode(ActivityStatus.COMPLETE), parent: activity() }).text()).toContain('pending_task.steps::1234, 5000');
+    });
+
+    it('should keep an account sync at a percentage, since its steps are seconds of range', () => {
+      const account = activity({ steps: { current: 86_400, total: 604_800 } });
+
+      expect(createWrapper({ activity: account, percentage: 14 }).find('[data-testid=activity-meter]').text()).toBe('percentage_display.value::14');
     });
 
     it('should mark a running row with no percentage by its status, with no ring and no bar', () => {
@@ -207,19 +257,19 @@ describe('dockActivityRow', () => {
   });
 
   describe('its controls', () => {
-    it('should emit cancel only when the caller allows it', async () => {
-      const wrapper = createWrapper({ cancellable: true });
+    it('should emit cancel for work that can be cancelled', async () => {
+      const wrapper = createWrapper();
       await wrapper.find('[data-testid=cancel-activity]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 
-    it('should render no cancel control when the caller withholds it', () => {
-      expect(createWrapper({ cancellable: false }).find('[data-testid=cancel-activity]').exists()).toBe(false);
+    it('should render no cancel control for work that cannot be cancelled', () => {
+      expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=cancel-activity]').exists()).toBe(false);
     });
 
     it('should render no cancel control once the work settled', () => {
-      const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.FAILED }), cancellable: true });
+      const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.FAILED }) });
 
       expect(wrapper.find('[data-testid=cancel-activity]').exists()).toBe(false);
     });

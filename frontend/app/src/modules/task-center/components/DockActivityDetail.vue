@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { Activity } from '@/modules/task-center/core/types';
-import { toSentenceCase } from '@rotki/common';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import DockCacheList from '@/modules/task-center/components/DockCacheList.vue';
 import { useDockActivityDetail } from '@/modules/task-center/use-dock-activity-detail';
 
 const { activity } = defineProps<{
@@ -10,8 +9,6 @@ const { activity } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { getChainName } = useSupportedChains();
 
 const detail = useDockActivityDetail(() => activity);
 </script>
@@ -47,19 +44,11 @@ const detail = useDockActivityDetail(() => activity);
       />
     </template>
   </div>
-  <div
+  <DockCacheList
     v-else-if="detail?.type === 'caches'"
-    class="text-xs leading-4 text-rui-text-secondary truncate"
+    :filling="detail.filling"
+    :filled="detail.filled"
+    :stopped="detail.stopped"
     data-testid="dock-activity-detail"
-  >
-    {{ t('task_dock.detail.cache', {
-      chain: getChainName(detail.current.chain),
-      processed: detail.current.processed,
-      protocol: toSentenceCase(detail.current.protocol),
-      total: detail.current.total,
-    }) }}
-    <template v-if="detail.more > 0">
-      {{ t('task_dock.detail.cache_more', { count: detail.more }) }}
-    </template>
-  </div>
+  />
 </template>

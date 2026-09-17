@@ -73,12 +73,14 @@ describe('taskDock', () => {
     vi.clearAllMocks();
   });
 
-  it('should explain a history sync while one runs, and say nothing of it for other work', async () => {
-    set(activities, refresh(ActivityStatus.RUNNING));
+  it('should explain a history sync under its own job while it runs, and say nothing of it for other work', async () => {
+    set(activities, [...refresh(ActivityStatus.RUNNING), activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING)]);
     const wrapper = createWrapper();
     await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
 
-    expect(wrapper.find('[data-testid=dock-sync-hint]').exists()).toBe(true);
+    const hints = wrapper.findAll('[data-testid=dock-sync-hint]');
+    expect(hints).toHaveLength(1);
+    expect(wrapper.find('[data-testid=dock-panel-header] ~ [data-testid=dock-sync-hint]').exists()).toBe(false);
 
     set(activities, [activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING)]);
     await nextTick();
@@ -130,8 +132,8 @@ describe('taskDock', () => {
       const wrapper = createWrapper();
       const settledRun = [
         activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE),
-        activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true),
-        activity(ActivityKind.TX_SYNC, 'gnosis', ActivityStatus.FAILED, refreshId, true),
+        { ...activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true), reason: 'rate limited' },
+        { ...activity(ActivityKind.TX_SYNC, 'gnosis', ActivityStatus.FAILED, refreshId, true), reason: 'no API key' },
       ];
 
       set(activities, settledRun);
@@ -146,6 +148,23 @@ describe('taskDock', () => {
       await retry.trigger('click');
 
       expect(rerun).toHaveBeenCalledTimes(2);
+    });
+
+    it('should leave retrying failures that share a reason under one job to their group', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      set(activities, [
+        activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.COMPLETE),
+        { ...activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.FAILED, refreshId, true), reason: 'no API key' },
+        { ...activity(ActivityKind.TX_SYNC, 'gnosis', ActivityStatus.FAILED, refreshId, true), reason: 'no API key' },
+      ]);
+      await nextTick();
+      await nextTick();
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=dock-failed-group-retry]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=dock-retry-failed]').exists()).toBe(false);
     });
 
     it('should leave retrying a single failure to its own row', async () => {
