@@ -142,6 +142,10 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.unit.decoders.test_curve_crvusd import (
     fixture_crvusd_controller,  # noqa: F401
 )
@@ -169,7 +173,6 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    Location,
     Price,
     SupportedBlockchain,
     TimestampMS,
@@ -267,7 +270,7 @@ def test_curve_locked_crv_balances(
         tx_ref=make_evm_tx_hash(),
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
         asset=A_CRV,
@@ -316,7 +319,7 @@ def test_yearn_vesting_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(0),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=token,
@@ -377,7 +380,7 @@ def test_across_staked_lp_balances(
             tx_ref=deserialize_evm_tx_hash('0xba03ae3521fb051d2f2c11355401f13f004978cc2b6af3d936a7333d8c5ce01f'),
             sequence_index=178,
             timestamp=TimestampMS(1782476591000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=token,
@@ -1730,7 +1733,7 @@ def test_morpho_blue_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(0),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=usdc,
@@ -1744,7 +1747,7 @@ def test_morpho_blue_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=TimestampMS(1),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=usdc,
@@ -1758,7 +1761,7 @@ def test_morpho_blue_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=TimestampMS(2),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=usdc,
@@ -1772,7 +1775,7 @@ def test_morpho_blue_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=3,
             timestamp=TimestampMS(3),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
             asset=usdc,
@@ -1786,7 +1789,7 @@ def test_morpho_blue_balances(
             tx_ref=make_evm_tx_hash(),
             sequence_index=4,
             timestamp=TimestampMS(4),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=usdc,

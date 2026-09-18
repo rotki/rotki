@@ -17,6 +17,7 @@ from fints.parser import FinTS3Parser
 from fints.utils import Password, mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.errors import (
     BankAuthChallenge,
     BankAuthExpired,
@@ -33,7 +34,7 @@ from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
-from rotkehlchen.types import ExchangeApiCredentials, Location
+from rotkehlchen.types import ExchangeApiCredentials
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {
@@ -259,7 +260,7 @@ class FailedInitializationTransport(FinTSFixtureTransport):
 def create_fints(database, messages, transport: FinTSFixtureTransport) -> Fints:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values=FINTS_VALUES,
     )
     assert credentials.api_secret is not None
@@ -379,7 +380,7 @@ def test_ing_initial_transaction_sync_requests_full_available_history(
     transport = FinTSFixtureTransport()
     credentials = Fints.api_credentials_from_values(
         name='ING',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values={**FINTS_VALUES, 'bank_code': '50010517'},
     )
     assert credentials.api_secret is not None
@@ -480,7 +481,7 @@ def test_initialization_errors_preserve_safe_response_code(
 def test_fints_endpoint_whitespace_is_removed() -> None:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values={**FINTS_VALUES, 'endpoint': ' https://bank.example/fints '},
     )
 
@@ -570,10 +571,10 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
         AuthenticationTransport(challenge),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
     assert manager.sync_status[connector.location_id()].auth_challenge is not None
 
     restored_transport = AuthenticationTransport(challenge)
@@ -588,7 +589,7 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
         with patch.object(restored_manager, '_instantiate', return_value=restored):
             restored_manager.initialize_banks(
-                credentials={Location.FINTS: [credentials]},
+                credentials={FINTS_CONNECTOR: [credentials]},
                 database=database,
             )
         assert restored_manager.sync_status[restored.location_id()].auth_challenge is not None
@@ -612,10 +613,10 @@ def test_rejected_tan_drops_the_pending_challenge_and_marks_it_expired(
     transport = RejectingAuthenticationTransport(challenge)
     connector = create_fints(database, function_scope_messages_aggregator, transport)
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
     with (
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
         pytest.raises(BankAuthExpired),
@@ -636,7 +637,7 @@ def test_rejected_tan_drops_the_pending_challenge_and_marks_it_expired(
 
     transport.challenge_sent = False
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
     assert (serialized := status.serialize())['auth_challenge'] is not None
     assert serialized['auth_expired'] is False
 
@@ -651,9 +652,9 @@ def test_starting_over_drops_the_pending_challenge_so_the_bank_is_asked_again(
     transport = AuthenticationTransport(challenge)
     connector = create_fints(database, function_scope_messages_aggregator, transport)
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
 
     rotki = MagicMock()
     rotki.bank_manager = manager
@@ -761,13 +762,13 @@ def test_adding_a_connection_again_does_not_resume_an_abandoned_setup(
     with patch.object(manager, '_instantiate', return_value=added):
         assert manager.setup_bank(
             name=added.name,
-            location=Location.FINTS,
+            location=FINTS_CONNECTOR,
             credentials=BankCredentialInput(values=FINTS_VALUES),
             database=database,
         ) == (True, '')
 
     assert manager.pending_setups == {}
-    assert manager.get_bank(name=added.name, location=Location.FINTS) is added
+    assert manager.get_bank(name=added.name, location=FINTS_CONNECTOR) is added
 
 
 def test_answer_endpoint_reports_a_dropped_challenge_as_gone(
@@ -780,11 +781,11 @@ def test_answer_endpoint_reports_a_dropped_challenge_as_gone(
     transport = RejectingAuthenticationTransport(challenge)
     connector = create_fints(database, function_scope_messages_aggregator, transport)
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
     rotki = MagicMock()
     rotki.bank_manager = manager
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
 
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
         result, message, status = BanksService(rotki).answer_authentication(
@@ -808,9 +809,9 @@ def test_accepted_tan_stays_accepted_when_the_resumed_sync_fails(
         AuthenticationTransport(challenge),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
 
     with (
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
@@ -918,12 +919,12 @@ def test_sync_requiring_authentication_has_no_success_result(
         AuthenticationTransport(FixtureTANResponse()),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     rotki = MagicMock()
     rotki.bank_manager = manager
     result = BanksService(rotki).sync_banks(
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         name=connector.name,
     )
 

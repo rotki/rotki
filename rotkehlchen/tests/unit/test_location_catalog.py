@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from rotkehlchen.locations import constants as location_constants
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
 from rotkehlchen.locations.legacy_chars import (
     LEGACY_LOCATIONS_PARENT,
@@ -10,7 +11,8 @@ from rotkehlchen.locations.legacy_chars import (
     V53_LOCATION_CHAR_TO_IDENTIFIER,
 )
 from rotkehlchen.locations.types import LocationIdentifier, LocationNode, LocationTreeError
-from rotkehlchen.types import Location, SupportedBlockchain
+from rotkehlchen.tests.utils.locations import V53_ENUM_CHAR_TO_SERIALIZATION
+from rotkehlchen.types import SupportedBlockchain
 
 PACKAGED_IMAGES_DIR = Path(__file__).parents[3] / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols'  # noqa: E501
 
@@ -46,19 +48,14 @@ def test_every_old_location_has_one_migration_rule():
     assert len(set(V53_LOCATION_CHAR_TO_IDENTIFIER.values())) == len(V53_LOCATION_CHAR_TO_IDENTIFIER)  # noqa: E501
     assert catalog_ids.isdisjoint(x[0] for x in V53_LEGACY_LOCATION_CHARS.values())
 
-    added_in_v54 = {Location.SONIC, Location.ROBINHOOD, Location.INK, Location.QONTO}
-    for location in Location:
-        char = chr(location.value + 64)  # the pre-v54 DB encoding of the enum
-        if location == Location.FINTS or location in added_in_v54:
-            assert char not in V53_LOCATION_CHAR_TO_IDENTIFIER
-            continue
+    for char, serialization in V53_ENUM_CHAR_TO_SERIALIZATION.items():
         if char in V53_LEGACY_LOCATION_CHARS:
-            assert V53_LEGACY_LOCATION_CHARS[char][0] == f'legacy:{location!s}'
+            assert V53_LEGACY_LOCATION_CHARS[char][0] == f'legacy:{serialization}'
         else:  # built-ins keep their API serialization as identifier
-            assert V53_LOCATION_CHAR_TO_IDENTIFIER[char] == str(location)
-
-    assert {str(x) for x in added_in_v54} <= catalog_ids
-    assert len(V53_LOCATION_CHAR_TO_IDENTIFIER) + len(V53_LEGACY_LOCATION_CHARS) + len(added_in_v54) + 1 == len(Location)  # noqa: E501
+            assert V53_LOCATION_CHAR_TO_IDENTIFIER[char] == serialization
+    assert len(V53_LOCATION_CHAR_TO_IDENTIFIER) + len(V53_LEGACY_LOCATION_CHARS) == len(V53_ENUM_CHAR_TO_SERIALIZATION)  # noqa: E501
+    # added by the unreleased v54 itself and never stored as a character
+    assert {'sonic', 'robinhood', 'ink', 'qonto'} <= catalog_ids
 
 
 def test_every_supported_blockchain_has_a_node():
@@ -116,3 +113,10 @@ def test_same_name_in_different_branches_is_allowed():
         _node('c', 'a', name='ING'),
         _node('d', 'b', name='ING'),
     ])
+
+
+def test_location_constants_match_catalog():
+    constants = {
+        value for name, value in vars(location_constants).items() if name.startswith('LOCATION_')
+    }
+    assert constants == {x.identifier for x in load_builtin_catalog()}

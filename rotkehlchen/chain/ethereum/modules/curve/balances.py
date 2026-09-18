@@ -15,8 +15,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
 
 if TYPE_CHECKING:
     from eth_typing import ABI
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
 
 VOTE_ESCROW_ABI: Final[ABI] = [{'inputs': [{'name': 'arg0', 'type': 'address'}], 'name': 'locked', 'outputs': [{'name': 'amount', 'type': 'int128'}, {'name': 'end', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 logger = logging.getLogger(__name__)
@@ -65,7 +68,7 @@ class CurveBalances(ProtocolWithGauges):
             assets=(A_CRV,),
             counterparties=[self.counterparty],
             type_and_subtype_combinations=self.deposit_event_types,
-            location=Location.from_chain_id(self.evm_inquirer.chain_id),
+            location=location_from_chain_id(self.evm_inquirer.chain_id),
             addresses=[VOTING_ESCROW],
             location_labels=[str(address) for address in addresses],
         )

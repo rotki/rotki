@@ -9,10 +9,13 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.constants import ZERO
+from rotkehlchen.locations.chains import (
+    EVM_EVMLIKE_LOCATIONS,
+    location_to_chain,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_EVMLIKE_LOCATIONS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CostBasisMethod,
     SupportedBlockchain,
@@ -313,7 +316,7 @@ class CSVExporter(CustomizableDateMixin):
         evm_explorer = None
         if event.location in EVM_EVMLIKE_LOCATIONS:
             # provide the explorer url to be used in the notes
-            evm_explorer = self.transaction_explorers[SupportedBlockchain.from_location(event.location)]  # type: ignore # type checked via if above # noqa: E501
+            evm_explorer = self.transaction_explorers[location_to_chain(event.location)]  # type: ignore # type checked via if above
 
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,

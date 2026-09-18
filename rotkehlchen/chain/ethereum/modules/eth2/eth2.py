@@ -22,6 +22,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, UserLimitType, get_user_limit, has_premium_check
 from rotkehlchen.serialization.deserialize import (
@@ -33,7 +34,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -1077,7 +1077,7 @@ class Eth2(EthereumModule):
                 f'Did not manage to query beaconcha.in api for address {address} due to {e!s}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
                 classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error=str(e)),
-                subject=Location.ETHEREUM,
+                subject=LOCATION_ETHEREUM,
             )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)

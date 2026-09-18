@@ -21,7 +21,8 @@ from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import Location, Timestamp, TimestampMS
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import Timestamp, TimestampMS
 
 
 class BankTransactionSide(SerializableEnumNameMixin):
@@ -81,7 +82,7 @@ def content_hash_id(*parts: Any) -> str:
 
 def bank_transaction_to_event(
         transaction: BankTransaction,
-        location: Location,
+        location: LocationIdentifier,
         location_label: str,
 ) -> BankTransactionEvent:
     """Map a normalized bank transaction onto rotki history events.

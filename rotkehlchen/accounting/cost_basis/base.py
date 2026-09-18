@@ -14,7 +14,7 @@ from rotkehlchen.errors.misc import AccountingError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp
+from rotkehlchen.types import CostBasisMethod, Price, Timestamp
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ class AssetAcquisitionEvent:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetSpendEvent:
     timestamp: Timestamp
-    location: Location
+    location: LocationIdentifier
     amount: FVal  # Amount of the asset we sell
     rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
 
@@ -790,7 +791,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def spend_asset(
             self,
             originating_event_id: int | None,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -803,7 +804,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def spend_asset(
             self,
             originating_event_id: int | None,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -816,7 +817,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def spend_asset(
             self,
             originating_event_id: int | None,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -828,7 +829,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def spend_asset(
             self,
             originating_event_id: int | None,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,

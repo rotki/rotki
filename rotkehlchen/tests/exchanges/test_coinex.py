@@ -18,12 +18,13 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import LOCATION_COINEX
 from rotkehlchen.tests.utils.messages import consume_errors
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 
 def test_name(coinex_exchange: Coinex) -> None:
-    assert coinex_exchange.location == Location.COINEX
+    assert coinex_exchange.location == LOCATION_COINEX
     assert coinex_exchange.name == 'coinex'
 
 
@@ -33,7 +34,7 @@ def test_failed_history_query_saves_completed_source(coinex_exchange: Coinex) ->
         group_identifier='incomplete-coinex-query',
         sequence_index=0,
         timestamp=TimestampMS(1000),
-        location=Location.COINEX,
+        location=LOCATION_COINEX,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -58,7 +59,7 @@ def test_failed_history_query_saves_completed_source(coinex_exchange: Coinex) ->
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{Location.COINEX!s}_history_events_{coinex_exchange.name}',),
+            (f'{LOCATION_COINEX!s}_history_events_{coinex_exchange.name}',),
         ).fetchone()[0] == 0
 
 
@@ -67,7 +68,7 @@ def test_history_query_without_full_progress_saves_events(coinex_exchange: Coine
         group_identifier='no-coinex-progress',
         sequence_index=0,
         timestamp=TimestampMS(1000),
-        location=Location.COINEX,
+        location=LOCATION_COINEX,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -89,7 +90,7 @@ def test_history_query_without_full_progress_saves_events(coinex_exchange: Coine
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{Location.COINEX!s}_history_events_{coinex_exchange.name}',),
+            (f'{LOCATION_COINEX!s}_history_events_{coinex_exchange.name}',),
         ).fetchone()[0] == 0
 
 
@@ -229,7 +230,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
     }
     assert deposits + withdrawals == [
         AssetMovement(
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             location_label='coinex',
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1637212022134),
@@ -238,7 +239,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
             unique_id='deposit-14270229',
             extra_data={'address': '0xabc', 'transaction_id': '0xdeposit'},
         ), AssetMovement(
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             location_label='coinex',
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1637212023134),
@@ -247,7 +248,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
             unique_id='withdrawal-206',
             extra_data={'address': '0xdef', 'transaction_id': '0xwithdraw'},
         ), AssetMovement(
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             location_label='coinex',
             event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1637212023134),
@@ -318,13 +319,13 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
         'Skipped CoinEx trades in unknown or delisted markets: LUNAUSDT',
     ]
     group_identifier = create_group_identifier_from_unique_id(
-        location=Location.COINEX,
+        location=LOCATION_COINEX,
         unique_id='trade-8678890',
     )
     assert trades == [
         SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('0.0998348650'),
@@ -332,7 +333,7 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=FVal('0.00000325'),
@@ -340,7 +341,7 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.0001'),
@@ -348,7 +349,7 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.FEE,
             sequence_index=3,
             asset=cet_asset,
@@ -400,13 +401,13 @@ def test_query_trades_skips_discount_fee_without_cet_mapping(
         caplog.text
     )
     group_identifier = create_group_identifier_from_unique_id(
-        location=Location.COINEX,
+        location=LOCATION_COINEX,
         unique_id='trade-8678890',
     )
     assert trades == [
         SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('0.0998348650'),
@@ -414,7 +415,7 @@ def test_query_trades_skips_discount_fee_without_cet_mapping(
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=FVal('0.00000325'),
@@ -422,7 +423,7 @@ def test_query_trades_skips_discount_fee_without_cet_mapping(
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('0.00000001'),
@@ -430,7 +431,7 @@ def test_query_trades_skips_discount_fee_without_cet_mapping(
             group_identifier=group_identifier,
         ), SwapEvent(
             timestamp=TimestampMS(1689152421692),
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             event_subtype=HistoryEventSubType.FEE,
             sequence_index=3,
             asset=A_USDT,
@@ -479,7 +480,7 @@ def test_paginated_query_follows_has_next(coinex_exchange: Coinex) -> None:
     assert [entry.kwargs['options']['page'] for entry in mock_api_query.call_args_list] == [1, 2]
     assert [movement.group_identifier for movement in deposits] == [
         create_group_identifier_from_unique_id(
-            location=Location.COINEX,
+            location=LOCATION_COINEX,
             unique_id=f'deposit-{deposit_id}',
         ) for deposit_id in (1, 2)
     ]

@@ -13,7 +13,18 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BANKS,
+    LOCATION_BASE,
+    LOCATION_BINANCE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+)
+from rotkehlchen.types import ChainID, SupportedBlockchain
 from tools.scenarios.deterministic import DeterministicFactory, monthly_ramp_weights
 from tools.scenarios.profiles.common import (
     MODULE_TOKEN_PRICES,
@@ -33,6 +44,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from tools.scenarios.base import ProfileBuilder
 
 SEED: Final = 2001
@@ -56,13 +68,13 @@ TX_GROUP_SIZE_WEIGHTS: Final = (0.30, 0.27, 0.17, 0.10, 0.07, 0.05, 0.03, 0.01)
 
 # Chain activity split (multichain user, mainnet-heavy)
 CHAINS: Final = (
-    Location.ETHEREUM,
-    Location.ARBITRUM_ONE,
-    Location.OPTIMISM,
-    Location.BASE,
+    LOCATION_ETHEREUM,
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_OPTIMISM,
+    LOCATION_BASE,
 )
 CHAIN_WEIGHTS: Final = (0.55, 0.18, 0.14, 0.13)
-CHAIN_IDS: Final = {Location.ETHEREUM: 1, Location.ARBITRUM_ONE: 42161, Location.OPTIMISM: 10, Location.BASE: 8453}  # noqa: E501
+CHAIN_IDS: Final = {LOCATION_ETHEREUM: 1, LOCATION_ARBITRUM_ONE: 42161, LOCATION_OPTIMISM: 10, LOCATION_BASE: 8453}  # noqa: E501
 
 # A few accounts do most of the activity (zipf-ish), like real wallets
 ACCOUNT_WEIGHTS: Final = tuple(1.0 / rank for rank in range(1, N_EVM_ACCOUNTS + 1))
@@ -70,7 +82,7 @@ ACCOUNT_WEIGHTS: Final = tuple(1.0 / rank for rank in range(1, N_EVM_ACCOUNTS + 
 SWAP_FEE_SHARE: Final = 0.3
 MOVEMENT_FEE_SHARE: Final = 0.5
 
-EXCHANGES: Final = (Location.KRAKEN, Location.BINANCE, Location.COINBASE)
+EXCHANGES: Final = (LOCATION_KRAKEN, LOCATION_BINANCE, LOCATION_COINBASE)
 EXCHANGE_WEIGHTS: Final = (0.5, 0.35, 0.15)
 
 # Counterparty pools with zipf-ish skew: a handful of protocols dominate
@@ -102,17 +114,17 @@ MAINNET_ERC20_POOL: Final = (
     (erc20(1, '0x6982508145454Ce325dDbE47a25d4ec3d2311933'), 'PEPE'),
 )
 L2_ERC20_POOLS: Final = {
-    Location.ARBITRUM_ONE: (
+    LOCATION_ARBITRUM_ONE: (
         (erc20(42161, '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'), 'USDC'),
         (erc20(42161, '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'), 'WETH'),
         (erc20(42161, '0x912CE59144191C1204E64559FE8253a0e49E6548'), 'ARB'),
     ),
-    Location.OPTIMISM: (
+    LOCATION_OPTIMISM: (
         (erc20(10, '0x7F5c764cBc14f9669B88837ca1490cCa17c31607'), 'USDC.e'),
         (erc20(10, '0x4200000000000000000000000000000000000006'), 'WETH'),
         (erc20(10, '0x4200000000000000000000000000000000000042'), 'OP'),
     ),
-    Location.BASE: (
+    LOCATION_BASE: (
         (erc20(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'), 'USDC'),
         (erc20(8453, '0x4200000000000000000000000000000000000006'), 'WETH'),
     ),
@@ -144,8 +156,8 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
         ],
     )
 
-    def chain_pools(location: Location) -> EvmPools:
-        candidates = MAINNET_ERC20_POOL if location == Location.ETHEREUM else L2_ERC20_POOLS[location]  # noqa: E501
+    def chain_pools(location: LocationIdentifier) -> EvmPools:
+        candidates = MAINNET_ERC20_POOL if location == LOCATION_ETHEREUM else L2_ERC20_POOLS[location]  # noqa: E501
         existing = set(builder.filter_existing_assets([x[0] for x in candidates]))
         assets = [(Asset(identifier), symbol) for identifier, symbol in candidates if identifier in existing]  # noqa: E501
         return EvmPools(
@@ -165,7 +177,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             identifier=-1,
             asset=Asset('EUR'),
             label='Bank account',
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
             amount=FVal('100000'),
@@ -174,7 +186,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             identifier=-1,
             asset=A_BTC,
             label='Hardware wallet',
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             tags=None,
             balance_type=BalanceType.ASSET,
             amount=FVal('4.2'),
@@ -183,7 +195,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
     builder.add_chain_state(*make_chain_state(
         seed=SEED,
         accounts=evm_accounts,
-        assets=pools_per_chain[Location.ETHEREUM].assets,
+        assets=pools_per_chain[LOCATION_ETHEREUM].assets,
     ))
     price_assets = {
         symbol: asset
@@ -202,13 +214,13 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
     )
     balance_rows, location_rows, snapshot_count = make_snapshots(
         factory=factory,
-        assets=pools_per_chain[Location.ETHEREUM].assets,
+        assets=pools_per_chain[LOCATION_ETHEREUM].assets,
         weeks=ACTIVE_MONTHS * 52 // 12,
         location_weights=(
-            (Location.BLOCKCHAIN, 0.55),
-            (Location.KRAKEN, 0.2),
-            (Location.BINANCE, 0.15),
-            (Location.COINBASE, 0.1),
+            (LOCATION_BLOCKCHAIN, 0.55),
+            (LOCATION_KRAKEN, 0.2),
+            (LOCATION_BINANCE, 0.15),
+            (LOCATION_COINBASE, 0.1),
         ),
     )
     builder.add_balance_snapshots(balance_rows, location_rows, snapshot_count)
@@ -237,7 +249,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             yield from group
 
         rows, idx = 0, 0
-        mainnet_pools = pools_per_chain[Location.ETHEREUM]
+        mainnet_pools = pools_per_chain[LOCATION_ETHEREUM]
         while rows < SWAP_ROWS_TARGET:
             group = make_exchange_swap(
                 factory=factory,

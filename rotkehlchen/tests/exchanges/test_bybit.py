@@ -22,8 +22,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BYBIT,
+)
 from rotkehlchen.tests.utils.constants import A_SOL, A_XRP
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -211,7 +214,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     assert events == [SwapEvent(
         group_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
         timestamp=TimestampMS(1702297236826),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('8.29549'),
@@ -219,7 +222,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     ), SwapEvent(
         group_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
         timestamp=TimestampMS(1702297236826),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_SOL,
         amount=FVal('0.119'),
@@ -227,7 +230,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     ), SwapEvent(
         group_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
         timestamp=TimestampMS(1702297107954),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('17.482000'),
@@ -235,7 +238,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     ), SwapEvent(
         group_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
         timestamp=TimestampMS(1702297107954),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH_MATIC,
         amount=FVal('20.00'),
@@ -243,7 +246,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     ), SwapEvent(
         group_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
         timestamp=TimestampMS(1701201377325),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('5.1573250'),
@@ -251,7 +254,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
     ), SwapEvent(
         group_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
         timestamp=TimestampMS(1701201377325),
-        location=Location.BYBIT,
+        location=LOCATION_BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.00250'),
@@ -285,7 +288,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
     assert movements == [
         AssetMovement(
             timestamp=TimestampMS(1701200911000),
-            location=Location.BYBIT,
+            location=LOCATION_BYBIT,
             location_label=bybit_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
@@ -294,7 +297,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             extra_data={'transaction_id': '0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27'},  # noqa: E501
         ), AssetMovement(
             timestamp=TimestampMS(1701200780000),
-            location=Location.BYBIT,
+            location=LOCATION_BYBIT,
             location_label=bybit_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,

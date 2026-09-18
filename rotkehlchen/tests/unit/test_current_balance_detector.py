@@ -23,10 +23,11 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_HYPERLIQUID
 from rotkehlchen.tasks.historical_balances import HYPERCORE_BUCKET_PROTOCOL
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import EventMetricKey, Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import EventMetricKey, SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 pytestmark = [
@@ -37,6 +38,7 @@ pytestmark = [
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
 
 TOLERANCE = FVal('0.001')
 
@@ -46,7 +48,7 @@ def _add_balance(
         address: str,
         balance: str,
         ts: int = 1_000,
-        location: Location = Location.ETHEREUM,
+        location: LocationIdentifier = LOCATION_ETHEREUM,
         protocol: str | None = None,
         asset: Asset = A_ETH,
 ) -> int:
@@ -71,7 +73,7 @@ def _add_balance(
             'metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)',
             (
-                event_id, location.serialize_for_db(), address, protocol,
+                event_id, location, address, protocol,
                 EventMetricKey.BALANCE.serialize(), balance,
                 asset.identifier, ts, ts,
             ),
@@ -187,12 +189,12 @@ def test_untracked_address_is_not_compared(database: DBHandler) -> None:
 
 @pytest.mark.parametrize('hyperliquid_accounts', [[TEST_ADDR1]])
 def test_hypercore_bucket_is_not_compared_with_hyperevm(database: DBHandler) -> None:
-    _add_balance(database, TEST_ADDR1, '5', location=Location.HYPERLIQUID)
+    _add_balance(database, TEST_ADDR1, '5', location=LOCATION_HYPERLIQUID)
     _add_balance(
         database=database,
         address=TEST_ADDR1,
         balance='7',
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         protocol=HYPERCORE_BUCKET_PROTOCOL,
     )
     assert _make_detector(database, '3', SupportedBlockchain.HYPERLIQUID).run() == 1

@@ -16,18 +16,22 @@ from urllib.parse import urlparse
 from fints.exceptions import FinTSClientPINError, FinTSConnectionError
 from fints.models import SEPAAccount
 
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.fints import Fints
 from rotkehlchen.banks.qonto import Qonto
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_QONTO,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 BANK_FIXTURES_DIR = Path(__file__).resolve().parent.parent / 'data' / 'banks'
@@ -185,7 +189,7 @@ class FinTSFixtureTransport(FixtureTransport):
 
 @dataclass
 class BankConnectorKit:
-    location: Location
+    location: LocationIdentifier
     connector_class: type[BankConnector]
     create_transport: Callable[[], FixtureTransport]
     expected_balances: dict[Any, FVal]  # asset -> amount the fixtures add up to
@@ -227,7 +231,7 @@ def _qonto_expected_balance() -> FVal:
 
 BANK_KITS: list[BankConnectorKit] = [
     BankConnectorKit(
-        location=Location.QONTO,
+        location=LOCATION_QONTO,
         connector_class=Qonto,
         create_transport=QontoFixtureTransport,
         expected_balances={A_EUR: _qonto_expected_balance()},
@@ -235,7 +239,7 @@ BANK_KITS: list[BankConnectorKit] = [
         cursor_param='updated_at_from',
     ),
     BankConnectorKit(
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         connector_class=Fints,
         create_transport=FinTSFixtureTransport,
         expected_balances={A_EUR: FVal('1250')},

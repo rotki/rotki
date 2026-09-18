@@ -27,12 +27,14 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITFINEX,
+)
 from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
-    Location,
     LocationAssetMappingUpdateEntry,
     Timestamp,
     TimestampMS,
@@ -129,7 +131,7 @@ TRADE_3: Final = """
 
 def test_name():
     exchange = Bitfinex('bitfinex1', 'a', b'a', object(), object())
-    assert exchange.location == Location.BITFINEX
+    assert exchange.location == LOCATION_BITFINEX
     assert exchange.name == 'bitfinex1'
 
 
@@ -192,7 +194,7 @@ def test_first_connection(mock_bitfinex, globaldb):
     assert mock_bitfinex.first_connection_made is False
     assert hasattr(mock_bitfinex, 'pair_bfx_symbols_map') is False
 
-    bitfinex_db_serialized = Location.BITFINEX.serialize_for_db()
+    bitfinex_db_serialized = LOCATION_BITFINEX
     with globaldb.conn.read_ctx() as cursor:
         mappings_before = set(cursor.execute(
             'SELECT exchange_symbol, local_id FROM location_asset_mappings '
@@ -276,7 +278,7 @@ def test_query_balances_asset_balance(
     mock_bitfinex.first_connection = MagicMock()  # type: ignore
     globaldb.add_location_asset_mappings([
         LocationAssetMappingUpdateEntry(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             location_symbol='GNT',
             asset=A_GLM,
         ),
@@ -435,34 +437,34 @@ def test_deserialize_trade_buy(mock_bitfinex):
     ]
     assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('49.3425179516'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_WBTC,
         amount=FVal('0.26334268'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.09868591'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
@@ -486,34 +488,34 @@ def test_deserialize_trade_sell(mock_bitfinex):
     ]
     assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.26334268'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('49.3425179516'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.09868591'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
@@ -548,34 +550,34 @@ def test_delisted_pair_trades_work(mock_bitfinex: Bitfinex) -> None:
     ]
     assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=rlc,
         amount=FVal('0.26334268'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('49.3425179516'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
     ), SwapEvent(
         timestamp=TimestampMS(1573485493000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         event_subtype=HistoryEventSubType.FEE,
         asset=rlc,
         amount=FVal('0.09868591'),
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             unique_id='399251013',
         ),
         location_label='bitfinex',
@@ -709,133 +711,133 @@ def test_query_online_trade_history_case_1(mock_bitfinex: Bitfinex) -> None:
         assert end_ts == actual_end_ts
         assert events == [SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.26334268'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('0.09868591'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.26334268'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.09868591'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('0.500000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
             amount=FVal('10000.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('20.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
             amount=FVal('10000.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('0.500000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('20.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
@@ -931,133 +933,133 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         assert end_ts == actual_end_ts
         assert events == [SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.26334268'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606899600000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.09868591'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='1',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.26334268'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606901400000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.09868591'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='2',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('0.500000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
             amount=FVal('10000.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606932000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('20.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='3',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
             amount=FVal('10000.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('0.500000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
         ), SwapEvent(
             timestamp=TimestampMS(1606986000000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_WBTC,
             amount=FVal('20.0'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='4',
             ),
             location_label='bitfinex',
@@ -1092,7 +1094,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex: Bitfinex) -> None:
     fee_asset = A_WBTC
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1569348774000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         location_label=mock_bitfinex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=fee_asset,
@@ -1105,7 +1107,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex: Bitfinex) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1569348774000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         location_label=mock_bitfinex.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=fee_asset,
@@ -1147,7 +1149,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex: Bitfinex) -> None:
     fee_asset = A_EUR
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1569348774000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         location_label=mock_bitfinex.name,
         event_subtype=HistoryEventSubType.SPEND,
         asset=fee_asset,
@@ -1156,7 +1158,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex: Bitfinex) -> None:
         extra_data={'reference': '13105603'},
     ), AssetMovement(
         timestamp=TimestampMS(1569348774000),
-        location=Location.BITFINEX,
+        location=LOCATION_BITFINEX,
         location_label=mock_bitfinex.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=fee_asset,
@@ -1395,7 +1397,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
         expected_asset_movements = [
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=wbtc_fee_asset,
@@ -1409,7 +1411,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=wbtc_fee_asset,
@@ -1418,7 +1420,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=wbtc_fee_asset,
@@ -1432,7 +1434,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=wbtc_fee_asset,
@@ -1441,7 +1443,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=eur_fee_asset,
@@ -1451,7 +1453,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=eur_fee_asset,
@@ -1624,7 +1626,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
         expected_asset_movements = [
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=wbtc_fee_asset,
@@ -1638,7 +1640,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=wbtc_fee_asset,
@@ -1647,7 +1649,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=wbtc_fee_asset,
@@ -1661,7 +1663,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=wbtc_fee_asset,
@@ -1670,7 +1672,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=eur_fee_asset,
@@ -1680,7 +1682,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=eur_fee_asset,
@@ -1689,7 +1691,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606996800000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=wbtc_fee_asset,
@@ -1703,7 +1705,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606996800000),
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 location_label=mock_bitfinex.name,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=wbtc_fee_asset,

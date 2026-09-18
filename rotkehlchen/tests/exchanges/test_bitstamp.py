@@ -29,16 +29,19 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITSTAMP,
+)
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
 def test_name():
     exchange = Bitstamp('bitstamp1', 'a', b'a', object(), object())
-    assert exchange.location == Location.BITSTAMP
+    assert exchange.location == LOCATION_BITSTAMP
     assert exchange.name == 'bitstamp1'
 
 
@@ -274,36 +277,36 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'order_id': 2,
     }) == [SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('0.0000250000000000'),
         location_label='bitstamp',
         extra_data={'reference': '2'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     )]
@@ -320,36 +323,36 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'order_id': 2,
     }) == [SwapEvent(
         timestamp=TimestampMS(1555402145000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('5.018400000'),
         location_label='bitstamp',
         extra_data={'reference': '2'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1555402145000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.00060000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1555402145000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.02'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     )]
@@ -366,36 +369,36 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'order_id': 15,
     }) == [SwapEvent(
         timestamp=TimestampMS(1555345154000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('7.7099826120'),
         location_label='bitstamp',
         extra_data={'reference': '15'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='15',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1555345154000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('6.87630'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='15',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1555345154000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.02'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='15',
         ),
     )]
@@ -413,36 +416,36 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'order_id': 3,
     }) == [SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('1.00000000'),
         location_label='bitstamp',
         extra_data={'reference': '5'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('0.8196721300000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     )]
@@ -459,36 +462,36 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'order_id': 3,
     }) == [SwapEvent(
         timestamp=TimestampMS(1561498868000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BTC,
         amount=FVal('1.81213214'),
         location_label='bitstamp',
         extra_data={'reference': '10'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='10',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1561498868000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('18338.4510730148'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='10',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1561498868000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('40.35000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='10',
         ),
     )]
@@ -834,70 +837,70 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
 
     assert result == [SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('0.0000250000000000'),
         location_label='bitstamp',
         extra_data={'reference': '2'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('1.00000000'),
         location_label='bitstamp',
         extra_data={'reference': '5'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('0.8196721300000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     )]
@@ -940,70 +943,70 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
     """
     events = [SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('1.22000000'),
         location_label='bitstamp',
         extra_data={'reference': '5'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('0.9999999986'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='5',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('0.000025'),
         location_label='bitstamp',
         extra_data={'reference': '2'},
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             unique_id='2',
         ),
     )]
@@ -1051,7 +1054,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
     asset = A_BTC
     movement = [AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=asset,
@@ -1063,7 +1066,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset,
@@ -1087,7 +1090,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
     asset = A_GBP
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=asset,
@@ -1099,7 +1102,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset,
@@ -1123,7 +1126,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
     asset = A_USDC
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=asset,
@@ -1135,7 +1138,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset,
@@ -1161,7 +1164,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
     asset = A_USD
     movement = [AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.SPEND,
         asset=asset,
@@ -1173,7 +1176,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset,
@@ -1197,7 +1200,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
     asset = A_EUR
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.SPEND,
         asset=asset,
@@ -1209,7 +1212,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         location_label=mock_bitstamp.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset,
@@ -1229,7 +1232,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     asset_usd = A_USD
     movements = [AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.SPEND,
         asset=asset_usd,
         amount=FVal('10000'),
@@ -1237,14 +1240,14 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         extra_data={'reference': '5'},
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset_usd,
         amount=FVal('50'),
         unique_id='5',
     ), AssetMovement(
         timestamp=TimestampMS(1606801400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=asset_btc,
         amount=FVal('0.5'),
@@ -1252,7 +1255,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         extra_data={'reference': '5'},
     ), AssetMovement(
         timestamp=TimestampMS(1606801400000),
-        location=Location.BITSTAMP,
+        location=LOCATION_BITSTAMP,
         event_subtype=HistoryEventSubType.FEE,
         asset=asset_btc,
         amount=FVal('0.0005'),

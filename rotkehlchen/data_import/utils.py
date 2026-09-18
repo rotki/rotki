@@ -9,9 +9,13 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.constants import (
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -26,6 +30,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 ITEMS_PER_DB_WRITE = 400
@@ -179,14 +184,14 @@ class SkippedCSVEntry(Exception):
 def process_rotki_generic_import_csv_fields(
         csv_row: dict[str, Any],
         currency_colname: str,
-) -> tuple[AssetWithOracles, FVal | None, Asset | None, Location, TimestampMS]:
+) -> tuple[AssetWithOracles, FVal | None, Asset | None, LocationIdentifier, TimestampMS]:
     """
     Process the imported csv for generic rotki trades and events
     """
     try:
-        location = Location.deserialize(csv_row['Location'])
+        location = deserialize_builtin_location(csv_row['Location'])
     except DeserializationError:
-        location = Location.EXTERNAL
+        location = LOCATION_EXTERNAL
 
     timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
     fee = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else None
@@ -211,7 +216,7 @@ def detect_duplicate_event(
         amount: FVal,
         asset: Asset,
         timestamp_ms: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         event_prefix: str,
         importer: BaseExchangeImporter,
         write_cursor: DBCursor,
@@ -227,7 +232,7 @@ def detect_duplicate_event(
             'AND asset=? AND amount=? AND timestamp=? AND location=? '
             'AND type=? AND subtype=?',
             (len(event_prefix), event_prefix, asset.identifier,
-             str(amount), timestamp_ms, location.serialize_for_db(),
+             str(amount), timestamp_ms, location,
              event_type.serialize(), event_subtype.serialize()),
         )
         return read_cursor.fetchone()[0] != 0

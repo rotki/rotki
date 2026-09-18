@@ -14,7 +14,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+)
+from rotkehlchen.types import Price, Timestamp
 
 
 def test_history_event_queue_discards_failed_batch() -> None:
@@ -70,7 +73,7 @@ def test_history_query_flushes_and_finishes_on_error(
 ) -> None:
     exchange = MagicMock()
     exchange.db = MagicMock()
-    exchange.location = Location.BINANCE
+    exchange.location = LOCATION_BINANCE
     exchange.name = 'test'
     exchange.query_locks_map = defaultdict(Semaphore)
     exchange.query_locks_map_lock = Semaphore()

@@ -13,9 +13,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -35,7 +38,7 @@ def test_swap(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756472597000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -46,7 +49,7 @@ def test_swap(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -59,7 +62,7 @@ def test_swap(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:8453/erc20:0xe5f2fe713CDB192C85e67A912Ff8891b4E636614'),
@@ -84,7 +87,7 @@ def test_create_lp_position(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1757008753000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -95,7 +98,7 @@ def test_create_lp_position(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=Asset('eip155:8453/erc20:0x4200000000000000000000000000000000000006'),
@@ -109,7 +112,7 @@ def test_create_lp_position(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -123,7 +126,7 @@ def test_create_lp_position(
         tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset('eip155:8453/erc721:0x84715977598247125C3D6E2e85370d1F6fDA1eaF/520'),
@@ -148,7 +151,7 @@ def test_increase_liquidity(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1757070031000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -159,7 +162,7 @@ def test_increase_liquidity(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -173,7 +176,7 @@ def test_increase_liquidity(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
         asset=Asset('eip155:8453/erc20:0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA'),
@@ -199,7 +202,7 @@ def test_decrease_liquidity(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1757077915000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -210,7 +213,7 @@ def test_decrease_liquidity(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
         asset=A_ETH,
@@ -224,7 +227,7 @@ def test_decrease_liquidity(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
         asset=Asset('eip155:8453/erc20:0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196'),

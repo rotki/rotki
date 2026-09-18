@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.exchanges.coinbase import ECDSA_KEY_RE
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -27,8 +29,8 @@ def data_migration_22(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
         with rotki.data.db.conn.read_ctx() as cursor:
             creds = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
-                location=Location.COINBASE,
-            )[Location.COINBASE]
+                location=LOCATION_COINBASE,
+            )[LOCATION_COINBASE]
 
         success = True
         for cred in creds:

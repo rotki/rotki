@@ -32,6 +32,9 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_HYPERLIQUID,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -42,7 +45,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -727,7 +729,7 @@ class HyperliquidAPI:
     def _entry_group_identifier(unique_id: str) -> str:
         """Create the rotki group identifier used for events from one entry."""
         return create_group_identifier_from_unique_id(
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             unique_id=unique_id,
         )
 
@@ -769,7 +771,7 @@ class HyperliquidAPI:
             group_identifier=context.group_identifier,
             sequence_index=sequence_index,
             timestamp=context.timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
@@ -793,7 +795,7 @@ class HyperliquidAPI:
         """Create a deposit or withdrawal asset movement from ledger activity."""
         return AssetMovement(
             timestamp=context.timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_subtype=event_subtype,
             asset=asset,
             amount=amount,
@@ -1430,7 +1432,7 @@ class HyperliquidAPI:
                 events.extend(
                     create_swap_events(
                         timestamp=parsed.context.timestamp,
-                        location=Location.HYPERLIQUID,
+                        location=LOCATION_HYPERLIQUID,
                         spend=parsed.spend,
                         receive=parsed.receive,
                         fee=fee,

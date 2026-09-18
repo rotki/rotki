@@ -10,7 +10,10 @@ from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
+from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -29,7 +32,7 @@ class CoinbaseHistoricalPriceOracle(HistoricalPriceOracleInterface):
 
     def _get_coinbase(self) -> Coinbase | None:
         """Choose a connection deterministically without copying its credentials."""
-        exchanges = self.exchange_manager.connected_exchanges.get(Location.COINBASE, ())
+        exchanges = self.exchange_manager.connected_exchanges.get(LOCATION_COINBASE, ())
         return next((
             exchange for exchange in sorted(exchanges, key=lambda entry: entry.name)
             if isinstance(exchange, Coinbase)
@@ -100,7 +103,7 @@ class CoinbaseHistoricalPriceOracle(HistoricalPriceOracleInterface):
 
         asset_symbols = GlobalDBHandler.get_location_asset_symbols(
             assets=[resolved_from_asset, *quote_assets],
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
         )
         if len(from_symbols := asset_symbols[resolved_from_asset]) == 0:
             raise PriceQueryUnsupportedAsset(from_asset.identifier)

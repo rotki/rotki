@@ -16,10 +16,13 @@ from rotkehlchen.db.internal_tx_conflicts import (
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -50,7 +53,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: APIS
                 'pending_group',
                 0,
                 1700000000,
-                Location.from_chain_id(ChainID.ETHEREUM).serialize_for_db(),
+                location_from_chain_id(ChainID.ETHEREUM),
                 '0xabc',
                 'ETH',
                 '1',

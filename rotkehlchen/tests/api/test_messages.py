@@ -5,13 +5,13 @@ import pytest
 import requests
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
+from rotkehlchen.locations.constants import LOCATION_KUCOIN, LOCATION_POLONIEX
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
-from rotkehlchen.types import Location
 from rotkehlchen.user_messages import BadData
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-@pytest.mark.parametrize('added_exchanges', [(Location.POLONIEX,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_POLONIEX,)])
 def test_query_messages(
         rotkehlchen_api_server_with_exchanges: APIServer,
         websocket_connection: WebsocketReader,
@@ -34,7 +34,7 @@ def test_query_messages(
     with setup.polo_patch:
         response = requests.post(
             api_url_for(rotkehlchen_api_server_with_exchanges, 'exchangeeventsqueryresource'),
-            json={'location': Location.POLONIEX.serialize()},
+            json={'location': LOCATION_POLONIEX},
         )
     assert_proper_response(response)
 
@@ -76,7 +76,7 @@ def test_polled_user_message_keeps_its_classification(
     rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.add_error(
         msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
         classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
-        subject=Location.KUCOIN,
+        subject=LOCATION_KUCOIN,
     )
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'messagesresource'),

@@ -17,13 +17,16 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_NEXO,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -99,7 +102,7 @@ class NexoImporter(BaseExchangeImporter):
         if entry_type in {'Deposit', 'Exchange Deposited On'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=asset,
                 amount=amount,
@@ -108,7 +111,7 @@ class NexoImporter(BaseExchangeImporter):
         elif entry_type in {'Withdrawal', 'Withdraw Exchanged'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=asset,
                 amount=amount,
@@ -117,7 +120,7 @@ class NexoImporter(BaseExchangeImporter):
         elif entry_type == 'Withdrawal Fee':
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 asset=asset,
                 amount=amount,
                 unique_id=transaction,
@@ -142,7 +145,7 @@ class NexoImporter(BaseExchangeImporter):
                 group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
@@ -158,7 +161,7 @@ class NexoImporter(BaseExchangeImporter):
                 group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 event_type=HistoryEventType.LOSS,
                 event_subtype=HistoryEventSubType.LIQUIDATE,
                 amount=input_amount,
@@ -172,7 +175,7 @@ class NexoImporter(BaseExchangeImporter):
                 group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.NEXO,
+                location=LOCATION_NEXO,
                 asset=asset,
                 amount=amount,
                 event_type=HistoryEventType.SPEND,
@@ -187,7 +190,7 @@ class NexoImporter(BaseExchangeImporter):
                 history_events=create_swap_events(
                     group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                     timestamp=ts_sec_to_ms(timestamp),
-                    location=Location.NEXO,
+                    location=LOCATION_NEXO,
                     spend=AssetAmount(
                         asset=asset_from_nexo(csv_row['Input Currency']),
                         amount=deserialize_fval_force_positive(csv_row['Input Amount']),

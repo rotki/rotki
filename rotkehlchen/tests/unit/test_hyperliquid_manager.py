@@ -27,8 +27,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import SupportedBlockchain, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -49,7 +50,7 @@ def _event(group_identifier: str) -> HistoryEvent:
         group_identifier=group_identifier,
         sequence_index=0,
         timestamp=TimestampMS(5000),
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -384,7 +385,7 @@ def test_refetch_does_not_duplicate_a_customized_legacy_funding_event(
     address instead of saving it a second time. Other payments are still saved."""
     manager, _ = _manager_with_db(database)
     legacy_group = create_group_identifier_from_unique_id(
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         unique_id=ZERO_32_BYTES_HEX,
     )
 
@@ -425,7 +426,7 @@ def test_sync_after_migration_29_does_not_duplicate_the_customized_funding_event
     must not be saved a second time, while the removed one is saved under its own group."""
     manager, add_error = _manager_with_db(database)
     legacy_group = create_group_identifier_from_unique_id(
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         unique_id=ZERO_32_BYTES_HEX,
     )
 
@@ -474,7 +475,7 @@ def test_refetch_keeps_both_if_the_legacy_event_identity_was_edited(
     saved next to it, since a duplicate can be deleted while a dropped payment is lost."""
     manager, _ = _manager_with_db(database)
     legacy_group = create_group_identifier_from_unique_id(
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         unique_id=ZERO_32_BYTES_HEX,
     )
 

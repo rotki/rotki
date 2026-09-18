@@ -8,7 +8,8 @@ from rotkehlchen.constants.assets import A_ETH, A_SOL
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
+from rotkehlchen.locations.constants import LOCATION_EXTERNAL
+from rotkehlchen.types import AssetAmount, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -52,7 +53,7 @@ def test_missing_rule_warning_for_ignored_trade_spend(accountant: Accountant) ->
     """Only receives paired with an ignored spend are suppressed, for the current report."""
     events = create_swap_events(
         timestamp=TimestampMS(1735689600000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='ignored-spend',
         spend=AssetAmount(asset=A_SOL, amount=ONE),
         receive=AssetAmount(asset=A_ETH, amount=ONE),
@@ -83,7 +84,7 @@ def test_missing_rule_warning_for_lone_trade_receive(accountant: Accountant) -> 
     """A receive with a missing, non-ignored spend must still warn with default rules."""
     events = create_swap_events(
         timestamp=TimestampMS(1735689600000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='missing-spend',
         spend=AssetAmount(asset=A_SOL, amount=ONE),
         receive=AssetAmount(asset=A_ETH, amount=ONE),

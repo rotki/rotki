@@ -20,13 +20,16 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_CRYPTOCOM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timestamp, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timestamp, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -138,7 +141,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     spend=AssetAmount(asset=quote_asset, amount=abs(quote_amount_sold)),
                     receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                     fee=AssetAmount(asset=fee_currency, amount=fee),
-                    location=Location.CRYPTOCOM,
+                    location=LOCATION_CRYPTOCOM,
                     location_label=CRYPTOCOM_LOCATION_LABEL,
                     spend_notes=notes,
                 ),
@@ -162,7 +165,7 @@ class CryptocomImporter(BaseExchangeImporter):
 
             asset = asset_from_cryptocom(csv_row['Currency'])
             self.add_history_events(write_cursor, [AssetMovement(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_subtype=movement_subtype,
                 timestamp=timestamp,
                 asset=asset,
@@ -196,7 +199,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 group_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=timestamp,
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
@@ -212,7 +215,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 group_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=timestamp,
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
@@ -225,7 +228,7 @@ class CryptocomImporter(BaseExchangeImporter):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_fval(csv_row['Amount']))
             self.add_history_events(write_cursor, [AssetMovement(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=timestamp,
                 asset=asset,
@@ -236,7 +239,7 @@ class CryptocomImporter(BaseExchangeImporter):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_fval(csv_row['Amount'])
             self.add_history_events(write_cursor, [AssetMovement(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=timestamp,
                 asset=asset,
@@ -256,7 +259,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 group_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=timestamp,
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
@@ -473,7 +476,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             spend=AssetAmount(asset=quote_asset, amount=abs(quote_amount_sold)),
                             receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                             fee=AssetAmount(asset=fee_currency, amount=fee),
-                            location=Location.CRYPTOCOM,
+                            location=LOCATION_CRYPTOCOM,
                             location_label=CRYPTOCOM_LOCATION_LABEL,
                             spend_notes=notes,
                         ),
@@ -539,7 +542,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             group_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row_without_index(withdrawal)}',
                             sequence_index=0,
                             timestamp=ts_sec_to_ms(withdrawal_date),
-                            location=Location.CRYPTOCOM,
+                            location=LOCATION_CRYPTOCOM,
                             event_type=HistoryEventType.RECEIVE,
                             event_subtype=HistoryEventSubType.NONE,
                             amount=profit,

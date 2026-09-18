@@ -1,4 +1,5 @@
 import json
+import re
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.db.filtering import DBMultiStringFilter
@@ -9,7 +10,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.types import Asset, AssetAmount, Location, TimestampMS
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import Asset, AssetAmount, TimestampMS
 
 
 def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
@@ -37,14 +39,14 @@ def _hash_group_key(payload: dict) -> str:
 
 
 def create_group_identifier_from_unique_id(
-        location: Location,
+        location: LocationIdentifier,
         unique_id: str,
 ) -> str:
     return hash_id(str(location) + unique_id)
 
 
 def create_group_identifier(
-        location: Location,
+        location: LocationIdentifier,
         timestamp: TimestampMS,
         asset: Asset,
         amount: FVal,
@@ -67,7 +69,7 @@ def create_group_identifier(
 
 
 def create_group_identifier_from_swap(
-        location: Location,
+        location: LocationIdentifier,
         timestamp: TimestampMS,
         spend: AssetAmount,
         receive: AssetAmount,
@@ -91,7 +93,7 @@ def generate_events_export_filename(filter_query: HistoryBaseEntryFilterQuery, u
     parts = [f'{filter_query.__class__.__name__.replace("FilterQuery", "").lower()}s']
     date_format = '%Y%m%d'
     if filter_query.location_filter and filter_query.location_filter.location:
-        parts.append(f'on_{filter_query.location_filter.location.name.lower()}')
+        parts.append(f"on_{re.sub(r'[^a-z0-9]+', '_', filter_query.location_filter.location.lower())}")  # noqa: E501
 
     if filter_query.timestamp_filter:
         if filter_query.timestamp_filter.from_ts and filter_query.timestamp_filter.to_ts:

@@ -13,8 +13,10 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import ts_now
 
 from .constants import (
@@ -27,6 +29,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 UNDERLYING_BALANCES_ABI: Final[ABI] = [{'inputs': [], 'name': 'underlyingToken', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'user', 'type': 'address'}], 'name': 'userUnderlyingView', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
@@ -135,7 +138,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         # as that would lead to double counting of balances
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_EIGENLAYER],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             to_ts=ts_now(),
             event_types=[HistoryEventType.INFORMATIONAL],
             event_subtypes=[HistoryEventSubType.NONE],

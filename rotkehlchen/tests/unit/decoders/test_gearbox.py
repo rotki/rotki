@@ -19,12 +19,16 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_ETHEREUM,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
     ChecksumEvmAddress,
-    Location,
     TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
@@ -118,7 +122,7 @@ def test_gearbox_deposit_non_farming_pool(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1754383247000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -129,7 +133,7 @@ def test_gearbox_deposit_non_farming_pool(
         tx_ref=tx_hash,
         sequence_index=693,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=underlying_token,
@@ -142,7 +146,7 @@ def test_gearbox_deposit_non_farming_pool(
         tx_ref=tx_hash,
         sequence_index=694,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=pool_token,
@@ -171,7 +175,7 @@ def test_gearbox_deposit(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716770963000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -182,7 +186,7 @@ def test_gearbox_deposit(
         ), EvmEvent(
             sequence_index=513,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_DAI,
@@ -195,7 +199,7 @@ def test_gearbox_deposit(
         ), EvmEvent(
             sequence_index=520,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xC853E4DA38d9Bd1d01675355b8c8f3BBC1451973'),
@@ -227,7 +231,7 @@ def test_gearbox_deposit_usdc(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716899027000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -238,7 +242,7 @@ def test_gearbox_deposit_usdc(
         ), EvmEvent(
             sequence_index=154,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_USDC,
@@ -249,7 +253,7 @@ def test_gearbox_deposit_usdc(
         ), EvmEvent(
             sequence_index=155,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_USDC,
@@ -262,7 +266,7 @@ def test_gearbox_deposit_usdc(
         ), EvmEvent(
             sequence_index=162,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0x9ef444a6d7F4A5adcd68FD5329aA5240C90E14d2'),
@@ -293,7 +297,7 @@ def test_gearbox_withdraw(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716739091000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -304,7 +308,7 @@ def test_gearbox_withdraw(
         ), EvmEvent(
             sequence_index=500,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:1/erc20:0xC853E4DA38d9Bd1d01675355b8c8f3BBC1451973'),
@@ -317,7 +321,7 @@ def test_gearbox_withdraw(
         ), EvmEvent(
             sequence_index=504,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_DAI,
@@ -348,7 +352,7 @@ def test_gearbox_deposit_arbitrum(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716815867000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -359,7 +363,7 @@ def test_gearbox_deposit_arbitrum(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
@@ -372,7 +376,7 @@ def test_gearbox_deposit_arbitrum(
         ), EvmEvent(
             sequence_index=40,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
@@ -403,7 +407,7 @@ def test_gearbox_deposit_arbitrum_lp(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716899425000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -414,7 +418,7 @@ def test_gearbox_deposit_arbitrum_lp(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
@@ -427,7 +431,7 @@ def test_gearbox_deposit_arbitrum_lp(
         ), EvmEvent(
             sequence_index=33,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x04419d3509f13054f60d253E0c79491d9E683399'),
@@ -460,7 +464,7 @@ def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1729918139000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -471,7 +475,7 @@ def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
@@ -484,7 +488,7 @@ def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
             tx_ref=tx_hash,
             sequence_index=29,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:42161/erc20:0xf3b7994e4dA53E04155057Fd61dc501599d57877'),
@@ -514,7 +518,7 @@ def test_gearbox_withdraw_arbitrum(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1717435594000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -525,7 +529,7 @@ def test_gearbox_withdraw_arbitrum(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
@@ -538,7 +542,7 @@ def test_gearbox_withdraw_arbitrum(
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_ETH,
@@ -569,7 +573,7 @@ def test_gearbox_deposit_usdc_arbitrum(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1717508317000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -580,7 +584,7 @@ def test_gearbox_deposit_usdc_arbitrum(
         ), EvmEvent(
             sequence_index=7,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
@@ -591,7 +595,7 @@ def test_gearbox_deposit_usdc_arbitrum(
         ), EvmEvent(
             sequence_index=8,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
@@ -604,7 +608,7 @@ def test_gearbox_deposit_usdc_arbitrum(
         ), EvmEvent(
             sequence_index=9,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
@@ -615,7 +619,7 @@ def test_gearbox_deposit_usdc_arbitrum(
         ), EvmEvent(
             sequence_index=17,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x608F9e2E8933Ce6b39A8CddBc34a1e3E8D21cE75'),
@@ -647,7 +651,7 @@ def test_gearbox_deposit_optimism(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1714433685000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -658,7 +662,7 @@ def test_gearbox_deposit_optimism(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
@@ -671,7 +675,7 @@ def test_gearbox_deposit_optimism(
         ), EvmEvent(
             sequence_index=97,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:10/erc20:0x704c4C9F0d29257E5b0E526b20b48EfFC8f758b2'),
@@ -703,7 +707,7 @@ def test_gearbox_deposit_usdc_optimism(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1714434001000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -714,7 +718,7 @@ def test_gearbox_deposit_usdc_optimism(
         ), EvmEvent(
             sequence_index=3,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
@@ -727,7 +731,7 @@ def test_gearbox_deposit_usdc_optimism(
         ), EvmEvent(
             sequence_index=4,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
@@ -738,7 +742,7 @@ def test_gearbox_deposit_usdc_optimism(
         ), EvmEvent(
             sequence_index=12,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:10/erc20:0x73302b63Ad4a16C498f26dB89cb27F37a72E4E04'),
@@ -770,7 +774,7 @@ def test_gearbox_withdraw_optimism_usdc(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1712552439000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -781,7 +785,7 @@ def test_gearbox_withdraw_optimism_usdc(
         ), EvmEvent(
             sequence_index=125,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:10/erc20:0x73302b63Ad4a16C498f26dB89cb27F37a72E4E04'),
@@ -794,7 +798,7 @@ def test_gearbox_withdraw_optimism_usdc(
         ), EvmEvent(
             sequence_index=129,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
@@ -820,7 +824,7 @@ def test_gearbox_staking(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1718177819000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -831,7 +835,7 @@ def test_gearbox_staking(
         ), EvmEvent(
             sequence_index=509,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -842,7 +846,7 @@ def test_gearbox_staking(
         ), EvmEvent(
             sequence_index=510,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -853,7 +857,7 @@ def test_gearbox_staking(
         ), EvmEvent(
             sequence_index=511,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -879,7 +883,7 @@ def test_gearbox_unstaking(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1717241039000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -890,7 +894,7 @@ def test_gearbox_unstaking(
         ), EvmEvent(
             sequence_index=308,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -920,7 +924,7 @@ def test_gearbox_claim_from_angle(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1745790011000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -931,7 +935,7 @@ def test_gearbox_claim_from_angle(
     ), EvmEvent(
         sequence_index=371,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -961,7 +965,7 @@ def test_gearbox_claim(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1745790059000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -972,7 +976,7 @@ def test_gearbox_claim(
     ), EvmEvent(
         sequence_index=339,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
@@ -1003,7 +1007,7 @@ def test_gearbox_claim_farming_token(
     expected_events = [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1769851043000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -1014,7 +1018,7 @@ def test_gearbox_claim_farming_token(
     ), EvmEvent(
         sequence_index=521,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),

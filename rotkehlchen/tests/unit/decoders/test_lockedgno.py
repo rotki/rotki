@@ -10,9 +10,12 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -26,7 +29,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1643833498000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -38,7 +41,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=365,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_GNO,
@@ -51,7 +54,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=366,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0x4f8AD938eBA0CD19155a835f617317a6E788c868'),
@@ -75,7 +78,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1682246147000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -87,7 +90,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=115,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_GNO,
@@ -100,7 +103,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=116,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0x4f8AD938eBA0CD19155a835f617317a6E788c868'),

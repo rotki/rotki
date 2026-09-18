@@ -13,9 +13,16 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    EVM_LOCATIONS,
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.locations.legacy_chars import location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import deserialize_evm_tx_hash
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -157,8 +164,8 @@ def upgrade_v36_to_v37(db: DBHandler, progress_handler: DBUpgradeProgressHandler
                 location = location_from_v53_char(entry[4])
                 db_event_identifier = entry[1]
                 if location in EVM_LOCATIONS:
-                    event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier)!s}'  # noqa: E501
-                elif location == Location.KRAKEN or db_event_identifier.startswith(b'rotki_events'):  # noqa: E501
+                    event_identifier = f'{location_to_chain_id(location)}{deserialize_evm_tx_hash(db_event_identifier)!s}'  # noqa: E501
+                elif location == LOCATION_KRAKEN or db_event_identifier.startswith(b'rotki_events'):  # noqa: E501
                     # kraken is the only location with basic history event entry type that doesn't
                     # start with 'rotki_events'
                     event_identifier = db_event_identifier.decode()
@@ -169,7 +176,7 @@ def upgrade_v36_to_v37(db: DBHandler, progress_handler: DBUpgradeProgressHandler
                     log.critical(f'Unexpected event {entry=} found. Skipping')
                     continue
 
-                if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
+                if location == LOCATION_KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1  # noqa: E501
                     entry_type = HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db()
                 else:
                     entry_type = HistoryBaseEntryType.EVM_EVENT.serialize_for_db()

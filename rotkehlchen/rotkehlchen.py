@@ -114,6 +114,10 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.indexer_stats import IndexerStats
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import (
@@ -140,7 +144,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     ExternalService,
     ListOfBlockchainAddresses,
-    Location,
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
@@ -164,6 +167,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1348,7 +1352,7 @@ class Rotkehlchen:
                     blockchain_assets[asset] = total_balance
 
             if len(blockchain_assets) != 0:
-                balances[str(Location.BLOCKCHAIN)] = blockchain_assets
+                balances[str(LOCATION_BLOCKCHAIN)] = blockchain_assets
 
             liabilities = {}
             for asset, asset_balances in blockchain_result.totals.liabilities.items():
@@ -1388,8 +1392,8 @@ class Rotkehlchen:
                 )
             else:
                 if len(nft_balances) != 0:
-                    if (blockchain_location := str(Location.BLOCKCHAIN)) not in balances:
-                        balances[str(Location.BLOCKCHAIN)] = {}
+                    if (blockchain_location := str(LOCATION_BLOCKCHAIN)) not in balances:
+                        balances[str(LOCATION_BLOCKCHAIN)] = {}
 
                     for balance_entry in nft_balances:
                         if balance_entry['price'] == ZERO:
@@ -1430,7 +1434,7 @@ class Rotkehlchen:
         # Calculate location stats
         location_stats: dict[str, Any] = {}
         for location, total_value in total_value_per_location.items():
-            if location == str(Location.BLOCKCHAIN):
+            if location == str(LOCATION_BLOCKCHAIN):
                 total_value -= liabilities_total_value  # noqa: PLW2901
 
             percentage = (total_value / net_value).to_percentage() if net_value != ZERO else '0%'
@@ -1602,7 +1606,7 @@ class Rotkehlchen:
         if (
                 oracle_type is HistoricalPriceOracle and
                 HistoricalPriceOracle.COINBASE in oracles and
-                not self.exchange_manager.connected_exchanges.get(Location.COINBASE)
+                not self.exchange_manager.connected_exchanges.get(LOCATION_COINBASE)
         ):
             return False, (
                 'You have enabled the Coinbase price oracle but you do not have a Coinbase '
@@ -1619,7 +1623,7 @@ class Rotkehlchen:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None = None,

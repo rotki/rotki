@@ -13,12 +13,15 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BISQ,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Price, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Price, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -88,12 +91,12 @@ class BisqTradesImporter(BaseExchangeImporter):
                     location='Bisq',
                     timezone_name=timezone,
                 )),
-                location=Location.BISQ,
+                location=LOCATION_BISQ,
                 spend=spend,
                 receive=receive,
                 fee=AssetAmount(asset=fee_currency, amount=fee_amount),
                 group_identifier=create_group_identifier_from_unique_id(
-                    location=Location.BISQ,
+                    location=LOCATION_BISQ,
                     unique_id=(trade_id := csv_row['Trade ID']),
                 ),
                 spend_notes=f'ID: {trade_id}',

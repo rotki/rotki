@@ -41,6 +41,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_btc_tx_id,
@@ -59,7 +60,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     HexColorCode,
     HyperliquidTokenAddress,
-    Location,
     Price,
     SolanaAddress,
     SupportedBlockchain,
@@ -931,13 +931,13 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: tuple[Location, ...] | None = None, **kwargs: Any) -> None:
+    def __init__(self, *, limit_to: tuple[LocationIdentifier, ...] | None = None, **kwargs: Any) -> None:  # noqa: E501
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
     @staticmethod
     def _serialize(
-            value: Location | None,
+            value: LocationIdentifier | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -951,9 +951,9 @@ class LocationField(fields.Field):
             attr: str | None,  # pylint: disable=unused-argument
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
-    ) -> Location:
+    ) -> LocationIdentifier:
         try:
-            location = Location.deserialize(value)
+            location = deserialize_location_identifier(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

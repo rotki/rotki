@@ -1,5 +1,6 @@
 /**
- * Extracts icon names from backend Python files for use in vite.config.ts.
+ * Extracts icon names from backend Python files and the built-in location catalog for use in
+ * vite.config.ts.
  * Falls back to a cached TypeScript file when the backend directory is unavailable (e.g., Docker builds).
  */
 
@@ -11,6 +12,8 @@ import { RuiIcons } from '@rotki/ui-library';
 import consola from 'consola';
 
 const GENERATED_FILE = '../backend-icons.generated.ts';
+/** The icons of the built-in locations are declared in this data file instead of in Python. */
+const LOCATION_CATALOG = 'rotkehlchen/data/locations.json';
 const validIconsSet = new Set<string>(RuiIcons);
 
 interface IconLocation {
@@ -90,11 +93,11 @@ function extractIconsWithLocations(filePath: string): IconLocation[] {
 
 function scanBackendIcons(projectRoot: string): { icons: string[]; invalidIcons: IconLocation[] } {
   const backendDir = join(projectRoot, 'rotkehlchen');
-  const pythonFiles = getPythonFiles(backendDir);
+  const sourceFiles = [...getPythonFiles(backendDir), join(projectRoot, LOCATION_CATALOG)];
   const allIcons = new Set<string>();
   const invalidIcons: IconLocation[] = [];
 
-  for (const file of pythonFiles) {
+  for (const file of sourceFiles) {
     for (const location of extractIconsWithLocations(file)) {
       allIcons.add(location.icon);
       if (!validIconsSet.has(location.icon))

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.data_import.importers.coinledger import CoinledgerImporter
@@ -8,9 +9,17 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
-from rotkehlchen.types import Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import TimestampMS
 
 
 def _coinledger_ts(date: str) -> TimestampMS:
@@ -45,7 +54,7 @@ def test_coinledger_importer(database) -> None:
     event = events[3]
     assert isinstance(event, AssetMovement)
     assert event.timestamp == _coinledger_ts('2025-03-02T16:24:08.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_subtype == HistoryEventSubType.RECEIVE
     assert event.asset == Asset('DOGE')
     assert event.amount == FVal('111.5')
@@ -58,7 +67,7 @@ def test_coinledger_importer(database) -> None:
     event = events[10]
     assert isinstance(event, AssetMovement)
     assert event.timestamp == _coinledger_ts('2025-08-12T05:33:18.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_subtype == HistoryEventSubType.SPEND
     assert event.asset == Asset('DOGE')
     assert event.amount == FVal('55')
@@ -71,7 +80,7 @@ def test_coinledger_importer(database) -> None:
     event = events[8]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-08-06T07:16:26.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.SPEND
     assert event.event_subtype == HistoryEventSubType.NONE
     assert event.asset == Asset('EUR')
@@ -83,7 +92,7 @@ def test_coinledger_importer(database) -> None:
     event = events[6]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-03-06T00:00:00.000')
-    assert event.location == Location.EXTERNAL
+    assert event.location == LOCATION_EXTERNAL
     assert event.event_type == HistoryEventType.SPEND
     assert event.event_subtype == HistoryEventSubType.FEE
     assert event.asset.symbol_or_name() == 'TRX'
@@ -94,7 +103,7 @@ def test_coinledger_importer(database) -> None:
     event = events[11]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-09-22T07:58:00.000')
-    assert event.location == Location.EXTERNAL
+    assert event.location == LOCATION_EXTERNAL
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.NONE
     assert event.asset.symbol_or_name() == 'USDT'
@@ -105,7 +114,7 @@ def test_coinledger_importer(database) -> None:
     event = events[12]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T10:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.SPEND
     assert event.event_subtype == HistoryEventSubType.FEE
     assert event.asset.symbol_or_name() == 'ETH'
@@ -116,7 +125,7 @@ def test_coinledger_importer(database) -> None:
     event = events[13]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T11:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.INTEREST
     assert event.asset.symbol_or_name() == 'USDT'
@@ -127,7 +136,7 @@ def test_coinledger_importer(database) -> None:
     event = events[14]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T12:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.REWARD
     assert event.asset.symbol_or_name() == 'BTC'
@@ -138,7 +147,7 @@ def test_coinledger_importer(database) -> None:
     event = events[15]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T13:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.STAKING
     assert event.event_subtype == HistoryEventSubType.REWARD
     assert event.asset.symbol_or_name() == 'ETH'
@@ -149,7 +158,7 @@ def test_coinledger_importer(database) -> None:
     event = events[16]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T14:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.AIRDROP
     assert event.asset.symbol_or_name() == 'DOGE'
@@ -160,7 +169,7 @@ def test_coinledger_importer(database) -> None:
     event = events[17]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T15:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.DONATE
     assert event.asset.symbol_or_name() == 'BTC'
@@ -171,7 +180,7 @@ def test_coinledger_importer(database) -> None:
     event = events[18]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T16:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.SPEND
     assert event.event_subtype == HistoryEventSubType.DONATE
     assert event.asset.symbol_or_name() == 'BTC'
@@ -182,7 +191,7 @@ def test_coinledger_importer(database) -> None:
     event = events[19]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T17:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.INTEREST
     assert event.asset.symbol_or_name() == 'USDT'
@@ -193,7 +202,7 @@ def test_coinledger_importer(database) -> None:
     event = events[20]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T18:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.LOSS
     assert event.event_subtype == HistoryEventSubType.NONE
     assert event.asset.symbol_or_name() == 'USDT'
@@ -204,7 +213,7 @@ def test_coinledger_importer(database) -> None:
     event = events[21]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T19:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.LOSS
     assert event.event_subtype == HistoryEventSubType.HACK
     assert event.asset.symbol_or_name() == 'ETH'
@@ -215,7 +224,7 @@ def test_coinledger_importer(database) -> None:
     event = events[22]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T20:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.SPEND
     assert event.event_subtype == HistoryEventSubType.PAYMENT
     assert event.asset.symbol_or_name() == 'USDT'
@@ -226,7 +235,7 @@ def test_coinledger_importer(database) -> None:
     event = events[23]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T21:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.NONE
     assert event.asset.symbol_or_name() == 'BCH'
@@ -237,7 +246,7 @@ def test_coinledger_importer(database) -> None:
     event = events[24]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T22:00:00.000')
-    assert event.location == Location.KRAKEN
+    assert event.location == LOCATION_KRAKEN
     assert event.event_type == HistoryEventType.RECEIVE
     assert event.event_subtype == HistoryEventSubType.INTEREST
     assert event.asset.symbol_or_name() == 'EUR'
@@ -248,7 +257,7 @@ def test_coinledger_importer(database) -> None:
     event = events[25]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-01T23:00:00.000')
-    assert event.location == Location.COINBASE
+    assert event.location == LOCATION_COINBASE
     assert event.event_type == HistoryEventType.STAKING
     assert event.event_subtype == HistoryEventSubType.REWARD
     assert event.asset.symbol_or_name() == 'ETH'
@@ -259,7 +268,7 @@ def test_coinledger_importer(database) -> None:
     event = events[26]
     assert isinstance(event, HistoryEvent)
     assert event.timestamp == _coinledger_ts('2025-10-02T00:00:00.000')
-    assert event.location == Location.BINANCE
+    assert event.location == LOCATION_BINANCE
     assert event.event_type == HistoryEventType.LOSS
     assert event.event_subtype == HistoryEventSubType.NONE
     assert event.asset.symbol_or_name() == 'USDT'

@@ -17,6 +17,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
@@ -28,7 +31,6 @@ from rotkehlchen.types import (
     Eth2PubKey,
     EvmTransaction,
     EVMTxHash,
-    Location,
     SolanaAddress,
     SupportedBlockchain,
     Timestamp,
@@ -153,7 +155,7 @@ def make_ethereum_event(
         location_label=location_label,
         identifier=index,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=event_type,
         event_subtype=event_subtype,
         asset=asset,
@@ -299,7 +301,7 @@ def make_eth2_deposit_event(pubkey: Eth2PubKey, depositor: ChecksumEvmAddress) -
         tx_ref=make_evm_tx_hash(),
         sequence_index=0,
         timestamp=ts_sec_to_ms(make_random_timestamp()),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         location_label=depositor,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,

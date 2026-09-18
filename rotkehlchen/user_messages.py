@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
-    from rotkehlchen.types import ExternalService, Location, Timestamp
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import ExternalService, Timestamp
 
 
 logger = logging.getLogger(__name__)
@@ -220,7 +221,7 @@ class MessagesAggregator:
             verbosity: str,
             msg: str,
             classification: MessageClassification,
-            subject: Location | None,
+            subject: LocationIdentifier | None,
     ) -> dict[str, Any]:
         """Assemble the USER_MESSAGE websocket payload.
 
@@ -229,17 +230,16 @@ class MessagesAggregator:
         a message that is not about any one location, such as a broken local database row.
         `group` is the message's identity, see MessageClassification.
         """
-        serialized_subject = subject.serialize() if subject is not None else None
         return {
             'verbosity': verbosity,
             'value': msg,
             'key': classification.key,
-            'subject': serialized_subject,
+            'subject': subject,
             'fields': classification.serialize(),
             'group': [
                 verbosity,
                 classification.key,
-                serialized_subject,
+                subject,
                 *classification.identity(),
             ],
         }
@@ -384,7 +384,7 @@ class MessagesAggregator:
             msg: str,
             *,
             classification: MessageClassification,
-            subject: Location | None = None,
+            subject: LocationIdentifier | None = None,
     ) -> None:
         log.warning(msg)
         self.add_message(
@@ -402,7 +402,7 @@ class MessagesAggregator:
             msg: str,
             *,
             classification: MessageClassification,
-            subject: Location | None = None,
+            subject: LocationIdentifier | None = None,
     ) -> None:
         log.error(msg)
         self.add_message(

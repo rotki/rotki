@@ -2,12 +2,14 @@ from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.filtering import INTERNAL_TX_CONFLICTS_JOIN
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ChainID,
     EVMTxHash,
-    Location,
     deserialize_evm_tx_hash,
 )
 
@@ -107,7 +109,7 @@ def is_tx_customized(
         'WHERE c.tx_ref = ? AND h.location = ? AND m.name = ? AND m.value = ?',
         (
             tx_hash,
-            Location.from_chain_id(chain_id).serialize_for_db(),
+            location_from_chain_id(chain_id),
             HISTORY_MAPPING_KEY_STATE,
             HistoryMappingState.CUSTOMIZED.serialize_for_db(),
         ),
@@ -173,7 +175,7 @@ def clean_internal_tx_conflict(
         'INNER JOIN chain_events_info c ON h.identifier = c.identifier '
         'WHERE c.tx_ref = ? AND h.location = ?'
         ')',
-        (tx_hash, Location.from_chain_id(chain_id).serialize_for_db()),
+        (tx_hash, location_from_chain_id(chain_id)),
     )
 
     write_cursor.execute(

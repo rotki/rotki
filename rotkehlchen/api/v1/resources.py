@@ -228,6 +228,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
     MONERIUM_CAPABILITY,
@@ -266,7 +267,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     ModuleName,
@@ -639,7 +639,7 @@ class ExchangesResource(BaseMethodView):
     def put(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -671,7 +671,7 @@ class ExchangesResource(BaseMethodView):
     def patch(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -700,7 +700,7 @@ class ExchangesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: Location) -> Response:
+    def delete(self, name: str, location: LocationIdentifier) -> Response:
         return self.rest_api.remove_exchange(name=name, location=location)
 
 
@@ -710,7 +710,7 @@ class ExchangesDataResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
-    def delete(self, location: Location | None, data_type: ExchangePurgeType) -> Response:
+    def delete(self, location: LocationIdentifier | None, data_type: ExchangePurgeType) -> Response:  # noqa: E501
         return self.rest_api.purge_exchange_data(location=location, data_type=data_type)
 
 
@@ -1031,7 +1031,7 @@ class BanksResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
+    def put(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
         return self.rest_api.setup_bank(name=name, location=location, credentials=credentials)
 
     @require_loggedin_user()
@@ -1039,7 +1039,7 @@ class BanksResource(BaseMethodView):
     def patch(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
@@ -1052,7 +1052,7 @@ class BanksResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: Location) -> Response:
+    def delete(self, name: str, location: LocationIdentifier) -> Response:
         return self.rest_api.remove_bank(name=name, location=location)
 
 
@@ -1070,12 +1070,12 @@ class BankAuthenticationResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: str, location: Location, response: str | None) -> Response:
+    def post(self, name: str, location: LocationIdentifier, response: str | None) -> Response:
         return self.rest_api.answer_bank_authentication(name, location, response)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: Location) -> Response:
+    def delete(self, name: str, location: LocationIdentifier) -> Response:
         """Drop the pending challenge, so the next query asks the bank for a fresh one."""
         return self.rest_api.cancel_bank_authentication(name, location)
 
@@ -1087,7 +1087,7 @@ class BankSyncResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, location: Location | None, name: str | None, async_query: bool) -> Response:
+    def post(self, location: LocationIdentifier | None, name: str | None, async_query: bool) -> Response:  # noqa: E501
         return self.rest_api.sync_banks(location=location, name=name, async_query=async_query)
 
 
@@ -1099,7 +1099,7 @@ class BankBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
@@ -1120,7 +1120,7 @@ class ExchangeBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
@@ -1458,7 +1458,7 @@ class ExchangeEventsQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: Location,
+            location: LocationIdentifier,
             async_query: bool,
             name: str | None = None,
     ) -> Response:
@@ -1477,7 +1477,7 @@ class ExchangeEventsRangeQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -2678,7 +2678,7 @@ class LocationAssetMappingsResource(BaseMethodView):
     @staticmethod
     def _location_mapping_reader(entry: dict[str, Any]) -> dict[str, Any]:
         if (loc := entry['location']) is not None:
-            entry['location'] = str(Location.deserialize_from_db(loc))
+            entry['location'] = str(LocationIdentifier(loc))
 
         return entry
 
@@ -2971,7 +2971,7 @@ class BinanceAvailableMarkets(BaseMethodView):
     get_schema = BinanceMarketsSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, location: Location) -> Response:
+    def get(self, location: LocationIdentifier) -> Response:
         return self.rest_api.get_all_binance_pairs(location=location)
 
 
@@ -2987,7 +2987,7 @@ class BinanceUserMarkets(BaseMethodView):
     get_schema = BinanceMarketsUserSchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, name: str, location: Location) -> Response:
+    def get(self, name: str, location: LocationIdentifier) -> Response:
         return self.rest_api.get_user_binance_pairs(name=name, location=location)
 
 
@@ -3000,7 +3000,7 @@ class BinanceSavingsResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> Response:

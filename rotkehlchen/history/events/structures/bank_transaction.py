@@ -6,7 +6,8 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-    from rotkehlchen.types import Location, TimestampMS
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import TimestampMS
 
 
 class BankTransactionExtraData(TypedDict):
@@ -30,7 +31,7 @@ class BankTransactionEvent(HistoryEvent):
             group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,

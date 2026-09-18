@@ -26,6 +26,9 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
+from rotkehlchen.locations.constants import (
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -37,7 +40,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_solana_address
 from rotkehlchen.tests.utils.messages import consume_errors
-from rotkehlchen.types import Location, TokenKind
+from rotkehlchen.types import TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -585,7 +588,7 @@ def test_user_asset_delete_guard(rotkehlchen_api_server: APIServer) -> None:
             asset=Asset(user_asset1_id),
             label='manual1',
             amount=ONE,
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             tags=None,
             balance_type=BalanceType.ASSET,
         )])

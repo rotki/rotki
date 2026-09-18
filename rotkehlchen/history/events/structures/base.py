@@ -21,13 +21,17 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
@@ -49,7 +53,7 @@ log = RotkehlchenLogsAdapter(logger)
 def get_event_direction(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
-        location: Location | None = None,
+        location: LocationIdentifier | None = None,
         for_balance_tracking: bool = False,
         for_movement_matching: bool = False,
 ) -> EventDirection | None:
@@ -168,7 +172,7 @@ class HistoryBaseEntryData[
     group_identifier: str
     sequence_index: int
     timestamp: TimestampMS
-    location: Location
+    location: LocationIdentifier
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
     asset: Asset
@@ -192,7 +196,7 @@ class HistoryBaseEntry[
             group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
@@ -291,7 +295,7 @@ class HistoryBaseEntry[
                 self.group_identifier,
                 self.sequence_index,
                 self.timestamp,
-                self.location.serialize_for_db(),
+                self.location,
                 self.location_label,
                 self.asset.identifier,
                 str(self.amount),
@@ -501,7 +505,7 @@ class HistoryBaseEntry[
                 group_identifier=data['group_identifier'],
                 sequence_index=data['sequence_index'],
                 timestamp=TimestampMS(deserialize_timestamp(data['timestamp'])),
-                location=Location.deserialize(data['location']),
+                location=deserialize_location_identifier(data['location']),
                 event_type=HistoryEventType.deserialize(data['event_type']),
                 event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: E501
                 location_label=deserialize_optional(data['location_label'], str),
@@ -567,7 +571,7 @@ class HistoryEvent(HistoryBaseEntry):
             group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
@@ -597,7 +601,7 @@ class HistoryEvent(HistoryBaseEntry):
         return HistoryBaseEntryType.HISTORY_EVENT
 
     def auto_notes(self) -> str | None:
-        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
+        if self.location == LOCATION_KRAKEN and self.event_type == HistoryEventType.STAKING:
             if self.event_subtype == HistoryEventSubType.REWARD:
                 return KRAKEN_STAKING_REWARD_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
             if self.event_subtype == HistoryEventSubType.FEE:
@@ -627,7 +631,7 @@ class HistoryEvent(HistoryBaseEntry):
             group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
+            location=LocationIdentifier(entry[4]),
             location_label=entry[5],
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
@@ -652,7 +656,7 @@ class HistoryEvent(HistoryBaseEntry):
             accounting: AccountingPot,
             events_iterator: peekable[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
-        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
+        if self.location == LOCATION_KRAKEN and self.event_type == HistoryEventType.STAKING:
             if self.event_subtype != HistoryEventSubType.REWARD:
                 return 1  # ignore asset movements between spot and staking
 

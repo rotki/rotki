@@ -6,8 +6,11 @@ import requests
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import hyperliquid_token_address_to_identifier
+from rotkehlchen.locations.constants import (
+    LOCATION_HYPERLIQUID,
+)
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -70,7 +73,7 @@ def test_refetch_hyperliquid_core_history_with_max_event(
             'SELECT COUNT(*) FROM history_events WHERE location=? AND location_label=? '
             'AND asset=? AND timestamp=?',
             (
-                Location.HYPERLIQUID.serialize_for_db(),
+                LOCATION_HYPERLIQUID,
                 address,
                 hyperliquid_token_address_to_identifier(
                     '0x6781b92b6ea5d8ed37d275eb201f64af',

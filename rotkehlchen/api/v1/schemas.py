@@ -57,6 +57,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_substrate_address,
 )
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_ETH2
+from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.constants.misc import ONE, VALID_LOGLEVELS, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
@@ -135,6 +136,20 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
+from rotkehlchen.locations.chains import (
+    BITCOIN_LOCATIONS,
+    EVM_EVMLIKE_LOCATIONS,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRIME,
+    LOCATION_COINBASEPRO,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import (
@@ -144,7 +159,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
-    BITCOIN_LOCATIONS,
     CHAINS_WITH_PENDING_TX_DECODING,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS,
@@ -152,7 +166,6 @@ from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_EVMLIKE_LOCATIONS,
     EVMLIKE_CHAIN_NAMES,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
@@ -173,7 +186,6 @@ from rotkehlchen.types import (
     ExternalService,
     ExternalServiceApiCredentials,
     HistoryEventQueryType,
-    Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     ModuleName,
@@ -240,6 +252,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import CurrentPriceOracle
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -523,7 +536,7 @@ class BaseStakingQuerySchema(
 
     def _make_query(
             self,
-            location: Location,
+            location: LocationIdentifier,
             data: dict[str, Any],
             event_types: list[HistoryEventType],
             value_event_subtypes: list[HistoryEventSubType],
@@ -612,7 +625,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
     ) -> dict[str, Any]:
         return self._make_query(
             data=data,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_types=[HistoryEventType.STAKING],
             query_event_subtypes=data['event_subtypes'],
             value_event_subtypes=[HistoryEventSubType.REWARD],
@@ -648,7 +661,7 @@ class HistoryEventFilterSchema(
     EXCLUDE_UNTRACKED_WITHDRAWALS: ClassVar[bool] = True
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
-    location = SerializableEnumField(Location, load_default=None)
+    location = LocationField(load_default=None)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
@@ -1045,12 +1058,12 @@ class CreateHistoryEventSchema(Schema):
                 **_kwargs: Any,
         ) -> dict[str, Any]:
             if (
-                ((location := data['location']) == Location.BITCOIN and data['asset'] != A_BTC) or
-                (location == Location.BITCOIN_CASH and data['asset'] != A_BCH)
+                ((location := data['location']) == LOCATION_BITCOIN and data['asset'] != A_BTC) or
+                (location == LOCATION_BITCOIN_CASH and data['asset'] != A_BCH)
             ):
-                expected_asset = 'BTC' if location == Location.BITCOIN else 'BCH'
+                expected_asset = 'BTC' if location == LOCATION_BITCOIN else 'BCH'
                 raise ValidationError(
-                    message=f'{location.name.lower()} events must use {expected_asset} as the asset',  # noqa: E501
+                    message=f'{location} events must use {expected_asset} as the asset',
                     field_name='asset',
                 )
 
@@ -1112,7 +1125,7 @@ class CreateHistoryEventSchema(Schema):
             (see CreateBaseHistoryEventSchema).
             """
             if data['asset'] != (
-                    expected_asset := A_BTC if data['location'] == Location.BITCOIN else A_BCH
+                    expected_asset := A_BTC if data['location'] == LOCATION_BITCOIN else A_BCH
             ):
                 raise ValidationError(
                     message=f'{data["location"]!s} events must use {expected_asset.identifier} as the asset',  # noqa: E501
@@ -2122,7 +2135,7 @@ class BinanceMarketsSchemaMixin(Schema):
             **_kwargs: Any,
     ) -> None:
         if (
-            data['location'] in (Location.BINANCE, Location.BINANCEUS) and
+            data['location'] in (LOCATION_BINANCE, LOCATION_BINANCEUS) and
             (data['binance_markets'] is None or len(data['binance_markets']) == 0)
         ):
             raise ValidationError(
@@ -2185,7 +2198,7 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
         if (
             (binance_history_start_ts := data['binance_history_start_ts']) is not None and
             (
-                location not in (Location.BINANCE, Location.BINANCEUS) or
+                location not in (LOCATION_BINANCE, LOCATION_BINANCEUS) or
                 binance_history_start_ts > ts_now()
             )
         ):
@@ -2197,13 +2210,13 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
 
         if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
             raise ValidationError(
-                f'{location.name.title()} requires an API secret',
+                f'{get_formatted_location_name(location)} requires an API secret',
                 field_name='api_secret',
             )
 
         if location in EXCHANGES_WITH_PASSPHRASE and not data.get('passphrase'):
             raise ValidationError(
-                f'{location.name.title()} requires a passphrase',
+                f'{get_formatted_location_name(location)} requires a passphrase',
                 field_name='passphrase',
             )
 
@@ -3211,10 +3224,10 @@ class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
-        if entry.location in (Location.COINBASEPRIME, Location.BINANCEUS, Location.COINBASEPRO):
-            replacement_location = Location.BINANCE if entry.location == Location.BINANCEUS else Location.COINBASE  # noqa: E501
+        if entry.location in (LOCATION_COINBASEPRIME, LOCATION_BINANCEUS, LOCATION_COINBASEPRO):
+            replacement_location = LOCATION_BINANCE if entry.location == LOCATION_BINANCEUS else LOCATION_COINBASE  # noqa: E501
             raise ValidationError(
-                message=f'Mappings for {entry.location.name} should use a location of {replacement_location.name}.',  # noqa: E501
+                message=f'Mappings for {entry.location} should use a location of {replacement_location}.',  # noqa: E501
                 field_name='location',
             )
 
@@ -3511,7 +3524,7 @@ class ERC20InfoSchema(AsyncQueryArgumentSchema):
 
 class BinanceMarketsUserSchema(Schema):
     name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=(Location.BINANCEUS, Location.BINANCE), required=True)
+    location = LocationField(limit_to=(LOCATION_BINANCEUS, LOCATION_BINANCE), required=True)
 
 
 class ManualPriceSchema(Schema):
@@ -3697,8 +3710,8 @@ class StatisticsNetValueSchema(Schema):
 
 class BinanceMarketsSchema(Schema):
     location = LocationField(
-        limit_to=(Location.BINANCEUS, Location.BINANCE),
-        load_default=Location.BINANCE,
+        limit_to=(LOCATION_BINANCEUS, LOCATION_BINANCE),
+        load_default=LOCATION_BINANCE,
     )
 
 
@@ -3993,7 +4006,7 @@ class LocationDataSnapshotSchema(Schema):
     ) -> LocationData:
         return LocationData(
             time=data['timestamp'],
-            location=data['location'].serialize_for_db(),
+            location=data['location'],
             usd_value=str(data['usd_value']),
         )
 
@@ -4296,7 +4309,7 @@ class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
 class BinanceSavingsSchema(BaseStakingQuerySchema):
     location = LocationField(
         required=True,
-        limit_to=(Location.BINANCE, Location.BINANCEUS),
+        limit_to=(LOCATION_BINANCE, LOCATION_BINANCEUS),
     )
 
     @post_load

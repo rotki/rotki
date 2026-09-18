@@ -17,8 +17,11 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -38,7 +41,7 @@ def test_delegation_reward(accountant: Accountant):
         tx_ref=HASH1,
         sequence_index=358,
         timestamp=TSMS1,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_GRT,
@@ -51,7 +54,7 @@ def test_delegation_reward(accountant: Accountant):
         tx_ref=HASH2,
         sequence_index=359,
         timestamp=TSMS2,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_GRT,
@@ -64,7 +67,7 @@ def test_delegation_reward(accountant: Accountant):
         tx_ref=HASH2,
         sequence_index=360,
         timestamp=TSMS2,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_GRT,
@@ -77,7 +80,7 @@ def test_delegation_reward(accountant: Accountant):
         tx_ref=HASH3,
         sequence_index=208,
         timestamp=TSMS3,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         asset=A_GRT,
@@ -100,7 +103,7 @@ def test_delegation_reward(accountant: Accountant):
         ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Acquire 1000 GRT',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TS1,
             asset=A_GRT,
             free_amount=ZERO,
@@ -113,7 +116,7 @@ def test_delegation_reward(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Delegate 995 GRT to indexer',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TS2,
             asset=A_GRT,
             free_amount=FVal('995'),
@@ -126,7 +129,7 @@ def test_delegation_reward(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Burn 5 GRT as delegation tax',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TS2,
             asset=A_GRT,
             free_amount=ZERO,
@@ -145,7 +148,7 @@ def test_delegation_reward(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 10 GRT as delegation reward for {USER_ADDRESS}',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TS3,
             asset=A_GRT,
             free_amount=ZERO,
@@ -158,7 +161,7 @@ def test_delegation_reward(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Withdraw 1005 GRT from indexer',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TS3,
             asset=A_GRT,
             free_amount=FVal('1005'),
