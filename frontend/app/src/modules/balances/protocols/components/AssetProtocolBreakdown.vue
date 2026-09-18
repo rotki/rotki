@@ -4,7 +4,6 @@ import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 
 defineProps<{
   data: ProtocolBalanceWithChains[];
@@ -18,10 +17,10 @@ const sort = ref<DataTableSortData<ProtocolBalanceWithChains>>({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const currencySymbol = useSetting('currencySymbol');
 
 const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
   align: 'start',
+  class: 'text-no-wrap w-full',
   key: 'protocol',
   label: t('common.location'),
   sortable: true,
@@ -34,11 +33,10 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
   sortable: true,
 }, {
   align: 'end',
+  cellClass: 'font-medium',
   class: 'text-no-wrap',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 </script>
@@ -73,14 +71,13 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
             </div>
           </template>
         </ProtocolIcon>
+        <ChainBalances
+          v-if="row.protocol.toLowerCase() === 'address' && row.chains && Object.keys(row.chains).length > 0"
+          :chains="row.chains"
+          :asset="asset"
+          :loading="loading"
+        />
       </div>
-      <ChainBalances
-        v-if="row.protocol.toLowerCase() === 'address' && row.chains && Object.keys(row.chains).length > 0"
-        class="ms-11 my-1"
-        :chains="row.chains"
-        :asset="asset"
-        :loading="loading"
-      />
     </template>
 
     <template #item.amount="{ row }">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetDisplay } from '@/modules/assets/types';
 import ManualBalanceMissingAssetWarning from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 
@@ -12,6 +13,9 @@ const emit = defineEmits<{
   'missing-asset-click': [item: AssetBalanceWithPrice];
 }>();
 
+/** The dashboard rows are compact: a 28px icon in the small avatar box. */
+const display: AssetDisplay = { dense: true, size: '28px' };
+
 function onMissingAssetClick(item: AssetBalanceWithPrice): void {
   emit('missing-asset-click', item);
 }
@@ -23,9 +27,14 @@ function onMissingAssetClick(item: AssetBalanceWithPrice): void {
     @click="onMissingAssetClick(asset)"
   />
 
-  <AssetDetails
+  <div
     v-else
-    :asset="asset.asset"
-    :resolution="{ isCollectionParent: !!asset.breakdown }"
-  />
+    class="[&_.text-caption]:!leading-4"
+  >
+    <AssetDetails
+      :asset="asset.asset"
+      :display="display"
+      :resolution="{ isCollectionParent: !!asset.breakdown }"
+    />
+  </div>
 </template>

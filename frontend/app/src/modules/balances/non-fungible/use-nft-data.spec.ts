@@ -247,10 +247,10 @@ describe('modules/balances/non-fungible/useNftData', () => {
       expect(serverTableOptions?.urlState).toEqual({ mode: 'none' });
     });
 
-    it('should sort by price, highest first, before the user picks anything', () => {
+    it('should sort by price, highest first, as a single sort so the header shows no multi-sort badge', () => {
       mountNftData();
 
-      expect(serverTableOptions?.sort).toEqual({ default: [{ column: 'price', direction: 'desc' }] });
+      expect(serverTableOptions?.sort).toEqual({ default: { column: 'price', direction: 'desc' } });
     });
 
     it('should hand the table the nft fetcher rather than fetching itself', () => {

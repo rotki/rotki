@@ -132,24 +132,21 @@ describe('usePoolBalances', () => {
     });
   });
 
-  describe('getPoolName', () => {
-    it('should format uniswap pool name', () => {
-      const { getPoolName } = usePoolBalances();
-      const name = getPoolName(PoolType.UNISWAP_V2, ['ETH', 'DAI']);
-      expect(name).toBe('UNI-V2 ETH-DAI');
+  describe('getPoolLabel', () => {
+    it('should give a uniswap pool its pair and the UNI-V2 prefix', () => {
+      const { getPoolLabel } = usePoolBalances();
+      expect(getPoolLabel(PoolType.UNISWAP_V2, ['ETH', 'DAI'])).toEqual({ pair: 'ETH-DAI', prefix: 'UNI-V2' });
     });
 
-    it('should format sushiswap pool name', () => {
-      const { getPoolName } = usePoolBalances();
-      const name = getPoolName(PoolType.SUSHISWAP, ['WETH', 'USDC']);
-      expect(name).toBe('SLP WETH-USDC');
+    it('should give a sushiswap pool its pair and the SLP prefix', () => {
+      const { getPoolLabel } = usePoolBalances();
+      expect(getPoolLabel(PoolType.SUSHISWAP, ['WETH', 'USDC'])).toEqual({ pair: 'WETH-USDC', prefix: 'SLP' });
     });
 
-    it('should fallback to concatenated assets for unknown type', () => {
-      const { getPoolName } = usePoolBalances();
+    it('should leave the prefix out for an unknown type', () => {
+      const { getPoolLabel } = usePoolBalances();
       // @ts-expect-error testing fallback with invalid enum value
-      const name = getPoolName('unknown', ['ETH', 'DAI']);
-      expect(name).toBe('ETH-DAI');
+      expect(getPoolLabel('unknown', ['ETH', 'DAI'])).toEqual({ pair: 'ETH-DAI', prefix: undefined });
     });
   });
 

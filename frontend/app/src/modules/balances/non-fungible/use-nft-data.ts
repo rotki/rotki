@@ -75,10 +75,10 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
       ignoredAssetsHandling: enumParam(modelIgnoredAssetsHandling, isIgnoredAssetsHandling, 'exclude'),
     }, { to: 'both' })],
     sort: {
-      default: [{
+      default: {
         column: 'price',
         direction: 'desc',
-      }],
+      },
     },
     urlState: routeWhen(() => !dashboard),
   });
@@ -118,25 +118,23 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
         sortable: true,
       }, {
         align: 'end',
-        cellClass: 'py-0',
+        cellClass: 'py-0 text-rui-text-secondary',
         class: 'text-no-wrap',
         key: 'priceInAsset',
         label: t('nft_balance_table.column.price_in_asset'),
       }, {
         align: 'end',
-        cellClass: 'py-0',
+        cellClass: 'py-0 font-medium',
         class: 'text-no-wrap',
         key: 'price',
-        label: t('common.price_in_symbol', {
-          symbol: get(currencySymbol),
-        }),
+        label: t('common.price'),
         sortable: true,
       }];
 
       if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
         headers.push({
           align: 'end',
-          cellClass: 'py-0',
+          cellClass: 'py-0 text-rui-text-secondary',
           class: 'text-no-wrap',
           key: 'percentageOfTotalNetValue',
           label: t('nft_balance_table.column.percentage'),
@@ -146,7 +144,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
       if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
         headers.push({
           align: 'end',
-          cellClass: 'py-0',
+          cellClass: 'py-0 text-rui-text-secondary',
           class: 'text-no-wrap',
           key: 'percentageOfTotalCurrentGroup',
           label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {

@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import type { ButtonProps } from '@rotki/ui-library';
 import type { DashboardTableType, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
-const { group, groupLabel } = defineProps<{
+const { group, groupLabel, size } = defineProps<{
   group: DashboardTableType;
   groupLabel?: string;
+  /** Button size; without it the button keeps its 48px square. */
+  size?: ButtonProps['size'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -64,6 +67,7 @@ function update(value: TableColumn) {
     <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="t('dashboard_asset_table.select_visible_columns')"
+        :size="size"
         v-bind="attrs"
       >
         <RuiIcon name="lu-ellipsis-vertical" />

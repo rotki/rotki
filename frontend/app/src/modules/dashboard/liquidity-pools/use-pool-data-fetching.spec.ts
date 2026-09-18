@@ -1,7 +1,8 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { Module } from '@/modules/core/common/modules';
 import { Cancelled } from '@/modules/core/tasks/task-result';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -57,7 +58,17 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
 }));
 
 describe('usePoolDataFetching', () => {
+  /** The fetcher is shared; stopping the scope that holds it after each test gives the next one a fresh instance. */
+  let scope: EffectScope;
+
+  function create(): ReturnType<typeof usePoolDataFetching> {
+    const result = scope.run(() => usePoolDataFetching());
+    assert(result);
+    return result;
+  }
+
   beforeEach(() => {
+    scope = effectScope();
     setActivePinia(createPinia());
     vi.clearAllMocks();
     mockStatusOf.mockReturnValue(IDLE);
@@ -67,19 +78,20 @@ describe('usePoolDataFetching', () => {
   });
 
   afterEach(() => {
+    scope.stop();
     vi.clearAllMocks();
   });
 
   describe('fetch', () => {
     it('should fetch both uniswap and sushiswap when premium', async () => {
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockRunTaskResult).toHaveBeenCalledTimes(2);
     });
 
     it('should submit one native activity per protocol', async () => {
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
@@ -97,7 +109,7 @@ describe('usePoolDataFetching', () => {
       const { usePoolBalancesStore } = await import('./use-pool-balances-store');
       const store = usePoolBalancesStore();
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       // The parsed payload lands in the store for both protocols, not just the task being run.
@@ -108,7 +120,7 @@ describe('usePoolDataFetching', () => {
     it('should skip sushiswap when not premium', async () => {
       mockIsPremium.mockReturnValue(ref<boolean>(false));
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockRunTaskResult).toHaveBeenCalledOnce();
@@ -117,7 +129,7 @@ describe('usePoolDataFetching', () => {
     it('should skip when uniswap module is not active', async () => {
       mockActiveModules.mockReturnValue(ref<string[]>([]));
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockRunTaskResult).not.toHaveBeenCalled();
@@ -126,7 +138,7 @@ describe('usePoolDataFetching', () => {
     it('should skip when the activity is already active', async () => {
       mockStatusOf.mockReturnValue({ ...IDLE, active: true, running: true });
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockSubmitTask).not.toHaveBeenCalled();
@@ -135,7 +147,7 @@ describe('usePoolDataFetching', () => {
     it('should skip when already completed and not refreshing', async () => {
       mockStatusOf.mockReturnValue({ ...IDLE, everCompleted: true });
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch();
 
       expect(mockSubmitTask).not.toHaveBeenCalled();
@@ -144,7 +156,7 @@ describe('usePoolDataFetching', () => {
     it('should fetch when refreshing even if already completed', async () => {
       mockStatusOf.mockReturnValue({ ...IDLE, everCompleted: true });
 
-      const { fetch } = usePoolDataFetching();
+      const { fetch } = create();
       await fetch(true);
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);

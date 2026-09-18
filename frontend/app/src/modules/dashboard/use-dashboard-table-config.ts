@@ -31,7 +31,6 @@ export function useDashboardTableConfig(
     page: 1,
   });
 
-  const currencySymbol = useSetting('currencySymbol');
   const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 
   function setPage(page: number): void {
@@ -70,12 +69,10 @@ export function useDashboardTableConfig(
       sortable: true,
     }, {
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'price',
-      label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
+      label: t('common.price'),
       sortable: true,
     }, {
       align: 'end',
@@ -85,19 +82,17 @@ export function useDashboardTableConfig(
       sortable: true,
     }, {
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 font-medium',
       class: 'text-no-wrap',
       key: 'value',
-      label: t('common.value_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
+      label: t('common.value'),
       sortable: true,
     }];
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
         align: 'end',
-        cellClass: 'py-0',
+        cellClass: 'py-0 text-rui-text-secondary',
         class: 'text-no-wrap',
         key: 'percentageOfTotalNetValue',
         label: toValue(totalNetWorth).gt(0)
@@ -109,7 +104,7 @@ export function useDashboardTableConfig(
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
       headers.push({
         align: 'end',
-        cellClass: 'py-0',
+        cellClass: 'py-0 text-rui-text-secondary',
         class: 'text-no-wrap',
         key: 'percentageOfTotalCurrentGroup',
         label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {

@@ -142,26 +142,20 @@ const fallbackData = computed(() => {
           </div>
           <div
             v-if="collectionName"
-            class="text-rui-text-secondary text-truncate"
+            class="text-rui-text-secondary text-caption text-truncate"
           >
             {{ collectionName }}
           </div>
         </div>
         <div v-else>
-          <div class="flex items-center">
-            <div>{{ t('nft_balance_table.contract_address') }}:</div>
-            <div class="pl-1 font-medium">
-              <HashLink
-                :text="fallbackData.address"
-                location="eth"
-              />
-            </div>
+          <div class="font-medium text-truncate">
+            {{ t('nft_balance_table.token_id') }} {{ fallbackData.tokenId }}
           </div>
-          <div class="flex">
-            <div>{{ t('nft_balance_table.token_id') }}:</div>
-            <div class="pl-1 font-medium">
-              {{ fallbackData.tokenId }}
-            </div>
+          <div class="text-caption text-rui-text-secondary">
+            <HashLink
+              :text="fallbackData.address"
+              location="eth"
+            />
           </div>
         </div>
       </div>

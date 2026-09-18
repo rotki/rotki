@@ -52,6 +52,14 @@ const forceChain = computed<string | undefined>(() => resolution?.forceChain);
 
 const showChain = computed<boolean>(() => !get(isCollectionParent));
 
+const title = computed<string>(() => (asset.isCustomAsset ? asset.name : asset.symbol) ?? '');
+
+/** Left out when it only repeats the title, as for ETH, whose name is its symbol. */
+const subtitle = computed<string>(() => {
+  const text = (asset.isCustomAsset ? asset.customAssetType : asset.name) ?? '';
+  return text.toLowerCase() === get(title).toLowerCase() ? '' : text;
+});
+
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => get(isCollectionParent));
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
@@ -113,8 +121,8 @@ watch(menuOpened, (menuOpened) => {
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
     :blur-content="!shouldShowAmount"
-    :title="asset.isCustomAsset ? asset.name : asset.symbol"
-    :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
+    :title="title"
+    :subtitle="subtitle"
   >
     <template #avatar>
       <ReuseImage />
@@ -145,8 +153,8 @@ watch(menuOpened, (menuOpened) => {
           :size="dense ? 'sm' : 'md'"
           :loading="loading"
           :blur-content="!shouldShowAmount"
-          :title="asset.isCustomAsset ? asset.name : asset.symbol"
-          :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
+          :title="title"
+          :subtitle="subtitle"
         >
           <template #avatar>
             <ReuseImage />

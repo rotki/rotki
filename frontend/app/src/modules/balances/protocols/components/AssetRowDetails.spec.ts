@@ -38,7 +38,7 @@ function createWrapper(
           props: {
             balances: { default: () => [], type: Array },
             breakdown: { default: undefined, type: Object },
-            hideTotal: { default: false, type: Boolean },
+            nested: { default: false, type: Boolean },
             loading: { default: false, type: Boolean },
           },
           template: '<div />',
@@ -107,7 +107,7 @@ describe('balances/protocols/components/AssetRowDetails.vue', () => {
   });
 
   it('should always hide the total on the nested table, whatever the outer hide asks for', () => {
-    expect(nested(createWrapper(undefined, 'BTC')).props('hideTotal')).toBe(true);
+    expect(nested(createWrapper(undefined, 'BTC')).props('nested')).toBe(true);
   });
 
   /*

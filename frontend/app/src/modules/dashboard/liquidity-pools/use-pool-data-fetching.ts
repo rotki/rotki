@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import { Blockchain } from '@rotki/common';
+import { createSharedComposable } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -22,7 +23,11 @@ interface UsePoolDataFetchingReturn {
   fetch: (refresh?: boolean) => Promise<void>;
 }
 
-export function usePoolDataFetching(): UsePoolDataFetchingReturn {
+/**
+ * Shared, so the pool table and the dashboard refresh menu drive one fetcher: its watchers refetch on
+ * account and premium changes, and a second instance would run every refetch twice.
+ */
+export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchingReturn => {
   const { addresses } = useAccountAddresses();
   const ethAddresses = computed<string[]>(() => get(addresses)[Blockchain.ETH] ?? []);
 
@@ -135,4 +140,4 @@ export function usePoolDataFetching(): UsePoolDataFetchingReturn {
   return {
     fetch,
   };
-}
+});
