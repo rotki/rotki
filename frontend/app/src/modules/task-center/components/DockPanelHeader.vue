@@ -72,7 +72,7 @@ const segments = computed<{ key: string; className: string; width: string }[]>((
         :aria-label="t('pending_task.collapse')"
         @click="emit('collapse')"
       >
-        <RuiIcon name="lu-chevron-up" />
+        <RuiIcon name="lu-chevron-down" />
       </RuiButton>
     </div>
     <template v-if="summary && total > 0">
