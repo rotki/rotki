@@ -3,6 +3,8 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import MissingPricesDialog from '@/modules/assets/prices/missing/MissingPricesDialog.vue';
+import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-missing-prices-dialog';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames, toPinned } from '@/modules/session/types';
 import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
@@ -15,6 +17,10 @@ const state = {
   push: vi.fn<(to: unknown) => Promise<void>>(),
   refreshAll: vi.fn<() => Promise<void>>(),
 };
+
+vi.mock('@/modules/assets/prices/missing/use-missing-prices', () => ({
+  useMissingPrices: (): object => ({ missingPriceIdentifiers: computed(() => ['ETH']) }),
+}));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): object => ({ openUrl }),
@@ -113,6 +119,30 @@ describe('modules/shell/action-center/GlobalActionCenter', () => {
 
     expect(run).toHaveBeenCalledOnce();
     expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(true);
+  });
+
+  it('should close the menu for a run target that opens a surface of its own', async () => {
+    const run = vi.fn<() => void>();
+    const wrapper = mountCenter();
+    const list = await openMenu(wrapper);
+
+    list.vm.$emit('open', { closesCenter: true, kind: 'run', run });
+    await nextTick();
+
+    expect(run).toHaveBeenCalledOnce();
+    expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(false);
+  });
+
+  it('should mount the missing prices dialog with the missing assets only once it is opened', async () => {
+    const wrapper = mountCenter();
+    expect(wrapper.findComponent(MissingPricesDialog).exists()).toBe(false);
+
+    useMissingPricesDialog().show();
+    await nextTick();
+
+    const dialog = wrapper.findComponent(MissingPricesDialog);
+    expect(dialog.props('identifiers')).toEqual(['ETH']);
+    expect(dialog.props('open')).toBe(true);
   });
 
   it('should open an external target outside the app and close the menu', async () => {

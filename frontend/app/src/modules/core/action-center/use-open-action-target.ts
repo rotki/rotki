@@ -16,7 +16,7 @@ interface UseOpenActionTargetReturn {
 
 /** Whether following a target takes the user somewhere else, so the center should close behind it. */
 function leavesCenter(target: ActionTarget): boolean {
-  return target.kind !== 'run';
+  return target.kind !== 'run' || target.closesCenter === true;
 }
 
 /**

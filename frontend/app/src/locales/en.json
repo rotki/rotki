@@ -330,6 +330,11 @@
           "action": "Add mappings",
           "description": "Some exchange assets have no mapping in rotki, so their balances and history are skipped.",
           "title": "Unmapped exchange assets"
+        },
+        "missing_prices": {
+          "action": "Add prices",
+          "description": "An oracle priced these assets before but reports none now, so they count as zero in your balances.",
+          "title": "Assets without a price"
         }
       },
       "chains": {
@@ -4884,6 +4889,13 @@
   "missing_exchange_rate": {
     "message": "This session of rotki may have errors if you use this currency.",
     "title": "Missing exchange rate"
+  },
+  "missing_prices_dialog": {
+    "add_price": "Add price",
+    "description": "These assets had an oracle price before but currently report none. Add a manual price to restore their value.",
+    "empty": "All prices resolved",
+    "open_manager": "Open price manager",
+    "title": "Missing prices"
   },
   "module_activator": {
     "hint": "* Modules that are activated for all addresses will not appear here",
