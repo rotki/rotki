@@ -2,29 +2,13 @@ import type { ComputedRef, Ref } from 'vue';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { someInSubtree } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
+import { DISMISSED_HIDE_DELAY, DockState } from '@/modules/task-center/dock-state';
+import { useDockAutoOpen } from '@/modules/task-center/use-dock-auto-open';
 import { type PendingJob, usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** How long the panel stays open after the last task settles. */
 const COLLAPSE_DEBOUNCE = 1000;
-
-/** How long the dismissed icon waits, collapsed and untouched, before the dock goes away. */
-const DISMISSED_HIDE_DELAY = 10_000;
-
-export const DockState = {
-  WORKING: 'working',
-  /** The last run finished with nothing failed; shown until dismissed or a new run starts. */
-  DONE: 'done',
-  /** A settled job has a failure somewhere in its subtree; shown until dismissed. */
-  FAILED: 'failed',
-  /**
-   * Everything reported has been dismissed; the pill shrinks to an icon that reopens it, and goes
-   * away after {@link DISMISSED_HIDE_DELAY} collapsed with no interaction.
-   */
-  DISMISSED: 'dismissed',
-} as const;
-
-export type DockState = (typeof DockState)[keyof typeof DockState];
 
 interface UseTaskDockReturn {
   /** What the dock is showing, or `undefined` when it is not rendered. */
@@ -186,6 +170,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   watch(isActive, replacePreviousRun);
   watchDebounced(isActive, collapseWhenIdle, { debounce: COLLAPSE_DEBOUNCE });
   watch([state, modelExpanded, interacting], scheduleHide, { immediate: true });
+  useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive, jobs, modelExpanded });
 
   return {
     acknowledge,

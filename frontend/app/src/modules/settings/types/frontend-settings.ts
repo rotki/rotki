@@ -230,6 +230,8 @@ export const FrontendSettings = z.object({
    * a `.catch`, so that an unreadable value surfaces rather than silently re-showing every prompt.
    */
   dismissedApiKeyNotices: z.array(z.string()).default([]),
+  /** Whether the task dock opens its panel to show how a batch of work ended. */
+  dockShowSummary: z.boolean().default(true),
   enableAliasNames: z.boolean().default(true),
   enablePasswordConfirmation: EnablePasswordConfirmation.default(true),
   evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(
