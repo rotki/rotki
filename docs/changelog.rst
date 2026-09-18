@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` The dashboard now shows where your net worth is held. Next to the total, a bar and legend split it between blockchain accounts, exchanges, banks, manual balances and NFTs, with liabilities underneath, and a strip of location tiles replaces the per-category summary cards. Picking a source in the legend narrows the tiles to it, and a place you hold through several sources, such as an exchange with manual balances recorded against it, shows as one tile. A single Refresh button next to the total now queries every source and then prices, and its menu can redetect tokens first, refresh only prices, or refresh one source.
+* :bug:`-` Refreshing balances from the dashboard now works in every language. Before, the refresh button on the exchange summary card did nothing in French, Chinese and Russian, and the one on the blockchain card did nothing in Chinese and Russian.
 * :feature:`13142` Docker users can now keep health checks from trusted external monitoring services out of access logs.
 * :feature:`13141` Docker users can now view rotki logs through ``docker logs`` or ``kubectl logs`` without managing separate log files. File logging remains the default.
 * :feature:`-` Qonto business accounts can now be connected to rotki under API Keys -> Banks, using an API key. Balances are pulled directly from Qonto into your net worth and the full transaction history into your history.
