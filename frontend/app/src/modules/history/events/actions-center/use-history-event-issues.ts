@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import { useTrackedEntities } from '@/modules/accounts/use-tracked-entities';
+import { TRACKED_ACCOUNTS_ROW_ID, useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { type ActionItem, type ActionItemDefinition, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { useActionCenter, type UseActionCenterReturn } from '@/modules/core/action-center/use-action-center';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
@@ -21,7 +21,7 @@ export const HISTORY_ISSUE_IDS = {
   DATA_ISSUES: 'data-issues',
   INTERNAL_CONFLICTS: 'internal-conflicts',
   MANUAL_REVIEW_DUPLICATES: 'manual-review-duplicates',
-  NO_TRACKED_ACCOUNTS: 'no-tracked-accounts',
+  NO_TRACKED_ACCOUNTS: TRACKED_ACCOUNTS_ROW_ID,
   UNDECODED: 'undecoded',
   UNMATCHED_BRIDGES: 'unmatched-bridges',
   UNMATCHED_MOVEMENTS: 'unmatched-movements',
@@ -93,29 +93,10 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   const dataIssuesEnabled = isAccountingUpdateEnabled();
   const { actionableCount: dataIssuesCount, refreshSummary } = useDataIssuesSummary();
   const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
-  const { loading: trackedEntitiesLoading, tracksNothing } = useTrackedEntities();
+  const { row: trackedAccounts } = useTrackedAccountsRow();
 
   const movementsIgnoredOnly = computed<boolean>(() => get(unmatchedMovementsCount) === 0 && get(ignoredMovementsCount) > 0);
   const bridgesIgnoredOnly = computed<boolean>(() => get(unmatchedBridgesCount) === 0 && get(ignoredBridgesCount) > 0);
-
-  /**
-   * The "nothing is tracked" row, whose count is a boolean unlike every other row's.
-   *
-   * @remarks
-   * There is one thing to do here, not N of them, and the badge counts categories rather than
-   * items, so it slots in as a count of one.
-   */
-  const trackedAccounts = computed<HistoryEventIssue>(() => createIssue({
-    actionLabel: t('transactions.alerts.issues.no_tracked_accounts.action'),
-    count: get(tracksNothing) ? 1 : 0,
-    description: t('transactions.alerts.issues.no_tracked_accounts.description'),
-    icon: 'lu-wallet',
-    id: HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
-    loading: get(trackedEntitiesLoading),
-    urgency: ActionUrgency.DECISION,
-    target: { kind: 'route', to: { name: '/accounts/' } },
-    title: t('transactions.alerts.issues.no_tracked_accounts.title'),
-  }));
 
   const issues = computed<HistoryEventIssue[]>(() => [
     get(trackedAccounts),

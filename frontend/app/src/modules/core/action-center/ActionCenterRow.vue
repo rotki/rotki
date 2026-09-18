@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
+import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowAction.vue';
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
@@ -131,22 +132,12 @@ const lockedHint = computed<string>(() => item.minimumTier
       {{ lockedHint }}
     </RuiTooltip>
 
-    <RuiButton
+    <ActionCenterRowAction
       v-else
-      size="sm"
-      :variant="item.urgency === ActionUrgency.AUTOMATIC ? 'text' : 'outlined'"
+      :item="item"
       :color="color"
-      class="shrink-0"
-      data-testid="actions-center-row-action"
-      @click="emit('action', item)"
-    >
-      {{ item.actionLabel }}
-      <template #append>
-        <RuiIcon
-          name="lu-chevron-right"
-          size="14"
-        />
-      </template>
-    </RuiButton>
+      @action="emit('action', $event)"
+      @option="emit('option', $event)"
+    />
   </div>
 </template>

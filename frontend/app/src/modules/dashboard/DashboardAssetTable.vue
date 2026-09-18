@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import { useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
@@ -48,7 +49,16 @@ const {
 
 const { isRowExpandable, modelExpanded, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
 
-const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS
+const { raised: tracksNothing } = useTrackedAccountsRow();
+
+/**
+ * The assets table's own text only while something is tracked.
+ *
+ * @remarks
+ * With nothing tracked, the Assets by source card above already shows the tracked accounts row, so
+ * the table stays neutral rather than saying it a second time.
+ */
+const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS && !get(tracksNothing)
   ? t('dashboard_asset_table.no_assets')
   : t('data_table.no_data'));
 

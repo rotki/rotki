@@ -60,6 +60,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const historyRows = computed<ActionItem[]>(() => get(history.issues).map(issue => ({
     ...issue,
     checkTarget: toGlobalTarget(issue.checkTarget),
+    choices: issue.choices.map(choice => ({ ...choice, target: toGlobalTarget(choice.target) })),
     options: issue.options.map(option => ({ ...option, target: toGlobalTarget(option.target) })),
     target: toGlobalTarget(issue.target),
   })));
