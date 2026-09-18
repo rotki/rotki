@@ -5,7 +5,10 @@ import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balance
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHistoricalBalanceProcessingCompletedHandler } from '@/modules/core/messaging/handlers/historical-balance-processing-completed';
+import { WebsocketMessage } from '@/modules/core/messaging/messages';
 import { OverlayMode, type UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
 import { useHistoryEventsOverlay } from './use-history-events-overlay';
 
@@ -61,6 +64,7 @@ function setup(mode: Ref<OverlayMode>, rows: HistoryEventRow[] = []): { availabl
 
 describe('useHistoryEventsOverlay', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     scope = effectScope();
     set(mockSyncCompleted, 0);
     accountingUpdateEnabled.mockReset().mockReturnValue(true);
@@ -102,6 +106,24 @@ describe('useHistoryEventsOverlay', () => {
     assert(call);
     expect(call[0].overlay).toBe(mockOverlay);
     expect(call[0].series).toBe(mockSeries);
+  });
+
+  it('should refresh visible balances and invalidate series after a processing completion message', async () => {
+    const mode = ref<OverlayMode>(OverlayMode.BALANCE);
+    setup(mode);
+    const message = WebsocketMessage.parse({ type: 'historical_balance_processing_completed', data: {} });
+    const handler = createHistoricalBalanceProcessingCompletedHandler();
+
+    await handler.handle(message.data);
+    await flushPromises();
+    expect(reset).toHaveBeenCalledOnce();
+    expect(refresh).toHaveBeenCalledOnce();
+
+    set(mode, OverlayMode.NONE);
+    await handler.handle(message.data);
+    await flushPromises();
+    expect(reset).toHaveBeenCalledTimes(2);
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it('should drop the series on every completed sync but refresh only a visible overlay', async () => {
