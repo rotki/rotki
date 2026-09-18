@@ -276,6 +276,11 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             passphrase=credentials.passphrase,
         ))
 
+    @property
+    def data_location(self) -> Location:
+        """The location of the events, balances and snapshots this connection produces"""
+        return self.location
+
     def location_id(self) -> ExchangeLocationID:
         """Returns unique location identifier for this exchange object (name + location)"""
         return ExchangeLocationID(name=self.name, location=self.location)

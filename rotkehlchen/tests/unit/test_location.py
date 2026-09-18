@@ -1,12 +1,15 @@
+import pytest
+
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
-from rotkehlchen.db.schema import DB_CREATE_LOCATION
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.locations.catalog import load_builtin_catalog
+from rotkehlchen.types import LEGACY_PROTOCOL_LOCATIONS, Location
 
 
 def test_location_details_coverage():
@@ -31,7 +34,21 @@ def test_location_details_coverage():
 
 def test_coinex_exists_in_db_schema():
     """Test that fresh user DBs contain CoinEx."""
-    assert (
-        f"INSERT OR IGNORE INTO location(location, seq) VALUES "
-        f"('{Location.COINEX.serialize_for_db()}', {Location.COINEX.value});"
-    ) in DB_CREATE_LOCATION
+    assert ('coinex', 'exchanges') in {
+        (x.identifier, x.parent_identifier) for x in load_builtin_catalog()
+    }
+
+
+def test_protocol_locations_are_stored_as_legacy_nodes() -> None:
+    assert {x.serialize_for_db() for x in LEGACY_PROTOCOL_LOCATIONS} == {
+        'legacy:uniswap', 'legacy:balancer', 'legacy:gitcoin', 'legacy:sushiswap',
+    }
+    for location in Location:
+        assert Location.deserialize_from_db(location.serialize_for_db()) == location
+        if location not in LEGACY_PROTOCOL_LOCATIONS:
+            assert location.serialize_for_db() == location.serialize()
+
+
+def test_only_protocol_locations_can_have_the_legacy_prefix() -> None:
+    with pytest.raises(DeserializationError):
+        Location.deserialize_from_db('legacy:kraken')

@@ -19,7 +19,6 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -350,10 +349,10 @@ def upgrade_v50_to_v51(db: DBHandler, progress_handler: DBUpgradeProgressHandler
                 AND receive.location = ? AND receive.type = ? AND receive.subtype = ?
             );""",
             (
-                Location.COINBASE.serialize_for_db(),
+                'G',
                 HistoryEventType.TRADE.serialize(),
                 HistoryEventSubType.SPEND.serialize(),
-                Location.COINBASE.serialize_for_db(),
+                'G',
                 HistoryEventType.TRADE.serialize(),
                 HistoryEventSubType.RECEIVE.serialize(),
             ),
