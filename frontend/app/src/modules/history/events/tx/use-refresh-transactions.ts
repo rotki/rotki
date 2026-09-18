@@ -48,7 +48,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
-  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, resumeDecodingSyncProgress, stopDecodingSyncProgress } = useDecodingStatusStore();
+  const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
 
   const { syncTransactionsByChains } = useTransactionSync();
   const {
@@ -91,13 +91,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       { extend: continuation },
     );
 
-    if (continuation) {
-      resumeDecodingSyncProgress();
-      return;
-    }
-
-    resetUndecodedTransactionsStatus();
-    resetDecodingSyncProgress();
+    if (!continuation)
+      resetUndecodedTransactionsStatus();
   }
 
   function resolveOnlineQueries(
@@ -311,7 +306,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           onHistoryFinished();
           stopTxSyncing();
           stopEventsSyncing();
-          stopDecodingSyncProgress();
           sigilBus.emit('history:ready');
         }
       },

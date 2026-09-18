@@ -59,7 +59,7 @@ describe('useHistoryEventsDialogContainer', () => {
     });
 
     it('should hand the event form nothing while another dialog is open', () => {
-      set(currentDialog, { data: undefined, type: DIALOG_TYPES.PROTOCOL_CACHE });
+      set(currentDialog, { data: undefined, type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
       const { container } = mountContainer();
 
       expect(get(container.modelFormData)).toBeUndefined();
@@ -122,7 +122,7 @@ describe('useHistoryEventsDialogContainer', () => {
     });
 
     it('should not be persistent while a different dialog is open', () => {
-      set(currentDialog, { data: undefined, type: DIALOG_TYPES.PROTOCOL_CACHE });
+      set(currentDialog, { data: undefined, type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
       const { container } = mountContainer();
 
       expect(get(container.decodingStatusPersistent)).toBe(false);

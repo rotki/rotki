@@ -1,23 +1,21 @@
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
+import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
 import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { decodeActivity, decodeActivityId, type DecodeSubject } from '@/modules/history/events/tx/decode-activity';
-import { protocolCacheActivity } from '@/modules/history/protocol-cache-activity';
+import { protocolCacheActivity, withProtocolCacheFrame } from '@/modules/history/protocol-cache-activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
-import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
+import { peekActivityDetail, publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { SocketMessageProgressUpdateSubType } from '../types/base';
 import { createCsvImportResultHandler } from './csv-import-result';
 
 export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<ProgressUpdateResultData> {
   const { setUndecodedTransactionsStatus } = useDecodingStatusStore();
-  const protocolCacheStore = useProtocolCacheStatusStore();
-  const { setProtocolCacheStatus, setReceivingProtocolCacheStatus } = protocolCacheStore;
   const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
   const { notifyHistoricalBalanceProcessingCompleted } = useDataIssuesInboxStore();
   const { reportProgress, reportProgressByPrefix, statusOf } = useTaskOrchestrator();
@@ -72,24 +70,25 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
    * Attach the protocol-cache rows to whatever work is filling them.
    *
    * Two producers send the same frames: the user's cache refresh, which has an activity of its own,
-   * and decoding, which fills a cache when a decoder reaches a log that needs one. Read back from
-   * the store so the rows are the accumulated set rather than the single pair this frame carries.
+   * and decoding, which fills a cache when a decoder reaches a log that needs one. Each frame is
+   * folded into the rows that activity already holds, so the rows are the set this run has touched
+   * rather than the single pair this frame carries; a run starts empty because the orchestrator
+   * drops an activity's detail when it is submitted or rerun.
    *
    * Published only against a live record, and nothing at all when neither is running — which is
-   * every frame today that arrives outside both, and is what the panel already shows for them.
+   * every frame today that arrives outside both, and is what the panel already shows for them. The
+   * same check keeps a cancelled run's rows as they were when it stopped.
    */
-  function publishProtocolCacheDetail(data: { chain: string }): void {
-    const protocols = protocolCacheStore.protocolCacheStatus;
+  function publishProtocolCacheDetail(data: ProtocolCacheUpdatesData): void {
+    if (statusOf(ActivityKind.PROTOCOL_CACHE).running) {
+      const rows = peekActivityDetail(protocolCacheActivity, undefined)?.protocols ?? [];
+      publishActivityDetail(protocolCacheActivity, undefined, { protocols: withProtocolCacheFrame(rows, data) });
+    }
 
-    if (statusOf(ActivityKind.PROTOCOL_CACHE).running)
-      publishActivityDetail(protocolCacheActivity, undefined, { protocols });
-
-    const chain = matchChain(data.chain) ?? data.chain.toLowerCase();
-    const decoding = liveDecodeSubject(chain);
+    const decoding = liveDecodeSubject(matchChain(data.chain) ?? data.chain.toLowerCase());
     if (decoding !== undefined) {
-      publishActivityDetail(decodeActivity, decoding, {
-        protocols: protocols.filter(row => (matchChain(row.chain) ?? row.chain.toLowerCase()) === chain),
-      });
+      const rows = peekActivityDetail(decodeActivity, decoding)?.protocols ?? [];
+      publishActivityDetail(decodeActivity, decoding, { protocols: withProtocolCacheFrame(rows, data) });
     }
   }
 
@@ -133,12 +132,10 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
 
     switch (subtype) {
       case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
-        setReceivingProtocolCacheStatus(false);
         setUndecodedTransactionsStatus(data);
         reportDecodeProgress(data);
         break;
       case SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES:
-        setProtocolCacheStatus(data);
         publishProtocolCacheDetail(data);
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS:

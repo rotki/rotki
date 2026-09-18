@@ -1,10 +1,9 @@
-import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
+import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventsDecodingStatus from '@/modules/history/events/HistoryEventsDecodingStatus.vue';
-import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 
 const { checkMissingEventsAndRedecode, isActive } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
@@ -28,10 +27,6 @@ const wrappers: VueWrapper[] = [];
 
 function undecoded(evmChain: string, processed: number, total: number): EvmUnDecodedTransactionsData {
   return { chain: evmChain, processed, total };
-}
-
-function cacheUpdate(): ProtocolCacheUpdatesData {
-  return { chain: 'ethereum', processed: 3, protocol: 'curve', total: 9 };
 }
 
 async function mountStatus(decodingStatus: EvmUnDecodedTransactionsData[] = []): Promise<VueWrapper> {
@@ -129,21 +124,6 @@ describe('modules/history/events/HistoryEventsDecodingStatus', () => {
       const wrapper = await mountStatus([]);
 
       expect(wrapper.findComponent({ name: 'RuiDataTable' }).exists()).toBe(false);
-    });
-
-    it('should put a protocol cache refresh above the chains while one is running', async () => {
-      useProtocolCacheStatusStore().setProtocolCacheStatus(cacheUpdate());
-
-      const wrapper = await mountStatus([undecoded('optimism', 2, 5)]);
-
-      expect(rowsOf(wrapper)[0]).toMatchObject({ chain: 'ethereum', processed: 0, total: 0 });
-      expect(rowsOf(wrapper)).toHaveLength(2);
-    });
-
-    it('should leave the chains alone when no cache refresh is running', async () => {
-      const wrapper = await mountStatus([undecoded('optimism', 2, 5)]);
-
-      expect(rowsOf(wrapper)).toHaveLength(1);
     });
   });
 });

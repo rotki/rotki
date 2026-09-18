@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { assert, toCapitalCase, toSentenceCase } from '@rotki/common';
+import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
 import { useSessionPurge } from '@/modules/session/use-purge';
@@ -13,10 +11,8 @@ import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const source = ref<string>();
 
-const { protocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
 const { useIsActive } = useTaskCenter();
 
-const { getChainName } = useSupportedChains();
 const { refreshGeneralCache } = useSessionPurge();
 const { getRefreshableGeneralCaches } = useSessionApi();
 const { t } = useI18n({ useScope: 'global' });
@@ -52,23 +48,6 @@ const taskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
 const eventTaskLoading = useIsActive(ActivityKind.TX_DECODING);
 const loading = logicOr(pending, taskRunning, eventTaskLoading);
 
-const hint = computed<string>(() => {
-  if (!get(taskRunning))
-    return '';
-
-  const status = get(protocolCacheStatus);
-  if (status.length === 0)
-    return '';
-
-  const data = status[0];
-
-  return t('transactions.protocol_cache_updates.hint', {
-    ...data,
-    chain: getChainName(data.chain),
-    protocol: toCapitalCase(data.protocol),
-  });
-});
-
 async function getRefreshableCaches() {
   set(generalCaches, await getRefreshableGeneralCaches());
 }
@@ -101,7 +80,6 @@ onMounted(() => {
         text-attr="text"
         key-attr="id"
         :disabled="loading"
-        :hint="hint"
         hide-details
       >
         <template #selection="{ item }">

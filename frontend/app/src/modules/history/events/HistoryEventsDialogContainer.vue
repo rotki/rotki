@@ -7,7 +7,6 @@ import {
   CustomizedEventDuplicatesDialog,
   HistoryEventFormDialog,
   HistoryEventsDecodingStatusDialog,
-  HistoryEventsProtocolCacheStatusDialog,
   InternalTxConflictsDialog,
   MatchAssetMovementsDialog,
   MatchBridgeTransactionsDialog,
@@ -106,12 +105,6 @@ defineExpose({
       :persistent="decodingStatusPersistent"
       @redecode-all-events="eventHandlers.onRedecodeAllEvents?.()"
       @reset-undecoded-transactions="eventHandlers.onResetUndecodedTransactions?.()"
-    />
-
-    <HistoryEventsProtocolCacheStatusDialog
-      v-if="currentDialog.type === DIALOG_TYPES.PROTOCOL_CACHE"
-      v-model="modelDialogOpen"
-      :refreshing="refreshing"
     />
 
     <AccountingRuleFormDialog

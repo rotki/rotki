@@ -8,8 +8,6 @@ import { useSessionPurge } from './use-purge';
 const refreshGeneralCacheTask = vi.fn();
 const runTaskResult = vi.fn();
 const notifyError = vi.fn();
-const markAllProtocolCacheCancelled = vi.fn();
-const resetProtocolCacheUpdatesStatus = vi.fn();
 
 const submitTask = vi.fn(runSpecWith(runTaskResult));
 
@@ -23,10 +21,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyError }),
-}));
-
-vi.mock('@/modules/history/use-protocol-cache-status-store', () => ({
-  useProtocolCacheStatusStore: (): object => ({ markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus }),
 }));
 
 describe('useSessionPurge', () => {
@@ -62,17 +56,16 @@ describe('useSessionPurge', () => {
   });
 
   describe('refreshGeneralCache', () => {
-    it('should reset the protocol cache and run the refresh task', async () => {
+    it('should run the refresh task', async () => {
       await useSessionPurge().refreshGeneralCache('opensea');
-      expect(resetProtocolCacheUpdatesStatus).toHaveBeenCalledOnce();
       expect(submitTask).toHaveBeenCalledOnce();
       expect(notifyError).not.toHaveBeenCalled();
     });
 
-    it('should mark the protocol cache cancelled when the task is cancelled', async () => {
+    it('should not notify when the user cancelled the refresh', async () => {
       runTaskResult.mockResolvedValue(err(Cancelled({ message: '' })));
       await useSessionPurge().refreshGeneralCache('opensea');
-      expect(markAllProtocolCacheCancelled).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
       expect(notifyError).not.toHaveBeenCalled();
     });
 
@@ -80,7 +73,6 @@ describe('useSessionPurge', () => {
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       await useSessionPurge().refreshGeneralCache('opensea');
       expect(notifyError).toHaveBeenCalledOnce();
-      expect(markAllProtocolCacheCancelled).not.toHaveBeenCalled();
     });
   });
 });

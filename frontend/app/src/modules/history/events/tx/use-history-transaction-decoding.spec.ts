@@ -16,7 +16,6 @@ interface UndecodedStatus {
 }
 
 const mocks = vi.hoisted(() => ({
-  markDecodingCancelled: vi.fn(),
   runTaskResult: vi.fn(),
   submitTask: vi.fn(),
   undecodedStatus: new Array<{ chain: string; processed: number; total: number }>(),
@@ -53,7 +52,6 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: vi.fn(() => ({
     getUndecodedTransactionStatus: vi.fn(() => mocks.undecodedStatus),
-    markDecodingCancelled: mocks.markDecodingCancelled,
     resetUndecodedTransactionsStatus: vi.fn(),
     updateUndecodedTransactionsStatus: vi.fn(),
   })),
@@ -166,13 +164,13 @@ describe('useHistoryTransactionDecoding', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should mark decoding cancelled on a cancellation', async () => {
+    it('should not notify when the user cancelled the decode', async () => {
       mocks.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
       const { decodeTransactionsTask } = useHistoryTransactionDecoding();
       await decodeTransactionsTask('ethereum');
 
-      expect(mocks.markDecodingCancelled).toHaveBeenCalledWith('ethereum');
+      expect(mocks.submitTask).toHaveBeenCalledOnce();
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
@@ -183,7 +181,6 @@ describe('useHistoryTransactionDecoding', () => {
       await decodeTransactionsTask('ethereum');
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mocks.markDecodingCancelled).not.toHaveBeenCalled();
     });
   });
 });
