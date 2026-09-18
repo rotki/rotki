@@ -474,6 +474,7 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
             notes='Remove 1000.374356073654694973 ETH from Uniswap V3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -487,6 +488,7 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
             notes='Remove 198401.464386 USDC from Uniswap V3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            extra_data={'liquidity_pool': True},
         ),
     ]
 
@@ -522,6 +524,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             notes='Deposit 11257.999999195502514358 DAI to Uniswap V3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -535,6 +538,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             notes='Deposit 13732.357062 USDC to Uniswap V3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -609,6 +613,7 @@ def test_uniswap_v3_create_lp_position_with_native_refund(
         notes=f'Deposit {eth_amount} ETH to Uniswap V3 LP 4818837',
         counterparty=CPT_UNISWAP_V3,
         address=nft_manager,
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=6,
@@ -622,6 +627,7 @@ def test_uniswap_v3_create_lp_position_with_native_refund(
         notes=f'Deposit {wbtc_amount} WBTC to Uniswap V3 LP 4818837',
         counterparty=CPT_UNISWAP_V3,
         address=string_to_evm_address('0x2f5e87C9312fa29aed5c179E456625D79015299c'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=7,
@@ -716,6 +722,7 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=(pool_address := string_to_evm_address('0x0dc9877F6024CCf16a470a74176C9260beb83AB6')),  # noqa: E501
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         sequence_index=104,
         timestamp=timestamp,
@@ -729,6 +736,7 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=pool_address,
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         sequence_index=105,
         timestamp=timestamp,
@@ -973,6 +981,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Deposit {usdc_deposit} USDC to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=48,
@@ -986,6 +995,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Deposit {op_deposit} OP to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=49,

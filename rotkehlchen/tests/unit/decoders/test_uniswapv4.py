@@ -392,6 +392,7 @@ def test_create_lp_position(
         notes=f'Deposit {oauto_amount} oAUTO to Uniswap V4 oAUTO/USDT0 LP',
         counterparty=CPT_UNISWAP_V4,
         address=(pool_manager := string_to_evm_address('0x67366782805870060151383F4BbFF9daB53e5cD6')),  # noqa: E501
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=450,
@@ -405,6 +406,7 @@ def test_create_lp_position(
         notes=f'Deposit {usdt_amount} USDT0 to Uniswap V4 oAUTO/USDT0 LP',
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=451,
@@ -457,6 +459,7 @@ def test_create_lp_position_with_native_refund(
         notes=f'Deposit {eth_amount} ETH to Uniswap V4 ETH/USDC LP',
         counterparty=CPT_UNISWAP_V4,
         address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -470,6 +473,7 @@ def test_create_lp_position_with_native_refund(
         notes='Deposit 50 USDC to Uniswap V4 ETH/USDC LP',
         counterparty=CPT_UNISWAP_V4,
         address=string_to_evm_address('0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -519,6 +523,7 @@ def test_increase_liquidity(
         notes=f'Deposit {usdc_amount} USDC to Uniswap V4 USDC/OP LP',
         counterparty=CPT_UNISWAP_V4,
         address=(pool_manager := string_to_evm_address('0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3')),  # noqa: E501
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -532,6 +537,7 @@ def test_increase_liquidity(
         notes=f'Deposit {op_amount} OP to Uniswap V4 USDC/OP LP',
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
+        extra_data={'liquidity_pool': True},
     )]
 
 
@@ -580,6 +586,7 @@ def test_exit_lp_position(
         notes=f'Withdraw {eth_amount} ETH from Uniswap V4 ETH/USDC LP',
         counterparty=CPT_UNISWAP_V4,
         address=(pool_manager := string_to_evm_address('0x000000000004444c5dc75cB358380D2e3dE08A90')),  # noqa: E501
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -593,6 +600,7 @@ def test_exit_lp_position(
         notes=f'Withdraw {usdc_amount} USDC from Uniswap V4 ETH/USDC LP',
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
+        extra_data={'liquidity_pool': True},
     )]
 
 
@@ -628,6 +636,7 @@ def test_decrease_liquidity(
         notes='Withdraw 20.49016382840257149 POL from Uniswap V4 POL/WETH LP',
         counterparty=CPT_UNISWAP_V4,
         address=(pool_manager := string_to_evm_address('0x67366782805870060151383F4BbFF9daB53e5cD6')),  # noqa: E501
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -641,6 +650,7 @@ def test_decrease_liquidity(
         notes='Withdraw 0.001429032787070825 WETH from Uniswap V4 POL/WETH LP',
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
+        extra_data={'liquidity_pool': True},
     )]
 
 

@@ -23,3 +23,7 @@ UNISWAP_V3_NFT_MANAGER_ADDRESSES: Final = {
 
 # Counterparty used to trigger router post decoding rules.
 CPT_UNISWAP_V3_ROUTER: Final = 'uniswap-v3-router'
+
+POOL_MINT_SIGNATURE: Final = b'zS\x08\x0b\xa4\x14\x15\x8b\xe7\xeci\xb9\x87\xb5\xfb}\x07\xde\xe1\x01\xfe\x85H\x8f\x08S\xae\x16#\x9d\x0b\xde'  # noqa: E501
+
+POOL_COLLECT_SIGNATURE: Final = b'p\x93S8\xe6\x97uEj\x85\xdd\xef"l9_\xb6h\xb6?\xa0\x11__ a\x0b8\x8el\xa9\xc0'  # noqa: E501

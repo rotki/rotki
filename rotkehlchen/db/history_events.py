@@ -731,7 +731,7 @@ class DBHistoryEvents:
                 # so an edit must not wipe it (e.g. events matched to asset movements).
                 event.extra_data = old_extra_data
             else:
-                for matched_key in ('matched_asset_movement', 'matched_bridge'):
+                for matched_key in ('matched_asset_movement', 'matched_bridge', 'liquidity_pool'):
                     if (
                         (matched := old_extra_data.get(matched_key)) is not None and
                         (event.extra_data is None or matched_key not in event.extra_data)
@@ -792,6 +792,9 @@ class DBHistoryEvents:
             event.event_type.serialize(),
             event.event_subtype.serialize(),
             event.location_label,
+        ) and (
+            (old_extra_data or {}).get('liquidity_pool') ==
+            (event.extra_data or {}).get('liquidity_pool')
         ):
             return
 

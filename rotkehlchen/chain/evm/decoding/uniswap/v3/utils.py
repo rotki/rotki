@@ -341,6 +341,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
                     else:
                         continue
 
+                event.extra_data = (event.extra_data or {}) | {'liquidity_pool': True}
                 found_events[idx] = True
                 event.event_type = to_event_type
                 event.event_subtype = to_event_subtype
@@ -369,6 +370,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
                     asset=resolved_asset_amount.asset.symbol,
                 ),
                 to_counterparty=counterparty,
+                extra_data={'liquidity_pool': True},
             ),
         )
 

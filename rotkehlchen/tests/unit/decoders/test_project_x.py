@@ -30,7 +30,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 def test_project_x_remove_liquidity(
@@ -66,6 +68,7 @@ def test_project_x_remove_liquidity(
             notes=f'Remove {hype_amount} HYPE from Project X LP 194165',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -79,11 +82,14 @@ def test_project_x_remove_liquidity(
             notes=f'Remove {xpl_amount} UXPL from Project X LP 194165',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ),
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 def test_project_x_deposit(
@@ -119,6 +125,7 @@ def test_project_x_deposit(
             notes=f'Deposit {hype_amount} HYPE to Project X LP 194165',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -132,6 +139,7 @@ def test_project_x_deposit(
             notes=f'Deposit {uxpl_amount} UXPL to Project X LP 194165',
             counterparty=CPT_PROJECT_X,
             address=string_to_evm_address('0xBD0CF45A8f47E27257F441529Aa684684dCd13c9'),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -149,7 +157,9 @@ def test_project_x_deposit(
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 def test_project_x_collect_multiple_positions(
@@ -177,45 +187,50 @@ def test_project_x_collect_multiple_positions(
             sequence_index=1,
             timestamp=timestamp,
             location=Location.HYPERLIQUID,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_HYPE,
             amount=FVal(hype_amount := '0.242168189683634854'),
             location_label=user_address,
-            notes=f'Collect {hype_amount} HYPE as Project X LP fees',
+            notes=f'Collect {hype_amount} HYPE from Project X LP positions',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=22,
             timestamp=timestamp,
             location=Location.HYPERLIQUID,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:999/erc20:0x33Af3c2540Ba72054e044EFe504867B39aE421f5'),
             amount=FVal(uxpl_amount := '6.808632161878741005'),
             location_label=user_address,
-            notes=f'Collect {uxpl_amount} UXPL as Project X LP fees',
+            notes=f'Collect {uxpl_amount} UXPL from Project X LP positions',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=23,
             timestamp=timestamp,
             location=Location.HYPERLIQUID,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:999/erc20:0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb'),
             amount=FVal(usdt0_amount := '0.012114'),
             location_label=user_address,
-            notes=f'Collect {usdt0_amount} USDT0 as Project X LP fees',
+            notes=f'Remove {usdt0_amount} USDT0 from Project X LP 192020',
             counterparty=CPT_PROJECT_X,
             address=PROJECT_X_NFT_MANAGER,
+            extra_data={'liquidity_pool': True},
         ),
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0xA06c44151E84a85456A1370CC73a23848D1802fF']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 def test_project_x_collect_single_position(
@@ -240,37 +255,41 @@ def test_project_x_collect_single_position(
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=2,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.HYPERLIQUID,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:999/erc20:0x27eC642013bcB3D80CA3706599D3cdA04F6f4452'),
             amount=FVal(upump_amount := '35417.508814'),
             location_label=user_address,
-            notes=f'Collect {upump_amount} UPUMP as Project X LP fees for position 344049',
+            notes=f'Remove {upump_amount} UPUMP from Project X LP 344049',
             counterparty=CPT_PROJECT_X,
             address=(pool_address := string_to_evm_address(
                 '0x043538c4d9dF365833b741BA2a3555787DE947d3',
             )),
+            extra_data={'liquidity_pool': True},
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=3,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.HYPERLIQUID,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:999/erc20:0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb'),
             amount=FVal(usdt0_amount := '103.372953'),
             location_label=user_address,
-            notes=f'Collect {usdt0_amount} USDT0 as Project X LP fees for position 344049',
+            notes=f'Remove {usdt0_amount} USDT0 from Project X LP 344049',
             counterparty=CPT_PROJECT_X,
             address=pool_address,
+            extra_data={'liquidity_pool': True},
         ),
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0x2E0940A7934A11a2ba03A8297A0e72b047196235']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 def test_project_x_swap_router(
@@ -323,7 +342,9 @@ def test_project_x_swap_router(
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], allow_playback_repeats=True,
+)
 @pytest.mark.parametrize('hyperliquid_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [HYPERLIQUID_PUBLIC_RPC_NODES])
 @pytest.mark.parametrize('tx_hash_hex', [
@@ -360,30 +381,32 @@ def test_project_x_position_operations(
                 counterparty=CPT_GAS,
             ), EvmEvent(
                 tx_ref=tx_hash,
-                sequence_index=21,
+                sequence_index=1,
                 timestamp=timestamp,
                 location=Location.HYPERLIQUID,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.REWARD,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 asset=uxpl,
                 amount=FVal(uxpl_amount := '0.097366748274519809'),
                 location_label=user_address,
-                notes=f'Collect {uxpl_amount} UXPL as Project X LP fees for position 192020',
+                notes=f'Remove {uxpl_amount} UXPL from Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ), EvmEvent(
                 tx_ref=tx_hash,
-                sequence_index=22,
+                sequence_index=2,
                 timestamp=timestamp,
                 location=Location.HYPERLIQUID,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.REWARD,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 asset=usdt0,
                 amount=FVal(usdt0_amount := '0.086071'),
                 location_label=user_address,
-                notes=f'Collect {usdt0_amount} USDT0 as Project X LP fees for position 192020',
+                notes=f'Remove {usdt0_amount} USDT0 from Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ),
         ]
     elif tx_hash_hex == '0x6b780ce9ce6f0b9b2d13f741b75f7a867bcdd20ec3b711d0622241cd4abfb090':
@@ -436,6 +459,7 @@ def test_project_x_position_operations(
                 notes=f'Remove {uxpl_amount} UXPL from Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ), EvmEvent(
                 tx_ref=tx_hash,
                 sequence_index=29,
@@ -449,6 +473,7 @@ def test_project_x_position_operations(
                 notes=f'Remove {usdt0_amount} USDT0 from Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ),
         ]
     else:
@@ -488,6 +513,7 @@ def test_project_x_position_operations(
                 notes=f'Deposit {uxpl_amount} UXPL to Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ), EvmEvent(
                 tx_ref=tx_hash,
                 sequence_index=5,
@@ -501,6 +527,7 @@ def test_project_x_position_operations(
                 notes=f'Deposit {usdt0_amount} USDT0 to Project X LP 192020',
                 counterparty=CPT_PROJECT_X,
                 address=pool_address,
+                extra_data={'liquidity_pool': True},
             ), EvmEvent(
                 tx_ref=tx_hash,
                 sequence_index=6,

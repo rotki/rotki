@@ -104,6 +104,7 @@ def test_create_lp_position(
         notes=f'Deposit {weth_amount} WETH to Quickswap V4 LP 520',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x5a9Ad2BB92B0B3E5C571FDD5125114E04E02be1a'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -117,6 +118,7 @@ def test_create_lp_position(
         notes=f'Deposit {usdc_amount} USDC to Quickswap V4 LP 520',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x5a9Ad2BB92B0B3E5C571FDD5125114E04E02be1a'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -166,6 +168,7 @@ def test_increase_liquidity(
         notes=f'Deposit {usdc_amount} USDC to Quickswap V4 LP 516',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x5D0bC342178C8Fe2c2f9A9fcC9D52555C99936db'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -179,6 +182,7 @@ def test_increase_liquidity(
         notes=f'Deposit {usdbc_amount} USDbC to Quickswap V4 LP 516',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x5D0bC342178C8Fe2c2f9A9fcC9D52555C99936db'),
+        extra_data={'liquidity_pool': True},
     )]
 
 
@@ -215,6 +219,7 @@ def test_decrease_liquidity(
         notes=f'Remove {eth_amount} ETH from Quickswap V4 LP 531',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x84715977598247125C3D6E2e85370d1F6fDA1eaF'),
+        extra_data={'liquidity_pool': True},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -228,4 +233,5 @@ def test_decrease_liquidity(
         notes=f'Remove {link_amount} LINK from Quickswap V4 LP 531',
         counterparty=CPT_QUICKSWAP_V4,
         address=string_to_evm_address('0x84715977598247125C3D6E2e85370d1F6fDA1eaF'),
+        extra_data={'liquidity_pool': True},
     )]
