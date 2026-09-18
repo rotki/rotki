@@ -22,6 +22,7 @@ class WSMessageType(StrEnum):
     MISSING_API_KEY = auto()
     HISTORY_EVENTS_STATUS = auto()
     REFRESH_BALANCES = auto()
+    HISTORICAL_BALANCE_PROCESSING_COMPLETED = auto()
     DATABASE_UPLOAD_RESULT = auto()
     ACCOUNTING_RULE_CONFLICT = auto()
     CALENDAR_REMINDER = auto()

@@ -166,6 +166,11 @@ const UnmatchedBridgeTransactionsMessage = z.object({
   type: z.literal(SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS),
 });
 
+const HistoricalBalanceProcessingCompletedMessage = z.object({
+  data: z.object({}),
+  type: z.literal(SocketMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED),
+});
+
 export const WebsocketMessage = z.discriminatedUnion('type', [
   LegacyWebsocketMessage,
   BalancesSnapshotErrorMessage,
@@ -179,6 +184,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   MissingApiKeyMessage,
   NegativeBalanceDetectedMessage,
   RefreshBalancesMessage,
+  HistoricalBalanceProcessingCompletedMessage,
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
   CalendarReminderMessage,
