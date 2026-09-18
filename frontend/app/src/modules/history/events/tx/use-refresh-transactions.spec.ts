@@ -116,10 +116,7 @@ const mockUndecodedTransactionsStatus = {
 };
 
 const mockDecodingStatusStore = {
-  resetDecodingSyncProgress: vi.fn(),
-  resumeDecodingSyncProgress: vi.fn(),
   resetUndecodedTransactionsStatus: vi.fn(),
-  stopDecodingSyncProgress: vi.fn(),
 };
 
 type SyncOutcomes = Promise<Result<void, TaskError>[]>;
@@ -508,7 +505,7 @@ describe('useRefreshTransactions', () => {
       vi.useRealTimers();
     });
 
-    it('should reopen the decoding progress gate on the drained wave, since the first wave turns it off and the drained one would otherwise decode invisibly behind a panel reading complete', async () => {
+    it('should reset the undecoded counts once for the sync, not again on the drained wave', async () => {
       vi.useFakeTimers();
 
       const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
@@ -523,8 +520,7 @@ describe('useRefreshTransactions', () => {
       await vi.advanceTimersByTimeAsync(150);
       await settleRefresh();
 
-      expect(mockDecodingStatusStore.resumeDecodingSyncProgress).toHaveBeenCalledTimes(1);
-      expect(mockDecodingStatusStore.resetDecodingSyncProgress).toHaveBeenCalledTimes(1);
+      expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).toHaveBeenCalledTimes(1);
 
       vi.useRealTimers();
     });
@@ -720,7 +716,6 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTxQueryStatusStore.stopSyncing).toHaveBeenCalled();
       expect(mockEventsQueryStatusStore.stopSyncing).toHaveBeenCalled();
-      expect(mockDecodingStatusStore.stopDecodingSyncProgress).toHaveBeenCalled();
     });
   });
 
@@ -876,24 +871,6 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(callOrder.indexOf('onHistoryStarted')).toBeLessThan(callOrder.indexOf('syncTransactionsByChains'));
-    });
-
-    it('should stop decoding sync progress only after the sync work has finished, so an early stop cannot drop the progress updates decoding pushes over the websocket', async () => {
-      const callOrder: string[] = [];
-
-      mockTransactionSync.syncTransactionsByChains.mockImplementation(async (): SyncOutcomes => {
-        callOrder.push('syncTransactionsByChains');
-        return [ok(undefined)];
-      });
-      mockDecodingStatusStore.stopDecodingSyncProgress.mockImplementation(() => {
-        callOrder.push('stopDecodingSyncProgress');
-      });
-
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
-      await refreshTransactions();
-
-      expect(callOrder.indexOf('syncTransactionsByChains')).toBeLessThan(callOrder.indexOf('stopDecodingSyncProgress'));
     });
 
     it('should call onHistoryFinished after all operations complete', async () => {

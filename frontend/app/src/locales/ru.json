@@ -4760,15 +4760,6 @@
       }
     },
     "ignore": "Исключить события из учета",
-    "protocol_cache_updates": {
-      "hint": "Обновление кэша {protocol} на {chain} ({processed}/{total})",
-      "no_ongoing": "Нет текущих обновлений.",
-      "outdated_data": "Устаревшие пулы",
-      "pools_refreshed": "{processed} / {total} пулов обновлено",
-      "protocol_pools_refreshed": "{processed} / {total} пулов {protocol} обновлено",
-      "refreshing": "Обновление кэша протокола",
-      "title": "Статус обновлений кэша протокола"
-    },
     "refresh_tooltip": "Получить последние события",
     "repulling": {
       "action": "Перезапросить события",

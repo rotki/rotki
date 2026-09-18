@@ -7005,15 +7005,6 @@
       }
     },
     "ignore": "Exclude from Accounting",
-    "protocol_cache_updates": {
-      "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
-      "no_ongoing": "No ongoing refresh happening.",
-      "outdated_data": "Outdated pools",
-      "pools_refreshed": "{processed} / {total} pools refreshed",
-      "protocol_pools_refreshed": "{processed} / {total} {protocol} pools refreshed",
-      "refreshing": "Refreshing protocol cache",
-      "title": "Protocol cache updates status"
-    },
     "refresh_tooltip": "Fetch latest events",
     "repulling": {
       "action": "Re-Pull Events",

@@ -1,11 +1,9 @@
 <script lang="ts" setup>
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
-import { toSentenceCase } from '@rotki/common';
+import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -44,8 +42,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
-const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
-
 function refresh() {
   if (decodingStatus.length === 0)
     emit('reset-undecoded-transactions');
@@ -73,9 +69,7 @@ const total = computed<number>(() =>
 );
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
-  data: EvmUnDecodedTransactionsData & {
-    protocolCacheRefreshStatus?: ProtocolCacheUpdatesData;
-  };
+  data: EvmUnDecodedTransactionsData;
 }>();
 
 watch(isDecoding, (loading) => {
@@ -85,28 +79,9 @@ watch(isDecoding, (loading) => {
   }
 });
 
-const combinedDecodingStatus = computed(() => {
-  const data = [...decodingStatus].reverse();
-  if (!get(receivingProtocolCacheStatus))
-    return data;
+const rows = computed<EvmUnDecodedTransactionsData[]>(() => [...decodingStatus].reverse());
 
-  const last = get(protocolCacheStatus)[0];
-
-  if (!last)
-    return data;
-
-  return [
-    {
-      chain: last.chain,
-      processed: 0,
-      protocolCacheRefreshStatus: last,
-      total: 0,
-    },
-    ...data,
-  ];
-});
-
-const allDone = computed(() => get(combinedDecodingStatus).every(status => status.total - status.processed === 0));
+const allDone = computed<boolean>(() => get(rows).every(status => status.total - status.processed === 0));
 
 onMounted(() => refresh());
 </script>
@@ -169,14 +144,9 @@ onMounted(() => refresh());
           thickness="3"
           size="20"
           color="primary"
-          :value="
-            data.protocolCacheRefreshStatus
-              ? (data.protocolCacheRefreshStatus.processed / (data.protocolCacheRefreshStatus.total || 1)) * 100
-              : (data.processed / (data.total || 1)) * 100
-          "
+          :value="(data.processed / (data.total || 1)) * 100"
         />
         <i18n-t
-          v-if="!data.protocolCacheRefreshStatus"
           scope="global"
           tag="span"
           keypath="transactions.events_decoding.transactions_processed"
@@ -188,22 +158,6 @@ onMounted(() => refresh());
             {{ data.total }}
           </template>
         </i18n-t>
-        <i18n-t
-          v-else
-          scope="global"
-          tag="span"
-          keypath="transactions.protocol_cache_updates.protocol_pools_refreshed"
-        >
-          <template #protocol>
-            {{ toSentenceCase(data.protocolCacheRefreshStatus.protocol) }}
-          </template>
-          <template #processed>
-            {{ data.protocolCacheRefreshStatus.processed }}
-          </template>
-          <template #total>
-            {{ data.protocolCacheRefreshStatus.total }}
-          </template>
-        </i18n-t>
       </div>
       <div v-else>
         -
@@ -211,9 +165,9 @@ onMounted(() => refresh());
     </DefineProgress>
 
     <RuiDataTable
-      v-if="combinedDecodingStatus.length > 0"
+      v-if="rows.length > 0"
       :cols="headers"
-      :rows="combinedDecodingStatus"
+      :rows="rows"
       dense
       row-attr="chain"
       striped

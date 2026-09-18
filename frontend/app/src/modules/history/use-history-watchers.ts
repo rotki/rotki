@@ -10,9 +10,6 @@ import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatch
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
-import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
 
@@ -29,21 +26,6 @@ export function useHistoryWatchers(): void {
   const router = useRouter();
 
   const processingDebounced = useRefWithDebounce(processing, 500);
-
-  const { useIsActive } = useTaskCenter();
-  const refreshProtocolCacheTaskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
-  const protocolCacheStore = useProtocolCacheStatusStore();
-  const { protocolCacheUpdateStatus } = storeToRefs(protocolCacheStore);
-
-  watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
-    if (
-      !curr &&
-      prev &&
-      !Object.values(get(protocolCacheUpdateStatus)).some(entry => entry.cancelled)
-    ) {
-      protocolCacheStore.resetProtocolCacheUpdatesStatus();
-    }
-  });
 
   // Debounced reprocessing after manual event modifications
   watchDebounced(

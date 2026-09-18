@@ -1,13 +1,10 @@
-import type { ComputedRef, EffectScope } from 'vue';
-import type { WorkStatus } from '@/modules/task-center/core/types';
+import type { EffectScope } from 'vue';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryWatchers } from './use-history-watchers';
 
 const mockProcessing = ref<boolean>(false);
 const mockFetchTransactionStatusSummary = vi.fn().mockResolvedValue(undefined);
-const mockResetProtocolCacheUpdatesStatus = vi.fn();
-const mockProtocolCacheUpdateStatus = ref<Record<string, { cancelled?: boolean }>>({});
 
 vi.mock('@/modules/history/events/use-history-events-status', () => ({
   useHistoryEventsStatus: vi.fn((): { processing: Ref<boolean> } => ({
@@ -18,18 +15,6 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
 vi.mock('@/modules/history/use-history-data-fetching', () => ({
   useHistoryDataFetching: vi.fn((): { fetchTransactionStatusSummary: () => Promise<void> } => ({
     fetchTransactionStatusSummary: mockFetchTransactionStatusSummary,
-  })),
-}));
-
-vi.mock('@/modules/history/use-protocol-cache-status-store', () => ({
-  useProtocolCacheStatusStore: vi.fn((): {
-    protocolCacheUpdateStatus: Ref<Record<string, { cancelled?: boolean }>>;
-    resetProtocolCacheUpdatesStatus: () => void;
-    $id: string;
-  } => ({
-    $id: 'history/protocol-cache-status',
-    protocolCacheUpdateStatus: mockProtocolCacheUpdateStatus,
-    resetProtocolCacheUpdatesStatus: mockResetProtocolCacheUpdatesStatus,
   })),
 }));
 
@@ -92,23 +77,6 @@ vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', () => ({
   })),
 }));
 
-const mockIsTaskRunning = ref<boolean>(false);
-
-vi.mock('@/modules/task-center/use-task-center', () => ({
-  useTaskCenter: vi.fn((): {
-    useIsActive: () => ComputedRef<boolean>;
-    useWorkStatus: () => ComputedRef<WorkStatus>;
-  } => ({
-    useIsActive: vi.fn((): ComputedRef<boolean> => computed<boolean>(() => get(mockIsTaskRunning))),
-    useWorkStatus: vi.fn((): ComputedRef<WorkStatus> => computed<WorkStatus>(() => ({
-      active: get(mockIsTaskRunning),
-      everCompleted: false,
-      pending: false,
-      running: get(mockIsTaskRunning),
-    }))),
-  })),
-}));
-
 const mockCurrentRoute = ref<{ name: string }>({ name: '/' });
 
 vi.mock('vue-router', () => ({
@@ -141,8 +109,6 @@ describe('useHistoryWatchers', () => {
     vi.clearAllMocks();
 
     set(mockProcessing, false);
-    set(mockIsTaskRunning, false);
-    set(mockProtocolCacheUpdateStatus, {});
     set(mockEventsVersion, 0);
     set(mockHasUnprocessedModifications, false);
     set(mockConnectedExchanges, []);
@@ -160,50 +126,6 @@ describe('useHistoryWatchers', () => {
       useHistoryWatchers();
     });
   }
-
-  describe('protocol cache reset watcher', () => {
-    it('should reset protocol cache status when task finishes with no cancelled entries', async () => {
-      set(mockIsTaskRunning, true);
-      set(mockProtocolCacheUpdateStatus, {
-        'eth#uniswap': { cancelled: false },
-      });
-
-      setupWatchers();
-      await nextTick();
-
-      set(mockIsTaskRunning, false);
-      await nextTick();
-
-      expect(mockResetProtocolCacheUpdatesStatus).toHaveBeenCalledOnce();
-    });
-
-    it('should not reset protocol cache status when task finishes but has cancelled entries', async () => {
-      set(mockIsTaskRunning, true);
-      set(mockProtocolCacheUpdateStatus, {
-        'eth#uniswap': { cancelled: true },
-      });
-
-      setupWatchers();
-      await nextTick();
-
-      set(mockIsTaskRunning, false);
-      await nextTick();
-
-      expect(mockResetProtocolCacheUpdatesStatus).not.toHaveBeenCalled();
-    });
-
-    it('should not reset protocol cache status when task is still running', async () => {
-      set(mockIsTaskRunning, false);
-
-      setupWatchers();
-      await nextTick();
-
-      set(mockIsTaskRunning, true);
-      await nextTick();
-
-      expect(mockResetProtocolCacheUpdatesStatus).not.toHaveBeenCalled();
-    });
-  });
 
   describe('transaction status summary watcher', () => {
     it('should fetch transaction status summary when processing changes', async () => {
