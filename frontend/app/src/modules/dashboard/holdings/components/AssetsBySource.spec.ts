@@ -8,6 +8,14 @@ import '@test/i18n';
 
 const netWorthLoading = ref<boolean>(true);
 const contributions = ref<SourceContribution[]>([]);
+const tracksNothing = ref<boolean>(false);
+
+vi.mock('@/modules/accounts/use-tracked-accounts-row', () => ({
+  useTrackedAccountsRow: (): object => ({
+    raised: computed<boolean>(() => get(tracksNothing)),
+    row: computed(() => ({ id: 'no-tracked-accounts' })),
+  }),
+}));
 
 vi.mock('@/modules/dashboard/use-net-worth-loading', () => ({
   useNetWorthLoading: vi.fn(() => computed<boolean>(() => get(netWorthLoading))),
@@ -23,7 +31,8 @@ vi.mock('@/modules/dashboard/holdings/use-dashboard-holdings', () => ({
 vi.mock('@/modules/settings/use-setting', () => ({ useSetting: vi.fn(() => ref(true)) }));
 
 const stubs = {
-  AddSourceMenu: { props: ['variant'], template: '<div data-testid="add-source-menu" :data-variant="variant ?? \'row\'" />' },
+  ActionEmptyState: { props: ['item'], template: '<div data-testid="empty-state" :data-key="item.id" />' },
+  AddSourceMenu: { template: '<div data-testid="add-source-menu" />' },
   FiatDisplay: true,
   PercentageDisplay: true,
   RuiIcon: true,
@@ -39,48 +48,51 @@ describe('assetsBySource', () => {
   beforeEach(() => {
     set(netWorthLoading, true);
     set(contributions, []);
+    set(tracksNothing, false);
   });
 
   it('should hold a skeleton, not the empty state, until the net worth has loaded', () => {
     const wrapper = createWrapper();
 
     expect(wrapper.findAll('[data-testid=legend-skeleton]').length).toBeGreaterThan(0);
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(false);
+  });
+
+  it('should render the tracked accounts row in place of the legend when nothing is added', async () => {
+    set(netWorthLoading, false);
+    set(tracksNothing, true);
+    const wrapper = createWrapper();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty] [data-testid=empty-state]').attributes('data-key')).toBe('no-tracked-accounts');
+    expect(wrapper.find('[data-testid=dashboard-source-legend]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=add-source-menu]').exists()).toBe(false);
   });
 
-  it('should offer to add a source once the load settles with none', async () => {
-    const wrapper = createWrapper();
-    set(netWorthLoading, false);
-    await nextTick();
-
-    expect(wrapper.find('[data-testid=legend-skeleton]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid=dashboard-source-legend]').exists()).toBe(false);
-    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['button']);
-    expect(wrapper.find('[data-testid=dashboard-holdings-empty] [data-testid=add-source-menu]').exists()).toBe(true);
-  });
-
-  it('should keep the legend, not the getting-started prompt, when a source is added but holds nothing', async () => {
+  it('should keep the legend, not the getting-started row, when a source is added but holds nothing', async () => {
     set(netWorthLoading, false);
     set(contributions, [{ kind: SourceKind.EXCHANGE, loading: false, location: 'kraken', value: Zero }]);
     const wrapper = createWrapper();
     await nextTick();
 
     expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(false);
-    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['row']);
+    expect(wrapper.find('[data-testid=add-source-menu]').exists()).toBe(true);
   });
 
-  it('should drop the empty state for the legend row once any source holds value', async () => {
-    const wrapper = createWrapper();
+  it('should drop the row for the legend once a source is added', async () => {
     set(netWorthLoading, false);
+    set(tracksNothing, true);
+    const wrapper = createWrapper();
     await nextTick();
     expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(true);
 
+    set(tracksNothing, false);
     set(contributions, [{ kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) }]);
     await nextTick();
 
     expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=source-bar]').exists()).toBe(true);
-    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['row']);
+    expect(wrapper.find('[data-testid=add-source-menu]').exists()).toBe(true);
   });
 
   it('should hold the bar back until every source is priced, since its shares are partial until then', async () => {

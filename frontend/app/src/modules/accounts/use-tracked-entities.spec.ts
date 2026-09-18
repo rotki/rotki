@@ -1,6 +1,7 @@
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { BankConnection } from '@/modules/banks/types';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { setActivePinia } from 'pinia';
@@ -9,6 +10,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useTrackedEntities } from '@/modules/accounts/use-tracked-entities';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 
 const state = {
   ready: ref(true),
@@ -54,6 +56,15 @@ describe('modules/accounts/useTrackedEntities', () => {
     const { tracksNothing } = useTrackedEntities();
 
     setConnectedExchanges([createMock<Exchange>()]);
+
+    expect(get(tracksNothing)).toBe(false);
+  });
+
+  it('should count a bank connection on its own', () => {
+    const { setConnections } = useBankConnectionsStore();
+    const { tracksNothing } = useTrackedEntities();
+
+    setConnections([createMock<BankConnection>()]);
 
     expect(get(tracksNothing)).toBe(false);
   });

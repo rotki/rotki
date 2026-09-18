@@ -8,6 +8,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   return {
     actionLabel: 'match',
     checkTarget: target,
+    choices: [],
     count: 3,
     description: 'description',
     icon: 'lu-git-compare-arrows',

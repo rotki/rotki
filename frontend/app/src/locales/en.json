@@ -2552,7 +2552,6 @@
         "manual": "Manual balance",
         "title": "Add a source"
       },
-      "empty": "No balances yet. Add an account, exchange, bank or manual balance to get started.",
       "kind": {
         "bank": "Banks",
         "blockchain": "Blockchain",
@@ -2828,7 +2827,7 @@
       "percentage_of_total_net_value": "% of net value",
       "percentage_total": "% of total"
     },
-    "no_assets": "No assets yet. They appear here once you add a source.",
+    "no_assets": "No assets yet. Your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
     "select_visible_columns": "Select visible columns"
@@ -6616,8 +6615,8 @@
           "title": "Duplicates needing review"
         },
         "no_tracked_accounts": {
-          "action": "Add an account",
-          "description": "rotki has no blockchain account or exchange to sync history from.",
+          "action": "Add a source",
+          "description": "rotki has no blockchain account, exchange, bank or manual balance to build your portfolio and history from.",
           "title": "Tracked accounts"
         },
         "undecoded": {

@@ -8,6 +8,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   return {
     actionLabel: 'Match',
     checkTarget: target,
+    choices: [],
     count: 11,
     description: 'description',
     icon: 'lu-arrow-left-right',
@@ -39,6 +40,31 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
 
     expect(wrapper.emitted('action')).toEqual([[item]]);
+  });
+
+  it('should turn the action into a menu of choices, handing the chosen one\'s target up instead of the action', async () => {
+    const exchange: ActionTarget = { kind: 'route', to: { name: '/api-keys/exchanges/' } };
+    const bank: ActionTarget = { kind: 'route', to: { name: '/api-keys/banks/' } };
+    const wrapper = mount(ActionCenterRow, {
+      global: { stubs: { RuiMenu: { template: '<div><slot name="activator" :attrs="{}" /><slot /></div>' } } },
+      props: {
+        item: createItem({
+          choices: [
+            { icon: 'lu-building-2', id: 'add-exchange', label: 'Exchange', target: exchange },
+            { icon: 'lu-landmark', id: 'add-bank', label: 'Bank', target: bank },
+          ],
+        }),
+      },
+    });
+
+    const choices = wrapper.findAll('[data-testid=actions-center-row-choice]');
+    expect(choices.map(choice => choice.attributes('data-key'))).toEqual(['add-exchange', 'add-bank']);
+
+    await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
+    await choices[1].trigger('click');
+
+    expect(wrapper.emitted('action')).toBeUndefined();
+    expect(wrapper.emitted('option')).toEqual([[bank]]);
   });
 
   it('should list no options for a row that has none', () => {

@@ -82,6 +82,14 @@ export interface ActionItem<TTarget extends { kind: string } = ActionTarget, TId
   checkTarget: TTarget;
   /** the row's lesser actions, in menu order; empty hides the menu */
   options: ActionItemOption<TTarget>[];
+  /**
+   * The ways to carry out the action, when there is more than one.
+   *
+   * @remarks
+   * Non-empty turns the action button into a menu of these, and `target` is then only where the
+   * cleared strip leads.
+   */
+  choices: ActionItemOption<TTarget>[];
 }
 
 /** Rows gathered under one heading, the way the global center groups them by module. */
@@ -97,7 +105,7 @@ export type ActionItemDefinition<TTarget extends { kind: string }, TId extends s
   Omit<ActionItem<TTarget, TId>, OptionalItemField>
   & Partial<Pick<ActionItem<TTarget, TId>, OptionalItemField>>;
 
-type OptionalItemField = 'loading' | 'locked' | 'minimumTier' | 'informational' | 'checkTarget' | 'options';
+type OptionalItemField = 'loading' | 'locked' | 'minimumTier' | 'informational' | 'checkTarget' | 'options' | 'choices';
 
 /** The candidates holding a value, in order: how a center keeps only the rows and options that apply. */
 export function applicable<T>(candidates: Option<T>[]): T[] {
@@ -109,6 +117,7 @@ export function createActionItem<TTarget extends { kind: string }, TId extends s
 ): ActionItem<TTarget, TId> {
   return {
     checkTarget: definition.target,
+    choices: [],
     informational: false,
     loading: false,
     locked: false,

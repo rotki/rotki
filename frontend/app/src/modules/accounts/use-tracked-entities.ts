@@ -3,6 +3,7 @@ import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 
 interface UseTrackedEntitiesReturn {
   /** the user has nothing in rotki to have a portfolio or a history from */
@@ -24,11 +25,13 @@ export function useTrackedEntities(): UseTrackedEntitiesReturn {
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { connections: bankConnections } = storeToRefs(useBankConnectionsStore());
   const { ready } = useAccountLoadState();
 
   const tracksNothing = computed<boolean>(() =>
     Object.values(get(accounts)).every(chainAccounts => chainAccounts.length === 0)
     && get(connectedExchanges).length === 0
+    && get(bankConnections).length === 0
     && get(manualBalances).length === 0
     && get(manualLiabilities).length === 0,
   );

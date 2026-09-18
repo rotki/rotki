@@ -23,6 +23,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     locked: false,
     minimumTier: null,
     options: [],
+    choices: [],
     urgency: ActionUrgency.DECISION,
     target: { kind: 'run', run: (): void => {} },
     title: 'An item',

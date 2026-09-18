@@ -7,6 +7,13 @@ import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
 const pendingAssets = ref<Set<string>>(new Set());
+const tracksNothing = ref<boolean>(false);
+
+vi.mock('@/modules/accounts/use-tracked-accounts-row', () => ({
+  useTrackedAccountsRow: (): object => ({
+    raised: computed(() => get(tracksNothing)),
+  }),
+}));
 
 vi.mock('@/modules/assets/prices/use-price-utils', async () => {
   const { computed: createComputed } = await import('vue');
@@ -30,6 +37,7 @@ vi.mock('@/modules/assets/prices/use-price-utils', async () => {
 /** Renders only the slots under test, so the assertions do not depend on RuiDataTable internals. */
 const RuiDataTableStub = defineComponent({
   props: {
+    empty: { default: undefined, type: Object },
     hideDefaultFooter: { default: false, type: Boolean },
     hideDefaultHeader: { default: false, type: Boolean },
     rows: { default: () => [], type: Array },
@@ -38,6 +46,7 @@ const RuiDataTableStub = defineComponent({
     return () => h('div', { 'data-pagers': `${props.hideDefaultHeader ? 'no-top' : 'top'},${props.hideDefaultFooter ? 'no-bottom' : 'bottom'}` }, [
       ...props.rows.map(row => h('div', slots['item.value']?.({ row }))),
       h('div', slots['body.append']?.({})),
+      ...(props.rows.length === 0 ? [h('div', { 'data-testid': 'empty' }, props.empty?.description)] : []),
     ]);
   },
 });
@@ -76,7 +85,10 @@ function createBalances(count: number): AssetBalanceWithPrice[] {
 describe('dashboardAssetTable', () => {
   let wrapper: VueWrapper<InstanceType<typeof DashboardAssetTable>>;
 
-  function createWrapper(balances: AssetBalanceWithPrice[]): VueWrapper<InstanceType<typeof DashboardAssetTable>> {
+  function createWrapper(
+    balances: AssetBalanceWithPrice[],
+    tableType: DashboardTableType = DashboardTableType.ASSETS,
+  ): VueWrapper<InstanceType<typeof DashboardAssetTable>> {
     return mount(DashboardAssetTable, {
       global: {
         plugins: [createPinia()],
@@ -92,7 +104,7 @@ describe('dashboardAssetTable', () => {
       },
       props: {
         balances,
-        tableType: DashboardTableType.ASSETS,
+        tableType,
         title: 'Assets',
       },
     });
@@ -106,6 +118,28 @@ describe('dashboardAssetTable', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     set(pendingAssets, new Set());
+    set(tracksNothing, false);
+  });
+
+  describe('the empty assets table', () => {
+    it('should stay neutral when nothing is tracked, since the card above already shows the tracked accounts row', () => {
+      set(tracksNothing, true);
+      wrapper = createWrapper([]);
+
+      expect(wrapper.find('[data-testid=empty]').text()).toBe('data_table.no_data');
+    });
+
+    it('should say balances are on their way once something is tracked', () => {
+      wrapper = createWrapper([]);
+
+      expect(wrapper.find('[data-testid=empty]').text()).toBe('dashboard_asset_table.no_assets');
+    });
+
+    it('should keep the other dashboard tables neutral, since they say nothing about tracking', () => {
+      wrapper = createWrapper([], DashboardTableType.LIABILITIES);
+
+      expect(wrapper.find('[data-testid=empty]').text()).toBe('data_table.no_data');
+    });
   });
 
   afterEach(() => {
