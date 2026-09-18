@@ -280,6 +280,11 @@ export interface PillBarLabels {
   readonly narrow: string;
   /** Shown when nothing matches what was typed in the inline input. */
   readonly narrowEmpty: string;
+  /**
+   * Shown in the narrowing list when the asset search failed, with the reason filled in. A function,
+   * since the reason has to land inside the translated sentence.
+   */
+  readonly narrowSearchFailed: (message: string) => string;
   /** Accessible name for a pill's remove control, which is an icon with no text of its own. */
   readonly remove: string;
   /** Lead-in for the narrowing popover's footer of typeable examples. */

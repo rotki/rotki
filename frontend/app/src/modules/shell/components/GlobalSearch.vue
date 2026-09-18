@@ -13,7 +13,7 @@ const { isMini = false } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { search: performSearch } = useGlobalSearch();
+const { assetSearchError, search: performSearch } = useGlobalSearch();
 const router = useRouter();
 const interop = useInterop();
 
@@ -211,6 +211,25 @@ onBeforeMount(async () => {
                 class="font-bold"
               />
             </div>
+          </div>
+        </template>
+        <!-- In the dropdown's footer: below the input the open dropdown would cover it. -->
+        <template
+          v-if="assetSearchError"
+          #footer
+        >
+          <div
+            class="flex items-center gap-1.5 px-4 py-2 text-caption text-rui-error border-t border-default"
+            role="status"
+            aria-live="polite"
+            data-testid="global-search-asset-error"
+          >
+            <RuiIcon
+              name="lu-circle-alert"
+              size="14"
+              class="shrink-0"
+            />
+            {{ t('asset_search.error.message', { message: assetSearchError }) }}
           </div>
         </template>
       </RuiAutoComplete>

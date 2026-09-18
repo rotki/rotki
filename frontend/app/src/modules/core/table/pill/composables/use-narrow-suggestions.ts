@@ -2,6 +2,8 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { startPromise } from '@shared/utils';
+import { match } from 'plainfp/result';
+import { fromPromise } from 'plainfp/result-async';
 import { assetDisplayCaption, assetDisplayLabel } from '@/modules/core/common/display/assets';
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
 import { usePillSyntaxHints } from '@/modules/core/table/pill/composables/use-pill-syntax-hints';
@@ -18,11 +20,17 @@ const ASSET_RESULT_CAP = 5;
 
 const SEARCH_DEBOUNCE = 300;
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 interface NarrowSuggestionsReturn {
   /** Field rows before anything is typed, matches after, with any asset results appended. */
   suggestions: ComputedRef<NarrowSuggestion[]>;
   /** An asset search is in flight; the list is usable meanwhile. */
   loading: Readonly<Ref<boolean>>;
+  /** Why the last asset search failed, empty when it did not; the other rows still stand. */
+  searchError: Readonly<Ref<string>>;
   /** Verbatim examples of what can be typed, for the fields currently on offer. */
   examples: ComputedRef<string[]>;
 }
@@ -51,6 +59,7 @@ export function useNarrowSuggestions(
   const syntaxHints = usePillSyntaxHints();
   const assetSuggestions = ref<NarrowSuggestion[]>([]);
   const loading = shallowRef<boolean>(false);
+  const searchError = shallowRef<string>('');
   // Only the newest search may publish: an earlier, slower response would otherwise overwrite it.
   let latestRequest = 0;
 
@@ -71,26 +80,28 @@ export function useNarrowSuggestions(
 
     if (!typed || !field?.searchAsset) {
       set(assetSuggestions, []);
+      set(searchError, '');
       set(loading, false);
       return;
     }
 
     const request = ++latestRequest;
     set(loading, true);
-    try {
-      const found = await field.searchAsset(typed);
-      if (request === latestRequest)
-        set(assetSuggestions, toSuggestions(field, found));
-    }
-    catch {
-      // A failed search just means no asset rows; the rest of the list still stands.
-      if (request === latestRequest)
+    const result = await fromPromise(field.searchAsset(typed), errorMessage);
+    if (request !== latestRequest)
+      return;
+
+    match(result, {
+      err: (message) => {
         set(assetSuggestions, []);
-    }
-    finally {
-      if (request === latestRequest)
-        set(loading, false);
-    }
+        set(searchError, message);
+      },
+      ok: (found) => {
+        set(assetSuggestions, toSuggestions(field, found));
+        set(searchError, '');
+      },
+    });
+    set(loading, false);
   }
 
   watchDebounced(() => toValue(query), () => {
@@ -111,5 +122,5 @@ export function useNarrowSuggestions(
 
   const examples = computed<string[]>(() => syntaxExamples(toValue(fields), get(syntaxHints)));
 
-  return { examples, loading: readonly(loading), suggestions };
+  return { examples, loading: readonly(loading), searchError: readonly(searchError), suggestions };
 }

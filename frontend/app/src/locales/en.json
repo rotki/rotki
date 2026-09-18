@@ -1459,8 +1459,7 @@
   },
   "asset_search": {
     "error": {
-      "message": "Failed to search asset: {message}",
-      "title": "Asset search"
+      "message": "Failed to search asset: {message}"
     }
   },
   "asset_select": {
@@ -6192,6 +6191,7 @@
       "empty": "No filters match",
       "narrow": "Filter…",
       "narrow_empty": "No matches",
+      "narrow_search_failed": "Asset search failed: {message}",
       "remove": "Remove filter",
       "search": "Filter by…",
       "syntax": {

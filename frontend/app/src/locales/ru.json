@@ -1060,8 +1060,7 @@
   },
   "asset_search": {
     "error": {
-      "message": "Не удалось выполнить поиск актива: {message}",
-      "title": "Поиск актива"
+      "message": "Не удалось выполнить поиск актива: {message}"
     }
   },
   "asset_select": {

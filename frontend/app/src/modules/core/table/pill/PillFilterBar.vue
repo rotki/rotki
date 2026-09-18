@@ -74,7 +74,12 @@ const availableFields = computed<FieldDef[]>(() => {
   return fields.filter(field => !used.has(field.key) && !excluded.has(field.key));
 });
 
-const { examples: syntaxExamples, loading: searching, suggestions } = useNarrowSuggestions(query, availableFields);
+const { examples: syntaxExamples, loading: searching, searchError, suggestions } = useNarrowSuggestions(query, availableFields);
+
+const searchErrorText = computed<string>(() => {
+  const message = get(searchError);
+  return message ? labels.narrowSearchFailed(message) : '';
+});
 
 // external wire form <-> model (the model's self-echo guard breaks the round-trip loop)
 watchImmediate(matches, value => model.setFromMatches(value, get(params)));
@@ -422,6 +427,7 @@ function focusInput(event: MouseEvent): void {
         id="pill-narrow-list"
         :suggestions="suggestions"
         :loading="searching"
+        :search-error="searchErrorText"
         :highlighted="highlighted"
         :empty-text="labels.narrowEmpty"
         :examples="syntaxExamples"

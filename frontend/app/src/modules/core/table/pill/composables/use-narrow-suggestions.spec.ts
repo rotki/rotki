@@ -120,12 +120,30 @@ describe('useNarrowSuggestions', () => {
       throw new Error('offline');
     });
     const fields = [protocol, assetField(search)];
-    const { loading, suggestions } = useNarrowSuggestions(ref('aave'), ref(fields));
+    const { loading, searchError, suggestions } = useNarrowSuggestions(ref('aave'), ref(fields));
 
     await vi.advanceTimersByTimeAsync(400);
 
     expect(get(suggestions)).toEqual([{ field: protocol, kind: 'value', label: 'aave', value: 'aave' }]);
+    expect(get(searchError)).toBe('offline');
     expect(get(loading)).toBe(false);
+  });
+
+  it('should clear the failure once a later search succeeds', async () => {
+    const search = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce([asset('usdc', 'USDC')]);
+    const query = ref('usd');
+    const { searchError, suggestions } = useNarrowSuggestions(query, ref([assetField(search)]));
+
+    await vi.advanceTimersByTimeAsync(400);
+    expect(get(searchError)).toBe('offline');
+
+    set(query, 'usdc');
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(get(searchError)).toBe('');
+    expect(get(suggestions).map(entry => entry.label)).toContain('USDC');
   });
 
   it('should report while a search is in flight', async () => {

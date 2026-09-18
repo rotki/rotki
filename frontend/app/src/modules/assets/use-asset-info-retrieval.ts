@@ -11,9 +11,6 @@ import {
   isEvmIdentifierWithNftId,
   isHyperliquidTokenIdentifier,
   isSolanaTokenIdentifier,
-  NotificationGroup,
-  Priority,
-  Severity,
 } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
@@ -22,7 +19,7 @@ import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -102,7 +99,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { fetchedAssetCollections, queueIdentifier, resolve: resolveAsset } = useAssetInfoCache();
-  const { notify, notifyError } = useNotifications();
+  const { notifyError } = useNotifications();
   const { cancelActivity, submitTask } = useNativeTask();
 
   const { getChain } = useSupportedChains();
@@ -261,6 +258,13 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     }
   };
 
+  /**
+   * Searches the assets, with an aborted search reading as no matches.
+   *
+   * @remarks
+   * Any other failure rejects, so the surface that ran the search can say so where the user typed;
+   * a notification would report it away from the input.
+   */
   const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {
     try {
       const evmChain = params.evmChain && getChain(params.evmChain) ? params.evmChain : undefined;
@@ -269,17 +273,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     catch (error: unknown) {
       if (isAbortError(error))
         return [];
-
-      notify({
-        group: NotificationGroup.ASSET_SEARCH_ERROR,
-        message: t('asset_search.error.message', {
-          message: getErrorMessage(error),
-        }),
-        priority: Priority.NORMAL,
-        severity: Severity.ERROR,
-        title: t('asset_search.error.title'),
-      });
-      return [];
+      throw error;
     }
   };
 

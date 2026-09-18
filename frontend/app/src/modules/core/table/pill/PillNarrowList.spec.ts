@@ -31,6 +31,28 @@ describe('pillNarrowList', () => {
     Element.prototype.scrollIntoView = scrollIntoView;
   });
 
+  it('should say why the asset search failed below the rows that did match, in place of the empty text', () => {
+    const failed = mount(PillNarrowList, {
+      props: { emptyText: 'no match', searchError: 'Asset search failed: offline', suggestions },
+    });
+    const failedWithNothing = mount(PillNarrowList, {
+      props: { emptyText: 'no match', searchError: 'Asset search failed: offline', suggestions: [] },
+    });
+
+    expect(failed.findAll('[data-testid=pill-narrow-row]')).toHaveLength(3);
+    expect(failed.find('[data-testid=pill-narrow-search-error]').text()).toContain('Asset search failed: offline');
+    expect(failedWithNothing.find('[data-testid=pill-narrow-empty]').exists()).toBe(false);
+  });
+
+  it('should show the spinner rather than a stale failure while a new search runs', () => {
+    const wrapper = mount(PillNarrowList, {
+      props: { emptyText: 'no match', loading: true, searchError: 'Asset search failed: offline', suggestions },
+    });
+
+    expect(wrapper.find('[data-testid=pill-narrow-loading]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=pill-narrow-search-error]').exists()).toBe(false);
+  });
+
   it('should bring the highlighted row into view when the bar moves the highlight', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();

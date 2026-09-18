@@ -55,6 +55,7 @@ vi.mock('@/pages/airdrops/use-airdrops-page', async () => {
           empty: 'empty',
           narrow: 'narrow',
           narrowEmpty: 'narrowEmpty',
+          narrowSearchFailed: (message: string): string => message,
           remove: 'remove',
           search: 'search',
           syntax: 'syntax',

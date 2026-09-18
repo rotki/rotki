@@ -1,12 +1,16 @@
 import type { RuiIcons } from '@rotki/ui-library';
+import type { Ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import { type BigNumber, getTextToken } from '@rotki/common';
+import { isErr } from 'plainfp/result';
+import { fromPromise } from 'plainfp/result-async';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useLocations } from '@/modules/core/common/use-locations';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useRouteSearch } from '@/modules/shell/layout/use-route-search';
 
 export interface SearchItem {
@@ -30,6 +34,8 @@ type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
 interface UseGlobalSearchReturn {
   search: (keyword: string) => Promise<SearchItem[]>;
+  /** Why the last search's asset lookup failed, empty when it did not; the other matches still show. */
+  assetSearchError: Readonly<Ref<string>>;
 }
 
 /**
@@ -44,6 +50,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   const { balancesByChainLocation, balancesByLocation, getBalances } = useAggregatedBalances();
   const { getLocationData } = useLocations();
   const { assetSearch } = useAssetInfoRetrieval();
+
+  const assetSearchError = shallowRef<string>('');
 
   function itemText(item: SearchItemWithoutValue): string {
     const base = item.texts ? item.texts.join(' ') : (item.text ?? '');
@@ -100,8 +108,16 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     return filterItems(actionItems, keyword);
   }
 
+  /** The balances matching the keyword, or none when the asset search failed, which is then recorded. */
   async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
-    const matches = await assetSearch({ limit: 5, value: keyword });
+    const result = await fromPromise(assetSearch({ limit: 5, value: keyword }), getErrorMessage);
+    if (isErr(result)) {
+      set(assetSearchError, result.error);
+      return [];
+    }
+    set(assetSearchError, '');
+
+    const matches = result.value;
     const assetBalances = getBalances();
     const map: Record<string, string> = {};
     for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';
@@ -160,8 +176,10 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   }
 
   async function search(keyword: string): Promise<SearchItem[]> {
-    if (!keyword)
+    if (!keyword) {
+      set(assetSearchError, '');
       return [];
+    }
 
     const staticData = [
       ...getRoutes(keyword),
@@ -177,5 +195,5 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     }));
   }
 
-  return { search };
+  return { assetSearchError: readonly(assetSearchError), search };
 }
