@@ -9,6 +9,7 @@ from packaging.version import Version
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -35,6 +36,7 @@ from rotkehlchen.utils.version_check import VersionCheckResult
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -492,6 +494,82 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         (default_rpc_nodes_count + 1, *custom_node_tuple),
         (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('remove_only', [False, True])
+def test_rpc_update_refreshes_inquirer_call_order(
+        database: DBHandler,
+        blockchain: ChainsAggregator,
+        remove_only: bool,
+) -> None:
+    """Remote additions and removals take effect even with a warmed RPC node cache."""
+    data_updater = RotkiDataUpdater(
+        msg_aggregator=database.msg_aggregator,
+        user_db=database,
+        chains_aggregator=blockchain,
+    )
+    inquirers: list[RPCManagerMixin] = [
+        blockchain.optimism.node_inquirer,
+        blockchain.solana.node_inquirer,
+    ]
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        default_nodes = cursor.execute(
+            'SELECT name, endpoint, owned, active, weight, blockchain FROM default_rpc_nodes',
+        ).fetchall()
+    with database.user_write() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO rpc_nodes('
+            'name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',
+            default_nodes,
+        )
+    remote_nodes = [dict(zip(
+        ('name', 'endpoint', 'owned', 'active', 'weight', 'blockchain'), row, strict=True,
+    )) for row in default_nodes if row[5] not in ('OPTIMISM', 'SOLANA')]
+    blockchain.ethereum.node_inquirer.invalidate_nodes_cache()
+    unchanged_cache = blockchain.ethereum.node_inquirer._get_configured_nodes()
+    for inquirer in inquirers:
+        inquirer.invalidate_nodes_cache()
+        assert any(
+            node.node_info.endpoint for node in RPCManagerMixin.default_call_order(inquirer)
+        )
+        if remove_only:
+            continue
+        remote_nodes.append({
+            'name': 'New remote node',
+            'endpoint': f'https://{inquirer.blockchain.value.lower()}.example.com',
+            'owned': False,
+            'active': True,
+            'weight': '1',
+            'blockchain': inquirer.blockchain.value,
+        })
+
+    with (
+        patch.object(data_updater, '_get_remote_info_json', return_value={
+            'rpc_nodes': {'latest': 1},
+        }),
+        patch('rotkehlchen.db.updates.query_file', return_value={'rpc_nodes': remote_nodes}),
+    ):
+        data_updater.check_for_updates(updates=[UpdateType.RPC_NODES])
+
+    assert blockchain.ethereum.node_inquirer._get_configured_nodes() is unchanged_cache
+    for inquirer in inquirers:
+        expected_endpoints = set() if remove_only else {
+            f'https://{inquirer.blockchain.value.lower()}.example.com',
+        }
+        assert {
+            node.node_info.endpoint
+            for node in data_updater.user_db.get_rpc_nodes(inquirer.blockchain, only_active=True)
+        } == expected_endpoints
+        assert {
+            node.node_info.endpoint for node in RPCManagerMixin.default_call_order(inquirer)
+            if node.node_info.endpoint
+        } == expected_endpoints
+
+    cached_nodes = [inquirer._get_configured_nodes() for inquirer in inquirers]
+    data_updater.update_rpc_nodes(data=remote_nodes, version=2)
+    for inquirer, cached in zip(inquirers, cached_nodes, strict=True):
+        assert inquirer._get_configured_nodes() is cached
 
 
 def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
