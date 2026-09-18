@@ -5,7 +5,7 @@ import { externalLinks } from '@shared/external-links';
 import { none, type Option, some } from 'plainfp/option';
 import { getOr } from 'plainfp/records';
 import { type MessageKey, msg } from '@/message-key';
-import { type ActionItem, type ActionItemOption, ActionSeverity, type ActionTarget, applicable, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { ExternalServiceKeys, type ExternalServiceName } from '@/modules/integrations/types';
@@ -132,7 +132,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
       icon: 'lu-key-round',
       id: conditionRowId(condition),
       options: missingKeyOptions(service, serviceName),
-      severity: OPTIONAL_KEY_SERVICES.has(service) ? ActionSeverity.INFO : ActionSeverity.WARNING,
+      urgency: OPTIONAL_KEY_SERVICES.has(service) ? ActionUrgency.TODO : ActionUrgency.DECISION,
       target: { kind: 'route', to: getServiceRegisterUrl(service)?.route ?? serviceSettings(service) },
       title: location
         ? t('action_center.rows.integrations.missing_api_key.title_location', params)
@@ -147,7 +147,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
       count: 1,
       icon: 'lu-log-in',
       id: conditionRowId(condition),
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       target: { kind: 'route', to: serviceSettings(service) },
     });
   }

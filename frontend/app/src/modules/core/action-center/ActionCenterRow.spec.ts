@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
-import { type ActionItem, ActionSeverity, type ActionTarget } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionTarget, ActionUrgency } from '@/modules/core/action-center/types';
 
 function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   const target: ActionTarget = { kind: 'route', to: { name: '/balances/blockchain/' } };
@@ -17,7 +17,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     locked: false,
     minimumTier: null,
     options: [],
-    severity: ActionSeverity.WARNING,
+    urgency: ActionUrgency.DECISION,
     target,
     title: 'Unmatched asset movements',
     ...overrides,
@@ -88,7 +88,7 @@ describe('modules/core/action-center/ActionCenterRow', () => {
   });
 
   it('should keep a muted item out of the warning treatment', () => {
-    const wrapper = mountRow(createItem({ id: 'internal-conflicts', severity: ActionSeverity.MUTED }));
+    const wrapper = mountRow(createItem({ id: 'internal-conflicts', urgency: ActionUrgency.AUTOMATIC }));
 
     expect(wrapper.find('[data-testid=actions-center-row][data-key=unmatched-movements]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=actions-center-row][data-key=internal-conflicts]').classes()).not.toContain('opacity-60');

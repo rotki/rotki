@@ -1,7 +1,7 @@
 import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ActionItem, type ActionItemOption, ActionSeverity } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
@@ -135,9 +135,9 @@ describe('modules/shell/action-center/use-integration-rows', () => {
 
       const [beaconchain, blockscout] = get(rows());
 
-      expect(beaconchain.severity).toBe(ActionSeverity.INFO);
+      expect(beaconchain.urgency).toBe(ActionUrgency.TODO);
       expect(beaconchain.description).toBe('action_center.rows.integrations.missing_api_key.description_beaconchain::Beaconchain');
-      expect(blockscout.severity).toBe(ActionSeverity.WARNING);
+      expect(blockscout.urgency).toBe(ActionUrgency.DECISION);
     });
   });
 

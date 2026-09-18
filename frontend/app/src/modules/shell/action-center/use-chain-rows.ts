@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { none, some } from 'plainfp/option';
-import { type ActionItem, type ActionItemOption, ActionSeverity, type ActionTarget, applicable, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
@@ -76,7 +76,7 @@ export function useChainRows(): ComputedRef<ActionItem[]> {
       icon: 'lu-server',
       id: conditionRowId(condition),
       options: options(condition, chain),
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
     } as const;
 
     if (condition.paidKeyRequired) {

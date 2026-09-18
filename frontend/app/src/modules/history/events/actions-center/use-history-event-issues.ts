@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { useTrackedEntities } from '@/modules/accounts/use-tracked-entities';
-import { type ActionItem, type ActionItemDefinition, ActionSeverity, type ActionTarget, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemDefinition, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { useActionCenter, type UseActionCenterReturn } from '@/modules/core/action-center/use-action-center';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
@@ -112,7 +112,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
     icon: 'lu-wallet',
     id: HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
     loading: get(trackedEntitiesLoading),
-    severity: ActionSeverity.WARNING,
+    urgency: ActionUrgency.DECISION,
     target: { kind: 'route', to: { name: '/accounts/' } },
     title: t('transactions.alerts.issues.no_tracked_accounts.title'),
   }));
@@ -129,7 +129,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       loading: get(autoMatchLoading),
       locked: !get(matchingAllowed),
       minimumTier: get(matchingTier),
-      severity: get(movementsIgnoredOnly) ? ActionSeverity.MUTED : ActionSeverity.WARNING,
+      urgency: get(movementsIgnoredOnly) ? ActionUrgency.AUTOMATIC : ActionUrgency.DECISION,
       target: { kind: 'dialog', options: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS } },
       title: t('transactions.alerts.issues.unmatched_movements.title'),
     }),
@@ -143,7 +143,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       loading: get(bridgeAutoMatchLoading),
       locked: !get(matchingAllowed),
       minimumTier: get(matchingTier),
-      severity: get(bridgesIgnoredOnly) ? ActionSeverity.MUTED : ActionSeverity.WARNING,
+      urgency: get(bridgesIgnoredOnly) ? ActionUrgency.AUTOMATIC : ActionUrgency.DECISION,
       target: { kind: 'dialog', options: { type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS } },
       title: t('transactions.alerts.issues.unmatched_bridges.title'),
     }),
@@ -153,7 +153,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       description: t('transactions.alerts.issues.auto_fix_duplicates.description'),
       icon: 'lu-copy',
       id: HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES,
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       checkTarget: { kind: 'dialog', options: { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES } },
       target: { groupIds: get(autoFixGroupIds), kind: 'duplicates', status: DuplicateHandlingStatus.AUTO_FIX },
       title: t('transactions.alerts.issues.auto_fix_duplicates.title'),
@@ -164,7 +164,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       description: t('transactions.alerts.issues.manual_review_duplicates.description'),
       icon: 'lu-copy-check',
       id: HISTORY_ISSUE_IDS.MANUAL_REVIEW_DUPLICATES,
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       checkTarget: { kind: 'dialog', options: { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES } },
       target: { groupIds: get(manualReviewGroupIds), kind: 'duplicates', status: DuplicateHandlingStatus.MANUAL_REVIEW },
       title: t('transactions.alerts.issues.manual_review_duplicates.title'),
@@ -176,7 +176,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
           description: t('transactions.alerts.issues.data_issues.description'),
           icon: 'lu-shield-alert',
           id: HISTORY_ISSUE_IDS.DATA_ISSUES,
-          severity: ActionSeverity.WARNING,
+          urgency: ActionUrgency.DECISION,
           target: { kind: 'pin', panel: toPinned(PinnedNames.DATA_ISSUES, {}) },
           title: t('transactions.alerts.issues.data_issues.title'),
         })]
@@ -187,7 +187,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       description: t('transactions.alerts.issues.internal_conflicts.description'),
       icon: 'lu-git-merge',
       id: HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS,
-      severity: ActionSeverity.MUTED,
+      urgency: ActionUrgency.AUTOMATIC,
       target: { kind: 'dialog', options: { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS } },
       title: t('transactions.alerts.issues.internal_conflicts.title'),
     }),
@@ -197,7 +197,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       description: t('transactions.alerts.issues.undecoded.description'),
       icon: 'lu-scroll-text',
       id: HISTORY_ISSUE_IDS.UNDECODED,
-      severity: ActionSeverity.INFO,
+      urgency: ActionUrgency.TODO,
       target: { kind: 'dialog', options: { type: DIALOG_TYPES.DECODING_STATUS } },
       title: t('transactions.alerts.issues.undecoded.title'),
     }),
