@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
+import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
 import {
@@ -97,11 +98,25 @@ export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): 
 }
 
 /**
- * The identifier of the bridge leg to unlink a joined matched-bridge subgroup by. Both legs carry
- * the joined group id and the backend accepts either side, so the first matched one is enough.
+ * What it takes to unlink a joined matched-bridge subgroup, or undefined when it is not one.
+ *
+ * Both legs carry the joined group id and the backend accepts either side, so the first matched
+ * one anchors the unlink call. The legs are also ignored afterwards, which a synthetic
+ * counterpart is left out of: unlinking deletes it, so there is nothing left to ignore.
  */
-export function getMatchedBridgeLegId(events: HistoryEventEntry[]): number | undefined {
-  return events.find(event => event.eventSubtype === 'bridge' && !!event.actualGroupIdentifier)?.identifier;
+export function getMatchedBridgeUnlink(events: HistoryEventEntry[]): HistoryEventBridgeUnlinkPayload | undefined {
+  const legs = events.filter(event => event.eventSubtype === 'bridge');
+  const anchor = legs.find(leg => !!leg.actualGroupIdentifier);
+  if (!anchor)
+    return undefined;
+
+  const isSynthetic = (leg: HistoryEventEntry): boolean => !!leg.states?.includes(HistoryEventState.SYNTHETIC);
+  return {
+    hasSynthetic: legs.some(isSynthetic),
+    identifier: anchor.identifier,
+    ignoredIdentifiers: legs.filter(leg => !isSynthetic(leg)).map(leg => leg.identifier),
+    type: 'bridge',
+  };
 }
 
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {

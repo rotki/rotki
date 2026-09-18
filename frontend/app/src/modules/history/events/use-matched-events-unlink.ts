@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
-import type { HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventBridgeUnlinkPayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -33,17 +33,24 @@ export function useMatchedEventsUnlink(
   const { show } = useConfirmStore();
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
   const { unlinkAssetMovement } = useAssetMovementMatchingApi();
-  const { unlinkBridgeTransaction } = useBridgeMatchingApi();
+  const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
 
-  async function unlink({ identifier, type }: HistoryEventUnlinkPayload): Promise<void> {
-    if (type === 'bridge') {
-      await unlinkBridgeTransaction(identifier);
+  async function unlink(payload: HistoryEventUnlinkPayload): Promise<void> {
+    if (payload.type === 'bridge') {
+      await unlinkBridgeTransaction(payload.identifier);
+      // The periodic matching task links an unmatched pair straight back, often before the user
+      // can act on it, so unlinking is only durable if the legs are ignored too. Ignoring is
+      // matching with no counterpart, and the ignored tab of the bridge matching dialog restores
+      // them. Sequential rather than concurrent: both writes hit the same table.
+      for (const identifier of payload.ignoredIdentifiers)
+        await matchBridgeTransactions(identifier);
+
       await refreshUnmatchedBridgeTransactions();
     }
     else {
-      await unlinkAssetMovement(identifier);
+      await unlinkAssetMovement(payload.identifier);
       await refreshUnmatchedAssetMovements();
     }
   }
@@ -62,10 +69,16 @@ export function useMatchedEventsUnlink(
     }
   }
 
+  function bridgeMessage(payload: HistoryEventBridgeUnlinkPayload): string {
+    return payload.hasSynthetic
+      ? t('transactions.events.confirmation.unlink.bridge_synthetic_message')
+      : t('transactions.events.confirmation.unlink.bridge_message');
+  }
+
   function confirmUnlink(payload: HistoryEventUnlinkPayload): void {
     show({
       message: payload.type === 'bridge'
-        ? t('transactions.events.confirmation.unlink.bridge_message')
+        ? bridgeMessage(payload)
         : t('transactions.events.confirmation.unlink.message'),
       primaryAction: t('common.actions.confirm'),
       title: t('transactions.events.confirmation.unlink.title'),

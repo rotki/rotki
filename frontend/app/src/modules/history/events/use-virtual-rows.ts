@@ -1,7 +1,8 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
-import { getMatchedBridgeLegId } from '@/modules/history/event-utils';
+import { getMatchedBridgeUnlink } from '@/modules/history/event-utils';
 
 export const ROW_HEIGHTS = {
   'group-header': 48,
@@ -68,8 +69,8 @@ interface SwapCollapseRow {
   eventCount: number;
   /** True when the subgroup is a matched bridge transfer rather than a swap. */
   bridge: boolean;
-  /** The bridge leg that unlinks the transfer; set only for a matched bridge. */
-  unlinkIdentifier?: number;
+  /** What unlinks the transfer; set only for a matched bridge. */
+  bridgeUnlink?: HistoryEventBridgeUnlinkPayload;
 }
 
 interface MatchedMovementRow {
@@ -254,7 +255,7 @@ export function useVirtualRows(
                   subgroupId: event[0]?.identifier,
                   eventCount: event.length,
                   bridge,
-                  unlinkIdentifier: getMatchedBridgeLegId(event),
+                  bridgeUnlink: getMatchedBridgeUnlink(event),
                 });
               }
 

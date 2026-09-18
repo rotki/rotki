@@ -1283,7 +1283,7 @@
       "find_match_anyway": "Find match anyway",
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
-      "ignored_description": "These asset movements have been marked as having no corresponding event. Restore them to retry matching.",
+      "ignored_description": "These asset movements have been marked as having no corresponding event, so automatic matching leaves them alone. Match one by hand at any time, or restore it to let automatic matching consider it again.",
       "manual_action": "Manual Action",
       "matching_for": "Finding matches for the following asset movement.",
       "matching_hint": "You can select one or more events to link.",
@@ -1879,7 +1879,7 @@
       "direction_in": "Bridge in",
       "direction_out": "Bridge out",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
-      "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
+      "ignored_description": "These bridge transactions are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
       "manual_action": "Manual Action",
       "mark_external": "External",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
@@ -6426,7 +6426,8 @@
           "indexer_order_title": "Indexer Order"
         },
         "unlink": {
-          "bridge_message": "Are you sure you want to unlink this bridge transfer? Both legs are restored to how they were before matching and return to the unmatched bridge transactions, where automatic matching may link them again. A counterpart event that was created to complete the match is deleted.",
+          "bridge_message": "Are you sure you want to unlink this bridge transfer? Both legs are restored to how they were before matching and then ignored, so automatic matching leaves them alone instead of linking them straight back. They stay in the ignored tab of the bridge matching window, where you can restore them or match them by hand.",
+          "bridge_synthetic_message": "Are you sure you want to unlink this bridge transfer? The counterpart event rotki created to complete the match is deleted, and the remaining leg is restored to how it was before matching and then ignored, so automatic matching leaves it alone. It stays in the ignored tab of the bridge matching window, where you can restore it or match it by hand.",
           "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",
           "title": "Unlink Matched Events"
         }

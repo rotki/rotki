@@ -133,6 +133,8 @@ onBeforeMount(async () => {
       :loading="ignoredLoading"
       :ignore-loading="ignoreLoading"
       is-pinned
+      :match-disabled="!isAutoMatchAllowed"
+      :match-minimum-tier="autoMatchMinimumTier"
       show-restore
       @action="handleAction($event)"
       @pin="emit('pin')"
@@ -164,6 +166,8 @@ onBeforeMount(async () => {
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
         :ignore-loading="ignoreLoading"
+        :match-disabled="!isAutoMatchAllowed"
+        :match-minimum-tier="autoMatchMinimumTier"
         show-restore
         @action="handleAction($event)"
         @pin="emit('pin')"
