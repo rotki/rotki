@@ -25,14 +25,17 @@ from rotkehlchen.history.data_issues.types import (
     TransactionDecodingComparison,
 )
 from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.locations.chains import (
+    EVM_LOCATIONS,
+    location_to_chain_id,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-    EVM_LOCATIONS,
     ChainID,
     EVMTxHash,
-    Location,
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -74,7 +77,7 @@ def _get_customized_transactions_for_issue(
         database: DBHandler,
         issue: DataIssue,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-        location: Location,
+        location: LocationIdentifier,
 ) -> dict[EVMTxHash, list[EvmEvent]]:
     """Return customized transactions associated with the issue account."""
     dbevents = DBHistoryEvents(database)
@@ -91,7 +94,7 @@ def _get_customized_transactions_for_issue(
                 issue.location_label,
                 HISTORY_MAPPING_KEY_STATE,
                 HistoryMappingState.CUSTOMIZED.serialize_for_db(),
-                location.serialize_for_db(),
+                location,
                 ts_ms_to_sec(TimestampMS(issue.ts_end)),
             ),
         )]
@@ -186,11 +189,11 @@ def _check_issue(
         preview_cache: PreviewCache,
         reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
 ) -> None:
-    location = Location.deserialize_from_db(issue.location)
+    location = LocationIdentifier(issue.location)
     if location not in EVM_LOCATIONS or issue.location_label == '':
         return
 
-    chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+    chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location_to_chain_id(location)))  # noqa: E501
     bucket = Bucket(
         location=issue.location,
         location_label=issue.location_label or None,

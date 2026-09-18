@@ -10,8 +10,8 @@ from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import Location
 from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.interfaces import EthereumModule
 
@@ -128,7 +128,7 @@ class PickleFinance(EthereumModule):
                     self.msg_aggregator.add_error(
                         f'Failed to query dill information for address {address}. {e!s}',
                         classification=BadData(record=UserMessageRecord.POSITION, error=str(e)),
-                        subject=Location.ETHEREUM,
+                        subject=LOCATION_ETHEREUM,
                     )
 
         return api_output

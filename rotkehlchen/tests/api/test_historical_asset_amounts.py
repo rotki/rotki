@@ -10,8 +10,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKCHAIN,
+)
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -34,7 +37,7 @@ def test_get_historical_asset_amounts_without_accounting_update(
                 timestamp=ts_sec_to_ms(timestamp),
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 asset=A_BTC,
                 amount=FVal('2'),
                 notes='Receive BTC',

@@ -22,7 +22,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 # keeping it small since reusing will only be assets in same event since we only go forward in time
@@ -225,7 +226,7 @@ class AccountingPot(CustomizableDateMixin):
             self,  # pylint: disable=unused-argument
             event_type: AccountingEventType,
             notes: str,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -305,7 +306,7 @@ class AccountingPot(CustomizableDateMixin):
             self,
             event_type: AccountingEventType,
             notes: str,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -417,7 +418,7 @@ class AccountingPot(CustomizableDateMixin):
             direction: EventDirection,
             event_type: AccountingEventType,
             notes: str,
-            location: Location,
+            location: LocationIdentifier,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,

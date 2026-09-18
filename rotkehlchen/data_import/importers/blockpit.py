@@ -15,12 +15,21 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCEUS,
+    LOCATION_BITCOINDE,
+    LOCATION_COINBASEPRO,
+    LOCATION_CRYPTOCOM,
+    LOCATION_EXTERNAL,
+    LOCATION_WOO,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -29,24 +38,25 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
-def exchange_row_to_location(entry: str) -> Location:
+def exchange_row_to_location(entry: str) -> LocationIdentifier:
     """Takes the Source Name from blockpit and returns a location"""
     try:
-        return Location.deserialize(entry)  # Should get everything without spaces or periods
+        return deserialize_builtin_location(entry)  # Should get everything without spaces or periods  # noqa: E501
     except DeserializationError:
         if entry == 'Binance US':
-            return Location.BINANCEUS
+            return LOCATION_BINANCEUS
         if entry == 'Bitcoin.de':
-            return Location.BITCOINDE
+            return LOCATION_BITCOINDE
         if entry == 'Coinbase Pro':
-            return Location.COINBASEPRO
+            return LOCATION_COINBASEPRO
         if entry in {'Crypto.com App', 'Crypto.com Exchange'}:
-            return Location.CRYPTOCOM
+            return LOCATION_CRYPTOCOM
         if entry == 'WOO X':
-            return Location.WOO
-        return Location.EXTERNAL
+            return LOCATION_WOO
+        return LOCATION_EXTERNAL
 
 
 class BlockpitImporter(BaseExchangeImporter):
@@ -80,7 +90,7 @@ class BlockpitImporter(BaseExchangeImporter):
         transaction_type = csv_row['Transaction Type']
         location = exchange_row_to_location(source_name)
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(
-            location if location in LOCATION_TO_ASSET_MAPPING else Location.EXTERNAL,
+            location if location in LOCATION_TO_ASSET_MAPPING else LOCATION_EXTERNAL,
             symbol_to_asset_or_token,
         )
 

@@ -8,7 +8,7 @@ from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.locations.catalog import load_builtin_catalog
 from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
-from rotkehlchen.types import LEGACY_PROTOCOL_LOCATIONS, Location, Timestamp
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -132,16 +132,16 @@ def test_location_foreign_keys(database: DBHandler) -> None:
 
 def test_legacy_locations_can_be_stored_and_read_back(database: DBHandler) -> None:
     with database.user_write() as write_cursor:
-        for char in V53_LEGACY_LOCATION_CHARS:
+        legacy_locations = {
             DBLocations.add_legacy_location(write_cursor, char)
+            for char in V53_LEGACY_LOCATION_CHARS
+        }
         database.add_multiple_location_data(write_cursor, [
-            LocationData(time=Timestamp(1), location=x.serialize_for_db(), usd_value='5')
-            for x in LEGACY_PROTOCOL_LOCATIONS
+            LocationData(time=Timestamp(1), location=x, usd_value='5') for x in legacy_locations
         ])
 
-    assert {x.serialize()['location'] for x in database.get_latest_location_value_distribution()} == {  # noqa: E501
-        str(x) for x in LEGACY_PROTOCOL_LOCATIONS
-    }
+    assert legacy_locations == {'legacy:uniswap', 'legacy:balancer', 'legacy:gitcoin', 'legacy:sushiswap'}  # noqa: E501
+    assert {x.serialize()['location'] for x in database.get_latest_location_value_distribution()} == legacy_locations  # noqa: E501
     with database.conn.read_ctx() as cursor:
         DBLocations().validate_tree(cursor)
-        assert Location.UNISWAP.serialize_for_db() in DBLocations.descendants(cursor, ['legacy locations'])  # noqa: E501
+        assert legacy_locations < DBLocations.descendants(cursor, ['legacy locations'])

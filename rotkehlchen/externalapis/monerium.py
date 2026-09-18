@@ -21,12 +21,20 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import location_to_chain_id
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+    LOCATION_POLYGON_POS,
+    LOCATION_SCROLL,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
-    Location,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import set_user_agent, ts_now
@@ -37,6 +45,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -53,12 +62,12 @@ AUTHORIZATION_CODE_FLOW_CLIENT_ID: Final = '9f93c53a-aa6c-11f0-9078-069e351f134d
 # keys are the values used in the monerium's orders endpoint
 # https://github.com/monerium/js-monorepo/blob/f01f01ceef87164f1dd42c54b332ca63444c2e23/packages/sdk/src/types.ts#L21
 SUPPORTED_MONERIUM_CHAINS: Final = {
-    'ethereum': Location.ETHEREUM,
-    'gnosis': Location.GNOSIS,
-    'polygon': Location.POLYGON_POS,
-    'arbitrum': Location.ARBITRUM_ONE,
-    'scroll': Location.SCROLL,
-    'base': Location.BASE,
+    'ethereum': LOCATION_ETHEREUM,
+    'gnosis': LOCATION_GNOSIS,
+    'polygon': LOCATION_POLYGON_POS,
+    'arbitrum': LOCATION_ARBITRUM_ONE,
+    'scroll': LOCATION_SCROLL,
+    'base': LOCATION_BASE,
 }
 
 
@@ -112,7 +121,7 @@ class Monerium:
             event: HistoryBaseEntry,
             order: dict[str, Any],
             tx_hashes: list[str],
-            location: Location,
+            location: LocationIdentifier,
             is_source: bool,
     ) -> None:
         """Record the structured cross-chain data of one leg of a monerium chain to chain move.
@@ -151,8 +160,8 @@ class Monerium:
         )
         set_bridge_extra_data(
             event=event,
-            from_chain=source_location.to_chain_id() if source_location is not None else None,
-            to_chain=destination_location.to_chain_id() if destination_location is not None else None,  # noqa: E501
+            from_chain=location_to_chain_id(source_location) if source_location is not None else None,  # noqa: E501
+            to_chain=location_to_chain_id(destination_location) if destination_location is not None else None,  # noqa: E501
             from_address=addresses['from_address'],
             to_address=addresses['to_address'],
             transfer_id='-'.join(sorted(x.lower() for x in tx_hashes)),

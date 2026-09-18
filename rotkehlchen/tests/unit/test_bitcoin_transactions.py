@@ -40,12 +40,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+)
 from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx, string_to_btc_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BTCAddress,
     BTCTxId,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -100,7 +102,7 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1686238076000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -114,7 +116,7 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -129,7 +131,7 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -144,7 +146,7 @@ def test_1input_1output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -174,7 +176,7 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
             sequence_index=0,
             timestamp=TimestampMS(1339247930000),
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -188,7 +190,7 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1339247930000)),
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
@@ -200,7 +202,7 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -212,7 +214,7 @@ def test_1input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
             group_identifier=group_identifier,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -239,7 +241,7 @@ def test_op_return(
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1729677861000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -251,7 +253,7 @@ def test_op_return(
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -275,7 +277,7 @@ def test_op_return_multiple_pushbytes(
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749216296000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -287,7 +289,7 @@ def test_op_return_multiple_pushbytes(
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -298,7 +300,7 @@ def test_op_return_multiple_pushbytes(
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -323,7 +325,7 @@ def test_op_return_pushdata1(
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749216962000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -335,7 +337,7 @@ def test_op_return_pushdata1(
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -346,7 +348,7 @@ def test_op_return_pushdata1(
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -391,7 +393,7 @@ def test_2input_1output(
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749114440000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -404,7 +406,7 @@ def test_2input_1output(
         group_identifier=group_identifier,
         sequence_index=0,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -418,7 +420,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -432,7 +434,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -446,7 +448,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -458,7 +460,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -473,7 +475,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -485,7 +487,7 @@ def test_2input_1output(
             group_identifier=group_identifier,
             sequence_index=3,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -525,7 +527,7 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1711929790000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -537,7 +539,7 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -549,7 +551,7 @@ def test_3input_2output(bitcoin_manager: BitcoinManager, btc_accounts: list[BTCA
         group_identifier=group_identifier,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -609,7 +611,7 @@ def test_p2pk(
             group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}',
             sequence_index=0,
             timestamp=TimestampMS(1313042188000),
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -873,17 +875,17 @@ def test_transactions_are_saved_and_redecoded_offline(
     )
     dbevents, dbtx = DBHistoryEvents(bitcoin_manager.database), bitcoin_manager.dbtx
     with bitcoin_manager.database.conn.read_ctx() as cursor:
-        saved_txs = dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+        saved_txs = dbtx.get_transactions(cursor=cursor, location=LOCATION_BITCOIN)
         original_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
         )
         # everything queried is saved, decoded and associated with the address it came from
         assert len(saved_txs) > 0
-        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 0
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=LOCATION_BITCOIN) == 0
         assert dbtx.get_transaction_ids_for_address(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             address=btc_accounts[0],
         ) != []
         assert (change_tx := next(
@@ -932,7 +934,7 @@ def test_query_checkpoint_reset_does_not_redecode_saved_transactions(
     dbtx = bitcoin_manager.dbtx
     bitcoin_manager.mark_addresses_transactions_for_redecode(btc_accounts)
     with bitcoin_manager.database.conn.read_ctx() as cursor:
-        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 0
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=LOCATION_BITCOIN) == 0
 
     with bitcoin_manager.database.user_write() as write_cursor:
         write_cursor.execute(  # as if the change tx had been saved for another address only
@@ -945,7 +947,7 @@ def test_query_checkpoint_reset_does_not_redecode_saved_transactions(
     with bitcoin_manager.database.conn.read_ctx() as cursor:
         assert dbtx.get_transaction_ids(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             undecoded_only=True,
         ) == [CHANGE_TX_ID]
 
@@ -964,7 +966,7 @@ def test_bitcoin_decoding_sends_progress_updates(
     with bitcoin_manager.database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(bitcoin_manager.database).reset_events_for_redecode(
             write_cursor=write_cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )
 
     with patch.object(bitcoin_manager.database.msg_aggregator, 'add_message') as msg_mock:
@@ -1055,14 +1057,14 @@ def test_saved_transaction_completed_by_a_second_partial_view(
         assert dbtx.add_transactions(  # only the change output is known at first
             write_cursor=write_cursor,
             transactions=[_partial_change_tx(outputs=[CHANGE_TX_CHANGE_IO])],
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             relevant_addresses=[CHANGE_TX_INPUT1],
         ) == {CHANGE_TX_ID}
 
     with bitcoin_manager.database.conn.read_ctx() as cursor:
         assert (saved := dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )[0]).is_complete is False
         assert saved.multi_io is False  # only one input, so it is still a single-to-many
         assert saved.outputs == [CHANGE_TX_CHANGE_IO]
@@ -1073,19 +1075,19 @@ def test_saved_transaction_completed_by_a_second_partial_view(
             transactions=[_partial_change_tx(
                 outputs=[CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO],
             )],
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             relevant_addresses=[CHANGE_TX_CHANGE_OUTPUT],
         ) == {CHANGE_TX_ID}
 
     with bitcoin_manager.database.conn.read_ctx() as cursor:
         assert (saved := dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )[0]).is_complete is True
         assert saved.outputs == [CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO]
         assert saved.fee == CHANGE_TX_FEE  # amounts survive the satoshi roundtrip
         # gaining a TxIO makes the events decoded from the incomplete copy outdated
-        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 1
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=LOCATION_BITCOIN) == 1
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
@@ -1118,7 +1120,7 @@ def test_partial_views_from_a_single_query_are_all_saved(
     with database.conn.read_ctx() as cursor:
         assert (saved := bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )[0]).is_complete is True  # no view was dropped, so every TxIO is there
         assert saved.outputs == [CHANGE_TX_EXTERNAL_IO, CHANGE_TX_CHANGE_IO]
         assert cursor.execute(  # and both addresses count as a reason to keep it
@@ -1288,7 +1290,7 @@ def test_unplaceable_txios_fall_back_to_the_next_explorer(
     with bitcoin_manager.database.conn.read_ctx() as cursor:
         saved = {x.tx_id: x for x in bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )}
         cached_block = bitcoin_manager.database.get_dynamic_cache(
             cursor=cursor,
@@ -1336,7 +1338,7 @@ def test_unplaceable_txios_do_not_advance_the_query_range(
     with bitcoin_manager.database.conn.read_ctx() as cursor:
         assert bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         ) == []
         assert bitcoin_manager.database.get_dynamic_cache(
             cursor=cursor,
@@ -1535,7 +1537,7 @@ def test_blockcypher_failed_transaction_is_retried(
             ) == expected_checkpoint
             assert bitcoin_manager.dbtx.get_transactions(
                 cursor=cursor,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
             ) == []
 
         bitcoin_manager.query_transactions(
@@ -1552,7 +1554,7 @@ def test_blockcypher_failed_transaction_is_retried(
         ) == 900_005
         assert [tx.tx_id for tx in bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )] == [tx_id]
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
@@ -1808,7 +1810,7 @@ def test_removing_an_address_keeps_shared_transactions(
     database, dbtx = bitcoin_manager.database, bitcoin_manager.dbtx
     with database.conn.read_ctx() as cursor:
         assert CHANGE_TX_ID in {  # the change tx was queried for both addresses
-            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=LOCATION_BITCOIN)
         }
 
     with database.user_write() as write_cursor:
@@ -1820,14 +1822,14 @@ def test_removing_an_address_keeps_shared_transactions(
 
     with database.conn.read_ctx() as cursor:
         saved_tx_ids = {
-            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN)
+            x.tx_id for x in dbtx.get_transactions(cursor=cursor, location=LOCATION_BITCOIN)
         }
         assert CHANGE_TX_ID in saved_tx_ids  # still needed by the address left tracking it
         # but its events were decoded while the removed address was tracked, so the transfer
         # to it is no longer what happened. It is pending decoding again.
         assert CHANGE_TX_ID in dbtx.get_transaction_ids(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             undecoded_only=True,
         )
 
@@ -1839,10 +1841,10 @@ def test_removing_an_address_keeps_shared_transactions(
         )
 
     with database.conn.read_ctx() as cursor:
-        assert dbtx.get_transactions(cursor=cursor, location=Location.BITCOIN) == []
+        assert dbtx.get_transactions(cursor=cursor, location=LOCATION_BITCOIN) == []
         assert DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITCOIN),
         ) == []
 
 
@@ -1992,7 +1994,7 @@ def test_deserialize_mempool_p2pk_tx(
         group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{P2PK_TX_ID}',
         sequence_index=0,
         timestamp=TimestampMS(1313042188000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -2048,7 +2050,7 @@ def test_deserialize_mempool_op_return_tx(
         group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}'),
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1700000000000)),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -2060,7 +2062,7 @@ def test_deserialize_mempool_op_return_tx(
         group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -2112,7 +2114,7 @@ def test_coinbase_tx_to_tracked_address_is_a_reward(
         group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}',
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_BTC,
@@ -2170,7 +2172,7 @@ def test_coinbase_tx_with_two_tracked_addresses_gets_one_event_each(
             group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}'),
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1700000000000)),
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_BTC,
@@ -2183,7 +2185,7 @@ def test_coinbase_tx_with_two_tracked_addresses_gets_one_event_each(
             group_identifier=group_identifier,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_BTC,
@@ -2221,7 +2223,7 @@ def test_coinbase_tx_with_multiple_outputs_to_same_address_aggregates_into_singl
         group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}',
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_BTC,
@@ -2378,7 +2380,7 @@ def test_deserialize_blockcypher_real_coinbase_tx(
         group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
         sequence_index=0,
         timestamp=TimestampMS(1749188520000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_BTC,
@@ -2488,7 +2490,7 @@ def test_deserialize_blockchain_info_real_coinbase_tx(
         group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
         sequence_index=0,
         timestamp=TimestampMS(1749188499000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_BTC,
@@ -2784,7 +2786,7 @@ def test_custom_mempool_api_queries_transactions(
     with database.conn.read_ctx() as cursor:
         assert [x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )] == [tx['txid']]
         assert database.get_dynamic_cache(
             cursor=cursor,
@@ -2793,7 +2795,7 @@ def test_custom_mempool_api_queries_transactions(
         ) == 900_000
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITCOIN),
         )
 
     assert [(x.event_type, x.event_subtype, x.amount) for x in events] == [
@@ -2896,7 +2898,7 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
         assert tx_a2['txid'] in [
             x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
                 cursor=cursor,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
             )
         ]
         assert database.get_dynamic_cache(
@@ -2968,7 +2970,7 @@ def test_checkpoint_rolls_back_when_saving_fails(
         ) == 900_000
         assert bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         ) == []
 
     # A later refresh re-queries from the old checkpoint and stores everything.
@@ -2995,7 +2997,7 @@ def test_checkpoint_rolls_back_when_saving_fails(
         assert tx['txid'] in [
             x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
                 cursor=cursor,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
             )
         ]
 
@@ -3092,7 +3094,7 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
         assert tx['txid'] in [
             x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
                 cursor=cursor,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
             )
         ]
         events = DBHistoryEvents(database).get_history_events_internal(
@@ -3181,7 +3183,7 @@ def test_failed_initial_redecode_is_retried(
         assert {
             saved_tx.tx_id for saved_tx in bitcoin_manager.dbtx.get_transactions(
                 cursor=cursor,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
             )
         } == ({tx['txid'], new_tx['txid']} if include_new_transactions else {tx['txid']})
         events = DBHistoryEvents(database).get_history_events_internal(

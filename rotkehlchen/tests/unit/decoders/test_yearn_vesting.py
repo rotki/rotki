@@ -15,8 +15,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -38,7 +41,7 @@ def test_vesting_escrow_creation(
         EvmEvent(
             sequence_index=94,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=yvdai,
@@ -50,7 +53,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=95,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
@@ -61,7 +64,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=96,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
@@ -72,7 +75,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=97,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=yvdai,
@@ -86,7 +89,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=98,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
@@ -97,7 +100,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=99,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.DONATE,
             asset=yvdai,
@@ -110,7 +113,7 @@ def test_vesting_escrow_creation(
         ), EvmEvent(
             sequence_index=101,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -137,7 +140,7 @@ def test_vesting_escrow_claim(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1698877619000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -148,7 +151,7 @@ def test_vesting_escrow_claim(
         ), EvmEvent(
             sequence_index=288,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_DAI,
@@ -176,7 +179,7 @@ def test_vesting_escrow_claim_v1(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1613502506000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -187,7 +190,7 @@ def test_vesting_escrow_claim_v1(
         ), EvmEvent(
             sequence_index=113,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_YFI,
@@ -215,7 +218,7 @@ def test_vesting_escrow_rug_pull(
         EvmEvent(
             sequence_index=42,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_YFI,
@@ -228,7 +231,7 @@ def test_vesting_escrow_rug_pull(
         ), EvmEvent(
             sequence_index=44,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -255,7 +258,7 @@ def test_vesting_escrow_revoked(
         EvmEvent(
             sequence_index=151,
             timestamp=TimestampMS(1746294215000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),
@@ -285,7 +288,7 @@ def test_vesting_escrow_set_open_claim(
         EvmEvent(
             sequence_index=161,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.UPDATE,
             asset=A_ETH,
@@ -298,7 +301,7 @@ def test_vesting_escrow_set_open_claim(
         ), EvmEvent(
             sequence_index=164,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -329,7 +332,7 @@ def test_vesting_escrow_disown(
         EvmEvent(
             sequence_index=145,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=rsup,
@@ -341,7 +344,7 @@ def test_vesting_escrow_disown(
         ), EvmEvent(
             sequence_index=148,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=rsup,
@@ -352,7 +355,7 @@ def test_vesting_escrow_disown(
         ), EvmEvent(
             sequence_index=149,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=rsup,
@@ -366,7 +369,7 @@ def test_vesting_escrow_disown(
         ), EvmEvent(
             sequence_index=151,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.UPDATE,
             asset=A_ETH,
@@ -379,7 +382,7 @@ def test_vesting_escrow_disown(
         ), EvmEvent(
             sequence_index=152,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -406,7 +409,7 @@ def test_vesting_escrow_grant(
         EvmEvent(
             sequence_index=100,
             timestamp=TimestampMS(1730212319000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GRANT,
             asset=Asset('eip155:1/erc20:0x028eC7330ff87667b6dfb0D94b954c820195336c'),
@@ -433,7 +436,7 @@ def test_vesting_escrow_clawback(
         EvmEvent(
             sequence_index=153,
             timestamp=TimestampMS(1746294215000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.CLAWBACK,
             asset=Asset('eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),

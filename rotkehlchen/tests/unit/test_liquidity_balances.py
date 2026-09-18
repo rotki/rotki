@@ -28,6 +28,10 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_HYPERLIQUID,
+)
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1
 from rotkehlchen.tests.utils.factories import (
@@ -35,7 +39,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
-from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChainID, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -62,7 +66,7 @@ def _make_event(
 ) -> EvmEvent:
     return EvmEvent(
         tx_ref=make_evm_tx_hash(), sequence_index=0, timestamp=TimestampMS(timestamp * 1000),
-        location=Location.ETHEREUM, event_type=event_type, event_subtype=event_subtype,
+        location=LOCATION_ETHEREUM, event_type=event_type, event_subtype=event_subtype,
         asset=asset, amount=FVal(amount), location_label=TEST_ADDR1, counterparty=counterparty,
         extra_data={'liquidity_pool': True} if liquidity_pool else None,
     )
@@ -206,7 +210,7 @@ def test_project_x_burned_position_uses_receipt_pool_without_archive_state(
         topics=[COLLECT_LIQUIDITY_SIGNATURE, (42).to_bytes(32)],
     )
     receipt = _make_event(1, A_WHYPE, '150', HistoryEventType.RECEIVE)
-    receipt.location = Location.HYPERLIQUID
+    receipt.location = LOCATION_HYPERLIQUID
     token0 = get_or_create_evm_token(
         userdb=inquirer.database,
         evm_address=string_to_evm_address('0x33Af3c2540Ba72054e044EFe504867B39aE421f5'),

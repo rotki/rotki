@@ -11,11 +11,15 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -30,7 +34,7 @@ def test_receiving_value_from_tx(accountant, google_service):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=Timestamp(1569924574000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             amount=FVal('1.5'),
@@ -64,7 +68,7 @@ def test_gas_fees_after_year(accountant, google_service):
             group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,  # not counting as income by default
             asset=A_ETH,
@@ -73,7 +77,7 @@ def test_gas_fees_after_year(accountant, google_service):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1640493374000),  # 4072.51 EUR/ETH
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             amount=FVal('0.01'),
@@ -112,7 +116,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1569924574000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             location_label=make_evm_address(),
             asset=A_ETH,
             amount=FVal('1.5'),
@@ -125,7 +129,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1569924574000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             amount=FVal('1.5'),

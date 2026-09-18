@@ -20,8 +20,8 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -92,7 +92,7 @@ class AztecDecoder(EvmDecoderInterface):
         dbevents = DBHistoryEvents(self.base.database)
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_AZTEC],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             type_and_subtype_combinations=[(
                 HistoryEventType.STAKING,
                 HistoryEventSubType.DEPOSIT_ASSET,

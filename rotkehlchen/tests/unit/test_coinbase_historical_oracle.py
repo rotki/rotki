@@ -12,7 +12,10 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
-from rotkehlchen.types import ChainID, Location, Price, Timestamp, TokenKind
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
+from rotkehlchen.types import ChainID, Price, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.updates import RotkiDataUpdater
@@ -41,7 +44,7 @@ def fixture_coinbase_oracle(
         ('ETH', 'USDC'): 'ETH-USDC',
         ('ETH', 'USDT'): 'ETH-USDT',
     }
-    exchange_manager.connected_exchanges[Location.COINBASE].append(function_scope_coinbase)
+    exchange_manager.connected_exchanges[LOCATION_COINBASE].append(function_scope_coinbase)
     return CoinbaseHistoricalPriceOracle(exchange_manager=exchange_manager)
 
 

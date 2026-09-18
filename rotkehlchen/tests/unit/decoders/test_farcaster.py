@@ -11,8 +11,11 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -48,7 +51,7 @@ def test_farcaster_pro_purchase(base_inquirer, base_accounts) -> None:
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1761944761000),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -59,7 +62,7 @@ def test_farcaster_pro_purchase(base_inquirer, base_accounts) -> None:
             tx_ref=tx_hash,
             sequence_index=219,
             timestamp=TimestampMS(1761944761000),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYMENT,
             asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),

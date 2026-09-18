@@ -6,8 +6,9 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
-from rotkehlchen.types import EVMTxHash, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import EVMTxHash, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 from .evm_event import EvmEvent
@@ -26,7 +27,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             tx_ref: EVMTxHash,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_subtype: Literal[
                 HistoryEventSubType.SPEND,
                 HistoryEventSubType.RECEIVE,
@@ -88,7 +89,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
+            location=LocationIdentifier(entry[4]),
             location_label=entry[5],
             asset=Asset(entry[6]).check_existence(),
             amount=amount,

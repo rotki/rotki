@@ -8,12 +8,15 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKCHAIN,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_simple_ok_response,
 )
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -143,7 +146,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: APIServer) 
             group_identifier='a',
             sequence_index=0,
             timestamp=TimestampMS(1467279735000),
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             amount=FVal(1000),
@@ -152,7 +155,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: APIServer) 
             group_identifier='b',
             sequence_index=0,
             timestamp=TimestampMS(1467279736000),
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             amount=FVal(5),

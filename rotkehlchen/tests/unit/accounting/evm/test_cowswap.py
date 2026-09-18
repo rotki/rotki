@@ -13,9 +13,12 @@ from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.accounting import MOCKED_PRICES, TIMESTAMP_1_MS, TIMESTAMP_1_SEC
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -35,7 +38,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TIMESTAMP_1_MS,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WBTC,
@@ -48,7 +51,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TIMESTAMP_1_MS,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
@@ -61,7 +64,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         tx_ref=tx_hash,
         sequence_index=3,
         timestamp=TIMESTAMP_1_MS,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_WBTC,
@@ -90,7 +93,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Swap {swap_amount_str} WBTC in cowswap',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,
             asset=A_WBTC,
             free_amount=ZERO,
@@ -103,7 +106,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.FEE,
             notes=f'Spend {fee_amount_str} WBTC as a cowswap fee',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,
             asset=A_WBTC,
             free_amount=FVal(fee_amount_str),
@@ -116,7 +119,7 @@ def test_cowswap_swap_with_fee(accountant: Accountant):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=TIMESTAMP_1_SEC,
             asset=A_USDC,
             free_amount=FVal(receive_amount_str),

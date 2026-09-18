@@ -13,9 +13,9 @@ from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location
 from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei
@@ -186,7 +186,7 @@ class Liquity(EthereumModule):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {e!s}.',
                         classification=BadData(record=UserMessageRecord.POSITION, error=str(e)),
-                        subject=Location.ETHEREUM,
+                        subject=LOCATION_ETHEREUM,
                     )
         return GetPositionsResult(
             balances=data,

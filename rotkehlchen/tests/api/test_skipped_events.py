@@ -12,7 +12,11 @@ from rotkehlchen.accounting.export.csv import FILENAME_SKIPPED_EXTERNAL_EVENTS_C
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
+from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.history.skipped import reprocess_skipped_external_events
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
@@ -24,7 +28,7 @@ from rotkehlchen.tests.utils.kraken import (
     KRAKEN_GENERAL_LEDGER_RESPONSE,
     MockKraken,
 )
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -32,7 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_KRAKEN,)])
 def test_reprocess_skipped_kraken_futures_event(
         rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
@@ -42,7 +46,7 @@ def test_reprocess_skipped_kraken_futures_event(
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_skipped_external_event(
             write_cursor=write_cursor,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             data=raw_log,
             extra_data={
                 'account_uid': 'account-1',
@@ -60,7 +64,7 @@ def test_reprocess_skipped_kraken_futures_event(
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_KRAKEN,)])
 def test_skipped_external_events(
         rotkehlchen_api_server_with_exchanges: APIServer,
         globaldb: GlobalDBHandler,
@@ -143,11 +147,13 @@ def test_skipped_external_events(
     assert len(result['entries']) == 0
 
     with rotki.data.db.user_write() as write_cursor:
-        rotki.data.db.purge_exchange_data(write_cursor, Location.KRAKEN)
+        rotki.data.db.purge_exchange_data(write_cursor, LOCATION_KRAKEN)
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     kraken: MockKraken = cast('MockKraken', try_get_first_exchange(
-        rotki.exchange_manager, Location.KRAKEN,
-        ))
+        exchange_manager=rotki.exchange_manager,
+        location=LOCATION_KRAKEN,
+        exchange_class=Kraken,
+    ))
     assert kraken is not None
     kraken.random_ledgers_data = False
     with patch(target, new=input_ledger):

@@ -25,6 +25,11 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -35,7 +40,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.tests.utils.history_base_entry import add_entries
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -308,7 +313,7 @@ def test_history_export_csv_free_limit(
             group_identifier=group_identifiers[0],
             sequence_index=0,
             timestamp=TimestampMS(1700000000000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -317,7 +322,7 @@ def test_history_export_csv_free_limit(
             group_identifier=group_identifiers[1],
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -326,7 +331,7 @@ def test_history_export_csv_free_limit(
             group_identifier=group_identifiers[2],
             sequence_index=0,
             timestamp=TimestampMS(1720000000000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -402,7 +407,7 @@ def test_history_export_csv_includes_matched_asset_movement_events(
                     identifier=(movement_id := 1),
                     group_identifier='GROUP_MOVEMENT',
                     timestamp=TimestampMS(1700000000000),
-                    location=Location.KRAKEN,
+                    location=LOCATION_KRAKEN,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
                     amount=ONE,
@@ -412,7 +417,7 @@ def test_history_export_csv_includes_matched_asset_movement_events(
                     group_identifier='GROUP_MATCHED',
                     sequence_index=0,
                     timestamp=TimestampMS(1700000000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,

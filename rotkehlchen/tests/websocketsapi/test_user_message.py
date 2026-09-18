@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry, UserMessageRecord
-from rotkehlchen.types import Location
+from rotkehlchen.locations.constants import LOCATION_KUCOIN
 from rotkehlchen.user_messages import BadData, LocalDbProblem
 
 
@@ -17,7 +17,7 @@ def test_query_user_message(rotkehlchen_api_server, websocket_connection):
     rotki.msg_aggregator.add_error(
         'Failed to deserialize a kucoin balance. Ignoring it.',
         classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
-        subject=Location.KUCOIN,
+        subject=LOCATION_KUCOIN,
     )
     websocket_connection.wait_until_messages_num(num=2, timeout=10)
     assert websocket_connection.messages_num() == 2

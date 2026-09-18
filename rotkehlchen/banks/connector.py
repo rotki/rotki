@@ -37,7 +37,6 @@ from rotkehlchen.types import (
     ApiSecret,
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -53,6 +52,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.exchanges.exchange import HistoryEventQueue
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class BankConnector(ExchangeInterface, ABC):
     def api_credentials_from_values(
             cls,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             values: dict[str, str],
             current: ExchangeAuthCredentials | None = None,
     ) -> ExchangeApiCredentials:

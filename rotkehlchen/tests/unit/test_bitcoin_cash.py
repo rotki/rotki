@@ -23,7 +23,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import BTCAddress, BTCTxId, Location, TimestampMS
+from rotkehlchen.locations.constants import LOCATION_BITCOIN_CASH
+from rotkehlchen.types import BTCAddress, BTCTxId, TimestampMS
 from rotkehlchen.utils.network import request_get
 
 if TYPE_CHECKING:
@@ -215,7 +216,7 @@ def test_deserialize_haskoin_real_coinbase_tx(
         group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}08941f78ae955ec536de0db409e5a1cfef980e26d0c6a62c7245e195af72fde3',
         sequence_index=0,
         timestamp=TimestampMS(1791383974000),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_BCH,

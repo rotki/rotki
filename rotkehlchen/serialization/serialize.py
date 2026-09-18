@@ -55,7 +55,6 @@ from rotkehlchen.types import (
     ChainID,
     CostBasisMethod,
     ExchangeLocationID,
-    Location,
     SupportedBlockchain,
     TokenKind,
 )
@@ -82,7 +81,7 @@ def _process_dict(entry: dict) -> dict:
     for k, v in entry.items():
         if isinstance(k, Asset) is True:
             k = k.identifier  # noqa: PLW2901
-        elif isinstance(k, HistoryEventType | HistoryEventSubType | EventCategory | Location | AccountingEventType) is True:  # noqa: E501
+        elif isinstance(k, HistoryEventType | HistoryEventSubType | EventCategory | AccountingEventType) is True:  # noqa: E501
             k = _process_entry(k)  # noqa: PLW2901
         new_dict[k] = _process_entry(v)
     return new_dict
@@ -94,7 +93,7 @@ HANDLERS: dict[type, Callable[[Any], Any]] = {
     ChainID: lambda x: x.to_name(),
     LocationData: lambda entry: {
         'time': entry.time,
-        'location': str(Location.deserialize_from_db(entry.location)),
+        'location': entry.location,
         'usd_value': entry.usd_value,
     },
     SingleDBAssetBalance: lambda entry: {
@@ -114,7 +113,6 @@ HANDLERS: dict[type, Callable[[Any], Any]] = {
 HANDLERS.update(dict.fromkeys((list, tuple), lambda x: [_process_entry(z) for z in x]))
 HANDLERS.update(dict.fromkeys((
     FVal,
-    Location,
     KrakenAccountType,
     VaultEventType,
     CurrentPriceOracle,

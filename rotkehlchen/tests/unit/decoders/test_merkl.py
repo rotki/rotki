@@ -9,10 +9,13 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -36,7 +39,7 @@ def test_merkl_morpho_reward(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1752610171000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -47,7 +50,7 @@ def test_merkl_morpho_reward(
         tx_ref=tx_hash,
         sequence_index=163,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:8453/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
@@ -71,7 +74,7 @@ def test_merkl_multi_reward(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1753427615000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -82,7 +85,7 @@ def test_merkl_multi_reward(
         tx_ref=tx_hash,
         sequence_index=246,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD'),
@@ -95,7 +98,7 @@ def test_merkl_multi_reward(
         tx_ref=tx_hash,
         sequence_index=249,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xf3e621395fc714B90dA337AA9108771597b4E696'),
@@ -119,7 +122,7 @@ def test_merkl_multi_reward_multiprotocol(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1751794103000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -130,7 +133,7 @@ def test_merkl_multi_reward_multiprotocol(
         tx_ref=tx_hash,
         sequence_index=342,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD'),
@@ -143,7 +146,7 @@ def test_merkl_multi_reward_multiprotocol(
         tx_ref=tx_hash,
         sequence_index=345,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xf3e621395fc714B90dA337AA9108771597b4E696'),
@@ -156,7 +159,7 @@ def test_merkl_multi_reward_multiprotocol(
         tx_ref=tx_hash,
         sequence_index=347,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),

@@ -15,8 +15,11 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import AlreadyExists
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -81,7 +84,7 @@ class EthereumTransactions(EvmTransactions):
         # fetch contract approval events to consider if we query the logs
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_THEGRAPH],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             type_and_subtype_combinations=[
                 (HistoryEventType.INFORMATIONAL, HistoryEventSubType.APPROVE),
             ],

@@ -12,11 +12,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASEPRO,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -64,7 +67,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
                     else HistoryEventSubType.SPEND
                 ),
                 timestamp=timestamp,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 asset=asset,
                 amount=abs(deserialize_fval(csv_row['Amount'])),
             )],
@@ -130,7 +133,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
 
         events: list[HistoryBaseEntry] = list(create_swap_events(
             timestamp=timestamp,
-            location=Location.COINBASEPRO,
+            location=LOCATION_COINBASEPRO,
             spend=AssetAmount(asset=spend_asset, amount=spend_amount),
             receive=AssetAmount(asset=receive_asset, amount=receive_amount),
             group_identifier=f'{COINBASEPRO_EVENT_PREFIX}_{uuid4().hex}',

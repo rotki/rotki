@@ -16,10 +16,13 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tasks.events import find_customized_event_duplicate_groups
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -37,7 +40,7 @@ def _insert_duplicate_group(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE,
@@ -46,7 +49,7 @@ def _insert_duplicate_group(
         tx_ref=tx_hash,
         sequence_index=1,  # change only the sequence index
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE,
@@ -126,7 +129,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=(tx_hash := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=(timestamp := TimestampMS(1710000000000)),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=(location_label := '0x8b878Ee3B32b0dFeA6142F5ca1EfebA8c5dFEc7e'),
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
@@ -137,7 +140,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=1,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=location_label,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
@@ -148,7 +151,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=2,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=location_label,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -159,7 +162,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=261,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=location_label,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
@@ -170,7 +173,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=262,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=location_label,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.APPROVE,
@@ -181,7 +184,7 @@ def test_customized_event_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=266,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 location_label=location_label,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,

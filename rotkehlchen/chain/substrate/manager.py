@@ -25,9 +25,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import LOCATION_KUSAMA, LOCATION_POLKADOT
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
-from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, Location, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
 from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -243,8 +244,8 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                     error='Node is not synced with the chain',
                 ),
                 subject=(
-                    Location.POLKADOT if self.chain == SupportedBlockchain.POLKADOT
-                    else Location.KUSAMA
+                    LOCATION_POLKADOT if self.chain == SupportedBlockchain.POLKADOT
+                    else LOCATION_KUSAMA
                 ),
             )
 

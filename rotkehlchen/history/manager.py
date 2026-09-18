@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.constants import ZERO
@@ -8,9 +8,13 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.locations.chains import location_from_chain
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
-from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
+from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
@@ -24,6 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.history.processing import HistoryProcessingCoordinator
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -91,7 +96,7 @@ class HistoryQueryingManager:
     def query_history_events(
             self,
             cursor: DBCursor,
-            location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             filter_query: HistoryEventFilterQuery,
             only_cache: bool,
     ) -> tuple[list[HistoryEvent], int]:
@@ -102,7 +107,7 @@ class HistoryQueryingManager:
         if only_cache is False:
             exchanges_list = self.exchange_manager.connected_exchanges.get(location, [])
             for exchange_instance in exchanges_list:
-                if location == Location.KRAKEN:
+                if location == LOCATION_KRAKEN:
                     exchange_instance.query_history_events()
                 else:  # a failure is reported, already classified, by the exchange itself
                     exchange_instance.query_lending_interests_history(  # type: ignore
@@ -224,7 +229,7 @@ class HistoryQueryingManager:
                     f'There was an error when querying {str_blockchain} etherscan for transactions: {msg}'  # noqa: E501
                     f'The final history result will not include {str_blockchain} transactions',
                     classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error=msg),
-                    subject=Location.from_chain(blockchain),
+                    subject=location_from_chain(blockchain),
                 )
                 empty_or_error += '\n' + msg
 

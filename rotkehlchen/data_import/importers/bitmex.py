@@ -18,13 +18,16 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITMEX,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import satoshis_to_btc, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -71,7 +74,7 @@ class BitMEXImporter(BaseExchangeImporter):
             notes=notes,
         )
         return MarginPosition(
-            location=Location.BITMEX,
+            location=LOCATION_BITMEX,
             open_time=None,
             close_time=close_time,
             profit_loss=realised_pnl,
@@ -111,7 +114,7 @@ class BitMEXImporter(BaseExchangeImporter):
         )
         return create_asset_movement_with_fee(
             timestamp=ts_sec_to_ms(ts),
-            location=Location.BITMEX,
+            location=LOCATION_BITMEX,
             asset=asset,
             amount=amount,
             unique_id=(transaction_id := get_key_if_has_val(csv_row, 'tx')),

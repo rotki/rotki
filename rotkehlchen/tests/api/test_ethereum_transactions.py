@@ -41,6 +41,10 @@ from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.premium.premium import GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -81,7 +85,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1959,7 +1962,7 @@ def test_monerium_gnosis_pay_events_update(
                 tx_ref=gnosis_pay_tx_1,
                 sequence_index=0,
                 timestamp=gnosis_pay_ts_1,
-                location=Location.GNOSIS,
+                location=LOCATION_GNOSIS,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_EUR,
@@ -1969,7 +1972,7 @@ def test_monerium_gnosis_pay_events_update(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1610000000),
-                location=Location.GNOSIS,
+                location=LOCATION_GNOSIS,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_EUR,
@@ -1979,7 +1982,7 @@ def test_monerium_gnosis_pay_events_update(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1620000000),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1989,7 +1992,7 @@ def test_monerium_gnosis_pay_events_update(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1630000000),
-                location=Location.GNOSIS,
+                location=LOCATION_GNOSIS,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -2095,7 +2098,7 @@ def test_notify_reauthentication_on_redecode(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1610000000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.RECEIVE if event_subtype == HistoryEventSubType.CASHBACK else HistoryEventType.SPEND,  # noqa: E501
             event_subtype=event_subtype,
             asset=A_EUR,

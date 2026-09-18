@@ -13,11 +13,17 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+    LOCATION_POLYGON_POS,
+)
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -61,7 +67,7 @@ def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=113,
             timestamp=TimestampMS(1701773255000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH_EURE,
@@ -83,7 +89,7 @@ def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=171,
             timestamp=TimestampMS(1701765059000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH_EURE,
@@ -107,7 +113,7 @@ def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
             tx_ref=tx_hash,
             sequence_index=176,
             timestamp=TimestampMS(1701800519000),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_POLYGON_EURE,
@@ -131,7 +137,7 @@ def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
             tx_ref=tx_hash,
             sequence_index=418,
             timestamp=TimestampMS(1701794990000),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_POLYGON_EURE,
@@ -155,7 +161,7 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnos
             tx_ref=tx_hash,
             sequence_index=371,
             timestamp=TimestampMS(1701802945000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
@@ -177,7 +183,7 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnos
             tx_ref=tx_hash,
             sequence_index=500,
             timestamp=TimestampMS(1701801200000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
@@ -199,7 +205,7 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gno
             tx_ref=tx_hash,
             sequence_index=497,
             timestamp=TimestampMS(1709969940000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
@@ -226,7 +232,7 @@ def test_mint_v2_eure(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1725021845000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -253,7 +259,7 @@ def test_burn_v2_eure_gnosis(
             tx_ref=tx_hash,
             sequence_index=27,
             timestamp=TimestampMS(1725912575000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -279,7 +285,7 @@ def test_mint_eure_on_arbitrum(
         tx_ref=tx_hash,
         sequence_index=8,
         timestamp=TimestampMS(1744902081000),
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
@@ -304,7 +310,7 @@ def test_burn_eure_on_arbitrum(
         tx_ref=tx_hash,
         sequence_index=46,
         timestamp=TimestampMS(1745310374000),
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
@@ -383,7 +389,7 @@ def test_monerium_post_processing_handles_remote_error(
             tx_ref=make_evm_tx_hash(),
             sequence_index=46,
             timestamp=TimestampMS(1745310374000),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),

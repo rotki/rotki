@@ -33,6 +33,7 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.tasks import historical_balances
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.unit.test_current_balance_detector import (
@@ -44,7 +45,7 @@ from rotkehlchen.tests.unit.test_current_balance_detector import (
 )
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 pytestmark = pytest.mark.accounting_update
@@ -55,7 +56,6 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
 
-ETH_LOCATION = Location.ETHEREUM.serialize_for_db()
 NOW = Timestamp(2_000_000_000)
 
 
@@ -74,7 +74,7 @@ def _add_event(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(timestamp),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=asset,
@@ -113,7 +113,7 @@ def _metric_count(database: DBHandler, address: str) -> int:
 
 def _bucket_key(address: str = TEST_ADDR1) -> tuple[str, str, str, str]:
     return make_bucket_key(
-        location=ETH_LOCATION,
+        location=LOCATION_ETHEREUM,
         location_label=address,
         protocol=None,
         asset=A_ETH.identifier,
@@ -136,7 +136,7 @@ def _check(
         compared_at: int = NOW,
 ) -> BucketBalanceCheck:
     return BucketBalanceCheck(
-        location=ETH_LOCATION,
+        location=LOCATION_ETHEREUM,
         location_label=address,
         asset=asset,
         derived_balance=FVal(5),
@@ -288,10 +288,10 @@ def test_observed_at_is_preserved_when_comparing_against_an_old_cache(
     detector = CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE)
     with patch.object(current_balance, 'ts_now', return_value=Timestamp(observed_at + 10)):
         detector.run()
-    first = _checks(database)[ETH_LOCATION, TEST_ADDR1, 'ETH']
+    first = _checks(database)[LOCATION_ETHEREUM, TEST_ADDR1, 'ETH']
     with patch.object(current_balance, 'ts_now', return_value=Timestamp(observed_at + 500)):
         CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE).run()
-    second = _checks(database)[ETH_LOCATION, TEST_ADDR1, 'ETH']
+    second = _checks(database)[LOCATION_ETHEREUM, TEST_ADDR1, 'ETH']
     assert first.observed_at == second.observed_at == observed_at
     assert (first.compared_at, second.compared_at) == (observed_at + 10, observed_at + 500)
 
@@ -307,7 +307,7 @@ def test_skipped_run_keeps_both_timestamps(database: DBHandler) -> None:
     _add_balance(database, TEST_ADDR1, '5', ts=10_000_000_000_000)  # newer than any observation
     _save(database, _check(observed_at=100, compared_at=200))
     assert _make_detector(database, '5').run() == 0
-    saved = _checks(database)[ETH_LOCATION, TEST_ADDR1, 'ETH']
+    saved = _checks(database)[LOCATION_ETHEREUM, TEST_ADDR1, 'ETH']
     assert (saved.observed_at, saved.compared_at) == (100, 200)
 
 
@@ -361,7 +361,7 @@ def test_comparison_and_issue_commit_together_and_dismissal_is_kept(database: DB
     DataIssuesManager(database).dismiss(issue.id)
     _make_detector(database, '2').run()
     assert _get_issues(database)[0].state == IssueState.DISMISSED
-    assert _checks(database)[ETH_LOCATION, TEST_ADDR1, 'ETH'].observed_balance == FVal(2)
+    assert _checks(database)[LOCATION_ETHEREUM, TEST_ADDR1, 'ETH'].observed_balance == FVal(2)
 
 
 def _remove_account(database: DBHandler) -> None:
@@ -444,7 +444,7 @@ def test_account_removal_deletes_only_its_checks(database: DBHandler) -> None:
     for address in (TEST_ADDR1, TEST_ADDR2):
         _save(database, _check(address))
     _remove_account(database)
-    assert list(_checks(database)) == [(ETH_LOCATION, TEST_ADDR2, 'ETH')]
+    assert list(_checks(database)) == [(LOCATION_ETHEREUM, TEST_ADDR2, 'ETH')]
 
 
 @with_accounts
@@ -463,7 +463,7 @@ def test_history_reset_deletes_checks_of_cleared_accounts_only(database: DBHandl
         events_db.delete_events_and_track(
             write_cursor, 'WHERE location_label=?', (TEST_ADDR2,),
         )
-    assert list(_checks(database)) == [(ETH_LOCATION, TEST_ADDR1, 'ETH')]
+    assert list(_checks(database)) == [(LOCATION_ETHEREUM, TEST_ADDR1, 'ETH')]
 
 
 @with_accounts
@@ -494,7 +494,7 @@ def test_checks_survive_a_setting_write_that_does_not_change_the_mapping(
 
 
 DEFAULT_CHECK = BucketBalanceCheck(
-    location=ETH_LOCATION,
+    location=LOCATION_ETHEREUM,
     location_label=TEST_ADDR1,
     asset='ETH',
     derived_balance=FVal(5),
@@ -654,7 +654,7 @@ def test_ordinary_reprocessing_keeps_unrelated_checks(database: DBHandler) -> No
     _add_event(database, TEST_ADDR2, '5', 1000)
     _save(database, _check(TEST_ADDR2))
     _process(database)
-    assert list(_checks(database)) == [(ETH_LOCATION, TEST_ADDR2, 'ETH')]
+    assert list(_checks(database)) == [(LOCATION_ETHEREUM, TEST_ADDR2, 'ETH')]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -666,7 +666,7 @@ def test_eth2_stop_blocks_the_merged_eth_bucket_after_the_setting_is_turned_on(
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO bucket_processing_stops VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            (ETH_LOCATION, TEST_ADDR1, '', 'ETH2', 1, 1000, '5', '-1'),
+            (LOCATION_ETHEREUM, TEST_ADDR1, '', 'ETH2', 1, 1000, '5', '-1'),
         )
         database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
     assert _make_detector(database, '3').run() == 0

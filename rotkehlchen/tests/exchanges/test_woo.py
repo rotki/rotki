@@ -16,14 +16,17 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_WOO,
+)
 from rotkehlchen.tests.utils.constants import A_SOL
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
 def test_name():
     exchange = Woo('woo', 'a', b'a', object(), object())
-    assert exchange.location == Location.WOO
+    assert exchange.location == LOCATION_WOO
     assert exchange.name == 'woo'
 
 
@@ -331,7 +334,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         'executed_timestamp': '1634600000.0',
     }) == [SwapEvent(
         timestamp=(timestamp := TimestampMS(1634600000000)),
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('50000.00'),
@@ -339,7 +342,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         group_identifier=(group_identifier := '4e59a50777b6eddb1a916539d7151fd47c489b0badc8488a01a5f835e52844c8'),  # noqa: E501
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('1.0'),
@@ -347,7 +350,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.1'),
@@ -370,7 +373,7 @@ def test_deserialize_trade_sell(mock_woo):
         'executed_timestamp': '1634610000.0',
     }) == [SwapEvent(
         timestamp=(timestamp := TimestampMS(1634610000000)),
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('2.0'),
@@ -378,7 +381,7 @@ def test_deserialize_trade_sell(mock_woo):
         group_identifier=(group_identifier := '98e48230961b7e3427b04a4264bcbee3eede633906d549202b946d26e6538f7f'),  # noqa: E501
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('6000.00'),
@@ -386,7 +389,7 @@ def test_deserialize_trade_sell(mock_woo):
         group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.WOO,
+        location=LOCATION_WOO,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.2'),
@@ -418,7 +421,7 @@ def test_deserialize_asset_movement_deposit(mock_woo: Woo) -> None:
     }
     result = mock_woo._deserialize_asset_movement(mock_deposit)
     assert result == [AssetMovement(
-        location=Location.WOO,
+        location=LOCATION_WOO,
         location_label=mock_woo.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1579399877000),
@@ -455,7 +458,7 @@ def test_deserialize_asset_movement_withdrawal(mock_woo: Woo) -> None:
     }
     result = mock_woo._deserialize_asset_movement(mock_withdrawal)
     assert result == [AssetMovement(
-        location=Location.WOO,
+        location=LOCATION_WOO,
         location_label=mock_woo.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1686677756000),

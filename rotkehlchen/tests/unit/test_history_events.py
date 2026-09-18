@@ -17,10 +17,15 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.factories import (
     make_evm_tx_hash,
 )
-from rotkehlchen.types import BTCAddress, BTCTxId, Location, TimestampMS
+from rotkehlchen.types import BTCAddress, BTCTxId, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -36,7 +41,7 @@ def test_serialize_with_invalid_type_subtype():
         group_identifier='1',
         sequence_index=1,
         timestamp=TimestampMS(1),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -77,7 +82,7 @@ def test_hash_does_not_collide_on_digit_boundary():
             group_identifier=gid,
             sequence_index=seq,
             timestamp=TimestampMS(1),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -106,7 +111,7 @@ def test_edited_event_caches_original_position(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(1710000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -154,7 +159,7 @@ def test_edited_event_caches_original_position(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(1710000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -185,7 +190,7 @@ def test_non_onchain_edits_skip_cache(database: DBHandler) -> None:
                 group_identifier=group_id,
                 sequence_index=0,
                 timestamp=TimestampMS(1710000000000),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
@@ -219,7 +224,7 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -
             tx_ref=BTCTxId('a' * 64),
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
@@ -244,7 +249,7 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -
             (event_id,),
         ).fetchall() == [(second_counterparty,)]
 
-        event.location = Location.KRAKEN
+        event.location = LOCATION_KRAKEN
         event.event_type = HistoryEventType.TRADE
         event.event_subtype = HistoryEventSubType.SPEND
         events_db.edit_history_event(write_cursor=write_cursor, event=event, mapping_state=None)
@@ -260,7 +265,7 @@ def test_add_history_events_returns_only_inserted_count(database: DBHandler) -> 
         group_identifier='duplicate_batch_insert_test',
         sequence_index=0,
         timestamp=TimestampMS(1710000000000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -290,7 +295,7 @@ def test_add_history_events_sets_ignored_flag(database: DBHandler) -> None:
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=asset,
@@ -325,7 +330,7 @@ def test_get_history_events_internal_skips_ignored_group_lookup(database: DBHand
             group_identifier=(gid := 'internal_skip_test'),
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -364,7 +369,7 @@ def test_ignored_group_lookup_detects_across_chunks(database: DBHandler) -> None
             group_identifier=group_identifier,
             sequence_index=0,
             timestamp=TimestampMS(1710000000000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=asset,

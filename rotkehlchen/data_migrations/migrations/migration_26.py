@@ -9,8 +9,10 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
 if TYPE_CHECKING:
@@ -68,7 +70,7 @@ def data_migration_26(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 'WHERE H.location = ? AND H.type = ? AND H.subtype = ? AND '
                 'EI.address = ? AND EI.counterparty IS NULL',
                 (
-                    Location.GNOSIS.serialize_for_db(),
+                    LOCATION_GNOSIS,
                     HistoryEventType.SPEND.serialize(),
                     HistoryEventSubType.NONE.serialize(),
                     GNOSIS_PAY_SPENDING_COLLECTOR,

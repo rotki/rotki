@@ -12,7 +12,10 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.locations.constants import (
+    LOCATION_SOLANA,
+)
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -137,7 +140,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
             'WHERE c.tx_ref=? AND h.location=? AND m.name=? AND m.value=?',
             (
                 signature.to_bytes(),
-                Location.SOLANA.serialize_for_db(),
+                LOCATION_SOLANA,
                 HISTORY_MAPPING_KEY_STATE,
                 HistoryMappingState.CUSTOMIZED.serialize_for_db(),
             ),
@@ -147,7 +150,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         DBHistoryEvents(self.db).delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[signature],
-            location=Location.SOLANA,
+            location=LOCATION_SOLANA,
             customized_handling='delete',
         )
         write_cursor.execute(
@@ -305,7 +308,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         DBHistoryEvents(self.db).delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[Signature(row[0]) for row in results],
-            location=Location.SOLANA,
+            location=LOCATION_SOLANA,
         )
         write_cursor.execute(
             'DELETE FROM solana_transactions WHERE identifier IN ('

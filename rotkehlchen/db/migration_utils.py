@@ -4,16 +4,17 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.types import AssetAmount, Location, Price, TimestampMS
+from rotkehlchen.types import AssetAmount, Price, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def create_swap_events_v47_v48(
         timestamp: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         spend: AssetAmount,
         receive: AssetAmount,
         unique_id: str | None = None,

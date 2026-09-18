@@ -13,13 +13,16 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location, TimestampMS
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
+    from rotkehlchen.types import TimestampMS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -147,7 +150,7 @@ class KrakenFuturesAccountLogProcessor:
                     item.entry_id,
                 ))
             group_identifier = create_group_identifier_from_unique_id(
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 unique_id=f'{self.account_uid}:{group_key}',
             )
             position_entries = positions_by_execution.get(group_key, [])
@@ -202,7 +205,7 @@ class KrakenFuturesAccountLogProcessor:
                 group_identifier=group_identifier,
                 sequence_index=sequence_index,
                 timestamp=entry.timestamp,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=(
                     HistoryEventSubType.RECEIVE
                     if actual_delta > ZERO else HistoryEventSubType.SPEND
@@ -256,7 +259,7 @@ class KrakenFuturesAccountLogProcessor:
                 group_identifier=group_identifier,
                 sequence_index=sequence_index + len(events),
                 timestamp=entry.timestamp,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
