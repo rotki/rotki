@@ -131,28 +131,30 @@ function choose(action: DashboardRefreshAction): void {
             />
           </RuiButton>
         </template>
-        <div class="py-2 w-72">
+        <div class="py-1.5 w-80">
           <RuiButton
             v-for="item in modeItems"
             :key="item.action.kind"
             variant="list"
+            class="!py-2"
             :data-testid="testIdOf(item.action)"
             @click="choose(item.action)"
           >
-            <div class="flex flex-col items-start text-left whitespace-normal">
+            <div class="flex flex-col items-start gap-0.5 text-left whitespace-normal">
               <span>{{ item.label }}</span>
-              <span class="text-xs text-rui-text-secondary">{{ item.hint }}</span>
+              <span class="text-xs leading-4 font-normal text-rui-text-secondary">{{ item.hint }}</span>
             </div>
           </RuiButton>
           <template v-if="sourceItems.length > 0">
-            <RuiDivider class="my-2" />
-            <div class="px-4 pb-1 text-xs text-rui-text-secondary">
+            <RuiDivider class="my-1.5" />
+            <div class="px-3 pt-1 pb-0.5 text-xs font-medium uppercase tracking-wider text-rui-text-secondary">
               {{ t('dashboard.refresh.source.title') }}
             </div>
             <RuiButton
               v-for="item in sourceItems"
               :key="testIdOf(item.action)"
               variant="list"
+              class="!py-2 !font-normal"
               :data-testid="testIdOf(item.action)"
               @click="choose(item.action)"
             >

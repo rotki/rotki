@@ -2552,7 +2552,7 @@
         "blockchain": "Blockchain accounts",
         "exchanges": "Exchanges",
         "manual": "Manual balances",
-        "title": "Refresh only one source, then prices"
+        "title": "Refresh one source"
       },
       "tooltip": "Query every account, exchange and bank, reload manual balances, then refresh prices"
     },
