@@ -42,6 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
 const selection = injectHistoryEventsSelection();
 
 const {
+  bridgeUnlink,
   chain,
   compactNotes,
   counterparty,
@@ -52,7 +53,6 @@ const {
   isReceiveHidden,
   isSelected,
   isSpendHidden,
-  matchedBridgeLegId,
   primaryEvent,
   receiveEvent,
   receiveEvents,
@@ -87,9 +87,9 @@ const typeLabel = computed<string | undefined>(() =>
 );
 
 function unlink(): void {
-  const identifier = get(matchedBridgeLegId);
-  if (identifier !== undefined)
-    emit('unlink-event', { identifier, type: 'bridge' });
+  const payload = get(bridgeUnlink);
+  if (payload)
+    emit('unlink-event', payload);
 }
 </script>
 
@@ -203,7 +203,7 @@ function unlink(): void {
         :item="primaryEvent"
         :index="0"
         :complete-group-events="completeGroupEvents"
-        :can-unlink="matchedBridgeLegId !== undefined"
+        :can-unlink="bridgeUnlink !== undefined"
         class="shrink-0"
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
@@ -325,7 +325,7 @@ function unlink(): void {
       :item="primaryEvent"
       :index="0"
       :complete-group-events="completeGroupEvents"
-      :can-unlink="matchedBridgeLegId !== undefined"
+      :can-unlink="bridgeUnlink !== undefined"
       collapse-action
       class="shrink-0 self-center"
       @edit-event="emit('edit-event', $event)"

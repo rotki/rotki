@@ -225,7 +225,7 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
       type: 'swap-row',
     });
 
-    const payload = { identifier: 3, type: 'bridge' } as const;
+    const payload = { hasSynthetic: false, identifier: 3, ignoredIdentifiers: [3, 4], type: 'bridge' } as const;
     await wrapper.findComponent(HistoryEventsSwapItem).vm.$emit('unlink-event', payload);
     expect(context.actions.unlinkEvent).toHaveBeenCalledWith(payload);
   });
@@ -236,14 +236,14 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
       eventCount: 2,
       groupId: 'group-1',
       swapKey: 'group-1-3',
+      bridgeUnlink: { hasSynthetic: false, identifier: 4, ignoredIdentifiers: [4, 5], type: 'bridge' },
       type: 'swap-collapse',
-      unlinkIdentifier: 4,
     });
 
     const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
     expect(header.props('canUnlink')).toBe(true);
     await header.vm.$emit('unlink-event');
-    expect(context.actions.unlinkEvent).toHaveBeenCalledWith({ identifier: 4, type: 'bridge' });
+    expect(context.actions.unlinkEvent).toHaveBeenCalledWith({ hasSynthetic: false, identifier: 4, ignoredIdentifiers: [4, 5], type: 'bridge' });
   });
 
   it('should not offer unlink on the header of a swap', async () => {

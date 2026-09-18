@@ -287,7 +287,12 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', true);
-      expect(collapseRows[0]).toHaveProperty('unlinkIdentifier', 2);
+      expect(collapseRows[0]).toHaveProperty('bridgeUnlink', {
+        hasSynthetic: false,
+        identifier: 2,
+        ignoredIdentifiers: [2, 3],
+        type: 'bridge',
+      });
 
       // both legs are marked as linked sub-events so per-leg chain/tx context is shown
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -315,7 +320,7 @@ describe('use-virtual-rows', () => {
       const collapseRows = get(flattenedRows).filter(r => r.type === 'swap-collapse');
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', false);
-      expect(collapseRows[0]).toHaveProperty('unlinkIdentifier', undefined);
+      expect(collapseRows[0]).toHaveProperty('bridgeUnlink', undefined);
 
       // plain swap legs share one transaction, so no linked sub-event marking
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
