@@ -70,16 +70,22 @@ function isFailed(activity: Activity): boolean {
  * - A run the user cancelled reports nothing, since they stopped it themselves.
  *
  * Only jobs seen running are reported, so work that settled before the dock saw it does not resurface.
+ * The exception is a failure: one that settled before the dock mounted, as work started during login
+ * can, is reported anyway, since nowhere else shows it. The ledger is reset on logout, so what is
+ * there at mount belongs to this session.
  */
 export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const { isActive, model } = useTaskCenter();
   const { children, jobs } = usePendingJobs();
 
-  const modelExpanded = shallowRef<boolean>(false);
-  const tracked = shallowRef<ReadonlySet<ActivityId>>(new Set());
-  const acknowledged = shallowRef<ReadonlySet<ActivityId>>(new Set());
-
   const hasFailure = (root: Activity): boolean => someInSubtree(get(children), root, isFailed);
+
+  /** Jobs that failed before the dock mounted; see the remarks on {@link useTaskDock}. */
+  const failedBeforeMount = get(model).roots.filter(root => isTerminalStatus(root.status) && hasFailure(root)).map(root => root.id);
+
+  const modelExpanded = shallowRef<boolean>(false);
+  const tracked = shallowRef<ReadonlySet<ActivityId>>(new Set(failedBeforeMount));
+  const acknowledged = shallowRef<ReadonlySet<ActivityId>>(new Set());
 
   const settled = computed<Activity[]>(() => {
     const ids = get(tracked);
