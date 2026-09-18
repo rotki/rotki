@@ -45,7 +45,7 @@ function generate(): void {
 }
 
 function syncHistory(): void {
-  startPromise(refreshTransactions());
+  startPromise(refreshTransactions({ userInitiated: true }));
 }
 
 function exportReportData(): void {
@@ -109,6 +109,7 @@ onMounted(async () => {
           variant="outlined"
           :loading="processing"
           :disabled="processing"
+          data-testid="report-generator-sync-history"
           @click="syncHistory()"
         >
           {{ t('profit_loss_report.sync_history') }}
