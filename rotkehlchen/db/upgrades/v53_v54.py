@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
@@ -13,6 +13,78 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Reviewed mapping of every location character a v53 database can hold to the identifier of
+# its node in the location tree. Never derive this from enum order at runtime. The characters
+# of the protocol-labelled legacy locations are in V53_LEGACY_LOCATION_CHARS instead.
+V53_LOCATION_CHAR_TO_IDENTIFIER: Final = {
+    'A': 'external',
+    'B': 'kraken',
+    'C': 'poloniex',
+    'D': 'bittrex',
+    'E': 'binance',
+    'F': 'bitmex',
+    'G': 'coinbase',
+    'H': 'total',
+    'I': 'banks',
+    'J': 'blockchain',
+    'K': 'coinbasepro',
+    'L': 'gemini',
+    'M': 'equities',
+    'N': 'realestate',
+    'O': 'commodities',
+    'P': 'cryptocom',
+    'R': 'bitstamp',
+    'S': 'binanceus',
+    'T': 'bitfinex',
+    'U': 'bitcoinde',
+    'V': 'iconomi',
+    'W': 'kucoin',
+    'Y': 'loopring',
+    'Z': 'ftx',
+    '[': 'nexo',
+    '\\': 'blockfi',
+    ']': 'independentreserve',
+    '`': 'shapeshift',
+    'a': 'uphold',
+    'b': 'bitpanda',
+    'c': 'bisq',
+    'd': 'ftxus',
+    'e': 'okx',
+    'f': 'ethereum',
+    'g': 'optimism',
+    'h': 'polygon pos',
+    'i': 'arbitrum one',
+    'j': 'base',
+    'k': 'gnosis',
+    'l': 'woo',
+    'm': 'bybit',
+    'n': 'scroll',
+    'o': 'zksync lite',
+    'p': 'htx',
+    'q': 'bitcoin',
+    'r': 'bitcoin cash',
+    's': 'polkadot',
+    't': 'kusama',
+    'u': 'coinbaseprime',
+    'v': 'binance sc',
+    'w': 'solana',
+    'x': 'avalanche',
+    'y': 'hyperliquid',
+    'z': 'monad',
+    '{': 'gate',
+    '|': 'bit2me',
+    '}': 'coinex',
+}
+# Protocol-labelled locations. Their nodes are created below LEGACY_LOCATIONS_PARENT only when
+# user data still references them.
+V53_LEGACY_LOCATION_CHARS: Final = {
+    'Q': ('legacy:uniswap', 'Uniswap', 'uniswap.svg'),
+    'X': ('legacy:balancer', 'Balancer', 'balancer.svg'),
+    '^': ('legacy:gitcoin', 'Gitcoin', 'gitcoin.svg'),
+    '_': ('legacy:sushiswap', 'Sushiswap', 'sushiswap.svg'),
+}
+LEGACY_LOCATIONS_PARENT: Final = ('legacy locations', 'Legacy locations', 'other', 'lu-archive')
 
 
 @enter_exit_debug_log(name='UserDB v53->v54 upgrade')
