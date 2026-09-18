@@ -2482,6 +2482,7 @@
         "manual": "Manual balance",
         "title": "Add a source"
       },
+      "empty": "No balances yet. Add an account, exchange, bank or manual balance to get started.",
       "kind": {
         "bank": "Banks",
         "blockchain": "Blockchain",
@@ -2757,7 +2758,7 @@
       "percentage_of_total_net_value": "% of net value",
       "percentage_total": "% of total"
     },
-    "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above. Your balances will appear here once the first query completes.",
+    "no_assets": "No assets yet. They appear here once you add a source.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
     "select_visible_columns": "Select visible columns"

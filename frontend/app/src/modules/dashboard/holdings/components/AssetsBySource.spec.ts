@@ -23,7 +23,7 @@ vi.mock('@/modules/dashboard/holdings/use-dashboard-holdings', () => ({
 vi.mock('@/modules/settings/use-setting', () => ({ useSetting: vi.fn(() => ref(true)) }));
 
 const stubs = {
-  AddSourceMenu: { template: '<div data-testid="add-source-menu" />' },
+  AddSourceMenu: { props: ['variant'], template: '<div data-testid="add-source-menu" :data-variant="variant ?? \'row\'" />' },
   FiatDisplay: true,
   PercentageDisplay: true,
   RuiIcon: true,
@@ -54,7 +54,33 @@ describe('assetsBySource', () => {
     await nextTick();
 
     expect(wrapper.find('[data-testid=legend-skeleton]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid=add-source-menu]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=dashboard-source-legend]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['button']);
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty] [data-testid=add-source-menu]').exists()).toBe(true);
+  });
+
+  it('should keep the legend, not the getting-started prompt, when a source is added but holds nothing', async () => {
+    set(netWorthLoading, false);
+    set(contributions, [{ kind: SourceKind.EXCHANGE, loading: false, location: 'kraken', value: Zero }]);
+    const wrapper = createWrapper();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['row']);
+  });
+
+  it('should drop the empty state for the legend row once any source holds value', async () => {
+    const wrapper = createWrapper();
+    set(netWorthLoading, false);
+    await nextTick();
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(true);
+
+    set(contributions, [{ kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) }]);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=dashboard-holdings-empty]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=source-bar]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-testid=add-source-menu]').map(menu => menu.attributes('data-variant'))).toEqual(['row']);
   });
 
   it('should hold the bar back until every source is priced, since its shares are partial until then', async () => {
