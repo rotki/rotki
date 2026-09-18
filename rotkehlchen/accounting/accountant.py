@@ -14,6 +14,8 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import AccountingError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
@@ -303,6 +305,14 @@ class Accountant:
             return 1, prev_time
 
         if any(x.identifier in self.ignored_asset_ids for x in event_assets):
+            if (
+                    isinstance(event, HistoryBaseEntry) and
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype == HistoryEventSubType.SPEND
+            ):
+                self.pots[0].ignored_trade_spends.add((
+                    event.group_identifier, event.sequence_index,
+                ))
             log.debug(
                 'Ignoring event with ignored asset',
                 event_type=event.get_accounting_event_type(),
