@@ -126,19 +126,18 @@ describe('useHistoryEventsOverlay', () => {
     expect(refresh).toHaveBeenCalledOnce();
   });
 
-  it('should drop the series on every completed sync but refresh only a visible overlay', async () => {
-    const mode = ref<OverlayMode>(OverlayMode.NONE);
-    setup(mode);
+  it('should refresh once after processing completes following a sync', async () => {
+    setup(ref<OverlayMode>(OverlayMode.BALANCE));
 
     set(mockSyncCompleted, 1);
     await flushPromises();
-    expect(reset).toHaveBeenCalledOnce();
+    expect(reset).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
 
-    set(mode, OverlayMode.BALANCE);
-    set(mockSyncCompleted, 2);
+    const message = WebsocketMessage.parse({ type: 'historical_balance_processing_completed', data: {} });
+    await createHistoricalBalanceProcessingCompletedHandler().handle(message.data);
     await flushPromises();
-    expect(reset).toHaveBeenCalledTimes(2);
+    expect(reset).toHaveBeenCalledOnce();
     expect(refresh).toHaveBeenCalledOnce();
   });
 });

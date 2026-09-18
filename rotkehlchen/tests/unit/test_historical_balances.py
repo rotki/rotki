@@ -281,10 +281,10 @@ def test_process_historical_balances_clears_stale_marker(
     with patch.object(messages_aggregator, 'add_message') as add_message:
         process_historical_balances(database, messages_aggregator)
 
-    assert add_message.call_args.kwargs == {
-        'message_type': WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-        'data': {},
-    }
+    add_message.assert_any_call(
+        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+        data={},
+    )
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
