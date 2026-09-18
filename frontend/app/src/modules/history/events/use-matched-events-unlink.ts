@@ -6,7 +6,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
-import { isAssetMovementEvent } from '@/modules/history/event-utils';
+import { getMatchedMovementIgnoreIds, isAssetMovementEvent } from '@/modules/history/event-utils';
 import { useCompleteEvents } from '@/modules/history/events/use-complete-events';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -32,18 +32,24 @@ export function useMatchedEventsUnlink(
   const { notifyError } = useNotifications();
   const { show } = useConfirmStore();
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
-  const { unlinkAssetMovement } = useAssetMovementMatchingApi();
+  const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
 
+  /**
+   * Unlinking alone does not stick: a match the automatic matcher made is deterministic, so
+   * returning the legs to the unmatched pool restores exactly the state it acted on and the next
+   * run links them straight back. Ignoring them is what makes the undo durable, and the ignored
+   * tab of the matching dialog is where the user restores or matches them by hand.
+   *
+   * Ignoring is matching with no counterpart, and a later match clears the ignore itself. The
+   * calls are sequential rather than concurrent because they all write the same table, and they
+   * follow the unlink so that a failed unlink ignores nothing.
+   */
   async function unlink(payload: HistoryEventUnlinkPayload): Promise<void> {
     if (payload.type === 'bridge') {
       await unlinkBridgeTransaction(payload.identifier);
-      // The periodic matching task links an unmatched pair straight back, often before the user
-      // can act on it, so unlinking is only durable if the legs are ignored too. Ignoring is
-      // matching with no counterpart, and the ignored tab of the bridge matching dialog restores
-      // them. Sequential rather than concurrent: both writes hit the same table.
       for (const identifier of payload.ignoredIdentifiers)
         await matchBridgeTransactions(identifier);
 
@@ -51,6 +57,9 @@ export function useMatchedEventsUnlink(
     }
     else {
       await unlinkAssetMovement(payload.identifier);
+      for (const identifier of payload.ignoredIdentifiers)
+        await matchAssetMovements(identifier);
+
       await refreshUnmatchedAssetMovements();
     }
   }
@@ -88,8 +97,13 @@ export function useMatchedEventsUnlink(
   function unlinkGroup(groupId: string): void {
     const events = getGroupEvents(groupId);
     const event = events.find(item => isAssetMovementEvent(item) && item.eventSubtype !== 'fee' && !!item.actualGroupIdentifier);
-    if (event)
-      confirmUnlink({ identifier: event.identifier, type: 'asset-movement' });
+    if (event) {
+      confirmUnlink({
+        identifier: event.identifier,
+        ignoredIdentifiers: getMatchedMovementIgnoreIds(events),
+        type: 'asset-movement',
+      });
+    }
   }
 
   return {

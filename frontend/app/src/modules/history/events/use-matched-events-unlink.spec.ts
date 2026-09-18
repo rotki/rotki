@@ -9,7 +9,9 @@ const { spies } = vi.hoisted(() => ({
     busEmit: vi.fn(),
     getGroupEvents: vi.fn((): HistoryEventEntry[] => []),
     matchBridgeTransactions: vi.fn(),
+    getMatchedMovementIgnoreIds: vi.fn((): number[] => []),
     isAssetMovementEvent: vi.fn(() => false),
+    matchAssetMovements: vi.fn(),
     notifyError: vi.fn(),
     refreshUnmatchedAssetMovements: vi.fn(),
     refreshUnmatchedBridgeTransactions: vi.fn(),
@@ -26,7 +28,10 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyError: spies.notifyError }),
 }));
 vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
-  useAssetMovementMatchingApi: (): object => ({ unlinkAssetMovement: spies.unlinkAssetMovement }),
+  useAssetMovementMatchingApi: (): object => ({
+    matchAssetMovements: spies.matchAssetMovements,
+    unlinkAssetMovement: spies.unlinkAssetMovement,
+  }),
 }));
 vi.mock('@/modules/history/api/events/use-bridge-matching-api', () => ({
   useBridgeMatchingApi: (): object => ({
@@ -44,6 +49,7 @@ vi.mock('@/modules/history/events/use-complete-events', () => ({
   useCompleteEvents: (): object => ({ getGroupEvents: spies.getGroupEvents }),
 }));
 vi.mock('@/modules/history/event-utils', () => ({
+  getMatchedMovementIgnoreIds: spies.getMatchedMovementIgnoreIds,
   isAssetMovementEvent: spies.isAssetMovementEvent,
 }));
 vi.mock('@/modules/task-center/events/task-center-bus', () => ({
@@ -65,15 +71,26 @@ describe('useMatchedEventsUnlink', () => {
     vi.clearAllMocks();
   });
 
-  it('should unlink an asset movement and refresh the unmatched movements', async () => {
-    setup().confirmUnlink({ identifier: 9, type: 'asset-movement' });
+  it('should unlink an asset movement and ignore its movement legs', async () => {
+    setup().confirmUnlink({ identifier: 9, ignoredIdentifiers: [9], type: 'asset-movement' });
     expect(spies.show.mock.calls[0][0].message).toBe('transactions.events.confirmation.unlink.message');
     await confirm();
 
     expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(9);
+    // same durability as a bridge unlink: the matcher would otherwise relink it on its next run
+    expect(spies.matchAssetMovements.mock.calls).toStrictEqual([[9]]);
     expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
     expect(spies.unlinkBridgeTransaction).not.toHaveBeenCalled();
     expect(emit).toHaveBeenCalledWith('refresh');
+  });
+
+  it('should not ignore any movement leg when the unlink itself fails', async () => {
+    spies.unlinkAssetMovement.mockRejectedValueOnce(new Error('boom'));
+    setup().confirmUnlink({ identifier: 9, ignoredIdentifiers: [9, 10], type: 'asset-movement' });
+    await confirm();
+
+    expect(spies.matchAssetMovements).not.toHaveBeenCalled();
+    expect(spies.notifyError).toHaveBeenCalledWith('transactions.events.unlink_error', 'boom');
   });
 
   it('should unlink a bridge transfer and ignore both legs', async () => {

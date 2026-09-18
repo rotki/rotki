@@ -119,6 +119,20 @@ export function getMatchedBridgeUnlink(events: HistoryEventEntry[]): HistoryEven
   };
 }
 
+/**
+ * The movement legs of a matched subgroup that unlinking should also ignore.
+ *
+ * Only asset movements are ignorable: the unmatched pool is built from them alone, so an ignore
+ * on a matched chain event would be an inert row. Fee legs are skipped for the same reason, and a
+ * movement matched to another movement contributes both sides. Adjustment events created during
+ * matching need no entry either, since unlinking deletes them.
+ */
+export function getMatchedMovementIgnoreIds(events: HistoryEventEntry[]): number[] {
+  return events
+    .filter(event => isAssetMovementEvent(event) && event.eventSubtype !== 'fee' && !!event.actualGroupIdentifier)
+    .map(event => event.identifier);
+}
+
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.BITCOIN_EVENT;
 }
