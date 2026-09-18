@@ -201,6 +201,8 @@ export interface Activity {
    * user-initiated work from background work; see `Priority` in `orchestrator/spec.ts`.
    */
   readonly priority?: number;
+  /** See `ActivitySpec.userStarted` in `orchestrator/spec.ts`. */
+  readonly userStarted?: boolean;
 }
 
 export interface ActivityGroup {

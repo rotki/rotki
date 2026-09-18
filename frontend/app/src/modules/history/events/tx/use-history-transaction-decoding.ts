@@ -143,6 +143,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       resets: redecodeFlow.resets,
+      userStarted: true,
       run: async (): Promise<Result<void, TaskError>> => {
         const outcomes = await Promise.allSettled(await subtree);
         const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;

@@ -90,6 +90,34 @@ describe('useDockPrimary', () => {
     expect(get(primarySteps)).toBeUndefined();
   });
 
+  it('should name a job the user started ahead of a better-ranked one that started on its own', () => {
+    const { primary } = primaryOf([
+      activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING),
+      { ...activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.RUNNING), userStarted: true },
+    ]);
+
+    expect(get(primary)?.activity.kind).toBe(ActivityKind.PNL_REPORT);
+  });
+
+  it('should name upkeep work the user started, rather than describing it generically', () => {
+    const { isPrimaryRanked, primary } = primaryOf([
+      activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING),
+      { ...activity(ActivityKind.PROTOCOL_CACHE, 'refresh', ActivityStatus.RUNNING), userStarted: true },
+    ]);
+
+    expect(get(primary)?.activity.kind).toBe(ActivityKind.PROTOCOL_CACHE);
+    expect(get(isPrimaryRanked)).toBe(true);
+  });
+
+  it('should rank two jobs the user started by their kind', () => {
+    const { primary } = primaryOf([
+      { ...activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING), userStarted: true },
+      { ...activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING), userStarted: true },
+    ]);
+
+    expect(get(primary)?.activity.kind).toBe(ActivityKind.HISTORY_SYNC);
+  });
+
   it('should name nothing while everything is still queued', () => {
     const { otherJobs, primary } = primaryOf([activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.PENDING)]);
 

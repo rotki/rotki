@@ -178,6 +178,18 @@ export interface ActivitySpec<T = unknown> {
   readonly lane?: Lane;
   /** Scheduling priority within the lane; defaults to {@link DEFAULT_PRIORITY}. */
   readonly priority?: Priority;
+  /**
+   * Whether the user asked for this run, as opposed to a login load, a schedule or an automatic
+   * fetch. Only a job's root is read, so a producer may set it on every activity of the run; that
+   * matters where a one-item batch has no umbrella and its only child becomes the root.
+   *
+   * @remarks
+   * Deliberately separate from {@link priority}: `Priority.USER` changes scheduling (it jumps the
+   * lane queue and skips the balance pause during a history sync), which is wrong for work such as
+   * a PnL report or a redecode that the user started but that should queue like any other. This
+   * flag changes only how the dock presents the job: it ranks first and opens the panel.
+   */
+  readonly userStarted?: boolean;
   /** Must all be terminal for this activity to become eligible to start. */
   readonly deps?: readonly ActivityId[];
   /**

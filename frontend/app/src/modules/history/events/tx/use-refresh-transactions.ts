@@ -292,6 +292,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
+      userStarted: userInitiated,
       run: async (): Promise<Result<void, TaskError>> => {
         initializeRefresh(targets, wave);
 

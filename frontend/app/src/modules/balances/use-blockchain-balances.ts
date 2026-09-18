@@ -114,7 +114,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const allowedAddresses = (chain: string): string[] | undefined =>
       requestedAddresses?.filter(address => !isAddressExcluded(chain, address));
 
-    const submit = mode === RefreshMode.USER ? supersedeTask : submitTask;
+    const userStarted = mode === RefreshMode.USER;
+    const submit = userStarted ? supersedeTask : submitTask;
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
@@ -145,7 +146,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         parent,
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         lane: BALANCES_LANE,
-        priority: mode === RefreshMode.USER ? Priority.USER : DEFAULT_PRIORITY,
+        priority: userStarted ? Priority.USER : DEFAULT_PRIORITY,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
           if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
@@ -167,6 +168,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         // Stage-neutral: fixed at submit time, while this job has two stages.
         subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.chain'), { chain: getChainName(chain) }),
         title: t('task_center.group.blockchain_balances'),
+        userStarted,
       });
     };
 
@@ -178,6 +180,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.run'), { count: chains.length }),
         title: t('task_center.group.blockchain_balances'),
+        userStarted,
       },
       chains,
       async (chain, parent) => chainJob(chain, parent),

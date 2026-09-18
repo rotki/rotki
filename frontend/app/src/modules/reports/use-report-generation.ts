@@ -81,6 +81,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       id,
       kind: ActivityKind.PNL_REPORT,
       rerunnable: true,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<number, TaskError>> => {
         const result = await runTask<number>(
           async () => generateReportCaller(period),
@@ -131,6 +132,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       id,
       kind: ActivityKind.PNL_REPORT,
       rerunnable: false,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => runTask<boolean | object>(
         async () => exportReportDataCaller(payload),
       ),
