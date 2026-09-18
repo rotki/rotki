@@ -447,21 +447,21 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
         )
         expected_events = [
             # First trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '10', 'trade', 'receive', None, event_id_1),
-            (1749566127000, 'A', 'USD', '12', 'trade', 'fee', None, event_id_1),
+            (1749566127000, 'external', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '10', 'trade', 'receive', None, event_id_1),
+            (1749566127000, 'external', 'USD', '12', 'trade', 'fee', None, event_id_1),
 
             # Third trade(different timestamp but same location)
-            (1749566160000, 'A', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
-            (1749566160000, 'A', 'BTC', '2', 'trade', 'receive', None, event_id_3),
+            (1749566160000, 'external', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
+            (1749566160000, 'external', 'BTC', '2', 'trade', 'receive', None, event_id_3),
 
             # Second trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '5', 'trade', 'receive', None, event_id_2),
+            (1749566127000, 'external', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '5', 'trade', 'receive', None, event_id_2),
 
             # Fourth trade(different timestamp but same location)
-            (1749566154000, 'A', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
-            (1749566154000, 'A', 'BTC', '1', 'trade', 'receive', None, event_id_4),
+            (1749566154000, 'external', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
+            (1749566154000, 'external', 'BTC', '1', 'trade', 'receive', None, event_id_4),
         ]
         assert all(expected_events[i] == row for i, row in enumerate(cursor))
 

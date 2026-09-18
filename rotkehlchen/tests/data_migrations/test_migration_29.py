@@ -72,26 +72,14 @@ def test_migration_29_removes_the_zero_hash_funding_event(database: DBHandler) -
         ).fetchall() == [('other', 0), (zero_hash_group, 1)]
 
 
-@pytest.mark.parametrize('data_migration_version', [28])
-def test_migration_29_adds_traditional_finance_locations(database: DBHandler) -> None:
-    """Fresh DBs have the Bonds, ETF and Collectibles locations, and the migration adds
-    them to existing DBs so that events can use them."""
+def test_traditional_finance_locations_in_tree(database: DBHandler) -> None:
+    """The Bonds, ETF and Collectibles locations that migration 29 added before the location
+    tree are built-in nodes of the tree, so events can use them."""
     new_locations = (Location.BONDS, Location.ETF, Location.COLLECTIBLES)
-    location_query = 'SELECT location, seq FROM location WHERE seq BETWEEN 62 AND 64 ORDER BY seq'
-    expected_rows = [(location.serialize_for_db(), location.value) for location in new_locations]
     with database.conn.read_ctx() as cursor:
-        assert cursor.execute(location_query).fetchall() == expected_rows
-
-    with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'DELETE FROM location WHERE location=?',
-            [(location.serialize_for_db(),) for location in new_locations],
-        )
-
-    run_single_migration(database=database, migration=29)
-
-    with database.conn.read_ctx() as cursor:
-        assert cursor.execute(location_query).fetchall() == expected_rows
+        assert cursor.execute(
+            "SELECT identifier, parent_identifier FROM locations WHERE identifier IN ('bonds', 'etf', 'collectibles') ORDER BY identifier",  # noqa: E501
+        ).fetchall() == [('bonds', 'other'), ('collectibles', 'other'), ('etf', 'other')]
 
     history_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:

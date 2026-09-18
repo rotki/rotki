@@ -118,7 +118,7 @@ def test_normalization_output(kit: BankConnectorKit, database, function_scope_me
     for event in events:
         assert isinstance(event, BankTransactionEvent)
         assert event.entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT
-        assert event.location == kit.location
+        assert event.location == connector.data_location != Location.FINTS
         assert event.location_label == connector.name
         assert event.sequence_index == 0
         assert (event.event_type, event.event_subtype) in ALLOWED_EVENT_TYPES

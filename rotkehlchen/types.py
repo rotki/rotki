@@ -871,6 +871,16 @@ class Location(DBCharEnumMixIn):
     QONTO = 68  # bank connector
     FINTS = 69  # German FinTS/HBCI bank connector
 
+    # Transitional until LocationIdentifier replaces this enum: the DB stores the location
+    # tree identifier, which equals the API serialization of every enum member.
+    def serialize_for_db(self) -> str:
+        return str(self)
+
+    @classmethod
+    def deserialize_from_db(cls, value: str) -> Location:
+        """May raise a DeserializationError if something is wrong with the DB data"""
+        return cls.deserialize(value)
+
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
         if chain_id == ChainID.ETHEREUM:
