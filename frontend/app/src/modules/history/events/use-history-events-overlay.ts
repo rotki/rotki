@@ -5,8 +5,7 @@ import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { OverlayMode, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { useAccountingOverlaySeries } from '@/modules/history/balances/use-accounting-overlay-series';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
-import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 
 interface UseHistoryEventsOverlayReturn {
   /** Whether the build serves the overlay at all, i.e. whether to render its toggles. */
@@ -25,7 +24,7 @@ interface UseHistoryEventsOverlayReturn {
  * clobbered by pagination, and is NOT persisted across sessions: fresh navigation resets it to
  * 'none', back restores it from the history entry. Only the main page syncs.
  *
- * Completed history syncs and balance processing invalidate the breakdown series and refresh a
+ * Completed balance processing invalidates the breakdown series and refreshes a
  * visible overlay. A hidden overlay stays idle until enabled.
  */
 export function useHistoryEventsOverlay(
@@ -47,9 +46,8 @@ export function useHistoryEventsOverlay(
 
   provideAccountingOverlay({ enabled, overlay, series });
 
-  const { syncCompleted } = useSyncCompleted();
-  const { historicalBalanceProcessingCompleted } = storeToRefs(useDataIssuesInboxStore());
-  watch([syncCompleted, historicalBalanceProcessingCompleted], async () => {
+  const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
+  watch(historicalBalanceProcessingCompleted, async () => {
     series.reset();
     if (get(enabled))
       await overlay.refresh();

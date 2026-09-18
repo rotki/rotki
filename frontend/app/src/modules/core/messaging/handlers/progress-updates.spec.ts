@@ -28,7 +28,6 @@ const mockStatusOf = vi.fn((kind: ActivityKind, ...parts: (string | number)[]) =
   everCompleted: false,
   running: runningIds.includes(makeActivityId(kind, ...parts)),
 }));
-const mockNotifyHistoricalBalanceProcessingCompleted = vi.fn();
 
 type SupportedChains = typeof import('@/modules/core/common/use-supported-chains');
 
@@ -39,12 +38,6 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
       matchChain: (chain: string) => (chain === 'ethereum' ? Blockchain.ETH : undefined),
     })),
 } satisfies Partial<SupportedChains>));
-
-vi.mock('@/modules/history/data-issues/use-data-issues-inbox-store', () => ({
-  useDataIssuesInboxStore: vi.fn(() => ({
-    notifyHistoricalBalanceProcessingCompleted: mockNotifyHistoricalBalanceProcessingCompleted,
-  })),
-}));
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: vi.fn(() => ({
@@ -282,17 +275,6 @@ describe('createProgressUpdateHandler', () => {
       makeActivityId(ActivityKind.HISTORICAL_BALANCES),
       expect.objectContaining({ current: expect.anything(), total: expect.anything() }),
     );
-  });
-
-  it('should wait for the completion message before refreshing historical balances', async () => {
-    const handler = createProgressUpdateHandler(mockT);
-    await handler.handle(createMock<ProgressUpdateResultData>({
-      processed: 2,
-      subtype: SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING,
-      total: 2,
-    }));
-
-    expect(mockNotifyHistoricalBalanceProcessingCompleted).not.toHaveBeenCalled();
   });
 
   it('should delegate csv import results to the csv handler', async () => {

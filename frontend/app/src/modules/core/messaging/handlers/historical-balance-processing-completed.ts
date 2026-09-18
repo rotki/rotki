@@ -1,8 +1,8 @@
 import type { StateHandler } from '../interfaces';
 import { createStateHandler } from '@/modules/core/messaging/utils';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 
 export function createHistoricalBalanceProcessingCompletedHandler(): StateHandler {
-  const { notifyHistoricalBalanceProcessingCompleted } = useDataIssuesInboxStore();
+  const { notifyHistoricalBalanceProcessingCompleted } = useHistoricalBalanceProcessingStore();
   return createStateHandler(() => notifyHistoricalBalanceProcessingCompleted());
 }
