@@ -3,7 +3,6 @@ import type { ProgressUpdateResultData } from '../types/status-types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { decodeActivity, decodeActivityId, type DecodeSubject } from '@/modules/history/events/tx/decode-activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache-activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
@@ -19,7 +18,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   const protocolCacheStore = useProtocolCacheStatusStore();
   const { setProtocolCacheStatus, setReceivingProtocolCacheStatus } = protocolCacheStore;
   const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
-  const { notifyHistoricalBalanceProcessingCompleted } = useDataIssuesInboxStore();
   const { reportProgress, reportProgressByPrefix, statusOf } = useTaskOrchestrator();
   const { matchChain } = useSupportedChains();
 
@@ -165,8 +163,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
         reportProgress(makeActivityId(ActivityKind.HISTORICAL_BALANCES), { current: data.processed, total: data.total });
-        if (data.processed >= data.total)
-          notifyHistoricalBalanceProcessingCompleted();
         break;
     }
 

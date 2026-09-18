@@ -284,7 +284,7 @@ describe('createProgressUpdateHandler', () => {
     );
   });
 
-  it('should signal data-issue refresh when historical balance processing completes', async () => {
+  it('should wait for the completion message before refreshing historical balances', async () => {
     const handler = createProgressUpdateHandler(mockT);
     await handler.handle(createMock<ProgressUpdateResultData>({
       processed: 2,
@@ -292,7 +292,7 @@ describe('createProgressUpdateHandler', () => {
       total: 2,
     }));
 
-    expect(mockNotifyHistoricalBalanceProcessingCompleted).toHaveBeenCalledOnce();
+    expect(mockNotifyHistoricalBalanceProcessingCompleted).not.toHaveBeenCalled();
   });
 
   it('should delegate csv import results to the csv handler', async () => {
