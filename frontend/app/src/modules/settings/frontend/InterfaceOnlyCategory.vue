@@ -2,6 +2,7 @@
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import Explorers from '@/modules/settings/explorers/Explorers.vue';
 import AnimationsEnabledSetting from '@/modules/settings/frontend/AnimationsEnabledSetting.vue';
+import DockShowSummarySetting from '@/modules/settings/frontend/DockShowSummarySetting.vue';
 import PersistPrivacySettings from '@/modules/settings/frontend/PersistPrivacySettings.vue';
 import PersistTableSortingSetting from '@/modules/settings/frontend/PersistTableSortingSetting.vue';
 import ScrambleDataSetting from '@/modules/settings/frontend/ScrambleDataSetting.vue';
@@ -25,6 +26,9 @@ const { t } = useI18n({ useScope: 'global' });
     </SettingsItem>
     <SettingsItem setting-key="persistTableSorting">
       <PersistTableSortingSetting />
+    </SettingsItem>
+    <SettingsItem setting-key="dockShowSummary">
+      <DockShowSummarySetting />
     </SettingsItem>
     <ScrambleDataSetting />
     <SettingsItem setting-key="persistPrivacySettings">

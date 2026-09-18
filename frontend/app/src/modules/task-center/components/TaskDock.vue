@@ -2,11 +2,12 @@
 import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
 import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
 import DockPill from '@/modules/task-center/components/DockPill.vue';
+import { DockState } from '@/modules/task-center/dock-state';
 import { useCancelConfirmation } from '@/modules/task-center/use-cancel-confirmation';
 import { useDockPanel } from '@/modules/task-center/use-dock-panel';
 import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
-import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 const { t } = useI18n({ useScope: 'global' });
 

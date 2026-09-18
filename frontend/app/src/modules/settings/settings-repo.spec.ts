@@ -54,6 +54,7 @@ describe('useSettingsRepo frontend channel', () => {
       clientId: '',
       defiSetupDone: true,
       dismissedApiKeyNotices: [],
+      dockShowSummary: true,
       language: SupportedLanguage.EN,
       lastAppliedSettingsVersion: '0.0.0',
       answeredSuggestions: [],

@@ -3602,6 +3602,13 @@
         "error": "Error setting animations state: {message}"
       }
     },
+    "dock_show_summary": {
+      "subtitle": "Open the task panel briefly when a batch of work finishes, to show how it went. Failures stay until you dismiss them either way.",
+      "title": "Show a summary when tasks finish",
+      "validation": {
+        "error": "Error setting the task summary: {message}"
+      }
+    },
     "graph_basis": {
       "range_selector": {
         "label": "Show graph range selector for line chart"

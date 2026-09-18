@@ -57,6 +57,14 @@ export const frontendRegistry = {
   decimalSeparator: frontend('decimalSeparator', { anchor: SettingsHighlightIds.AMOUNT_FORMAT, effects: [applyBigNumberFormat] }),
   defaultThemeVersion: frontend('defaultThemeVersion'),
   dismissedApiKeyNotices: frontend('dismissedApiKeyNotices', { userFacing: false }),
+  dockShowSummary: frontend('dockShowSummary', {
+    anchor: SettingsHighlightIds.DOCK_SHOW_SUMMARY,
+    search: {
+      category: SettingsCategoryIds.INTERFACE_ONLY,
+      keywords: [msg.$t('frontend_settings.dock_show_summary.subtitle')],
+      titleKey: msg.$t('frontend_settings.dock_show_summary.title'),
+    },
+  }),
   enableAliasNames: frontend('enableAliasNames'),
   enablePasswordConfirmation: frontend('enablePasswordConfirmation', {
     anchor: SettingsHighlightIds.PASSWORD_CONFIRMATION,

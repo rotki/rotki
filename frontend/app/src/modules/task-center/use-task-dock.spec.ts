@@ -11,9 +11,14 @@ import {
   ActivityStatus,
   makeActivityId,
 } from '@/modules/task-center/core/types';
-import { DockState, useTaskDock } from './use-task-dock';
+import { DockState } from './dock-state';
+import { useTaskDock } from './use-task-dock';
 
 const activities = ref<Activity[]>([]);
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<boolean> => ref<boolean>(false),
+}));
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { isActive: ComputedRef<boolean>; model: ComputedRef<ActivityModel> } => {

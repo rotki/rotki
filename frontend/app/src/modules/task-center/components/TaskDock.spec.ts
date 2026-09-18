@@ -34,6 +34,10 @@ vi.mock('@/modules/task-center/use-task-controller', () => ({
   useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
 }));
 
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<boolean> => ref<boolean>(false),
+}));
+
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
   useExternalApiKeys: (): { loading: Ref<boolean>; useApiKey: () => Ref<string> } => ({ loading: ref(false), useApiKey: () => ref('') }),
 }));
