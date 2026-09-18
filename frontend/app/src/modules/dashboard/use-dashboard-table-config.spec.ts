@@ -6,11 +6,10 @@ import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
 const TABLE_TYPE = DashboardTableType.ASSETS;
 
-const mockCurrencySymbol = ref<string>('USD');
 const mockVisibleColumns = ref<Record<string, TableColumn[]>>({ [TABLE_TYPE]: [] });
 
 vi.mock('@/modules/settings/use-setting', () => ({
-  useSetting: vi.fn((key: string) => (key === 'currencySymbol' ? mockCurrencySymbol : mockVisibleColumns)),
+  useSetting: vi.fn(() => mockVisibleColumns),
 }));
 
 vi.mock('@/modules/core/table/use-remember-table-sorting', async importOriginal => ({
@@ -29,7 +28,6 @@ function create(netWorth: BigNumber = bigNumberify(100)): ReturnType<typeof useD
 
 describe('useDashboardTableConfig', () => {
   beforeEach(() => {
-    set(mockCurrencySymbol, 'USD');
     set(mockVisibleColumns, { [TABLE_TYPE]: [] });
   });
 
@@ -114,12 +112,12 @@ describe('useDashboardTableConfig', () => {
       expect(header?.label).toBe('dashboard_asset_table.headers.percentage_total');
     });
 
-    it('should reflect the currency symbol in the price column label', () => {
-      set(mockCurrencySymbol, 'EUR');
+    it('should label price and value plainly, since every cell already carries the currency', () => {
       const { tableHeaders } = create();
-      const priceHeader = get(tableHeaders).find(h => h.key === 'price');
+      const labelOf = (key: string): string | undefined => get(tableHeaders).find(h => h.key === key)?.label;
 
-      expect(priceHeader?.label).toBe('common.price_in_symbol');
+      expect(labelOf('price')).toBe('common.price');
+      expect(labelOf('value')).toBe('common.value');
     });
   });
 });

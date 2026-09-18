@@ -2232,6 +2232,7 @@
     "unknown": "Unknown",
     "url": "URL",
     "validator_index": "Validator Index",
+    "value": "Value",
     "value_in_symbol": "{symbol} Value",
     "xpub": "XPUB"
   },
@@ -2552,6 +2553,8 @@
         "blockchain": "Blockchain accounts",
         "exchanges": "Exchanges",
         "manual": "Manual balances",
+        "nfts": "NFTs",
+        "pools": "Liquidity pools",
         "title": "Refresh one source"
       },
       "tooltip": "Query every account, exchange and bank, reload manual balances, then refresh prices"
@@ -2776,12 +2779,16 @@
         "title": "Snapshots"
       },
       "subtitle": "Download this snapshot's data."
+    },
+    "table": {
+      "collapse": "Collapse table",
+      "expand": "Expand table"
     }
   },
   "dashboard_asset_table": {
     "headers": {
       "percentage_of_total_current_group": "% of total {group}",
-      "percentage_of_total_net_value": "% of net Value",
+      "percentage_of_total_net_value": "% of net value",
       "percentage_total": "% of total"
     },
     "no_assets": "No assets yet. Add a blockchain address, connect an exchange, or add a manual balance above. Your balances will appear here once the first query completes.",
@@ -4880,7 +4887,6 @@
           "premium_only": "See your complete assets overview with a Premium account "
         },
         "pool_table": {
-          "refresh_tooltip": "Refresh LP Tokens",
           "title": "LP Tokens"
         },
         "task": {
@@ -4976,12 +4982,11 @@
   },
   "nft_balance_table": {
     "column": {
-      "percentage": "% of net Value",
+      "percentage": "% of net value",
       "price_in_asset": "Price in asset"
     },
-    "contract_address": "Contract address",
     "hidden_hint": "Image is hidden for safety reason, you can manage it in NFT setting.",
-    "refresh": "Refresh the NFT balances",
+    "open_page": "Open the NFT balances page",
     "title": "NFT Balances",
     "token_id": "Token ID"
   },

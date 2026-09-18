@@ -13,12 +13,13 @@ import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.v
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
-import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { usePoolBalances } from './use-pool-balances';
 
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
+
+const PAGE_SIZE = 10;
 
 const expanded = ref<PoolLiquidityBalance[]>([]);
 
@@ -31,29 +32,32 @@ const currencySymbol = useSetting('currencySymbol');
 const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
-const { balances, fetch, getPoolName, loading, total } = usePoolBalances();
+const { balances, fetch, getPoolLabel, loading, total } = usePoolBalances();
+
+const fitsOnePage = computed<boolean>(() => get(balances).length <= PAGE_SIZE);
 const { t } = useI18n({ useScope: 'global' });
 
 const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[LIQUIDITY_POSITION];
 
   const headers: DataTableColumn<PoolLiquidityBalance>[] = [{
-    cellClass: 'text-no-wrap',
+    cellClass: 'text-no-wrap py-0',
+    class: 'text-no-wrap w-full',
     key: 'name',
     label: t('common.name'),
   }, {
     align: 'end',
+    cellClass: 'font-medium',
     class: 'text-no-wrap',
     key: 'value',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
+    label: t('common.value'),
     sortable: true,
   }];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
       align: 'end',
+      cellClass: 'text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalNetValue',
       label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
@@ -63,6 +67,7 @@ const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
       align: 'end',
+      cellClass: 'text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalCurrentGroup',
       label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
@@ -77,6 +82,10 @@ const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
 useRememberTableSorting<PoolLiquidityBalance>(TableId.POOL_LIQUIDITY_BALANCE, sort, tableHeaders);
 
 const getAssets = (assets: PoolAsset[]) => assets.map(({ asset }) => asset);
+
+const poolLabels = computed<Map<number, ReturnType<typeof getPoolLabel>>>(() => new Map(
+  get(balances).map(row => [row.id, getPoolLabel(row.type, getAssets(row.assets))]),
+));
 
 function percentageOfTotalNetValue(value: BigNumber) {
   const netWorth = get(totalNetWorth);
@@ -98,19 +107,18 @@ watch(currencySymbol, async () => {
 </script>
 
 <template>
-  <DashboardExpandableTable v-if="balances.length > 0">
+  <DashboardExpandableTable
+    v-if="balances.length > 0"
+    :count="balances.length"
+  >
     <template #title>
-      <RefreshButton
-        :loading="loading"
-        :tooltip="t('modules.dashboard.liquidity_pools.pool_table.refresh_tooltip')"
-        @refresh="fetch(true)"
-      />
       {{ t('modules.dashboard.liquidity_pools.pool_table.title') }}
     </template>
     <template #details>
       <VisibleColumnsSelector
         :group="LIQUIDITY_POSITION"
         :group-label="t('modules.dashboard.liquidity_pools.pool_table.title')"
+        size="sm"
       />
     </template>
     <template #shortDetails>
@@ -123,8 +131,12 @@ watch(currencySymbol, async () => {
     <RuiDataTable
       v-model:expanded="expanded"
       v-model:sort="sort"
-      outlined
       dense
+      :items-per-page="PAGE_SIZE"
+      :hide-default-header="fitsOnePage"
+      :hide-default-footer="fitsOnePage"
+      class="!rounded-t-none"
+      :class="{ 'border-t border-default': !fitsOnePage }"
       :cols="tableHeaders"
       :rows="balances"
       :loading="loading"
@@ -132,13 +144,19 @@ watch(currencySymbol, async () => {
       single-expand
     >
       <template #item.name="{ row }">
-        <div class="flex items-center py-2">
+        <div class="flex items-center gap-3 py-2">
           <PoolIcon
             :type="row.type"
             :assets="getAssets(row.assets)"
           />
-          <div class="pl-4 font-medium">
-            {{ getPoolName(row.type, getAssets(row.assets)) }}
+          <div class="flex flex-col leading-[1.25em]">
+            <span class="text-sm font-medium">{{ poolLabels.get(row.id)?.pair }}</span>
+            <span
+              v-if="poolLabels.get(row.id)?.prefix"
+              class="text-caption leading-4 text-rui-text-secondary"
+            >
+              {{ poolLabels.get(row.id)?.prefix }}
+            </span>
           </div>
         </div>
       </template>
@@ -163,14 +181,20 @@ watch(currencySymbol, async () => {
           :premium-only="row.premiumOnly"
         />
       </template>
-      <template #body.append>
+      <template
+        v-if="balances.length > 1"
+        #body.append
+      >
         <RowAppend
           label-colspan="1"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 2"
-          class-name="[&>td]:p-4"
+          class-name="text-sm border-t border-default [&>td]:px-4 [&>td]:py-3"
         >
-          <FiatDisplay :value="total" />
+          <FiatDisplay
+            :value="total"
+            class="font-bold"
+          />
         </RowAppend>
       </template>
     </RuiDataTable>

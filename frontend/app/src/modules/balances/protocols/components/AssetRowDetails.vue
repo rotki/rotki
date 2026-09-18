@@ -38,7 +38,7 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
       <AssetBalances
         v-else
         :loading="loading"
-        hide-total
+        nested
         :breakdown="breakdown"
         :balances="row.breakdown ?? []"
       />

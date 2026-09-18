@@ -55,25 +55,37 @@ function isPriceMissing(asset: string): boolean {
   return get(prices)[asset]?.priceMissing === true;
 }
 
+/** Below this many rows the whole table is in view, so a search field only takes space. */
+const SEARCH_MIN_ROWS = 11;
+
 const totalPending = computed<boolean>(() => isTotalPending(get(sorted)));
+
+const searchable = computed<boolean>(() => balances.length >= SEARCH_MIN_ROWS);
+
+const fitsOnePage = computed<boolean>(() => get(sorted).length <= get(pagination).itemsPerPage);
+
+/** With one row the row is its own total. */
+const showTotal = computed<boolean>(() => get(sorted).length > 1 && get(modelSearch).length === 0);
 
 watch(modelSearch, () => setPage(1));
 </script>
 
 <template>
-  <DashboardExpandableTable>
+  <DashboardExpandableTable :count="balances.length">
     <template #title>
       {{ title }}
     </template>
     <template #details>
       <RuiTextField
+        v-if="searchable"
         v-model="modelSearch"
         variant="outlined"
         color="primary"
         dense
         prepend-icon="lu-search"
-        :label="t('common.actions.search')"
-        class="max-w-[28rem] w-full"
+        :placeholder="t('common.actions.search')"
+        :aria-label="t('common.actions.search')"
+        class="max-w-[16rem] w-full [&_input]:!py-1.5 [&_input]:!text-sm [&_input]:!leading-5 [&_input::placeholder]:!opacity-100 [&_input::placeholder]:!text-rui-text-secondary [&_svg]:!size-4"
         hide-details
         clearable
         @click:clear="modelSearch = ''"
@@ -82,6 +94,7 @@ watch(modelSearch, () => setPage(1));
       <VisibleColumnsSelector
         :group="tableType"
         :group-label="title"
+        size="sm"
       />
     </template>
     <template #shortDetails>
@@ -107,8 +120,11 @@ watch(modelSearch, () => setPage(1));
       row-attr="asset"
       sticky-header
       single-expand
-      outlined
       dense
+      :hide-default-header="fitsOnePage"
+      :hide-default-footer="fitsOnePage"
+      class="!rounded-t-none"
+      :class="{ 'border-t border-default': !fitsOnePage }"
       @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">
@@ -184,18 +200,20 @@ watch(modelSearch, () => setPage(1));
         </span>
       </template>
       <template
-        v-if="balances.length > 0 && (!modelSearch || modelSearch.length === 0)"
+        v-if="showTotal"
         #body.append
       >
         <RowAppend
           label-colspan="4"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
-          class-name="text-sm [&_td]:p-4"
+          class-name="text-sm border-t border-default [&_td]:px-4 [&_td]:py-3"
+          data-testid="dashboard-asset-table-total"
         >
           <FiatDisplay
             :value="total"
             :loading="totalPending"
+            class="font-bold"
           />
         </RowAppend>
       </template>

@@ -29,9 +29,13 @@ vi.mock('@/modules/assets/prices/use-price-utils', async () => {
 
 /** Renders only the slots under test, so the assertions do not depend on RuiDataTable internals. */
 const RuiDataTableStub = defineComponent({
-  props: { rows: { default: () => [], type: Array } },
+  props: {
+    hideDefaultFooter: { default: false, type: Boolean },
+    hideDefaultHeader: { default: false, type: Boolean },
+    rows: { default: () => [], type: Array },
+  },
   setup(props, { slots }): () => VNode {
-    return () => h('div', [
+    return () => h('div', { 'data-pagers': `${props.hideDefaultHeader ? 'no-top' : 'top'},${props.hideDefaultFooter ? 'no-bottom' : 'bottom'}` }, [
       ...props.rows.map(row => h('div', slots['item.value']?.({ row }))),
       h('div', slots['body.append']?.({})),
     ]);
@@ -65,6 +69,10 @@ function createBalance(asset: string, overrides: Partial<AssetBalanceWithPrice> 
   };
 }
 
+function createBalances(count: number): AssetBalanceWithPrice[] {
+  return Array.from({ length: count }, (_, index) => createBalance(`A${index}`));
+}
+
 describe('dashboardAssetTable', () => {
   let wrapper: VueWrapper<InstanceType<typeof DashboardAssetTable>>;
 
@@ -74,10 +82,11 @@ describe('dashboardAssetTable', () => {
         plugins: [createPinia()],
         stubs: {
           AssetValueDisplay: valueStub('row-value'),
-          DashboardExpandableTable: { template: '<div><slot /></div>' },
+          DashboardExpandableTable: { template: '<div><slot name="details" /><slot /></div>' },
           FiatDisplay: valueStub('total-value'),
           RowAppend: { template: '<div><slot /></div>' },
           RuiDataTable: RuiDataTableStub,
+          RuiTextField: { template: '<input data-testid="search" />' },
           VisibleColumnsSelector: true,
         },
       },
@@ -134,5 +143,29 @@ describe('dashboardAssetTable', () => {
     wrapper = createWrapper([createBalance('ETH'), createBalance('DAI')]);
 
     expect(totalValues()).toContain('true');
+  });
+
+  it('should leave the total row out when the single row is its own total', () => {
+    wrapper = createWrapper([createBalance('ETH')]);
+
+    expect(totalValues()).toHaveLength(0);
+  });
+
+  it('should offer search only once there are more rows than fit in view', () => {
+    wrapper = createWrapper(createBalances(10));
+    expect(wrapper.find('[data-testid=search]').exists()).toBe(false);
+
+    wrapper.unmount();
+    wrapper = createWrapper(createBalances(11));
+    expect(wrapper.find('[data-testid=search]').exists()).toBe(true);
+  });
+
+  it('should hide both pagers while every row fits on one page, and show both once it does not', () => {
+    wrapper = createWrapper(createBalances(10));
+    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('no-top,no-bottom');
+
+    wrapper.unmount();
+    wrapper = createWrapper(createBalances(11));
+    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('top,bottom');
   });
 });

@@ -195,4 +195,17 @@ describe('assetDetailsBase', () => {
       expect(appImage(wrapper).props('size')).toBe('48px');
     });
   });
+
+  describe('subtitle', () => {
+    it('should show the name under the symbol', () => {
+      expect(listItem(createWrapper()).props('subtitle')).toBe('Dai Stablecoin');
+    });
+
+    it('should leave the name out when it only repeats the symbol', () => {
+      const wrapper = createWrapper({ asset: { ...ASSET, name: 'eth', symbol: 'ETH' } });
+
+      expect(listItem(wrapper).props('title')).toBe('ETH');
+      expect(listItem(wrapper).props('subtitle')).toBe('');
+    });
+  });
 });

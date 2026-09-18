@@ -2111,7 +2111,6 @@
           "premium_only": "升级到溢价以查看资产信息"
         },
         "pool_table": {
-          "refresh_tooltip": "刷新 LP 代币",
           "title": "LP代币"
         },
         "task": {
@@ -2169,8 +2168,6 @@
       "percentage": "净值%",
       "price_in_asset": "资产价格"
     },
-    "contract_address": "合约地址",
-    "refresh": "刷新NFT余额",
     "title": "NFT 余额",
     "token_id": "代币 ID"
   },

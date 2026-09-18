@@ -2323,7 +2323,6 @@
           "premium_only": "Mettez à niveau vers premium pour voir les informations sur les actifs"
         },
         "pool_table": {
-          "refresh_tooltip": "Rafraîchir les jetons LP",
           "title": "Jetons LP"
         },
         "task": {
@@ -2380,9 +2379,7 @@
       "percentage": "% de la valeur nette",
       "price_in_asset": "Prix dans l'actif"
     },
-    "contract_address": "Adresse du contrat",
     "hidden_hint": "L'image est masquée pour des raisons de sécurité, vous pouvez la gérer dans les paramètres NFT.",
-    "refresh": "Actualiser les soldes NFT",
     "title": "Soldes NFT",
     "token_id": "ID de jeton"
   },

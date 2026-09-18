@@ -763,15 +763,6 @@
       "enabled": "Activado"
     }
   },
-  "modules": {
-    "dashboard": {
-      "liquidity_pools": {
-        "pool_table": {
-          "refresh_tooltip": "Refrescar LP Tokens"
-        }
-      }
-    }
-  },
   "navigation_menu": {
     "balances_sub": {
       "blockchain_balances": "Balances en blockchains",

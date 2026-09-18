@@ -37,4 +37,17 @@ describe('asset-balances', () => {
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(false);
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
+
+  it('should drop the currency from the price and value headers only when nested in another row', async () => {
+    const headers = (): string => wrapper.find('thead').text();
+
+    expect(headers()).toContain('common.price_in_symbol');
+    expect(headers()).toContain('common.value_in_symbol');
+
+    await wrapper.setProps({ nested: true });
+
+    expect(headers()).not.toContain('_in_symbol');
+    expect(headers()).toContain('common.price');
+    expect(headers()).toContain('common.value');
+  });
 });

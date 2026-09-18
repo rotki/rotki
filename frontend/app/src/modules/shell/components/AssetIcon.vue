@@ -30,6 +30,8 @@ interface AssetIconProps {
   circle?: boolean;
   padding?: string;
   showChain?: boolean;
+  /** Leaves out the token's protocol mark, for icons that already sit beside one of their own. */
+  hideProtocol?: boolean;
   flat?: boolean;
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
@@ -46,6 +48,7 @@ const {
   circle,
   flat = false,
   forceChain,
+  hideProtocol = false,
   identifier,
   noTooltip = false,
   optimizeForVirtualScroll = false,
@@ -205,7 +208,7 @@ const { copied, copy } = useCopy(() => identifier);
         </div>
 
         <div
-          v-if="protocol"
+          v-if="protocol && !hideProtocol"
           class="z-[1] absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
           :class="{ blur: !shouldShowAmount }"
         >

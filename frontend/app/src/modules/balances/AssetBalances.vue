@@ -30,8 +30,8 @@ const selected = defineModel<string[] | undefined>('selected', { required: false
 const {
   balances,
   breakdown,
-  hideTotal = false,
   loading = false,
+  nested = false,
   selectionMode = false,
   showPerProtocol = false,
   stickyHeader = false,
@@ -40,11 +40,15 @@ const {
   balances: AssetBalanceWithPrice[];
   breakdown?: AssetBreakdownOptions;
   loading?: boolean;
-  hideTotal?: boolean;
   stickyHeader?: boolean;
   visibleColumns?: TableColumn[];
   showPerProtocol?: boolean;
   selectionMode?: boolean;
+  /**
+   * Shown inside another table's expanded row: it follows that table's column style and leaves the
+   * total out, since the row it expands already shows it.
+   */
+  nested?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -98,11 +102,11 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: 'py-0',
+    cellClass: nested ? 'py-0 text-rui-text-secondary' : 'py-0',
     key: 'price',
-    label: t('common.price_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
+    label: nested
+      ? t('common.price')
+      : t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   }, {
     align: 'end',
@@ -112,12 +116,12 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: 'py-0',
+    cellClass: nested ? 'py-0 font-medium' : 'py-0',
     class: 'text-no-wrap',
     key: 'value',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
+    label: nested
+      ? t('common.value')
+      : t('common.value_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   }];
 
@@ -236,7 +240,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
       />
     </template>
     <template
-      v-if="balances.length > 0 && !hideTotal"
+      v-if="balances.length > 0 && !nested"
       #body.append
     >
       <RowAppend

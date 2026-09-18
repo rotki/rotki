@@ -39,10 +39,16 @@ function createNewBalance(account: string, poolBalance: PoolBalance): Writeable<
   };
 }
 
+/** How a pool reads in a table: its asset pair, and the LP token prefix of the protocol when known. */
+interface PoolLabel {
+  pair: string;
+  prefix: string | undefined;
+}
+
 interface UsePoolBalancesReturn {
   balances: ComputedRef<PoolLiquidityBalance[]>;
   fetch: (refresh?: boolean) => Promise<void>;
-  getPoolName: (type: PoolType, assets: string[]) => string;
+  getPoolLabel: (type: PoolType, assets: string[]) => PoolLabel;
   loading: ComputedRef<boolean>;
   total: ComputedRef<BigNumber>;
 }
@@ -102,23 +108,22 @@ export function usePoolBalances(): UsePoolBalancesReturn {
 
   const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.value)));
 
-  function getPoolName(type: PoolType, assets: string[]): string {
-    const concatAssets = (items: string[]): string => items.map(asset => getAssetField(asset, 'symbol')).join('-');
-
+  function getPoolLabel(type: PoolType, assets: string[]): PoolLabel {
     const prefixes: Record<string, string> = {
       [PoolType.UNISWAP_V2]: 'UNI-V2',
       [PoolType.SUSHISWAP]: 'SLP',
     };
 
-    const prefix = prefixes[type];
-    const joined = concatAssets(assets);
-    return prefix ? `${prefix} ${joined}` : joined;
+    return {
+      pair: assets.map(asset => getAssetField(asset, 'symbol')).join('-'),
+      prefix: prefixes[type],
+    };
   }
 
   return {
     balances,
     fetch,
-    getPoolName,
+    getPoolLabel,
     loading,
     total,
   };

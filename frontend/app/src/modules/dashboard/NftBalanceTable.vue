@@ -8,7 +8,6 @@ import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTab
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
-import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 /**
@@ -52,6 +51,8 @@ onMounted(async () => {
  */
 const hasBalances = computed<boolean>(() => get(found) > 0);
 
+const fitsOnePage = computed<boolean>(() => get(found) <= get(pagination).limit);
+
 watch(sectionLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
@@ -62,26 +63,31 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
   <DashboardExpandableTable
     v-if="hasBalances"
     v-bind="$attrs"
+    :count="found"
   >
     <template #title>
-      <RefreshButton
-        :loading="sectionLoading"
-        :tooltip="t('nft_balance_table.refresh')"
-        @refresh="refreshNonFungibleBalances(true)"
-      />
       {{ t('nft_balance_table.title') }}
+    </template>
+    <template #titleActions>
       <RouterLink :to="nonFungibleRoute">
         <RuiButton
           variant="text"
           icon
-          class="ml-2"
+          size="sm"
+          :aria-label="t('nft_balance_table.open_page')"
         >
-          <RuiIcon name="lu-chevron-right" />
+          <RuiIcon
+            name="lu-chevron-right"
+            size="18"
+          />
         </RuiButton>
       </RouterLink>
     </template>
     <template #details>
-      <VisibleColumnsSelector :group="group" />
+      <VisibleColumnsSelector
+        :group="group"
+        size="sm"
+      />
     </template>
     <template #shortDetails>
       <FiatDisplay
@@ -100,11 +106,17 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       :empty="emptyState"
       row-attr="id"
       sticky-header
-      outlined
       dense
+      :hide-default-header="fitsOnePage"
+      :hide-default-footer="fitsOnePage"
+      class="!rounded-t-none"
+      :class="{ 'border-t border-default': !fitsOnePage }"
     >
       <template #item.name="{ row }">
-        <NftDetails :identifier="row.id" />
+        <NftDetails
+          :identifier="row.id"
+          size="32px"
+        />
       </template>
       <template #item.priceInAsset="{ row }">
         <AssetAmountDisplay
@@ -138,11 +150,12 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           :label="t('common.total')"
           :right-patch-colspan="cols.length - 3"
           :is-mobile="false"
-          class-name="[&>td]:p-4 text-sm"
+          class-name="text-sm border-t border-default [&>td]:px-4 [&>td]:py-3"
         >
           <FiatDisplay
             v-if="totalValue"
             :value="totalValue"
+            class="font-bold"
           />
         </RowAppend>
       </template>

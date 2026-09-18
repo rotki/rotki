@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { type BalanceSource, RefreshSource } from '@/modules/balances/refresh/core/refresh-types';
-import { type DashboardRefreshAction, DashboardRefreshKind } from '@/modules/dashboard/dashboard-refresh-action';
+import {
+  DashboardExtraSource,
+  type DashboardRefreshAction,
+  DashboardRefreshKind,
+} from '@/modules/dashboard/dashboard-refresh-action';
 
 interface MenuItem {
   readonly action: DashboardRefreshAction;
@@ -8,10 +12,12 @@ interface MenuItem {
   readonly hint?: string;
 }
 
-const { busy = false, sources = [] } = defineProps<{
+const { busy = false, extraSources = [], sources = [] } = defineProps<{
   busy?: boolean;
   /** Connected sources, each offered as a refresh of its own. */
   sources?: BalanceSource[];
+  /** Dashboard tables with a query of their own, offered after the sources. */
+  extraSources?: DashboardExtraSource[];
 }>();
 
 const emit = defineEmits<{
@@ -41,10 +47,16 @@ const modeItems = computed<MenuItem[]>(() => [
   },
 ]);
 
-const sourceItems = computed<MenuItem[]>(() => sources.map(source => ({
-  action: { kind: DashboardRefreshKind.SOURCE, source },
-  label: sourceLabel(source),
-})));
+const sourceItems = computed<MenuItem[]>(() => [
+  ...sources.map((source): MenuItem => ({
+    action: { kind: DashboardRefreshKind.SOURCE, source },
+    label: sourceLabel(source),
+  })),
+  ...extraSources.map((source): MenuItem => ({
+    action: { kind: DashboardRefreshKind.EXTRA_SOURCE, source },
+    label: source === DashboardExtraSource.NFTS ? t('dashboard.refresh.source.nfts') : t('dashboard.refresh.source.pools'),
+  })),
+]);
 
 function sourceLabel(source: BalanceSource): string {
   switch (source) {
@@ -60,7 +72,7 @@ function sourceLabel(source: BalanceSource): string {
 }
 
 function testIdOf(action: DashboardRefreshAction): string {
-  return action.kind === DashboardRefreshKind.SOURCE
+  return action.kind === DashboardRefreshKind.SOURCE || action.kind === DashboardRefreshKind.EXTRA_SOURCE
     ? `dashboard-refresh-source-${action.source}`
     : `dashboard-refresh-${action.kind}`;
 }

@@ -35,22 +35,24 @@ const multiple = computed<boolean>(() => assets.length > 2);
       <AssetIcon
         circle
         :identifier="assets[0]"
-        size="32px"
+        size="28px"
         padding="0"
         :show-chain="false"
+        hide-protocol
       />
       <AssetIcon
         v-if="!multiple"
         circle
-        class="z-0 -ml-2.5"
+        class="z-0 -ml-2"
         :identifier="assets[1]"
-        size="32px"
+        size="28px"
         padding="0"
         :show-chain="false"
+        hide-protocol
       />
       <RuiMenu v-else>
         <template #activator>
-          <div class="z-0 -ml-2.5 cursor-pointer rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-rui-grey-700 text-rui-text flex items-center justify-center font-bold">
+          <div class="z-0 -ml-2 cursor-pointer rounded-full w-7 h-7 bg-rui-grey-300 dark:bg-rui-grey-700 text-rui-text text-xs flex items-center justify-center font-bold">
             +{{ assets.length - 1 }}
           </div>
         </template>
@@ -63,13 +65,14 @@ const multiple = computed<boolean>(() => assets.length > 2);
             size="32px"
             padding="0"
             :show-chain="false"
+            hide-protocol
           />
         </div>
       </RuiMenu>
     </div>
-    <div class="relative p-0.5 w-5 h-5 rounded-full bg-rui-grey-200 -ml-3 -mt-3">
+    <div class="absolute -bottom-0.5 -right-1 p-px w-4 h-4 rounded-full bg-white dark:bg-rui-grey-900 ring-1 ring-black/[0.12] dark:ring-white/[0.12]">
       <AppImage
-        size="1rem"
+        size="0.875rem"
         :src="icon"
       />
     </div>
