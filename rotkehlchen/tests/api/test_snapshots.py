@@ -92,17 +92,17 @@ def _populate_db_with_location_data(
         location_data=[
             LocationData(
                 time=ts,
-                location='A',
+                location='external',
                 usd_value='100.00',
             ),
             LocationData(
                 time=ts,
-                location='B',
+                location='kraken',
                 usd_value='200.00',
             ),
             LocationData(
                 time=ts,
-                location='H',
+                location='total',
                 usd_value='50.00',
             ),
         ],

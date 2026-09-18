@@ -8,7 +8,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
+from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -69,11 +69,11 @@ def upgrade_v40_to_v41(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         """
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE location=?',
-            (Location.BITTREX.serialize_for_db(),),
+            ('D',),
         )
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.BITTREX!s}\\_%', '\\'),
+            ('bittrex\\_%', '\\'),
         )
         non_syncing_exchanges_in_db = write_cursor.execute(
             "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
@@ -87,7 +87,7 @@ def upgrade_v40_to_v41(db: DBHandler, progress_handler: DBUpgradeProgressHandler
                     'during the DB upgrade to v41.',
                 )
             else:
-                new_values = [x for x in non_syncing_exchanges if x['location'] != Location.BITTREX.serialize()]  # noqa: E501
+                new_values = [x for x in non_syncing_exchanges if x['location'] != 'bittrex']
                 write_cursor.execute(
                     "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
                     (json.dumps(new_values),),

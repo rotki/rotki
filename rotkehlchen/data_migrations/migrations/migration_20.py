@@ -16,6 +16,7 @@ from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.legacy_chars import location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, FVal, Location, Price
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
@@ -246,7 +247,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 )
                 recovered_events.extend(create_swap_events_v47_v48(
                     timestamp=ts_sec_to_ms(row[0]),
-                    location=Location.deserialize_from_db(row[1]),
+                    location=location_from_v53_char(row[1]),  # the backup is a v47 DB
                     spend=spend,
                     receive=receive,
                     fee=AssetAmount(

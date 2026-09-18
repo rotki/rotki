@@ -45,6 +45,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.locations.legacy_chars import V53_CHAR_TO_NAME, v53_char
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.database import column_exists, index_exists
@@ -52,7 +53,6 @@ from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
     CacheType,
     ChainID,
-    Location,
     Timestamp,
     TokenKind,
 )
@@ -595,26 +595,26 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
         # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
         for exchange, expected_mappings_count in (
             (None, 33),
-            (Location.KRAKEN.serialize_for_db(), 228),
-            (Location.POLONIEX.serialize_for_db(), 147),
-            (Location.BITTREX.serialize_for_db(), 121),
-            (Location.BINANCE.serialize_for_db(), 135),
-            (Location.COINBASE.serialize_for_db(), 78),
-            (Location.COINBASEPRO.serialize_for_db(), 82),
-            (Location.GEMINI.serialize_for_db(), 26),
-            (Location.CRYPTOCOM.serialize_for_db(), 0),
-            (Location.BITSTAMP.serialize_for_db(), 16),
-            (Location.BITFINEX.serialize_for_db(), 60),
-            (Location.ICONOMI.serialize_for_db(), 36),
-            (Location.KUCOIN.serialize_for_db(), 233),
-            (Location.FTX.serialize_for_db(), 45),
-            (Location.NEXO.serialize_for_db(), 2),
-            (Location.BLOCKFI.serialize_for_db(), 5),
-            (Location.UPHOLD.serialize_for_db(), 37),
-            (Location.BITPANDA.serialize_for_db(), 41),
-            (Location.OKX.serialize_for_db(), 65),
-            (Location.WOO.serialize_for_db(), 32),
-            (Location.BYBIT.serialize_for_db(), 78),
+            (v53_char('kraken'), 228),
+            (v53_char('poloniex'), 147),
+            (v53_char('bittrex'), 121),
+            (v53_char('binance'), 135),
+            (v53_char('coinbase'), 78),
+            (v53_char('coinbasepro'), 82),
+            (v53_char('gemini'), 26),
+            (v53_char('cryptocom'), 0),
+            (v53_char('bitstamp'), 16),
+            (v53_char('bitfinex'), 60),
+            (v53_char('iconomi'), 36),
+            (v53_char('kucoin'), 233),
+            (v53_char('ftx'), 45),
+            (v53_char('nexo'), 2),
+            (v53_char('blockfi'), 5),
+            (v53_char('uphold'), 37),
+            (v53_char('bitpanda'), 41),
+            (v53_char('okx'), 65),
+            (v53_char('woo'), 32),
+            (v53_char('bybit'), 78),
         ):
             assert cursor.execute(
                 'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ?', (exchange,),
@@ -624,15 +624,15 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
         # exact values can be tested by pasting this gist here and running it
         # https://gist.github.com/OjusWiZard/0a9544ac4e985be08736cc3296e3e0d3
         for location, expected_mappings_count in (
-            (Location.BINANCE.serialize_for_db(), 22),
-            (Location.BITFINEX.serialize_for_db(), 10),
-            (Location.BITTREX.serialize_for_db(), 125),
-            (Location.FTX.serialize_for_db(), 65),
-            (Location.GEMINI.serialize_for_db(), 10),
-            (Location.ICONOMI.serialize_for_db(), 4),
-            (Location.KUCOIN.serialize_for_db(), 233),
-            (Location.OKX.serialize_for_db(), 7),
-            (Location.POLONIEX.serialize_for_db(), 133),
+            (v53_char('binance'), 22),
+            (v53_char('bitfinex'), 10),
+            (v53_char('bittrex'), 125),
+            (v53_char('ftx'), 65),
+            (v53_char('gemini'), 10),
+            (v53_char('iconomi'), 4),
+            (v53_char('kucoin'), 233),
+            (v53_char('okx'), 7),
+            (v53_char('poloniex'), 133),
         ):
             assert cursor.execute(
                 'SELECT COUNT(*) FROM location_unsupported_assets WHERE location = ?', (location,),
@@ -1922,12 +1922,20 @@ def test_upgrade_v18_v19(
         messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test the global DB upgrade from v18 to v19 that adds Birdeye to the
-    historical price sources table."""
+    historical price sources table and stores exchange locations as text identifiers."""
     assert globaldb.get_setting_value('version', 0) == 18
-    with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute(
+    with globaldb.conn.write_ctx() as write_cursor:
+        assert write_cursor.execute(
             "SELECT COUNT(*) FROM price_history_source_types WHERE type='L'",
         ).fetchone()[0] == 0
+        mappings_before = write_cursor.execute(
+            'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+        ).fetchall()
+        assert {x[0] for x in mappings_before} >= {None, v53_char('kraken'), v53_char('binance')}
+        write_cursor.executemany(  # the binance pairs of both binance locations
+            'INSERT INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)',  # noqa: E501
+            [('ETHBTC', 'ETH', 'BTC', v53_char('binance')), ('ETHBTC', 'ETH', 'BTC', v53_char('binanceus'))],  # noqa: E501
+        )
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 19)
@@ -1943,6 +1951,15 @@ def test_upgrade_v18_v19(
         assert cursor.execute(
             "SELECT seq FROM price_history_source_types WHERE type='L'",
         ).fetchone() == (12,)
+        assert set(cursor.execute(
+            'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+        ).fetchall()) == {
+            (None if location is None else V53_CHAR_TO_NAME[location], symbol, local_id)
+            for location, symbol, local_id in mappings_before
+        }
+        assert cursor.execute(
+            'SELECT location FROM binance_pairs ORDER BY location',
+        ).fetchall() == [('binance',), ('binanceus',)]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

@@ -1288,7 +1288,7 @@ class Rotkehlchen:
                     data={'location': exchange.name, 'error': error_msg},
                 )
             else:
-                location_str = str(exchange.location)
+                location_str = str(exchange.data_location)
                 if location_str not in balances:  # need to widen type at assignment here
                     balances[location_str] = cast('dict[Asset, Balance]', exchange_balances)
                 else:  # multiple exchange of same type. Combine balances

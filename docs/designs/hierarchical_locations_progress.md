@@ -12,7 +12,7 @@ section.
 | # | Section | Design workstream | Status |
 |---|---------|-------------------|--------|
 | 1 | Inventory, catalog, old-to-new mapping, catalog validation tests | A, B (catalog) | done |
-| 2 | `locations` schema, v54 upgrade, `DBLocations`, migration fixtures/assertions | A, B | todo |
+| 2 | `locations` schema, v54 upgrade, `DBLocations`, migration fixtures/assertions | A, B | done |
 | 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | todo |
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | todo |
 | 5 | Custom location API (CRUD, usage, image upload) | B | todo |
@@ -21,11 +21,24 @@ section.
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
 
-Transitional plan: section 2 switches the database to text identifiers while the `Location` enum
-still exists. `Location.serialize_for_db()`/`deserialize_from_db()` temporarily read and write the
-text identifier (equal to `str(location)`), so the application keeps working between sections 2 and
-3. Section 3 then removes the enum. FinTS keeps its enum member until section 6, but no FinTS
-row is ever inserted into `locations`.
+Transitional state after section 2 (all of it is removed by sections 3 and 6):
+
+- `Location.serialize_for_db()`/`deserialize_from_db()` read and write the text identifier (equal
+  to `str(location)`) in both the user and the global DB, so the application keeps working until
+  section 3 removes the enum.
+- FinTS keeps its enum member until section 6, but no FinTS row is ever inserted into `locations`.
+  `ExchangeInterface.data_location` is the location a connection's events, balances and snapshots
+  use; `Fints.data_location` returns `banks` until section 6 gives each FinTS connection its
+  institution location.
+- `user_credentials.location` and `user_credentials_mappings.credential_location` hold text but have
+  no FK: they are connector identity, replaced by `integration_connections` in section 6. Premium
+  credentials keep the `external` location they always had.
+- The protocol-labelled enum members (Uniswap, Balancer, Gitcoin, Sushiswap) still exist in the
+  enum but have no node in fresh DBs.
+
+Pre-tree character encoding: `rotkehlchen/locations/legacy_chars.py` is the frozen codec every
+historical user DB upgrade (v36..v53), the v54 migration and the global v18->v19 conversion use. Old
+upgrades no longer call the enum serializers.
 
 ## Placement decisions (review these)
 
@@ -54,13 +67,13 @@ settings) stays valid without rewriting.
 - Other: external, equities, realestate ("Real estate"), commodities.
 - Legacy (conditional, never in the catalog): `legacy locations` ("Legacy locations", inactive,
   below `other`) with `legacy:uniswap`, `legacy:balancer`, `legacy:gitcoin`, `legacy:sushiswap`.
-  Defined in `rotkehlchen/db/upgrades/v53_v54.py`.
+  Defined in `rotkehlchen/locations/legacy_chars.py`.
 - Icons of structural nodes: total `lu-wallet`, blockchain `lu-link`, evm chains `lu-layers`,
   exchanges `lu-arrow-left-right`, other `lu-ellipsis`, legacy `lu-archive`. All are icons the
   frontend already uses.
 
 The reviewed old-character mapping is `V53_LOCATION_CHAR_TO_IDENTIFIER` in
-`rotkehlchen/db/upgrades/v53_v54.py`. It covers the 57 characters a v53 database can hold apart
+`rotkehlchen/locations/legacy_chars.py`. It covers the 57 characters a v53 database can hold apart
 from the four legacy ones. Sonic, Robinhood, Ink, Qonto and FinTS were only introduced by the
 unreleased v53->v54 upgrade, so no released database contains their characters.
 `rotkehlchen/tests/unit/test_location_catalog.py` checks that every enum value is handled exactly
@@ -103,10 +116,12 @@ address label).
 | global `binance_pairs.location` | char | connector identifier |
 | global `location_asset_mappings.location` | char, NULL = any | connector identifier (rename concept to connector asset mappings) |
 
-Global DB v18->v19 is unreleased (1.45), so these global changes fold into it. The data repo also
-ships `location_asset_mappings` updates with character locations
-(`populate_location_mappings`); the updater has to translate them, or the data repo format has to
-change. This is open.
+Global DB v18->v19 is unreleased (1.45), so these global changes fold into it. Section 2 already
+converted `location_asset_mappings.location` and `binance_pairs.location` from characters to text
+names in that upgrade and in the packaged `rotkehlchen/data/global.db` (only those rows changed; for
+exchanges the name is also the connector identifier). Remote asset-mapping updates from the data
+repo already use names (`Location.deserialize(raw_location)` in `db/updates.py`), so the data repo
+needs no change.
 
 ### Code classification (backend, 147 non-test files, ~960 references)
 
@@ -130,3 +145,26 @@ change. This is open.
   referenced only by the enum and `constants/location_details.py`.
 - **Historical upgrades and migrations** (`db/upgrades/*`, `data_migrations/*`): they operate on old
   schemas. Freeze them with literal characters or string identifiers when the enum goes (section 3).
+
+## Section 2 notes
+
+- Schema: `locations` table + `idx_locations_parent` + `unique_locations_sibling_name`; every real
+  location column is `TEXT NOT NULL REFERENCES locations(identifier)` (no default). Fresh DBs seed
+  built-ins through `DBLocations.seed_builtin_locations` right after the create script.
+- `rotkehlchen/db/locations.py` (`DBLocations`): catalog seeding, get/get_all, recursive
+  `descendants` and `ancestors`, `path_names`, `validate_tree`, `validate_assignable` (rejects root
+  and archived), `usage`, custom `add_custom`/`edit_custom`/`delete_custom` with all mutation rules.
+  `LOCATION_REFERENCES` lists every real location column.
+- v53->v54 upgrade: the five old "add location" steps are gone; new steps create/seed the tree, add
+  the conditional legacy branch, rebuild the 11 location-bearing tables through a temporary
+  `location_char_mapping` table (derived tables `event_metrics`/`data_issues` may drop unknown rows,
+  all others abort), recreate their indexes, drop `location`, then run a scoped
+  `foreign_key_check` and tree validation.
+- Tests: `tests/db/test_db_upgrades.py::test_upgrade_db_53_to_54_locations` (every character in
+  history events, every table, legacy none/each/all-in-every-table), `..._unknown_location_restores_backup`,
+  `tests/db/test_db_locations.py`, `tests/unit/test_location_catalog.py`, global
+  `test_upgrade_v18_v19`.
+- Known pre-existing failures on develop in this sandbox (not ours): `test_inquirer.py::test_switching_to_backup_api`,
+  `test_bitcoin.py::test_bitcoin_balance_api_resolver`, `test_bitcoin.py::test_local_bitcoin_mempool_api`,
+  `accounting/test_settings.py::test_eth_withdrawal_not_taxable`. VCR tests error in parallel runs
+  here because `git merge-base bugfixes develop` fails in the sandbox.

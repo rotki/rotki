@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -31,9 +32,9 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
         location_to_name = {}
         multiple_locations = set()
         for result in credentials_result:
-            try:
-                location = Location.deserialize_from_db(result[1])
-            except DeserializationError as e:
+            try:  # this migration only runs against the pre-v54 schema
+                location = location_from_v53_char(result[1])
+            except (KeyError, DeserializationError) as e:
                 log.error(
                     f'During data migration 1 found location {result[1]} '
                     f'that could not be deserialized due to {e!s}',
@@ -74,15 +75,15 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
             if location in multiple_locations or location == Location.KRAKEN:
                 write_cursor.execute(
                     'DELETE FROM trades WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
                 write_cursor.execute(
                     'DELETE FROM asset_movements WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
                 write_cursor.execute(
                     'DELETE FROM asset_movements WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
                 db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
             else:

@@ -168,7 +168,7 @@ TABLES_AT_INIT = [
     'evmtx_address_mappings',
     'evm_tx_mappings',
     'manually_tracked_balances',
-    'location',
+    'locations',
     'settings',
     'used_query_ranges',
     'margin_positions',
@@ -1169,16 +1169,13 @@ def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instr
     distribution = data.db.get_latest_location_value_distribution()
     assert len(distribution) == 5
     assert all(entry.time == Timestamp(1491607800) for entry in distribution)
-    assert distribution[0].location == 'B'  # kraken location serialized for DB enum
-    assert distribution[0].usd_value == '2000'
-    assert distribution[1].location == 'C'  # poloniex location serialized for DB enum
-    assert distribution[1].usd_value == '100'
-    assert distribution[2].location == 'H'  # total location serialized for DB enum
-    assert distribution[2].usd_value == '10700.5'
-    assert distribution[3].location == 'I'  # banks location serialized for DB enum
-    assert distribution[3].usd_value == '10000'
-    assert distribution[4].location == 'J'  # blockchain location serialized for DB enum
-    assert distribution[4].usd_value == '200000'
+    assert {x.location: x.usd_value for x in distribution} == {
+        'kraken': '2000',
+        'poloniex': '100',
+        'total': '10700.5',
+        'banks': '10000',
+        'blockchain': '200000',
+    }
     data.logout()
 
 
@@ -1742,11 +1739,11 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
     locations = [
         LocationData(
             time=1590676728,
-            location='H',
+            location='total',
             usd_value='55',
         ), LocationData(
             time=1590676728,
-            location='H',
+            location='total',
             usd_value='56',
         ),
     ]
@@ -1801,8 +1798,8 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     cursor = data.db.conn.cursor()
     cursor.execute(
-        'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-        ('rotkehlchen', 'foo', 'boo'),
+        'INSERT OR REPLACE INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
+        ('rotkehlchen', 'external', 'foo', 'boo'),
     )
     data.db.conn.commit()
 
@@ -1904,27 +1901,6 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     assert 'Overflow error while trying to add "margin_position" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
 
 
-@pytest.mark.parametrize(('enum_class', 'query', 'deserialize_from_db', 'deserialize'), [
-    (Location, 'SELECT location, seq from location',
-        Location.deserialize_from_db, Location.deserialize),
-])
-def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
-    """
-    Test that all enum represented in DB deserialize to a valid matching Enum class
-    """
-    # Query for all objects in the db table
-    cursor = database.conn.cursor()
-    query_result = cursor.execute(query)
-
-    # We deserialize, then serialize and compare the result
-    for letter, seq in query_result:
-        deserialized = deserialize_from_db(letter)
-        assert deserialized.value == seq
-        assert enum_class(seq).serialize_for_db() == letter
-        name = deserialize(deserialized.serialize())
-        assert name == deserialized
-
-
 def test_all_balance_types_in_db(database):
     """
     Test that all balance_category in DB deserialize to a valid BalanceType
@@ -1944,7 +1920,6 @@ def test_all_balance_types_in_db(database):
 
 
 @pytest.mark.parametrize(('enum_class', 'table_name'), [
-    (Location, 'location'),
     (BalanceType, 'balance_category'),
 ])
 def test_values_are_present_in_db(database, enum_class, table_name):

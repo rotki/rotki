@@ -77,8 +77,13 @@ def test_pre_serialized_list_skips_rewalk() -> None:
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_deserialize_location(database):
     balances = []
+    not_in_tree = {  # FinTS is a connector. Protocols exist only in DBs that referenced them
+        Location.FINTS, Location.UNISWAP, Location.BALANCER, Location.GITCOIN, Location.SUSHISWAP,
+    }
     for idx, data in enumerate(Location):
         assert Location.deserialize(str(data)) == data
+        if data in not_in_tree:
+            continue
         balances.append(ManuallyTrackedBalance(
             identifier=-1,
             asset=A_BTC,
@@ -101,7 +106,7 @@ def test_deserialize_location(database):
     with database.conn.read_ctx() as cursor:
         balances = database.get_manually_tracked_balances(cursor)
     for data in Location:
-        assert data in (x.location for x in balances)
+        assert (data in (x.location for x in balances)) == (data not in not_in_tree)
 
 
 def test_deserialize_int_from_hex_or_int():

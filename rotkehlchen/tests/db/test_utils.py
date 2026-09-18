@@ -160,7 +160,7 @@ def test_combine_asset_balances():
 @pytest.mark.parametrize(
     ('data', 'tuple_type', 'expected_str'),
     [(
-        ('44', 'F', 1674510513, 1674510513, '1', 'ETH', '0.1', 'USD', 'link', 'notes'),
+        ('44', 'bitmex', 1674510513, 1674510513, '1', 'ETH', '0.1', 'USD', 'link', 'notes'),
         'margin_position',
         'Margin position with id 44 in bitmex for ETH closed at timestamp 1674510513',
     ), (

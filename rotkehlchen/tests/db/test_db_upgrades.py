@@ -35,6 +35,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import (
@@ -51,6 +52,13 @@ from rotkehlchen.exchanges.coinbase import CB_EVENTS_PREFIX
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.legacy_chars import (
+    V53_LEGACY_LOCATION_CHARS,
+    V53_LOCATION_CHAR_TO_IDENTIFIER,
+    location_from_v53_char,
+    location_to_v53_char,
+    v53_char,
+)
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.constants import A_LTC
 from rotkehlchen.tests.utils.database import (
@@ -108,7 +116,7 @@ def assert_tx_hash_is_bytes(
         l_new = list(z_new)
         if is_history_event is True:
             l_new[tx_hash_index] = make_serialized_group_identifier(
-                location=Location.deserialize_from_db(l_new[4]),
+                location=location_from_v53_char(l_new[4]),
                 raw_group_identifier=l_new[1],
             )
         else:
@@ -1641,7 +1649,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(  # Check that Polygon POS location was added
         'SELECT location FROM location WHERE seq=?',
         (Location.POLYGON_POS.value,),
-    ).fetchone()[0] == Location.POLYGON_POS.serialize_for_db()
+    ).fetchone()[0] == v53_char('polygon pos')
     nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     default_polygon_nodes_with_ids = [
         (identifier, *node)
@@ -1835,8 +1843,8 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     # Check Arbitrum One related data
     assert cursor.execute(  # Check that Arbitrum One location was added
         'SELECT location FROM location WHERE location=?',
-        (Location.ARBITRUM_ONE.serialize_for_db(),),
-    ).fetchone()[0] == Location.ARBITRUM_ONE.serialize_for_db()
+        (v53_char('arbitrum one'),),
+    ).fetchone()[0] == v53_char('arbitrum one')
 
     # check that nodes got correctly copied except for the duplicated one
     assert cursor.execute('SELECT * FROM rpc_nodes').fetchall() == [node for node in rpc_nodes if node[0] != 18]  # node 18 is the duplicated flashbot node # noqa: E501
@@ -1961,7 +1969,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(  # Check that BASE and GNOSIS locations were added
         'SELECT location FROM location WHERE seq IN (?, ?) ORDER BY seq',
         (Location.BASE.value, Location.GNOSIS.value),
-    ).fetchall() == [(Location.BASE.serialize_for_db(),), (Location.GNOSIS.serialize_for_db(),)]
+    ).fetchall() == [(v53_char('base'),), (v53_char('gnosis'),)]
 
     # test that all 8 ledger actions were moved to history events
     assert all(x == (1, 0) for x in cursor.execute("SELECT entry_type, sequence_index from history_events WHERE event_identifier LIKE 'MLA_%'"))  # noqa: E501
@@ -2390,7 +2398,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
             assert cursor.execute(  # Check that new locations were added
                 'SELECT location FROM location WHERE seq=?',
                 (new_loc.value,),
-            ).fetchone()[0] == new_loc.serialize_for_db()
+            ).fetchone()[0] == location_to_v53_char(new_loc)
         raw_list = cursor.execute(
             'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
         ).fetchone()[0]
@@ -2429,14 +2437,14 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         assert cursor.execute(
             'SELECT location from history_events WHERE location_label=?',
             (test_address,),
-        ).fetchall() == [(Location.ZKSYNC_LITE.serialize_for_db(),), (Location.POLYGON_POS.serialize_for_db(),)]  # noqa: E501
+        ).fetchall() == [(v53_char('zksync lite'),), (v53_char('polygon pos'),)]
         # check hop-protocol counterparty is there
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 0  # noqa: E501
     with db_v42.conn.write_ctx() as write_cursor:
         assert write_cursor.execute(
             'INSERT INTO user_credentials VALUES (?, ?, ?, ?, ?)',
-            ('coinbasepro', Location.COINBASEPRO.serialize_for_db(), 'api_key', 'api_secret', 'passphrase'),  # noqa: E501
+            ('coinbasepro', v53_char('coinbasepro'), 'api_key', 'api_secret', 'passphrase'),
         ).rowcount == 1
 
     # create csv files that will be deleted in the db upgrade and a parquet one to keep
@@ -2468,7 +2476,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         assert cursor.execute(
             'SELECT location from history_events WHERE location_label=?',
             (test_address,),
-        ).fetchall() == [(Location.ZKSYNC_LITE.serialize_for_db(),)]
+        ).fetchall() == [(v53_char('zksync lite'),)]
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 1  # noqa: E501
 
@@ -2476,7 +2484,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         assert cursor.fetchone() == (Location.HTX.value,)
         assert cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
-            (Location.COINBASEPRO.serialize_for_db(),),
+            (v53_char('coinbasepro'),),
         ).fetchone()[0] == 0
 
     assert uniswap_path.exists() is False
@@ -2525,10 +2533,10 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         assert cursor.execute(  # check that the new locations we add are not in the DB before
             'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
             (
-                Location.BITCOIN.serialize_for_db(),
-                Location.BITCOIN_CASH.serialize_for_db(),
-                Location.POLKADOT.serialize_for_db(),
-                Location.KUSAMA.serialize_for_db(),
+                v53_char('bitcoin'),
+                v53_char('bitcoin cash'),
+                v53_char('polkadot'),
+                v53_char('kusama'),
             ),
         ).fetchone()[0] == 0
 
@@ -2587,10 +2595,10 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         assert cursor.execute(  # check that the new locations we add are now in the DB
             'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
             (
-                Location.BITCOIN.serialize_for_db(),
-                Location.BITCOIN_CASH.serialize_for_db(),
-                Location.POLKADOT.serialize_for_db(),
-                Location.KUSAMA.serialize_for_db(),
+                v53_char('bitcoin'),
+                v53_char('bitcoin cash'),
+                v53_char('polkadot'),
+                v53_char('kusama'),
             ),
         ).fetchone()[0] == 4
 
@@ -2660,7 +2668,7 @@ def test_upgrade_db_45_to_46(user_data_dir: Path, messages_aggregator):
     # Add a plain history event to the db to be checked after upgrade that it wasn't modified
     # Note that it has to be manually inserted here since the functions for creating
     # history events now expect there to be an extra_data column in history_events
-    history_event_bindings = [HistoryBaseEntryType.HISTORY_EVENT.value, 'TEST1', 0, 1, Location.KRAKEN.serialize_for_db(), 'Somewhere', A_ETH.identifier, 1, 3000, 'Just a test event', HistoryEventType.INFORMATIONAL.value, HistoryEventSubType.NONE.value]  # noqa: E501
+    history_event_bindings = [HistoryBaseEntryType.HISTORY_EVENT.value, 'TEST1', 0, 1, v53_char('kraken'), 'Somewhere', A_ETH.identifier, 1, 3000, 'Just a test event', HistoryEventType.INFORMATIONAL.value, HistoryEventSubType.NONE.value]  # noqa: E501
     with db_v45.conn.write_ctx() as write_cursor:
         write_cursor.execute(
             'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
@@ -2830,7 +2838,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
             'timestamp, location, location_label, asset, amount, usd_value, notes, '
             'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (HistoryBaseEntryType.EVM_EVENT.value, 'TEST1', 0, 1, Location.ETHEREUM.serialize_for_db(), (user_address := '0x706A70067BE19BdadBea3600Db0626859Ff25D74'), uniswap_erc721_token.identifier, 1, 0, '', HistoryEventType.DEPLOY.value, HistoryEventSubType.NFT.value, ''),  # noqa: E501
+            (HistoryBaseEntryType.EVM_EVENT.value, 'TEST1', 0, 1, v53_char('ethereum'), (user_address := '0x706A70067BE19BdadBea3600Db0626859Ff25D74'), uniswap_erc721_token.identifier, 1, 0, '', HistoryEventType.DEPLOY.value, HistoryEventSubType.NFT.value, ''),  # noqa: E501
         )
         write_cursor.execute(  # mark it a custom event to so event reset doesn't affect it.
             "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ((SELECT identifier FROM history_events WHERE event_identifier='TEST1'), ?, ?)",  # noqa: E501
@@ -2856,12 +2864,12 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'timestamp, location, location_label, asset, amount, usd_value, notes, '
             'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                (1, f'{CB_EVENTS_PREFIX}_EVENT', 0, 1, (coinbase_location := Location.COINBASE.serialize_for_db()), '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
+                (1, f'{CB_EVENTS_PREFIX}_EVENT', 0, 1, (coinbase_location := v53_char('coinbase')), '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
                 (1, f'{ROTKI_EVENT_PREFIX}_EVENT', 0, 1, coinbase_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
-                (1, 'kraken-id', 0, 1, (kraken_location := Location.KRAKEN.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
-                (1, 'gemini-id', 0, 1, (gemini_location := Location.GEMINI.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+                (1, 'kraken-id', 0, 1, (kraken_location := v53_char('kraken')), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+                (1, 'gemini-id', 0, 1, (gemini_location := v53_char('gemini')), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
                 (1, f'{ROTKI_EVENT_PREFIX}_GEM_EVENT', 0, 1, gemini_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
-                (1, 'bybit-id', 0, 1, (bybit_location := Location.BYBIT.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+                (1, 'bybit-id', 0, 1, (bybit_location := v53_char('bybit')), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
                 (1, f'{ROTKI_EVENT_PREFIX}_BYBIT_EVENT', 0, 1, bybit_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
             ],
         )
@@ -3360,7 +3368,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
     ).fetchone()[0] == 0
-    removed_tables = set()
+    removed_tables = {'location'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3370,7 +3378,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == set()
+    assert new_tables == {'locations'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4034,7 +4042,7 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 'BTC_NOTE_TEST_1',
                 0,
                 1730000000000,
-                Location.BITCOIN.serialize_for_db(),
+                v53_char('bitcoin'),
                 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
                 'BTC',
                 '0.25',
@@ -4056,7 +4064,7 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 'BCH_NOTE_TEST_1',
                 0,
                 1730000001000,
-                Location.BITCOIN_CASH.serialize_for_db(),
+                v53_char('bitcoin cash'),
                 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',
                 'BCH',
                 '3.5',
@@ -4075,7 +4083,7 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 'BTC_NOTE_TEST_2',
                 0,
                 1730000002000,
-                Location.BITCOIN.serialize_for_db(),
+                v53_char('bitcoin'),
                 '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp',
                 'BTC',
                 '0.01',
@@ -4272,7 +4280,7 @@ def test_upgrade_db_52_to_53(
                 'EVENT_METRICS_TEST_1',
                 0,
                 1730000000000,
-                Location.BLOCKCHAIN.serialize_for_db(),
+                v53_char('blockchain'),
                 '0x0000000000000000000000000000000000000001',
                 'ETH',
                 '1',
@@ -4286,11 +4294,11 @@ def test_upgrade_db_52_to_53(
         # range is reset. Customized transaction events and plain user-created events survive.
         btc_tx_id, bch_tx_id, customized_tx_id = 'a' * 64, 'b' * 64, 'c' * 64
         for group_identifier, sequence_index, location in (
-            (f'btc_{btc_tx_id}', 0, Location.BITCOIN.serialize_for_db()),
-            (f'btc_{btc_tx_id}', 1, Location.BITCOIN.serialize_for_db()),
-            (f'bch_{bch_tx_id}', 0, Location.BITCOIN_CASH.serialize_for_db()),
-            (f'btc_{customized_tx_id}', 0, Location.BITCOIN.serialize_for_db()),
-            ('manual_btc_event', 0, Location.BITCOIN.serialize_for_db()),
+            (f'btc_{btc_tx_id}', 0, v53_char('bitcoin')),
+            (f'btc_{btc_tx_id}', 1, v53_char('bitcoin')),
+            (f'bch_{bch_tx_id}', 0, v53_char('bitcoin cash')),
+            (f'btc_{customized_tx_id}', 0, v53_char('bitcoin')),
+            ('manual_btc_event', 0, v53_char('bitcoin')),
         ):
             write_cursor.execute(
                 'INSERT INTO history_events('
@@ -4378,7 +4386,7 @@ def test_upgrade_db_52_to_53(
         )
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE location=?',
-            (Location.POLONIEX.serialize_for_db(),),
+            (v53_char('poloniex'),),
         )
         write_cursor.executemany(
             'INSERT INTO history_events('
@@ -4390,7 +4398,7 @@ def test_upgrade_db_52_to_53(
                 group_identifier,
                 0,
                 timestamp,
-                Location.POLONIEX.serialize_for_db(),
+                v53_char('poloniex'),
                 location_label,
                 'ETH',
                 '1',
@@ -4407,7 +4415,7 @@ def test_upgrade_db_52_to_53(
             'INSERT INTO user_credentials(name, location, api_key, api_secret, passphrase) '
             'VALUES (?, ?, ?, ?, ?)',
             (
-                'poloniex-main', Location.POLONIEX.serialize_for_db(),
+                'poloniex-main', v53_char('poloniex'),
                 'poloniex-key', 'secret', None,
             ),
         )
@@ -4434,7 +4442,7 @@ def test_upgrade_db_52_to_53(
         ).fetchall()) == expected_location_labels
         assert write_cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
-            (Location.COINBASE.serialize_for_db(),),
+            (v53_char('coinbase'),),
         ).fetchone()[0] == 2
 
         # ens_mappings has no source column yet at v52
@@ -4458,7 +4466,7 @@ def test_upgrade_db_52_to_53(
                 group_identifier,
                 1,
                 1730000001000,
-                Location.KRAKEN.serialize_for_db(),
+                v53_char('kraken'),
                 'ETH',
                 '0.01',
                 'Adjustment of 0.01 ETH to account for the difference between exchange and onchain amounts.',  # noqa: E501
@@ -4492,7 +4500,7 @@ def test_upgrade_db_52_to_53(
             (
                 HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
                 'ORPHANED_BACKUP',
-                Location.KRAKEN.serialize_for_db(),
+                v53_char('kraken'),
                 'ETH',
                 '1',
                 HistoryEventType.RECEIVE.serialize(),
@@ -4531,7 +4539,7 @@ def test_upgrade_db_52_to_53(
                 'NON_CHECKSUMMED_ASSET_EVENT',
                 0,
                 1730000000000,
-                Location.BLOCKCHAIN.serialize_for_db(),
+                v53_char('blockchain'),
                 '0x0000000000000000000000000000000000000001',
                 lowercased_id,
                 '1',
@@ -4578,7 +4586,7 @@ def test_upgrade_db_52_to_53(
                 'DOUBLE_CASED_ASSET_EVENT',
                 0,
                 1730000000000,
-                Location.BLOCKCHAIN.serialize_for_db(),
+                v53_char('blockchain'),
                 '0x0000000000000000000000000000000000000001',
                 both_lowercased_id,
                 '1',
@@ -4614,7 +4622,7 @@ def test_upgrade_db_52_to_53(
                     group_identifier,
                     sequence_index,
                     1730000000000,
-                    location.serialize_for_db(),
+                    location_to_v53_char(location),
                     '0x0000000000000000000000000000000000000003',
                     'ETH',
                     '1',
@@ -4828,7 +4836,7 @@ def test_upgrade_db_52_to_53(
                 'SELECT identifier FROM history_events WHERE group_identifier=?',
                 ('EVENT_METRICS_TEST_1',),
             ).fetchone()[0],
-            Location.BLOCKCHAIN.serialize_for_db(),
+            v53_char('blockchain'),
             '0x0000000000000000000000000000000000000001',
             'wallet',
             'balance',
@@ -4949,19 +4957,6 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
     with db_v53.conn.write_ctx() as write_cursor:
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_archive')
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_pruned')
-        # make sure the Sonic and Robinhood locations are not in the old DB
-        assert write_cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
-        ).fetchone()[0] == 0
         # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -5026,19 +5021,12 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
-        # make sure the Sonic and Robinhood locations exist
+        # the location tree replaced the character location table
+        assert table_exists(cursor, 'locations') and not table_exists(cursor, 'location')
         assert cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
-        ).fetchone()[0] == 1
+            "SELECT name, parent_identifier FROM locations WHERE identifier IN ('sonic', 'qonto', 'robinhood', 'ink') ORDER BY identifier",  # noqa: E501
+        ).fetchall() == [('Ink', 'evm chains'), ('Qonto', 'banks'), ('Robinhood Chain', 'evm chains'), ('Sonic', 'evm chains')]  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM locations WHERE identifier='fints'").fetchone()[0] == 0  # noqa: E501
         # and the obsolete setting was removed
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -5055,4 +5043,193 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 0
         assert db.get_setting(cursor, 'version') == 54
 
+    db.logout()
+
+
+_LOCATION_ROW_INSERTS = {  # table -> (insert query, row builder taking a location and a unique index)  # noqa: E501
+    'history_events': (
+        (
+            'INSERT INTO history_events(entry_type, group_identifier, sequence_index, timestamp, '
+            "location, location_label, asset, amount, notes, type, subtype) VALUES (1, ?, 0, ?, ?, 'label', 'ETH', ?, 'note', 'receive', 'none')"  # noqa: E501
+        ),
+        lambda loc, idx: (f'loc_group_{idx}', 1700000000000 + idx, loc, str(idx + 1)),
+    ),
+    'history_events_backup': (
+        (
+            'INSERT INTO history_events_backup(entry_type, group_identifier, sequence_index, timestamp, '  # noqa: E501
+            "location, asset, amount, type, subtype) VALUES (1, ?, 0, ?, ?, 'ETH', '1', 'spend', 'none')"  # noqa: E501
+        ),
+        lambda loc, idx: (f'backup_group_{idx}', 1700000000000 + idx, loc),
+    ),
+    'timed_location_data': (
+        'INSERT INTO timed_location_data(timestamp, location, usd_value) VALUES (?, ?, ?)',
+        lambda loc, idx: (1700000000 + idx, loc, str(10 * (idx + 1))),
+    ),
+    'manually_tracked_balances': (
+        "INSERT INTO manually_tracked_balances(asset, label, amount, location, category) VALUES ('ETH', ?, '2', ?, 'A')",  # noqa: E501
+        lambda loc, idx: (f'manual {idx}', loc),
+    ),
+    'margin_positions': (
+        "INSERT INTO margin_positions(id, location, open_time, close_time, profit_loss, pl_currency) VALUES (?, ?, 1, 2, '5', 'ETH')",  # noqa: E501
+        lambda loc, idx: (f'margin_{idx}', loc),
+    ),
+    'skipped_external_events': (
+        'INSERT INTO skipped_external_events(data, location) VALUES (?, ?)',
+        lambda loc, idx: (f'{{"skipped": {idx}}}', loc),
+    ),
+    'bitcoin_transactions': (
+        'INSERT INTO bitcoin_transactions(location, tx_id, timestamp, block_height, fee) VALUES (?, ?, 1, 1, 1)',  # noqa: E501
+        lambda loc, idx: (loc, f'btc_tx_{idx}'),
+    ),
+    'event_metrics': (
+        (
+            'INSERT INTO event_metrics(event_identifier, location, location_label, protocol, metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '  # noqa: E501
+            "VALUES ((SELECT MIN(identifier) FROM history_events), ?, 'label', ?, 'balance', '1', 'ETH', 1, 0, 0)"  # noqa: E501
+        ),
+        lambda loc, idx: (loc, f'protocol_{idx}'),
+    ),
+    'data_issues': (
+        (
+            'INSERT INTO data_issues(kind, location, asset, ts_start, ts_end, severity, state, payload_json, created_at) '  # noqa: E501
+            "VALUES ('negative_balance', ?, ?, 1, 2, 'warning', 'open', '{}', 1)"
+        ),
+        lambda loc, idx: (loc, f'asset_{idx}'),
+    ),
+}
+
+
+@pytest.mark.parametrize('legacy_placement', [
+    {},  # no legacy reference at all: the legacy branch is not created
+    *({char: 'history_events'} for char in V53_LEGACY_LOCATION_CHARS),
+    *(dict.fromkeys(V53_LEGACY_LOCATION_CHARS, table) for table in _LOCATION_ROW_INSERTS),
+])
+def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legacy_placement):
+    """Every location character of a v53 DB, in every table holding a location, maps to its
+    node of the location tree and all other data stays identical. The legacy branch exists
+    only for protocol-labelled locations still referenced by data."""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v53 = _init_db_with_target_version(
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v53.conn.write_ctx() as write_cursor:
+        write_cursor.execute("INSERT OR IGNORE INTO assets(identifier) VALUES ('ETH')")
+        idx = 0
+        for char in V53_LOCATION_CHAR_TO_IDENTIFIER:  # every normal location in history events
+            query, builder = _LOCATION_ROW_INSERTS['history_events']
+            write_cursor.execute(query, builder(char, idx := idx + 1))
+        for table, (query, builder) in _LOCATION_ROW_INSERTS.items():  # every table
+            for char in ('B', 'f', 'q', 'H', 'J', 'I'):
+                if table == 'history_events':
+                    continue
+                write_cursor.execute(query, builder(char, idx := idx + 1))
+        for char, table in legacy_placement.items():
+            query, builder = _LOCATION_ROW_INSERTS[table]
+            write_cursor.execute(query, builder(char, idx := idx + 1))
+        write_cursor.execute(
+            "INSERT INTO user_credentials(name, location, api_key, api_secret, passphrase) VALUES ('kr', 'B', 'key', ?, NULL)",  # noqa: E501
+            (secret := b'\x00secret\xff',),
+        )
+        write_cursor.execute(
+            "INSERT INTO user_credentials_mappings(credential_name, credential_location, setting_name, setting_value) VALUES ('kr', 'B', 'kraken_account_type', 'pro')",  # noqa: E501
+        )
+
+        def table_rows(cursor, table, location_column='location'):
+            columns = [  # notes are rewritten by another step of this upgrade
+                row[1] for row in cursor.execute(f'PRAGMA table_info({table})')
+                if row[1] not in (location_column, 'notes')
+            ]
+            return {
+                (tuple(row[:-1]), row[-1]) for row in cursor.execute(
+                    f'SELECT {", ".join(columns)}, {location_column} FROM {table}',
+                )
+            }
+
+        tables = [*_LOCATION_ROW_INSERTS, 'user_credentials']
+        before = {table: table_rows(write_cursor, table) for table in tables}
+        before['user_credentials_mappings'] = table_rows(write_cursor, 'user_credentials_mappings', 'credential_location')  # noqa: E501
+        total_snapshots_before = write_cursor.execute(
+            "SELECT timestamp, usd_value FROM timed_location_data WHERE location='H' ORDER BY timestamp",  # noqa: E501
+        ).fetchall()
+
+    db_v53.logout()
+    db = _init_db_with_target_version(
+        target_version=54,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    mapping = {  # derived from the enum values independently of the upgrade's mapping table
+        chr(location.value + 64): str(location) for location in Location
+    } | {char: identifier for char, (identifier, _, _) in V53_LEGACY_LOCATION_CHARS.items()}
+    with db.conn.read_ctx() as cursor:
+        after = {table: table_rows(cursor, table) for table in tables}
+        after['user_credentials_mappings'] = table_rows(cursor, 'user_credentials_mappings', 'credential_location')  # noqa: E501
+        for table, rows in before.items():  # all rows and columns kept, locations mapped
+            assert after[table] == {(row, mapping[location]) for row, location in rows}, table
+
+        assert cursor.execute(
+            "SELECT api_secret FROM user_credentials WHERE name='kr'",
+        ).fetchone()[0] == secret
+        assert cursor.execute(
+            "SELECT timestamp, usd_value FROM timed_location_data WHERE location='total' ORDER BY timestamp",  # noqa: E501
+        ).fetchall() == total_snapshots_before
+
+        legacy_nodes = cursor.execute(
+            'SELECT identifier, parent_identifier, is_builtin, is_active FROM locations '
+            "WHERE identifier LIKE 'legacy%' ORDER BY identifier",
+        ).fetchall()
+        if len(legacy_placement) == 0:
+            assert legacy_nodes == []
+        else:
+            assert legacy_nodes == [('legacy locations', 'other', 1, 0)] + sorted(
+                (V53_LEGACY_LOCATION_CHARS[char][0], 'legacy locations', 1, 0)
+                for char in legacy_placement
+            )
+        for table in (*_LOCATION_ROW_INSERTS, 'user_credentials_mappings'):
+            assert cursor.execute(f'PRAGMA foreign_key_check({table})').fetchall() == []
+        DBLocations().validate_tree(cursor)
+
+    db.logout()
+
+
+def test_upgrade_db_53_to_54_unknown_location_restores_backup(user_data_dir, messages_aggregator):
+    """An event with a location no v53 DB can hold aborts the upgrade and keeps the v53 DB"""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v53 = _init_db_with_target_version(
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v53.conn.write_ctx() as write_cursor:
+        write_cursor.execute("INSERT OR IGNORE INTO assets(identifier) VALUES ('ETH')")
+        write_cursor.switch_foreign_keys('OFF')
+        query, builder = _LOCATION_ROW_INSERTS['history_events']
+        write_cursor.execute(query, builder('\x99', 1))
+        write_cursor.switch_foreign_keys('ON')
+    db_v53.logout()
+
+    with pytest.raises(DBUpgradeError, match='unknown location'):
+        _init_db_with_target_version(
+            target_version=54,
+            user_data_dir=user_data_dir,
+            msg_aggregator=messages_aggregator,
+            resume_from_backup=False,
+        )
+
+    db = _init_db_with_target_version(  # the backup is still a complete v53 DB
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=True,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 53
+        assert table_exists(cursor, 'location') and not table_exists(cursor, 'locations')
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM history_events WHERE group_identifier='loc_group_1'",
+        ).fetchone()[0] == 1
     db.logout()

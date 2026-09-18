@@ -46,6 +46,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
+from rotkehlchen.locations.legacy_chars import location_to_v53_char
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
@@ -246,7 +247,7 @@ def test_migration_1(database: DBHandler) -> None:
         for exchange_location in [Location.BINANCE, Location.KRAKEN]:
             margin_tuples = ((
                  f'custom-margin-id-{exchange_location}',  # id
-                 exchange_location.serialize_for_db(),  # location
+                 location_to_v53_char(exchange_location),  # location, as in the pre-v54 schema
                  1,  # open_time
                  2,  # close_time
                  str(ONE),  # profit_loss

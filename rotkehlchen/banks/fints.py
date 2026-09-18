@@ -128,6 +128,12 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
 class Fints(BankConnector):
     manifest = FINTS_MANIFEST
 
+    @property
+    def data_location(self) -> Location:
+        """FinTS is a connector and never a location. Until connections point at their
+        institution location its data belongs to the broad Banks location."""
+        return Location.BANKS
+
     def __init__(
             self,
             name: str,

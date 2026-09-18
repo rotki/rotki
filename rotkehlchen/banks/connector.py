@@ -258,7 +258,7 @@ class BankConnector(ExchangeInterface, ABC):
         for transaction in self.query_transactions(account=account, updated_since=updated_since):
             events.append(bank_transaction_to_event(
                 transaction=transaction,
-                location=self.location,
+                location=self.data_location,
                 location_label=self.name,
             ))
             if transaction.updated_at is not None and (newest is None or transaction.updated_at > newest):  # noqa: E501

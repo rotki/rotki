@@ -772,7 +772,7 @@ def test_replace_asset_not_in_globaldb(
     cursor.execute(
         'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
         'VALUES (?, ?, ?, ?)',
-        (unknown_id, 'forgotten balance', '1', 'A'),
+        (unknown_id, 'forgotten balance', '1', 'external'),
     )
     assert cursor.execute(
         'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),

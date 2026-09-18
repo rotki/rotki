@@ -68,6 +68,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.misc import detect_sqlcipher_version, evaluate_integrity_check_rows
 from rotkehlchen.db.pending_transactions import PendingTransactionsTracker
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -126,6 +127,7 @@ from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.locations.types import ROOT_LOCATION_IDENTIFIER
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
@@ -426,6 +428,7 @@ class DBHandler:
         if fresh_db:  # create tables during the first run and add the DB version
             with self.conn.write_ctx() as write_cursor:
                 write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+                DBLocations.seed_builtin_locations(write_cursor)
                 write_cursor.execute(
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                     ('version', str(ROTKEHLCHEN_DB_VERSION)),
@@ -3503,10 +3506,10 @@ class DBHandler:
         # sync with data from server we need an empty last_write_ts in that case.
         with self.conn.write_ctx() as cursor:
             # We don't care about previous value so simple insert or replace should work
-            cursor.execute(
+            cursor.execute(  # premium credentials always had the external location
                 'INSERT OR REPLACE INTO user_credentials'
-                '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
-                ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
+                '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
+                ('rotkehlchen', str(Location.EXTERNAL), credentials.serialize_key(), credentials.serialize_secret(), None),  # noqa: E501
             )
 
     def delete_premium_credentials(self) -> bool:
@@ -3595,10 +3598,10 @@ class DBHandler:
                     excluded_values[timestamp] -= FVal(usd_value)
 
             data, times_int = [], []
-            for entry in cursor.execute(  # the total ("H") entries in ascending time
-                "SELECT timestamp, usd_value FROM timed_location_data "
-                "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
-                (from_ts,),
+            for entry in cursor.execute(  # the total entries in ascending time
+                'SELECT timestamp, usd_value FROM timed_location_data '
+                'WHERE location=? AND timestamp >= ? ORDER BY timestamp ASC;',
+                (ROOT_LOCATION_IDENTIFIER, from_ts),
             ):
                 times_int.append(entry[0])
                 data.append(

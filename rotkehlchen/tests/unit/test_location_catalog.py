@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from rotkehlchen.db.upgrades.v53_v54 import (
+from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
+from rotkehlchen.locations.legacy_chars import (
     LEGACY_LOCATIONS_PARENT,
     V53_LEGACY_LOCATION_CHARS,
     V53_LOCATION_CHAR_TO_IDENTIFIER,
 )
-from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
 from rotkehlchen.locations.types import LocationIdentifier, LocationNode, LocationTreeError
 from rotkehlchen.types import Location, SupportedBlockchain
 
@@ -48,10 +48,10 @@ def test_every_old_location_has_one_migration_rule():
 
     added_in_v54 = {Location.SONIC, Location.ROBINHOOD, Location.INK, Location.QONTO}
     for location in Location:
+        char = chr(location.value + 64)  # the pre-v54 DB encoding of the enum
         if location == Location.FINTS or location in added_in_v54:
-            assert location.serialize_for_db() not in V53_LOCATION_CHAR_TO_IDENTIFIER
+            assert char not in V53_LOCATION_CHAR_TO_IDENTIFIER
             continue
-        char = location.serialize_for_db()
         if char in V53_LEGACY_LOCATION_CHARS:
             assert V53_LEGACY_LOCATION_CHARS[char][0] == f'legacy:{location!s}'
         else:  # built-ins keep their API serialization as identifier

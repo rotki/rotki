@@ -1,11 +1,11 @@
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
-from rotkehlchen.db.schema import DB_CREATE_LOCATION
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
+from rotkehlchen.locations.catalog import load_builtin_catalog
 from rotkehlchen.types import Location
 
 
@@ -31,7 +31,6 @@ def test_location_details_coverage():
 
 def test_coinex_exists_in_db_schema():
     """Test that fresh user DBs contain CoinEx."""
-    assert (
-        f"INSERT OR IGNORE INTO location(location, seq) VALUES "
-        f"('{Location.COINEX.serialize_for_db()}', {Location.COINEX.value});"
-    ) in DB_CREATE_LOCATION
+    assert ('coinex', 'exchanges') in {
+        (x.identifier, x.parent_identifier) for x in load_builtin_catalog()
+    }
