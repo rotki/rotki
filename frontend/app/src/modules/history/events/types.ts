@@ -50,6 +50,8 @@ export type HistoryEventDeletePayload = HistoryEventIgnorePayload | HistoryEvent
 interface HistoryEventAssetMovementUnlinkPayload {
   readonly identifier: number;
   readonly type: 'asset-movement';
+  /** The movement legs to ignore once unlinked, so automatic matching cannot relink them. */
+  readonly ignoredIdentifiers: number[];
 }
 
 export interface HistoryEventBridgeUnlinkPayload {
