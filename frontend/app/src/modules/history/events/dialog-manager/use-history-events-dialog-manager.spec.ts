@@ -58,8 +58,8 @@ describe('useHistoryEventsDialogManager', () => {
 
   it('should open dataless dialogs', async () => {
     const { currentDialog, show } = useHistoryEventsDialogManager();
-    await show({ type: DIALOG_TYPES.PROTOCOL_CACHE });
-    expect(get(currentDialog)).toEqual({ data: undefined, type: DIALOG_TYPES.PROTOCOL_CACHE });
+    await show({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+    expect(get(currentDialog)).toEqual({ data: undefined, type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
   });
 
   it('should navigate to the accounting settings for add-missing-rule', async () => {
@@ -95,8 +95,8 @@ describe('useHistoryEventsDialogManager', () => {
 
   it('should close an open dialog', async () => {
     const { closeDialog, currentDialog, show } = useHistoryEventsDialogManager();
-    await show({ type: DIALOG_TYPES.PROTOCOL_CACHE });
-    expect(get(currentDialog).type).toBe(DIALOG_TYPES.PROTOCOL_CACHE);
+    await show({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+    expect(get(currentDialog).type).toBe(DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES);
     closeDialog();
     expect(get(currentDialog)).toEqual({ type: 'closed' });
   });

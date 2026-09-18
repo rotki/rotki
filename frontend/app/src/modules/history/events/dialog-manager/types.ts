@@ -14,7 +14,6 @@ export type DialogState =
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS; data: undefined }
   | { type: typeof DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS; data: undefined }
   | { type: typeof DIALOG_TYPES.MISSING_RULES; data: HistoryEventEditData }
-  | { type: typeof DIALOG_TYPES.PROTOCOL_CACHE; data: undefined }
   | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION; data: undefined }
   | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data: AddTransactionHashPayload }
   | { type: 'closed' };

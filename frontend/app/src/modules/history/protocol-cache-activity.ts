@@ -31,6 +31,21 @@ export interface ProtocolCacheDetail {
 }
 
 /**
+ * The rows after one more frame: the frame's pair first, every other pair counted as full.
+ *
+ * @remarks
+ * The backend fills one pair at a time and sends nothing when a pair finishes, so a frame for a new
+ * pair is the only sign the previous one is done. A pair that reports no work (`total` 0) is left
+ * out, since it has nothing to show a bar for.
+ */
+export function withProtocolCacheFrame(rows: readonly ProtocolCacheRow[], frame: ProtocolCacheRow): ProtocolCacheRow[] {
+  const isFramePair = (row: ProtocolCacheRow): boolean => row.chain === frame.chain && row.protocol === frame.protocol;
+  const others = rows.filter(row => !isFramePair(row)).map(row => ({ ...row, processed: row.total }));
+  const { chain, processed, protocol, total } = frame;
+  return [{ chain, processed, protocol, total }, ...others].filter(row => row.total > 0);
+}
+
+/**
  * The user-initiated cache refresh, from the data-management screen.
  *
  * No key: one refresh runs at a time and the id has nothing to distinguish. Declared as a
