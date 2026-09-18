@@ -196,3 +196,14 @@ export interface OraclePricesQuery extends PaginationRequestPayload<OraclePriceE
   readonly toAsset?: string;
   readonly toTimestamp?: number;
 }
+
+/**
+ * Whether an oracle ever recorded a price, per requested asset identifier.
+ *
+ * @remarks
+ * `true` means an oracle priced the asset before, so a current zero is a genuine missing price
+ * rather than an asset the oracles never supported.
+ */
+export const AssetOraclePriceExistence = z.record(z.string(), z.boolean());
+
+export type AssetOraclePriceExistence = z.infer<typeof AssetOraclePriceExistence>;

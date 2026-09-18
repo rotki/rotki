@@ -35,8 +35,11 @@ export type ActionTarget =
   | { kind: 'pin'; panel: Pinned }
   /** Opens a page outside the app, in the system browser on the desktop app. */
   | { kind: 'external'; url: string }
-  /** Acts in place, so the center stays open to show the outcome. */
-  | { kind: 'run'; run: () => void };
+  /**
+   * Acts in place, so the center stays open to show the outcome, unless `closesCenter` says the run
+   * opens a surface of its own, such as a dialog.
+   */
+  | { kind: 'run'; run: () => void; closesCenter?: boolean };
 
 /** Something a row offers besides its main action, listed in the row's menu. */
 export interface ActionItemOption<TTarget extends { kind: string } = ActionTarget> {
