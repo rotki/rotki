@@ -16,6 +16,7 @@ export function usePillBarLabels(): ComputedRef<PillBarLabels> {
     empty: t('table_filter.pill.empty'),
     narrow: t('table_filter.pill.narrow'),
     narrowEmpty: t('table_filter.pill.narrow_empty'),
+    narrowSearchFailed: (message: string): string => t('table_filter.pill.narrow_search_failed', { message }),
     remove: t('table_filter.pill.remove'),
     search: t('table_filter.pill.search'),
     syntax: t('table_filter.pill.syntax.label'),

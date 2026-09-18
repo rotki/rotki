@@ -5,7 +5,7 @@ import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 
-const { suggestions, highlighted = 0, emptyText = '', loading = false, examples = [], examplesLabel = '' } = defineProps<{
+const { suggestions, highlighted = 0, emptyText = '', loading = false, searchError = '', examples = [], examplesLabel = '' } = defineProps<{
   /** Cross-field narrowing results for what the user typed in the bar. */
   suggestions: NarrowSuggestion[];
   /**
@@ -20,6 +20,8 @@ const { suggestions, highlighted = 0, emptyText = '', loading = false, examples 
   emptyText?: string;
   /** An asset search is still running; its rows will be appended to what is already shown. */
   loading?: boolean;
+  /** Why the asset search failed, already worded; the rows that did match stay above it. */
+  searchError?: string;
   /**
    * Verbatim things that can be typed into the bar (`after 15/01/2024`, `>100`), shown in the
    * footer. Drawn as code rather than prose: the whole point is that they are literal text the
@@ -158,6 +160,20 @@ watch(() => highlighted, (index) => {
           size="16"
           color="primary"
         />
+      </div>
+      <div
+        v-else-if="searchError"
+        class="flex items-center justify-center gap-1.5 text-rui-error text-sm px-2.5 py-3 text-center"
+        role="status"
+        aria-live="polite"
+        data-testid="pill-narrow-search-error"
+      >
+        <RuiIcon
+          name="lu-circle-alert"
+          size="14"
+          class="shrink-0"
+        />
+        {{ searchError }}
       </div>
       <div
         v-else-if="suggestions.length === 0"

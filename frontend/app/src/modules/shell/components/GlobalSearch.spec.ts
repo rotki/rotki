@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { currentPath, isMac, performSearch, push, resolve } = await vi.hoisted(async () => {
+const { assetSearchError, currentPath, isMac, performSearch, push, resolve } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
+    assetSearchError: ref<string>(''),
     currentPath: ref<string>('/dashboard'),
     isMac: vi.fn(),
     performSearch: vi.fn(),
@@ -24,19 +25,22 @@ vi.mock('vue-router', () => ({
 }));
 
 vi.mock('@/modules/shell/layout/use-global-search', () => ({
-  useGlobalSearch: (): { search: Mock } => ({ search: performSearch }),
+  useGlobalSearch: (): { assetSearchError: Ref<string>; search: Mock } => ({ assetSearchError, search: performSearch }),
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): { isMac: Mock } => ({ isMac }),
 }));
 
-/** The shared stub carries neither of this component's two models, so it is replaced here. */
+/**
+ * The shared stub carries neither of this component's two models, so it is replaced here. It renders
+ * the footer slot where the real one does, inside its dropdown.
+ */
 const AutoCompleteStub = {
   emits: ['update:modelValue', 'update:searchInput'],
   name: 'RuiAutoComplete',
   props: ['modelValue', 'searchInput', 'options', 'loading'],
-  template: '<div />',
+  template: '<div data-testid="auto-complete-dropdown"><slot name="footer" /></div>',
 };
 
 const DialogStub = { name: 'RuiDialog', props: ['modelValue'], template: '<div><slot /></div>' };
@@ -96,6 +100,7 @@ async function choose(wrapper: VueWrapper<any>, index: number): Promise<void> {
 describe('globalSearch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    set(assetSearchError, '');
     set(currentPath, '/dashboard');
     isMac.mockResolvedValue(false);
     performSearch.mockResolvedValue([]);
@@ -243,6 +248,21 @@ describe('globalSearch', () => {
 
       expect(wrapper.findComponent(AutoCompleteStub).props('options')).toHaveLength(2);
       expect(wrapper.findComponent(AutoCompleteStub).props('loading')).toBe(false);
+    });
+
+    it('should show a failed asset search inside the dropdown, which would cover it anywhere below the input', async () => {
+      set(assetSearchError, 'rejected');
+      const wrapper = await mountReady();
+
+      const error = wrapper.find('[data-testid=auto-complete-dropdown] [data-testid=global-search-asset-error]');
+      expect(error.exists()).toBe(true);
+      expect(error.text()).toContain('asset_search.error.message');
+    });
+
+    it('should show no error while the asset search succeeds', async () => {
+      const wrapper = await mountReady();
+
+      expect(wrapper.find('[data-testid=global-search-asset-error]').exists()).toBe(false);
     });
   });
 });

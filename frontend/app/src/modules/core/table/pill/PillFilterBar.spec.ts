@@ -90,6 +90,7 @@ const labels = {
   empty: 'No filters match',
   narrow: 'Filter…',
   narrowEmpty: 'No matches',
+  narrowSearchFailed: (message: string): string => `Asset search failed: ${message}`,
   remove: 'Remove filter',
   search: 'Filter by…',
   syntax: 'Type directly:',

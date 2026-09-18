@@ -25,8 +25,10 @@ vi.mock('@/modules/balances/use-aggregated-balances', () => ({
 vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: (): { getLocationData: () => undefined } => ({ getLocationData: (): undefined => undefined }),
 }));
+const { assetSearch } = vi.hoisted(() => ({ assetSearch: vi.fn<() => Promise<unknown[]>>() }));
+
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
-  useAssetInfoRetrieval: (): { assetSearch: () => Promise<unknown[]> } => ({ assetSearch: async (): Promise<unknown[]> => [] }),
+  useAssetInfoRetrieval: (): { assetSearch: () => Promise<unknown[]> } => ({ assetSearch }),
 }));
 
 function entry(path: string, labelKey: string, parentLabelKey?: string): RouteSearchEntry {
@@ -37,6 +39,22 @@ describe('modules::shell::use-global-search', () => {
   beforeEach(() => {
     set(searchEntries, []);
     set(actionEntries, []);
+    assetSearch.mockReset().mockResolvedValue([]);
+  });
+
+  it('should keep the other matches and say why when the asset search fails, until one succeeds', async () => {
+    set(searchEntries, [entry('/dashboard', 'navigation_menu.dashboard')]);
+    assetSearch.mockRejectedValueOnce(new Error('colibri is down'));
+    const { assetSearchError, search } = useGlobalSearch();
+
+    const items = await search('dashboard');
+
+    expect(items.map(item => item.route)).toEqual(['/dashboard']);
+    expect(get(assetSearchError)).toBe('colibri is down');
+
+    await search('dashboard');
+
+    expect(get(assetSearchError)).toBe('');
   });
 
   it('should return nothing for an empty keyword', async () => {
