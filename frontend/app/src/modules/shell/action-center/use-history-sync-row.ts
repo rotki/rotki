@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { none, some } from 'plainfp/option';
-import { type ActionItem, type ActionItemOption, ActionSeverity, type ActionTarget, applicable, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import { useScramble } from '@/modules/settings/use-scramble';
@@ -84,7 +84,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
       options: applicable<ActionItemOption>([
         setAside ? none : some({ icon: 'lu-x', id: 'dismiss', label: t('action_center.dismiss'), target: { kind: 'run', run: dismiss } }),
       ]),
-      severity: ActionSeverity.INFO,
+      urgency: ActionUrgency.TODO,
       target: HISTORY_EVENTS,
       title: get(title),
     })];

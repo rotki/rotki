@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
-import { type ActionItem, ActionSeverity } from '@/modules/core/action-center/types';
+import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
 const { item } = defineProps<{
@@ -12,26 +12,26 @@ const emit = defineEmits<{
   option: [target: TTarget];
 }>();
 
-const SEVERITY_COLORS: Record<ActionSeverity, ContextColorsType | undefined> = {
-  [ActionSeverity.INFO]: 'info',
-  [ActionSeverity.MUTED]: undefined,
-  [ActionSeverity.WARNING]: 'warning',
+const URGENCY_COLORS: Record<ActionUrgency, ContextColorsType | undefined> = {
+  [ActionUrgency.AUTOMATIC]: undefined,
+  [ActionUrgency.DECISION]: 'warning',
+  [ActionUrgency.TODO]: 'info',
 };
 
-const SEVERITY_ICON_CLASSES: Record<ActionSeverity, string> = {
-  [ActionSeverity.INFO]: 'bg-rui-info/10 text-rui-info',
-  [ActionSeverity.MUTED]: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
-  [ActionSeverity.WARNING]: 'bg-rui-warning/10 text-rui-warning',
+const URGENCY_ICON_CLASSES: Record<ActionUrgency, string> = {
+  [ActionUrgency.AUTOMATIC]: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
+  [ActionUrgency.DECISION]: 'bg-rui-warning/10 text-rui-warning',
+  [ActionUrgency.TODO]: 'bg-rui-info/10 text-rui-info',
 };
 
-const MUTED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-disabled';
+const LOCKED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-disabled';
 
 const { t } = useI18n({ useScope: 'global' });
 const { href, linkTarget, onLinkClick } = useLinks();
 
-const color = computed<ContextColorsType | undefined>(() => item.locked ? undefined : SEVERITY_COLORS[item.severity]);
+const color = computed<ContextColorsType | undefined>(() => item.locked ? undefined : URGENCY_COLORS[item.urgency]);
 
-const iconClass = computed<string>(() => item.locked ? MUTED_ICON_CLASS : SEVERITY_ICON_CLASSES[item.severity]);
+const iconClass = computed<string>(() => item.locked ? LOCKED_ICON_CLASS : URGENCY_ICON_CLASSES[item.urgency]);
 
 const lockedHint = computed<string>(() => item.minimumTier
   ? t('action_center.locked_hint', { tier: item.minimumTier })
@@ -134,7 +134,7 @@ const lockedHint = computed<string>(() => item.minimumTier
     <RuiButton
       v-else
       size="sm"
-      :variant="item.severity === ActionSeverity.MUTED ? 'text' : 'outlined'"
+      :variant="item.urgency === ActionUrgency.AUTOMATIC ? 'text' : 'outlined'"
       :color="color"
       class="shrink-0"
       data-testid="actions-center-row-action"

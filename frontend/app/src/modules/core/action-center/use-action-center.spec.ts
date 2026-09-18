@@ -1,6 +1,6 @@
 import type { useActionCenter as UseActionCenter } from '@/modules/core/action-center/use-action-center';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ActionItem, ActionSeverity } from '@/modules/core/action-center/types';
+import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 
 const state = {
   logged: ref(true),
@@ -23,7 +23,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     locked: false,
     minimumTier: null,
     options: [],
-    severity: ActionSeverity.WARNING,
+    urgency: ActionUrgency.DECISION,
     target: { kind: 'run', run: (): void => {} },
     title: 'An item',
     ...overrides,

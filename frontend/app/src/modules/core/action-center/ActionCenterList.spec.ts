@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ActionCenterList from '@/modules/core/action-center/ActionCenterList.vue';
-import { type ActionCenterSection, type ActionItem, ActionSeverity, type ActionTarget } from '@/modules/core/action-center/types';
+import { type ActionCenterSection, type ActionItem, type ActionTarget, ActionUrgency } from '@/modules/core/action-center/types';
 
 function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   const target: ActionTarget = { kind: 'route', to: { name: '/balances/blockchain/' } };
@@ -17,7 +17,7 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
     locked: false,
     minimumTier: null,
     options: [],
-    severity: ActionSeverity.WARNING,
+    urgency: ActionUrgency.DECISION,
     target,
     title: 'Unmatched bridge transactions',
     ...overrides,

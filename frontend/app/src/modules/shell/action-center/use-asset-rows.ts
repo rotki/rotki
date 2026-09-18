@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue';
 import { useMissingMappingsCount } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-count';
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
 import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-missing-prices-dialog';
-import { type ActionItem, ActionSeverity, type ActionTarget, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 
 interface UseAssetRowsReturn {
   rows: ComputedRef<ActionItem[]>;
@@ -27,7 +27,7 @@ export function useAssetRows(): UseAssetRowsReturn {
       description: t('action_center.rows.assets.missing_prices.description'),
       icon: 'lu-circle-dollar-sign',
       id: 'missing-prices',
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       target: missingPricesTarget,
       title: t('action_center.rows.assets.missing_prices.title'),
     }),
@@ -37,7 +37,7 @@ export function useAssetRows(): UseAssetRowsReturn {
       description: t('action_center.rows.assets.missing_mappings.description'),
       icon: 'lu-cable',
       id: 'missing-exchange-mappings',
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       target: { kind: 'route', to: { name: '/asset-manager/more/missing-mappings/' } },
       title: t('action_center.rows.assets.missing_mappings.title'),
     }),

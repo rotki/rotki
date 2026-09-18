@@ -6,17 +6,20 @@ import { flatMap } from 'plainfp/arrays';
 import { match, type Option } from 'plainfp/option';
 
 /**
- * How much attention a row asks for. `WARNING` needs a decision from the user,
- * `INFO` is a to-do that resolves on its own once data is processed and `MUTED`
- * is handled automatically (rotki retries) and is only worth a look.
+ * What a row asks of the user, which sets how loudly it is drawn.
+ *
+ * @remarks
+ * An actionability axis rather than a severity, so it stays apart from the notifications' `Severity`.
+ * `DECISION` needs the user to decide something, `TODO` is work that resolves once data is
+ * processed, and `AUTOMATIC` is handled by rotki (it retries) and is only worth a look.
  */
-export const ActionSeverity = {
-  INFO: 'info',
-  MUTED: 'muted',
-  WARNING: 'warning',
+export const ActionUrgency = {
+  AUTOMATIC: 'automatic',
+  DECISION: 'decision',
+  TODO: 'todo',
 } as const;
 
-export type ActionSeverity = (typeof ActionSeverity)[keyof typeof ActionSeverity];
+export type ActionUrgency = (typeof ActionUrgency)[keyof typeof ActionUrgency];
 
 /**
  * The targets every action center understands.
@@ -64,7 +67,7 @@ export interface ActionItem<TTarget extends { kind: string } = ActionTarget, TId
   description: string;
   actionLabel: string;
   count: number;
-  severity: ActionSeverity;
+  urgency: ActionUrgency;
   /** while true the count is not trustworthy yet, so the row is not counted as active */
   loading: boolean;
   /** the count is visible but every action behind it needs premium the user lacks */

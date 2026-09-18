@@ -2,7 +2,7 @@ import type { EffectScope } from 'vue';
 import type { HistoryEventIssue } from '@/modules/history/events/actions-center/use-history-event-issues';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ActionItem, ActionSeverity, type ActionTarget, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 
@@ -67,7 +67,7 @@ function row(id: string, overrides: Partial<ActionItem> = {}): ActionItem {
       description: 'description',
       icon: 'lu-key-round',
       id,
-      severity: ActionSeverity.WARNING,
+      urgency: ActionUrgency.DECISION,
       target: { kind: 'route', to: { name: '/accounts/' } },
       title: id,
     }),

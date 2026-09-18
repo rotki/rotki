@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActionUrgency } from '@/modules/core/action-center/types';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
@@ -205,11 +206,11 @@ describe('useHistoryEventIssues', () => {
 
   it('should demote internal conflicts and mark undecoded as informational', () => {
     const { issues } = useHistoryEventIssues();
-    const bySeverity = Object.fromEntries(get(issues).map(issue => [issue.id, issue.severity]));
+    const byUrgency = Object.fromEntries(get(issues).map(issue => [issue.id, issue.urgency]));
 
-    expect(bySeverity[HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS]).toBe('muted');
-    expect(bySeverity[HISTORY_ISSUE_IDS.UNDECODED]).toBe('info');
-    expect(bySeverity[HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES]).toBe('warning');
+    expect(byUrgency[HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS]).toBe(ActionUrgency.AUTOMATIC);
+    expect(byUrgency[HISTORY_ISSUE_IDS.UNDECODED]).toBe(ActionUrgency.TODO);
+    expect(byUrgency[HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES]).toBe(ActionUrgency.DECISION);
   });
 
   it('should give bridges their own action label', () => {
@@ -288,7 +289,7 @@ describe('useHistoryEventIssues', () => {
     expect(get(categoryCount)).toBe(0);
     expect(movements.id).toBe(HISTORY_ISSUE_IDS.UNMATCHED_MOVEMENTS);
     expect(movements.count).toBe(4);
-    expect(movements.severity).toBe('muted');
+    expect(movements.urgency).toBe(ActionUrgency.AUTOMATIC);
     expect(movements.actionLabel).toBe('transactions.alerts.review_ignored');
   });
 
@@ -344,7 +345,7 @@ describe('useHistoryEventIssues', () => {
       expect(get(categoryCount)).toBe(1);
       expect(row.id).toBe(HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS);
       expect(row.count).toBe(1);
-      expect(row.severity).toBe('warning');
+      expect(row.urgency).toBe(ActionUrgency.DECISION);
       expect(row.target).toEqual({ kind: 'route', to: { name: '/accounts/' } });
     });
 
@@ -394,7 +395,7 @@ describe('useHistoryEventIssues', () => {
 
       expect(get(issues)).toHaveLength(8);
       expect(row?.count).toBe(4);
-      expect(row?.severity).toBe('warning');
+      expect(row?.urgency).toBe(ActionUrgency.DECISION);
       expect(row?.target).toEqual({ kind: 'pin', panel: { name: PinnedNames.DATA_ISSUES, props: {} } });
       expect(get(activeItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
     });
