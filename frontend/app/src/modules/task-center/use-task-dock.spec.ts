@@ -79,10 +79,19 @@ describe('useTaskDock', () => {
       expect(get(visible)).toBe(true);
     });
 
-    it('should hide for work that had already settled before the dock saw it running', () => {
-      set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.FAILED)]);
+    it('should hide for a clean run that had already settled before the dock saw it running', () => {
+      set(activities, refresh(ActivityStatus.COMPLETE));
 
       expect(get(dock().visible)).toBe(false);
+    });
+
+    it('should report a failure beneath a job that settled before the dock mounted, as one started during login', () => {
+      set(activities, refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+
+      const { failed, state } = dock();
+
+      expect(get(state)).toBe(DockState.FAILED);
+      expect(get(failed).map(root => root.id)).toEqual([refreshId]);
     });
   });
 
