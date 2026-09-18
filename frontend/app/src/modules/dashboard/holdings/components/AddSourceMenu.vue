@@ -11,6 +11,14 @@ interface AddOption {
   readonly to: RouteLocationAsRelative;
 }
 
+/**
+ * `row` sits at the foot of the source legend; `button` stands alone in the empty dashboard, where
+ * nothing around it says the dashboard fills from sources.
+ */
+const { variant = 'row' } = defineProps<{
+  variant?: 'row' | 'button';
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
@@ -37,17 +45,43 @@ async function add(to: RouteLocationAsRelative): Promise<void> {
 <template>
   <RuiMenu
     :options="{ placement: 'bottom-start' }"
-    :class-names="{ wrapper: 'w-full' }"
+    :class-names="{ wrapper: variant === 'row' ? 'w-full' : undefined }"
   >
     <template #activator="{ attrs }">
-      <button
-        type="button"
-        class="grid grid-cols-[10px_1fr] items-center gap-2.5 w-full px-1.5 py-1 rounded text-left text-sm text-rui-text-secondary hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
+      <RuiButton
+        v-if="variant === 'button'"
+        color="primary"
+        variant="outlined"
         data-testid="dashboard-add-source"
         v-bind="attrs"
       >
-        <span class="size-2.5 rounded-sm border border-dashed border-rui-text-disabled" />
-        <span>{{ t('dashboard.holdings.add.title') }}</span>
+        <template #prepend>
+          <RuiIcon name="lu-plus" />
+        </template>
+        {{ t('dashboard.holdings.add.title') }}
+        <template #append>
+          <RuiIcon name="lu-chevron-down" />
+        </template>
+      </RuiButton>
+      <button
+        v-else
+        type="button"
+        class="grid grid-cols-[10px_1fr] items-center gap-2.5 w-full px-1.5 py-1 rounded text-left text-sm text-rui-primary hover:bg-rui-primary/10"
+        data-testid="dashboard-add-source"
+        v-bind="attrs"
+      >
+        <RuiIcon
+          name="lu-plus"
+          size="14"
+          class="-ml-0.5"
+        />
+        <span class="flex items-center gap-1 font-medium">
+          {{ t('dashboard.holdings.add.title') }}
+          <RuiIcon
+            name="lu-chevron-down"
+            size="14"
+          />
+        </span>
       </button>
     </template>
     <div class="py-2">
