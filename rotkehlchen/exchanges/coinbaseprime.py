@@ -32,6 +32,10 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRIME,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -44,7 +48,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.misc import (
@@ -63,6 +66,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -105,7 +109,7 @@ def _process_trade(exchange_name: str, trade_data: dict[str, Any]) -> list[SwapE
 
         return create_swap_events(
             timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(trade_data['created_at'])),
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             spend=AssetAmount(
                 asset=spend_asset,
                 amount=deserialize_fval(trade_data['filled_value']),
@@ -120,7 +124,7 @@ def _process_trade(exchange_name: str, trade_data: dict[str, Any]) -> list[SwapE
                 amount=deserialize_fval(trade_data['commission']),
             ) if len(trade_data['commission']) != 0 else None,
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.COINBASEPRIME,
+                location=LOCATION_COINBASEPRIME,
                 unique_id=str(trade_data['id']),
             ),
         )
@@ -165,7 +169,7 @@ def _process_deposit_withdrawal(
             ) from e
 
         return create_asset_movement_with_fee(
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             location_label=exchange_name,
             event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(timestamp),
@@ -206,7 +210,7 @@ def _process_conversions(exchange_name: str, raw_data: dict[str, Any]) -> list[H
             group_identifier=raw_data['id'],
             sequence_index=0,
             timestamp=timestamp_ms,
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             amount=converted_amount,
@@ -217,7 +221,7 @@ def _process_conversions(exchange_name: str, raw_data: dict[str, Any]) -> list[H
             group_identifier=raw_data['id'],
             sequence_index=1,
             timestamp=timestamp_ms,
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             amount=converted_amount,
@@ -236,7 +240,7 @@ def _process_conversions(exchange_name: str, raw_data: dict[str, Any]) -> list[H
             group_identifier=raw_data['id'],
             sequence_index=2,
             timestamp=timestamp_ms,
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.FEE,
             amount=fee_amount,
@@ -261,7 +265,7 @@ def _process_reward(exchange_name: str, raw_data: dict[str, Any]) -> list[Histor
         group_identifier=raw_data['id'],
         sequence_index=0,
         timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at'] or raw_data['created_at'])),  # noqa: E501
-        location=Location.COINBASEPRIME,
+        location=LOCATION_COINBASEPRIME,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         amount=(amount := deserialize_fval(
@@ -288,7 +292,7 @@ class Coinbaseprime(ExchangeInterface):
     ):
         super().__init__(
             name=name,
-            location=Location.COINBASEPRIME,
+            location=LOCATION_COINBASEPRIME,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -305,7 +309,7 @@ class Coinbaseprime(ExchangeInterface):
             self,
             asset_identifier: str,
             details: str,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
     ) -> None:
         """Override setting the WS message location to Coinbase since Coinbase and CoinbasePrime
         share asset mappings.
@@ -313,7 +317,7 @@ class Coinbaseprime(ExchangeInterface):
         self._send_unknown_asset_message(
             asset_identifier=asset_identifier,
             details=details,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
         )
 
     def validate_api_key(self) -> tuple[bool, str]:

@@ -16,9 +16,9 @@ from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.locations.legacy_chars import location_from_v53_char
+from rotkehlchen.locations.legacy_chars import V53_CHAR_TO_NAME, location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import AssetAmount, FVal, Location, Price
+from rotkehlchen.types import AssetAmount, FVal, Price
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -181,7 +181,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
         # check if any events have location hash as their identifier
         # this indicates the upgrade bug affected this database
-        location_hashes = tuple(hash_id(str(loc)) for loc in Location)
+        location_hashes = tuple(hash_id(name) for name in V53_CHAR_TO_NAME.values())
         placeholders = ','.join('?' * len(location_hashes))
         with db.conn.read_ctx() as cursor:
             if (affected_events_count := cursor.execute(
@@ -277,7 +277,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                             event.group_identifier,
                             event.sequence_index,
                             event.timestamp,
-                            event.location.serialize_for_db(),
+                            event.location,
                             event.location_label,
                             event.asset.identifier,
                             str(event.amount),

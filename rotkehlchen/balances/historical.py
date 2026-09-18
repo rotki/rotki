@@ -18,8 +18,12 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import EventMetricKey, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -35,7 +39,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class HistoricalBalanceEntry(NamedTuple):
-    location: Location
+    location: LocationIdentifier
     location_label: str
     protocol: str | None
     asset: Asset
@@ -43,7 +47,7 @@ class HistoricalBalanceEntry(NamedTuple):
 
 
 class HistoricalBalanceSeriesEntry(NamedTuple):
-    location: Location
+    location: LocationIdentifier
     location_label: str
     protocol: str | None
     asset: Asset
@@ -69,7 +73,7 @@ class HistoricalBalanceDivergenceProbe(NamedTuple):
 
 class HistoricalBalanceDivergenceResult(NamedTuple):
     status: Literal['diverged', 'diverged_from_start', 'no_divergence']
-    location: Location
+    location: LocationIdentifier
     address: str
     asset: Asset
     total_events: int
@@ -137,7 +141,7 @@ class HistoricalBalancesManager:
                 )
                 data = [
                     HistoricalBalanceEntry(
-                        location=Location.deserialize_from_db(location),
+                        location=LocationIdentifier(location),
                         location_label=location_label,
                         protocol=protocol,
                         asset=Asset(asset_id),
@@ -173,7 +177,7 @@ class HistoricalBalancesManager:
         filter_str, filter_bindings = filter_query.prepare()
         query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
         entries: list[HistoricalBalanceSeriesEntry] = []
-        current_key: tuple[Location, str, str | None, Asset] | None = None
+        current_key: tuple[LocationIdentifier, str, str | None, Asset] | None = None
         times: list[Timestamp] = []
         values: list[FVal] = []
         with self.db.conn.read_ctx() as cursor:
@@ -189,7 +193,7 @@ class HistoricalBalancesManager:
             )
             for location_raw, location_label, protocol, asset_id, timestamp, amount in cursor:
                 key = (
-                    Location.deserialize_from_db(location_raw),
+                    LocationIdentifier(location_raw),
                     location_label,
                     protocol,
                     Asset(asset_id),
@@ -296,7 +300,7 @@ class HistoricalBalancesManager:
             )
             for identifier, location, label, protocol, asset, amount in cursor:
                 balances[identifier].append(HistoricalBalanceEntry(
-                    location=Location.deserialize_from_db(location),
+                    location=LocationIdentifier(location),
                     location_label=label,
                     protocol=protocol,
                     asset=Asset(asset),
@@ -358,7 +362,7 @@ class HistoricalBalancesManager:
         - NotFoundError if no processed wallet balance metrics exist for the address/asset.
         - RemoteError if block lookup or archive balance lookup fails.
         """
-        location = Location.from_chain_id(evm_chain)
+        location = location_from_chain_id(evm_chain)
         events = self._get_tracked_wallet_balance_events(
             evm_chain=evm_chain,
             location=location,
@@ -368,7 +372,7 @@ class HistoricalBalancesManager:
         if len(events) == 0:
             raise NotFoundError(
                 f'No historical wallet balance data found for {asset.identifier} at '
-                f'{address} on {location.serialize()}',
+                f'{address} on {location}',
             )
 
         token = (
@@ -788,7 +792,7 @@ class HistoricalBalancesManager:
     def _get_tracked_wallet_balance_events(
             self,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-            location: Location,
+            location: LocationIdentifier,
             address: ChecksumEvmAddress,
             asset: Asset,
     ) -> list[_TrackedBalanceEvent]:
@@ -821,7 +825,7 @@ class HistoricalBalancesManager:
                     (
                         evm_chain.serialize_for_db(),
                         EventMetricKey.BALANCE.serialize(),
-                        location.serialize_for_db(),
+                        location,
                         address,
                         asset.resolve_swapped_for().identifier,
                     ),

@@ -53,7 +53,6 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     HyperliquidTokenAddress,
-    Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     Price,
@@ -79,6 +78,7 @@ if TYPE_CHECKING:
         CounterpartyAssetMappingsFilterQuery,
         LocationAssetMappingsFilterQuery,
     )
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 MANUAL_SERIALIZED: Final = HistoricalPriceOracle.MANUAL.serialize_for_db()
@@ -2507,7 +2507,7 @@ class GlobalDBHandler:
     @staticmethod
     def get_location_asset_symbols(
             assets: Sequence[AssetWithOracles],
-            location: Location,
+            location: LocationIdentifier,
     ) -> dict[AssetWithOracles, set[str]]:
         """Return mapping-backed symbols for assets and members of their collections.
 
@@ -2543,7 +2543,7 @@ class GlobalDBHandler:
                     'WHERE LM.location=? OR LM.location IS NULL',
                     (
                         *(asset.identifier for asset in chunk),
-                        location.serialize_for_db(),
+                        location,
                     ),
                 )
                 for requested_identifier, exchange_symbol, asset_symbol in cursor:
@@ -2555,7 +2555,7 @@ class GlobalDBHandler:
         return symbols
 
     @staticmethod
-    def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
+    def get_assetid_from_exchange_name(exchange: LocationIdentifier | None, symbol: str, default: str) -> str:  # noqa: E501
         """Returns the asset's identifier from the ticker symbol of the given exchange according to
         location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
         If the mapping is not present returns default."""
@@ -2563,7 +2563,7 @@ class GlobalDBHandler:
             location_filter, bindings = '', [symbol]
             if exchange is not None:
                 location_filter = 'location IS ? OR'
-                bindings.append(exchange.serialize_for_db())
+                bindings.append(exchange)
             identifier = cursor.execute(
                 f'SELECT local_id FROM location_asset_mappings WHERE exchange_symbol=? AND ({location_filter} location IS NULL)',  # noqa: E501
                 bindings,
@@ -2573,7 +2573,7 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_exchange_name_from_assetid(
-            exchange: Location,
+            exchange: LocationIdentifier,
             identifier: str,
             default: str,
     ) -> str:
@@ -2585,7 +2585,7 @@ class GlobalDBHandler:
             result = cursor.execute(
                 'SELECT exchange_symbol FROM location_asset_mappings WHERE local_id=? AND '
                 '(location=? OR location IS NULL) ORDER BY location IS NULL LIMIT 1',
-                (identifier, exchange.serialize_for_db()),
+                (identifier, exchange),
             ).fetchone()
 
         return default if result is None else result[0]
@@ -2597,7 +2597,7 @@ class GlobalDBHandler:
             query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
             filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
             location_or_counterparty_reader_callback: Callable,
-    ) -> tuple[list[dict[str, str | Location | None]], int, int]:
+    ) -> tuple[list[dict[str, str | LocationIdentifier | None]], int, int]:
         """Query asset mappings based on the mapping type.
 
         Returns:

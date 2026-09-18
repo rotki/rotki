@@ -48,6 +48,9 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_GATE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -55,7 +58,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -100,7 +102,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.GATE,
+            location=LOCATION_GATE,
             api_key=api_key,
             secret=secret,
             database=database,

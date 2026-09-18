@@ -15,9 +15,15 @@ from rotkehlchen.constants.assets import A_ETH, A_POL, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+    LOCATION_POLYGON_POS,
+)
 from rotkehlchen.tests.utils.base import BASE_MAINNET_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -42,7 +48,7 @@ def test_receive_usdc_on_base_from_solana_v2(
     assert events == [EvmEvent(
         sequence_index=460,
         timestamp=TimestampMS(1788256855000),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=Asset(USDC_IDENTIFIER_BASE),
@@ -72,7 +78,7 @@ def test_deposit_usdc_from_ethereum_to_solana_v2(
     assert events[-1] == EvmEvent(
         sequence_index=216,
         timestamp=TimestampMS(1774849751000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_USDC,
@@ -103,7 +109,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716588659000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -114,7 +120,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
         ), EvmEvent(
             sequence_index=300,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDC,
@@ -149,7 +155,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716589968000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -160,7 +166,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),
@@ -194,7 +200,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716970880000)),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
@@ -205,7 +211,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
         ), EvmEvent(
             sequence_index=432,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_POLYGON),
@@ -240,7 +246,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716971722000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -251,7 +257,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
         ), EvmEvent(
             sequence_index=18,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),
@@ -285,7 +291,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon_2(
         EvmEvent(
             sequence_index=1,
             timestamp=TimestampMS(1716978796000),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),

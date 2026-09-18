@@ -16,8 +16,9 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
-    from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
+    from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 
 
 class ExchangesService:
@@ -30,7 +31,7 @@ class ExchangesService:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -74,7 +75,7 @@ class ExchangesService:
     def edit_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -107,7 +108,7 @@ class ExchangesService:
     def remove_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
     ) -> tuple[bool | None, str, HTTPStatus]:
         result, message = self.rotkehlchen.exchange_manager.delete_exchange(
             name=name,
@@ -119,7 +120,7 @@ class ExchangesService:
 
     def query_exchange_history_events(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str | None,
     ) -> dict[str, Any]:
         try:
@@ -144,7 +145,7 @@ class ExchangesService:
 
     def query_exchange_history_events_in_range(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -181,7 +182,7 @@ class ExchangesService:
 
     def query_exchange_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:

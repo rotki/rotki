@@ -29,6 +29,14 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BITMEX,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -40,7 +48,7 @@ from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_AD
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import create_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -109,7 +117,7 @@ def assert_csv_export_response(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(LOCATION_BINANCE, LOCATION_POLONIEX, LOCATION_BITMEX, LOCATION_KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -221,7 +229,7 @@ def test_history_export_download_csv(
             group_identifier=str(make_evm_tx_hash()),
             sequence_index=0,
             timestamp=TimestampMS(1601040360000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             asset=custom_asset,
             amount=FVal('1.5'),
             event_type=HistoryEventType.RECEIVE,
@@ -261,7 +269,7 @@ def test_history_export_download_csv(
             group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
             sequence_index=0,
             timestamp=TimestampMS(1601040360000),
-            location=Location.ZKSYNC_LITE,
+            location=LOCATION_ZKSYNC_LITE,
             asset=custom_asset,
             amount=FVal('1.5'),
             event_type=HistoryEventType.RECEIVE,
@@ -311,7 +319,7 @@ def test_report_export_uses_transient_db(
             group_identifier='report_export_test',
             sequence_index=0,
             timestamp=ts_sec_to_ms(now),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             asset=A_EUR,
             amount=FVal('1.5'),
             event_type=HistoryEventType.RECEIVE,
@@ -380,7 +388,7 @@ def test_encoding(
             tx_ref=GENESIS_HASH,
             sequence_index=0,
             timestamp=TimestampMS(1569924574000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -431,7 +439,7 @@ def test_encoding(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(LOCATION_BINANCE, LOCATION_POLONIEX, LOCATION_BITMEX, LOCATION_KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])

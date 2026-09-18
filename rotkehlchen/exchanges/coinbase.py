@@ -46,6 +46,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -58,7 +61,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Price,
     Timestamp,
 )
@@ -167,7 +169,7 @@ class Coinbase(ExchangeInterface):
         """
         super().__init__(
             name=name,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -572,7 +574,7 @@ class Coinbase(ExchangeInterface):
                     if (last_query := self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.LAST_QUERY_TS,
-                        location=self.location.serialize(),
+                        location=self.location,
                         location_name=self.name,
                         account_id=account_id,
                     )) is not None and now - last_query < HOUR_IN_SECONDS:
@@ -582,7 +584,7 @@ class Coinbase(ExchangeInterface):
                     if (result_id := self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.LAST_QUERY_ID,
-                        location=self.location.serialize(),
+                        location=self.location,
                         location_name=self.name,
                         account_id=account_id,
                     )) is not None:
@@ -642,7 +644,7 @@ class Coinbase(ExchangeInterface):
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.LAST_QUERY_TS,
                 value=ts_now(),
-                location=self.location.serialize(),
+                location=self.location,
                 location_name=self.name,
                 account_id=account_id,
             )
@@ -1236,7 +1238,7 @@ class Coinbase(ExchangeInterface):
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,

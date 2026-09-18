@@ -13,10 +13,13 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
-    Location,
     SupportedBlockchain,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -67,7 +70,7 @@ def test_relay_bridge_receive(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1783071503000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_ETH,
@@ -118,7 +121,7 @@ def test_relay_bridge_receive_on_base(base_inquirer, base_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1785411023000),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_ETH,

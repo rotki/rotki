@@ -14,6 +14,9 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -27,7 +30,7 @@ from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS2,
     make_btc_tx_id,
 )
-from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import BTCAddress, SupportedBlockchain, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -666,7 +669,7 @@ def test_delete_btc_account(
                         group_identifier=make_btc_tx_id(),
                         sequence_index=0,
                         timestamp=TimestampMS(1500000000000),
-                        location=Location.BITCOIN,
+                        location=LOCATION_BITCOIN,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_BTC,
@@ -702,7 +705,7 @@ def test_delete_btc_account(
         assert events[0].location_label == btc_accounts[0]
         assert events[0].identifier in dbevents.get_event_mapping_states(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             mapping_state=HistoryMappingState.CUSTOMIZED,
         )
         assert events[1].location_label == btc_accounts[1]

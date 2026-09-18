@@ -34,6 +34,9 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -57,7 +60,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmTransaction,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1481,7 +1483,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: APIServer) -> 
                 tx_ref=(tx_hash := deserialize_evm_tx_hash(tx_hash_str := '0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')),  # noqa: E501
                 sequence_index=0,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1603,7 +1605,7 @@ def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: APISer
         tx_ref=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
         sequence_index=0,
         timestamp=TimestampMS(1739574323000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,

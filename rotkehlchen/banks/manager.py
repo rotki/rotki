@@ -26,7 +26,6 @@ from rotkehlchen.types import (
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
     ExchangeLocationID,
-    Location,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -36,6 +35,7 @@ if TYPE_CHECKING:
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankManifest
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -67,7 +67,7 @@ class BankCredentialInput:
     """Credentials as the API receives them: one value per manifest secret slot"""
     values: dict[str, str] = field(default_factory=dict)
 
-    def to_exchange_credentials(self, name: str, location: Location) -> ExchangeApiCredentials:
+    def to_exchange_credentials(self, name: str, location: LocationIdentifier) -> ExchangeApiCredentials:  # noqa: E501
         secret = self.values.get('api_secret')
         return ExchangeApiCredentials(
             name=name,
@@ -100,7 +100,7 @@ class BankCredentialInput:
 class BankManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
-        self.connected_banks: dict[Location, list[BankConnector]] = defaultdict(list)
+        self.connected_banks: dict[LocationIdentifier, list[BankConnector]] = defaultdict(list)
         self.pending_setups: dict[ExchangeLocationID, BankConnector] = {}
         self.sync_status: dict[ExchangeLocationID, BankSyncStatus] = defaultdict(BankSyncStatus)
         self.msg_aggregator = msg_aggregator
@@ -110,15 +110,15 @@ class BankManager:
         self.database: DBHandler | None = None
 
     @staticmethod
-    def get_manifest(location: Location) -> BankManifest:
+    def get_manifest(location: LocationIdentifier) -> BankManifest:
         return BANK_MANIFESTS[location]
 
     @staticmethod
-    def _connector_class(location: Location) -> type[BankConnector]:
+    def _connector_class(location: LocationIdentifier) -> type[BankConnector]:
         module = import_module(f'rotkehlchen.banks.{location!s}')
         return getattr(module, str(location).capitalize())
 
-    def get_bank(self, name: str, location: Location) -> BankConnector | None:
+    def get_bank(self, name: str, location: LocationIdentifier) -> BankConnector | None:
         for bank in self.connected_banks.get(location, ()):
             if bank.name == name:
                 return bank
@@ -134,7 +134,7 @@ class BankManager:
     def get_connected_banks_info(self) -> list[dict[str, Any]]:
         return [{
             'name': bank.name,
-            'location': bank.location.serialize(),
+            'location': bank.location,
             'display_name': bank.manifest.display_name,
             'sync_status': self.sync_status[bank.location_id()].serialize(),
         } for bank in self.iterate_banks()]
@@ -154,13 +154,13 @@ class BankManager:
         )
 
     @staticmethod
-    def _location_id(name: str, location: Location) -> ExchangeLocationID:
+    def _location_id(name: str, location: LocationIdentifier) -> ExchangeLocationID:
         return ExchangeLocationID(location=location, name=name)
 
     def setup_bank(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             credentials: BankCredentialInput,
             database: DBHandler,
     ) -> tuple[bool, str]:
@@ -205,7 +205,7 @@ class BankManager:
     def answer_bank_authentication(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             response: str | None,
     ) -> tuple[bool, str]:
         """Resume a pending connector challenge and finish setup when it was an add flow."""
@@ -247,7 +247,7 @@ class BankManager:
     def edit_bank(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             credentials: BankCredentialInput,
     ) -> tuple[bool, str]:
@@ -306,7 +306,7 @@ class BankManager:
                     self.sync_status[bank.location_id()] = status
         return True, ''
 
-    def delete_bank(self, name: str, location: Location) -> tuple[bool, str]:
+    def delete_bank(self, name: str, location: LocationIdentifier) -> tuple[bool, str]:
         assert self.database is not None, 'delete_bank called before login'
         with self.registry_lock:
             bank = self.get_bank(name=name, location=location)
@@ -337,7 +337,7 @@ class BankManager:
 
     def initialize_banks(
             self,
-            credentials: dict[Location, list[ExchangeApiCredentials]],
+            credentials: dict[LocationIdentifier, list[ExchangeApiCredentials]],
             database: DBHandler,
     ) -> None:
         """Instantiate the connectors of every saved bank credential at login"""
@@ -363,7 +363,7 @@ class BankManager:
                         e,
                     )
 
-    def query_bank_history_events(self, location: Location | None, name: str | None) -> None:
+    def query_bank_history_events(self, location: LocationIdentifier | None, name: str | None) -> None:  # noqa: E501
         """Sync the history of one connection, of every connection at a location, or of all.
 
         May raise RemoteError when one or more syncs fail and InputError when the

@@ -33,6 +33,9 @@ from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
@@ -41,7 +44,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -121,7 +123,7 @@ def test_delete_transactions_by_chain(
                         aggregate_by_group_ids=False,
         )
         assert len(events) == ethereum_events
-        assert all(event.location == Location.ETHEREUM for event in events)
+        assert all(event.location == LOCATION_ETHEREUM for event in events)
 
 
 def test_erc20_transfers_range_not_updated_on_remote_error(database: DBHandler, ethereum_manager: EthereumManager) -> None:  # noqa: E501
@@ -217,7 +219,7 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
                 tx_ref=transaction.tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(transaction.timestamp * 1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -327,7 +329,7 @@ def test_first_evm_mapping_keeps_events_already_referencing_address(
                 tx_ref=transaction.tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(transaction.timestamp * 1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -387,7 +389,7 @@ def test_existing_transactions_are_batched_for_redecoding(database: DBHandler) -
                 tx_ref=transactions[0].tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(transactions[0].timestamp * 1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -613,7 +615,7 @@ def test_cached_transaction_is_mapped_to_discovering_address(
                 tx_ref=transaction.tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(transaction.timestamp * 1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,

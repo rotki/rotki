@@ -170,6 +170,7 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -233,7 +234,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     ModuleName,
@@ -828,7 +828,7 @@ class RestAPI:
     def get_banks(self) -> Response:
         return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
 
-    def setup_bank(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
+    def setup_bank(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
         result, msg, status_code = self.banks_service.setup_bank(
             name=name,
             location=location,
@@ -839,7 +839,7 @@ class RestAPI:
     def edit_bank(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
@@ -851,14 +851,14 @@ class RestAPI:
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_bank(self, name: str, location: Location) -> Response:
+    def remove_bank(self, name: str, location: LocationIdentifier) -> Response:
         result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     def answer_bank_authentication(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             response: str | None,
     ) -> Response:
         result, msg, status_code = self.banks_service.answer_authentication(
@@ -869,13 +869,13 @@ class RestAPI:
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @async_api_call()
-    def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
+    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
         return self.banks_service.sync_banks(location=location, name=name)
 
     @async_api_call()
     def query_bank_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
@@ -895,7 +895,7 @@ class RestAPI:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -932,7 +932,7 @@ class RestAPI:
     def edit_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -960,7 +960,7 @@ class RestAPI:
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_exchange(self, name: str, location: Location) -> Response:
+    def remove_exchange(self, name: str, location: LocationIdentifier) -> Response:
         result, message, status_code = self.exchanges_service.remove_exchange(
             name=name,
             location=location,
@@ -970,7 +970,7 @@ class RestAPI:
     @async_api_call()
     def query_exchange_history_events(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str | None,
     ) -> dict[str, Any]:
         """Queries new history events for the specified exchange and saves them in the database."""
@@ -982,7 +982,7 @@ class RestAPI:
     @async_api_call()
     def query_exchange_history_events_in_range(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -1000,7 +1000,7 @@ class RestAPI:
     @async_api_call()
     def query_exchange_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
@@ -2556,7 +2556,7 @@ class RestAPI:
 
     def purge_exchange_data(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             data_type: ExchangePurgeType,
     ) -> Response:
         with self.rotkehlchen.data.db.user_write() as cursor:
@@ -2849,7 +2849,7 @@ class RestAPI:
             conflicts=conflicts,
         )
 
-    def get_all_binance_pairs(self, location: Location) -> Response:
+    def get_all_binance_pairs(self, location: LocationIdentifier) -> Response:
         try:
             pairs = list(query_binance_exchange_pairs(location=location).keys())
         except InputError as e:
@@ -2868,7 +2868,7 @@ class RestAPI:
             )
         return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
 
-    def get_user_binance_pairs(self, name: str, location: Location) -> Response:
+    def get_user_binance_pairs(self, name: str, location: LocationIdentifier) -> Response:
         return api_response(
             _wrap_in_ok_result(
                 self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
@@ -3116,11 +3116,11 @@ class RestAPI:
             # When multiple locations exist for a label, we take the first one
             # Only include labels that correspond to tracked blockchain accounts
             # For exchanges, include all labels since users' credentials can be removed.
-            exchange_locations = tuple(loc.serialize_for_db() for loc in SUPPORTED_EXCHANGES)
+            exchange_locations = tuple(loc for loc in SUPPORTED_EXCHANGES)
             placeholders = ','.join(['?' for _ in exchange_locations])
             labels = [{
                 'location_label': row[0],
-                'location': Location.deserialize_from_db(row[1]).serialize(),
+                'location': LocationIdentifier(row[1]),
             } for row in cursor.execute(
                 f'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
                 f'FROM history_events '
@@ -3443,7 +3443,7 @@ class RestAPI:
     def get_binance_savings_history(
             self,
             only_cache: bool,
-            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> dict[str, Any]:
@@ -3724,7 +3724,7 @@ class RestAPI:
         return {
             'id': issue.id,
             'kind': issue.kind,
-            'location': Location.deserialize_from_db(issue.location).serialize(),
+            'location': LocationIdentifier(issue.location),
             'location_label': issue.location_label or None,
             'protocol': issue.protocol or None,
             'asset': issue.asset or None,
@@ -3846,7 +3846,7 @@ class RestAPI:
         elif group_by_account is True:
             result['entries'] = [
                 {
-                    'location': entry.location.serialize(),
+                    'location': entry.location,
                     'location_label': entry.location_label,
                     'protocol': entry.protocol,
                     'asset': entry.asset.identifier,
@@ -3883,7 +3883,7 @@ class RestAPI:
         else:
             result['entries'] = [
                 {
-                    'location': entry.location.serialize(),
+                    'location': entry.location,
                     'location_label': entry.location_label,
                     'protocol': entry.protocol,
                     'asset': entry.asset.identifier,
@@ -3910,7 +3910,7 @@ class RestAPI:
                 str(identifier): {
                     'processing_required': identifier in processing,
                     'buckets': [{
-                        'location': bucket.location.serialize(),
+                        'location': bucket.location,
                         'protocol': bucket.protocol,
                         'balance': str(bucket.amount),
                     } for bucket in buckets],
@@ -4137,7 +4137,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         return {
             'status': result.status,
-            'location': result.location.serialize(),
+            'location': result.location,
             'address': result.address,
             'asset': result.asset.identifier,
             'total_events': result.total_events,

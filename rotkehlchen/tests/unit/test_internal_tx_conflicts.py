@@ -23,6 +23,12 @@ from rotkehlchen.db.settings import DEFAULT_INTERNAL_TXS_TO_REPULL
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tasks.internal_tx_conflicts import (
     _query_parent_tx_data_batch,
     _repull_internal_tx_data,
@@ -30,7 +36,7 @@ from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp
+from rotkehlchen.types import ChainID, EvmTransaction, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -254,7 +260,7 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
                 f'10{tx_hash!s}',
                 0,
                 1700000000,
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
                 sender,
                 A_ETH.identifier,
                 '1',
@@ -730,7 +736,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fi
     for call_args in ethereum_decoder._maybe_load_or_purge_events_from_db.call_args_list:
         assert call_args.kwargs['ignore_cache'] is True
         assert call_args.kwargs['delete_customized'] is False
-        assert call_args.kwargs['location'] == Location.from_chain_id(ChainID.ETHEREUM)
+        assert call_args.kwargs['location'] == location_from_chain_id(ChainID.ETHEREUM)
 
     with database.conn.read_ctx() as cursor:
         for tx_hash in (tx_hash1, tx_hash2, tx_hash3):
@@ -1162,7 +1168,7 @@ def test_fix_redecode_preserves_customized_events(database) -> None:
                 f'10{tx_hash!s}',
                 0,
                 1700000000,
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
                 sender,
                 A_ETH.identifier,
                 '1',

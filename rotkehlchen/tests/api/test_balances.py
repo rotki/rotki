@@ -31,10 +31,21 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+    LOCATION_BINANCE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+    LOCATION_POLONIEX,
+    LOCATION_TOTAL,
+)
 from rotkehlchen.tests.api.test_liquity import make_liquity_proxy_patch
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -70,7 +81,6 @@ from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_
 from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
     ChainID,
-    Location,
     Price,
     SolanaAddress,
     SupportedBlockchain,
@@ -101,7 +111,7 @@ def assert_all_balances(
     total_btc = get_asset_balance_total(A_BTC, setup)
     total_eur = get_asset_balance_total(A_EUR, setup)
 
-    got_external = any(x.location == Location.EXTERNAL for x in setup.manually_tracked_balances)
+    got_external = any(x.location == LOCATION_EXTERNAL for x in setup.manually_tracked_balances)
 
     assert len(result) == 4
     assert result['liabilities'] == {}
@@ -170,15 +180,15 @@ def assert_all_balances(
             assert len(location_data) == 0
         else:
             expected_locations = {
-                Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
-                Location.BINANCE.serialize_for_db(),
-                Location.TOTAL.serialize_for_db(),
-                Location.BLOCKCHAIN.serialize_for_db(),
+                LOCATION_POLONIEX,  # pylint: disable=no-member
+                LOCATION_BINANCE,
+                LOCATION_TOTAL,
+                LOCATION_BLOCKCHAIN,
             }
             if got_external:
-                expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member
+                expected_locations.add(LOCATION_EXTERNAL)  # pylint: disable=no-member
             if total_eur != ZERO:
-                expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member
+                expected_locations.add(LOCATION_BANKS)  # pylint: disable=no-member
             locations = {x.location for x in location_data}
             assert locations == expected_locations
 
@@ -194,7 +204,7 @@ def assert_all_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -217,7 +227,7 @@ def test_query_all_balances(
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal('1550'),
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         )],
@@ -284,7 +294,7 @@ def test_query_all_balances(
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -293,9 +303,9 @@ def test_query_all_balances_ignore_cache(
     """Test that using the query all balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    binance = try_get_first_exchange(rotki.exchange_manager, LOCATION_BINANCE, Binance)
     assert binance is not None
-    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    poloniex = try_get_first_exchange(rotki.exchange_manager, LOCATION_POLONIEX, Poloniex)
     assert poloniex is not None
     eth_query_patch = patch.object(
         rotki.chains_aggregator,
@@ -426,7 +436,7 @@ def test_query_all_balances_ignore_cache(
 }]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_all_balances_with_manually_tracked_balances(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -445,7 +455,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         asset=A_BTC,
         label='XPUB BTC wallet',
         amount=FVal('10'),
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         tags=None,
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
@@ -453,7 +463,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         asset=A_BTC,
         label='BTC in hardware wallet',
         amount=FVal('20'),
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         tags=['private'],
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
@@ -461,7 +471,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         asset=A_ETH,
         label='ETH in a not supported exchange wallet',
         amount=FVal('10'),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         tags=['private'],
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
@@ -469,7 +479,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         asset=A_EUR,
         label='N26 account',
         amount=FVal('12500.15'),
-        location=Location.BANKS,
+        location=LOCATION_BANKS,
         tags=None,
         balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
@@ -477,7 +487,7 @@ def test_query_all_balances_with_manually_tracked_balances(
         asset=A_EUR,
         label='Deutsche Bank account',
         amount=FVal('1337.1337'),
-        location=Location.BANKS,
+        location=LOCATION_BANKS,
         tags=None,
         balance_type=BalanceType.ASSET,
     )]
@@ -592,7 +602,7 @@ def test_query_all_balances_queries_sources_concurrently(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for exchange_name in ('coinbase1', 'coinbase2'):
-        rotki.exchange_manager.connected_exchanges[Location.COINBASE].append(create_test_coinbase(
+        rotki.exchange_manager.connected_exchanges[LOCATION_COINBASE].append(create_test_coinbase(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
             name=exchange_name,
@@ -699,7 +709,7 @@ def test_uniswap_v3_v4_balances(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE,)])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_balance_snapshot_error_message(
         rotkehlchen_api_server_with_exchanges: APIServer,
@@ -709,7 +719,7 @@ def test_balance_snapshot_error_message(
     Test that an error in the general balance snapshot is caught and a websocket message is sent
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    binance = try_get_first_exchange(rotki.exchange_manager, LOCATION_BINANCE, Binance)
 
     def mock_binance_method() -> None:
         raise RemoteError('Made a booboo')
@@ -752,7 +762,7 @@ def test_balance_snapshot_error_message(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('separate_blockchain_calls', [True, False])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -778,7 +788,7 @@ def test_multiple_balance_queries_not_concurrent(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.query_balances',
         wraps=rotki.chains_aggregator.bitcoin.query_balances,
     )
-    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    binance = try_get_first_exchange(rotki.exchange_manager, LOCATION_BINANCE, Binance)
     assert binance is not None
     binance_querydict_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
@@ -1311,7 +1321,7 @@ def test_blockchain_balances_refresh(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_balances_with_threshold(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -1326,7 +1336,7 @@ def test_query_balances_with_threshold(
             asset=A_EUR,
             label='Small EUR',
             amount=ONE,
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         ),
@@ -1335,7 +1345,7 @@ def test_query_balances_with_threshold(
             asset=A_USD,
             label='USD',
             amount=FVal('10'),
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         ),
@@ -1344,7 +1354,7 @@ def test_query_balances_with_threshold(
             asset=A_BTC,
             label='Large BTC',
             amount=ONE,
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             tags=None,
             balance_type=BalanceType.ASSET,
         ),
@@ -1669,5 +1679,5 @@ def test_blockchain_balances_partial_chain_failure(
             with rotki.data.db.conn.read_ctx() as cursor:
                 assert cursor.execute(
                     'SELECT COUNT(*) FROM timed_location_data WHERE location=?',
-                    (Location.BLOCKCHAIN.serialize_for_db(),),
+                    (LOCATION_BLOCKCHAIN,),
                 ).fetchone()[0] == int(ignore_errors)

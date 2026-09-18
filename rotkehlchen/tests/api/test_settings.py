@@ -20,6 +20,9 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -40,7 +43,6 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
-    Location,
     ModuleName,
     SupportedBlockchain,
 )
@@ -226,7 +228,7 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
         elif setting == 'default_evm_indexer_order':
             value = ['etherscan', 'blockscout', 'routescan']
         elif setting == 'non_syncing_exchanges':
-            value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
+            value = [ExchangeLocationID(name='test_name', location=LOCATION_KRAKEN).serialize()]
         elif setting == 'evmchains_to_skip_detection':
             value = [x.serialize() for x in (SupportedBlockchain.POLYGON_POS, SupportedBlockchain.BASE, SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE)]  # noqa: E501
         elif setting == 'disabled_chain_queries':
@@ -837,21 +839,21 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: APIServer) -> None:
     exchanges_input = {
         'settings': {
             'non_syncing_exchanges': [
-                ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='test_name', location=LOCATION_KRAKEN).serialize(),
+                ExchangeLocationID(name='test_name2', location=LOCATION_KRAKEN).serialize(),
             ],
         },
     }
     exchanges_expected = [
-        ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
-        ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
+        ExchangeLocationID(name='test_name', location=LOCATION_KRAKEN).serialize(),
+        ExchangeLocationID(name='test_name2', location=LOCATION_KRAKEN).serialize(),
     ]
 
     exchanges_bad_input = {
         'settings': {
             'non_syncing_exchanges': [
-                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='bad_name', location=LOCATION_KRAKEN).serialize(),
+                ExchangeLocationID(name='bad_name', location=LOCATION_KRAKEN).serialize(),
             ],
         },
     }

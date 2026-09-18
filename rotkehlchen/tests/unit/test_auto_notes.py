@@ -29,11 +29,19 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash, make_solana_signature
-from rotkehlchen.types import ChecksumEvmAddress, Location, SolanaAddress, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, SolanaAddress, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
 
 USER: Final = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
 OTHER: Final = string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c')
@@ -49,7 +57,7 @@ def _evm(
         amount: FVal,
         counterparty: str | None = None,
         address: ChecksumEvmAddress | None = None,
-        location: Location = Location.ETHEREUM,
+        location: LocationIdentifier = LOCATION_ETHEREUM,
         notes: str | None = None,
 ) -> EvmEvent:
     return EvmEvent(
@@ -110,7 +118,7 @@ def _events_with_auto_notes() -> list[tuple[HistoryBaseEntry, str]]:
         (_evm(event_type=HistoryEventType.TRANSACTION_TO_SELF, event_subtype=HistoryEventSubType.NONE, asset=A_ETH, amount=FVal(0), address=USER), 'No value transaction to self'),  # noqa: E501
         (_evm(event_type=HistoryEventType.TRANSACTION_TO_SELF, event_subtype=HistoryEventSubType.NONE, asset=A_ETH, amount=FVal('1.5'), address=USER), 'Transaction to self of 1.5 ETH'),  # noqa: E501
         (_evm(event_type=HistoryEventType.SPEND, event_subtype=HistoryEventSubType.NONE, asset=A_ETH, amount=FVal('0.5'), address=OTHER), f'Send 0.5 ETH to {OTHER}'),  # noqa: E501
-        (_evm(event_type=HistoryEventType.RECEIVE, event_subtype=HistoryEventSubType.NONE, asset=A_ETH, amount=FVal('0.5'), address=OTHER, location=Location.ARBITRUM_ONE), f'Receive 0.5 ETH from {OTHER}'),  # noqa: E501
+        (_evm(event_type=HistoryEventType.RECEIVE, event_subtype=HistoryEventSubType.NONE, asset=A_ETH, amount=FVal('0.5'), address=OTHER, location=LOCATION_ARBITRUM_ONE), f'Receive 0.5 ETH from {OTHER}'),  # noqa: E501
         (_evm(event_type=HistoryEventType.WITHDRAWAL, event_subtype=HistoryEventSubType.REMOVE_ASSET, asset=A_ETH, amount=FVal('2'), address=OTHER, counterparty='kraken'), 'Withdraw 2 ETH from kraken'),  # noqa: E501
         (_evm(event_type=HistoryEventType.TRANSFER, event_subtype=HistoryEventSubType.NONE, asset=A_USDC, amount=FVal('10'), address=OTHER), f'Transfer 10 USDC from {USER} to {OTHER}'),  # noqa: E501
         (_evm(event_type=HistoryEventType.RECEIVE, event_subtype=HistoryEventSubType.NONE, asset=A_USDC, amount=FVal('10'), address=OTHER), f'Receive 10 USDC from {OTHER} to {USER}'),  # noqa: E501
@@ -124,16 +132,16 @@ def _events_with_auto_notes() -> list[tuple[HistoryBaseEntry, str]]:
         (EthBlockEvent(validator_index=42, timestamp=TIMESTAMP, amount=FVal('0.2'), fee_recipient=USER, fee_recipient_tracked=True, block_number=100, is_mev_reward=True), f'Validator 42 produced block 100. Relayer reported 0.2 ETH as the MEV reward going to {USER}'),  # noqa: E501
         (EthDepositEvent(tx_ref=make_evm_tx_hash(), validator_index=42, sequence_index=0, timestamp=TIMESTAMP, amount=FVal(32), depositor=USER), 'Deposit 32 ETH to validator 42'),  # noqa: E501
         (EthDepositEvent(tx_ref=make_evm_tx_hash(), validator_index=-1, sequence_index=0, timestamp=TIMESTAMP, amount=FVal(32), depositor=USER), 'Deposit 32 ETH to validator with a not yet known validator index'),  # noqa: E501
-        (HistoryEvent(group_identifier='kraken1', sequence_index=0, timestamp=TIMESTAMP, location=Location.KRAKEN, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.REWARD, asset=A_ETH, amount=FVal('0.3')), 'Gain 0.3 ETH from Kraken staking'),  # noqa: E501
-        (HistoryEvent(group_identifier='kraken2', sequence_index=0, timestamp=TIMESTAMP, location=Location.KRAKEN, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.FEE, asset=A_ETH, amount=FVal('0.01')), 'Spend 0.01 ETH as Kraken staking fee'),  # noqa: E501
-        (SwapEvent(timestamp=TIMESTAMP, location=Location.BINANCE, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(1), group_identifier='swap1'), 'Swap 1 ETH in Binance'),  # noqa: E501
-        (SwapEvent(timestamp=TIMESTAMP, location=Location.BINANCE, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(3000), group_identifier='swap1'), 'Receive 3000 USD after a swap in Binance'),  # noqa: E501
-        (SwapEvent(timestamp=TIMESTAMP, location=Location.BINANCE, event_subtype=HistoryEventSubType.FEE, asset=A_USD, amount=FVal(3), group_identifier='swap1'), 'Spend 3 USD as Binance swap fee'),  # noqa: E501
-        (EvmSwapEvent(tx_ref=make_evm_tx_hash(), sequence_index=0, timestamp=TIMESTAMP, location=Location.ETHEREUM, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(1)), 'Swap 1 ETH in Ethereum'),  # noqa: E501
-        (_multi_trade(timestamp=TIMESTAMP, location=Location.KRAKEN, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(500), group_identifier='swap2'), 'Receive 500 USD after a swap in Kraken'),  # noqa: E501
-        (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.RECEIVE, asset=A_ETH, amount=FVal(1), unique_id='m1'), 'Deposit 1 ETH to Binance US'),  # noqa: E501
-        (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(2), unique_id='m2'), 'Withdraw 2 ETH from Binance US'),  # noqa: E501
-        (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.FEE, asset=A_ETH, amount=FVal('0.1'), unique_id='m2'), 'Pay 0.1 ETH as Binance US exchange transfer fee'),  # noqa: E501
+        (HistoryEvent(group_identifier='kraken1', sequence_index=0, timestamp=TIMESTAMP, location=LOCATION_KRAKEN, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.REWARD, asset=A_ETH, amount=FVal('0.3')), 'Gain 0.3 ETH from Kraken staking'),  # noqa: E501
+        (HistoryEvent(group_identifier='kraken2', sequence_index=0, timestamp=TIMESTAMP, location=LOCATION_KRAKEN, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.FEE, asset=A_ETH, amount=FVal('0.01')), 'Spend 0.01 ETH as Kraken staking fee'),  # noqa: E501
+        (SwapEvent(timestamp=TIMESTAMP, location=LOCATION_BINANCE, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(1), group_identifier='swap1'), 'Swap 1 ETH in Binance'),  # noqa: E501
+        (SwapEvent(timestamp=TIMESTAMP, location=LOCATION_BINANCE, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(3000), group_identifier='swap1'), 'Receive 3000 USD after a swap in Binance'),  # noqa: E501
+        (SwapEvent(timestamp=TIMESTAMP, location=LOCATION_BINANCE, event_subtype=HistoryEventSubType.FEE, asset=A_USD, amount=FVal(3), group_identifier='swap1'), 'Spend 3 USD as Binance swap fee'),  # noqa: E501
+        (EvmSwapEvent(tx_ref=make_evm_tx_hash(), sequence_index=0, timestamp=TIMESTAMP, location=LOCATION_ETHEREUM, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(1)), 'Swap 1 ETH in Ethereum Mainnet'),  # noqa: E501
+        (_multi_trade(timestamp=TIMESTAMP, location=LOCATION_KRAKEN, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(500), group_identifier='swap2'), 'Receive 500 USD after a swap in Kraken'),  # noqa: E501
+        (AssetMovement(timestamp=TIMESTAMP, location=LOCATION_BINANCEUS, event_subtype=HistoryEventSubType.RECEIVE, asset=A_ETH, amount=FVal(1), unique_id='m1'), 'Deposit 1 ETH to Binance US'),  # noqa: E501
+        (AssetMovement(timestamp=TIMESTAMP, location=LOCATION_BINANCEUS, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(2), unique_id='m2'), 'Withdraw 2 ETH from Binance US'),  # noqa: E501
+        (AssetMovement(timestamp=TIMESTAMP, location=LOCATION_BINANCEUS, event_subtype=HistoryEventSubType.FEE, asset=A_ETH, amount=FVal('0.1'), unique_id='m2'), 'Pay 0.1 ETH as Binance US exchange transfer fee'),  # noqa: E501
     ]
 
 

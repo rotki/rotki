@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import itemgetter
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.constants import (
     DEFAULT,
@@ -14,11 +14,16 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.history.events.structures.base import get_event_direction
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import Location
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 
-# Representative exchange used to resolve the ``EXCHANGE`` reading of the few type/subtype
+if TYPE_CHECKING:
+    from rotkehlchen.locations.types import LocationIdentifier
+
 # combos that mean something different on a centralized exchange than they do on chain.
-EXCHANGE_LOCATION: Final = Location.KRAKEN
+EXCHANGE_LOCATION: Final = LOCATION_KRAKEN
 
 # Rules an agent cannot infer from the data and gets wrong every time without them.
 TAXONOMY_RULES: Final = (
@@ -167,7 +172,7 @@ def _describe(
         event_type: Any,
         event_subtype: Any,
         category: Any,
-        location: Location | None = None,
+        location: LocationIdentifier | None = None,
 ) -> dict[str, Any]:
     """Describe one type/subtype/category combination.
 
@@ -194,7 +199,7 @@ def _parse_event_key(
         event_type: Any,
         event_subtype: Any,
         location: Any,
-) -> tuple[HistoryEventType, HistoryEventSubType, Location | None] | None:
+) -> tuple[HistoryEventType, HistoryEventSubType, LocationIdentifier | None] | None:
     """Parse the serialized type/subtype/location as they appear in the analytics frame.
 
     Returns None for anything that does not parse, so a single unrecognized event cannot
@@ -205,7 +210,7 @@ def _parse_event_key(
             HistoryEventType.deserialize(event_type),
             HistoryEventSubType.deserialize(event_subtype)
             if isinstance(event_subtype, str) else HistoryEventSubType.NONE,
-            Location.deserialize(location) if isinstance(location, str) else None,
+            deserialize_builtin_location(location) if isinstance(location, str) else None,
         )
     except DeserializationError:
         return None

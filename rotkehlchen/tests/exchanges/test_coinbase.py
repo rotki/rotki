@@ -28,11 +28,14 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, His
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.factories import make_random_bytes
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -44,7 +47,7 @@ def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
 
 
 def test_name(mock_coinbase):
-    assert mock_coinbase.location == Location.COINBASE
+    assert mock_coinbase.location == LOCATION_COINBASE
     assert mock_coinbase.name == 'coinbase1'
 
 
@@ -359,7 +362,7 @@ def query_coinbase_and_test(
     mock_coinbase_query = _create_coinbase_mock(transactions_response)
 
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
-        coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=Location.COINBASE)
+        coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=LOCATION_COINBASE)
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
         if len(returned_events := coinbase._query_transactions()) != 0:
             with coinbase.db.user_write() as write_cursor:
@@ -369,7 +372,7 @@ def query_coinbase_and_test(
         events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
             ),
         )
@@ -522,7 +525,7 @@ def test_coinbase_staking_events(
     with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_COINBASE),
         )
 
     assert events == [HistoryEvent(
@@ -530,7 +533,7 @@ def test_coinbase_staking_events(
         group_identifier='CBE_tx_id_1',
         sequence_index=0,
         timestamp=TimestampMS(1704125964000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=asset_from_coinbase('DOT'),
@@ -588,7 +591,7 @@ def test_account_failure_does_not_advance_cursors(
         ).fetchone()[0] == 0
         assert events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_COINBASE),
         ) == []
 
     failing = False  # retry with the remote error resolved: account_a's event is recovered
@@ -598,7 +601,7 @@ def test_account_failure_does_not_advance_cursors(
     with database.conn.read_ctx() as cursor:
         events = events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_COINBASE),
         )
         assert cursor.execute(  # and only now is the cursor persisted
             'SELECT value FROM key_value_cache WHERE name=?',
@@ -622,7 +625,7 @@ def test_coinbase_query_history_events(
     with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_COINBASE),
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -633,7 +636,7 @@ def test_coinbase_query_history_events(
     expected_events = [AssetMovement(
         identifier=4,
         group_identifier='582c2b78e88052d879b203fd07b6fca15f90417da7f715dcda72275b8d290054',
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         location_label=coinbase.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1502554304000),
@@ -646,31 +649,31 @@ def test_coinbase_query_history_events(
     ), SwapEvent(
         identifier=8,
         timestamp=TimestampMS(1566687695000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('10.99'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id10',
         ),
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1566687695000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.05772716'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id10',
         ),
     ), AssetMovement(
         identifier=1,
         group_identifier='157b922cd6b7d3be91d0d3c2e197153dfb91dd9f8d2507eb83b9e3d477a5e6fd',
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         location_label=coinbase.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1566726126000),
@@ -684,7 +687,7 @@ def test_coinbase_query_history_events(
     ), AssetMovement(
         identifier=3,
         group_identifier='af84752f7e7bcdd99c91dd856a117086df6205e26f0c8f6e530dfd5f3ff5add1',
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         location_label=coinbase.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1566726126000),
@@ -697,7 +700,7 @@ def test_coinbase_query_history_events(
     ), AssetMovement(
         identifier=2,
         group_identifier='157b922cd6b7d3be91d0d3c2e197153dfb91dd9f8d2507eb83b9e3d477a5e6fd',
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         location_label=coinbase.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1566726126000),
@@ -706,25 +709,25 @@ def test_coinbase_query_history_events(
     ), SwapEvent(
         identifier=10,
         timestamp=TimestampMS(1569366095000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.05772715'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id11',
         ),
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1569366095000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('10.98'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id11',
         ),
     ), HistoryEvent(
@@ -732,7 +735,7 @@ def test_coinbase_query_history_events(
         group_identifier='CBE_id4',
         sequence_index=0,
         timestamp=TimestampMS(1609877514000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('NMR'),
@@ -744,7 +747,7 @@ def test_coinbase_query_history_events(
         group_identifier='CBE_id5',
         sequence_index=0,
         timestamp=TimestampMS(1611426233000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('ALGO'),
@@ -756,7 +759,7 @@ def test_coinbase_query_history_events(
         group_identifier='CBE_id6',
         sequence_index=0,
         timestamp=TimestampMS(1611512633000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         asset=asset_from_coinbase('SOL'),
@@ -766,7 +769,7 @@ def test_coinbase_query_history_events(
     ), AssetMovement(
         identifier=7,
         group_identifier='1181793af14ed42cb443d55ce50f68deef95b320c114025cb25a988f005a3a76',
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         location_label=coinbase.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1615493615000),
@@ -776,37 +779,37 @@ def test_coinbase_query_history_events(
     ), SwapEvent(
         identifier=13,
         timestamp=TimestampMS(1733150783000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('10.382341'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id9',
         ),
     ), SwapEvent(
         identifier=14,
         timestamp=TimestampMS(1733150783000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('9.98'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id9',
         ),
     ), SwapEvent(
         identifier=15,
         timestamp=TimestampMS(1733150783000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.099839'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id9',
         ),
     )]
@@ -884,24 +887,24 @@ def test_asset_conversion(mock_coinbase):
     trade_pairs = {tx_id: [trade_a, trade_b]}
     assert mock_coinbase._process_trades_from_conversion(trade_pairs) == [SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('1000.000000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     )]
@@ -919,35 +922,35 @@ def test_conversion_with_fee(mock_coinbase):
         transaction_pairs={tx_id: [trade_a, trade_b]},
     ) == [SwapEvent(
         timestamp=TimestampMS(1733480877000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('10.461968'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1733480877000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.00266121'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1733480877000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.109974'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id,
         ),
     )]
@@ -991,7 +994,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
         stored_events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
             ),
         )
@@ -999,12 +1002,12 @@ def test_conversion_across_wallets(function_scope_coinbase):
         event.identifier = None  # set to None for comparison below
 
     group_identifier = create_group_identifier_from_unique_id(
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         unique_id=tx_id,
     )
     assert returned_events == stored_events == [SwapEvent(
         timestamp=TimestampMS(1733480876000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('10.461968'),
@@ -1012,7 +1015,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
         group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=TimestampMS(1733480876000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.00266121'),
@@ -1020,7 +1023,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
         group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=TimestampMS(1733480876000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.109974'),
@@ -1061,35 +1064,35 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         transaction_pairs={tx_id: [trade_a]},
     ) == [SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_XTZ,
         amount=FVal('449'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('540'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XTZ,
         amount=FVal('1'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     )]
@@ -1165,24 +1168,24 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
         transaction_pairs={tx_id: [trade_a, trade_b]},
     ) == [SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_1INCH,
         amount=FVal('6000.000000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     )]
@@ -1258,24 +1261,24 @@ def test_asset_conversion_zero_fee(mock_coinbase):
         transaction_pairs={tx_id: [trade_a, trade_b]},
     ) == [SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_1INCH,
         amount=FVal('6000.000000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
     )]
@@ -1520,7 +1523,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
                 order_by_rules=[('timestamp', True), ('group_identifier', False)],
             ),
@@ -1535,193 +1538,193 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
     assert events == [SwapEvent(
         identifier=1,
         timestamp=TimestampMS(1709799171000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('192.790000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id1',
         ),
     ), SwapEvent(
         identifier=2,
         timestamp=TimestampMS(1709799171000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('176.8655460000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id1',
         ),
     ), SwapEvent(
         identifier=3,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('485.330000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id2',
         ),
     ), SwapEvent(
         identifier=4,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('445.2417420000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id2',
         ),
     ), SwapEvent(
         identifier=5,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('1.120000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id3',
         ),
     ), SwapEvent(
         identifier=6,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
         amount=FVal('3734.461920000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id3',
         ),
     ), SwapEvent(
         identifier=7,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.0000005'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id3',
         ),
     ), SwapEvent(
         identifier=8,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal('100.25001480'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id4',
         ),
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_SOL,
         amount=FVal('0.589290'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id4',
         ),
     ), SwapEvent(
         identifier=10,
         timestamp=TimestampMS(1709802771000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.5710371002622'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id4',
         ),
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('191.2262900000000000000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id5',
         ),
     ), SwapEvent(
         identifier=12,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('NEAR'),
         amount=FVal('25.8100000000000000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id5',
         ),
     ), SwapEvent(
         identifier=13,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('1.9122629'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id5',
         ),
     ), SwapEvent(
         identifier=14,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('14.8160000000000000000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id6',
         ),
     ), SwapEvent(
         identifier=15,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('NEAR'),
         amount=FVal('2.0000000000000000'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id6',
         ),
     ), SwapEvent(
         identifier=16,
         timestamp=TimestampMS(1711371791000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.14816'),
         location_label='coinbase',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id='id6',
         ),
     )]
@@ -1760,35 +1763,35 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
     }
     assert mock_coinbase._process_coinbase_trade(raw_trade_a) == [SwapEvent(
         timestamp=TimestampMS(1653075484000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('205.50'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id1,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653075484000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.105600147994367992106967040420961757844215372914975180111201323727402596067872'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id1,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653075484000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.85'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id1,
         ),
     )]
@@ -1818,35 +1821,35 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
     }
     assert mock_coinbase._process_coinbase_trade(raw_trade_b) == [SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('1.8701600000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id2,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.00100000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id2,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.0047'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id2,
         ),
     )]
@@ -1876,35 +1879,35 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
     }
     assert mock_coinbase._process_coinbase_trade(raw_trade_c) == [SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.50000000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id3,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('1000.00000000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id3,
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.5'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             unique_id=tx_id3,
         ),
     )]
@@ -1951,7 +1954,7 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
             write_cursor=write_cursor,
             name=DBCacheDynamic.LAST_QUERY_TS,
             value=1728522001,  # 2024-10-10 01:00:01 UTC
-            location=coinbase.location.serialize(),
+            location=coinbase.location,
             location_name=coinbase.name,
             account_id='xyz',
         )
@@ -2022,25 +2025,25 @@ def test_ignore_same_asset_same_amount_swap(function_scope_coinbase):
         ) == [SwapEvent(
             identifier=1,
             timestamp=TimestampMS(1767189154000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('200'),
             location_label='coinbase',
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 unique_id='TEST_ID_1',
             ),
         ), SwapEvent(
             identifier=2,
             timestamp=TimestampMS(1767189154000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('200'),
             location_label='coinbase',
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 unique_id='TEST_ID_1',
             ),
         )]

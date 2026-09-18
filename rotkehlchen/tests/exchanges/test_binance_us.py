@@ -13,6 +13,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCEUS,
+)
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
@@ -20,13 +23,13 @@ from rotkehlchen.tests.utils.exchanges import (
     assert_binance_asset_movements_result,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 
 def test_name():
     exchange = Binance('binanceus1', 'a', b'a', object(), object(), uri=BINANCEUS_BASE_URL)
-    assert exchange.location == Location.BINANCEUS
+    assert exchange.location == LOCATION_BINANCEUS
     assert exchange.name == 'binanceus1'
 
 
@@ -49,7 +52,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
             ))
 
 
-@pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
+@pytest.mark.parametrize('binance_location', [LOCATION_BINANCEUS])
 def test_binanceus_trades_location(function_scope_binance):
     """Test that trades from binance US have the right location.
 
@@ -72,41 +75,41 @@ def test_binanceus_trades_location(function_scope_binance):
         )
         assert events == [SwapEvent(
             timestamp=TimestampMS(1499865549590),
-            location=Location.BINANCEUS,
+            location=LOCATION_BINANCEUS,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=FVal('48.0000120000000000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BINANCEUS,
+                location=LOCATION_BINANCEUS,
                 unique_id='28457',
             ),
             location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1499865549590),
-            location=Location.BINANCEUS,
+            location=LOCATION_BINANCEUS,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BNB,
             amount=FVal('12.00000000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BINANCEUS,
+                location=LOCATION_BINANCEUS,
                 unique_id='28457',
             ),
             location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1499865549590),
-            location=Location.BINANCEUS,
+            location=LOCATION_BINANCEUS,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BNB,
             amount=FVal('10.10000000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BINANCEUS,
+                location=LOCATION_BINANCEUS,
                 unique_id='28457',
             ),
             location_label=binance.name,
         )]
 
 
-@pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
+@pytest.mark.parametrize('binance_location', [LOCATION_BINANCEUS])
 def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     """Test deposits/withdrawals of binance US have the right location.
 
@@ -138,12 +141,12 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     assert len(movements) == 6
     assert_binance_asset_movements_result(
         movements=movements,
-        location=Location.BINANCEUS,
+        location=LOCATION_BINANCEUS,
         got_fiat=False,
     )
 
 
-@pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
+@pytest.mark.parametrize('binance_location', [LOCATION_BINANCEUS])
 def test_binanceus_skips_convert_history(function_scope_binance: Binance):
     """Test that the convert history query is skipped for Binance US.
     While Binance US does have a convert feature in the UI, the API endpoint we use for querying

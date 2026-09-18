@@ -35,7 +35,6 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     ChainID,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.network import query_file
@@ -597,7 +596,7 @@ def test_remote_updates_consistency_with_packaged_db(
 
     missing_in_packaged_db: list[Any] = []
     missing_in_remote_updates: list[Any] = []
-    for mapping_type, table_details in [
+    for _, table_details in [
         (
             'location',
             {
@@ -639,8 +638,7 @@ def test_remote_updates_consistency_with_packaged_db(
         missing_in_remote_updates.extend([
             {
                 'asset': identifier,
-                field1_name: None if field1 is None else Location.deserialize_from_db(
-                    field1).serialize() if mapping_type == 'location' else field1,
+                field1_name: field1,
                 f'{field1_name}_symbol': field2,
             }
             for (field1, field2), identifier in packaged_mappings.items()

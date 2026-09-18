@@ -19,6 +19,11 @@ from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -40,7 +45,6 @@ from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS,
     ChainID,
     ChecksumEvmAddress,
-    Location,
     SolanaAddress,
     SupportedBlockchain,
     Timestamp,
@@ -157,7 +161,7 @@ def test_transaction_reference_addition(rotkehlchen_api_server: APIServer, solan
             tx_ref=deserialize_evm_tx_hash(tx_hash),
             sequence_index=22,
             timestamp=TimestampMS(1513958719000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -522,13 +526,13 @@ def test_latest_blockchain_transaction_timestamps(
             (write_cursor.lastrowid, solana_address),
         )
         for location, tx_id, timestamp, address in (
-            (Location.BITCOIN, 'btc-tx', 400, btc_address),
-            (Location.BITCOIN_CASH, 'bch-tx', 500, bch_address),
+            (LOCATION_BITCOIN, 'btc-tx', 400, btc_address),
+            (LOCATION_BITCOIN_CASH, 'bch-tx', 500, bch_address),
         ):
             write_cursor.execute(
                 'INSERT INTO bitcoin_transactions(location, tx_id, timestamp, block_height, fee) '
                 'VALUES (?, ?, ?, ?, ?)',
-                (location.serialize_for_db(), tx_id, timestamp, 1, 1),
+                (location, tx_id, timestamp, 1, 1),
             )
             write_cursor.execute(
                 'INSERT INTO bitcointx_address_mappings(tx_id, address) VALUES (?, ?)',

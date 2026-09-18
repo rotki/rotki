@@ -41,6 +41,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITFINEX,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -53,7 +56,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -133,7 +135,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -617,7 +619,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 )
             else:  # add the mappings fetched from the API in globalDB, if they are not already there  # noqa: E501
                 test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
-                bfx_db_serialized = Location.BITFINEX.serialize_for_db()
+                bfx_db_serialized = LOCATION_BITFINEX
                 bindings = []
                 for bfx_symbol, symbol in response_list[0]:
                     if bfx_symbol in test_assets:

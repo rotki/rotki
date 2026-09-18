@@ -20,11 +20,11 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.types import (
         ChainID,
         ChecksumEvmAddress,
         EvmTransaction,
-        Location,
         TimestampMS,
     )
     from tools.scenarios.deterministic import DeterministicFactory
@@ -101,7 +101,7 @@ def make_snapshots(
         factory: DeterministicFactory,
         assets: Sequence[tuple[Asset, str]],
         weeks: int,
-        location_weights: Sequence[tuple[Location, float]],
+        location_weights: Sequence[tuple[LocationIdentifier, float]],
 ) -> tuple[list[tuple], list[tuple], int]:
     """Weekly balance snapshots over the profile lifetime.
 
@@ -129,7 +129,7 @@ def make_snapshots(
         for location, weight in location_weights:
             location_rows.append((
                 timestamp,
-                location.serialize_for_db(),
+                location,
                 str(total * FVal(f'{weight}')),
             ))
         location_rows.append((timestamp, 'H', str(total)))  # 'H' = total; netvalue reads it
@@ -174,7 +174,7 @@ class EvmPools:
 def make_evm_tx_group(
         factory: DeterministicFactory,
         pools: EvmPools,
-        location: Location,
+        location: LocationIdentifier,
         account: ChecksumEvmAddress,
         timestamp: TimestampMS,
         size: int,
@@ -348,7 +348,7 @@ def make_decodable_evm_transactions(
 
 def make_exchange_swap(
         factory: DeterministicFactory,
-        location: Location,
+        location: LocationIdentifier,
         timestamp: TimestampMS,
         spend: tuple[Asset, str],
         receive: tuple[Asset, str],
@@ -389,7 +389,7 @@ def make_exchange_swap(
 
 def make_asset_movement(
         factory: DeterministicFactory,
-        location: Location,
+        location: LocationIdentifier,
         timestamp: TimestampMS,
         asset: tuple[Asset, str],
         is_deposit: bool,
@@ -420,7 +420,7 @@ def make_asset_movement(
 
 def make_staking_reward(
         factory: DeterministicFactory,
-        location: Location,
+        location: LocationIdentifier,
         timestamp: TimestampMS,
         asset: tuple[Asset, str],
         unique_suffix: str,

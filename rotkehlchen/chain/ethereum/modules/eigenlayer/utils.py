@@ -4,11 +4,14 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -25,7 +28,7 @@ def get_eigenpods_to_owners_mapping(db: DBHandler) -> dict[ChecksumEvmAddress, C
                 CPT_EIGENLAYER,
                 HistoryEventType.INFORMATIONAL.serialize(),
                 HistoryEventSubType.CREATE.serialize(),
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
             ),
         )
         if len(events_extra_data := cursor.fetchall()) == 0:

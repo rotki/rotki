@@ -10,7 +10,10 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+)
+from rotkehlchen.types import Timestamp
 
 EXCHANGE_METHODS_TO_CHECK = (
     'query_balances',
@@ -47,10 +50,10 @@ def test_requery_exchange_history_events_uses_incremental_queue() -> None:
     manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
     exchange = MagicMock()
     exchange.name = 'test'
-    exchange.location = Location.BINANCE
+    exchange.location = LOCATION_BINANCE
     exchange.location_id.return_value = 'binance_test'
     exchange.requery_online_history_events_into_queue.return_value = Timestamp(2)
-    manager.connected_exchanges[Location.BINANCE].append(exchange)
+    manager.connected_exchanges[LOCATION_BINANCE].append(exchange)
     event_queue = MagicMock(spec=HistoryEventQueue)
     event_queue.queried_events = 3
     event_queue.saved_events = 2
@@ -60,7 +63,7 @@ def test_requery_exchange_history_events_uses_incremental_queue() -> None:
         return_value=event_queue,
     ):
         result = manager.requery_exchange_history_events(
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             name='test',
             start_ts=Timestamp(1),
             end_ts=Timestamp(2),
@@ -81,10 +84,10 @@ def test_requery_exchange_history_events_flushes_and_finishes_on_error() -> None
     manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
     exchange = MagicMock()
     exchange.name = 'test'
-    exchange.location = Location.BINANCE
+    exchange.location = LOCATION_BINANCE
     exchange.location_id.return_value = 'binance_test'
     exchange.requery_online_history_events_into_queue.side_effect = RemoteError('query failed')
-    manager.connected_exchanges[Location.BINANCE].append(exchange)
+    manager.connected_exchanges[LOCATION_BINANCE].append(exchange)
     event_queue = MagicMock(spec=HistoryEventQueue)
 
     with (
@@ -95,7 +98,7 @@ def test_requery_exchange_history_events_flushes_and_finishes_on_error() -> None
         pytest.raises(RemoteError, match='query failed'),
     ):
         manager.requery_exchange_history_events(
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             name='test',
             start_ts=Timestamp(1),
             end_ts=Timestamp(2),
@@ -114,11 +117,11 @@ def test_query_exchange_history_events_continues_after_remote_error() -> None:
     exchanges = [MagicMock(), MagicMock()]
     for idx, exchange in enumerate(exchanges):
         exchange.name = f'test_{idx}'
-        exchange.location = Location.BINANCE
+        exchange.location = LOCATION_BINANCE
         exchange.location_id.return_value = f'binance_test_{idx}'
     exchanges[0].query_history_events.side_effect = RemoteError('first failed')
     exchanges[1].query_history_events.side_effect = RemoteError('second failed')
-    manager.connected_exchanges[Location.BINANCE].extend(exchanges)
+    manager.connected_exchanges[LOCATION_BINANCE].extend(exchanges)
 
     with pytest.raises(
         RemoteError,
@@ -127,7 +130,7 @@ def test_query_exchange_history_events_continues_after_remote_error() -> None:
             'test_0: first failed, test_1: second failed'
         ),
     ):
-        manager.query_exchange_history_events(location=Location.BINANCE, name=None)
+        manager.query_exchange_history_events(location=LOCATION_BINANCE, name=None)
 
     for exchange in exchanges:
         exchange.query_history_events.assert_called_once_with()
@@ -140,16 +143,16 @@ def test_query_exchange_history_events_should_continue_after_input_error() -> No
     exchanges = [MagicMock(), MagicMock()]
     for idx, exchange in enumerate(exchanges):
         exchange.name = f'test_{idx}'
-        exchange.location = Location.BINANCE
+        exchange.location = LOCATION_BINANCE
         exchange.location_id.return_value = f'binance_test_{idx}'
     exchanges[0].query_history_events.side_effect = InputError('no market pairs selected')
-    manager.connected_exchanges[Location.BINANCE].extend(exchanges)
+    manager.connected_exchanges[LOCATION_BINANCE].extend(exchanges)
 
     with pytest.raises(
         RemoteError,
         match='Failed to query binance history events for test_0: no market pairs selected',
     ):
-        manager.query_exchange_history_events(location=Location.BINANCE, name=None)
+        manager.query_exchange_history_events(location=LOCATION_BINANCE, name=None)
 
     for exchange in exchanges:
         exchange.query_history_events.assert_called_once_with()
@@ -161,12 +164,12 @@ def test_query_exchange_history_events_should_propagate_named_input_error() -> N
     manager.database.get_settings.return_value = SimpleNamespace(non_syncing_exchanges=set())
     exchange = MagicMock()
     exchange.name = 'test'
-    exchange.location = Location.BINANCE
+    exchange.location = LOCATION_BINANCE
     exchange.location_id.return_value = 'binance_test'
     exchange.query_history_events.side_effect = InputError('no market pairs selected')
-    manager.connected_exchanges[Location.BINANCE].append(exchange)
+    manager.connected_exchanges[LOCATION_BINANCE].append(exchange)
 
     with pytest.raises(InputError, match='no market pairs selected'):
-        manager.query_exchange_history_events(location=Location.BINANCE, name='test')
+        manager.query_exchange_history_events(location=LOCATION_BINANCE, name='test')
 
     exchange.query_history_events.assert_called_once_with()

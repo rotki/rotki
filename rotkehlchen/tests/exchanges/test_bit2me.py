@@ -9,8 +9,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BIT2ME,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 
 # Sample API responses based on real Bit2Me API data
 # Note: The pocket API returns "currency" field for the currency symbol
@@ -329,8 +332,8 @@ EMPTY_TRADES_RESPONSE = """{"count": 0, "data": []}"""
 
 def test_bit2me_location(bit2me):
     """Test that Bit2me has the correct location."""
-    assert bit2me.location == Location.BIT2ME
-    assert bit2me.location_id().location == Location.BIT2ME
+    assert bit2me.location == LOCATION_BIT2ME
+    assert bit2me.location_id().location == LOCATION_BIT2ME
 
 
 def test_bit2me_name(bit2me):

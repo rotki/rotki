@@ -27,8 +27,13 @@ from rotkehlchen.history.events.structures.eth2 import (
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OKX,
+)
 from rotkehlchen.types import (
-    Location,
     SupportedBlockchain,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -139,7 +144,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         tx_ref=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_DAI,
         amount=FVal('1.542'),
@@ -150,7 +155,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         tx_ref=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=163,
         timestamp=TimestampMS(1569924575000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_USDT,
         amount=FVal('1.542'),
@@ -161,7 +166,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         tx_ref=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=2,
         timestamp=TimestampMS(1619924576000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
         amount=FVal('0.0001'),
@@ -173,7 +178,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         tx_ref=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=3,
         timestamp=TimestampMS(1619924579000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_ETH,
@@ -185,7 +190,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         tx_ref=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         asset=A_ETH,
         amount=ONE,
@@ -196,7 +201,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         group_identifier='STARK-STARK-STARK',
         sequence_index=0,
         timestamp=TimestampMS(1673146287380),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         location_label='Kraken',
         asset=A_ETH2,
         amount=FVal('0.0000400780'),
@@ -226,7 +231,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         is_mev_reward=False,
     ), AssetMovement(
         timestamp=TimestampMS(1701654218000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.0586453'),
@@ -239,7 +244,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         ),
     ), AssetMovement(
         timestamp=TimestampMS(1701654218000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.000423'),
@@ -247,7 +252,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         location_label='Coinbase 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
-        location=Location.OKX,
+        location=LOCATION_OKX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('5792.2972152799999995'),
@@ -255,7 +260,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
-        location=Location.OKX,
+        location=LOCATION_OKX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('4.5'),
@@ -263,7 +268,7 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
-        location=Location.OKX,
+        location=LOCATION_OKX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.00315'),

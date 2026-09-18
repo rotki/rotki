@@ -15,9 +15,12 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_CRYPTOCOM,
+)
 from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 EMPTY_BALANCES_RESPONSE: Final = {'id': 1, 'method': 'private/user-balance', 'code': 0, 'result': {'data': [{'total_available_balance': '0', 'total_margin_balance': '0', 'total_initial_margin': '0.00000000', 'total_haircut': '0.00000000', 'total_position_im': '0', 'total_maintenance_margin': '0', 'total_position_cost': '0', 'total_cash_balance': '0', 'total_session_unrealized_pnl': '0', 'instrument_name': 'USD', 'total_session_realized_pnl': '0', 'position_balances': [], 'credit_limits': [], 'total_effective_leverage': '0', 'position_limit': '0', 'used_position_limit': '0', 'total_borrow': '0', 'margin_score': '0', 'is_liquidating': False, 'has_risk': False, 'terminatable': True}]}}  # noqa: E501
@@ -29,7 +32,7 @@ TRADES_RESPONSE: Final = {'id': 1, 'method': 'private/get-trades', 'code': 0, 'r
 
 def test_name():
     exchange = Cryptocom('cryptocom1', 'a', b'a', object(), object())
-    assert exchange.location == Location.CRYPTOCOM
+    assert exchange.location == LOCATION_CRYPTOCOM
     assert exchange.name == 'cryptocom1'
 
 
@@ -143,67 +146,67 @@ def test_query_trades(mock_cryptocom):
         )
         assert events == [SwapEvent(
             timestamp=TimestampMS(1755892532063),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('9.95850'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981674131791',
             ),
             location_label=mock_cryptocom.name,
         ), SwapEvent(
             timestamp=TimestampMS(1755892532063),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_SOL,
             amount=FVal('0.050'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981674131791',
             ),
             location_label=mock_cryptocom.name,
         ), SwapEvent(
             timestamp=TimestampMS(1755892532063),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_SOL,
             amount=FVal('0.00025'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981674131791',
             ),
             location_label=mock_cryptocom.name,
         ), SwapEvent(
             timestamp=TimestampMS(1755885101119),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('19.8492000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981648392989',
             ),
             location_label=mock_cryptocom.name,
         ), SwapEvent(
             timestamp=TimestampMS(1755885101119),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=FVal('0.00017'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981648392989',
             ),
             location_label=mock_cryptocom.name,
         ), SwapEvent(
             timestamp=TimestampMS(1755885101119),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('0.00000085'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.CRYPTOCOM,
+                location=LOCATION_CRYPTOCOM,
                 unique_id='6242909981648392989',
             ),
             location_label=mock_cryptocom.name,
@@ -227,7 +230,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
         assert events == [AssetMovement(
             group_identifier='b8c8a7320bd804ebd989a2b602186716d217b0dfde736add740d13f709146239',
             timestamp=TimestampMS(1755883811000),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
             amount=FVal(100),
@@ -240,7 +243,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
         ), AssetMovement(
             group_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
             timestamp=TimestampMS(1607063412000),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal(25),
@@ -249,7 +252,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
         ), AssetMovement(
             group_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
             timestamp=TimestampMS(1607063412000),
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal(1.0),

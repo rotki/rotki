@@ -11,8 +11,11 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.exchanges.kraken import Kraken
@@ -31,7 +34,7 @@ def get_skipped_external_events_summary(rotki: Rotkehlchen) -> dict[str, Any]:
 
         total = 0
         for count, location in cursor:
-            serialized_location = Location.deserialize_from_db(location).serialize()
+            serialized_location = LocationIdentifier(location)
             summary['locations'][serialized_location] = count
             total += count
 
@@ -52,7 +55,7 @@ def export_skipped_external_events(rotki: Rotkehlchen, directory: Path | None) -
     """
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT location, data, extra_data FROM skipped_external_events')
-        data = [{'location': Location.deserialize_from_db(x).serialize(), 'data': y, 'extra_data': z} for x, y, z in cursor]  # noqa: E501
+        data = [{'location': LocationIdentifier(x), 'data': y, 'extra_data': z} for x, y, z in cursor]  # noqa: E501
 
     if directory is None:
         _, newfilename = tempfile.mkstemp()
@@ -88,8 +91,8 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT identifier, data, location, extra_data FROM skipped_external_events')  # noqa: E501
         for identifier, data, raw_location, extra_data in cursor:
-            location = Location.deserialize_from_db(raw_location)  # should not raise
-            if location != Location.KRAKEN:
+            location = LocationIdentifier(raw_location)  # should not raise
+            if location != LOCATION_KRAKEN:
                 continue
             extra_json = None
             if extra_data is not None:
@@ -115,7 +118,7 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
     identifiers_to_delete = set()
     # Now that we got the skipped kraken events from the DB, find the kraken instances
     for kraken_name, raw_events in raw_kraken_events.items():
-        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=Location.KRAKEN)
+        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=LOCATION_KRAKEN)
         if exchange is None:  # we have deleted the exchange, so the skipped events can also go
             identifiers_to_delete.update({x[0] for x in raw_events})
             continue
@@ -141,7 +144,7 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
                 continue
 
     for (kraken_name, account_uid), raw_events in raw_kraken_futures_events.items():
-        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=Location.KRAKEN)
+        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=LOCATION_KRAKEN)
         if exchange is None:
             identifiers_to_delete.update({entry[0] for entry in raw_events})
             continue

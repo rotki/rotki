@@ -127,7 +127,26 @@ from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.locations.types import ROOT_LOCATION_IDENTIFIER
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+    location_from_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_EXTERNAL,
+    LOCATION_GATE,
+    LOCATION_KRAKEN,
+    LOCATION_OKX,
+    LOCATION_SOLANA,
+    LOCATION_TOTAL,
+    LOCATION_ZKSYNC_LITE,
+)
+from rotkehlchen.locations.types import (
+    ROOT_LOCATION_IDENTIFIER,
+    LocationIdentifier,
+    deserialize_location_identifier,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
@@ -160,7 +179,6 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     HexColorCode,
     ListOfBlockchainAddresses,
-    Location,
     PurgeableModuleName,
     SolanaAddress,
     SupportedBlockchain,
@@ -1847,7 +1865,7 @@ class DBHandler:
     def _get_exchange_instance_cache_keys(
             self,
             cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
             exchange_name: str,
     ) -> list[str]:
         """Return the key_value_cache keys holding the query progress of one exchange
@@ -1868,7 +1886,7 @@ class DBHandler:
     def delete_used_query_range_for_exchange(
             self,
             write_cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
             exchange_name: str | None = None,
             data_type: ExchangePurgeType = ExchangePurgeType.ALL,
     ) -> None:
@@ -1924,7 +1942,7 @@ class DBHandler:
     def purge_exchange_data(
             self,
             write_cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
             data_type: ExchangePurgeType = ExchangePurgeType.ALL,
     ) -> None:
         self.delete_used_query_range_for_exchange(
@@ -1940,7 +1958,7 @@ class DBHandler:
             )
 
         where_clause = 'WHERE location = ?'
-        where_bindings: tuple[str, ...] = (location.serialize_for_db(),)
+        where_bindings: tuple[str, ...] = (location,)
         if data_type == ExchangePurgeType.TRADES:
             where_clause += f' AND type IN ({",".join("?" for _ in EXCHANGE_TRADE_EVENT_TYPES)})'
             where_bindings += tuple(EXCHANGE_TRADE_EVENT_TYPES)
@@ -1991,7 +2009,7 @@ class DBHandler:
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
                     f'Tried to add a timed_location_data for '
-                    f'{Location.deserialize_from_db(entry.location)!s} at'
+                    f'{LocationIdentifier(entry.location)!s} at'
                     f' already existing timestamp {entry.time}.',
                 ) from e
 
@@ -2469,7 +2487,7 @@ class DBHandler:
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
-                    location=Location.deserialize_from_db(entry[3]),
+                    location=LocationIdentifier(entry[3]),
                     tags=tags,
                     balance_type=balance_type,
                     asset_is_missing=asset_is_missing,
@@ -2493,7 +2511,7 @@ class DBHandler:
             for entry in data:
                 write_cursor.execute(
                     'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '  # noqa: E501
-                    'VALUES (?, ?, ?, ?, ?)', (entry.asset.identifier, entry.label, str(entry.amount), entry.location.serialize_for_db(), entry.balance_type.serialize_for_db()),  # noqa: E501
+                    'VALUES (?, ?, ?, ?, ?)', (entry.asset.identifier, entry.label, str(entry.amount), entry.location, entry.balance_type.serialize_for_db()),  # noqa: E501
                 )
                 entry.identifier = write_cursor.lastrowid
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -2533,7 +2551,7 @@ class DBHandler:
         tuples = [(
             entry.asset.identifier,
             str(entry.amount),
-            entry.location.serialize_for_db(),
+            entry.location,
             BalanceType.serialize_for_db(entry.balance_type),
             entry.label,
             entry.identifier,
@@ -2612,7 +2630,7 @@ class DBHandler:
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast('dict', val2)
-            location = Location.deserialize(key2).serialize_for_db()
+            location = deserialize_location_identifier(key2)
             locations.append(LocationData(
                 time=timestamp,
                 location=location,
@@ -2620,7 +2638,7 @@ class DBHandler:
             ))
         locations.append(LocationData(
             time=timestamp,
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_TOTAL,  # pylint: disable=no-member
             usd_value=str(data['net_value'] * main_to_usd_rate),
         ))
         try:
@@ -2632,7 +2650,7 @@ class DBHandler:
     def add_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None = None,
@@ -2651,7 +2669,7 @@ class DBHandler:
             cursor.execute(
                 'INSERT INTO user_credentials '
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
-                (name, location.serialize_for_db(), api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
+                (name, location, api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
             )
             # Older versions did not clear the per-instance query progress (Coinbase account
             # cursors, Bitstamp offset, Binance pair progress and lending range) when an
@@ -2665,12 +2683,12 @@ class DBHandler:
                 exchange_name=name,
             )
 
-            if location == Location.KRAKEN:
+            if location == LOCATION_KRAKEN:
                 if kraken_account_type is not None:
                     self._insert_into_credentials_mappings(
                         cursor=cursor,
                         name=name,
-                        location=location.serialize_for_db(),
+                        location=location,
                         settings={KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type.serialize()},
                     )
 
@@ -2678,7 +2696,7 @@ class DBHandler:
                     try:
                         self._insert_into_credentials_mappings(
                             cursor=cursor,
-                            location=location.serialize_for_db(),
+                            location=location,
                             name=name,
                             settings={KRAKEN_FUTURES_API_KEY_KEY: kraken_futures_api_key,
                                       KRAKEN_FUTURES_API_SECRET_KEY: kraken_futures_api_secret},
@@ -2686,26 +2704,26 @@ class DBHandler:
                     except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                         raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
-            if location == Location.GATE and gate_location is not None:
+            if location == LOCATION_GATE and gate_location is not None:
                 self._insert_into_credentials_mappings(
                     cursor=cursor,
                     name=name,
-                    location=location.serialize_for_db(),
+                    location=location,
                     settings={GATE_LOCATION_KEY: gate_location.serialize()},
                 )
 
-            if location == Location.OKX and okx_location is not None:
+            if location == LOCATION_OKX and okx_location is not None:
                 self._insert_into_credentials_mappings(
                     cursor=cursor,
                     name=name,
-                    location=location.serialize_for_db(),
+                    location=location,
                     settings={OKX_LOCATION_KEY: okx_location.serialize()},
                 )
 
-            if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
+            if location in (LOCATION_BINANCE, LOCATION_BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
                 self.set_binance_pairs(cursor, name=name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
 
-            if location in (Location.BINANCE, Location.BINANCEUS):
+            if location in (LOCATION_BINANCE, LOCATION_BINANCEUS):
                 now = ts_now()
                 if binance_history_start_ts is None:
                     binance_history_start_ts = (
@@ -2718,7 +2736,7 @@ class DBHandler:
                 self._insert_into_credentials_mappings(
                     cursor=cursor,
                     name=name,
-                    location=location.serialize_for_db(),
+                    location=location,
                     settings={BINANCE_HISTORY_START_TS_KEY: binance_history_start_ts},
                 )
                 if binance_history_start_ts > 0:
@@ -2737,7 +2755,7 @@ class DBHandler:
             'INNER JOIN history_events_mappings M ON H.identifier=M.parent_identifier '
             'WHERE H.location=? AND M.name=? AND M.value=?',
             (
-                Location.BINANCE.serialize_for_db(),
+                LOCATION_BINANCE,
                 HISTORY_MAPPING_KEY_STATE,
                 HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db(),
             ),
@@ -2750,7 +2768,7 @@ class DBHandler:
             self,
             write_cursor: DBCursor,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -2786,20 +2804,20 @@ class DBHandler:
                 querystr = querystr[:-1]
 
             querystr += ' WHERE name=? AND location=?;'
-            bindings.extend([name, location.serialize_for_db()])
+            bindings.extend([name, location])
 
             try:
                 write_cursor.execute(querystr, bindings)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials due to {e!s}') from e
 
-        if location == Location.KRAKEN:
+        if location == LOCATION_KRAKEN:
             if kraken_account_type is not None:
                 try:
                     self._insert_into_credentials_mappings(
                         cursor=write_cursor,
                         name=new_name if new_name is not None else name,
-                        location=location.serialize_for_db(),
+                        location=location,
                         settings={KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type.serialize()},
                 )
                 except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -2810,36 +2828,36 @@ class DBHandler:
                     self._insert_into_credentials_mappings(
                         cursor=write_cursor,
                         name=new_name if new_name is not None else name,
-                        location=location.serialize_for_db(),
+                        location=location,
                         settings={KRAKEN_FUTURES_API_KEY_KEY: kraken_futures_api_key,
                                   KRAKEN_FUTURES_API_SECRET_KEY: kraken_futures_api_secret},
                     )
                 except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                     raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
-        if location == Location.GATE and gate_location is not None:
+        if location == LOCATION_GATE and gate_location is not None:
             try:
                 self._insert_into_credentials_mappings(
                     cursor=write_cursor,
                     name=new_name if new_name is not None else name,
-                    location=location.serialize_for_db(),
+                    location=location,
                     settings={GATE_LOCATION_KEY: gate_location.serialize()},
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
-        if location == Location.OKX and okx_location is not None:
+        if location == LOCATION_OKX and okx_location is not None:
             try:
                 self._insert_into_credentials_mappings(
                     cursor=write_cursor,
                     name=new_name if new_name is not None else name,
-                    location=location.serialize_for_db(),
+                    location=location,
                     settings={OKX_LOCATION_KEY: okx_location.serialize()},
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
-        location_is_binance = location in (Location.BINANCE, Location.BINANCEUS)
+        location_is_binance = location in (LOCATION_BINANCE, LOCATION_BINANCEUS)
         if location_is_binance and binance_selected_trade_pairs is not None:
             try:
                 exchange_name = new_name if new_name is not None else name
@@ -2889,19 +2907,19 @@ class DBHandler:
             DBHistoryEvents(database=self).update_events_and_track(
                 write_cursor=write_cursor,
                 where_clause='WHERE location=? AND location_label=?',
-                where_bindings=(location.serialize_for_db(), name),
+                where_bindings=(location, name),
                 set_clause='SET location_label=?',
                 set_bindings=(new_name,),
             )
 
-    def remove_exchange(self, write_cursor: DBCursor, name: str, location: Location) -> None:
+    def remove_exchange(self, write_cursor: DBCursor, name: str, location: LocationIdentifier) -> None:  # noqa: E501
         """
         Removes the exchange location from user_credentials and from
         `the non_syncing_exchanges`setting.
         """
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE name=? AND location=?',
-            (name, location.serialize_for_db()),
+            (name, location),
         )
 
         settings = self.get_settings(write_cursor)
@@ -2933,7 +2951,7 @@ class DBHandler:
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
                 (
                     credentials.name,
-                    credentials.location.serialize_for_db(),
+                    credentials.location,
                     credentials.api_key,
                     credentials.api_secret.decode() if credentials.api_secret is not None else None,  # noqa: E501
                     credentials.passphrase,
@@ -2944,7 +2962,7 @@ class DBHandler:
             self,
             write_cursor: DBCursor,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             credentials: ExchangeAuthCredentials,
     ) -> None:
@@ -2967,7 +2985,7 @@ class DBHandler:
         try:
             write_cursor.execute(
                 f'UPDATE user_credentials SET {", ".join(assignments)} WHERE name=? AND location=?',  # noqa: E501
-                (*bindings, name, location.serialize_for_db()),
+                (*bindings, name, location),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(f'A {location!s} bank connection named {new_name} already exists') from e  # noqa: E501
@@ -2991,7 +3009,7 @@ class DBHandler:
             DBHistoryEvents(database=self).update_events_and_track(
                 write_cursor=write_cursor,
                 where_clause='WHERE location=? AND location_label=?',
-                where_bindings=(location.serialize_for_db(), name),
+                where_bindings=(location, name),
                 set_clause='SET location_label=?',
                 set_bindings=(new_name,),
             )
@@ -2999,9 +3017,9 @@ class DBHandler:
     def get_exchange_credentials(
             self,
             cursor: DBCursor,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
             name: str | None = None,
-    ) -> dict[Location, list[ExchangeApiCredentials]]:
+    ) -> dict[LocationIdentifier, list[ExchangeApiCredentials]]:
         """Gets all exchange credentials
 
         If an exchange name and location are passed the credentials are filtered further
@@ -3010,7 +3028,7 @@ class DBHandler:
         querystr = 'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials'
         if name is not None and location is not None:
             querystr += ' WHERE name=? and location=?'
-            bindings = (name, location.serialize_for_db())  # type: ignore
+            bindings = (name, location)  # type: ignore
         querystr += ';'
         result = cursor.execute(querystr, bindings)
         credentials = defaultdict(list)
@@ -3020,7 +3038,7 @@ class DBHandler:
 
             passphrase = None if entry[4] is None else entry[4]
             try:
-                location = Location.deserialize_from_db(entry[1])
+                location = LocationIdentifier(entry[1])
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Found unknown location {entry[1]} for exchange {entry[0]} at '
@@ -3042,13 +3060,13 @@ class DBHandler:
 
         return credentials
 
-    def get_exchange_credentials_extras(self, name: str, location: Location) -> dict[str, Any]:
+    def get_exchange_credentials_extras(self, name: str, location: LocationIdentifier) -> dict[str, Any]:  # noqa: E501
         """Returns any extra settings for a particular exchange key credentials"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT setting_name, setting_value FROM user_credentials_mappings '
                 'WHERE credential_name=? AND credential_location=?',
-                (name, location.serialize_for_db()),
+                (name, location),
             )
             extras: dict[str, Any] = {}
             for entry in cursor:
@@ -3089,7 +3107,7 @@ class DBHandler:
 
         return extras
 
-    def set_binance_pairs(self, write_cursor: DBCursor, name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
+    def set_binance_pairs(self, write_cursor: DBCursor, name: str, pairs: list[str], location: LocationIdentifier) -> None:  # noqa: E501
         """Sets the market pairs used by the user on a specific binance exchange"""
         data = json.dumps(pairs)
         write_cursor.execute(
@@ -3098,19 +3116,19 @@ class DBHandler:
             'VALUES (?, ?, ?, ?)',
             (
                 name,
-                location.serialize_for_db(),
+                location,
                 BINANCE_MARKETS_KEY,
                 data,
             ),
         )
 
-    def get_binance_pairs(self, name: str, location: Location) -> list[str]:
+    def get_binance_pairs(self, name: str, location: LocationIdentifier) -> list[str]:
         """Gets the market pairs used by the user on a specific binance exchange"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT setting_value FROM user_credentials_mappings WHERE '
                 'credential_name=? AND credential_location=? AND setting_name=?',
-                (name, location.serialize_for_db(), BINANCE_MARKETS_KEY),
+                (name, location, BINANCE_MARKETS_KEY),
             )
             data = cursor.fetchone()
             if data and data[0] != '':
@@ -3224,14 +3242,14 @@ class DBHandler:
                 )
                 if is_new is False and write_cursor.rowcount == 1:
                     if tuple_type == 'solana_transaction':
-                        location, tx_ref = Location.SOLANA, entry[4]
+                        location, tx_ref = LOCATION_SOLANA, entry[4]
                     else:
                         chain_id = ChainID.deserialize_from_db(entry[1])
                         if chain_id not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
                             raise DeserializationError(
                                 f'Unsupported EVM transaction chain ID {chain_id}',
                             )
-                        location, tx_ref = Location.from_chain_id(chain_id), entry[0]
+                        location, tx_ref = location_from_chain_id(chain_id), entry[0]
                     # A transaction gaining another address mapping must be redecoded. For its
                     # first mapping, redecoding is only needed when an earlier by-hash decode did
                     # not already attribute an event to that address. CASE skips the event lookup
@@ -3248,7 +3266,7 @@ class DBHandler:
                             tx_id,
                             relevant_address,
                             tx_ref,
-                            location.serialize_for_db(),
+                            location,
                             relevant_address,
                         ),
                     ).fetchone()[0] == 1
@@ -3269,7 +3287,7 @@ class DBHandler:
             open_time = 0 if margin.open_time is None else margin.open_time
             margin_tuples.append((
                 margin.identifier,
-                margin.location.serialize_for_db(),
+                margin.location,
                 open_time,
                 margin.close_time,
                 str(margin.profit_loss),
@@ -3301,7 +3319,7 @@ class DBHandler:
             cursor: DBCursor,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
     ) -> list[MarginPosition]:
         """Returns a list of margin positions optionally filtered by time and location
 
@@ -3309,7 +3327,7 @@ class DBHandler:
         """
         query = 'SELECT * FROM margin_positions '
         if location is not None:
-            query += f"WHERE location='{location.serialize_for_db()}' "
+            query += f"WHERE location='{location}' "
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -3473,7 +3491,7 @@ class DBHandler:
             db_history_events.delete_events_and_track(
                 write_cursor=write_cursor,
                 where_clause=f'WHERE identifier IN (SELECT H.identifier FROM history_events H INNER JOIN chain_events_info C ON H.identifier=C.identifier AND C.tx_ref IN ({placeholders}) AND H.location=?)',  # noqa: E501
-                where_bindings=tuple(hashes_chunk) + (Location.ZKSYNC_LITE.serialize_for_db(),),
+                where_bindings=tuple(hashes_chunk) + (LOCATION_ZKSYNC_LITE,),
             )
 
     def delete_data_for_bitcoin_address(
@@ -3485,7 +3503,7 @@ class DBHandler:
         """Deletes all bitcoin related data from the DB for a single bitcoin address"""
         DBBitcoinTx(self).delete_data_for_address(
             write_cursor=write_cursor,
-            location=(location := Location.from_chain(blockchain)),
+            location=(location := location_from_chain(blockchain)),
             address=address,
         )
         DBHistoryEvents(database=self).delete_location_events(
@@ -3509,7 +3527,7 @@ class DBHandler:
             cursor.execute(  # premium credentials always had the external location
                 'INSERT OR REPLACE INTO user_credentials'
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
-                ('rotkehlchen', str(Location.EXTERNAL), credentials.serialize_key(), credentials.serialize_secret(), None),  # noqa: E501
+                ('rotkehlchen', str(LOCATION_EXTERNAL), credentials.serialize_key(), credentials.serialize_secret(), None),  # noqa: E501
             )
 
     def delete_premium_credentials(self) -> bool:
@@ -4677,14 +4695,14 @@ class DBHandler:
             raise OSError(f'Failed to create a DB backup due to {e!s}') from e
         return new_db_path
 
-    def get_associated_locations(self) -> set[Location]:
+    def get_associated_locations(self) -> set[LocationIdentifier]:
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT location FROM margin_positions UNION '
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',
             )
-            return {Location.deserialize_from_db(loc[0]) for loc in cursor}
+            return {LocationIdentifier(loc[0]) for loc in cursor}
 
     def should_save_balances(
             self,
@@ -5000,7 +5018,7 @@ class DBHandler:
     def add_skipped_external_event(
             self,
             write_cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
             data: dict[str, Any],
             extra_data: dict[str, Any] | None,
     ) -> None:
@@ -5010,7 +5028,7 @@ class DBHandler:
             serialized_extra_data = json.dumps(extra_data, separators=(',', ':'))
         write_cursor.execute(
             'INSERT OR IGNORE INTO skipped_external_events(data, location, extra_data) VALUES(?, ?, ?)',  # noqa: E501
-            (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
+            (json.dumps(data, separators=(',', ':')), location, serialized_extra_data),
         )
 
     def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]:

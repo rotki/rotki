@@ -12,12 +12,15 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_KUCOIN,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -92,7 +95,7 @@ class KucoinImporter(BaseExchangeImporter):
                                 location='Kucoin order history import',
                                 timezone_name=timezone,
                             )),
-                            location=Location.KUCOIN,
+                            location=LOCATION_KUCOIN,
                             spend=spend,
                             receive=receive,
                             fee=AssetAmount(

@@ -23,6 +23,7 @@ from rotkehlchen.db.snapshots import (
 )
 from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -31,7 +32,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -393,7 +394,7 @@ def assert_csv_export_response(
                     display_date_in_localtime=timestamp_validation_data[1],
                     is_for_import=False,
                 )
-            assert Location.deserialize(row['location']) is not None
+            assert deserialize_location_identifier(row['location']) is not None
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
             count += 1
         assert count == 3
@@ -412,7 +413,7 @@ def assert_csv_export_response(
                     display_date_in_localtime=timestamp_validation_data[1],
                     is_for_import=True,
                 )
-            assert Location.deserialize(row['location']) is not None
+            assert deserialize_location_identifier(row['location']) is not None
             assert row['usd_value'] is not None
             count += 1
         assert count == 3

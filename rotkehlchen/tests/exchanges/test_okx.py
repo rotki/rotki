@@ -14,14 +14,17 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_OKX,
+)
 from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 
 def test_name():
     exchange = Okx('okx1', 'a', b'a', 'a', object(), object())
-    assert exchange.location == Location.OKX
+    assert exchange.location == LOCATION_OKX
     assert exchange.name == 'okx1'
 
 
@@ -551,265 +554,265 @@ def test_okx_query_trades(mock_okx: Okx) -> None:
         )
         assert events == [SwapEvent(
             timestamp=TimestampMS(1665846604080),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('30009.966'),
             location_label='okx',
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE1',
             ),
         ), SwapEvent(
             timestamp=TimestampMS(1665846604080),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('1871.42147976'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE1',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665846604080),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('1.87142147976'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE1',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641177030),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('0.61740'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE2',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641177030),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('10'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE2',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641177030),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('0.01'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE2',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641133954),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('1.48176'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE3',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641133954),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('24'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE3',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641133954),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('0.024'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE3',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641100283),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('1852.20000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE4',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641100283),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('30000'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE4',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665641100283),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('24'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE4',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665594495006),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('3513.8312'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE5',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665594495006),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('3514.18258312'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE5',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665594495006),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('3.51418258312'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE5',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665512880478),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('5792.2972152799999995'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE6',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665512880478),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('4.5'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE6',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1665512880478),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.00315'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE6',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664784938639),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('3600'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE7',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664784938639),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('3600'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE7',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664784938639),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('3.6'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE7',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664783042522),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('850'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE8',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664783042522),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('850'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE8',
             ),
             location_label='okx',
         ), SwapEvent(
             timestamp=TimestampMS(1664783042522),
-            location=Location.OKX,
+            location=LOCATION_OKX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.85'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.OKX,
+                location=LOCATION_OKX,
                 unique_id='TRADE8',
             ),
             location_label='okx',
@@ -914,7 +917,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
 
     expected_asset_movements = [
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1669963555000),
@@ -927,7 +930,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
             },
         ),
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1669405596000),
@@ -940,7 +943,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
             },
         ),
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1671542569000),
@@ -953,7 +956,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
             },
         ),
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1671542569000),
@@ -962,7 +965,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
             unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
         ),
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1670953159000),
@@ -975,7 +978,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
             },
         ),
         AssetMovement(
-            location=Location.OKX,
+            location=LOCATION_OKX,
             location_label=mock_okx.name,
             event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1670953159000),

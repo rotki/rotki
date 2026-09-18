@@ -8,12 +8,14 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_tx_hash,
     deserialize_int_from_hex_or_int,
 )
-from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_now
 
 from .constants import (
@@ -71,7 +73,7 @@ def query_deposit_for_transactions(
             'SELECT DISTINCT H.location_label FROM history_events H '
             'JOIN chain_events_info C ON H.identifier=C.identifier '
             'WHERE H.location=? AND C.counterparty=? AND C.address IN (?, ?)',
-            (Location.from_chain_id(inquirer.chain_id).serialize_for_db(), CPT_FLYING_TULIP,
+            (location_from_chain_id(inquirer.chain_id), CPT_FLYING_TULIP,
              deployment.positions_manager, deployment.leverage_engine),
         )}
     addresses = list(dict.fromkeys(addresses))

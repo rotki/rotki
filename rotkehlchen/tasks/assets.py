@@ -65,11 +65,14 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
 )
+from rotkehlchen.locations.chains import (
+    EVM_LOCATIONS,
+    location_to_chain,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
-    EVM_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
@@ -459,7 +462,7 @@ def maybe_detect_new_tokens(database: DBHandler) -> None:
             ):
                 continue
 
-            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.from_location(event.location)  # type: ignore[assignment]  # event.location is one of EVM_LOCATIONS  # noqa: E501
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = location_to_chain(event.location)  # type: ignore[assignment]  # event.location is one of EVM_LOCATIONS
             if (
                 event.location_label is None or
                 EVM_ADDRESS_REGEX.fullmatch(event.location_label) is None or

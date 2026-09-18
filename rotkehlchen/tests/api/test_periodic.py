@@ -6,13 +6,17 @@ import requests
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Location, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -22,7 +26,7 @@ if TYPE_CHECKING:
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0

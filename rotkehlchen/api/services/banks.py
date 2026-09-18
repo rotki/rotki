@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
-    from rotkehlchen.types import Location
 
 
 class BanksService:
@@ -44,7 +44,7 @@ class BanksService:
     def setup_bank(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             credentials: dict[str, str],
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         try:
@@ -67,7 +67,7 @@ class BanksService:
     def answer_authentication(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             response: str | None,
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         manager = self.rotkehlchen.bank_manager
@@ -93,7 +93,7 @@ class BanksService:
     def edit_bank(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> tuple[bool | None, str, HTTPStatus]:
@@ -110,13 +110,13 @@ class BanksService:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def remove_bank(self, name: str, location: Location) -> tuple[bool | None, str, HTTPStatus]:
+    def remove_bank(self, name: str, location: LocationIdentifier) -> tuple[bool | None, str, HTTPStatus]:  # noqa: E501
         result, msg = self.rotkehlchen.bank_manager.delete_bank(name=name, location=location)
         if not result:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
+    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
         except BankMFARequired:
@@ -129,7 +129,7 @@ class BanksService:
 
     def query_bank_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:

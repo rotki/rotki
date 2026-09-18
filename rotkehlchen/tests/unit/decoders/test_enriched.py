@@ -12,11 +12,13 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
-    Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -87,7 +89,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             ),
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1646375440000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -100,7 +102,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             ),
             sequence_index=298,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302'),
@@ -176,7 +178,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -187,7 +189,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             tx_ref=tx_hash,
             sequence_index=474,
             timestamp=TimestampMS(1646375440000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken('eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),

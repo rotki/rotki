@@ -71,6 +71,15 @@ from rotkehlchen.history.events.structures.base import (
 from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY, EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.chains import (
+    EVM_LOCATIONS,
+    location_from_chain_id,
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tasks.calendar import acknowledge_matched_l2_bridge_calendar_entry
@@ -81,9 +90,7 @@ from rotkehlchen.tasks.events import (
 )
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
-    EVM_LOCATIONS,
     ChainID,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -94,6 +101,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -123,8 +131,8 @@ SLOW_BRIDGE_MATCH_WINDOWS: Final[dict[str, int]] = {
 }
 # Legs rotki decodes without a counterparty. Their location is then the only thing saying
 # which bridge, and so which settlement window, they belong to.
-BRIDGE_COUNTERPARTY_BY_LOCATION: Final[dict[Location, str]] = {
-    Location.ZKSYNC_LITE: CPT_ZKSYNC,
+BRIDGE_COUNTERPARTY_BY_LOCATION: Final[dict[LocationIdentifier, str]] = {
+    LOCATION_ZKSYNC_LITE: CPT_ZKSYNC,
 }
 
 
@@ -135,17 +143,17 @@ def get_event_bridge_data(event: HistoryBaseEntry) -> dict[str, Any]:
     return event.extra_data.get(BRIDGE_EXTRA_DATA_KEY) or {}
 
 
-def _chain_matches_location(chain_value: int | str, location: Location) -> bool:
+def _chain_matches_location(chain_value: int | str, location: LocationIdentifier) -> bool:
     """Check whether a bridge extra_data chain value refers to the given location."""
     if isinstance(chain_value, int):
-        return location in EVM_LOCATIONS and location.to_chain_id() == chain_value
-    return chain_value in (location.serialize(), location.name.lower())
+        return location in EVM_LOCATIONS and location_to_chain_id(location) == chain_value
+    return chain_value in (location, location.replace(' ', '_'))
 
 
-def _location_chain_label(location: Location) -> str:
+def _location_chain_label(location: LocationIdentifier) -> str:
     """Human readable chain name for bridge notes."""
     if location in EVM_LOCATIONS:
-        return ChainID(location.to_chain_id()).label()
+        return ChainID(location_to_chain_id(location)).label()
     return str(location)
 
 
@@ -187,7 +195,7 @@ def get_unmatched_bridge_events(
         deposits.extend(events_db.get_history_events_internal(
             cursor=cursor,  # exits bridge out too, they just cannot state their amount yet
             filter_query=HistoryEventFilterQuery.make(
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 type_and_subtype_combinations=[
                     (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
                 ],
@@ -255,7 +263,7 @@ def is_zksync_lite_exit(event: HistoryBaseEntry) -> bool:
     ethereum leg that paid it out, once that counterpart is found.
     """
     return (
-        event.location == Location.ZKSYNC_LITE and
+        event.location == LOCATION_ZKSYNC_LITE and
         event.event_type == HistoryEventType.INFORMATIONAL and
         event.event_subtype == HistoryEventSubType.NONE
     )
@@ -648,7 +656,7 @@ def update_bridge_matched_event(
             event.extra_data = {}
         matched_bridge_data = {
             'group_identifier': other.group_identifier,
-            'location': other.location.serialize(),
+            'location': other.location,
         }
         if fee_amount is not None and fee_amount > 0:
             matched_bridge_data['fee_amount'] = str(fee_amount)
@@ -737,7 +745,7 @@ def resolve_bridge_event_external(
     return True
 
 
-def _bridge_counterpart_location(bridge_event: HistoryBaseEntry) -> Location | None:
+def _bridge_counterpart_location(bridge_event: HistoryBaseEntry) -> LocationIdentifier | None:
     """Derive the chain of the missing counterpart leg from the event's bridge data.
 
     Returns None when the bridge data has no chain entry or the chain does not
@@ -754,11 +762,11 @@ def _bridge_counterpart_location(bridge_event: HistoryBaseEntry) -> Location | N
         if chain_id not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
             return None  # from_chain_id silently falls back to polygon for other chains
 
-        return Location.from_chain_id(chain_id)
+        return location_from_chain_id(chain_id)
 
     if isinstance(chain_value, str):
         try:
-            return Location.deserialize(chain_value)
+            return deserialize_builtin_location(chain_value)
         except DeserializationError:
             return None
 

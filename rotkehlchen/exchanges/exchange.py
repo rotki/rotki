@@ -27,7 +27,6 @@ from rotkehlchen.types import (
     ApiSecret,
     ExchangeAuthCredentials,
     ExchangeLocationID,
-    Location,
     T_ApiKey,
     T_ApiSecret,
     Timestamp,
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -213,7 +213,7 @@ class ExchangeWithExtras:
     """
     db: DBHandler
     name: str
-    location: Location
+    location: LocationIdentifier
 
     @abstractmethod
     def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
@@ -233,7 +233,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
     def __init__(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
@@ -277,7 +277,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         ))
 
     @property
-    def data_location(self) -> Location:
+    def data_location(self) -> LocationIdentifier:
         """The location of the events, balances and snapshots this connection produces"""
         return self.location
 
@@ -592,20 +592,23 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             self,
             asset_identifier: str,
             details: str,
-            location: Location,
+            location: LocationIdentifier,
     ) -> None:
         """Log warning and send WS message to notify user of unknown asset found on an exchange.
         Args:
             asset_identifier (str): Asset identifier of the unknown asset.
             details (str): Details about what type of event was being processed
                 when the unknown asset was encountered.
-            location (Location): Location of the exchange where the unknown asset was found.
+            location: Location of the exchange where the unknown asset was found.
         """
-        log.warning(f'Found unknown {self.location.serialize()} {self.name} asset {asset_identifier} in {details}.')  # noqa: E501
+        log.warning(
+            'Found unknown %s %s asset %s in %s.',
+            self.location, self.name, asset_identifier, details,
+        )
         self.msg_aggregator.add_message(
             message_type=WSMessageType.EXCHANGE_UNKNOWN_ASSET,
             data={
-                'location': location.serialize(),
+                'location': location,
                 'name': self.name,
                 'identifier': asset_identifier,
                 'details': details,
@@ -631,7 +634,7 @@ class ExchangeInterface(ExchangeWithoutApiSecret):
     def __init__(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             secret: ApiSecret,
             database: DBHandler,

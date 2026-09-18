@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 import pandas as pd
 
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.locations.catalog import load_builtin_catalog
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
     balances_timeout,
@@ -25,7 +26,6 @@ from rotkehlchen.mcp.backend import (
     set_privacy_mode,
 )
 from rotkehlchen.mcp.taxonomy import resolve_direction, resolve_group
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -110,7 +110,7 @@ STRICT_IDENTIFIER_COLUMN_NAMES: Final = PII_COLUMN_NAMES | frozenset({'label', '
 # text and gets hashed like every other identifier. This costs no venue information -- the
 # ``location`` column already carries it -- only the ability to tell two accounts on the same
 # venue apart *by name*, and their hashes still distinguish them for grouping.
-READABLE_LOCATION_LABELS: Final = frozenset(str(location) for location in Location)
+READABLE_LOCATION_LABELS: Final = frozenset(x.identifier for x in load_builtin_catalog())
 # The ONLY columns allowed through verbatim outside ``raw`` mode. This is the core of the
 # fail-closed design: anything whose base name is not here, and that is not handled by the
 # text/identifier paths above, is hashed (if a string) rather than leaked. Adding a new

@@ -17,9 +17,12 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -42,7 +45,7 @@ def test_airdrop_claim(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1732720037000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -53,7 +56,7 @@ def test_airdrop_claim(
             tx_ref=tx_hash,
             sequence_index=185,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(WCT_TOKEN_ID),
@@ -83,7 +86,7 @@ def test_stake(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1732726673000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -94,7 +97,7 @@ def test_stake(
             tx_ref=tx_hash,
             sequence_index=75,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
@@ -123,7 +126,7 @@ def test_unstake(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1732792847000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -134,7 +137,7 @@ def test_unstake(
             tx_ref=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(WCT_TOKEN_ID),
@@ -170,7 +173,7 @@ def test_increase_lock(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1732793011000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -181,7 +184,7 @@ def test_increase_lock(
             tx_ref=tx_hash,
             sequence_index=72,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset(WCT_TOKEN_ID),
@@ -212,7 +215,7 @@ def test_update_lock(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1732792963000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -223,7 +226,7 @@ def test_update_lock(
             tx_ref=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
@@ -251,7 +254,7 @@ def test_claim_staking_reward(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1775401085000)),
-        location=Location.OPTIMISM,
+        location=LOCATION_OPTIMISM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -262,7 +265,7 @@ def test_claim_staking_reward(
         tx_ref=tx_hash,
         sequence_index=284,
         timestamp=timestamp,
-        location=Location.OPTIMISM,
+        location=LOCATION_OPTIMISM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset(WCT_TOKEN_ID),

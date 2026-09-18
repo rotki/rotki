@@ -20,9 +20,12 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_KUCOIN,
+)
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_SOL
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -40,7 +43,7 @@ def test_name():
         msg_aggregator=object(),
         passphrase='a',
     )
-    assert exchange.location == Location.KUCOIN
+    assert exchange.location == LOCATION_KUCOIN
     assert exchange.name == 'kucoin1'
 
 
@@ -267,35 +270,35 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
         case=KucoinCase.TRADES,
     ) == [SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('200.0'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_KCS,
         amount=FVal('0.2'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.14'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     )]
@@ -326,35 +329,35 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
         case=KucoinCase.TRADES,
     ) == [SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSV,
         amount=FVal('0.0013'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('48.91172'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.034238204'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     )]
@@ -376,35 +379,35 @@ def test_deserialize_v1_trade(mock_kucoin):
         case=KucoinCase.OLD_TRADES,
     ) == [SwapEvent(
         timestamp=(timestamp := TimestampMS(1520471876000)),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_NANO,
         amount=FVal('0.002186'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('0.000034414198'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     ), SwapEvent(
         timestamp=timestamp,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('3E-8'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id,
         ),
     )]
@@ -426,7 +429,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: Kucoin) -> None:
     }
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1612556794259),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
@@ -438,7 +441,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: Kucoin) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1612556794259),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -469,7 +472,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: Kucoin) -> None:
     }
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1612556794259),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
@@ -481,7 +484,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: Kucoin) -> None:
         },
     ), AssetMovement(
         timestamp=TimestampMS(1612556794259),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -703,134 +706,134 @@ def test_query_trades(mock_kucoin: Kucoin):
 
     assert events == [SwapEvent(
         timestamp=(timestamp_1 := TimestampMS(1744132562652)),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('4.96872'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=(unique_id_1 := '13983206078699521'),
         ),
     ), SwapEvent(
         timestamp=timestamp_1,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BNB,
         amount=FVal('0.009'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_1,
         ),
     ), SwapEvent(
         timestamp=timestamp_1,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.00496872'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_1,
         ),
     ), SwapEvent(
         timestamp=(timestamp_2 := TimestampMS(1744132671985)),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.0026585'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=(unique_id_2 := '14218680720705537'),
         ),
     ), SwapEvent(
         timestamp=timestamp_2,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('3.920250685'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_2,
         ),
     ), SwapEvent(
         timestamp=timestamp_2,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.003920250685'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_2,
         ),
     ), SwapEvent(
         timestamp=(timestamp_3 := TimestampMS(1744132630457)),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('2.9998368'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=(unique_id_3 := '13983241039403009'),
         ),
     ), SwapEvent(
         timestamp=timestamp_3,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_SOL,
         amount=FVal('0.0288'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_3,
         ),
     ), SwapEvent(
         timestamp=timestamp_3,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.0029998368'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_3,
         ),
     ), SwapEvent(
         timestamp=(timestamp_4 := TimestampMS(1744132705815)),
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('4.11'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=(unique_id_4 := '11759667966785537'),
         ),
     ), SwapEvent(
         timestamp=timestamp_4,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
         amount=FVal('4.107945'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_4,
         ),
     ), SwapEvent(
         timestamp=timestamp_4,
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal('0.004107945'),
         location_label=mock_kucoin.name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             unique_id=unique_id_4,
         ),
     )]
@@ -1014,7 +1017,7 @@ def test_query_asset_movements(
         """
     )
     expected_asset_movements = [AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1612556652000),
@@ -1026,7 +1029,7 @@ def test_query_asset_movements(
             'transaction_id': '5bbb57386d99522d9f954c5a',
         },
     ), AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556652000),
@@ -1034,7 +1037,7 @@ def test_query_asset_movements(
         amount=FVal('0.0001'),
         unique_id='5bbb57386d99522d9f954c5a',
     ), AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1612556651000),
@@ -1046,7 +1049,7 @@ def test_query_asset_movements(
             'transaction_id': '5bbb57386d99522d9f954c5b',
         },
     ), AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556651000),
@@ -1054,7 +1057,7 @@ def test_query_asset_movements(
         amount=FVal('0.01'),
         unique_id='5bbb57386d99522d9f954c5b',
     ), AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1612556652000),
@@ -1066,7 +1069,7 @@ def test_query_asset_movements(
             'transaction_id': 'b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4',
         },
     ), AssetMovement(
-        location=Location.KUCOIN,
+        location=LOCATION_KUCOIN,
         location_label=mock_kucoin.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556652000),

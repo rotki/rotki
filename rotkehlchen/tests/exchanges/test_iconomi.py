@@ -11,9 +11,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_ICONOMI,
+)
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
 
 ICONOMI_BALANCES_RESPONSE = """{"currency":"USD","daaList":[{"name":"CARUS-AR","ticker":"CAR","balance":"100.0","value":"1000.0"},{"name":"Strategy 2","ticker":"SCND","balance":"80.00000000","value":"0"}],"assetList":[{"name":"Aragon","ticker":"ANT","balance":"1000","value":"200.0"},{"name":"Ethereum","ticker":"ETH","balance":"32","value":"10000.031241234"},{"name":"Augur","ticker":"REP","balance":"0.5314532451","value":"0.8349030710000"}]}"""  # noqa: E501
@@ -27,7 +30,7 @@ ICONOMI_TRADES_EMPTY_RESPONSE = """{"transactions":[]}"""
 
 def test_name():
     exchange = Iconomi('iconomi1', 'a', b'a', object(), object())
-    assert exchange.location == Location.ICONOMI
+    assert exchange.location == LOCATION_ICONOMI
     assert exchange.name == 'iconomi1'
 
 
@@ -73,46 +76,46 @@ def test_query_trade_history(function_scope_iconomi):
 
     assert events == [SwapEvent(
         timestamp=TimestampMS(1539713117000),
-        location=Location.ICONOMI,
+        location=LOCATION_ICONOMI,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_REP,
         amount=FVal('1000.23'),
         location_label='iconomi',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.ICONOMI,
+            location=LOCATION_ICONOMI,
             unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1539713117000),
-        location=Location.ICONOMI,
+        location=LOCATION_ICONOMI,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('1505.63'),
         location_label='iconomi',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.ICONOMI,
+            location=LOCATION_ICONOMI,
             unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1539713118000),
-        location=Location.ICONOMI,
+        location=LOCATION_ICONOMI,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('999.9'),
         location_label='iconomi',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.ICONOMI,
+            location=LOCATION_ICONOMI,
             unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1539713118000),
-        location=Location.ICONOMI,
+        location=LOCATION_ICONOMI,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_REP,
         amount=FVal('1234'),
         location_label='iconomi',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.ICONOMI,
+            location=LOCATION_ICONOMI,
             unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
         ),
     )]

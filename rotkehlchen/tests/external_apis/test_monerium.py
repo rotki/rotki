@@ -24,12 +24,16 @@ from rotkehlchen.externalapis.monerium import Monerium, MoneriumOAuthClient
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY, EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_ethereum_transaction
 from rotkehlchen.tests.utils.premium import MockResponse
-from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -71,7 +75,7 @@ def test_send_bank_transfer(database: DBHandler, monerium_credentials: Any) -> N
         tx_ref=tx_hash,
         sequence_index=171,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
@@ -122,7 +126,7 @@ def test_receive_bank_transfer(database: DBHandler, monerium_credentials: Any) -
         tx_ref=tx_hash,
         sequence_index=113,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
@@ -166,7 +170,7 @@ def test_bridge_via_monerium(database: DBHandler, monerium_credentials: Any) -> 
         tx_ref=ethhash,
         sequence_index=171,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
@@ -179,7 +183,7 @@ def test_bridge_via_monerium(database: DBHandler, monerium_credentials: Any) -> 
         tx_ref=gnosishash,
         sequence_index=113,
         timestamp=timestamp,
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
@@ -244,7 +248,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer) -> No
         tx_ref=gnosishash,
         sequence_index=113,
         timestamp=TimestampMS(1701765059000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,

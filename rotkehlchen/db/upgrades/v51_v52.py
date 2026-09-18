@@ -7,15 +7,18 @@ from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+)
 from rotkehlchen.locations.legacy_chars import location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -33,11 +36,11 @@ BLOCKSCOUT_SERVICES_TO_DELETE = (
 )
 
 
-def _extract_addresses_from_notes(location: Location, notes: str) -> list[str]:
+def _extract_addresses_from_notes(location: LocationIdentifier, notes: str) -> list[str]:
     if (match := NOTES_ADDRESS_MARKER_RE.search(notes)) is None:
         return []
 
-    validator = is_valid_btc_address if location == Location.BITCOIN else (
+    validator = is_valid_btc_address if location == LOCATION_BITCOIN else (
         lambda value: is_valid_bitcoin_cash_address(value) or is_valid_btc_address(value)
     )
     return [

@@ -17,8 +17,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, TokenKind
+from rotkehlchen.types import TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -310,7 +313,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 "AND json_extract(H.extra_data, '$.flying_tulip_queue.circuit_breaker')=? "
                 "AND json_extract(H.extra_data, '$.flying_tulip_queue.is_release') IS NULL "
                 'LIMIT 1',
-                (Location.from_chain_id(self.node_inquirer.chain_id).serialize_for_db(),
+                (location_from_chain_id(self.node_inquirer.chain_id),
                  CPT_FLYING_TULIP, queue_id, recipient, token.identifier, str(amount),
                  self.deployment.circuit_breaker),
             ).fetchone()

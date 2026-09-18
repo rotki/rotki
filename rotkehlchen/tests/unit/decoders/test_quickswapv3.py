@@ -13,8 +13,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_POLYGON_POS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
@@ -32,7 +35,7 @@ def test_swap(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756239853000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -43,7 +46,7 @@ def test_swap(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
@@ -54,7 +57,7 @@ def test_swap(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
@@ -67,7 +70,7 @@ def test_swap(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=3,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -91,7 +94,7 @@ def test_create_lp_position(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756380415000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -102,7 +105,7 @@ def test_create_lp_position(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -116,7 +119,7 @@ def test_create_lp_position(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -130,7 +133,7 @@ def test_create_lp_position(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=3,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -154,7 +157,7 @@ def test_add_liquidity(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756388739000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -165,7 +168,7 @@ def test_add_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
@@ -179,7 +182,7 @@ def test_add_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
@@ -204,7 +207,7 @@ def test_remove_liquidity(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756389021000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -215,7 +218,7 @@ def test_remove_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
@@ -229,7 +232,7 @@ def test_remove_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,

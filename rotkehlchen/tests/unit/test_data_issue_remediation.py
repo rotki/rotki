@@ -19,10 +19,13 @@ from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -49,7 +52,7 @@ def _make_event(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(timestamp),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -98,7 +101,7 @@ def _add_negative_balance_issue(
     assert event_id is not None
     issue_id = DataIssuesManager(database).write_issue(
         kind=IssueKind.NEGATIVE_BALANCE,
-        location=Location.ETHEREUM.serialize_for_db(),
+        location=LOCATION_ETHEREUM,
         location_label=TEST_ADDR1,
         protocol=None,
         asset=A_ETH.identifier,
@@ -192,7 +195,7 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
             tx_ref=spend_tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(2_000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -399,7 +402,7 @@ def test_earlier_customized_transaction_in_negative_bucket_is_compared(
     assert failing_event_id is not None
     issue_id = DataIssuesManager(database).write_issue(
         kind=IssueKind.NEGATIVE_BALANCE,
-        location=Location.ETHEREUM.serialize_for_db(),
+        location=LOCATION_ETHEREUM,
         location_label=TEST_ADDR1,
         protocol=None,
         asset=A_ETH.identifier,

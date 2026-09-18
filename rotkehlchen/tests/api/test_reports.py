@@ -13,13 +13,16 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
 )
 from rotkehlchen.tests.utils.constants import A_GBP, TEST_PREMIUM_PNL_EVENTS_LIMIT
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
@@ -50,7 +53,7 @@ def setup_report_events(database) -> tuple[int, list[ProcessedAccountingEvent]]:
         ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Received 1 ETH',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_1_secs,
             asset=A_ETH,
             free_amount=ONE,
@@ -63,7 +66,7 @@ def setup_report_events(database) -> tuple[int, list[ProcessedAccountingEvent]]:
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Send 0.5 ETH to 0xABC',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_2_secs,
             asset=A_ETH,
             free_amount=ZERO,
@@ -76,7 +79,7 @@ def setup_report_events(database) -> tuple[int, list[ProcessedAccountingEvent]]:
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Received 100 DAI',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_2_secs,
             asset=A_DAI,
             free_amount=hundred,

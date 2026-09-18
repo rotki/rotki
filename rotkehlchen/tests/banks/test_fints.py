@@ -16,6 +16,7 @@ from fints.parser import FinTS3Parser
 from fints.utils import mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
 from rotkehlchen.banks.fints import (
     Fints,
@@ -26,7 +27,7 @@ from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
-from rotkehlchen.types import ExchangeApiCredentials, Location
+from rotkehlchen.types import ExchangeApiCredentials
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {
@@ -186,7 +187,7 @@ class FailedInitializationTransport(FinTSFixtureTransport):
 def create_fints(database, messages, transport: FinTSFixtureTransport) -> Fints:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values=FINTS_VALUES,
     )
     assert credentials.api_secret is not None
@@ -270,7 +271,7 @@ def test_ing_initial_transaction_sync_requests_full_available_history(
     transport = FinTSFixtureTransport()
     credentials = Fints.api_credentials_from_values(
         name='ING',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values={**FINTS_VALUES, 'bank_code': '50010517'},
     )
     assert credentials.api_secret is not None
@@ -371,7 +372,7 @@ def test_initialization_errors_preserve_safe_response_code(
 def test_fints_endpoint_whitespace_is_removed() -> None:
     credentials = Fints.api_credentials_from_values(
         name='FinTS 1',
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         values={**FINTS_VALUES, 'endpoint': ' https://bank.example/fints '},
     )
 
@@ -461,10 +462,10 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
         AuthenticationTransport(challenge),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+        manager.query_bank_history_events(location=FINTS_CONNECTOR, name=connector.name)
     assert manager.sync_status[connector.location_id()].auth_challenge is not None
 
     restored_transport = AuthenticationTransport(challenge)
@@ -479,7 +480,7 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
         with patch.object(restored_manager, '_instantiate', return_value=restored):
             restored_manager.initialize_banks(
-                credentials={Location.FINTS: [credentials]},
+                credentials={FINTS_CONNECTOR: [credentials]},
                 database=database,
             )
         assert restored_manager.sync_status[restored.location_id()].auth_challenge is not None
@@ -505,12 +506,12 @@ def test_sync_requiring_authentication_has_no_success_result(
         AuthenticationTransport(FixtureTANResponse()),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     rotki = MagicMock()
     rotki.bank_manager = manager
     result = BanksService(rotki).sync_banks(
-        location=Location.FINTS,
+        location=FINTS_CONNECTOR,
         name=connector.name,
     )
 

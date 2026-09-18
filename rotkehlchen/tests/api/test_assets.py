@@ -32,6 +32,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+    LOCATION_BINANCE,
+    LOCATION_ETHEREUM,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -54,7 +60,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     HyperliquidTokenAddress,
-    Location,
     SolanaAddress,
     Timestamp,
     TimestampMS,
@@ -105,7 +110,7 @@ def _min_levenshtein(entry: dict[str, Any], term: str) -> int:
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_owned_assets(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -124,7 +129,7 @@ def test_query_owned_assets(
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal(1550),
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         )],
@@ -138,7 +143,7 @@ def test_query_owned_assets(
                 group_identifier='1',
                 sequence_index=1,
                 timestamp=TimestampMS(1),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
@@ -675,7 +680,7 @@ def test_edit_rebasing_asset_flag(
                 group_identifier='unrelated',
                 sequence_index=0,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_DAI,
@@ -684,7 +689,7 @@ def test_edit_rebasing_asset_flag(
                 group_identifier='rebasing',
                 sequence_index=0,
                 timestamp=TimestampMS(5000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=token,

@@ -10,8 +10,9 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
@@ -103,7 +104,7 @@ def parse_import_snapshot_data(
     try:
         processed_location_data_list: list[LocationData] = [LocationData(
             time=Timestamp(int(entry['timestamp'])),
-            location=Location.deserialize(entry['location']).serialize_for_db(),
+            location=deserialize_location_identifier(entry['location']),
             usd_value=str(deserialize_fval(
                 value=entry['usd_value'],
                 name='usd_value',

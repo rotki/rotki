@@ -13,9 +13,12 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITPANDA,
+)
 from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_LTC, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 WALLETS_RESPONSE = """{"data":[
@@ -172,61 +175,61 @@ def test_trades(mock_bitpanda):
 
     assert events == [SwapEvent(
         timestamp=TimestampMS(1634963958000),
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('1.6599986395'),
         location_label='bitpanda',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             unique_id='tradeid1',
         ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1634963958000),
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_LTC,
         amount=FVal('0.00917887'),
         location_label='bitpanda',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             unique_id='tradeid1',
         ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1634963958000),
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BEST,
         amount=FVal('1.71800028'),
         location_label='bitpanda',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             unique_id='tradeid1',
         ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1629440767000),
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ADA,
         amount=FVal('5.37267451'),
         location_label='bitpanda',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             unique_id='tradeid2',
         ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1629440767000),
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('12.936862952629'),
         location_label='bitpanda',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             unique_id='tradeid2',
         ),
     )]
@@ -265,7 +268,7 @@ def test_asset_movements(database, mock_bitpanda):
     with database.conn.read_ctx() as cursor:
         movements = DBHistoryEvents(database).get_history_events_internal(
             cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITPANDA),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITPANDA),
         )
 
     warnings = mock_bitpanda.msg_aggregator.consume_warnings()
@@ -276,7 +279,7 @@ def test_asset_movements(database, mock_bitpanda):
     expected_movements = [AssetMovement(
         identifier=5,
         group_identifier='bc9ae2697f378ed91ce77120c3a29e635c435ecb752865760e5e9304aed35759',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1597072246000),
@@ -289,7 +292,7 @@ def test_asset_movements(database, mock_bitpanda):
     ), AssetMovement(
         identifier=6,
         group_identifier='bc9ae2697f378ed91ce77120c3a29e635c435ecb752865760e5e9304aed35759',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1597072246000),
@@ -298,7 +301,7 @@ def test_asset_movements(database, mock_bitpanda):
     ), AssetMovement(
         identifier=1,
         group_identifier='417fa4b6bcb5ff3b9050d84ddff00e3e423333512bca8f36a430bccf72634c20',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1631088548000),
@@ -307,7 +310,7 @@ def test_asset_movements(database, mock_bitpanda):
     ), AssetMovement(
         identifier=2,
         group_identifier='7db139d1cf52facb8f9043e2fe73e924c3b58d54b27f38574d9a73e74a1c5bd1',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1631888548000),
@@ -316,7 +319,7 @@ def test_asset_movements(database, mock_bitpanda):
     ), AssetMovement(
         identifier=3,
         group_identifier='7db139d1cf52facb8f9043e2fe73e924c3b58d54b27f38574d9a73e74a1c5bd1',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1631888548000),
@@ -325,7 +328,7 @@ def test_asset_movements(database, mock_bitpanda):
     ), AssetMovement(
         identifier=4,
         group_identifier='eedabacb4b72276581975459254fcb3d603dc46900335d40055adcc32cbd69ed',
-        location=Location.BITPANDA,
+        location=LOCATION_BITPANDA,
         location_label=mock_bitpanda.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1633849272000),

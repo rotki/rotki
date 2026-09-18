@@ -1,3 +1,11 @@
+"""Display details of every location the backend can report, keyed by location identifier.
+
+Names, icons and images come from the location tree catalog. Exchange and bank connector details
+are merged in for the locations that have a connector.
+"""
+from typing import Any, Final
+
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
@@ -6,133 +14,50 @@ from rotkehlchen.exchanges.constants import (
     EXPERIMENTAL_EXCHANGES,
     SUPPORTED_EXCHANGES,
 )
-from rotkehlchen.types import Location
-
-LOCATION_DETAILS: dict = {
-    Location.EXTERNAL: {'icon': 'lu-book-text'},
-    Location.KRAKEN: {'image': 'kraken.svg'},
-    Location.POLONIEX: {'image': 'poloniex.svg'},
-    Location.BITTREX: {'image': 'bittrex.svg'},
-    Location.BINANCE: {'image': 'binance.svg'},
-    Location.BITMEX: {'image': 'bitmex.svg'},
-    Location.COINBASE: {'image': 'coinbase.svg'},
-    Location.COINBASEPRIME: {'image': 'coinbaseprime.svg', 'label': 'Coinbase Prime'},
-    Location.BANKS: {'icon': 'lu-landmark'},
-    Location.BLOCKCHAIN: {'icon': 'lu-link'},
-    Location.COINBASEPRO: {
-        'image': 'coinbasepro.svg',
-        'label': 'Coinbase Pro',
-    },
-    Location.GEMINI: {'image': 'gemini.svg'},
-    Location.EQUITIES: {'icon': 'lu-luggage'},
-    Location.REALESTATE: {'icon': 'lu-house'},
-    Location.COMMODITIES: {'icon': 'lu-leaf'},
-    Location.CRYPTOCOM: {'image': 'crypto_com.svg'},
-    Location.UNISWAP: {'image': 'uniswap.svg'},
-    Location.BITSTAMP: {'image': 'bitstamp.svg'},
-    Location.BINANCEUS: {
-        'label': 'Binance US',
-        'image': 'binance.svg',
-    },
-    Location.BITFINEX: {'image': 'bitfinex.svg'},
-    Location.BIT2ME: {
-        'label': 'Bit2Me',
-        'image': 'bit2me.png',
-    },
-    Location.BITCOINDE: {
-        'label': 'Bitcoin.de',
-        'image': 'btcde.svg',
-    },
-    Location.ICONOMI: {'image': 'iconomi.svg'},
-    Location.KUCOIN: {'image': 'kucoin.svg'},
-    Location.BALANCER: {'image': 'balancer.svg'},
-    Location.LOOPRING: {'image': 'loopring.svg'},
-    Location.FTX: {
-        'label': 'FTX',
-        'image': 'ftx.svg',
-    },
-    Location.NEXO: {'image': 'nexo.svg'},
-    Location.BLOCKFI: {'image': 'blockfi.svg'},
-    Location.INDEPENDENTRESERVE: {
-        'label': 'Independent Reserve',
-        'image': 'independentreserve.svg',
-    },
-    Location.GITCOIN: {'image': 'gitcoin.svg'},
-    Location.SUSHISWAP: {'image': 'sushiswap.svg'},
-    Location.SHAPESHIFT: {'image': 'shapeshift.svg'},
-    Location.UPHOLD: {'image': 'uphold.svg'},
-    Location.BITPANDA: {'image': 'bitpanda.svg'},
-    Location.BISQ: {'image': 'bisq.svg'},
-    Location.FTXUS: {
-        'label': 'FTX US',
-        'image': 'ftxus.svg',
-    },
-    Location.OKX: {
-        'label': 'OKX',
-        'image': 'okx.svg',
-    },
-    Location.ETHEREUM: {'image': 'ethereum.svg'},
-    Location.OPTIMISM: {'image': 'optimism.svg'},
-    Location.POLYGON_POS: {'image': 'polygon_pos.svg'},
-    Location.ARBITRUM_ONE: {'image': 'arbitrum_one.svg'},
-    Location.BASE: {'image': 'base.svg'},
-    Location.HYPERLIQUID: {'image': 'hyperliquid.svg'},
-    Location.GNOSIS: {'image': 'gnosis.svg'},
-    Location.SCROLL: {'image': 'scroll.svg'},
-    Location.BINANCE_SC: {'image': 'binance_sc.svg'},
-    Location.MONAD: {'image': 'monad.svg'},
-    Location.SONIC: {'image': 'sonic.svg'},
-    Location.ROBINHOOD: {'image': 'robinhood.svg'},
-    Location.INK: {'image': 'ink.svg'},
-    Location.AVALANCHE: {'image': 'avalanche.svg'},
-    Location.WOO: {'image': 'woo.svg'},
-    Location.BYBIT: {'image': 'bybit.svg'},
-    Location.HTX: {
-        'label': 'HTX',
-        'image': 'htx.svg',
-    },
-    Location.GATE: {
-        'label': 'Gate',
-        'image': 'gate.svg',
-    },
-    Location.COINEX: {
-        'label': 'CoinEx',
-        'image': 'coinex.svg',
-    },
-    Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
-    Location.BITCOIN: {'image': 'bitcoin.svg'},
-    Location.BITCOIN_CASH: {
-        'label': 'Bitcoin Cash',
-        'image': 'bitcoin-cash.svg',
-    },
-    Location.POLKADOT: {'image': 'polkadot.svg'},
-    Location.KUSAMA: {'image': 'kusama.svg'},
-    Location.SOLANA: {'image': 'solana.svg'},
-    Location.QONTO: {'image': 'qonto.svg'},
-    Location.FINTS: {'icon': 'lu-landmark'},
-}
-for key, value in LOCATION_DETAILS.items():
-    if key in ALL_SUPPORTED_EXCHANGES:
-        if key in SUPPORTED_EXCHANGES:
-            value['exchange_details'] = {'is_exchange_with_key': True}
-            if key in EXCHANGES_WITH_PASSPHRASE:
-                value['exchange_details']['is_exchange_with_passphrase'] = True
-            if key in EXCHANGES_WITHOUT_API_SECRET:
-                value['exchange_details']['is_exchange_without_api_secret'] = True
-            if key in EXPERIMENTAL_EXCHANGES:
-                value['exchange_details']['experimental'] = True
-            continue
-        value['is_exchange'] = True
-    elif key in BANK_MANIFESTS:
-        value['is_bank'] = True
-        value['bank_details'] = BANK_MANIFESTS[key].serialize()
+from rotkehlchen.locations.catalog import load_builtin_catalog
+from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
+from rotkehlchen.locations.types import LocationIdentifier
 
 
-def get_formatted_location_name(location: Location) -> str:
-    """Get a properly formatted location name either from the location details mapping,
-    or by simply capitalizing the location name.
-    """
-    if location in LOCATION_DETAILS and 'label' in LOCATION_DETAILS[location]:
-        return LOCATION_DETAILS[location]['label']
+def _visuals(name: str, icon: str | None, image: str | None) -> dict[str, Any]:
+    return {'label': name} | ({'image': image} if image is not None else {'icon': icon})
 
-    return str(location).capitalize()
+
+def _location_details() -> dict[LocationIdentifier, dict[str, Any]]:
+    details = {
+        node.identifier: _visuals(node.name, node.icon, node.image)
+        for node in load_builtin_catalog()
+    }
+    for identifier, name, image in V53_LEGACY_LOCATION_CHARS.values():  # only in upgraded DBs
+        details[LocationIdentifier(identifier)] = _visuals(name, None, image)
+    # FinTS is a connector, not a location, but the bank setup still reads its details here
+    details[FINTS_CONNECTOR] = _visuals('FinTS', 'lu-landmark', None)
+
+    for key, value in details.items():
+        if key in ALL_SUPPORTED_EXCHANGES:
+            if key in SUPPORTED_EXCHANGES:
+                value['exchange_details'] = {'is_exchange_with_key': True}
+                if key in EXCHANGES_WITH_PASSPHRASE:
+                    value['exchange_details']['is_exchange_with_passphrase'] = True
+                if key in EXCHANGES_WITHOUT_API_SECRET:
+                    value['exchange_details']['is_exchange_without_api_secret'] = True
+                if key in EXPERIMENTAL_EXCHANGES:
+                    value['exchange_details']['experimental'] = True
+                continue
+            value['is_exchange'] = True
+        elif key in BANK_MANIFESTS:
+            value['is_bank'] = True
+            value['bank_details'] = BANK_MANIFESTS[key].serialize()
+
+    return details
+
+
+LOCATION_DETAILS: Final = _location_details()
+
+
+def get_formatted_location_name(location: LocationIdentifier) -> str:
+    """The display name of a built-in location, or the identifier itself for any other"""
+    if (details := LOCATION_DETAILS.get(location)) is not None:
+        return details['label']
+
+    return location

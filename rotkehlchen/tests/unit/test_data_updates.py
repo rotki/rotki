@@ -19,6 +19,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -26,7 +27,6 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     AddressbookEntry,
     ChainID,
-    Location,
     SupportedBlockchain,
     TokenKind,
 )
@@ -388,7 +388,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.CONTRACTS.serialize(), 999),
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
-                (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
+                (UpdateType.LOCATION_ASSET_MAPPINGS, 999),
                 (UpdateType.COUNTERPARTY_ASSET_MAPPINGS.serialize(), 999),
             ],
         )
@@ -706,7 +706,7 @@ def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> Non
             f"SELECT {'COUNT(*)' if after_upgrade is False else 'local_id'} "
             'FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?', (
                 None if addition['location'] is None else
-                Location.deserialize(addition['location']).serialize_for_db(),
+                deserialize_location_identifier(addition['location']),
                 addition['location_symbol'],
             ),
         ).fetchone()[0]
@@ -715,14 +715,14 @@ def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> Non
     for update in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['updates']:
         asset_id = cursor.execute(  # mappings to be updated are not updated already
             'SELECT local_id FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
-            (Location.deserialize(update['location']).serialize_for_db(), update['location_symbol']),  # noqa: E501
+            (deserialize_location_identifier(update['location']), update['location_symbol']),
         ).fetchone()[0]
         assert (asset_id == update['asset']) == after_upgrade
 
     for deletion in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['deletions']:
         not_exists = cursor.execute(  # mappings to be deleted are present already
             'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
-            (Location.deserialize(deletion['location']).serialize_for_db(), deletion['location_symbol']),  # noqa: E501
+            (deserialize_location_identifier(deletion['location']), deletion['location_symbol']),
         ).fetchone()[0] == 0
         assert not_exists == after_upgrade
 

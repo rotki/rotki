@@ -46,12 +46,14 @@ from rotkehlchen.banks.normalization import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+)
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -64,6 +66,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import HistoryEventQueue
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 SESSION_VERSION: Final = 1
@@ -129,10 +132,10 @@ class Fints(BankConnector):
     manifest = FINTS_MANIFEST
 
     @property
-    def data_location(self) -> Location:
+    def data_location(self) -> LocationIdentifier:
         """FinTS is a connector and never a location. Until connections point at their
         institution location its data belongs to the broad Banks location."""
-        return Location.BANKS
+        return LOCATION_BANKS
 
     def __init__(
             self,
@@ -190,7 +193,7 @@ class Fints(BankConnector):
     def api_credentials_from_values(
             cls,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             values: dict[str, str],
             current: ExchangeAuthCredentials | None = None,
     ) -> ExchangeApiCredentials:

@@ -6,8 +6,11 @@ from rotkehlchen.constants.assets import A_MON, A_WMON
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_MONAD,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -22,7 +25,7 @@ def test_wmon_wrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1758018567000)),
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_MON,
@@ -33,7 +36,7 @@ def test_wmon_wrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_MON,
@@ -46,7 +49,7 @@ def test_wmon_wrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=A_WMON,
@@ -70,7 +73,7 @@ def test_wmon_unwrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1759393762000)),
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_MON,
@@ -81,7 +84,7 @@ def test_wmon_unwrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=A_WMON,
@@ -94,7 +97,7 @@ def test_wmon_unwrap(monad_inquirer, monad_accounts):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.MONAD,
+        location=LOCATION_MONAD,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=A_MON,

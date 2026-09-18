@@ -19,6 +19,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tasks.bridges import SYNTHETIC_BRIDGE_GROUP_PREFIX
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -27,7 +33,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -50,7 +56,7 @@ def _add_bridge_pair(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=(
                     HistoryEventType.DEPOSIT
                     if deposit_is_decoded_bridge else HistoryEventType.SPEND
@@ -76,7 +82,7 @@ def _add_bridge_pair(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000300000),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=(
                     HistoryEventType.WITHDRAWAL
                     if withdrawal_is_decoded_bridge else HistoryEventType.RECEIVE
@@ -139,14 +145,14 @@ def test_match_and_unlink_bridge_transactions(rotkehlchen_api_server: APIServer)
     assert matched.extra_data is not None
     assert matched.extra_data['matched_bridge'] == {
         'group_identifier': deposit.group_identifier,
-        'location': Location.ETHEREUM.serialize(),
+        'location': LOCATION_ETHEREUM,
         'fee_amount': '0.001',
     }
     matched_deposit = next(x for x in events if x.identifier == deposit.identifier)
     assert matched_deposit.extra_data is not None
     assert matched_deposit.extra_data['matched_bridge'] == {
         'group_identifier': withdrawal.group_identifier,
-        'location': Location.ARBITRUM_ONE.serialize(),
+        'location': LOCATION_ARBITRUM_ONE,
         'fee_amount': '0.001',
     }
 
@@ -260,7 +266,7 @@ def test_create_counterpart_and_unlink(rotkehlchen_api_server: APIServer) -> Non
             filter_query=HistoryEventFilterQuery.make(identifiers=[3]),
         ))
         assert synthetic.group_identifier == f'{SYNTHETIC_BRIDGE_GROUP_PREFIX}{deposit.group_identifier}'  # noqa: E501
-        assert synthetic.location == Location.ARBITRUM_ONE
+        assert synthetic.location == LOCATION_ARBITRUM_ONE
         assert synthetic.event_type == HistoryEventType.WITHDRAWAL
         assert synthetic.event_subtype == HistoryEventSubType.BRIDGE
         assert synthetic.asset == A_ETH
@@ -273,7 +279,7 @@ def test_create_counterpart_and_unlink(rotkehlchen_api_server: APIServer) -> Non
         assert synthetic.extra_data['bridge'] == deposit.extra_data['bridge']
         assert synthetic.extra_data['matched_bridge'] == {
             'group_identifier': deposit.group_identifier,
-            'location': Location.ETHEREUM.serialize(),
+            'location': LOCATION_ETHEREUM,
         }
         states = {(row[0], row[1]) for row in cursor.execute(
             'SELECT parent_identifier, value FROM history_events_mappings WHERE name=?',
@@ -436,7 +442,7 @@ def test_socket_bridge_match_suggestion_keeps_normal_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.BASE,
+                location=LOCATION_BASE,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_USDC,
@@ -454,7 +460,7 @@ def test_socket_bridge_match_suggestion_keeps_normal_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1800000000000),
-                location=Location.GNOSIS,
+                location=LOCATION_GNOSIS,
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_DAI,
@@ -498,7 +504,7 @@ def test_ignore_single_leg_of_multi_leg_transaction(rotkehlchen_api_server: APIS
         tx_ref=deposit_tx,
         sequence_index=identifier - 1,
         timestamp=TimestampMS(1700000000000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_ETH,
@@ -616,14 +622,14 @@ def test_match_from_withdrawal_leg_rewrites_source(rotkehlchen_api_server: APISe
     assert matched.extra_data is not None
     assert matched.extra_data['matched_bridge'] == {
         'group_identifier': withdrawal.group_identifier,
-        'location': Location.ARBITRUM_ONE.serialize(),
+        'location': LOCATION_ARBITRUM_ONE,
         'fee_amount': '0.001',
     }
     matched_withdrawal = next(x for x in events if x.identifier == withdrawal.identifier)
     assert matched_withdrawal.extra_data is not None
     assert matched_withdrawal.extra_data['matched_bridge'] == {
         'group_identifier': deposit.group_identifier,
-        'location': Location.ETHEREUM.serialize(),
+        'location': LOCATION_ETHEREUM,
         'fee_amount': '0.001',
     }
 
@@ -659,7 +665,7 @@ def test_matched_bridge_pairs_display_as_separate_groups(
                 tx_ref=deposit_tx,
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_ETH,
@@ -671,7 +677,7 @@ def test_matched_bridge_pairs_display_as_separate_groups(
                 tx_ref=deposit_tx,
                 sequence_index=1,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_ETH,
@@ -683,7 +689,7 @@ def test_matched_bridge_pairs_display_as_separate_groups(
                 tx_ref=withdrawal_tx,
                 sequence_index=0,
                 timestamp=TimestampMS(1700000300000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_ETH,
@@ -695,7 +701,7 @@ def test_matched_bridge_pairs_display_as_separate_groups(
                 tx_ref=withdrawal_tx,
                 sequence_index=1,
                 timestamp=TimestampMS(1700000300000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_ETH,

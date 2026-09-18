@@ -45,6 +45,9 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import (
     INFURA_ETH_NODE,
     TEST_ADDR1,
@@ -61,7 +64,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -178,7 +180,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         tx_ref=approve_tx_hash,
                         sequence_index=0,
                         timestamp=1569924574000,
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         location_label=addr1,
                         asset=A_ETH,
                         amount=FVal('0.000030921'),
@@ -192,7 +194,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         tx_ref=approve_tx_hash,
                         sequence_index=163,
                         timestamp=1569924574000,
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         location_label=addr1,
                         asset=A_SAI,
                         amount=1,
@@ -223,7 +225,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
         assert write_cursor.execute('SELECT COUNT(*) from chain_events_info').fetchone()[0] == 2
         assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 1
 
-        dbevents.reset_events_for_redecode(write_cursor, Location.ETHEREUM)
+        dbevents.reset_events_for_redecode(write_cursor, LOCATION_ETHEREUM)
         # after deletion all events in the customized event's transaction are preserved
         assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 2
         assert write_cursor.execute('SELECT COUNT(*) from chain_events_info').fetchone()[0] == 2
@@ -400,7 +402,7 @@ def test_delete_transactions_removes_internals_queried_mapping(
                 f'10x{tx_hash_eth!s}',
                 0,
                 TimestampMS(1646375440000),
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
                 ethereum_accounts[0],
                 A_ETH.identifier,
                 '1',
@@ -538,7 +540,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746615035000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -549,7 +551,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.MESSAGE,
             asset=A_ETH,
@@ -561,7 +563,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DELEGATE,
             asset=A_ETH,
@@ -588,7 +590,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746793655000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -599,7 +601,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DELEGATE,
             asset=A_ETH,
@@ -626,7 +628,7 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1756420055000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -637,7 +639,7 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPLOY,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -745,7 +747,7 @@ def test_write_events_relocates_sequence_index_collision(
             tx_ref=tx_hash,
             sequence_index=sequence_index,
             timestamp=TimestampMS(1646375440000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -811,7 +813,7 @@ def test_reward_fallback_only_persists_after_normal_decoding(
             tx_ref=transaction.tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(transaction.timestamp * 1000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -903,7 +905,7 @@ def test_decode_transaction_without_persistence_discards_write_buffer(
         tx_ref=transaction.tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,

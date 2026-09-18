@@ -28,6 +28,16 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BINANCE,
+    LOCATION_BITSTAMP,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRO,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tasks.events import get_unmatched_asset_movements, match_asset_movements
 from rotkehlchen.tests.unit.test_eth2 import HOUR_IN_MILLISECONDS
 from rotkehlchen.tests.utils.api import (
@@ -40,7 +50,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -82,7 +92,7 @@ def test_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
             write_cursor=write_cursor,
             history=[(asset_movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -94,7 +104,7 @@ def test_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1510000000001),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -151,7 +161,7 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: APIServer) -> None
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -193,7 +203,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 identifier=1,
                 group_identifier='xyz1',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1500000000000),
@@ -201,7 +211,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 amount=FVal('0.01'),
             )), (asset_movement := AssetMovement(
                 identifier=2,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -213,7 +223,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=(tx_hash1 := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=TimestampMS(1510000000001),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -225,7 +235,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash1,
                 sequence_index=1,
                 timestamp=TimestampMS(1510000000001),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -236,7 +246,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=(tx_hash2 := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=TimestampMS(1510000000002),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -248,7 +258,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash2,
                 sequence_index=1,
                 timestamp=TimestampMS(1510000000002),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -258,7 +268,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
                 identifier=7,
                 group_identifier='xyz2',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1510000000003),
@@ -366,7 +376,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     result = assert_proper_response_with_result(
         response=requests.post(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json={'aggregate_by_group_ids': False, 'location': Location.ETHEREUM.serialize()},
+            json={'aggregate_by_group_ids': False, 'location': LOCATION_ETHEREUM},
         ),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )['entries']
@@ -397,7 +407,7 @@ def test_mark_asset_movement_no_match(rotkehlchen_api_server: APIServer) -> None
             write_cursor=write_cursor,
             history=[(asset_movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_ETH,
@@ -407,7 +417,7 @@ def test_mark_asset_movement_no_match(rotkehlchen_api_server: APIServer) -> None
                 identifier=(matched_event_id := 2),
                 group_identifier='xyz',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1510000000001),
@@ -486,7 +496,7 @@ def test_resolve_asset_movement_as_external(
             write_cursor=write_cursor,
             history=[(movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=movement_subtype,
                 timestamp=(timestamp := TimestampMS(1510000000000)),
                 asset=A_ETH,
@@ -497,7 +507,7 @@ def test_resolve_asset_movement_as_external(
             )), (fee_event := AssetMovement(
                 identifier=2,
                 group_identifier=movement.group_identifier,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=timestamp,
                 asset=A_ETH,
@@ -532,7 +542,7 @@ def test_resolve_asset_movement_as_external(
         group_identifier=movement.group_identifier,
         sequence_index=0,
         timestamp=timestamp,
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         location_label='Kraken 1',
         asset=A_ETH,
         amount=FVal('0.1'),
@@ -551,7 +561,7 @@ def test_resolve_asset_movement_as_external(
         group_identifier=movement.group_identifier,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         location_label='Kraken 1',
         asset=A_ETH,
         amount=FVal('0.001'),
@@ -585,7 +595,7 @@ def test_resolve_asset_movement_as_external_errors(rotkehlchen_api_server: APISe
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -595,7 +605,7 @@ def test_resolve_asset_movement_as_external_errors(rotkehlchen_api_server: APISe
                 identifier=2,
                 group_identifier='xyz',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1510000000001),
@@ -642,7 +652,7 @@ def test_unlink_matched_asset_movements(rotkehlchen_api_server: APIServer) -> No
             write_cursor=write_cursor,
             history=(original_events := [(movement1 := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_ETH,
@@ -650,7 +660,7 @@ def test_unlink_matched_asset_movements(rotkehlchen_api_server: APIServer) -> No
                 unique_id='1',
             )), (movement2 := AssetMovement(
                 identifier=2,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=movement1.timestamp,
                 asset=movement1.asset,
@@ -658,7 +668,7 @@ def test_unlink_matched_asset_movements(rotkehlchen_api_server: APIServer) -> No
                 unique_id='2',
             )), (movement3 := AssetMovement(
                 identifier=3,
-                location=Location.BITSTAMP,
+                location=LOCATION_BITSTAMP,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1600000000000),
                 asset=A_ETH,
@@ -671,12 +681,12 @@ def test_unlink_matched_asset_movements(rotkehlchen_api_server: APIServer) -> No
                 timestamp=movement3.timestamp,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 asset=movement3.asset,
                 amount=movement3.amount,
             )), (movement4 := AssetMovement(
                 identifier=5,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000),
                 asset=A_ETH,
@@ -763,7 +773,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: APIServer) -> Non
             write_cursor=write_cursor,
             history=[(matched_movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -771,7 +781,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: APIServer) -> Non
                 unique_id='1',
             )), (unmatched_movement := AssetMovement(
                 identifier=2,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -779,7 +789,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: APIServer) -> Non
                 unique_id='2',
             )), (no_match_movement := AssetMovement(
                 identifier=3,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -792,7 +802,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: APIServer) -> Non
                 timestamp=TimestampMS(1510000000000),
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 asset=A_ETH,
                 amount=FVal('0.1'),
             )],
@@ -843,7 +853,7 @@ def test_get_unmatched_excludes_right_match(
             write_cursor=write_cursor,
             history=[(left_movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -851,7 +861,7 @@ def test_get_unmatched_excludes_right_match(
                 unique_id='1',
             )), (right_movement := AssetMovement(
                 identifier=2,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1510000000001),
                 asset=A_ETH,
@@ -887,7 +897,7 @@ def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
 
     matched_movement = AssetMovement(
         identifier=1,
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1510000000000),
         asset=A_ETH,
@@ -902,7 +912,7 @@ def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(timestamp),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -930,7 +940,7 @@ def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
                 timestamp=TimestampMS(matched_movement.timestamp - 5),
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 asset=A_BTC,  # asset not in the same collection as the movement.
                 amount=matched_movement.amount,
             ), EthWithdrawalEvent(  # ETH staking event that should be ignored.
@@ -945,7 +955,7 @@ def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=matched_movement.timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.APPROVE,
                 asset=matched_movement.asset,
@@ -981,7 +991,7 @@ def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
                     group_identifier=f'dummy-{idx}',
                     timestamp=matched_movement.timestamp,
                     event_subtype=HistoryEventSubType.RECEIVE,
-                    location=Location.EXTERNAL,
+                    location=LOCATION_EXTERNAL,
                     asset=A_ETH,
                     amount=FVal('0.1'),
                 ),
@@ -1026,7 +1036,7 @@ def test_protocol_counterparty_in_other_events_only(
             write_cursor=write_cursor,
             history=[movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700003101000),
                 asset=A_ETH,
@@ -1038,7 +1048,7 @@ def test_protocol_counterparty_in_other_events_only(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700003100000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -1107,7 +1117,7 @@ def test_get_history_events_with_matched_asset_movements(
             write_cursor=write_cursor,
             history=[(movement1 := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_ETH,
@@ -1115,7 +1125,7 @@ def test_get_history_events_with_matched_asset_movements(
                 unique_id='1',
             )), AssetMovement(
                 identifier=2,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=movement1.timestamp,
                 asset=A_ETH,
@@ -1123,7 +1133,7 @@ def test_get_history_events_with_matched_asset_movements(
                 unique_id='1',
             ), (movement2 := AssetMovement(
                 identifier=3,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1500000000001),
                 asset=A_ETH,
@@ -1131,7 +1141,7 @@ def test_get_history_events_with_matched_asset_movements(
                 unique_id='2',
             )), AssetMovement(
                 identifier=4,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=movement2.timestamp,
                 asset=A_ETH,
@@ -1139,7 +1149,7 @@ def test_get_history_events_with_matched_asset_movements(
                 unique_id='2',
             ), (movement3 := AssetMovement(
                 identifier=5,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1500000000003),
                 asset=A_ETH,
@@ -1150,7 +1160,7 @@ def test_get_history_events_with_matched_asset_movements(
                 tx_ref=(tx_ref := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=TimestampMS(1500000000002),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1161,7 +1171,7 @@ def test_get_history_events_with_matched_asset_movements(
                 tx_ref=tx_ref,
                 sequence_index=1,
                 timestamp=TimestampMS(1500000000002),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1273,7 +1283,7 @@ def test_coinbase_chain_two_groups(
             write_cursor=write_cursor,
             history=[(coinbase_deposit := AssetMovement(
                 identifier=1,  # oldest
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000),
                 asset=A_BAT,
@@ -1283,7 +1293,7 @@ def test_coinbase_chain_two_groups(
                 notes='Transfer funds from CoinbasePro',
             )), (coinbasepro_withdrawal := AssetMovement(
                 identifier=2,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000001000),
                 asset=A_BAT,
@@ -1297,7 +1307,7 @@ def test_coinbase_chain_two_groups(
                 ),
             )), (coinbase_withdrawal := AssetMovement(
                 identifier=3,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000002000),
                 asset=A_BAT,
@@ -1314,7 +1324,7 @@ def test_coinbase_chain_two_groups(
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(1700000003000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BAT,
@@ -1370,7 +1380,7 @@ def test_group_header_event(rotkehlchen_api_server: APIServer) -> None:
             write_cursor=write_cursor,
             history=[(movement_event := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_BTC,
@@ -1382,7 +1392,7 @@ def test_group_header_event(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=(tx_hash := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=movement_event.timestamp,
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1393,7 +1403,7 @@ def test_group_header_event(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=1,
                 timestamp=movement_event.timestamp,
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=movement_event.asset,
@@ -1464,7 +1474,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
             write_cursor=write_cursor,
             history=[(movement := AssetMovement(
                 identifier=1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_ETH,
@@ -1476,7 +1486,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1500000000002),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1486,7 +1496,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
                 identifier=3,
                 group_identifier='older_group',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1500000000000 - HOUR_IN_MILLISECONDS),
@@ -1496,7 +1506,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
                 identifier=4,
                 group_identifier='oldest_group',
                 sequence_index=0,
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 timestamp=TimestampMS(1500000000000 - 2 * HOUR_IN_MILLISECONDS),
@@ -1534,7 +1544,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
     result = assert_proper_response_with_result(
         response=requests.post(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json={'aggregate_by_group_ids': True, 'location': Location.ETHEREUM.serialize()},
+            json={'aggregate_by_group_ids': True, 'location': LOCATION_ETHEREUM},
         ),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
@@ -1546,7 +1556,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
     result = assert_proper_response_with_result(
         response=requests.post(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json={'aggregate_by_group_ids': True, 'location': Location.KRAKEN.serialize()},
+            json={'aggregate_by_group_ids': True, 'location': LOCATION_KRAKEN},
         ),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )

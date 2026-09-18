@@ -14,9 +14,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -35,7 +39,7 @@ def test_purge_exchange_restores_matched_events(database: DBHandler) -> None:
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=[AssetMovement(
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1600000000000),
                 asset=A_ETH,
@@ -46,7 +50,7 @@ def test_purge_exchange_restores_matched_events(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1600000000001),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -80,10 +84,10 @@ def test_purge_exchange_restores_matched_events(database: DBHandler) -> None:
         assert events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(identifiers=[matched_event_id]),
-        )[0].counterparty == Location.KRAKEN.name.lower()  # type: ignore[attr-defined]
+        )[0].counterparty == LOCATION_KRAKEN  # type: ignore[attr-defined]
 
     with database.conn.write_ctx() as write_cursor:
-        database.purge_exchange_data(write_cursor=write_cursor, location=Location.KRAKEN)
+        database.purge_exchange_data(write_cursor=write_cursor, location=LOCATION_KRAKEN)
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -113,7 +117,7 @@ def test_purge_exchange_restores_matched_events(database: DBHandler) -> None:
 
         assert events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_KRAKEN),
         ) == []
 
 
@@ -125,7 +129,7 @@ def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=[AssetMovement(
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1600000000000),
                 asset=A_ETH,
@@ -136,7 +140,7 @@ def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1600000000001),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -154,7 +158,7 @@ def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
         ).fetchone()[0] > 0
 
     with database.conn.write_ctx() as write_cursor:
-        database.purge_exchange_data(write_cursor=write_cursor, location=Location.KRAKEN)
+        database.purge_exchange_data(write_cursor=write_cursor, location=LOCATION_KRAKEN)
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -164,7 +168,7 @@ def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
 
         remaining = events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.ETHEREUM),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_ETHEREUM),
         )
         onchain_receive.identifier = remaining[0].identifier
         assert remaining == [onchain_receive]

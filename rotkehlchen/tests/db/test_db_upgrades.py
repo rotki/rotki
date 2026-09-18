@@ -52,6 +52,21 @@ from rotkehlchen.exchanges.coinbase import CB_EVENTS_PREFIX
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_BITSTAMP,
+    LOCATION_BITTREX,
+    LOCATION_BYBIT,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_GEMINI,
+    LOCATION_GNOSIS,
+    LOCATION_HTX,
+    LOCATION_KRAKEN,
+    LOCATION_POLYGON_POS,
+    LOCATION_SCROLL,
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.locations.legacy_chars import (
     V53_LEGACY_LOCATION_CHARS,
     V53_LOCATION_CHAR_TO_IDENTIFIER,
@@ -70,10 +85,10 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.locations import V53_ENUM_CHAR_TO_SERIALIZATION, v53_seq
 from rotkehlchen.types import (
     ChainID,
     ExternalService,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TokenKind,
@@ -85,11 +100,12 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
-def make_serialized_group_identifier(location: Location, raw_group_identifier: bytes) -> str:
+def make_serialized_group_identifier(location: LocationIdentifier, raw_group_identifier: bytes) -> str:  # noqa: E501
     """Creates a serialized group identifier using the logic at the moment of v32_v33 upgrade"""
-    if location == Location.KRAKEN or raw_group_identifier.startswith(b'rotki_events'):
+    if location == LOCATION_KRAKEN or raw_group_identifier.startswith(b'rotki_events'):
         return raw_group_identifier.decode()
 
     hex_representation = raw_group_identifier.hex()
@@ -1648,7 +1664,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (238,)]  # noqa: E501  # 1, 238 are customized so they stay. 74 should be deleted
     assert cursor.execute(  # Check that Polygon POS location was added
         'SELECT location FROM location WHERE seq=?',
-        (Location.POLYGON_POS.value,),
+        (v53_seq(LOCATION_POLYGON_POS),),
     ).fetchone()[0] == v53_char('polygon pos')
     nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     default_polygon_nodes_with_ids = [
@@ -1968,7 +1984,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
 
     assert cursor.execute(  # Check that BASE and GNOSIS locations were added
         'SELECT location FROM location WHERE seq IN (?, ?) ORDER BY seq',
-        (Location.BASE.value, Location.GNOSIS.value),
+        (v53_seq(LOCATION_BASE), v53_seq(LOCATION_GNOSIS)),
     ).fetchall() == [(v53_char('base'),), (v53_char('gnosis'),)]
 
     # test that all 8 ledger actions were moved to history events
@@ -2076,9 +2092,9 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         'ethwithdrawalsts_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '123',
         'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': '123',
         'ethwithdrawalsidx_0xc37b40ABdB939635068d3c5f13E7faF686F03B65': '234',
-        f'{Location.BITSTAMP}_bitstamp1_last_cryptotx_offset': '345',
-        f'{Location.COINBASE}_coinbase1_123_last_query_ts': '456',
-        f'{Location.COINBASE}_coinbase1_123_last_query_id': '567',
+        f'{LOCATION_BITSTAMP}_bitstamp1_last_cryptotx_offset': '345',
+        f'{LOCATION_COINBASE}_coinbase1_123_last_query_ts': '456',
+        f'{LOCATION_COINBASE}_coinbase1_123_last_query_id': '567',
         'last_produced_blocks_query_ts': '678',
         'last_withdrawals_exit_query_ts': '789',
         'last_events_processing_task_ts': '890',
@@ -2129,7 +2145,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.BITTREX!s}\\_%', '\\'),
+            (f'{LOCATION_BITTREX!s}\\_%', '\\'),
         ).fetchone()[0] == 3
 
     # test external credentials are there
@@ -2273,7 +2289,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         ).fetchone()[0] == 0
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.BITTREX!s}\\_%', '\\'),
+            (f'{LOCATION_BITTREX!s}\\_%', '\\'),
         ).fetchone()[0] == 0
         assert json.loads(cursor.execute(
             'SELECT value FROM settings WHERE name=?',
@@ -2394,10 +2410,10 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
             ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6), ('G', 7),
         ]
-        for new_loc in (Location.SCROLL, Location.ZKSYNC_LITE):
+        for new_loc in (LOCATION_SCROLL, LOCATION_ZKSYNC_LITE):
             assert cursor.execute(  # Check that new locations were added
                 'SELECT location FROM location WHERE seq=?',
-                (new_loc.value,),
+                (v53_seq(new_loc),),
             ).fetchone()[0] == location_to_v53_char(new_loc)
         raw_list = cursor.execute(
             'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
@@ -2481,7 +2497,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 1  # noqa: E501
 
         cursor.execute('SELECT seq FROM location WHERE location=?', 'p')
-        assert cursor.fetchone() == (Location.HTX.value,)
+        assert cursor.fetchone() == (v53_seq(LOCATION_HTX),)
         assert cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
             (v53_char('coinbasepro'),),
@@ -3017,11 +3033,11 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
         assert cursor.execute(  # all coinbase caches are deleted
             'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
-            (f'{(coinbase_loc := Location.COINBASE.serialize())}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
+            (f'{(coinbase_loc := LOCATION_COINBASE)}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
         ).fetchone()[0] == 0
         assert cursor.execute(  # check that the kraken cache was not affected
             'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
-            (f'{(kraken_loc := Location.KRAKEN.serialize())}_%_last_query_ts', f'{kraken_loc}_%_last_query_id'),  # noqa: E501
+            (f'{(kraken_loc := LOCATION_KRAKEN)}_%_last_query_ts', f'{kraken_loc}_%_last_query_id'),  # noqa: E501
         ).fetchone()[0] == 1
         assert cursor.execute(  # ensure trades with bybit or Coinbase or Gemini location and a link are deleted  # noqa: E501
             'SELECT COUNT(*) FROM trades WHERE location IN (?, ?, ?) AND link != ?',
@@ -3032,7 +3048,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         ]
         assert cursor.execute(  # verify query ranges for bybit, coinbase and gemini are deleted
             'SELECT COUNT(*) FROM used_query_ranges WHERE name IN (?, ?, ?)',
-            (f'{coinbase_loc}_%', f'{Location.GEMINI.serialize()}_%', f'{Location.BYBIT.serialize()}_%'),  # noqa: E501
+            (f'{coinbase_loc}_%', f'{LOCATION_GEMINI}_%', f'{LOCATION_BYBIT}_%'),
         ).fetchone()[0] == 0
 
         # assert block events state after upgrade
@@ -4606,11 +4622,11 @@ def test_upgrade_db_52_to_53(
         # along with the fee charged for the bridging. A fee of anything else, and any other
         # chain's leg, keep the counterparty they had.
         for group_identifier, sequence_index, location, subtype, counterparty in (
-            ('zkl' + 'd' * 64, 0, Location.ZKSYNC_LITE, HistoryEventSubType.BRIDGE, None),
-            ('zkl' + 'd' * 64, 1, Location.ZKSYNC_LITE, HistoryEventSubType.FEE, None),
-            ('zkl' + 'e' * 64, 0, Location.ZKSYNC_LITE, HistoryEventSubType.NONE, None),
-            ('zkl' + 'e' * 64, 1, Location.ZKSYNC_LITE, HistoryEventSubType.FEE, None),
-            ('1' + 'f' * 64, 0, Location.ETHEREUM, HistoryEventSubType.BRIDGE, 'hop'),
+            ('zkl' + 'd' * 64, 0, LOCATION_ZKSYNC_LITE, HistoryEventSubType.BRIDGE, None),
+            ('zkl' + 'd' * 64, 1, LOCATION_ZKSYNC_LITE, HistoryEventSubType.FEE, None),
+            ('zkl' + 'e' * 64, 0, LOCATION_ZKSYNC_LITE, HistoryEventSubType.NONE, None),
+            ('zkl' + 'e' * 64, 1, LOCATION_ZKSYNC_LITE, HistoryEventSubType.FEE, None),
+            ('1' + 'f' * 64, 0, LOCATION_ETHEREUM, HistoryEventSubType.BRIDGE, 'hop'),
         ):
             write_cursor.execute(
                 'INSERT INTO history_events('
@@ -5161,9 +5177,9 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    mapping = {  # derived from the enum values independently of the upgrade's mapping table
-        chr(location.value + 64): str(location) for location in Location
-    } | {char: identifier for char, (identifier, _, _) in V53_LEGACY_LOCATION_CHARS.items()}
+    mapping = dict(V53_ENUM_CHAR_TO_SERIALIZATION) | {  # independent of the upgrade's table
+        char: identifier for char, (identifier, _, _) in V53_LEGACY_LOCATION_CHARS.items()
+    }
     with db.conn.read_ctx() as cursor:
         after = {table: table_rows(cursor, table) for table in tables}
         after['user_credentials_mappings'] = table_rows(cursor, 'user_credentials_mappings', 'credential_location')  # noqa: E501

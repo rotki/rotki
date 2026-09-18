@@ -13,7 +13,7 @@ section.
 |---|---------|-------------------|--------|
 | 1 | Inventory, catalog, old-to-new mapping, catalog validation tests | A, B (catalog) | done |
 | 2 | `locations` schema, v54 upgrade, `DBLocations`, migration fixtures/assertions | A, B | done |
-| 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | todo |
+| 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | done |
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | todo |
 | 5 | Custom location API (CRUD, usage, image upload) | B | todo |
 | 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | todo |
@@ -21,20 +21,17 @@ section.
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
 
-Transitional state after section 2 (all of it is removed by sections 3 and 6):
+Transitional state (removed by section 6 unless noted):
 
-- `Location.serialize_for_db()`/`deserialize_from_db()` read and write the text identifier (equal
-  to `str(location)`) in both the user and the global DB, so the application keeps working until
-  section 3 removes the enum.
-- FinTS keeps its enum member until section 6, but no FinTS row is ever inserted into `locations`.
+- FinTS has no location. `rotkehlchen.banks.constants.FINTS_CONNECTOR` ('fints') keys its
+  credentials and manifest like an exchange location until connections store connector and
+  location separately. `LOCATION_DETAILS` still carries a `fints` entry for the bank setup UI.
   `ExchangeInterface.data_location` is the location a connection's events, balances and snapshots
   use; `Fints.data_location` returns `banks` until section 6 gives each FinTS connection its
   institution location.
 - `user_credentials.location` and `user_credentials_mappings.credential_location` hold text but have
   no FK: they are connector identity, replaced by `integration_connections` in section 6. Premium
   credentials keep the `external` location they always had.
-- The protocol-labelled enum members (Uniswap, Balancer, Gitcoin, Sushiswap) still exist in the
-  enum but have no node in fresh DBs.
 
 Pre-tree character encoding: `rotkehlchen/locations/legacy_chars.py` is the frozen codec every
 historical user DB upgrade (v36..v53), the v54 migration and the global v18->v19 conversion use. Old
@@ -168,3 +165,30 @@ needs no change.
   `test_bitcoin.py::test_bitcoin_balance_api_resolver`, `test_bitcoin.py::test_local_bitcoin_mempool_api`,
   `accounting/test_settings.py::test_eth_withdrawal_not_taxable`. VCR tests error in parallel runs
   here because `git merge-base bugfixes develop` fails in the sandbox.
+
+## Section 3 notes
+
+- The `Location` enum is gone. `LocationIdentifier` (`rotkehlchen/locations/types.py`) is the
+  only location type; `LOCATION_<NAME>` constants for every built-in are in
+  `rotkehlchen/locations/constants.py` (a test checks they match the catalog).
+- `rotkehlchen/locations/chains.py` is the chain registry: `EVM_LOCATIONS`, `EVMLIKE_LOCATIONS`,
+  `EVM_EVMLIKE_LOCATIONS`, `BITCOIN_LOCATIONS`, `BLOCKCHAIN_LOCATIONS`, `location_from_chain_id`,
+  `location_to_chain_id`, `location_from_chain`, `location_to_chain` and the `is_*_location`
+  predicates. The Literal location types were dropped; annotations use `LocationIdentifier`.
+- Parsing: `deserialize_location_identifier` checks syntax only (built-in names are
+  case-insensitive and accept underscores; prefixed ids like `custom:<uuid>` are verbatim).
+  `deserialize_builtin_location` (catalog.py) keeps the old "must be a location rotki knows"
+  semantics for CSV importers, remote asset-mapping updates, bridge extra data and the MCP
+  taxonomy. The generic CSV importer therefore still falls back to External for anything that is
+  not a built-in until section 7 adds preflight.
+- Existence checks happen where user data is written: manual balance add/edit and history event
+  add/edit call `DBLocations.validate_assignable` (edits accept archived locations). API
+  `LocationField` only checks syntax and `limit_to`.
+- `LOCATION_DETAILS` (/locations/all) is derived from the catalog: every built-in (Total and the
+  structural nodes included), the four legacy locations and the transitional fints entry, each
+  with an explicit `label`. Display names now come from the catalog, e.g. `cryptocom` is
+  "Crypto.com" and `ethereum` "Ethereum Mainnet"; `get_formatted_location_name` returns the
+  identifier for anything without details.
+- Tests: `tests/utils/locations.py` freezes the v53 enum order so migration tests keep an
+  independent source; `try_get_first_exchange` takes the expected exchange class instead of
+  location-literal overloads.

@@ -18,11 +18,13 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    Location,
     SupportedBlockchain,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -50,7 +52,7 @@ def test_claim_airdrop_2(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1709555247000)),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -61,7 +63,7 @@ def test_claim_airdrop_2(
             tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=DEGEN_TOKEN,
@@ -102,7 +104,7 @@ def test_claim_airdrop_1(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1711819697000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -113,7 +115,7 @@ def test_claim_airdrop_1(
         tx_ref=tx_hash,
         sequence_index=150,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.AIRDROP,
         asset=DEGEN_TOKEN,
@@ -143,7 +145,7 @@ def test_claim_airdrop_3(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1715696797000)),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -154,7 +156,7 @@ def test_claim_airdrop_3(
             tx_ref=tx_hash,
             sequence_index=121,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=DEGEN_TOKEN,

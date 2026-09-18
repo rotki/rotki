@@ -3,7 +3,7 @@ import json
 import os
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.constants import ONE
@@ -35,6 +35,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+)
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -47,15 +51,14 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    Location,
     TimestampMS,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
-    from rotkehlchen.exchanges.kraken import Kraken
+    from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
@@ -513,7 +516,7 @@ def assert_binance_balances_result(balances: dict[str, Any]) -> None:
 
 def assert_binance_asset_movements_result(
         movements: list[AssetMovement],
-        location: Location,
+        location: LocationIdentifier,
         got_fiat: bool,
 ) -> None:
     for movement in movements:
@@ -729,12 +732,12 @@ def create_test_cryptocom(
 def create_test_binance(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-        location: Location = Location.BINANCE,
+        location: LocationIdentifier = LOCATION_BINANCE,
         name: str = 'binance',
 ) -> Binance:
-    if location == Location.BINANCE:
+    if location == LOCATION_BINANCE:
         uri = BINANCE_BASE_URL
-    elif location == Location.BINANCEUS:
+    elif location == LOCATION_BINANCEUS:
         uri = BINANCEUS_BASE_URL
     else:
         raise AssertionError(f'Tried to create binance exchange with location {location}')
@@ -1041,170 +1044,11 @@ def create_test_woo(
     )
 
 
-@overload
-def try_get_first_exchange(
+def try_get_first_exchange[T: ExchangeInterface](
         exchange_manager: ExchangeManager,
-        location: Literal[Location.BINANCE, Location.BINANCEUS],
-) -> Binance | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITPANDA],
-) -> Bitpanda | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITCOINDE],
-) -> Bitcoinde | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITFINEX],
-) -> Bitfinex | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITMEX],
-) -> Bitmex | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITSTAMP],
-) -> Bitstamp | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BYBIT],
-) -> Bybit | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.COINBASE],
-) -> Coinbase | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.COINBASEPRIME],
-) -> Coinbaseprime | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.COINEX],
-) -> Coinex | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.GEMINI],
-) -> Gemini | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.HTX],
-) -> Htx | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.GATE],
-) -> Gate | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.ICONOMI],
-) -> Iconomi | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.INDEPENDENTRESERVE],
-) -> Independentreserve | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.KRAKEN],
-) -> Kraken | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.OKX],
-) -> Okx | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.POLONIEX],
-) -> Poloniex | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.WOO],
-) -> Woo | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.KUCOIN],
-) -> Kucoin | None:
-    ...
-
-
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Location,
-) -> ExchangeWithoutApiSecret | ExchangeInterface | None:
+        location: LocationIdentifier,
+        exchange_class: type[T],
+) -> T | None:
     """Tries to get the first exchange of a given type from the exchange manager
 
     If no such exchange exists returns None.
@@ -1216,7 +1060,7 @@ def try_get_first_exchange(
     if exchanges_list is None:
         return None
 
-    return exchanges_list[0]
+    return cast('T', exchanges_list[0])  # tests may connect mocks of the exchange class
 
 
 def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
@@ -1238,7 +1082,7 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
 
 
 def check_saved_events_for_exchange(
-        exchange_location: Location,
+        exchange_location: LocationIdentifier,
         db: DBHandler,
         should_exist: bool,
         queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
@@ -1530,7 +1374,7 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
 
 
 def get_exchange_asset_symbols(
-        exchange: Location,
+        exchange: LocationIdentifier,
         query_suffix: Literal[' OR location IS NULL;', ';'] = ' OR location IS NULL;',
 ) -> set[str]:
     """Get all asset symbols for an exchange from the global database.
@@ -1540,4 +1384,4 @@ def get_exchange_asset_symbols(
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
         querystr = 'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ?' + query_suffix  # noqa: E501
-        return {asset[0] for asset in cursor.execute(querystr, (exchange.serialize_for_db(),))}
+        return {asset[0] for asset in cursor.execute(querystr, (exchange,))}

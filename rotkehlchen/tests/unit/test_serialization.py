@@ -14,6 +14,8 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_hash
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.catalog import load_builtin_catalog
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
     deserialize_evm_transaction,
@@ -24,7 +26,6 @@ from rotkehlchen.serialization.serialize import PreSerializedList, process_resul
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TokenKind,
@@ -76,37 +77,32 @@ def test_pre_serialized_list_skips_rewalk() -> None:
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_deserialize_location(database):
-    balances = []
-    not_in_tree = {  # FinTS is a connector. Protocols exist only in DBs that referenced them
-        Location.FINTS, Location.UNISWAP, Location.BALANCER, Location.GITCOIN, Location.SUSHISWAP,
-    }
-    for idx, data in enumerate(Location):
-        assert Location.deserialize(str(data)) == data
-        if data in not_in_tree:
-            continue
-        balances.append(ManuallyTrackedBalance(
-            identifier=-1,
-            asset=A_BTC,
-            label='Test' + str(idx),
-            amount=ONE,
-            location=data,
-            tags=None,
-            balance_type=BalanceType.ASSET,
-        ))
+    for value, expected in (
+            ('kraken', 'kraken'),
+            ('KRAKEN', 'kraken'),
+            ('polygon_pos', 'polygon pos'),
+            (' Polygon PoS ', 'polygon pos'),
+            ('custom:0A1b', 'custom:0A1b'),  # prefixed identifiers are taken verbatim
+            ('dsadsad', 'dsadsad'),  # only syntax is checked, existence is the DB's concern
+    ):
+        assert deserialize_location_identifier(value) == expected
+    for invalid in (15, None, '', '   '):
+        with pytest.raises(DeserializationError):
+            deserialize_location_identifier(invalid)
 
-    with pytest.raises(DeserializationError):
-        Location.deserialize('dsadsad')
-
-    with pytest.raises(DeserializationError):
-        Location.deserialize(15)
-
-    # Also write and read each location to DB to make sure that
-    # location.serialize_for_db() and deserialize_location_from_db work fine
-    add_manually_tracked_balances(database, balances)
+    # every built-in location except the total can hold data and round-trips through the DB
+    assignable = [x.identifier for x in load_builtin_catalog() if x.identifier != 'total']
+    add_manually_tracked_balances(database, [ManuallyTrackedBalance(
+        identifier=-1,
+        asset=A_BTC,
+        label=f'Test{idx}',
+        amount=ONE,
+        location=location,
+        tags=None,
+        balance_type=BalanceType.ASSET,
+    ) for idx, location in enumerate(assignable)])
     with database.conn.read_ctx() as cursor:
-        balances = database.get_manually_tracked_balances(cursor)
-    for data in Location:
-        assert (data in (x.location for x in balances)) == (data not in not_in_tree)
+        assert sorted(x.location for x in database.get_manually_tracked_balances(cursor)) == sorted(assignable)  # noqa: E501
 
 
 def test_deserialize_int_from_hex_or_int():

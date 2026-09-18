@@ -22,6 +22,16 @@ from rotkehlchen.db.constants import InternalTxSource
 from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_BISQ,
+    LOCATION_BITMEX,
+    LOCATION_BLOCKFI,
+    LOCATION_CRYPTOCOM,
+    LOCATION_NEXO,
+    LOCATION_SHAPESHIFT,
+    LOCATION_UPHOLD,
+)
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.enums import (
     DBCharEnumMixIn,
@@ -583,16 +593,6 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
-    @classmethod
-    def from_location(cls, location: BLOCKCHAIN_LOCATIONS_TYPE) -> SupportedBlockchain:
-        """
-        Turns a location to a supported chain.
-        Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.
-
-        For now since we only got evm/evmlike Locations this works only for them.
-        """
-        return getattr(cls, location.name)
-
     def to_chain_id(self) -> SUPPORTED_CHAIN_IDS:
         """Warning: Caller has to make sure this is an evm blockchain"""
         return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]  # type: ignore
@@ -781,225 +781,6 @@ CHAINS_WITH_NODES: tuple[CHAINS_WITH_NODES_TYPE, ...] = CHAINS_WITH_TRANSACTION_
 CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
 
 
-class Location(DBCharEnumMixIn):
-    """Supported Locations"""
-    EXTERNAL = 1
-    KRAKEN = 2
-    POLONIEX = 3
-    BITTREX = 4
-    BINANCE = 5
-    BITMEX = 6
-    COINBASE = 7
-    TOTAL = 8
-    BANKS = 9
-    BLOCKCHAIN = 10
-    COINBASEPRO = 11
-    GEMINI = 12
-    EQUITIES = 13
-    REALESTATE = 14
-    COMMODITIES = 15
-    CRYPTOCOM = 16
-    UNISWAP = 17
-    BITSTAMP = 18
-    BINANCEUS = 19
-    BITFINEX = 20
-    BITCOINDE = 21
-    ICONOMI = 22
-    KUCOIN = 23
-    BALANCER = 24
-    LOOPRING = 25  # Loopring is shut down but we keep the location for historical data
-    FTX = 26  # FTX is dead but we keep the location for historical reasons
-    NEXO = 27
-    BLOCKFI = 28
-    INDEPENDENTRESERVE = 29
-    GITCOIN = 30
-    SUSHISWAP = 31
-    SHAPESHIFT = 32
-    UPHOLD = 33
-    BITPANDA = 34
-    BISQ = 35
-    FTXUS = 36
-    OKX = 37
-    ETHEREUM = 38  # on-chain ethereum events
-    OPTIMISM = 39  # on-chain optimism events
-    POLYGON_POS = 40  # on-chain Polygon POS events
-    ARBITRUM_ONE = 41  # on-chain Arbitrum One events
-    BASE = 42  # on-chain Base events
-    GNOSIS = 43  # on-chain Gnosis events
-    WOO = 44
-    BYBIT = 45
-    SCROLL = 46  # on-chain Scroll events
-    ZKSYNC_LITE = 47
-    HTX = 48
-    BITCOIN = 49
-    BITCOIN_CASH = 50
-    POLKADOT = 51
-    KUSAMA = 52
-    COINBASEPRIME = 53
-    BINANCE_SC = 54  # on-chain Binance Smart Chain events
-    SOLANA = 55
-    AVALANCHE = 56  # on-chain Avalanche events
-    HYPERLIQUID = 57  # on-chain Hyperliquid events
-    MONAD = 58  # on-chain Monad events
-    GATE = 59
-    BIT2ME = 60
-    COINEX = 61
-    SONIC = 62  # on-chain Sonic events
-    ROBINHOOD = 63  # on-chain Robinhood chain events
-    INK = 64  # on-chain Ink chain events
-    QONTO = 65  # bank connector
-    FINTS = 66  # German FinTS/HBCI bank connector
-
-    # Transitional until LocationIdentifier replaces this enum: the DB stores the location
-    # tree identifier, which equals the API serialization of every enum member.
-    def serialize_for_db(self) -> str:
-        return str(self)
-
-    @classmethod
-    def deserialize_from_db(cls, value: str) -> Location:
-        """May raise a DeserializationError if something is wrong with the DB data"""
-        return cls.deserialize(value)
-
-    @staticmethod
-    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
-        if chain_id == ChainID.ETHEREUM:
-            return Location.ETHEREUM
-
-        if chain_id == ChainID.OPTIMISM:
-            return Location.OPTIMISM
-
-        if chain_id == ChainID.ARBITRUM_ONE:
-            return Location.ARBITRUM_ONE
-
-        if chain_id == ChainID.BASE:
-            return Location.BASE
-
-        if chain_id == ChainID.HYPERLIQUID:
-            return Location.HYPERLIQUID
-
-        if chain_id == ChainID.GNOSIS:
-            return Location.GNOSIS
-
-        if chain_id == ChainID.SCROLL:
-            return Location.SCROLL
-
-        if chain_id == ChainID.BINANCE_SC:
-            return Location.BINANCE_SC
-
-        if chain_id == ChainID.MONAD:
-            return Location.MONAD
-
-        if chain_id == ChainID.SONIC:
-            return Location.SONIC
-
-        if chain_id == ChainID.ROBINHOOD:
-            return Location.ROBINHOOD
-
-        if chain_id == ChainID.INK:
-            return Location.INK
-
-        # else
-        return Location.POLYGON_POS
-
-    def to_chain_id(self) -> int:
-        """EVMLocation to chain id
-
-        Dealing directly with ints since it's used as integers mostly and helps with import hell
-        """
-        assert self in EVM_LOCATIONS
-        if self == Location.ETHEREUM:
-            return ChainID.ETHEREUM.value
-        if self == Location.OPTIMISM:
-            return ChainID.OPTIMISM.value
-        if self == Location.ARBITRUM_ONE:
-            return ChainID.ARBITRUM_ONE.value
-        if self == Location.BASE:
-            return ChainID.BASE.value
-        if self == Location.HYPERLIQUID:
-            return ChainID.HYPERLIQUID.value
-        if self == Location.GNOSIS:
-            return ChainID.GNOSIS.value
-        if self == Location.SCROLL:
-            return ChainID.SCROLL.value
-        if self == Location.BINANCE_SC:
-            return ChainID.BINANCE_SC.value
-        if self == Location.MONAD:
-            return ChainID.MONAD.value
-        if self == Location.SONIC:
-            return ChainID.SONIC.value
-        if self == Location.ROBINHOOD:
-            return ChainID.ROBINHOOD.value
-        if self == Location.INK:
-            return ChainID.INK.value
-        assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
-        return ChainID.POLYGON_POS.value
-
-    @staticmethod
-    def from_chain(chain: CHAINS_WITH_TRANSACTIONS_TYPE) -> BLOCKCHAIN_LOCATIONS_TYPE:
-        assert chain in CHAINS_WITH_TRANSACTIONS
-        match chain:
-            case SupportedBlockchain.ETHEREUM:
-                return Location.ETHEREUM
-            case SupportedBlockchain.OPTIMISM:
-                return Location.OPTIMISM
-            case SupportedBlockchain.POLYGON_POS:
-                return Location.POLYGON_POS
-            case SupportedBlockchain.ARBITRUM_ONE:
-                return Location.ARBITRUM_ONE
-            case SupportedBlockchain.BASE:
-                return Location.BASE
-            case SupportedBlockchain.HYPERLIQUID:
-                return Location.HYPERLIQUID
-            case SupportedBlockchain.GNOSIS:
-                return Location.GNOSIS
-            case SupportedBlockchain.SCROLL:
-                return Location.SCROLL
-            case SupportedBlockchain.BINANCE_SC:
-                return Location.BINANCE_SC
-            case SupportedBlockchain.MONAD:
-                return Location.MONAD
-            case SupportedBlockchain.SONIC:
-                return Location.SONIC
-            case SupportedBlockchain.ROBINHOOD:
-                return Location.ROBINHOOD
-            case SupportedBlockchain.INK:
-                return Location.INK
-            case SupportedBlockchain.ZKSYNC_LITE:
-                return Location.ZKSYNC_LITE
-            case SupportedBlockchain.BITCOIN:
-                return Location.BITCOIN
-            case SupportedBlockchain.BITCOIN_CASH:
-                return Location.BITCOIN_CASH
-            case SupportedBlockchain.SOLANA:
-                return Location.SOLANA
-            case _:  # should never happen
-                raise AssertionError(f'Got in Location.from_chain for {chain}')
-
-    def is_evm(self) -> bool:
-        return self in EVM_LOCATIONS
-
-    def is_evmlike(self) -> bool:
-        return self in EVMLIKE_LOCATIONS
-
-    def is_evm_or_evmlike(self) -> bool:
-        return self in EVM_EVMLIKE_LOCATIONS
-
-    def is_bitcoin(self) -> bool:
-        return self in BITCOIN_LOCATIONS
-
-
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD, Location.SONIC, Location.ROBINHOOD, Location.INK]  # noqa: E501
-EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
-EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
-EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
-EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
-EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
-BITCOIN_LOCATIONS_TYPE = Literal[Location.BITCOIN, Location.BITCOIN_CASH]
-BITCOIN_LOCATIONS: tuple[BITCOIN_LOCATIONS_TYPE, ...] = typing.get_args(BITCOIN_LOCATIONS_TYPE)
-type BLOCKCHAIN_LOCATIONS_TYPE = EVM_EVMLIKE_LOCATIONS_TYPE | BITCOIN_LOCATIONS_TYPE | Literal[Location.SOLANA]  # noqa: E501
-BLOCKCHAIN_LOCATIONS: tuple[BLOCKCHAIN_LOCATIONS_TYPE, ...] = EVM_EVMLIKE_LOCATIONS + BITCOIN_LOCATIONS + (Location.SOLANA,)  # noqa: E501
-
-
 class ExchangeAuthCredentials(NamedTuple):
     """
     Data structure that is used for editing credentials of exchanges.
@@ -1017,29 +798,29 @@ class ExchangeApiCredentials(NamedTuple):
     The Api in question must at least have an API key.
     """
     name: str  # A unique name to identify this particular Location credentials
-    location: Location
+    location: LocationIdentifier
     api_key: ApiKey
     api_secret: ApiSecret | None
     passphrase: str | None = None
 
 
 EXTERNAL_EXCHANGES = (
-    Location.CRYPTOCOM,
-    Location.BLOCKFI,
-    Location.NEXO,
-    Location.SHAPESHIFT,
-    Location.UPHOLD,
-    Location.BISQ,
-    Location.BITMEX,
+    LOCATION_CRYPTOCOM,
+    LOCATION_BLOCKFI,
+    LOCATION_NEXO,
+    LOCATION_SHAPESHIFT,
+    LOCATION_UPHOLD,
+    LOCATION_BISQ,
+    LOCATION_BITMEX,
 )
 
 
 class ExchangeLocationID(NamedTuple):
     name: str
-    location: Location
+    location: LocationIdentifier
 
     def serialize(self) -> dict:
-        return {'name': self.name, 'location': self.location.serialize()}
+        return {'name': self.name, 'location': self.location}
 
     @classmethod
     def deserialize(
@@ -1050,7 +831,7 @@ class ExchangeLocationID(NamedTuple):
         try:
             return cls(
                 name=data['name'],
-                location=Location.deserialize(data['location']),
+                location=deserialize_location_identifier(data['location']),
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
@@ -1193,7 +974,7 @@ class AddressbookEntryWithSource(NamedTuple):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class LocationAssetMappingDeleteEntry:
-    location: Location | None
+    location: LocationIdentifier | None
     location_symbol: str
 
     @classmethod
@@ -1210,7 +991,7 @@ class LocationAssetMappingDeleteEntry:
             raise DeserializationError(f'Missing key {e!s}') from e
 
     def serialize_for_db(self) -> tuple[Any, ...]:
-        return self.location_symbol, None if self.location is None else self.location.serialize_for_db()  # noqa: E501
+        return self.location_symbol, self.location
 
     def __str__(self) -> str:
         return f'{self.location_symbol} in {self.location}'

@@ -4,11 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.tests.data_migrations.test_migrations import (
     MockRotkiForMigrationsWithExchangeManager,
 )
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -23,9 +25,9 @@ def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
     with database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT INTO user_credentials (name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
-            [('Coinbase 1', Location.COINBASE.serialize_for_db(), 'BADKEY', '', None),
-            ('Coinbase 2', Location.COINBASE.serialize_for_db(), str(uuid.uuid4()), '', None),
-            ('Coinbase 3', Location.COINBASE.serialize_for_db(), f'organizations/{uuid.uuid4()!s}/apiKeys/{uuid.uuid4()!s}', '', None)],  # noqa: E501
+            [('Coinbase 1', LOCATION_COINBASE, 'BADKEY', '', None),
+            ('Coinbase 2', LOCATION_COINBASE, str(uuid.uuid4()), '', None),
+            ('Coinbase 3', LOCATION_COINBASE, f'organizations/{uuid.uuid4()!s}/apiKeys/{uuid.uuid4()!s}', '', None)],  # noqa: E501
         )
 
     with (patch(
@@ -34,7 +36,7 @@ def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
     )):
         rotki = run_single_migration(database=database, migration=22)
 
-    assert [x.name for x in rotki.exchange_manager.connected_exchanges[Location.COINBASE]] == ['Coinbase 2', 'Coinbase 3']  # noqa: E501
+    assert [x.name for x in rotki.exchange_manager.connected_exchanges[LOCATION_COINBASE]] == ['Coinbase 2', 'Coinbase 3']  # noqa: E501
     with database.conn.read_ctx() as cursor:
         result = cursor.execute('SELECT name FROM user_credentials').fetchall()
         assert result == [('Coinbase 2',), ('Coinbase 3',)]

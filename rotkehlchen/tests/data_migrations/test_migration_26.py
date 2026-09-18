@@ -13,9 +13,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Location, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -84,7 +87,7 @@ def test_migration_26_retag_gnosis_pay_new_spender_payments(database: DBHandler)
             tx_ref=tx_ref,
             sequence_index=0,
             timestamp=TimestampMS(1780902380000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=subtype,
             asset=A_EURE,
@@ -135,7 +138,7 @@ def test_migration_26_retag_gnosis_pay_new_spender_payments(database: DBHandler)
         'WHERE H.location = ? AND EI.counterparty = ? AND H.notes LIKE ?'
     )
     backfill_bindings = (
-        Location.GNOSIS.serialize_for_db(),
+        LOCATION_GNOSIS,
         CPT_GNOSIS_PAY,
         'Spend% via Gnosis Pay',
     )

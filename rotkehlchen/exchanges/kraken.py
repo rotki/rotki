@@ -62,6 +62,9 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events_multi_fee,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -69,7 +72,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -265,7 +267,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -846,7 +848,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             return create_swap_events(
                 timestamp=timestamp,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 spend=AssetAmount(asset=spend_asset, amount=spend_amount),
                 receive=AssetAmount(asset=receive_asset, amount=receive_amount),
                 group_identifier=create_group_identifier_from_unique_id(
@@ -876,7 +878,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return create_swap_events_multi_fee(
             timestamp=timestamp,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             spend=AssetAmount(asset=spend_part.asset, amount=spend_part.amount),
             receive=AssetAmount(asset=receive_part.asset, amount=receive_part.amount),
             fees=fees,
@@ -952,7 +954,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                 swap_events.extend(create_swap_events(
                     timestamp=a1.timestamp,
-                    location=Location.KRAKEN,
+                    location=LOCATION_KRAKEN,
                     spend=AssetAmount(asset=spend_event.asset, amount=spend_event.amount),
                     receive=AssetAmount(asset=receive_event.asset, amount=receive_event.amount),
                     group_identifier=create_group_identifier_from_unique_id(
@@ -1155,7 +1157,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     for skipped_log in skipped_logs:
                         self.db.add_skipped_external_event(
                             write_cursor=write_cursor,
-                            location=Location.KRAKEN,
+                            location=LOCATION_KRAKEN,
                             data=skipped_log,
                             extra_data={
                                 'location_label': self.name,
@@ -1488,7 +1490,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                             group_identifier=identifier,
                             sequence_index=idx,
                             timestamp=timestamp,
-                            location=Location.KRAKEN,
+                            location=LOCATION_KRAKEN,
                             location_label=self.name,
                             asset=asset,
                             amount=abs(raw_amount),  # amount sign was used above to determine types now enforce positive  # noqa: E501
@@ -1505,7 +1507,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         group_identifier=identifier,
                         sequence_index=current_fee_index,
                         timestamp=timestamp,
-                        location=Location.KRAKEN,
+                        location=LOCATION_KRAKEN,
                         location_label=self.name,
                         asset=asset,
                         amount=abs(fee_amount),
@@ -1528,7 +1530,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     with self.db.user_write() as write_cursor:
                         self.db.add_skipped_external_event(
                             write_cursor=write_cursor,
-                            location=Location.KRAKEN,
+                            location=LOCATION_KRAKEN,
                             data=raw_event,
                             extra_data={'location_label': self.name},
                         )
@@ -1554,7 +1556,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 with self.db.user_write() as write_cursor:
                     self.db.add_skipped_external_event(
                         write_cursor=write_cursor,
-                        location=Location.KRAKEN,
+                        location=LOCATION_KRAKEN,
                         data=events[raw_event_idx],
                         extra_data={'location_label': self.name},
                     )

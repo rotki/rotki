@@ -9,12 +9,15 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.locations.chains import (
+    location_to_chain,
+)
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
@@ -26,8 +29,29 @@ class HistoryEventsService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
 
+    def _ensure_assignable_locations(
+            self,
+            events: list[HistoryBaseEntry],
+            allow_archived: bool,
+    ) -> dict[str, Any] | None:
+        """Error response if an event's location can not hold data, None otherwise.
+        Edits accept archived locations so that their history stays editable."""
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for location in {event.location for event in events}:
+                try:
+                    DBLocations().validate_assignable(
+                        cursor=cursor,
+                        identifier=location,
+                        allow_archived=allow_archived,
+                    )
+                except InputError as e:
+                    return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}  # noqa: E501
+        return None
+
     def add_history_events(self, events: list[HistoryBaseEntry]) -> dict[str, Any]:
         if (error := self._ensure_event_tx_existence(events[0])) is not None:
+            return error
+        if (error := self._ensure_assignable_locations(events, allow_archived=False)) is not None:
             return error
 
         db = DBHistoryEvents(self.rotkehlchen.data.db)
@@ -72,6 +96,8 @@ class HistoryEventsService:
             identifiers: list[int] | None,
     ) -> dict[str, Any]:
         if (error := self._ensure_event_tx_existence(events[0])) is not None:
+            return error
+        if (error := self._ensure_assignable_locations(events, allow_archived=True)) is not None:
             return error
 
         events_db = DBHistoryEvents(self.rotkehlchen.data.db)
@@ -145,7 +171,7 @@ class HistoryEventsService:
         if not isinstance(event, EvmEvent):
             return None
 
-        blockchain = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type]
+        blockchain = location_to_chain(event.location)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             table = 'zksynclite_transactions' if blockchain.is_evmlike() else 'evm_transactions'
             if cursor.execute(
@@ -181,6 +207,6 @@ class HistoryEventsService:
 
         return {
             'result': None,
-            'message': f'The provided transaction hash does not exist for {event.location.name.lower()}.',  # noqa: E501
+            'message': f'The provided transaction hash does not exist for {event.location}.',
             'status_code': HTTPStatus.BAD_REQUEST,
         }

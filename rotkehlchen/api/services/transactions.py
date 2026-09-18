@@ -40,6 +40,13 @@ from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import AlreadyExists, DataIntegrityError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
@@ -59,7 +66,6 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS_TYPE,
     ExternalService,
     ListOfBlockchainAddresses,
-    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -413,11 +419,11 @@ class TransactionsService:
                 dbevents.delete_events_by_tx_ref(
                     write_cursor=write_cursor,
                     tx_refs=[tx_ref],
-                    location=Location.from_chain(chain),  # type: ignore[arg-type]
+                    location=location_from_chain(chain),  # type: ignore[arg-type]
                 )
             else:
                 chains = [chain] if chain is not None else CHAINS_WITH_TRANSACTIONS
-                for chain_location in [Location.from_chain(i_chain) for i_chain in chains]:
+                for chain_location in [location_from_chain(i_chain) for i_chain in chains]:
                     dbevents.reset_events_for_redecode(
                         write_cursor=write_cursor,
                         location=chain_location,
@@ -465,7 +471,7 @@ class TransactionsService:
                 else:  # its events were already deleted above
                     DBBitcoinTx(self.rotkehlchen.data.db).delete_transactions(
                         write_cursor=write_cursor,
-                        location=Location.from_chain(chain),
+                        location=location_from_chain(chain),
                         tx_ids=[tx_ref],  # type: ignore[list-item]  # is a BTCTxId for bitcoin chains
                     )
 
@@ -636,7 +642,7 @@ class TransactionsService:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
                     dbevents.reset_events_for_redecode(
                         write_cursor=write_cursor,
-                        location=Location.from_chain(chain),
+                        location=location_from_chain(chain),
                     )
 
                 if chain == SupportedBlockchain.ETHEREUM:
@@ -702,8 +708,8 @@ class TransactionsService:
             for chain in EVM_CHAINS_WITH_TRANSACTIONS
         }
         bitcoin_chains = {
-            Location.BITCOIN.serialize_for_db(): SupportedBlockchain.BITCOIN.serialize(),
-            Location.BITCOIN_CASH.serialize_for_db(): SupportedBlockchain.BITCOIN_CASH.serialize(),
+            LOCATION_BITCOIN: SupportedBlockchain.BITCOIN.serialize(),
+            LOCATION_BITCOIN_CASH: SupportedBlockchain.BITCOIN_CASH.serialize(),
         }
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -1153,9 +1159,9 @@ class TransactionsService:
         DBBitcoinTx(self.rotkehlchen.data.db).delete_transactions(
             write_cursor=write_cursor,
             location=(
-                Location.BITCOIN
+                LOCATION_BITCOIN
                 if cache_key == DBCacheDynamic.LAST_BTC_TX_BLOCK
-                else Location.BITCOIN_CASH
+                else LOCATION_BITCOIN_CASH
             ),
         )
         self.rotkehlchen.data.db.delete_dynamic_caches(

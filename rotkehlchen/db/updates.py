@@ -24,6 +24,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
@@ -31,7 +32,6 @@ from rotkehlchen.types import (
     AddressbookType,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     OptionalChainAddress,
@@ -493,7 +493,7 @@ class RotkiDataUpdater:
                     if (asset_id := raw_entry.get('asset')) is not None:
                         raw_entry['asset'] = Asset(asset_id)
                     if (raw_location := raw_entry.get('location')) is not None:
-                        raw_entry['location'] = Location.deserialize(raw_location)
+                        raw_entry['location'] = deserialize_builtin_location(raw_location)
                     entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # they all implement deserialize()
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')

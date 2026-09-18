@@ -18,13 +18,15 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -553,7 +555,7 @@ class GnosisPay:
                 'FROM history_events H '
                 'INNER JOIN chain_events_info EI ON EI.identifier = H.identifier '
                 'WHERE H.location = ? AND EI.counterparty = ? AND H.notes LIKE ?',
-                (Location.GNOSIS.serialize_for_db(), CPT_GNOSIS_PAY, 'Spend% via Gnosis Pay'),
+                (LOCATION_GNOSIS, CPT_GNOSIS_PAY, 'Spend% via Gnosis Pay'),
             )
             for raw_tx_hash, timestamp_ms in cursor:
                 if raw_tx_hash is None or timestamp_ms is None:
@@ -607,7 +609,7 @@ class GnosisPay:
                 filter_query=EvmEventFilterQuery.make(
                     tx_hashes=[transaction.tx_hash],
                     counterparties=[CPT_GNOSIS_PAY],
-                    location=Location.GNOSIS,
+                    location=LOCATION_GNOSIS,
                 ),
             )
 

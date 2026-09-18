@@ -4,9 +4,15 @@ from unittest.mock import patch
 
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BITPANDA,
+    LOCATION_KRAKEN,
+    LOCATION_KUCOIN,
+)
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -46,10 +52,10 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
     )
 
     exchange_manager.initialize_exchanges({}, database)
-    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken1)
-    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken2)
-    exchange_manager.connected_exchanges[Location.BINANCE].append(binance1)
-    exchange_manager.connected_exchanges[Location.BINANCE].append(binance2)
+    exchange_manager.connected_exchanges[LOCATION_KRAKEN].append(kraken1)
+    exchange_manager.connected_exchanges[LOCATION_KRAKEN].append(kraken2)
+    exchange_manager.connected_exchanges[LOCATION_BINANCE].append(binance1)
+    exchange_manager.connected_exchanges[LOCATION_BINANCE].append(binance2)
     assert set(exchange_manager.iterate_exchanges()) == {kraken1, kraken2, binance1, binance2}
 
     with database.user_write() as cursor:
@@ -85,8 +91,8 @@ def test_query_exchange_history_events_respects_non_syncing(
     )
 
     exchange_manager.initialize_exchanges({}, database)
-    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken1)
-    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken2)
+    exchange_manager.connected_exchanges[LOCATION_KRAKEN].append(kraken1)
+    exchange_manager.connected_exchanges[LOCATION_KRAKEN].append(kraken2)
 
     with database.user_write() as cursor:
         database.set_settings(cursor, ModifiableDBSettings(
@@ -95,7 +101,7 @@ def test_query_exchange_history_events_respects_non_syncing(
 
     with patch.object(kraken1, 'query_history_events') as kraken1_query, \
             patch.object(kraken2, 'query_history_events') as kraken2_query:
-        exchange_manager.query_exchange_history_events(location=Location.KRAKEN, name=None)
+        exchange_manager.query_exchange_history_events(location=LOCATION_KRAKEN, name=None)
 
         kraken1_query.assert_not_called()
         kraken2_query.assert_called_once()
@@ -103,7 +109,7 @@ def test_query_exchange_history_events_respects_non_syncing(
 
 TEST_CREDENTIALS_1 = ExchangeApiCredentials(
     name='KuCoin',
-    location=Location.KUCOIN,
+    location=LOCATION_KUCOIN,
     api_key=ApiKey('api-key-1'),
     api_secret=ApiSecret(b'api-secret-1'),
     passphrase='passphrase-1',
@@ -111,7 +117,7 @@ TEST_CREDENTIALS_1 = ExchangeApiCredentials(
 
 TEST_CREDENTIALS_2 = ExchangeApiCredentials(
     name='KuCoin',
-    location=Location.KUCOIN,
+    location=LOCATION_KUCOIN,
     api_key=ApiKey('api-key-2'),
     api_secret=ApiSecret(b'api-secret-2'),
     passphrase='passphrase-2',
@@ -119,7 +125,7 @@ TEST_CREDENTIALS_2 = ExchangeApiCredentials(
 
 TEST_CREDENTIALS_3 = ExchangeApiCredentials(
     name='KuCoin',
-    location=Location.KUCOIN,
+    location=LOCATION_KUCOIN,
     api_key=ApiKey('api-key-3'),
     api_secret=ApiSecret(b'api-secret-3'),
     passphrase='passphrase-3',
@@ -142,7 +148,7 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
     def get_current_credentials(kucoin) -> ExchangeApiCredentials:
         return ExchangeApiCredentials(
             name=kucoin.name,
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             api_key=kucoin.api_key,
             api_secret=kucoin.secret,
             passphrase=kucoin.api_passphrase,
@@ -152,24 +158,24 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
         # Setup with correct credentials
         rotki.setup_exchange(
             name='KuCoin',
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             api_key=TEST_CREDENTIALS_1.api_key,
             api_secret=TEST_CREDENTIALS_1.api_secret,
             passphrase=TEST_CREDENTIALS_1.passphrase,
         )
-        kucoin = rotki.exchange_manager.connected_exchanges[Location.KUCOIN][0]
+        kucoin = rotki.exchange_manager.connected_exchanges[LOCATION_KUCOIN][0]
         with rotki.data.db.conn.read_ctx() as cursor:
             credentials_in_db = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
-                location=Location.KUCOIN,
+                location=LOCATION_KUCOIN,
                 name='KuCoin',
-            )[Location.KUCOIN][0]
+            )[LOCATION_KUCOIN][0]
             assert credentials_in_db == get_current_credentials(kucoin) == TEST_CREDENTIALS_1
 
         # Try to change credentials to incorrect ones
         success, _ = rotki.exchange_manager.edit_exchange(
             name='KuCoin',
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             new_name=None,
             api_key=TEST_CREDENTIALS_2.api_key,
             api_secret=TEST_CREDENTIALS_2.api_secret,
@@ -184,15 +190,15 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
         with rotki.data.db.conn.read_ctx() as cursor:
             credentials_in_db = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
-                location=Location.KUCOIN,
+                location=LOCATION_KUCOIN,
                 name='KuCoin',
-            )[Location.KUCOIN][0]
+            )[LOCATION_KUCOIN][0]
             assert credentials_in_db == get_current_credentials(kucoin) == TEST_CREDENTIALS_1, 'Credentials should not have changed'  # noqa: E501
 
         # Change credentials to correct ones
         success, _ = rotki.exchange_manager.edit_exchange(
             name='KuCoin',
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             new_name=None,
             api_key=TEST_CREDENTIALS_3.api_key,
             api_secret=TEST_CREDENTIALS_3.api_secret,
@@ -207,9 +213,9 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
         with rotki.data.db.conn.read_ctx() as cursor:
             credentials_in_db = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
-                location=Location.KUCOIN,
+                location=LOCATION_KUCOIN,
                 name='KuCoin',
-            )[Location.KUCOIN][0]
+            )[LOCATION_KUCOIN][0]
             assert credentials_in_db == get_current_credentials(kucoin) == TEST_CREDENTIALS_3
 
 
@@ -223,7 +229,7 @@ def test_delete_cannot_interleave_with_setup_persistence(
     delete_results: list[tuple[bool, str]] = []
     original_add_exchange = rotki.data.db.add_exchange
     delete_thread = threading.Thread(target=lambda: delete_results.append(
-        rotki.exchange_manager.delete_exchange(name='KuCoin', location=Location.KUCOIN),
+        rotki.exchange_manager.delete_exchange(name='KuCoin', location=LOCATION_KUCOIN),
     ))
 
     def add_exchange_racing_a_delete(*args: Any, **kwargs: Any) -> None:
@@ -238,7 +244,7 @@ def test_delete_cannot_interleave_with_setup_persistence(
     ):
         success, msg = rotki.setup_exchange(
             name='KuCoin',
-            location=Location.KUCOIN,
+            location=LOCATION_KUCOIN,
             api_key=TEST_CREDENTIALS_1.api_key,
             api_secret=TEST_CREDENTIALS_1.api_secret,
             passphrase=TEST_CREDENTIALS_1.passphrase,
@@ -249,9 +255,9 @@ def test_delete_cannot_interleave_with_setup_persistence(
 
     # the delete ran after the setup completed, leaving no leftovers anywhere
     assert delete_results == [(True, '')]
-    assert Location.KUCOIN not in rotki.exchange_manager.connected_exchanges
+    assert LOCATION_KUCOIN not in rotki.exchange_manager.connected_exchanges
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert Location.KUCOIN not in rotki.data.db.get_exchange_credentials(cursor)
+        assert LOCATION_KUCOIN not in rotki.data.db.get_exchange_credentials(cursor)
 
 
 def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: APIServer) -> None:
@@ -260,7 +266,7 @@ def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: AP
     with patch('rotkehlchen.exchanges.binance.Binance.validate_api_key', return_value=(True, '')):
         rotki.setup_exchange(
             name='binance 1',
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             api_key=make_api_key(),
             api_secret=make_api_secret(),
             binance_selected_trade_pairs=expected_trade_pairs,
@@ -275,10 +281,10 @@ def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: AP
             database=rotki.data.db,
         )
 
-    assert Location.BINANCE in rotki.exchange_manager.connected_exchanges
-    assert len(rotki.exchange_manager.connected_exchanges[Location.BINANCE]) == 1
+    assert LOCATION_BINANCE in rotki.exchange_manager.connected_exchanges
+    assert len(rotki.exchange_manager.connected_exchanges[LOCATION_BINANCE]) == 1
 
-    selected_pairs = rotki.exchange_manager.connected_exchanges[Location.BINANCE][0].selected_pairs  # type: ignore[attr-defined] # binance has the attribute present
+    selected_pairs = rotki.exchange_manager.connected_exchanges[LOCATION_BINANCE][0].selected_pairs  # type: ignore[attr-defined] # binance has the attribute present
     assert isinstance(selected_pairs, list)
     assert selected_pairs == expected_trade_pairs
 
@@ -294,13 +300,13 @@ def test_bitpanda_credentials_in_db(database: DBHandler) -> None:
     with database.conn.write_ctx() as write_cursor:
         write_cursor.execute(
             'INSERT INTO user_credentials(name, location, api_key) VALUES (?, ?, ?)',
-            ('Bitpanda 1', Location.BITPANDA.serialize_for_db(), make_api_key()),
+            ('Bitpanda 1', LOCATION_BITPANDA, make_api_key()),
         )
 
     with database.conn.read_ctx() as cursor:
         credentials = database.get_exchange_credentials(
             cursor=cursor,
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
         )
 
-    assert len(credentials[Location.BITPANDA]) == 1
+    assert len(credentials[LOCATION_BITPANDA]) == 1

@@ -14,8 +14,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -31,7 +34,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: EthereumInquirer, ethereum_acco
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1702156943000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -42,7 +45,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: EthereumInquirer, ethereum_acco
             tx_ref=tx_hash,
             sequence_index=82,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(BLUR_IDENTIFIER),
@@ -55,7 +58,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: EthereumInquirer, ethereum_acco
             tx_ref=tx_hash,
             sequence_index=83,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
@@ -78,7 +81,7 @@ def test_blur_stake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1715478947000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -89,7 +92,7 @@ def test_blur_stake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list
             tx_ref=tx_hash,
             sequence_index=154,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
@@ -111,7 +114,7 @@ def test_blur_unstake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: li
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1716377543000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -122,7 +125,7 @@ def test_blur_unstake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: li
         ), EvmEvent(
             sequence_index=242,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(BLUR_IDENTIFIER),

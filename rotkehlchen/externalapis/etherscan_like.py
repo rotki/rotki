@@ -22,6 +22,9 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import get_earliest_ts
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -38,7 +41,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
-    Location,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -669,7 +671,7 @@ class EtherscanLikeApi(ABC):
                             dbevents.delete_events_by_tx_ref(
                                 write_cursor=write_cursor,
                                 tx_refs=[GENESIS_HASH],
-                                location=Location.from_chain_id(chain_id.to_blockchain()),  # type: ignore
+                                location=location_from_chain_id(chain_id.to_blockchain()),  # type: ignore
                             )
                             write_cursor.execute(
                                 'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '

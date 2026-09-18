@@ -10,13 +10,16 @@ from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_QONTO,
+)
 from rotkehlchen.tests.utils.banks import (
     BANK_FIXTURES_DIR,
     QontoFixtureTransport,
     patch_bank_transport,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -37,7 +40,7 @@ def test_event_mapping_per_operation_type(qonto):
     with patch_bank_transport(qonto, transport):
         events, _ = qonto.query_online_history_events(Timestamp(0), ts_now())
     raw_by_group_id = {
-        create_group_identifier_from_unique_id(Location.QONTO, t['id']): t
+        create_group_identifier_from_unique_id(LOCATION_QONTO, t['id']): t
         for t in transport.transactions
     }
     assert len(events) == 28

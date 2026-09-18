@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import FiatAsset
-from rotkehlchen.banks.constants import SUPPORTED_BANKS
+from rotkehlchen.banks.constants import FINTS_CONNECTOR, SUPPORTED_BANKS
 from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchemaDrift
 from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
@@ -27,7 +27,7 @@ from rotkehlchen.tests.utils.banks import (
     QontoFixtureTransport,
     patch_bank_transport,
 )
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 ALLOWED_EVENT_TYPES = {
@@ -77,7 +77,7 @@ def test_manifest_is_valid_and_registered(kit: BankConnectorKit):
 @KITS
 def test_manifest_serializes_to_plain_json_types(kit: BankConnectorKit):
     serialized = kit.connector_class.manifest.serialize()
-    assert serialized['location'] == kit.location.serialize()
+    assert serialized['location'] == kit.location
     assert isinstance(serialized['access_tier'], str)
     assert all(isinstance(step['primitive'], str) for step in serialized['auth_flow'])
     assert all({'slot', 'label', 'description'} <= set(s) for s in serialized['secrets'])
@@ -118,7 +118,7 @@ def test_normalization_output(kit: BankConnectorKit, database, function_scope_me
     for event in events:
         assert isinstance(event, BankTransactionEvent)
         assert event.entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT
-        assert event.location == connector.data_location != Location.FINTS
+        assert event.location == connector.data_location != FINTS_CONNECTOR
         assert event.location_label == connector.name
         assert event.sequence_index == 0
         assert (event.event_type, event.event_subtype) in ALLOWED_EVENT_TYPES
@@ -266,4 +266,4 @@ def test_purge_local_state_on_removal(kit: BankConnectorKit, database, function_
 
 def test_location_is_a_bank_only_once():
     assert len(set(SUPPORTED_BANKS)) == len(SUPPORTED_BANKS)
-    assert all(isinstance(location, Location) for location in SUPPORTED_BANKS)
+    assert all(isinstance(location, str) for location in SUPPORTED_BANKS)

@@ -19,6 +19,9 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.constants import A_AIR2
 from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
@@ -26,7 +29,7 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_TRADES_RESPONSE,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
@@ -51,42 +54,42 @@ TEST_POLO_TRADE = {
 
 def test_name():
     exchange = Poloniex('poloniex1', 'a', b'a', object(), object())
-    assert exchange.location == Location.POLONIEX
+    assert exchange.location == LOCATION_POLONIEX
     assert exchange.name == 'poloniex1'
 
 
 def test_trade_from_poloniex():
     assert trade_from_poloniex(exchange_name=(exchange_name := 'poloniex1'), poloniex_trade=TEST_POLO_TRADE) == [SwapEvent(  # noqa: E501
         timestamp=TimestampMS(1500758317000),
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(TEST_AMOUNT_STR),
         location_label=exchange_name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             unique_id='192167',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1500758317000),
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.1411665444631867'),
         location_label=exchange_name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             unique_id='192167',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1500758317000),
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal(TEST_FEE_STR),
         location_label=exchange_name,
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             unique_id='192167',
         ),
     )]
@@ -157,7 +160,7 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert events[0].asset == A_BTC
     assert events[1].asset == A_AIR2
     assert events[2].asset == A_AIR2
-    assert events[0].location == Location.POLONIEX
+    assert events[0].location == LOCATION_POLONIEX
     assert all(event.location_label == exchange_name for event in events)
 
 
@@ -176,67 +179,67 @@ def test_query_trade_history(poloniex: Poloniex):
         )
         assert events == [SwapEvent(
             timestamp=TimestampMS(1539713117000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BCH,
             amount=FVal('1.40308443'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='394131412',
             ),
             location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=FVal('0.0973073287465092'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='394131412',
             ),
             location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('0.00009730732'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='394131412',
             ),
             location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=FVal('0.1235704463578728'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='13536350',
             ),
             location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('3600.53748129'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='13536350',
             ),
             location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('7.20107496258'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 unique_id='13536350',
             ),
             location_label=poloniex.name,
@@ -438,7 +441,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
         )
 
     assert asset_movements == [AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1458994442000),
@@ -450,7 +453,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
             'transaction_id': '2d27ae26fa9c70d6709e27ac94d4ce2fde19b3986926e9f3bfcf3e2d68354ec5',
         },
     ), AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1458994442000),
@@ -458,7 +461,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
         amount=FVal('0.5'),
         unique_id='withdrawal_1',
     ), AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1468994442000),
@@ -470,7 +473,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
             'transaction_id': '0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4',
         },
     ), AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1468994442000),
@@ -478,7 +481,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
         amount=FVal('0.1'),
         unique_id='withdrawal_2',
     ), AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1448994442000),
@@ -490,7 +493,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
             'transaction_id': 'b05bdec7430a56b5a5ed34af4a31a54859dda9b7c88a5586bc5d6540cdfbfc7a',
         },
     ), AssetMovement(
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         location_label=poloniex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1438994442000),

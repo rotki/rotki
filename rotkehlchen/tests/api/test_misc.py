@@ -9,12 +9,19 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.api.session_store import SessionStore
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.catalog import load_builtin_catalog
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -22,7 +29,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain
+from rotkehlchen.types import ChainID, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
 
 if TYPE_CHECKING:
@@ -605,7 +612,7 @@ def test_query_all_chain_ids(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.BINANCE)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_KRAKEN, LOCATION_BINANCE)])
 def test_events_mappings(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """
     Test different mappings and information that we provide for rendering events information
@@ -652,9 +659,11 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges: APIServer) -> No
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    excluded_locations = {Location.TOTAL}
-    valid_locations = {location.serialize() for location in Location if location not in excluded_locations}  # noqa: E501
-    assert set(result['locations'].keys()) == valid_locations
+    assert set(result['locations'].keys()) == {  # every built-in, legacy location and fints
+        *(x.identifier for x in load_builtin_catalog()),
+        *(x[0] for x in V53_LEGACY_LOCATION_CHARS.values()),
+        FINTS_CONNECTOR,
+    }
     for detail in result['locations'].values():
         assert 'icon' in detail or 'image' in detail
 

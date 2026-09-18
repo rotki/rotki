@@ -18,13 +18,16 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_GEMINI,
+)
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
 )
 from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -141,68 +144,68 @@ def test_gemini_query_trades(sandbox_gemini):
 
     assert events == [SwapEvent(
         timestamp=TimestampMS(1584720549000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('3311.315'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560627330',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1584720549000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.5'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560627330',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1584720549000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('33.11315'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560627330',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('1'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560628883',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USD,
         amount=FVal('20.00'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560628883',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.20'),
         location_label='gemini',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             unique_id='560628883',
         ),
     )]
@@ -317,13 +320,13 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     with sandbox_gemini.db.conn.read_ctx() as cursor:
         movements = DBHistoryEvents(sandbox_gemini.db).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.GEMINI),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_GEMINI),
         )
 
     assert len(movements) == 6
     expected_movements = [AssetMovement(
         identifier=1,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1535451930000),
@@ -336,7 +339,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         },
     ), AssetMovement(
         identifier=6,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1507913541000),
@@ -345,7 +348,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         unique_id='320013281',
     ), AssetMovement(
         identifier=5,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1499990797000),
@@ -355,7 +358,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         extra_data={'transaction_id': '605c5fa8bf99458d24d61e09941bc443ddc44839d9aaa508b14b296c0c8269b2'},  # noqa: E501
     ), AssetMovement(
         identifier=4,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1495550176000),
@@ -365,7 +368,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         extra_data={'transaction_id': '163eeee4741f8962b748289832dd7f27f754d892f5d23bf3ea6fba6e350d9ce3'},  # noqa: E501
     ), AssetMovement(
         identifier=3,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1458862076000),
@@ -374,7 +377,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         unique_id='265799530',
     ), AssetMovement(
         identifier=2,
-        location=Location.GEMINI,
+        location=LOCATION_GEMINI,
         location_label=sandbox_gemini.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1450403787000),

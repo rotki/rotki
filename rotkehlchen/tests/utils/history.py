@@ -14,6 +14,12 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BITMEX,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.constants import (
     A_EUR,
     ETH_ADDRESS1,
@@ -26,7 +32,6 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -37,6 +42,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.utils.kraken import MockKraken
+    from rotkehlchen.types import Timestamp
 
 TEST_END_TS = 1559427707
 
@@ -496,7 +502,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         return MockResponse(200, payload)
 
     # TODO: Turn this into a loop of all exchanges and return a list of patches
-    poloniex_objects = rotki.exchange_manager.connected_exchanges.get(Location.POLONIEX, None)
+    poloniex_objects = rotki.exchange_manager.connected_exchanges.get(LOCATION_POLONIEX, None)
     poloniex = None if poloniex_objects is None else poloniex_objects[0]
     polo_patch = None
     if poloniex:
@@ -506,7 +512,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_poloniex_api_queries,
         )
 
-    binance_objects = rotki.exchange_manager.connected_exchanges.get(Location.BINANCE, None)
+    binance_objects = rotki.exchange_manager.connected_exchanges.get(LOCATION_BINANCE, None)
     binance = None if binance_objects is None else binance_objects[0]
     binance_patch = None
     if binance:
@@ -516,7 +522,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_binance_api_queries,
         )
 
-    bitmex_objects = rotki.exchange_manager.connected_exchanges.get(Location.BITMEX, None)
+    bitmex_objects = rotki.exchange_manager.connected_exchanges.get(LOCATION_BITMEX, None)
     bitmex = None if bitmex_objects is None else bitmex_objects[0]
     bitmex_patch = None
     if bitmex:
@@ -583,87 +589,87 @@ def mock_history_processing(
         asset_movements = [x for x in events if isinstance(x, AssetMovement)]
         assert len(asset_movements) == expected_asset_movements_num
         if not limited_range_test:
-            assert asset_movements[0].location == Location.KRAKEN
+            assert asset_movements[0].location == LOCATION_KRAKEN
             assert asset_movements[0].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[0].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[0].asset == A_BTC
-            assert asset_movements[1].location == Location.KRAKEN
+            assert asset_movements[1].location == LOCATION_KRAKEN
             assert asset_movements[1].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[1].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[1].asset == A_BTC
-            assert asset_movements[2].location == Location.POLONIEX
+            assert asset_movements[2].location == LOCATION_POLONIEX
             assert asset_movements[2].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[2].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[2].asset == A_ETH
-            assert asset_movements[3].location == Location.KRAKEN
+            assert asset_movements[3].location == LOCATION_KRAKEN
             assert asset_movements[3].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[3].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[3].asset == A_ETH
-            assert asset_movements[4].location == Location.KRAKEN
+            assert asset_movements[4].location == LOCATION_KRAKEN
             assert asset_movements[4].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[4].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[4].asset == A_ETH
-            assert asset_movements[5].location == Location.KRAKEN
+            assert asset_movements[5].location == LOCATION_KRAKEN
             assert asset_movements[5].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[5].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[5].asset == A_ETH
-            assert asset_movements[6].location == Location.KRAKEN
+            assert asset_movements[6].location == LOCATION_KRAKEN
             assert asset_movements[6].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[6].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[6].asset == A_ETH
-            assert asset_movements[7].location == Location.KRAKEN
+            assert asset_movements[7].location == LOCATION_KRAKEN
             assert asset_movements[7].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[7].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[7].asset == A_ETH
-            assert asset_movements[8].location == Location.POLONIEX
+            assert asset_movements[8].location == LOCATION_POLONIEX
             assert asset_movements[8].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[8].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[8].asset == A_BTC
-            assert asset_movements[9].location == Location.KRAKEN
+            assert asset_movements[9].location == LOCATION_KRAKEN
             assert asset_movements[9].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[9].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[9].asset == A_EUR
-            assert asset_movements[10].location == Location.KRAKEN
+            assert asset_movements[10].location == LOCATION_KRAKEN
             assert asset_movements[10].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[10].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[10].asset == A_EUR
-            assert asset_movements[11].location == Location.KRAKEN
+            assert asset_movements[11].location == LOCATION_KRAKEN
             assert asset_movements[11].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[11].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[11].asset == A_BTC
-            assert asset_movements[12].location == Location.POLONIEX
+            assert asset_movements[12].location == LOCATION_POLONIEX
             assert asset_movements[12].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[12].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[12].asset == A_BTC
-            assert asset_movements[13].location == Location.POLONIEX
+            assert asset_movements[13].location == LOCATION_POLONIEX
             assert asset_movements[13].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[13].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[13].asset == A_BTC
-            assert asset_movements[14].location == Location.POLONIEX
+            assert asset_movements[14].location == LOCATION_POLONIEX
             assert asset_movements[14].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[14].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[14].asset == A_ETH
-            assert asset_movements[15].location == Location.POLONIEX
+            assert asset_movements[15].location == LOCATION_POLONIEX
             assert asset_movements[15].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[15].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[15].asset == A_ETH
-            assert asset_movements[16].location == Location.BITMEX
+            assert asset_movements[16].location == LOCATION_BITMEX
             assert asset_movements[16].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[16].event_subtype == HistoryEventSubType.RECEIVE
             assert asset_movements[16].asset == A_BTC
-            assert asset_movements[17].location == Location.BITMEX
+            assert asset_movements[17].location == LOCATION_BITMEX
             assert asset_movements[17].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[17].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[17].asset == A_BTC
-            assert asset_movements[18].location == Location.BITMEX
+            assert asset_movements[18].location == LOCATION_BITMEX
             assert asset_movements[18].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[18].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[18].asset == A_BTC
-            assert asset_movements[19].location == Location.BITMEX
+            assert asset_movements[19].location == LOCATION_BITMEX
             assert asset_movements[19].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[19].event_subtype == HistoryEventSubType.SPEND
             assert asset_movements[19].asset == A_BTC
-            assert asset_movements[20].location == Location.BITMEX
+            assert asset_movements[20].location == LOCATION_BITMEX
             assert asset_movements[20].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[20].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[20].asset == A_BTC
@@ -869,7 +875,7 @@ def prepare_rotki_for_history_processing_test(
     Makes sure blockchain accounts are loaded, kraken does not generate random trades
     and that all mocks are ready.
     """
-    kraken = cast('MockKraken', rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore
+    kraken = cast('MockKraken', rotki.exchange_manager.connected_exchanges.get(LOCATION_KRAKEN)[0])  # type: ignore
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors

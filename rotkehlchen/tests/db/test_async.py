@@ -11,7 +11,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKCHAIN,
+)
+from rotkehlchen.types import TimestampMS
 
 
 def make_history_event():
@@ -19,7 +22,7 @@ def make_history_event():
         group_identifier=uuid4().hex,
         sequence_index=0,
         timestamp=TimestampMS(randint(1000, 16433333000)),
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         asset=A_ETH,
         amount=FVal(randint(1, 1642323)),
         event_type=HistoryEventType.SPEND,

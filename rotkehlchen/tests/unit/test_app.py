@@ -9,10 +9,13 @@ from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_random_bytes
-from rotkehlchen.types import Location
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):
@@ -37,16 +40,16 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
         passphrase = None
         if location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = 'supersecretpassphrase'
-        if location == Location.COINBASE:
+        if location == LOCATION_COINBASE:
             credentials.append(
-                (str(location), location.serialize_for_db(), str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)).decode(), passphrase),  # noqa: E501
+                (str(location), location, str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)).decode(), passphrase),  # noqa: E501
             )
         else:
             credentials.append(
-                (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member
+                (str(location), location, make_api_key(), make_api_secret().decode(), passphrase),  # pylint: disable=no-member
             )
     credentials.append(
-        ('rotkehlchen', Location.EXTERNAL.serialize_for_db(), make_api_key(), make_api_secret().decode(), None),  # noqa: E501  # pylint: disable=no-member
+        ('rotkehlchen', LOCATION_EXTERNAL, make_api_key(), make_api_secret().decode(), None),  # pylint: disable=no-member
     )
     cursor = rotki.data.db.conn.cursor()
     for entry in credentials:
