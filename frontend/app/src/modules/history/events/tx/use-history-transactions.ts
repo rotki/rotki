@@ -116,6 +116,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       id: repullTransactionsActivityId(payload),
       kind: ActivityKind.REPULLING,
       rerunnable: false,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingTransactionResponse | undefined, TaskError>> => mapResult(
         await runTask<RepullingTransactionResponse>(
           async () => repullingTransactionsCaller(payload),
@@ -161,6 +162,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       ),
       kind: ActivityKind.REPULLING,
       rerunnable: false,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingExchangeEventsResponse, TaskError>> => mapResult(
         await runTask<RepullingExchangeEventsResponse>(
           async () => repullingExchangeEventsCaller(payload),
@@ -209,6 +211,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       ),
       kind: ActivityKind.REPULLING,
       rerunnable: false,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingEthStakingResponse, TaskError>> => mapResult(
         await runTask<RepullingEthStakingResponse>(
           async () => repullingEthStakingEventsCaller(payload),

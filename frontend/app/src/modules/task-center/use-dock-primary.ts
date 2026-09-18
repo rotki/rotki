@@ -25,28 +25,42 @@ function rankOf(job: PendingJob): number {
   return globalKindRank(job.activity.kind) ?? Number.POSITIVE_INFINITY;
 }
 
+function isNamed(job: PendingJob): boolean {
+  return Boolean(job.activity.userStarted) || Number.isFinite(rankOf(job));
+}
+
+/** Whether `job` should be named ahead of `best`: a job the user started first, then the better kind. */
+function outranks(job: PendingJob, best: PendingJob): boolean {
+  const started = Boolean(job.activity.userStarted);
+  if (started !== Boolean(best.activity.userStarted))
+    return started;
+  return rankOf(job) < rankOf(best);
+}
+
 /**
  * Picks the one job the dock's pill names while work is in flight.
  *
  * @remarks
  * The pill names one job rather than a total. Kinds report progress in different units, so a
  * combined figure would compare leaves with events, and averaging percentages makes the bar jump
- * whenever a job starts or ends. The primary job is the best-ranked job by `globalKindRank`, which
- * ranks the data a user waits to look at; with none of those running it is the first job in
- * flight, and the pill describes it generically rather than naming upkeep such as a price refresh.
+ * whenever a job starts or ends. A job the user started comes first, whatever its kind, since it
+ * is the one they are waiting on. After that the primary job is the best-ranked job by
+ * `globalKindRank`, which ranks the data a user waits to look at; with none of those running it is
+ * the first job in flight, and the pill describes it generically rather than naming upkeep such as
+ * a price refresh the user did not ask for.
  */
 export function useDockPrimary(
   jobs: MaybeRefOrGetter<PendingJob[]>,
   children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
 ): UseDockPrimaryReturn {
   const primary = computed<PendingJob | undefined>(() => toValue(jobs).reduce<PendingJob | undefined>(
-    (best, job) => (best === undefined || rankOf(job) < rankOf(best) ? job : best),
+    (best, job) => (best === undefined || outranks(job, best) ? job : best),
     undefined,
   ));
 
   const isPrimaryRanked = computed<boolean>(() => {
     const job = get(primary);
-    return job !== undefined && Number.isFinite(rankOf(job));
+    return job !== undefined && isNamed(job);
   });
 
   const primarySteps = computed<ActivitySteps | undefined>(() => {

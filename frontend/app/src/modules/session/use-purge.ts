@@ -51,6 +51,7 @@ export function useSessionPurge(): UseSessionPurge {
       id: protocolCacheActivityId(),
       kind: ActivityKind.PROTOCOL_CACHE,
       rerunnable: true,
+      userStarted: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(
           async () => refreshGeneralCacheTask(source),

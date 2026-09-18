@@ -32,6 +32,8 @@ interface BatchUmbrella extends BatchLabels {
    * subjects and the umbrella is only their container.
    */
   readonly container?: boolean;
+  /** See {@link ActivitySpec.userStarted}. The children carry their own, for the one-item case. */
+  readonly userStarted?: boolean;
 }
 
 interface UseActivityBatchReturn {
@@ -90,6 +92,7 @@ export function useActivityBatch(): UseActivityBatchReturn {
       },
       subtitle: umbrella.subtitle,
       title: umbrella.title,
+      userStarted: umbrella.userStarted,
     });
 
     const work = items.map(async item => run(item, batchId));
