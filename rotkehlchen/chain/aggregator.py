@@ -33,6 +33,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules import MODULE_NAME_TO_PATH
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.across.balances import AcrossBalances
+from rotkehlchen.chain.ethereum.modules.aztec.balances import AztecBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
@@ -204,6 +205,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (
         Compoundv3Balances,
         AcrossBalances,
+        AztecBalances,
         CurveBalances,  # only needed in ethereum, because other chains have new gauge contracts
         ConvexBalances,
         OctantBalances,
