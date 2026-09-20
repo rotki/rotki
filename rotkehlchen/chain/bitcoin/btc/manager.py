@@ -60,8 +60,9 @@ class BitcoinManager(BitcoinCommonManager):
 
     def __init__(self, database: DBHandler) -> None:
         if custom_btc_mempool_api := CachedSettings().get_entry('btc_mempool_api'):
-            api_callbacks = [self.get_custom_mempool_api_callback(custom_btc_mempool_api)]  # type: ignore
-
+            api_callbacks = [self.get_custom_mempool_api_callback(
+                api_url=self._custom_mempool_api_url(custom_btc_mempool_api),  # type: ignore
+            )]
         else:
             api_callbacks = self.get_default_api_callbacks()
         super().__init__(
@@ -442,13 +443,21 @@ class BitcoinManager(BitcoinCommonManager):
             self.api_callbacks = self.get_default_api_callbacks()
             return True, ''
         else:
-            endpoint = urllib.parse.urljoin(endpoint, '/api')
+            endpoint = self._custom_mempool_api_url(endpoint)
             is_connected, msg = self._connect_node(endpoint)
             if is_connected:
                 self.api_callbacks = [self.get_custom_mempool_api_callback(endpoint)]
                 return True, ''
 
         return is_connected, msg
+
+    @staticmethod
+    def _custom_mempool_api_url(endpoint: str) -> str:
+        """The api url of a mempool instance whose base url is what the setting stores.
+        Used both when the setting changes and when the manager is created from it at
+        login, so that the same url is queried in both cases.
+        """
+        return urllib.parse.urljoin(endpoint, '/api')
 
     def _connect_node(self, endpoint: str) -> tuple[bool, str]:
         """Attempt to connect to a node, check its blockheight

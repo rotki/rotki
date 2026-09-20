@@ -14,6 +14,7 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_BASE_URL,
     BTC_GROUP_IDENTIFIER_PREFIX,
 )
+from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 from rotkehlchen.chain.bitcoin.types import (
     BitcoinTx,
     BtcTxIO,
@@ -47,7 +48,6 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -1603,8 +1603,8 @@ def test_deserialize_mempool_unconfirmed_tx(bitcoin_manager: BitcoinManager) -> 
     assert bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(block_height=None)) is None
 
 
-def _mock_esplora_pages(pages: dict[str, list[dict[str, Any]]]) -> Any:
-    """Serve the given raw tx lists keyed by the path after `/api`, via requests.get."""
+def _mock_esplora_pages(pages: dict[str, Any]) -> Any:
+    """Serve the given json responses keyed by the path after `/api`, via requests.get."""
     def router(url: str, **kwargs: Any) -> MockResponse:
         path = url.removeprefix('https://mempool.example/api')
         assert path in pages, f'unexpected esplora request {url}'
@@ -1756,3 +1756,26 @@ def test_custom_mempool_api_queries_transactions(
         (HistoryEventType.SPEND, HistoryEventSubType.FEE, FVal('0.00001')),
         (HistoryEventType.SPEND, HistoryEventSubType.NONE, FVal('0.00099')),
     ]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_custom_mempool_api_setting_is_queried_under_its_api_path(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """The setting keeps the endpoint as entered, without the /api path that
+    set_custom_mempool_api adds. A manager created from the setting at login must add it
+    too, or every query hits the web ui of the instance and gets html back.
+    """
+    cached_settings = MagicMock()
+    cached_settings.return_value.get_entry.return_value = 'https://mempool.example'
+    with patch('rotkehlchen.chain.bitcoin.btc.manager.CachedSettings', cached_settings):
+        manager = BitcoinManager(database=bitcoin_manager.database)
+
+    assert [x.name for x in manager.api_callbacks] == ['custom mempool api']
+    with _mock_esplora_pages({
+        f'/address/{btc_accounts[0]}': {'chain_stats': {'funded_txo_sum': 1000, 'spent_txo_sum': 0, 'tx_count': 1}},  # noqa: E501
+    }):
+        assert manager.have_transactions(btc_accounts) == {
+            btc_accounts[0]: (True, FVal('0.00001')),
+        }
