@@ -28,6 +28,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import BlockchainAccountData
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -1377,3 +1378,381 @@ def test_removing_an_address_keeps_shared_transactions(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
         ) == []
+
+
+# Real mainnet transaction in the esplora format served by mempool.space and blockstream.info.
+# Same transaction as test_p2pk: a P2PK input and a P2PK change output, for which esplora
+# gives no address, plus a P2PKH output. Only the fields the deserializer uses are kept.
+P2PK_TX_ID = '1db6251a9afce7025a2061a19e63c700dffc3bec368bd1883decfac353357a9d'
+P2PK_ADDRESS = string_to_btc_address('1PJJygLB42VsaTgo2twFPgRT8CNz1bpGNE')
+P2PK_SCRIPT = '41049464205950188c29d377eebca6535e0f3699ce4069ecd77ffebfbd0bcf95e3c134cb7d2742d800a12df41413a09ef87a80516353a2f0a280547bb5512dc03da8ac'  # noqa: E501
+P2PKH_SCRIPT = '76a91431891996d28cc0214faa3760a765b40846bd035888ac'
+ESPLORA_P2PK_TX: dict[str, Any] = {
+    'txid': P2PK_TX_ID,
+    'vin': [{
+        'txid': 'd675157268aee592e02d5434414209f5673ac4d190d50e44ef6c522ee8430474',
+        'vout': 1,
+        'prevout': {
+            'scriptpubkey': P2PK_SCRIPT,
+            'scriptpubkey_type': 'p2pk',
+            'value': 30000000000,
+        },
+        'is_coinbase': False,
+    }],
+    'vout': [{
+        'scriptpubkey': P2PKH_SCRIPT,
+        'scriptpubkey_type': 'p2pkh',
+        'scriptpubkey_address': '15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN',
+        'value': 5000000000,
+    }, {
+        'scriptpubkey': P2PK_SCRIPT,
+        'scriptpubkey_type': 'p2pk',
+        'value': 25000000000,
+    }],
+    'fee': 0,
+    'status': {
+        'confirmed': True,
+        'block_height': 140496,
+        'block_hash': '0000000000000564f91b41d1d82f08c755a0091e7bc2811e56778d1e75f91b2f',
+        'block_time': 1313042188,
+    },
+}
+P2WPKH_ADDRESS = string_to_btc_address('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')
+P2WPKH_SCRIPT = '0014751e76e8199196d454941c45d1b3a323f1433bd6'
+
+
+def _esplora_tx(
+        block_height: int | None,
+        block_time: int = 1700000000,
+        vin: list[dict[str, Any]] | None = None,
+        vout: list[dict[str, Any]] | None = None,
+        fee: int = 0,
+) -> dict[str, Any]:
+    """Build a minimal esplora transaction. Unconfirmed when block_height is None."""
+    status: dict[str, Any] = {'confirmed': False}
+    if block_height is not None:
+        status = {'confirmed': True, 'block_height': block_height, 'block_time': block_time}
+
+    return {
+        'txid': f'{block_height or block_time:064x}',
+        'vin': vin or [],
+        'vout': vout or [],
+        'fee': fee,
+        'status': status,
+    }
+
+
+def _esplora_p2wpkh_txio(value: int, address: BTCAddress = P2WPKH_ADDRESS) -> dict[str, Any]:
+    return {
+        'scriptpubkey': P2WPKH_SCRIPT,
+        'scriptpubkey_type': 'v0_p2wpkh',
+        'scriptpubkey_address': address,
+        'value': value,
+    }
+
+
+def test_deserialize_mempool_tx(bitcoin_manager: BitcoinManager) -> None:
+    """Every TxIO of an esplora transaction is returned, so the position is the real index
+    and the counts stay unset.
+    """
+    other = string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=150_000)}],
+        vout=[_esplora_p2wpkh_txio(value=100_000, address=other), _esplora_p2wpkh_txio(value=49_000)],  # noqa: E501
+        fee=1_000,
+    ))
+    assert tx == BitcoinTx(
+        tx_id=f'{900_000:064x}',
+        timestamp=Timestamp(1700000000),
+        block_height=900_000,
+        fee=FVal('0.00001'),
+        inputs=[BtcTxIO(
+            value=FVal('0.0015'),
+            script=bytes.fromhex(P2WPKH_SCRIPT),
+            address=P2WPKH_ADDRESS,
+            direction=BtcTxIODirection.INPUT,
+            io_index=0,
+        )],
+        outputs=[BtcTxIO(
+            value=FVal('0.001'),
+            script=bytes.fromhex(P2WPKH_SCRIPT),
+            address=other,
+            direction=BtcTxIODirection.OUTPUT,
+            io_index=0,
+        ), BtcTxIO(
+            value=FVal('0.00049'),
+            script=bytes.fromhex(P2WPKH_SCRIPT),
+            address=P2WPKH_ADDRESS,
+            direction=BtcTxIODirection.OUTPUT,
+            io_index=1,
+        )],
+    )
+    assert tx.is_complete
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2PK_ADDRESS]])
+def test_deserialize_mempool_p2pk_tx(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Esplora gives no address for P2PK scripts, so it is derived from the public key in the
+    script and the transaction decodes exactly like test_p2pk does from the other explorers.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(ESPLORA_P2PK_TX)
+    assert tx is not None
+    assert tx.inputs[0].address == P2PK_ADDRESS
+    assert tx.outputs[1].address == P2PK_ADDRESS
+    assert tx.outputs[0].address == '15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN'
+
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId(P2PK_TX_ID),
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{P2PK_TX_ID}',
+        sequence_index=0,
+        timestamp=TimestampMS(1313042188000),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('50'),
+        location_label=btc_accounts[0],
+        notes='Send 50 BTC to 15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN',
+    )]
+
+
+def test_deserialize_mempool_malformed_p2pk_script(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """A P2PK script that holds no public key is a deserialization error, so the pipeline
+    skips the transaction instead of crashing the whole query.
+    """
+    with pytest.raises(DeserializationError):
+        bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+            block_height=140_496,
+            vout=[{'scriptpubkey': '00ac', 'scriptpubkey_type': 'p2pk', 'value': 1}],
+        ))
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_deserialize_mempool_op_return_tx(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """An op_return output has no address and keeps its script for decoding."""
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000)}],
+        vout=[
+            {'scriptpubkey': '6a0b68656c6c6f20776f726c64', 'scriptpubkey_type': 'op_return', 'value': 0},  # noqa: E501
+            _esplora_p2wpkh_txio(value=99_000),
+        ],
+        fee=1_000,
+    ))
+    assert tx is not None
+    assert tx.outputs[0] == BtcTxIO(
+        value=ZERO,
+        script=bytes.fromhex('6a0b68656c6c6f20776f726c64'),
+        address=None,
+        direction=BtcTxIODirection.OUTPUT,
+        io_index=0,
+    )
+
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx.tx_id),
+        group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1700000000000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount := FVal('0.00001')),
+        location_label=btc_accounts[0],
+        notes=f'Spend {fee_amount} BTC for fees',
+    ), BitcoinEvent(
+        tx_ref=BTCTxId(tx.tx_id),
+        group_identifier=group_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ZERO,
+        notes='Store text on the blockchain: hello world',
+    )]
+
+
+def test_deserialize_mempool_coinbase_tx(bitcoin_manager: BitcoinManager) -> None:
+    """A coinbase input has no prevout and is dropped, like the other explorers do."""
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[_esplora_p2wpkh_txio(value=312_500_000)],
+    ))
+    assert tx is not None
+    assert tx.inputs == []
+    assert len(tx.outputs) == 1
+
+
+def test_deserialize_mempool_unconfirmed_tx(bitcoin_manager: BitcoinManager) -> None:
+    assert bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(block_height=None)) is None
+
+
+def _mock_esplora_pages(pages: dict[str, list[dict[str, Any]]]) -> Any:
+    """Serve the given raw tx lists keyed by the path after `/api`, via requests.get."""
+    def router(url: str, **kwargs: Any) -> MockResponse:
+        path = url.removeprefix('https://mempool.example/api')
+        assert path in pages, f'unexpected esplora request {url}'
+        return MockResponse(200, json.dumps(pages[path]))
+
+    return patch('requests.get', side_effect=router)
+
+
+def test_mempool_pagination_stops_at_last_queried_block(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """Mempool pages have no fixed size (10 on electrum backends, 25 on mempool.space), so
+    pages are followed via the last txid until one ends at or below the last queried
+    block. Unconfirmed entries come first and are skipped by the processing.
+    """
+    progress_callback = MagicMock()
+    address_a = P2WPKH_ADDRESS
+    address_b = string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')
+    page_1 = [
+        _esplora_tx(block_height=None),
+        _esplora_tx(block_height=900_010, block_time=1700000300),
+        _esplora_tx(block_height=900_005, block_time=1700000200),
+        _esplora_tx(block_height=900_001, block_time=1700000100),
+    ]
+    page_2 = [
+        _esplora_tx(block_height=899_990, block_time=1699999000),
+        _esplora_tx(block_height=850_000, block_time=1600000000),
+    ]
+    with _mock_esplora_pages({
+        f'/address/{address_a}/txs': page_1,
+        f'/address/{address_a}/txs?after_txid={page_1[-1]["txid"]}': page_2,
+        f'/address/{address_b}/txs': [],
+    }) as requests_mock:
+        block_height, txs = bitcoin_manager._query_mempool_transactions(
+            base_url='https://mempool.example/api',
+            accounts=[address_a, address_b],
+            options={
+                'last_queried_block': 880_000,
+                'to_timestamp': ts_now(),
+                'progress_callback': progress_callback,
+            },
+        )
+
+    assert requests_mock.call_count == 3  # no request for the page after 850_000
+    assert block_height == 900_010
+    assert [tx.block_height for tx in txs] == [900_010, 900_005, 900_001, 899_990]
+    assert progress_callback.call_args_list == [
+        call(Timestamp(1700000100)),
+        call(Timestamp(1600000000)),
+    ]
+
+
+def test_mempool_pagination_with_only_unconfirmed_first_page(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """A first page holding only mempool entries is paged past via its last entry, and the
+    confirmed history follows.
+    """
+    address = P2WPKH_ADDRESS
+    unconfirmed_txs = [_esplora_tx(block_height=None, block_time=1), _esplora_tx(block_height=None, block_time=2)]  # noqa: E501
+    confirmed_tx = _esplora_tx(block_height=900_010, block_time=1700000300)
+    with _mock_esplora_pages({
+        f'/address/{address}/txs': unconfirmed_txs,
+        f'/address/{address}/txs?after_txid={unconfirmed_txs[-1]["txid"]}': [confirmed_tx],
+        f'/address/{address}/txs?after_txid={confirmed_tx["txid"]}': [],
+    }) as requests_mock:
+        block_height, txs = bitcoin_manager._query_mempool_transactions(
+            base_url='https://mempool.example/api',
+            accounts=[address],
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+
+    assert requests_mock.call_count == 3
+    assert block_height == 900_010
+    assert [tx.tx_id for tx in txs] == [confirmed_tx['txid']]
+
+
+def test_mempool_pagination_stops_on_a_repeated_page(bitcoin_manager: BitcoinManager) -> None:
+    """A mempool instance on an electrum backend serves the first page again when asked for
+    the transactions after the newest one of the address. That must end the history
+    instead of looping forever.
+    """
+    address = P2WPKH_ADDRESS
+    tx = _esplora_tx(block_height=900_010, block_time=1700000300)
+    with _mock_esplora_pages({
+        f'/address/{address}/txs': [tx],
+        f'/address/{address}/txs?after_txid={tx["txid"]}': [tx],
+    }) as requests_mock:
+        block_height, txs = bitcoin_manager._query_mempool_transactions(
+            base_url='https://mempool.example/api',
+            accounts=[address],
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+
+    assert requests_mock.call_count == 2
+    assert block_height == 900_010
+    assert [x.tx_id for x in txs] == [tx['txid']]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_custom_mempool_api_queries_transactions(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A custom mempool endpoint serves transactions too, not only balances."""
+    with patch(
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+        return_value=(True, ''),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+
+    assert len(bitcoin_manager.api_callbacks) == 1
+    assert bitcoin_manager.api_callbacks[0].transactions_fn is not None
+
+    tx = _esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000)}],
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8'))],  # noqa: E501
+        fee=1_000,
+    )
+    with _mock_esplora_pages({
+        f'/address/{btc_accounts[0]}/txs': [tx],
+        f'/address/{btc_accounts[0]}/txs?after_txid={tx["txid"]}': [],
+    }):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        assert [x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )] == [tx['txid']]
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=btc_accounts[0],
+        ) == 900_000
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+        )
+
+    assert [(x.event_type, x.event_subtype, x.amount) for x in events] == [
+        (HistoryEventType.SPEND, HistoryEventSubType.FEE, FVal('0.00001')),
+        (HistoryEventType.SPEND, HistoryEventSubType.NONE, FVal('0.00099')),
+    ]

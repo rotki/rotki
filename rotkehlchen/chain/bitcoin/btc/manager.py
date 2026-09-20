@@ -27,12 +27,14 @@ from rotkehlchen.chain.bitcoin.utils import (
     query_blockstream_like_balances,
     query_blockstream_like_blockheight,
     query_blockstream_like_has_transactions,
+    query_mempool_address_transactions,
+    scriptpubkey_to_p2pk_address,
 )
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -81,12 +83,16 @@ class BitcoinManager(BitcoinCommonManager):
             name='blockstream.info',
             balances_fn=lambda accounts: query_blockstream_like_balances(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
             has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
-            transactions_fn=None,  # this API doesn't handle p2pk txs properly
+            # These esplora apis index by script, so the history of an address omits the
+            # transactions that touch it only via a P2PK script. The explorers above and
+            # below return those, so esplora transactions are only used when a user opts
+            # into their own instance. See get_custom_mempool_api_callback.
+            transactions_fn=None,
         ), BtcApiCallback(
             name='mempool.space',
             balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
             has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
-            transactions_fn=None,  # this API doesn't handle p2pk txs properly
+            transactions_fn=None,  # same as blockstream.info above
         ), BtcApiCallback(
             name='blockcypher.com',
             balances_fn=None,  # TODO implement blockcypher for all actions
@@ -368,6 +374,63 @@ class BitcoinManager(BitcoinCommonManager):
             vout_count=vout_count,
         )
 
+    def _query_mempool_transactions(
+            self,
+            base_url: str,
+            accounts: Sequence[BTCAddress],
+            options: dict[str, Any],
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Query a mempool api, the user's own instance, for transactions. The api takes one
+        address at a time and pages newest to oldest, so one raw list per address is
+        handed to the common processing.
+        Returns a tuple containing the latest queried block height and the list of txs.
+
+        The history of an address on mempool omits the transactions that touch it only via
+        a P2PK script (the api indexes by script), which is why the public esplora apis
+        are not used for transactions. A user opting into their own instance accepts that.
+        """
+        last_queried_block = options.get('last_queried_block', 0)
+        progress_callback = options.get('progress_callback')
+        return self._process_raw_tx_lists(
+            raw_tx_lists=[query_mempool_address_transactions(
+                base_url=base_url,
+                address=address,
+                last_queried_block=last_queried_block,
+                progress_callback=progress_callback,
+            ) for address in accounts],
+            options=options,
+            processing_fn=self.deserialize_tx_from_mempool,
+        )
+
+    def deserialize_tx_from_mempool(self, data: dict[str, Any]) -> BitcoinTx | None:
+        """Deserialize a transaction from a mempool api (esplora format).
+        Returns None for an unconfirmed transaction, since the address history also
+        contains the mempool entries of the address.
+        May raise DeserializationError, KeyError, ValueError.
+        """
+        if (status := data['status']).get('confirmed') is not True:
+            return None
+
+        return BitcoinTx(
+            tx_id=data['txid'],
+            timestamp=deserialize_timestamp(status['block_time']),
+            block_height=deserialize_int(value=status['block_height'], location='btc tx block height'),  # noqa: E501
+            fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='btc tx fees')),
+            # A coinbase input has no prevout and is the only input of its transaction, so
+            # dropping it leaves no other input misplaced.
+            inputs=BtcTxIO.deserialize_list(
+                data_list=[prevout for vin in data['vin'] if (prevout := vin.get('prevout')) is not None],  # noqa: E501
+                direction=BtcTxIODirection.INPUT,
+                deserialize_fn=self.deserialize_tx_io_from_mempool,
+            ),
+            outputs=BtcTxIO.deserialize_list(
+                data_list=data['vout'],
+                direction=BtcTxIODirection.OUTPUT,
+                deserialize_fn=self.deserialize_tx_io_from_mempool,
+            ),
+            # this api returns every TxIO of the transaction, so the counts stay unset.
+        )
+
     def set_custom_mempool_api(self, endpoint: str) -> tuple[bool, str]:
         """
         Sets the API Callbacks to be used with a custom Mempool API instance if
@@ -448,7 +511,32 @@ class BitcoinManager(BitcoinCommonManager):
         )
 
     @staticmethod
-    def get_custom_mempool_api_callback(api_url: str) -> BtcApiCallback:
+    def deserialize_tx_io_from_mempool(
+            data: dict[str, Any],
+            direction: BtcTxIODirection,
+            position: int,
+    ) -> BtcTxIO:
+        """Deserialize a TxIO from a mempool api (esplora format).
+        May raise DeserializationError, KeyError, ValueError.
+        """
+        script = bytes.fromhex(data['scriptpubkey'])
+        # The api gives no address for P2PK scripts (and none for op_return, which is
+        # decoded from the script). Derive it like the other explorers report it.
+        if (address := data.get('scriptpubkey_address')) is None and data.get('scriptpubkey_type') == 'p2pk':  # noqa: E501
+            try:
+                address = scriptpubkey_to_p2pk_address(script)
+            except EncodingError as e:
+                raise DeserializationError(f'Failed to derive the address of P2PK TxIO {data}: {e!s}') from e  # noqa: E501
+
+        return BtcTxIO(
+            value=satoshis_to_btc(deserialize_int(value=data['value'], location='btc TxIO value')),
+            script=script,
+            address=address,
+            direction=direction,
+            io_index=position,  # this api returns every TxIO, so the position is the real index
+        )
+
+    def get_custom_mempool_api_callback(self, api_url: str) -> BtcApiCallback:
         """
         Retrieve custom mempool API callbacks based on provided mempool settings.
 
@@ -458,5 +546,5 @@ class BitcoinManager(BitcoinCommonManager):
             name='custom mempool api',
             balances_fn=lambda accounts: query_blockstream_like_balances(base_url=api_url, accounts=accounts),  # noqa: E501
             has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=api_url, accounts=accounts),  # noqa: E501
-            transactions_fn=None,  # this API doesn't handle p2pk txs properly
+            transactions_fn=lambda accounts, options: self._query_mempool_transactions(base_url=api_url, accounts=accounts, options=options),  # noqa: E501
         )
