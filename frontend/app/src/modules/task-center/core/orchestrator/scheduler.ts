@@ -31,6 +31,8 @@ export interface Scheduler {
   readonly clear: () => void;
   readonly isRunning: (id: string) => boolean;
   readonly isQueued: (id: string) => boolean;
+  /** Whether a job on `lane` could start now as far as the lane and lane-family caps go. */
+  readonly hasFreeSlot: (lane: Lane) => boolean;
   readonly runningCount: (lane?: Lane) => number;
 }
 
@@ -108,6 +110,10 @@ export function createScheduler(
     return count;
   }
 
+  function hasFreeSlot(lane: Lane): boolean {
+    return runningInLane(lane) < capFor(lane) && !familyLaneBlocked(lane);
+  }
+
   function start(job: ScheduledJob): void {
     running.set(job, job.lane);
     // `run()` never rejects; the trailing catch only keeps the fire-and-forget chain from floating.
@@ -124,7 +130,7 @@ export function createScheduler(
       let bestIndex = -1;
       let bestPriority = Number.NEGATIVE_INFINITY;
       for (const [index, job] of queue.entries()) {
-        if (job.priority > bestPriority && runningInLane(job.lane) < capFor(job.lane) && !familyLaneBlocked(job.lane) && job.eligible()) {
+        if (job.priority > bestPriority && hasFreeSlot(job.lane) && job.eligible()) {
           bestPriority = job.priority;
           bestIndex = index;
         }
@@ -149,6 +155,7 @@ export function createScheduler(
       queue.splice(index, 1);
       return true;
     },
+    hasFreeSlot,
     isQueued: (id: string): boolean => queue.some(job => job.id === id),
     isRunning: (id: string): boolean => [...running.keys()].some(job => job.id === id),
     pump,
