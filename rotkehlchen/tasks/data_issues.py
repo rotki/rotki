@@ -412,7 +412,7 @@ def _check_issue(
         issues_manager.update_state(
             issue_id=issue.id,
             state=IssueState.UNRESOLVED,
-            attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+            attempt=attempt,
         )
         raise
     else:
@@ -435,7 +435,6 @@ def _check_issue(
             key: value for key, value in attempt.items()
             if key not in {'attribution', 'strategy', 'timestamp'}
         },
-        record_attempt=_is_repeated_failure(issue, attempt) is False,
     )
 
 
@@ -532,15 +531,4 @@ def _last_attempt_failed(issue: DataIssue) -> bool:
         len(issue.auto_remediation_attempts) != 0 and
         issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
         issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
-    )
-
-
-def _is_repeated_failure(issue: DataIssue, attempt: AutoRemediationAttempt) -> bool:
-    """Return whether the previous timeline entry records the same failure."""
-    return (
-        attempt.get('result') == 'redecoding_failed' and
-        len(issue.auto_remediation_attempts) != 0 and
-        {key: value for key, value in issue.auto_remediation_attempts[-1].items()
-         if key != 'timestamp'} ==
-        {key: value for key, value in attempt.items() if key != 'timestamp'}
     )

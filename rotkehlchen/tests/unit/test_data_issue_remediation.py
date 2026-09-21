@@ -629,7 +629,7 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
     assert _get_saved_event_rows(database) == saved_rows
 
 
-def test_repeated_failed_comparison_keeps_one_attempt(database: DBHandler) -> None:
+def test_repeated_failed_comparison_records_every_attempt(database: DBHandler) -> None:
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
     with patch(
         'rotkehlchen.tasks.data_issues._preview_transaction',
@@ -641,7 +641,8 @@ def test_repeated_failed_comparison_keeps_one_attempt(database: DBHandler) -> No
     assert preview.call_count == 2
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
-    assert len(issue.auto_remediation_attempts) == 1
+    assert len(issue.auto_remediation_attempts) == 2
+    assert all(attempt['result'] == 'redecoding_failed' for attempt in issue.auto_remediation_attempts)
 
 
 def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
