@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
+from threading import RLock
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar
 from urllib.parse import urlparse
 
@@ -155,6 +156,9 @@ class RPCManagerMixin[WEB3_NODE_TYPE: (Web3, Client)](ABC):
         # Cached list of active configured nodes for this chain.
         # None means the cache is stale and must be reloaded from DB on next access.
         self._configured_nodes_cache: list[WeightedNode] | None = None
+        self._nodes_lock = RLock()
+        # Reject removed identities in saved call orders and in-flight connection attempts.
+        self._removed_nodes: set[NodeName] = set()
 
     def connected_to_any_node(self) -> bool:
         """Check if there are any currently connected nodes.
@@ -176,73 +180,96 @@ class RPCManagerMixin[WEB3_NODE_TYPE: (Web3, Client)](ABC):
 
     def _get_configured_nodes(self) -> list[WeightedNode]:
         """Return the cached list of active configured nodes, loading from DB if needed."""
-        if self._configured_nodes_cache is None:
-            self._configured_nodes_cache = list(
-                self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True),
-            )
-        return self._configured_nodes_cache
+        with self._nodes_lock:
+            if self._configured_nodes_cache is None:
+                self._configured_nodes_cache = list(
+                    self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True),
+                )
+            return self._configured_nodes_cache
 
     def invalidate_nodes_cache(self) -> None:
-        """Mark the configured-node cache as stale.
+        """Mark the configured-node cache stale after RPC configuration changes."""
+        with self._nodes_lock:
+            self._configured_nodes_cache = None
 
-        Must be called after any RPC configuration change (add / edit / delete / enable).
-        """
-        self._configured_nodes_cache = None
+    def refresh_nodes(self, added: set[NodeName], removed: set[NodeName]) -> None:
+        """Reconcile remote configuration changes with cached connections and health state."""
+        with self._nodes_lock:
+            self._configured_nodes_cache = None
+            self._removed_nodes.update(removed)
+            self._removed_nodes.difference_update(added)
+            for node in removed:
+                self.rpc_mapping.pop(node, None)
+            for node in added | removed:
+                self.failed_to_connect_nodes.discard(node.name)
+                self.clear_runtime_state(node)
 
     def _endpoint_key(self, node: NodeName) -> str:
         return _normalize_endpoint(node.endpoint)
 
     def mark_node_success(self, node: NodeName) -> None:
         """Record a successful query."""
-        key = self._endpoint_key(node)
-        now = ts_now()
-        existing = self._node_runtime_state.get(key)
-        if existing is not None:
-            # Mutate in-place — avoids object allocation on the hot path
-            existing.status = NodeStatus.READY
-            existing.cooldown_until = None
-            existing.consecutive_failures = 0
-            existing.last_success_ts = now
-        else:
-            self._node_runtime_state[key] = NodeRuntimeState(
-                status=NodeStatus.READY,
-                last_success_ts=now,
-            )
+        with self._nodes_lock:
+            if node in self._removed_nodes:
+                return
+            key = self._endpoint_key(node)
+            now = ts_now()
+            existing = self._node_runtime_state.get(key)
+            if existing is not None:
+                # Mutate in-place — avoids object allocation on the hot path
+                existing.status = NodeStatus.READY
+                existing.cooldown_until = None
+                existing.consecutive_failures = 0
+                existing.last_success_ts = now
+            else:
+                self._node_runtime_state[key] = NodeRuntimeState(
+                    status=NodeStatus.READY,
+                    last_success_ts=now,
+                )
 
     def mark_node_rate_limited(self, node: NodeName, error: str) -> None:
         """Put a node into cooldown after a rate-limit response (HTTP 429 / 403 / message)."""
-        key = self._endpoint_key(node)
-        now = ts_now()
-        existing = self._node_runtime_state.get(key)
-        consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
-        self._node_runtime_state[key] = NodeRuntimeState(
-            status=NodeStatus.COOLING_DOWN,
-            cooldown_until=Timestamp(now + RATE_LIMIT_COOLDOWN_SECS),
-            last_success_ts=existing.last_success_ts if existing else None,
-            last_error_ts=now,
-            last_error_kind='rate_limited',
-            consecutive_failures=consecutive_failures,
-        )
-        log.warning(
-            f'Node {node.name} ({key}) is rate-limited. '
-            f'Cooling down for {RATE_LIMIT_COOLDOWN_SECS}s. Error: {error}',
-        )
+        with self._nodes_lock:
+            if node in self._removed_nodes:
+                return
+            key = self._endpoint_key(node)
+            now = ts_now()
+            existing = self._node_runtime_state.get(key)
+            consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
+            self._node_runtime_state[key] = NodeRuntimeState(
+                status=NodeStatus.COOLING_DOWN,
+                cooldown_until=Timestamp(now + RATE_LIMIT_COOLDOWN_SECS),
+                last_success_ts=existing.last_success_ts if existing else None,
+                last_error_ts=now,
+                last_error_kind='rate_limited',
+                consecutive_failures=consecutive_failures,
+            )
+            log.warning(
+                'Node %s (%s) is rate-limited. Cooling down for %ss. Error: %s',
+                node.name,
+                key,
+                RATE_LIMIT_COOLDOWN_SECS,
+                error,
+            )
 
     def mark_node_failure(self, node: NodeName, error: str) -> None:
         """Record a non-rate-limit failure for a node."""
-        key = self._endpoint_key(node)
-        now = ts_now()
-        existing = self._node_runtime_state.get(key)
-        consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
-        self._node_runtime_state[key] = NodeRuntimeState(
-            # Ordinary failure: stay ready so the node is tried again later.
-            status=NodeStatus.READY,
-            cooldown_until=existing.cooldown_until if existing else None,
-            last_success_ts=existing.last_success_ts if existing else None,
-            last_error_ts=now,
-            last_error_kind='failure',
-            consecutive_failures=consecutive_failures,
-        )
+        with self._nodes_lock:
+            if node in self._removed_nodes:
+                return
+            key = self._endpoint_key(node)
+            now = ts_now()
+            existing = self._node_runtime_state.get(key)
+            consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
+            self._node_runtime_state[key] = NodeRuntimeState(
+                # Ordinary failure: stay ready so the node is tried again later.
+                status=NodeStatus.READY,
+                cooldown_until=existing.cooldown_until if existing else None,
+                last_success_ts=existing.last_success_ts if existing else None,
+                last_error_ts=now,
+                last_error_kind='failure',
+                consecutive_failures=consecutive_failures,
+            )
 
     def is_node_in_cooldown(self, node: NodeName) -> bool:
         """Return True if the node is currently in the rate-limit cooldown window."""
@@ -422,6 +449,8 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
         For our own node if the given rpc endpoint is not the same as the saved one
         the connection is re-attempted to the new one
         """
+        if node in self._removed_nodes:
+            return False, f'RPC node {node.name} was removed'
         if node in self.rpc_mapping:
             return True, f'Already connected to {node} {self.chain_name} node'
 
@@ -497,12 +526,15 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                 is_archive, is_pruned = False, False
             else:
                 is_archive, is_pruned = self.determine_capabilities(web3)
-            log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
-            self.rpc_mapping[node] = RPCNode(
-                rpc_client=web3,
-                is_pruned=is_pruned,
-                is_archive=is_archive,
-            )
+            with self._nodes_lock:
+                if node in self._removed_nodes:
+                    return False, f'RPC node {node.name} was removed'
+                log.info('Connected %s node %s at %s', self.chain_name, node, rpc_endpoint)
+                self.rpc_mapping[node] = RPCNode(
+                    rpc_client=web3,
+                    is_pruned=is_pruned,
+                    is_archive=is_archive,
+                )
             return True, ''
 
         # else
@@ -548,6 +580,8 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
         For our own node if the given rpc endpoint is not the same as the saved one
         the connection is re-attempted to the new one
         """
+        if node in self._removed_nodes:
+            return False, f'RPC node {node.name} was removed'
         if self.rpc_mapping.get(node, None) is not None:
             return True, f'Already connected to {node} {self.chain_name} node'
 
@@ -569,17 +603,20 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
             is_archive = self._is_archive(client)
             supports_program_accounts = self._supports_program_accounts(client)
 
-        self.known_node_capabilities[node.name] = SolanaNodeCapabilities(
-            is_archive=is_archive,
-            supports_program_accounts=supports_program_accounts,
-        )
-        log.info(f'Connected Solana node {node} at {node.endpoint}')
-        self.rpc_mapping[node] = RPCNode(
-            rpc_client=client,
-            is_pruned=False,
-            is_archive=is_archive,
-            supports_program_accounts=supports_program_accounts,
-        )
+        with self._nodes_lock:
+            if node in self._removed_nodes:
+                return False, f'RPC node {node.name} was removed'
+            self.known_node_capabilities[node.name] = SolanaNodeCapabilities(
+                is_archive=is_archive,
+                supports_program_accounts=supports_program_accounts,
+            )
+            log.info('Connected Solana node %s at %s', node, node.endpoint)
+            self.rpc_mapping[node] = RPCNode(
+                rpc_client=client,
+                is_pruned=False,
+                is_archive=is_archive,
+                supports_program_accounts=supports_program_accounts,
+            )
 
         return True, ''
 

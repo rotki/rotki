@@ -1,7 +1,8 @@
 import json
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from functools import partial
+from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import MagicMock, patch
 
 import pytest
 from packaging.version import Version
@@ -9,7 +10,9 @@ from packaging.version import Version
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin, RPCNode, SolanaNodeCapabilities
+from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -18,6 +21,7 @@ from rotkehlchen.db.unresolved_conflicts import ConflictType
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
@@ -37,6 +41,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -509,7 +514,7 @@ def test_rpc_update_refreshes_inquirer_call_order(
         user_db=database,
         chains_aggregator=blockchain,
     )
-    inquirers: list[RPCManagerMixin] = [
+    inquirers: list[EvmNodeInquirer | SolanaInquirer] = [
         blockchain.optimism.node_inquirer,
         blockchain.solana.node_inquirer,
     ]
@@ -531,12 +536,26 @@ def test_rpc_update_refreshes_inquirer_call_order(
     for inquirer in inquirers:
         inquirer.invalidate_nodes_cache()
         assert any(
-            node.node_info.endpoint for node in RPCManagerMixin.default_call_order(inquirer)
+            node.node_info.endpoint for node in RPCManagerMixin[Any].default_call_order(inquirer)
         )
+        old_node = inquirer._get_configured_nodes()[0].node_info
+        inquirer.failed_to_connect_nodes.add(old_node.name)
+        inquirer.mark_node_failure(old_node, 'connection failed')
+        inquirer.rpc_mapping[old_node] = RPCNode(
+            rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+        )
+        if isinstance(inquirer, SolanaInquirer):
+            inquirer.node_backoff_info[old_node.name] = (None, 3, 60)
+            inquirer.known_node_capabilities[old_node.name] = SolanaNodeCapabilities(
+                is_archive=False, supports_program_accounts=False,
+            )
+        else:
+            assert inquirer.has_archive_node()
+            assert old_node in {node.node_info for node in inquirer.get_archive_call_order()}
         if remove_only:
             continue
         remote_nodes.append({
-            'name': 'New remote node',
+            'name': old_node.name,
             'endpoint': f'https://{inquirer.blockchain.value.lower()}.example.com',
             'owned': False,
             'active': True,
@@ -562,9 +581,37 @@ def test_rpc_update_refreshes_inquirer_call_order(
             for node in data_updater.user_db.get_rpc_nodes(inquirer.blockchain, only_active=True)
         } == expected_endpoints
         assert {
-            node.node_info.endpoint for node in RPCManagerMixin.default_call_order(inquirer)
+            node.node_info.endpoint for node in RPCManagerMixin[Any].default_call_order(inquirer)
             if node.node_info.endpoint
         } == expected_endpoints
+
+    for inquirer in inquirers:
+        assert not inquirer.failed_to_connect_nodes
+        assert not inquirer.rpc_mapping
+        assert not inquirer._node_runtime_state
+    assert not blockchain.optimism.node_inquirer.has_archive_node()
+    assert blockchain.optimism.node_inquirer.get_archive_call_order() == []
+    assert not blockchain.solana.node_inquirer.node_backoff_info
+    assert not blockchain.solana.node_inquirer.known_node_capabilities
+
+    if remove_only is False:
+        for inquirer in inquirers:
+            replacement = inquirer._get_configured_nodes()[0].node_info
+            with patch.object(
+                inquirer, 'attempt_connect', return_value=(False, 'offline'),
+            ) as connect:
+                query = inquirer.query if isinstance(inquirer, SolanaInquirer) else inquirer._query
+                kwargs = (
+                    {'only_archive_nodes': True, 'only_program_accounts_nodes': True}
+                    if isinstance(inquirer, SolanaInquirer) else {}
+                )
+                with pytest.raises(RemoteError):
+                    query(
+                        method=MagicMock(__name__='query'),
+                        call_order=inquirer._get_configured_nodes(),
+                        **kwargs,
+                    )
+            connect.assert_called_once_with(node=replacement)
 
     cached_nodes = [inquirer._get_configured_nodes() for inquirer in inquirers]
     data_updater.update_rpc_nodes(data=remote_nodes, version=2)
@@ -910,3 +957,103 @@ def test_branch_used_in_updates(database: DBHandler, monkeypatch: pytest.MonkeyP
     assert branch_for('master') == 'main'
     assert branch_for('') == 'develop'
     assert branch_for(None) == 'develop'
+
+
+@pytest.mark.parametrize('chain', [SupportedBlockchain.OPTIMISM, SupportedBlockchain.SOLANA])
+@pytest.mark.parametrize('during_connect', [False, True])
+def test_removed_rpc_cannot_reconnect(
+        blockchain: ChainsAggregator,
+        chain: Literal[SupportedBlockchain.OPTIMISM, SupportedBlockchain.SOLANA],
+        during_connect: bool,
+) -> None:
+    """A saved call order and an in-flight connection cannot restore a removed endpoint."""
+    inquirer = (
+        blockchain.solana if chain == SupportedBlockchain.SOLANA else blockchain.optimism
+    ).node_inquirer
+    node = NodeName(
+        name='provider', endpoint='https://old.example.com',
+        owned=False, blockchain=chain,
+    )
+    client = MagicMock()
+    client.is_connected.return_value = True
+    if during_connect:
+        client.is_connected.side_effect = partial(_refresh_rpc_nodes, inquirer, {node})
+    else:
+        inquirer.refresh_nodes(set(), {node})
+    with ExitStack() as stack:
+        if isinstance(inquirer, SolanaInquirer):
+            stack.enter_context(patch('rotkehlchen.chain.mixins.rpc_nodes.Client',
+                return_value=client,
+            ))
+            stack.enter_context(patch.object(inquirer, '_is_archive', return_value=True))
+            stack.enter_context(patch.object(inquirer,
+                '_supports_program_accounts', return_value=True,
+            ))
+        else:
+            stack.enter_context(patch.object(inquirer,
+                '_init_web3', return_value=(client, node.endpoint),
+            ))
+            stack.enter_context(patch.object(inquirer,
+                'determine_capabilities', return_value=(True, False),
+            ))
+        assert inquirer.attempt_connect(node, connectivity_check=False)[0] is False
+    assert node not in inquirer.rpc_mapping
+    if isinstance(inquirer, SolanaInquirer):
+        assert node.name not in inquirer.known_node_capabilities
+
+
+def _refresh_rpc_nodes(
+        inquirer: EvmNodeInquirer | SolanaInquirer,
+        removed: set[NodeName],
+        error: Exception | None = None,
+) -> bool:
+    """Refresh during a mocked network call, optionally failing that call."""
+    inquirer.refresh_nodes(set(), removed)
+    if error is not None:
+        raise error
+    return True
+
+
+@pytest.mark.parametrize('chain', [SupportedBlockchain.OPTIMISM, SupportedBlockchain.SOLANA])
+@pytest.mark.parametrize('remove_first', [False, True])
+def test_rpc_refresh_preserves_healthy_fallback(
+        blockchain: ChainsAggregator,
+        chain: Literal[SupportedBlockchain.OPTIMISM, SupportedBlockchain.SOLANA],
+        remove_first: bool,
+) -> None:
+    """A refresh during a failed request must neither poison replacements nor cancel fallback."""
+    import requests
+
+    from rotkehlchen.chain.solana.rpc import SolanaRpcException
+
+    inquirer = (
+        blockchain.solana if chain == SupportedBlockchain.SOLANA else blockchain.optimism
+    ).node_inquirer
+    nodes = [WeightedNode(
+        node_info=NodeName(
+            name=name, endpoint=f'https://{name}.example.com',
+            owned=False, blockchain=chain,
+        ),
+        identifier=idx, active=True, weight=FVal(1),
+    ) for idx, name in enumerate(('first', 'healthy'))]
+    first, healthy = (node.node_info for node in nodes)
+    first_client, healthy_client = MagicMock(), MagicMock()
+    healthy_client.get_health.return_value = 123
+    for node, client in ((first, first_client), (healthy, healthy_client)):
+        inquirer.rpc_mapping[node] = RPCNode(
+            rpc_client=client, is_archive=True, is_pruned=False,
+        )
+    error = SolanaRpcException() if isinstance(inquirer, SolanaInquirer) else requests.Timeout()
+    error.__cause__ = requests.exceptions.ReadTimeout()
+    first_client.get_health.side_effect = partial(
+        _refresh_rpc_nodes, inquirer, {first} if remove_first else set(), error,
+    )
+    query = inquirer.query if isinstance(inquirer, SolanaInquirer) else inquirer._query
+    assert query(method=lambda client: client.get_health(), call_order=nodes) == 123
+    first_client.get_health.assert_called_once_with()
+    healthy_client.get_health.assert_called_once_with()
+    if remove_first:
+        assert first.name not in inquirer.failed_to_connect_nodes
+        assert inquirer.get_runtime_state(first) is None
+        if isinstance(inquirer, SolanaInquirer):
+            assert first.name not in inquirer.node_backoff_info

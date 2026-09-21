@@ -61,7 +61,7 @@ from .types import SolanaTransaction, pubkey_to_solana_address
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.chain.evm.types import NodeName, WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.helius import Helius
     from rotkehlchen.tasks.supervisor import TaskSupervisor
@@ -93,6 +93,11 @@ class SolanaInquirer(SolanaRPCMixin):
         self.helius = helius
         self.known_node_capabilities: dict[str, SolanaNodeCapabilities] = {}
         self.node_backoff_info: dict[str, tuple[Timestamp | None, int, int]] = {}
+
+    def clear_runtime_state(self, node: NodeName) -> None:
+        super().clear_runtime_state(node)
+        self.node_backoff_info.pop(node.name, None)
+        self.known_node_capabilities.pop(node.name, None)
 
     def default_call_order(self) -> list[WeightedNode]:
         """Default call order for solana nodes.
@@ -159,6 +164,8 @@ class SolanaInquirer(SolanaRPCMixin):
             is_retry = True  # Any iteration of the main loop is a retry after the first run.
             for weighted_node in call_order:
                 node_info = weighted_node.node_info
+                if node_info in self._removed_nodes:
+                    continue
                 # Pop the node from the backoff info dict to ensure its only included again in
                 # future iterations if it actually fails with a rate limit again, or still has a
                 # backoff end time in the future.
@@ -174,7 +181,9 @@ class SolanaInquirer(SolanaRPCMixin):
 
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
-                        self.failed_to_connect_nodes.add(node_info.name)
+                        with self._nodes_lock:
+                            if node_info not in self._removed_nodes:
+                                self.failed_to_connect_nodes.add(node_info.name)
                         continue
 
                     if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -221,11 +230,13 @@ class SolanaInquirer(SolanaRPCMixin):
                             backoff = int(retry_after) + 1
 
                         log.warning(f'Got rate limited from solana node {node_info.name}. Backing off {backoff} seconds on this node...')  # noqa: E501
-                        self.node_backoff_info[node_info.name] = (
-                            Timestamp(ts_now() + backoff),  # Time when we can retry this node
-                            attempts,  # Number of retry attempts
-                            backoff * BACKOFF_MULTIPLIER,  # Next backoff length
-                        )
+                        with self._nodes_lock:
+                            if node_info not in self._removed_nodes:
+                                self.node_backoff_info[node_info.name] = (
+                                    Timestamp(ts_now() + backoff),  # Next retry time
+                                    attempts,  # Number of retry attempts
+                                    backoff * BACKOFF_MULTIPLIER,  # Next backoff length
+                                )
                         continue
 
                     log.error(f'Failed to call solana node {node_info.name} due to {e}')

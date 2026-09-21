@@ -241,7 +241,7 @@ class TransactionsService:
             manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
                 blockchain=node.node_info.blockchain,
             )
-            manager.node_inquirer.invalidate_nodes_cache()  # type: ignore[attr-defined]
+            manager.node_inquirer.refresh_nodes(added={node.node_info}, removed=set())  # type: ignore[attr-defined]
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
@@ -283,7 +283,7 @@ class TransactionsService:
                 f'Failed to find node with endpoint {old_endpoint} in web3 mappings. Skipping',
             )
 
-        manager.node_inquirer.invalidate_nodes_cache()
+        manager.node_inquirer.refresh_nodes(added={node.node_info}, removed=set())
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 

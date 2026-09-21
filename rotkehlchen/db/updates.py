@@ -11,6 +11,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
@@ -25,6 +26,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
+    CHAINS_WITH_NODES,
     AddressbookEntry,
     AddressbookType,
     CounterpartyAssetMappingDeleteEntry,
@@ -212,14 +214,19 @@ class RotkiDataUpdater:
                 new_default_nodes,
             )
 
-        changed_chains = self._update_user_nodes(
+        added, removed = self._update_user_nodes(
             existing_default_nodes=existing_default_nodes,
             new_default_nodes=new_default_nodes,
         )
         if self.chains_aggregator is not None:
             for manager in self.chains_aggregator.iterate_chain_managers_with_nodes():
-                if manager.node_inquirer.blockchain.value in changed_chains:
-                    manager.node_inquirer.invalidate_nodes_cache()
+                inquirer = manager.node_inquirer
+                chain_added = {node for node in added if node.blockchain == inquirer.blockchain}
+                chain_removed = {
+                    node for node in removed if node.blockchain == inquirer.blockchain
+                }
+                if chain_added or chain_removed:
+                    inquirer.refresh_nodes(added=chain_added, removed=chain_removed)
 
     def update_accounting_rules(
             self,
@@ -563,7 +570,7 @@ class RotkiDataUpdater:
             self,
             existing_default_nodes: list[tuple[Any, ...]],
             new_default_nodes: list[tuple[Any, ...]],
-    ) -> set[str]:
+    ) -> tuple[set[NodeName], set[NodeName]]:
         """Updates the user nodes using the default nodes from the global db.
 
         This function does the following:
@@ -571,13 +578,16 @@ class RotkiDataUpdater:
         and the difference is deleted from the user db.
         2. Adds the new default rpc nodes to the user db.
 
-        Returns the blockchains whose user nodes were added or removed.
+        Returns the added and removed user node identities, respectively.
 
         indexes 1 & 2 -> endpoint of node
         indexes 5 & 6 -> blockchain of node
         """
         with self.user_db.conn.read_ctx() as cursor:
-            user_rpc_nodes = set(cursor.execute('SELECT endpoint, blockchain FROM rpc_nodes'))
+            user_nodes = cursor.execute(
+                'SELECT name, endpoint, owned, blockchain FROM rpc_nodes',
+            ).fetchall()
+            user_rpc_nodes = {(node[1], node[3]) for node in user_nodes}
 
         # check for nodes to delete for the user
         nodes_to_delete = (
@@ -606,4 +616,14 @@ class RotkiDataUpdater:
                 'VALUES(?, ?, ?, ?, ?, ?)',
                 nodes_to_add,
             )
-        return {node[5] for node in nodes_to_add} | {chain for _, chain in nodes_to_delete}
+        node_chains = {chain.value: chain for chain in CHAINS_WITH_NODES}
+        return (
+            {NodeName(
+                name=node[0], endpoint=node[1], owned=bool(node[2]),
+                blockchain=node_chains[node[5]],
+            ) for node in nodes_to_add},
+            {NodeName(
+                name=node[0], endpoint=node[1], owned=bool(node[2]),
+                blockchain=node_chains[node[3]],
+            ) for node in user_nodes if (node[1], node[3]) in nodes_to_delete},
+        )
