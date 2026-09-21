@@ -1,8 +1,9 @@
 import logging
 import os
+from functools import partial
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -748,3 +749,74 @@ def test_connecting_to_node(rotkehlchen_api_server: APIServer) -> None:
             'errors': [{'name': 'dRPC', 'error': 'Custom error'}],
         }
         assert response.status_code == HTTPStatus.OK
+
+
+def _change_rpc_through_api(url: str, payload: dict[str, Any], delete: bool) -> bool:
+    response = (requests.delete if delete else requests.patch)(url, json=payload)
+    assert_proper_sync_response_with_result(response)
+    return True
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('operation', ['delete', 'disable', 'replace', 'zero_weight'])
+@pytest.mark.parametrize('inflight', [False, True])
+def test_rpc_api_reconciles_connections(
+        rotkehlchen_api_server: APIServer,
+        operation: str,
+        inflight: bool,
+) -> None:
+    """API changes evict archive connections and reject old in-flight connections."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    inquirer = rotki.chains_aggregator.optimism.node_inquirer
+    database = rotki.data.db
+    old = NodeName(
+        name='review archive', endpoint='https://old.example.com', owned=False,
+        blockchain=SupportedBlockchain.OPTIMISM,
+    )
+    database.add_rpc_node(WeightedNode(node_info=old, active=True, weight=FVal(1)))
+    node = next(
+        entry for entry in database.get_rpc_nodes(old.blockchain) if entry.node_info == old
+    )
+    payload: dict[str, Any] = {'identifier': node.identifier}
+    if operation != 'delete':
+        payload.update(
+            name=old.name,
+            endpoint='https://new.example.com' if operation == 'replace' else old.endpoint,
+            owned=False, active=operation != 'disable',
+            weight='0' if operation == 'zero_weight' else '100',
+        )
+    change = partial(
+        _change_rpc_through_api,
+        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='optimism'),
+        payload, operation == 'delete',
+    )
+    inquirer.rpc_mapping.clear()
+    inquirer.failed_to_connect_nodes.add(old.name)
+    inquirer.mark_node_failure(old, 'old failure')
+    client = MagicMock()
+    client.is_connected.side_effect = change
+    with (
+        patch.object(inquirer, 'connect_to_multiple_nodes') as connect,
+        patch.object(inquirer, '_init_web3', return_value=(client, old.endpoint)),
+        patch.object(inquirer, 'determine_capabilities', return_value=(True, False)),
+    ):
+        if inflight:
+            assert inquirer.attempt_connect(old, connectivity_check=False)[0] is False
+        else:
+            inquirer.rpc_mapping[old] = RPCNode(
+                rpc_client=client, is_archive=True, is_pruned=False,
+            )
+            assert inquirer.has_archive_node()
+            change()
+            assert inquirer.attempt_connect(old, connectivity_check=False)[0] is False
+        assert old not in inquirer.rpc_mapping
+        assert old in inquirer._removed_nodes
+        assert old.name not in inquirer.failed_to_connect_nodes
+        assert inquirer.get_runtime_state(old) is None
+        assert not inquirer.has_archive_node()
+        assert inquirer.get_archive_call_order() == []
+        assert all(entry.node_info != old for entry in connect.call_args.args[0])
+        if operation == 'replace':
+            replacement = next(entry.node_info for entry in connect.call_args.args[0]
+                               if entry.node_info.name == old.name)
+            assert replacement not in inquirer._removed_nodes

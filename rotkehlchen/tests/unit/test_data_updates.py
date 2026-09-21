@@ -568,6 +568,8 @@ def test_rpc_update_refreshes_inquirer_call_order(
             'rpc_nodes': {'latest': 1},
         }),
         patch('rotkehlchen.db.updates.query_file', return_value={'rpc_nodes': remote_nodes}),
+        patch.object(blockchain.optimism.node_inquirer, 'connect_to_multiple_nodes'),
+        patch.object(blockchain.solana.node_inquirer, 'connect_to_multiple_nodes'),
     ):
         data_updater.check_for_updates(updates=[UpdateType.RPC_NODES])
 
@@ -1057,3 +1059,52 @@ def test_rpc_refresh_preserves_healthy_fallback(
         assert inquirer.get_runtime_state(first) is None
         if isinstance(inquirer, SolanaInquirer):
             assert first.name not in inquirer.node_backoff_info
+
+
+def _connect_archive_rpc(
+        inquirer: EvmNodeInquirer,
+        node: NodeName,
+        **kwargs: Any,
+) -> tuple[bool, str]:
+    inquirer.rpc_mapping[node] = RPCNode(
+        rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+    )
+    return True, ''
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize(('active', 'weight'), [(True, '1'), (False, '1'), (True, '0')])
+def test_remote_archive_node_connects_without_query(
+        database: DBHandler,
+        blockchain: ChainsAggregator,
+        active: bool,
+        weight: str,
+) -> None:
+    """Remote additions become archive candidates without an unrelated lazy query."""
+    from rotkehlchen.concurrency import wait
+
+    inquirer = blockchain.optimism.node_inquirer
+    inquirer.rpc_mapping.clear()
+    updater = RotkiDataUpdater(
+        msg_aggregator=database.msg_aggregator, user_db=database, chains_aggregator=blockchain,
+    )
+    node = NodeName(
+        name='new archive', endpoint='https://archive.example.com',
+        owned=False, blockchain=SupportedBlockchain.OPTIMISM,
+    )
+    with (
+        patch.object(updater, '_update_user_nodes', return_value=({node}, set())),
+        patch.object(inquirer, 'attempt_connect', side_effect=partial(
+            _connect_archive_rpc, inquirer,
+        )) as connect,
+    ):
+        database.add_rpc_node(WeightedNode(node_info=node, active=active, weight=FVal(weight)))
+        updater.update_rpc_nodes(data=[], version=1)
+        wait(inquirer.task_supervisor.tasks, timeout=5)
+    if active and weight != '0':
+        connect.assert_called_once_with(node=node, connectivity_check=True)
+        assert inquirer.has_archive_node()
+        assert [entry.node_info for entry in inquirer.get_archive_call_order()] == [node]
+    else:
+        connect.assert_not_called()
+        assert not inquirer.has_archive_node()
