@@ -1,7 +1,7 @@
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { ActivityId, ActivityKind, ActivityText } from '@/modules/task-center/core/types';
 import { ok, type Result } from 'plainfp/result';
-import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { type Priority, UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface BatchLabels {
@@ -34,6 +34,11 @@ interface BatchUmbrella extends BatchLabels {
   readonly container?: boolean;
   /** See {@link ActivitySpec.userStarted}. The children carry their own, for the one-item case. */
   readonly userStarted?: boolean;
+  /**
+   * The umbrella's scheduling priority. Give it the children's: they cannot start before it does, so
+   * a rule that holds the umbrella holds every child with it, whatever their own priority says.
+   */
+  readonly priority?: Priority;
 }
 
 interface UseActivityBatchReturn {
@@ -85,6 +90,7 @@ export function useActivityBatch(): UseActivityBatchReturn {
       kind: umbrella.kind,
       lane: UMBRELLA_LANE,
       parent: umbrella.parent,
+      priority: umbrella.priority,
       rerunnable: false,
       run: async (): Promise<Result<void, TaskError>> => {
         await Promise.allSettled(await subtree);

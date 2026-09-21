@@ -34,6 +34,14 @@ interface UseBlockchainBalancesReturn {
 }
 
 /**
+ * The scheduling priority of a refresh, shared by its umbrella and its chain jobs: a chain cannot
+ * start before its umbrella, so an umbrella at a lower priority would hold a user's refresh back.
+ */
+function refreshPriority(userStarted: boolean): Priority {
+  return userStarted ? Priority.USER : DEFAULT_PRIORITY;
+}
+
+/**
  * Layer 2 — the work, as **one chain job per chain**.
  *
  * The chain is the unit of identity, ordering and exclusion, and the job is a *parent*, not a leaf:
@@ -116,6 +124,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
 
     const userStarted = mode === RefreshMode.USER;
     const submit = userStarted ? supersedeTask : submitTask;
+    const priority = refreshPriority(userStarted);
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
@@ -146,7 +155,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         parent,
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
         lane: BALANCES_LANE,
-        priority: userStarted ? Priority.USER : DEFAULT_PRIORITY,
+        priority,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
           if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
@@ -178,6 +187,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         // The chains are the subjects; this only contains them, so it records no completion.
         container: true,
         kind: ActivityKind.BLOCKCHAIN_BALANCES,
+        priority,
         subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.run'), { count: chains.length }),
         title: t('task_center.group.blockchain_balances'),
         userStarted,
