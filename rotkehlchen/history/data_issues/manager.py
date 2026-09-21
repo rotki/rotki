@@ -22,6 +22,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssuePayload,
     NegativeBalanceIssuePayload,
     RebasingTokenIssuePayload,
+    TrackedAddressTransferIssuePayload,
     UnmatchedBridgeIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -190,11 +191,12 @@ class DataIssuesManager:
         created_at = ts_now()
         if kind in (
             IssueKind.NEGATIVE_BALANCE,
+            IssueKind.TRACKED_ADDRESS_TRANSFER,
             IssueKind.REBASING_TOKEN,
             IssueKind.UNMATCHED_BRIDGE,
         ):
             event_identifier = cast(
-                'NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
+                'NegativeBalanceIssuePayload | TrackedAddressTransferIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
                 payload,
             )['event_identifier']
         else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
