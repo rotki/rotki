@@ -90,8 +90,8 @@ jobs:
             platform: macosx-11.0-arm64
           - runner: macos-15-intel
             arch: 'x86_64'
-            target: 10.9
-            platform: macosx-10.9-x86_64
+            target: 10.15
+            platform: macosx-10.15-x86_64
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
