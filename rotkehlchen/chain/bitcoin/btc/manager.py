@@ -419,6 +419,10 @@ class BitcoinManager(BitcoinCommonManager):
             fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='btc tx fees')),
             # A coinbase input has no prevout and is the only input of its transaction, so
             # dropping it leaves no other input misplaced.
+            # TODO: The decoder treats a transaction without inputs as one without transfers,
+            # so a mining reward paid to a tracked address gets no receive event. The same
+            # happens for the other explorers (blockchain.info reports the coinbase input as
+            # a prev_out without address). A coinbase transaction needs its own decoding.
             inputs=BtcTxIO.deserialize_list(
                 data_list=[prevout for vin in data['vin'] if (prevout := vin.get('prevout')) is not None],  # noqa: E501
                 direction=BtcTxIODirection.INPUT,
