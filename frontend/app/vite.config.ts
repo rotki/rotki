@@ -317,7 +317,7 @@ export default defineConfig({
     sourcemap: isDevelopment || isTest || isCoverage,
     outDir: 'dist',
     assetsDir: '.',
-    minify: true,
+    minify: !isCoverage,
     rolldownOptions: {
       external: [
         'electron',
