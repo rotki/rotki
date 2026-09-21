@@ -63,7 +63,7 @@ export interface ExchangeEventsSubject {
 export interface ExchangeEventsDetail {
   /** The sub-range being queried, `[from, to]`, in seconds. Absent until the first status update. */
   readonly period?: readonly [number, number];
-  /** Which query this is, as the backend's own type. Empty while the panel is only seeded. */
+  /** Which query this is, as the backend's own type. */
   readonly eventType: string;
 }
 
