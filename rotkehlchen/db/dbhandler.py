@@ -2694,7 +2694,7 @@ class DBHandler:
             settings[BINANCE_MARKETS_KEY] = json.dumps(binance_selected_trade_pairs)
         DBConnections.set_settings(write_cursor, identifier, settings)
 
-    def remove_exchange(self, write_cursor: DBCursor, identifier: ConnectionIdentifier) -> None:
+    def remove_exchange(self, write_cursor: DBCursor, identifier: str) -> None:
         """Remove a connection with its settings and progress, and from the non-syncing
         setting. Used for bank connections too. May raise InputError."""
         DBConnections(self).delete(write_cursor, identifier)
@@ -2722,7 +2722,7 @@ class DBHandler:
         """Every exchange and bank connection, optionally only of the given connectors"""
         return DBConnections.get_all(cursor, connectors)
 
-    def get_exchange_credentials_extras(self, identifier: ConnectionIdentifier) -> dict[str, Any]:
+    def get_exchange_credentials_extras(self, identifier: str) -> dict[str, Any]:
         """Returns any extra settings of an exchange connection"""
         with self.conn.read_ctx() as cursor:
             raw_settings = DBConnections.get_settings(cursor, identifier)
@@ -2730,14 +2730,14 @@ class DBHandler:
         extras: dict[str, Any] = {}
         for key, value in raw_settings.items():
             if key not in USER_CREDENTIAL_MAPPING_KEYS:
-                log.error(f'Unknown credential setting {key} found in the DB. Skipping.')
+                log.error('Unknown credential setting %s found in the DB. Skipping.', key)
                 continue
 
             if key == KRAKEN_ACCOUNT_TYPE_KEY:
                 try:
                     extras[key] = KrakenAccountType.deserialize(value)
                 except DeserializationError as e:
-                    log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
+                    log.error('Couldnt deserialize kraken account type from DB. %s', e)
             elif key in (KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY):
                 extras[key] = value
             elif key == GATE_LOCATION_KEY:
@@ -2759,7 +2759,7 @@ class DBHandler:
                 try:
                     extras[key] = json.loads(value)
                 except json.JSONDecodeError as e:
-                    log.error(f'Could not deserialize binance markets from DB. {e!s}')
+                    log.error('Could not deserialize binance markets from DB. %s', e)
 
         return extras
 

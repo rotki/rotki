@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
@@ -60,7 +61,7 @@ def test_failed_history_query_saves_completed_source(coinex_exchange: Coinex) ->
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{LOCATION_COINEX!s}_history_events_{coinex_exchange.name}',),
+            (connection_range_name(coinex_exchange.connection_identifier, 'history_events'),),
         ).fetchone()[0] == 0
 
 
@@ -91,7 +92,7 @@ def test_history_query_without_full_progress_saves_events(coinex_exchange: Coine
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{LOCATION_COINEX!s}_history_events_{coinex_exchange.name}',),
+            (connection_range_name(coinex_exchange.connection_identifier, 'history_events'),),
         ).fetchone()[0] == 0
 
 

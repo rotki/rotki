@@ -842,8 +842,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: APIServer) -> N
         ),
         json={
             'async_query': async_query,
-            'location': LOCATION_KRAKEN,
-            'name': 'mockkraken',
+            'identifier': rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.exchange_manager.connected_exchanges[LOCATION_KRAKEN][0].connection_identifier,  # noqa: E501
         },
     )
 

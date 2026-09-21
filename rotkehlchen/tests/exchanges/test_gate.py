@@ -9,6 +9,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
@@ -127,7 +128,7 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
     with gate_exchange.db.conn.read_ctx() as cursor:
         ranges_to_query = DBQueryRanges(gate_exchange.db).get_location_query_ranges(
             cursor=cursor,
-            location_string=f'{gate_exchange.location!s}_history_events_{gate_exchange.name}',
+            location_string=connection_range_name(gate_exchange.connection_identifier, 'history_events'),  # noqa: E501
             start_ts=GATE_MOVEMENTS_QUERY_START_TS,
             end_ts=query_end,
         )

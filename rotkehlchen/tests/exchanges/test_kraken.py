@@ -24,6 +24,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.concurrency import spawn, wait
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BCH,
@@ -198,7 +199,7 @@ def test_partial_history_query_saves_events_without_advancing_range(kraken: Krak
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{LOCATION_KRAKEN!s}_history_events_{kraken.name}',),
+            (connection_range_name(kraken.connection_identifier, 'history_events'),),
         ).fetchone()[0] == 0
 
 
@@ -363,7 +364,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         )) == 4  # spend, receive, fee, and kfee
         assert database.get_used_query_range(
             cursor,
-            'kraken_history_events_mockkraken',
+            connection_range_name(kraken.connection_identifier, 'history_events'),
         ) is None  # pages are newest-first, so a partial response has no safe range boundary
 
 
@@ -1422,8 +1423,8 @@ def test_trade_from_kraken_unexpected_data(kraken):
                 (location,),
             )
             cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name LIKE ?',
-                (f'{location}_history_events_%',),
+                'DELETE FROM used_query_ranges WHERE name=?',
+                (connection_range_name(kraken.connection_identifier, 'history_events'),),
             )
 
         with _patch_ledger(kraken, input_trades):
@@ -2228,8 +2229,8 @@ def test_kraken_futures_history_uses_independent_query_range(kraken: Kraken) -> 
     ):
         kraken.query_history_events()
 
-    spot_range_name = f'{LOCATION_KRAKEN!s}_history_events_{kraken.name}'
-    futures_range_name = f'{LOCATION_KRAKEN!s}_history_events_futures_{kraken.name}'
+    spot_range_name = connection_range_name(kraken.connection_identifier, 'history_events')
+    futures_range_name = connection_range_name(kraken.connection_identifier, 'history_events_futures')  # noqa: E501
     with kraken.db.conn.read_ctx() as cursor:
         assert kraken.db.get_used_query_range(cursor, spot_range_name) == (Timestamp(0), end_ts)
         assert kraken.db.get_used_query_range(cursor, futures_range_name) is None

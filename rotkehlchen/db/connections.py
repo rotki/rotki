@@ -4,7 +4,7 @@ A connection is one configured account of an exchange or bank connector. Its ide
 changes, so everything that tracks a connection's progress (query ranges, cursors, sessions,
 connector settings, the non-syncing setting) is keyed by it and survives renames.
 """
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -41,7 +41,8 @@ def _connection_from_row(row: tuple) -> IntegrationConnection:
         connector=ConnectorIdentifier(row[2]),
         location=LocationIdentifier(row[3]),
         api_key=ApiKey(row[4]),
-        api_secret=None if row[5] is None else ApiSecret(row[5].encode()),
+        # databases written by old versions may hold the secret as a blob
+        api_secret=None if row[5] is None else ApiSecret(row[5] if isinstance(row[5], bytes) else row[5].encode()),  # noqa: E501
         passphrase=row[6],
     )
 
@@ -216,7 +217,7 @@ class DBConnections:
             self.db.set_non_syncing_exchanges(write_cursor, non_syncing - {identifier})
 
     @staticmethod
-    def get_settings(cursor: DBCursor, identifier: str) -> dict[str, str]:
+    def get_settings(cursor: DBCursor, identifier: str) -> dict[str, Any]:
         """The raw connector specific settings of a connection"""
         return dict(cursor.execute(
             'SELECT setting_name, setting_value FROM integration_connection_settings '
@@ -225,9 +226,10 @@ class DBConnections:
         ))
 
     @staticmethod
-    def set_settings(write_cursor: DBCursor, identifier: str, settings: dict[str, str]) -> None:
+    def set_settings(write_cursor: DBCursor, identifier: str, settings: dict[str, Any]) -> None:
+        """Values are stored as given, a secret keeps its bytes"""
         write_cursor.executemany(
             'INSERT OR REPLACE INTO integration_connection_settings'
             '(connection_identifier, setting_name, setting_value) VALUES (?, ?, ?)',
-            [(identifier, name, str(value)) for name, value in settings.items()],
+            [(identifier, name, value) for name, value in settings.items()],
         )

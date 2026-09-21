@@ -2432,7 +2432,7 @@ def test_untracked_kraken_withdrawal_negative_balance(
     events_db = DBHistoryEvents(database)
     if remedy == 'track_exchange':
         database.add_exchange(
-            name='Kraken', location=LOCATION_KRAKEN, api_key=ApiKey('test'), api_secret=None,
+            name='Kraken', connector=LOCATION_KRAKEN, api_key=ApiKey('test'), api_secret=None,
         )
         process_historical_balances(database, messages_aggregator)
         assert 'reason' not in issues_manager.get_issue(issues[0].id).payload

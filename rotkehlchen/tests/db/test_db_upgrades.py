@@ -182,6 +182,8 @@ def _init_db_with_target_version(
         if target_version <= 50:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
+        if target_version < 54:  # the non syncing setting refers to connections since v54
+            stack.enter_context(patch.object(DBHandler, '_check_settings'))
         return DBHandler(
             user_data_dir=user_data_dir,
             password='123',
@@ -1496,7 +1498,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
-    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}]'
+    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}, {"name": "FTX 1", "location": "ftx"}]'  # noqa: E501
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='ssf_0graph_multiplier'",
     ).fetchone()[0] == '42'
@@ -3384,7 +3386,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
     ).fetchone()[0] == 0
-    removed_tables = {'location'}
+    removed_tables = {'location', 'user_credentials_mappings'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3394,7 +3396,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'locations'}
+    assert new_tables == {'locations', 'integration_connections', 'integration_connection_settings'}  # noqa: E501
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -5151,6 +5153,20 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         write_cursor.execute(
             "INSERT INTO user_credentials_mappings(credential_name, credential_location, setting_name, setting_value) VALUES ('kr', 'B', 'kraken_account_type', 'pro')",  # noqa: E501
         )
+        # the progress of the connection and of one whose name starts with it
+        write_cursor.execute("INSERT INTO user_credentials(name, location, api_key, api_secret) VALUES ('kr_2', 'B', 'key2', 'secret2')")  # noqa: E501
+        write_cursor.executemany(
+            'INSERT INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, 0, ?)',
+            [('kraken_history_events_kr', 10), ('kraken_history_events_futures_kr', 11), ('kraken_history_events_kr_2', 12)],  # noqa: E501
+        )
+        write_cursor.executemany(
+            'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
+            [('kraken_kr_acc1_last_query_ts', '5'), ('kraken_kr_2_acc1_last_query_ts', '6')],
+        )
+        write_cursor.execute(
+            "INSERT OR REPLACE INTO settings(name, value) VALUES ('non_syncing_exchanges', ?)",
+            ('[{"name": "kr_2", "location": "kraken"}, {"name": "gone", "location": "kraken"}]',),
+        )
 
         def table_rows(cursor, table, location_column='location'):
             columns = [  # notes are rewritten by another step of this upgrade
@@ -5163,9 +5179,8 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
                 )
             }
 
-        tables = [*_LOCATION_ROW_INSERTS, 'user_credentials']
+        tables = list(_LOCATION_ROW_INSERTS)
         before = {table: table_rows(write_cursor, table) for table in tables}
-        before['user_credentials_mappings'] = table_rows(write_cursor, 'user_credentials_mappings', 'credential_location')  # noqa: E501
         total_snapshots_before = write_cursor.execute(
             "SELECT timestamp, usd_value FROM timed_location_data WHERE location='H' ORDER BY timestamp",  # noqa: E501
         ).fetchall()
@@ -5182,13 +5197,31 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
     }
     with db.conn.read_ctx() as cursor:
         after = {table: table_rows(cursor, table) for table in tables}
-        after['user_credentials_mappings'] = table_rows(cursor, 'user_credentials_mappings', 'credential_location')  # noqa: E501
         for table, rows in before.items():  # all rows and columns kept, locations mapped
             assert after[table] == {(row, mapping[location]) for row, location in rows}, table
 
-        assert cursor.execute(
-            "SELECT api_secret FROM user_credentials WHERE name='kr'",
-        ).fetchone()[0] == secret
+        # credentials are connections now, keeping their bytes, and everything keyed by
+        # location and name is keyed by the connection identifier
+        connections = {row[1]: row for row in cursor.execute(
+            'SELECT identifier, name, connector_identifier, location_identifier, api_key, api_secret FROM integration_connections',  # noqa: E501
+        )}
+        assert connections['kr'][2:] == ('kraken', 'kraken', 'key', secret)
+        assert connections['kr_2'][2:] == ('kraken', 'kraken', 'key2', 'secret2')
+        kr_id, kr2_id = connections['kr'][0], connections['kr_2'][0]
+        assert cursor.execute("SELECT COUNT(*) FROM user_credentials WHERE name != 'rotkehlchen'").fetchone()[0] == 0  # noqa: E501
+        assert not table_exists(cursor, 'user_credentials_mappings')
+        assert cursor.execute('SELECT connection_identifier, setting_name, setting_value FROM integration_connection_settings WHERE connection_identifier IN (?, ?)', (kr_id, kr2_id)).fetchall() == [(kr_id, 'kraken_account_type', 'pro')]  # noqa: E501
+        assert dict(cursor.execute('SELECT name, end_ts FROM used_query_ranges WHERE name LIKE ? OR name LIKE ?', (f'{kr_id}%', f'{kr2_id}%'))) == {  # noqa: E501
+            f'{kr_id}_history_events': 10,
+            f'{kr_id}_history_events_futures': 11,
+            f'{kr2_id}_history_events': 12,
+        }
+        assert dict(cursor.execute('SELECT name, value FROM key_value_cache WHERE name LIKE ? OR name LIKE ?', (f'{kr_id}%', f'{kr2_id}%'))) == {  # noqa: E501
+            f'{kr_id}_acc1_last_query_ts': '5',
+            f'{kr2_id}_acc1_last_query_ts': '6',
+        }
+        assert cursor.execute("SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE 'kraken_history_events_kr%'").fetchone()[0] == 0  # noqa: E501
+        assert db.get_settings(cursor).non_syncing_exchanges == {kr2_id}
         assert cursor.execute(
             "SELECT timestamp, usd_value FROM timed_location_data WHERE location='total' ORDER BY timestamp",  # noqa: E501
         ).fetchall() == total_snapshots_before
@@ -5204,7 +5237,7 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
                 (V53_LEGACY_LOCATION_CHARS[char][0], 'legacy locations', 1, 0)
                 for char in legacy_placement
             )
-        for table in (*_LOCATION_ROW_INSERTS, 'user_credentials_mappings'):
+        for table in (*_LOCATION_ROW_INSERTS, 'integration_connections'):
             assert cursor.execute(f'PRAGMA foreign_key_check({table})').fetchall() == []
         DBLocations().validate_tree(cursor)
 

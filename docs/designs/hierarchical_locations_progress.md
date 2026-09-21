@@ -16,22 +16,14 @@ section.
 | 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | done |
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | done |
 | 5 | Custom location API (CRUD, usage, image upload) | B | done |
-| 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | todo |
+| 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | in progress (connections done; global connector mappings next) |
 | 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | todo |
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
 
-Transitional state (removed by section 6 unless noted):
-
-- FinTS has no location. `rotkehlchen.banks.constants.FINTS_CONNECTOR` ('fints') keys its
-  credentials and manifest like an exchange location until connections store connector and
-  location separately. `LOCATION_DETAILS` still carries a `fints` entry for the bank setup UI.
-  `ExchangeInterface.data_location` is the location a connection's events, balances and snapshots
-  use; `Fints.data_location` returns `banks` until section 6 gives each FinTS connection its
-  institution location.
-- `user_credentials.location` and `user_credentials_mappings.credential_location` hold text but have
-  no FK: they are connector identity, replaced by `integration_connections` in section 6. Premium
-  credentials keep the `external` location they always had.
+Transitional state: none left from sections 1-5. Section 6 gave FinTS connections their own
+location and replaced `user_credentials` (bar the premium row) and `user_credentials_mappings`
+with `integration_connections`.
 
 Pre-tree character encoding: `rotkehlchen/locations/legacy_chars.py` is the frozen codec every
 historical user DB upgrade (v36..v53), the v54 migration and the global v18->v19 conversion use. Old
@@ -257,3 +249,42 @@ needs no change.
   its image removes the file. Built-in `image` values are packaged frontend names and are never
   served by the backend, so a client tells the two apart by `is_builtin`.
 - User-data backup and restore of the images belongs to section 7.
+
+## Section 6 notes
+
+- A connection is one configured account of a connector: `integration_connections(identifier,
+  name, connector_identifier, location_identifier, api_key, api_secret, passphrase)` with a
+  uuid4 identifier and `UNIQUE(connector_identifier, name)`. Connector specific settings (kraken
+  account type, binance markets, kraken futures keys, ...) are rows of
+  `integration_connection_settings`, deleted with the connection. `DBConnections`
+  (`db/connections.py`) is the only code reading or writing either table.
+- Everything that tracks a connection's progress is keyed by its identifier, so it survives
+  renames: query ranges `{identifier}_{kind}` (`connection_range_name`), and the
+  `DBCacheDynamic` templates starting with `{connection}` (cursors, bank sessions, per-account
+  last query ts/id, binance per-pair ids). `LAST_QUERY_TS`/`LAST_BLOCK_ID` stay location keyed
+  for chains. Deleting a connection deletes all of it (`DBConnections.delete_progress`). A
+  rename rewrites only the `location_label` of the connection's events, which holds the name.
+- Connectors come from explicit registries (`EXCHANGE_CONNECTOR_CLASSES`,
+  `BANK_CONNECTOR_CLASSES`) instead of importing a module named after a location. An exchange
+  connector's location is `exchange_location(connector)` (the same name). A bank manifest carries
+  `connector_identifier` and `fixed_location`: Qonto fixes `qonto`, FinTS has none, so each FinTS
+  connection names a location in the Banks subtree (validated on add). Bank events get
+  `connection_identifier` and the provider `source_id` in extra data, and the group identifier
+  hashes location, account and source id.
+- API: `/exchanges` and `/banks` take the connection `identifier` on edit, delete, auth and sync;
+  add takes `connector` (plus `location` for a bank connector without a fixed one) and returns
+  the new identifier. `GET /exchanges/supported` replaces the exchange details of
+  `/locations/all`, `/banks/supported` the bank details. `non_syncing_exchanges` is a list of
+  identifiers. `/history/events/query/exchange` takes an identifier or a location;
+  `/exchanges/binance/pairs/<identifier>`.
+- v53->v54 (`_move_credentials_to_connections`, after `_finish_location_tree`): one connection
+  per old credential row with a fresh uuid, mappings to settings, range names and caches rekeyed
+  through frozen tail regexes (bank caches were `{connector}_{hex(name)}_...`), non-syncing
+  entries mapped and unknown ones dropped, then the old non-premium rows and the mappings table
+  are dropped and `integration_connections` is FK-checked.
+- Frontend: exchanges and banks are addressed by identifier everywhere (store, API clients,
+  refresh flows, pages). The bank form picks a connector and, for FinTS, a bank location from
+  `GET /locations` limited to the Banks subtree (`bank-locations.ts`). Bank locations are the
+  locations of the bank connections (`useBankConnectionsStore().bankLocations`); `isBank` and the
+  exchange details of the flat location map are gone.
+

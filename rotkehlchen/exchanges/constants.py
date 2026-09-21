@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.locations.constants import (
     LOCATION_BINANCE,
@@ -31,9 +31,6 @@ from rotkehlchen.locations.constants import (
 )
 from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.types import EXTERNAL_EXCHANGES
-
-if TYPE_CHECKING:
-    from rotkehlchen.connections.types import ConnectorIdentifier
 
 EXCHANGES_WITH_PASSPHRASE = (LOCATION_KUCOIN, LOCATION_OKX, LOCATION_COINBASEPRIME)
 EXCHANGES_WITHOUT_API_SECRET = (LOCATION_BITPANDA,)
@@ -68,7 +65,7 @@ DEAD_EXCHANGES = (LOCATION_FTX, LOCATION_FTXUS, LOCATION_BITTREX, LOCATION_COINB
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES + DEAD_EXCHANGES
 
 
-def exchange_location(connector: ConnectorIdentifier | LocationIdentifier) -> LocationIdentifier:
+def exchange_location(connector: str) -> LocationIdentifier:
     """The location an exchange connector's connections put their data in. Every exchange
     connector reads its own exchange, whose location is spelled like the connector."""
     return LocationIdentifier(connector)

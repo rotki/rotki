@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import _patch, patch
 
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bit2me import Bit2me
@@ -1077,23 +1079,28 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
                     amount=ONE,
                     notes='boo',
                 )])
-            db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_margins_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
-            db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_history_events_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
+            for identifier in DBConnections.identifiers_at_location(cursor, exchange_location):
+                for kind in ('margins', 'history_events'):
+                    db.update_used_query_range(write_cursor=cursor, name=connection_range_name(identifier, kind), start_ts=0, end_ts=9999)  # noqa: E501
 
 
 def check_saved_events_for_exchange(
         exchange_location: LocationIdentifier,
         db: DBHandler,
         should_exist: bool,
-        queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
+        queryrange_formatstr: str | None = None,
 ) -> None:
-    """Check that an exchange has saved events"""
+    """Check whether the connections of an exchange have queried their margins, or with
+    a format string, whether the legacy range of that name exists"""
     with db.conn.read_ctx() as cursor:
-        margins_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
-    if should_exist:
-        assert margins_range is not None
-    else:
-        assert margins_range is None
+        if queryrange_formatstr is not None:
+            ranges = [db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='margins'))]  # noqa: E501
+        else:
+            ranges = [
+                db.get_used_query_range(cursor, connection_range_name(identifier, 'margins'))
+                for identifier in DBConnections.identifiers_at_location(cursor, exchange_location)
+            ]
+    assert any(x is not None for x in ranges) is should_exist
 
 
 TRANSACTIONS_RESPONSE = """{

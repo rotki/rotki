@@ -371,6 +371,8 @@ CREATE TABLE IF NOT EXISTS integration_connection_settings (
 
     write_cursor.execute("DELETE FROM user_credentials WHERE name != 'rotkehlchen'")
     write_cursor.execute('DROP TABLE user_credentials_mappings')
+    if len(violations := write_cursor.execute('PRAGMA foreign_key_check(integration_connections)').fetchall()) != 0:  # noqa: E501
+        raise DBUpgradeError(f'Connections with unknown locations: {violations}')
 
 
 @enter_exit_debug_log(name='UserDB v53->v54 upgrade')
@@ -492,10 +494,6 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             _rebuild_location_table(write_cursor, *entry)
         write_cursor.switch_foreign_keys('ON')
 
-    @progress_step(description='Move exchange and bank credentials to connections.')
-    def _move_credentials(write_cursor: DBCursor) -> None:
-        _move_credentials_to_connections(write_cursor)
-
     @progress_step(description='Remove the old location table and verify the location tree.')
     def _finish_location_tree(write_cursor: DBCursor) -> None:
         write_cursor.execute('DROP TABLE location')
@@ -510,5 +508,9 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             DBLocations().validate_tree(write_cursor)
         except LocationTreeError as e:
             raise DBUpgradeError(f'Invalid location tree after the upgrade: {e!s}') from e
+
+    @progress_step(description='Move exchange and bank credentials to connections.')
+    def _move_credentials(write_cursor: DBCursor) -> None:
+        _move_credentials_to_connections(write_cursor)
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -9,7 +9,6 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.api.session_store import SessionStore
-from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -659,10 +658,9 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges: APIServer) -> No
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert set(result['locations'].keys()) == {  # every built-in, legacy location and fints
+    assert set(result['locations'].keys()) == {  # every built-in and legacy location
         *(x.identifier for x in load_builtin_catalog()),
         *(x[0] for x in V53_LEGACY_LOCATION_CHARS.values()),
-        FINTS_CONNECTOR,
     }
     for detail in result['locations'].values():
         assert 'icon' in detail or 'image' in detail

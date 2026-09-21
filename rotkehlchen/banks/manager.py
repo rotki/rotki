@@ -104,7 +104,7 @@ class BankManager:
         # the connected banks of every connector
         self.connected_banks: dict[str, list[BankConnector]] = defaultdict(list)
         self.pending_setups: dict[ConnectionIdentifier, BankConnector] = {}
-        self.sync_status: dict[ConnectionIdentifier, BankSyncStatus] = defaultdict(BankSyncStatus)
+        self.sync_status: dict[str, BankSyncStatus] = defaultdict(BankSyncStatus)
         self.msg_aggregator = msg_aggregator
         # serializes registry mutations together with their DB persistence, like the
         # exchange manager does. Never held across network calls.
@@ -302,7 +302,7 @@ class BankManager:
 
     def edit_bank(
             self,
-            identifier: ConnectionIdentifier,
+            identifier: str,
             new_name: str | None,
             credentials: BankCredentialInput,
     ) -> tuple[bool, str]:
@@ -357,7 +357,7 @@ class BankManager:
                 bank.name = new_name
         return True, ''
 
-    def delete_bank(self, identifier: ConnectionIdentifier) -> tuple[bool, str]:
+    def delete_bank(self, identifier: str) -> tuple[bool, str]:
         assert self.database is not None, 'delete_bank called before login'
         with self.registry_lock:
             if (bank := self.get_bank(identifier)) is None:

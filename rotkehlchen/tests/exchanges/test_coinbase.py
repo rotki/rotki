@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_USD, A_USDC
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -363,6 +364,7 @@ def query_coinbase_and_test(
 
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
         coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=LOCATION_COINBASE)
+        DBConnections.delete_progress(write_cursor, [coinbase.connection_identifier])
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
         if len(returned_events := coinbase._query_transactions()) != 0:
             with coinbase.db.user_write() as write_cursor:
@@ -605,7 +607,7 @@ def test_account_failure_does_not_advance_cursors(
         )
         assert cursor.execute(  # and only now is the cursor persisted
             'SELECT value FROM key_value_cache WHERE name=?',
-            (f'{coinbase.location}_{coinbase.name}_account_a_last_query_id',),
+            (DBCacheDynamic.LAST_QUERY_ID.get_db_key(connection=coinbase.connection_identifier, account_id='account_a'),),  # noqa: E501
         ).fetchone()[0] == 'tx_a_1'
     assert len(events) == 1
     assert events[0].group_identifier == 'CBE_tx_a_1'
@@ -1952,10 +1954,9 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
     with coinbase.db.user_write() as write_cursor:
         coinbase.db.set_dynamic_cache(
             write_cursor=write_cursor,
-            name=DBCacheDynamic.LAST_QUERY_TS,
+            name=DBCacheDynamic.CONNECTION_LAST_QUERY_TS,
             value=1728522001,  # 2024-10-10 01:00:01 UTC
-            location=coinbase.location,
-            location_name=coinbase.name,
+            connection=coinbase.connection_identifier,
             account_id='xyz',
         )
 

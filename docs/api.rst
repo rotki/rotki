@@ -1081,7 +1081,7 @@ Getting or modifying settings
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :reqjson object[optional] evm_indexers_order: Mapping of EVM chain names to the ordered list of indexers to query per chain. Each list must contain the available indexers without duplicates.
    :resjson list[optional] default_evm_indexer_order: Default order to use for chains where no specific indexer order has been given.
-   :reqjson list non_syncing_exchanges: A list of objects with the keys ``name`` and ``location`` of the exchange. These exchanges will be ignored when querying the trades. Example: ``[{"name": "my_exchange", "location": "binance"}]``.
+   :reqjson list non_syncing_exchanges: A list of exchange connection identifiers. These connections will be ignored when querying the history. Example: ``["0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"]``.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
@@ -2369,7 +2369,7 @@ Get the supported banks
 
 .. http:get:: /api/(version)/banks/supported
 
-   Doing a GET on this endpoint returns the manifest of every bank connector rotki ships. The manifest is what a setup UI needs to render the connection form generically: the credential fields (``secrets``, each with the ``slot`` it is stored in, a ``label`` and a ``description``), the ``auth_flow`` as a list of auth primitives, the access tier, capabilities and user-facing ``setup_notes``. The same object is available per location under ``bank_details`` of the `Get all valid locations`_ endpoint.
+   Doing a GET on this endpoint returns the manifest of every bank connector rotki ships. The manifest is what a setup UI needs to render the connection form generically: the credential fields (``secrets``, each with the ``slot`` it is stored in, a ``label`` and a ``description``), the ``auth_flow`` as a list of auth primitives, the access tier, capabilities and user-facing ``setup_notes``. ``connector_identifier`` names the connector when adding a connection. ``fixed_location`` is the location every connection of the connector puts its data in, or ``null`` for a connector such as FinTS that serves many banks, where each connection names its bank location.
 
    **Example Response**:
 
@@ -2380,7 +2380,8 @@ Get the supported banks
 
       {
           "result": [{
-              "location": "qonto",
+              "connector_identifier": "qonto",
+              "fixed_location": "qonto",
               "display_name": "Qonto",
               "access_tier": "official api",
               "capabilities": ["balances", "transactions"],
@@ -2416,22 +2417,24 @@ Get, add, edit or remove bank connections
 
       {
           "result": [{
+              "identifier": "4c1f6e0a-8a55-4d4b-9c1e-2b1f0c7d9e10",
               "name": "Qonto main",
+              "connector": "qonto",
               "location": "qonto",
               "display_name": "Qonto",
-              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null}
+              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null, "auth_challenge": null}
           }],
           "message": ""
       }
 
-   :resjson list result: One entry per connection. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
+   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which every other bank endpoint takes and which survives renames. ``location`` is the location its balances and history belong to. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
    :statuscode 200: Connections returned
    :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/banks
 
-   Doing a PUT on this endpoint with a bank location, a name for the connection and the credentials the bank's manifest declares validates the credentials against the bank and saves the connection.
+   Doing a PUT on this endpoint with a bank connector, a name for the connection and the credentials the connector's manifest declares validates the credentials against the bank and saves the connection.
 
    **Example Request**:
 
@@ -2441,12 +2444,28 @@ Get, add, edit or remove bank connections
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"location": "qonto", "name": "Qonto main", "credentials": {"api_key": "the-login", "api_secret": "the-secret-key"}}
+      {"connector": "qonto", "name": "Qonto main", "credentials": {"api_key": "the-login", "api_secret": "the-secret-key"}}
 
-   :reqjson string location: The bank. One of the locations returned by ``/banks/supported``.
-   :reqjson string name: A name for this connection. Unique per bank.
-   :reqjson object credentials: One string per credential ``slot`` of the bank's manifest. Every declared slot is required. For Qonto ``api_key`` is the login and ``api_secret`` the secret key of the organization's API key.
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"success": true, "identifier": "4c1f6e0a-8a55-4d4b-9c1e-2b1f0c7d9e10", "history_start_ts": null},
+          "message": ""
+      }
+
+   :reqjson string connector: The bank connector. One of the ``connector_identifier`` values returned by ``/banks/supported``.
+   :reqjson string name: A name for this connection. Unique per connector.
+   :reqjson string location: The location the connection's data belongs to. Required for a connector without a ``fixed_location``, where it must be the Banks location or a location below it, and ignored otherwise.
+   :reqjson object credentials: One string per credential ``slot`` of the connector's manifest. Every declared slot is required. For Qonto ``api_key`` is the login and ``api_secret`` the secret key of the organization's API key.
+   :resjson string identifier: The identifier of the new connection.
+   :resjson int history_start_ts: The oldest time the bank serves history for, or ``null`` if it serves all of it.
    :statuscode 200: The connection was added
+   :statuscode 202: The bank asks for an authentication, such as a TAN. The result is the challenge together with the ``identifier`` to answer it under at ``/banks/auth``.
    :statuscode 400: Malformed JSON, or the credentials do not fit the bank's manifest
    :statuscode 401: No user is logged in
    :statuscode 409: The bank rejected the credentials, or a connection with this name exists
@@ -2456,8 +2475,7 @@ Get, add, edit or remove bank connections
 
    Doing a PATCH on this endpoint renames a connection and/or replaces some of its credentials. New credentials are validated against the bank before they are saved.
 
-   :reqjson string location: The bank of the connection
-   :reqjson string name: The current name of the connection
+   :reqjson string identifier: The identifier of the connection
    :reqjson string new_name: Optional. The new name
    :reqjson object credentials: Optional. The credential slots to replace, any subset of the manifest's slots
    :statuscode 200: The connection was edited
@@ -2470,8 +2488,7 @@ Get, add, edit or remove bank connections
 
    Doing a DELETE on this endpoint removes a connection: its credentials, sync cursors and query ranges. History events already pulled stay.
 
-   :reqjson string location: The bank of the connection
-   :reqjson string name: The name of the connection
+   :reqjson string identifier: The identifier of the connection
    :statuscode 200: The connection was removed
    :statuscode 400: Malformed JSON
    :statuscode 401: No user is logged in
@@ -2483,10 +2500,10 @@ Sync bank transactions
 
 .. http:post:: /api/(version)/banks/sync
 
-   Doing a POST on this endpoint pulls new transactions of one connection (``location`` and ``name``), of every connection of a bank (``location`` only) or of every bank (no arguments) into the history events. Syncs are incremental from each account's cursor and re-running one never duplicates a transaction. Banks are also synced by the periodic history query, like exchanges.
+   Doing a POST on this endpoint pulls new transactions of one connection (``identifier``), of every connection of a connector (``connector``) or of every bank connection (no arguments) into the history events. Syncs are incremental from each account's cursor and re-running one never duplicates a transaction. Banks are also synced by the periodic history query, like exchanges.
 
-   :reqjson string location: Optional. The bank to sync
-   :reqjson string name: Optional. The connection to sync. Needs ``location``.
+   :reqjson string connector: Optional. The bank connector whose connections to sync
+   :reqjson string identifier: Optional. The connection to sync
    :reqjson bool async_query: Optional. If true the query is made asynchronously.
    :statuscode 200: Synced
    :statuscode 400: Malformed JSON
@@ -2500,7 +2517,7 @@ Query bank balances
 
 .. http:get:: /api/(version)/banks/balances/(location)
 
-   Doing a GET on this endpoint returns the balances of every connection of a bank, combined. Omitting the location (``/banks/balances``) returns a mapping of bank location to balances for every bank.
+   Doing a GET on this endpoint returns the balances of every bank connection whose data belongs to the location, combined. Omitting the location (``/banks/balances``) returns a mapping of location to balances for every bank connection.
 
    :reqjson bool async_query: Optional. If true the query is made asynchronously.
    :reqjson bool ignore_cache: Optional. If true the bank is queried even if a recent result is cached.
@@ -2528,7 +2545,7 @@ Get a list of setup exchanges
 
 .. http:get:: /api/(version)/exchanges
 
-   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user and with which names.
+   Doing a GET on this endpoint will return the exchange connections of the logged in user.
 
    **Example Request**:
 
@@ -2546,17 +2563,54 @@ Get a list of setup exchanges
 
       {
           "result": [
-               {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
-               {"location": "okx", "name": "okx1", "okx_location": "global"},
-               {"location": "poloniex", "name": "poloniex1"},
-               {"location": "binance", "name": "binance1"}
+               {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f", "name": "kraken1", "connector": "kraken", "location": "kraken", "kraken_account_type": "starter"},
+               {"identifier": "7d2e9a4b-1c3f-4e5a-9b8c-0f1e2d3c4b5a", "name": "okx1", "connector": "okx", "location": "okx", "okx_location": "global"},
+               {"identifier": "c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "name": "binance1", "connector": "binance", "location": "binance"}
            ],
           "message": ""
       }
 
-   :resjson list result: A list of exchange location/name pairs that have been setup for the logged in user.
+   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which the other exchange endpoints take and which survives renames. ``connector`` is the exchange integration that queries it and ``location`` the location its data belongs to.
    :statuscode 200: The exchanges list has been successfully setup
    :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
+Get the supported exchange connectors
+======================================
+
+.. http:get:: /api/(version)/exchanges/supported
+
+   Doing a GET on this endpoint returns every exchange connector a connection can be set up with, and what its setup needs.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/supported HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {"connector": "kraken", "location": "kraken", "is_exchange_with_passphrase": false, "is_exchange_without_api_secret": false, "experimental": false},
+              {"connector": "kucoin", "location": "kucoin", "is_exchange_with_passphrase": true, "is_exchange_without_api_secret": false, "experimental": false},
+              {"connector": "bitpanda", "location": "bitpanda", "is_exchange_with_passphrase": false, "is_exchange_without_api_secret": true, "experimental": false}
+          ],
+          "message": ""
+      }
+
+   :resjson string connector: The value to pass as ``connector`` when setting up a connection
+   :resjson string location: The location the data of its connections belongs to
+   :resjson bool is_exchange_with_passphrase: Whether the setup needs a passphrase
+   :resjson bool is_exchange_without_api_secret: Whether the setup needs no API secret
+   :resjson bool experimental: Whether the connector is experimental
+   :statuscode 200: Connectors returned
    :statuscode 500: Internal rotki error
 
 Setup or remove an exchange
@@ -2564,7 +2618,7 @@ Setup or remove an exchange
 
 .. http:put:: /api/(version)/exchanges
 
-   Doing a PUT on this endpoint with an exchange's name, location, api key and secret will setup the exchange for the current user. Also for some exchanges additional optional info can be provided.
+   Doing a PUT on this endpoint with an exchange connector, a name, api key and secret will set up a connection to the exchange for the current user. Also for some exchanges additional optional info can be provided.
 
    **Example Request**:
 
@@ -2574,10 +2628,10 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
+      {"name": "my kraken key", "connector": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
 
-   :reqjson string name: A name to give to this exchange's key
-   :reqjson string location: The location of the exchange to setup
+   :reqjson string name: A name to give to this exchange's key. Unique per connector.
+   :reqjson string connector: The exchange connector to set up. One of the connectors returned by ``/exchanges/supported``.
    :reqjson string api_key: The api key with which to setup the exchange
    :reqjson string api_secret: The API secret for the exchange. Required for all exchanges except Bitpanda, which only uses API key.
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
@@ -2592,11 +2646,11 @@ Setup or remove an exchange
       Content-Type: application/json
 
       {
-          "result": true
+          "result": {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"},
           "message": ""
       }
 
-   :resjson bool result: A boolean indicating success or failure
+   :resjson string identifier: The identifier of the new connection
    :statuscode 200: The exchange has been successfully setup
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: No user is logged in
@@ -2605,7 +2659,7 @@ Setup or remove an exchange
 
 .. http:delete:: /api/(version)/exchanges
 
-   Doing a DELETE on this endpoint for a particular exchange name will delete the exchange from the database for the current user.
+   Doing a DELETE on this endpoint for a connection identifier will delete the exchange connection from the database for the current user.
 
    **Example Request**:
 
@@ -2615,10 +2669,9 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken"}
+      {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"}
 
-   :reqjson string name: The name of the exchange whose key to delete
-   :reqjson string location: The location of the exchange to delete
+   :reqjson string identifier: The identifier of the connection to delete
 
    **Example Response**:
 
@@ -2644,7 +2697,7 @@ Edit an exchange entry
 
 .. http:patch:: /api/(version)/exchanges
 
-   Doing a PATCH on this endpoint with an exchange's name and location and the various attributes will result in editing it.
+   Doing a PATCH on this endpoint with a connection identifier and the various attributes will result in editing it.
 
    **Example Request**:
 
@@ -2654,10 +2707,9 @@ Edit an exchange entry
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
+      {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
 
-   :reqjson string name: The name of the exchange key to edit
-   :reqjson string location: The location of the exchange to edit
+   :reqjson string identifier: The identifier of the connection to edit
    :reqjson string new_name: Optional. If given this will be the new name for the exchange credentials.
    :reqjson string api_key: Optional. If given this will be the new api key for the exchange credentials.
    :reqjson string api_secret: Optional. If given this will be the new api secret for the exchange credentials.
@@ -7023,14 +7075,13 @@ Querying exchange history events
 
       {
           "async_query": true,
-          "name": "Kraken 1",
-          "location": "kraken"
+          "identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"
       }
 
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson string location: The location of the exchange to query
-   :reqjson string name: Optional. The name of the exchange to query. Queries all connected exchanges for the given location when omitted.
+   :reqjson string identifier: The connection to query. Exactly one of ``identifier`` and ``location`` is required.
+   :reqjson string location: The exchange location to query every connection of.
 
    **Example Response**:
 
@@ -7069,15 +7120,13 @@ Re-querying exchange history events in a range
 
       {
           "async_query": false,
-          "location": "kraken",
-          "name": "Kraken 1",
+          "identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f",
           "from_timestamp": 0,
           "to_timestamp": 1700000000
       }
 
    :reqjson bool async_query: Optional. Boolean denoting whether this is an asynchronous query or not (defaults to ``false``)
-   :reqjson string location: Exchange location identifier
-   :reqjson string name: Name of the exchange entry to query
+   :reqjson string identifier: The identifier of the exchange connection to query
    :reqjson int start_ts: Start timestamp for the re-query (seconds since epoch)
    :reqjson int end_ts: End timestamp for the re-query (seconds since epoch)
 
@@ -11845,15 +11894,15 @@ All Binance markets
 User selected Binance markets
 ================================
 
-.. http:get:: /api/(version)/exchanges/binance/pairs/(exchange account name)
+.. http:get:: /api/(version)/exchanges/binance/pairs/(connection identifier)
 
-   Doing a GET to this endpoint will return the market pairs that the user has selected to be queried at binance.
+   Doing a GET to this endpoint will return the market pairs that the user has selected to be queried by a binance or binance US connection.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/binance/pairs/testExchange HTTP/1.1
+      GET /api/1/exchanges/binance/pairs/c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -14353,56 +14402,15 @@ Get all valid locations
             "ethereum": {"image": "ethereum.svg"},
             "optimism": {"image": "optimism.svg"},
             "ftx": {"image": "ftx.svg", "is_exchange": true},
-            "kraken": {
-              "image": "kraken.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true
-              }
-            },
-            "kucoin": {
-              "image": "kucoin.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "is_exchange_with_passphrase": true
-              }
-            },
-            "bitpanda": {
-              "image": "bitpanda.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "is_exchange_without_api_secret": true
-              }
-            },
-            "qonto": {
-              "image": "qonto.svg",
-              "is_bank": true,
-              "bank_details": {
-                "location": "qonto",
-                "display_name": "Qonto",
-                "access_tier": "official api",
-                "capabilities": ["balances", "transactions"],
-                "auth_flow": [{"primitive": "static secret"}],
-                "secrets": [
-                  {"slot": "api_key", "label": "Login", "description": "The organization login shown next to the API key in the Qonto app"},
-                  {"slot": "api_secret", "label": "Secret key", "description": "The secret key generated together with the login"}
-                ],
-                "maintainer": "rotki",
-                "version": "1.0.0",
-                "docs_url": "https://docs.qonto.com",
-                "setup_notes": ["In the Qonto web app go to Settings > Integrations & Partners > API key and generate a key. ..."]
-              }
-            "cryptocom": {
-              "image": "crypto_com.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "experimental": true
-              }
-            },
+            "kraken": {"image": "kraken.svg", "is_exchange": true},
+            "kucoin": {"image": "kucoin.svg", "is_exchange": true},
+            "qonto": {"image": "qonto.svg"},
+            "cryptocom": {"image": "crypto_com.svg", "is_exchange": true},
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true. A bank connector location has `is_bank` set to true and carries a `bank_details` object: its manifest with `display_name`, `access_tier`, `capabilities`, the `auth_flow` as a list of auth primitives, the `secrets` the setup form should ask for (each with the credential `slot` it is stored in, a `label` and a `description`), `maintainer`, `version`, `docs_url` and user-facing `setup_notes`.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. An exchange location has `is_exchange` set to true. What setting up a connection needs is served by the connector endpoints: `/exchanges/supported` for exchanges and `/banks/supported` for banks.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

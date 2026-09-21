@@ -323,8 +323,8 @@ class ExchangeManager:
 
         if not result:
             log.error(
-                f'Failed to validate API key for {connector!s} exchange {name}'
-                f' due to {message}',
+                'Failed to validate API key for %s exchange %s due to %s',
+                connector, name, message,
             )
             return None, message
 
@@ -442,8 +442,8 @@ class ExchangeManager:
         if identifier is not None:
             if (exchange := self.get_exchange(identifier)) is None:
                 log.error(
-                    'Failed to query history events for unknown exchange connection '
-                    f'{identifier}',
+                    'Failed to query history events for unknown exchange connection %s',
+                    identifier,
                 )
                 return
             exchanges_list.append(exchange)

@@ -435,7 +435,7 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
     task_manager.exchange_manager = exchange_manager
     with task_manager.database.user_write() as cursor:
         task_manager.database.set_settings(cursor, ModifiableDBSettings(
-            non_syncing_exchanges=[poloniex.location_id()],
+            non_syncing_exchanges=[poloniex.connection_identifier],
         ))
     assert task_manager._maybe_schedule_exchange_history_query() is None
 

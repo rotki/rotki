@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.types import (
     DEFAULT_INDEXERS_ORDER,
     string_to_evm_address,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier, connection_range_name
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -44,6 +45,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.misc import (
     detect_sqlcipher_version,
     evaluate_integrity_check_rows,
@@ -112,11 +114,8 @@ from rotkehlchen.locations.constants import (
     LOCATION_BINANCE,
     LOCATION_BINANCEUS,
     LOCATION_BITMEX,
-    LOCATION_BITSTAMP,
-    LOCATION_BITTREX,
     LOCATION_COINBASE,
     LOCATION_EXTERNAL,
-    LOCATION_FTX,
     LOCATION_KRAKEN,
     LOCATION_POLONIEX,
     LOCATION_TOTAL,
@@ -164,7 +163,8 @@ TABLES_AT_INIT = [
     'balance_category',
     'external_service_credentials',
     'user_credentials',
-    'user_credentials_mappings',
+    'integration_connections',
+    'integration_connection_settings',
     'blockchain_accounts',
     'blockchain_balances_cache',
     'calendar',
@@ -1904,30 +1904,14 @@ def test_values_are_present_in_db(database, enum_class, table_name):
         assert r.fetchone() == (1,), f'The value {enum_class_entry.value} for {table_name} enum is not found in the db. Please add it in rotkehlchen/db/schema.py'  # noqa: E501
 
 
-def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(
-        user_data_dir=user_data_dir,
-        password='123',
-        msg_aggregator=msg_aggregator,
-        initial_settings=None,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-        resume_from_backup=False,
-    )
-
-    binance_api_key = ApiKey('binance_api_key')
-    binance_api_secret = ApiSecret(b'binance_api_secret')
-    db.add_exchange('binance', LOCATION_BINANCE, binance_api_key, binance_api_secret)
-
-    with db.user_write() as write_cursor:
-        db.set_binance_pairs(write_cursor, 'binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], LOCATION_BINANCE)  # noqa: E501
-        query = db.get_binance_pairs('binance', LOCATION_BINANCE)
-        assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
-
-        db.set_binance_pairs(write_cursor, 'binance', [], LOCATION_BINANCE)
-        query = db.get_binance_pairs('binance', LOCATION_BINANCE)
-    assert query == []
-    db.logout()
+def test_binance_pairs(database: DBHandler) -> None:
+    identifier = database.add_exchange('binance', LOCATION_BINANCE, ApiKey('binance_api_key'), ApiSecret(b'binance_api_secret'))  # noqa: E501
+    with database.user_write() as write_cursor:
+        database.set_binance_pairs(write_cursor, identifier, ['ETHUSDC', 'ETHBTC', 'BNBBTC'])
+    assert database.get_binance_pairs(identifier) == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
+    with database.user_write() as write_cursor:
+        database.set_binance_pairs(write_cursor, identifier, [])
+    assert database.get_binance_pairs(identifier) == []
 
 
 def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
@@ -1935,72 +1919,47 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     Tests that adding, editing and removing Kraken with Futures credentials in the DB works.
     It also test that deleting Kraken also removes the Futures API keys
     """
+    identifier = database.add_exchange(
+        'kraken1',
+        LOCATION_KRAKEN,
+        (kraken_api_key := ApiKey('kraken_api_key')),
+        (kraken_api_secret := ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')),
+        kraken_futures_api_key=(kraken_futures_api_key := ApiKey('kraken_futures_api_key')),
+        kraken_futures_api_secret=(kraken_futures_api_secret := ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQy')),  # noqa: E501
+    )
     with database.conn.read_ctx() as cursor:
-        kraken_api_key = ApiKey('kraken_api_key')
-        kraken_api_secret = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')
-        kraken_futures_api_key = ApiKey('kraken_futures_api_key')
-        kraken_futures_api_secret = ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQy')
-
-        database.add_exchange(
-            'kraken1',
-            LOCATION_KRAKEN,
-            kraken_api_key,
-            kraken_api_secret,
-            kraken_futures_api_key=kraken_futures_api_key,
-            kraken_futures_api_secret=kraken_futures_api_secret,
-        )
-        # check the credentials can be retrieved
-        credentials = database.get_exchange_credentials(cursor)
-        kraken_extras = database.get_exchange_credentials_extras('kraken1', LOCATION_KRAKEN)
-
-    assert len(credentials) == 1
-    assert len(credentials[LOCATION_KRAKEN]) == 1
-    kraken1 = credentials[LOCATION_KRAKEN][0]
-    assert kraken1.name == 'kraken1'
-    assert kraken1.api_key == kraken_api_key
-    assert kraken1.api_secret == kraken_api_secret
+        assert [(x.name, x.api_key, x.api_secret) for x in database.get_exchange_credentials(cursor)] == [  # noqa: E501
+            ('kraken1', kraken_api_key, kraken_api_secret),
+        ]
+    kraken_extras = database.get_exchange_credentials_extras(identifier)
     assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == kraken_futures_api_key
     assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == kraken_futures_api_secret
 
     with database.user_write() as cursor:
-        new_kraken_futures_api_key = ApiKey('new_kraken_futures_api_key')
-        new_kraken_futures_api_secret = ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQz')
-
         database.edit_exchange(
             cursor,
-            'kraken1',
-            LOCATION_KRAKEN,
+            identifier,
             new_name=None,
             api_key=None,
             api_secret=None,
             passphrase=None,
             kraken_account_type=None,
-            kraken_futures_api_key=new_kraken_futures_api_key,
-            kraken_futures_api_secret=new_kraken_futures_api_secret,
+            kraken_futures_api_key=(new_futures_api_key := ApiKey('new_kraken_futures_api_key')),
+            kraken_futures_api_secret=(new_futures_api_secret := ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQz')),  # noqa: E501
             binance_selected_trade_pairs=None,
             okx_location=None,
         )
-
-        credentials = database.get_exchange_credentials(cursor)
-        kraken_extras = database.get_exchange_credentials_extras('kraken1', LOCATION_KRAKEN)
-
-    assert len(credentials) == 1
-    assert len(credentials[LOCATION_KRAKEN]) == 1
-    kraken1 = credentials[LOCATION_KRAKEN][0]
-    assert kraken1.name == 'kraken1'
-    assert kraken1.api_key == kraken_api_key
-    assert kraken1.api_secret == kraken_api_secret
-    assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == new_kraken_futures_api_key
-    assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == new_kraken_futures_api_secret
+        assert [(x.name, x.api_key, x.api_secret) for x in database.get_exchange_credentials(cursor)] == [  # noqa: E501
+            ('kraken1', kraken_api_key, kraken_api_secret),
+        ]
+    kraken_extras = database.get_exchange_credentials_extras(identifier)
+    assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == new_futures_api_key
+    assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == new_futures_api_secret
 
     with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken1', LOCATION_KRAKEN)
-        credentials = database.get_exchange_credentials(cursor)
-        kraken_extras = database.get_exchange_credentials_extras('kraken1', LOCATION_KRAKEN)
-
-    assert len(credentials) == 0
-    assert len(credentials[LOCATION_KRAKEN]) == 0
-    assert kraken_extras == {}
+        database.remove_exchange(cursor, identifier)
+        assert database.get_exchange_credentials(cursor) == []
+    assert database.get_exchange_credentials_extras(identifier) == {}
 
 
 @pytest.mark.parametrize(('location', 'with_csv', 'custom_start_ts', 'expected_start_ts', 'expected_end_ts'), [  # noqa: E501
@@ -2039,22 +1998,19 @@ def test_add_binance_initializes_history_query_range(
             )
 
     with patch('rotkehlchen.db.dbhandler.ts_now', return_value=Timestamp(1800000000)):
-        database.add_exchange(
+        identifier = database.add_exchange(
             name='binance1',
-            location=location,
+            connector=location,
             api_key=ApiKey('binance_api_key'),
             api_secret=ApiSecret(b'binance_api_secret'),
             binance_history_start_ts=custom_start_ts,
         )
 
-    assert database.get_exchange_credentials_extras(
-        name='binance1',
-        location=location,
-    )[BINANCE_HISTORY_START_TS_KEY] == expected_start_ts
+    assert database.get_exchange_credentials_extras(identifier)[BINANCE_HISTORY_START_TS_KEY] == expected_start_ts  # noqa: E501
     with database.conn.read_ctx() as cursor:
         queried_range = database.get_used_query_range(
             cursor,
-            f'{location!s}_history_events_binance1',
+            connection_range_name(identifier, 'history_events'),
         )
         if expected_end_ts is None:
             assert queried_range is None
@@ -2064,30 +2020,23 @@ def test_add_binance_initializes_history_query_range(
 
 def test_edit_binance_pairs_keeps_history_events_query_range(database: DBHandler) -> None:
     """A newly selected pair bootstraps from the saved exchange timestamp."""
-    name = 'binance1'
-    database.add_exchange(
-        name=name,
-        location=LOCATION_BINANCE,
+    identifier = database.add_exchange(
+        name='binance1',
+        connector=LOCATION_BINANCE,
         api_key=ApiKey('binance_api_key'),
         api_secret=ApiSecret(b'binance_api_secret'),
         binance_history_start_ts=Timestamp(1400000000),
     )
-    # range name built exactly like ExchangeInterface.query_history_events does
-    events_range = f'{LOCATION_BINANCE!s}_history_events_{name}'
-    trades_range = f'{LOCATION_BINANCE!s}_trades_{name}'  # unrelated, must survive
     with database.user_write() as write_cursor:
-        for range_name in (events_range, trades_range):
-            database.update_used_query_range(
-                write_cursor=write_cursor,
-                name=range_name,
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(1500000000),
-            )
-
+        database.update_used_query_range(
+            write_cursor=write_cursor,
+            name=(events_range := connection_range_name(identifier, 'history_events')),
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1500000000),
+        )
         database.edit_exchange(
             write_cursor,
-            name=name,
-            location=LOCATION_BINANCE,
+            identifier=identifier,
             new_name=None,
             api_key=ApiKey('new_binance_api_key'),
             api_secret=None,
@@ -2102,295 +2051,35 @@ def test_edit_binance_pairs_keeps_history_events_query_range(database: DBHandler
     with database.conn.read_ctx() as cursor:
         assert database.get_used_query_range(cursor, events_range) is not None, \
             'editing binance pairs should preserve the history events query range'
-        assert database.get_used_query_range(cursor, trades_range) is not None, \
-            'unrelated query ranges must not be deleted when editing binance pairs'
-    assert database.get_exchange_credentials_extras(
-        name=name,
-        location=LOCATION_BINANCE,
-    )[BINANCE_HISTORY_START_TS_KEY] == Timestamp(1400000000)
+    assert database.get_exchange_credentials_extras(identifier)[BINANCE_HISTORY_START_TS_KEY] == Timestamp(1400000000)  # noqa: E501
 
 
-@pytest.mark.parametrize(('deleted_name', 'remaining_name'), [
-    ('binance_1', 'binance_1_backup'),
-    ('binance_1_backup', 'binance_1'),
-])
-def test_delete_binance_exchange_clears_pair_query_progress(
-        database: DBHandler,
-        deleted_name: str,
-        remaining_name: str,
-) -> None:
-    """Deleting one Binance key clears only that key's per-pair progress."""
-    cache_args = {
-        'location': LOCATION_BINANCE,
-        'queried_pair': 'ETHBTC',
-    }
-    exchange_names = (deleted_name, remaining_name)
-    for idx, location_name in enumerate(exchange_names):
-        database.add_exchange(
-            name=location_name,
-            location=LOCATION_BINANCE,
-            api_key=ApiKey(f'binance_api_key_{idx}'),
-            api_secret=ApiSecret(f'binance_api_secret_{idx}'.encode()),
-        )
+def test_connection_progress_follows_its_identifier(database: DBHandler) -> None:
+    """Query ranges, cursors and pair progress are keyed by the connection identifier.
+    A rename keeps them, while deleting a connection drops exactly its own, even when
+    another connection's name starts with the deleted one's."""
+    main_id = database.add_exchange('main', LOCATION_BINANCE, make_api_key(), make_api_secret(), binance_history_start_ts=Timestamp(0))  # noqa: E501
+    backup_id = database.add_exchange('main_backup', LOCATION_BINANCE, make_api_key(), make_api_secret(), binance_history_start_ts=Timestamp(0))  # noqa: E501
 
-    with database.user_write() as write_cursor:
-        for location_name in exchange_names:
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                value=42,
-                location_name=location_name,
-                **cache_args,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-                value=Timestamp(1800000000),
-                location_name=location_name,
-                **cache_args,
-            )
-
-        database.delete_used_query_range_for_exchange(
-            write_cursor=write_cursor,
-            location=LOCATION_BINANCE,
-            exchange_name=deleted_name,
-        )
-
-    with database.conn.read_ctx() as cursor:
-        for cache_name in (
-                DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-        ):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=cache_name,
-                location_name=deleted_name,
-                **cache_args,
-            ) is None
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=cache_name,
-                location_name=remaining_name,
-                **cache_args,
-            ) is not None
-
-
-@pytest.mark.parametrize(('deleted_name', 'remaining_name'), [
-    ('coinbase_1', 'coinbase_1_backup'),
-    ('coinbase_1_backup', 'coinbase_1'),
-])
-def test_delete_exchange_clears_instance_cache(
-        database: DBHandler,
-        deleted_name: str,
-        remaining_name: str,
-) -> None:
-    """Deleting one Coinbase/Bitstamp key clears only that key's query cursors.
-
-    Regression test: the by-name purge only matched cache keys ending in the exchange
-    name, but the Coinbase per-account cursors and the Bitstamp offset are named
-    {location}_{name}_..., so removing and re-adding an exchange under the same name never
-    re-fetched the transactions before the old cursor.
-    """
-    account_id = '3c04e35e-8e5a-5ff1-9155-00675db4ac02'
-    exchange_names = (deleted_name, remaining_name)
-    with database.user_write() as write_cursor:
-        for location_name in exchange_names:
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                value='tx_id',
-                location=LOCATION_COINBASE,
-                location_name=location_name,
-                account_id=account_id,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_TS,
-                value=Timestamp(1800000000),
-                location=LOCATION_COINBASE,
-                location_name=location_name,
-                account_id=account_id,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                value=7,
-                location=LOCATION_BITSTAMP,
-                location_name=location_name,
-            )
-
-        for location in (LOCATION_COINBASE, LOCATION_BITSTAMP):
-            database.delete_used_query_range_for_exchange(
-                write_cursor=write_cursor,
-                location=location,
-                exchange_name=deleted_name,
-            )
-
-    with database.conn.read_ctx() as cursor:
-        for cache_name in (DBCacheDynamic.LAST_QUERY_ID, DBCacheDynamic.LAST_QUERY_TS):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=cache_name,
-                location=LOCATION_COINBASE,
-                location_name=deleted_name,
-                account_id=account_id,
-            ) is None
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=cache_name,
-                location=LOCATION_COINBASE,
-                location_name=remaining_name,
-                account_id=account_id,
-            ) is not None
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-            location=LOCATION_BITSTAMP,
-            location_name=deleted_name,
-        ) is None
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-            location=LOCATION_BITSTAMP,
-            location_name=remaining_name,
-        ) == 7
-
-
-@pytest.mark.parametrize(('renamed_name', 'sibling_name'), [
-    ('main', 'main_backup'),
-    ('main_backup', 'main'),
-])
-def test_rename_exchange_moves_instance_cache(
-        database: DBHandler,
-        renamed_name: str,
-        sibling_name: str,
-) -> None:
-    """Renaming an exchange moves its query progress to the new name and leaves alone
-    a sibling whose name shares a prefix with it.
-
-    Regression test: edit_exchange renamed the used_query_ranges rows but not the
-    key_value_cache cursors (Coinbase per-account, Bitstamp offset, Binance per-pair), so a
-    renamed exchange re-queried its whole history and the old keys were orphaned. The
-    Binance lending history range was not renamed either.
-    """
-    new_name = 'renamed'
-    account_id = '3c04e35e-8e5a-5ff1-9155-00675db4ac02'
-    for location in (LOCATION_COINBASE, LOCATION_BITSTAMP, LOCATION_BINANCE):
-        for name in (renamed_name, sibling_name):
-            database.add_exchange(
-                name=name,
-                location=location,
-                api_key=ApiKey(f'{location!s}_{name}_key'),
-                api_secret=ApiSecret(f'{location!s}_{name}_secret'.encode()),
+    def progress(identifier: ConnectionIdentifier) -> tuple:
+        with database.conn.read_ctx() as cursor:
+            return (
+                database.get_used_query_range(cursor, connection_range_name(identifier, 'lending_history')),  # noqa: E501
+                database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.BINANCE_PAIR_LAST_ID, connection=identifier, queried_pair='ETHBTC'),  # noqa: E501
+                database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET, connection=identifier),  # noqa: E501
             )
 
     with database.user_write() as write_cursor:
-        for name in (renamed_name, sibling_name):
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                value=f'tx_of_{name}',
-                location=LOCATION_COINBASE,
-                location_name=name,
-                account_id=account_id,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                value=7,
-                location=LOCATION_BITSTAMP,
-                location_name=name,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                value=42,
-                location=LOCATION_BINANCE,
-                location_name=name,
-                queried_pair='ETHBTC',
-            )
-            database.update_used_query_range(
-                write_cursor=write_cursor,
-                name=f'{LOCATION_BINANCE!s}_lending_history_{name}',
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(1500000000),
-            )
+        for identifier in (main_id, backup_id):
+            database.update_used_query_range(write_cursor, connection_range_name(identifier, 'lending_history'), Timestamp(0), Timestamp(10))  # noqa: E501
+            database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.BINANCE_PAIR_LAST_ID, value=7, connection=identifier, queried_pair='ETHBTC')  # noqa: E501
+            database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET, value=42, connection=identifier)  # noqa: E501
 
-        for location in (LOCATION_COINBASE, LOCATION_BITSTAMP, LOCATION_BINANCE):
-            database.edit_exchange(
-                write_cursor,
-                name=renamed_name,
-                location=location,
-                new_name=new_name,
-                api_key=None,
-                api_secret=None,
-                passphrase=None,
-                kraken_account_type=None,
-                kraken_futures_api_key=None,
-                kraken_futures_api_secret=None,
-                binance_selected_trade_pairs=None,
-                okx_location=None,
-            )
-
-    with database.conn.read_ctx() as cursor:
-        for name, expected_tx in ((renamed_name, None), (new_name, f'tx_of_{renamed_name}'), (sibling_name, f'tx_of_{sibling_name}')):  # noqa: E501
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                location=LOCATION_COINBASE,
-                location_name=name,
-                account_id=account_id,
-            ) == expected_tx
-        for name, expected in ((renamed_name, None), (new_name, 7), (sibling_name, 7)):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                location=LOCATION_BITSTAMP,
-                location_name=name,
-            ) == expected
-        for name, expected in ((renamed_name, None), (new_name, 42), (sibling_name, 42)):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                location=LOCATION_BINANCE,
-                location_name=name,
-                queried_pair='ETHBTC',
-            ) == expected
-            assert (database.get_used_query_range(
-                cursor,
-                f'{LOCATION_BINANCE!s}_lending_history_{name}',
-            ) is None) == (expected is None)
-
-
-def test_rename_exchange_replaces_orphan_instance_cache(database: DBHandler) -> None:
-    """Renaming an exchange onto a name whose query progress an older version left
-    behind replaces the orphan keys instead of failing the whole rename.
-
-    Regression test: older versions did not clear key_value_cache on exchange removal or
-    rename, so a plain UPDATE to the new name hit the key_value_cache.name primary key
-    with an IntegrityError that nothing caught.
-    """
-    database.add_exchange(
-        name=(name := 'current'),
-        location=LOCATION_COINBASE,
-        api_key=ApiKey('key'),
-        api_secret=ApiSecret(b'secret'),
-    )
     with database.user_write() as write_cursor:
-        for location_name in (name, (orphan_name := 'orphan')):
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                value=f'tx_of_{location_name}',
-                location=LOCATION_COINBASE,
-                location_name=location_name,
-                account_id=(account_id := '3c04e35e-8e5a-5ff1-9155-00675db4ac02'),
-            )
         database.edit_exchange(
             write_cursor,
-            name=name,
-            location=LOCATION_COINBASE,
-            new_name=orphan_name,
+            identifier=main_id,
+            new_name='renamed',
             api_key=None,
             api_secret=None,
             passphrase=None,
@@ -2400,101 +2089,12 @@ def test_rename_exchange_replaces_orphan_instance_cache(database: DBHandler) -> 
             binance_selected_trade_pairs=None,
             okx_location=None,
         )
+    assert progress(main_id) == progress(backup_id) == ((Timestamp(0), Timestamp(10)), 7, 42)
 
-    with database.conn.read_ctx() as cursor:
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_QUERY_ID,
-            location=LOCATION_COINBASE,
-            location_name=orphan_name,
-            account_id=account_id,
-        ) == f'tx_of_{name}'
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_QUERY_ID,
-            location=LOCATION_COINBASE,
-            location_name=name,
-            account_id=account_id,
-        ) is None
-
-
-def test_add_exchange_clears_stale_instance_cache(database: DBHandler) -> None:
-    """Adding an exchange drops any query progress an older version left under its
-    name, so the new connection queries its history from scratch, while the keys of an
-    exchange whose name merely starts with the same prefix are kept."""
     with database.user_write() as write_cursor:
-        for location_name in ((name := 'main'), (sibling_name := 'main_backup')):
-            database.update_used_query_range(
-                write_cursor=write_cursor,
-                name=f'{LOCATION_BINANCE!s}_lending_history_{location_name}',
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(1500000000),
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                value=f'tx_of_{location_name}',
-                location=LOCATION_COINBASE,
-                location_name=location_name,
-                account_id=(account_id := '3c04e35e-8e5a-5ff1-9155-00675db4ac02'),
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                value=7,
-                location=LOCATION_BITSTAMP,
-                location_name=location_name,
-            )
-            database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                value=42,
-                location=LOCATION_BINANCE,
-                location_name=location_name,
-                queried_pair='ETHBTC',
-            )
-
-    for location in (LOCATION_COINBASE, LOCATION_BITSTAMP, LOCATION_BINANCE):
-        database.add_exchange(
-            name=name,
-            location=location,
-            api_key=ApiKey(f'{location!s}_key'),
-            api_secret=ApiSecret(f'{location!s}_secret'.encode()),
-        )
-
-    with database.conn.read_ctx() as cursor:
-        for location_name, expected_tx in ((name, None), (sibling_name, f'tx_of_{sibling_name}')):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_QUERY_ID,
-                location=LOCATION_COINBASE,
-                location_name=location_name,
-                account_id=account_id,
-            ) == expected_tx
-        for location_name, expected in ((name, None), (sibling_name, 7)):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                location=LOCATION_BITSTAMP,
-                location_name=location_name,
-            ) == expected
-        for location_name, expected in ((name, None), (sibling_name, 42)):
-            assert database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                location=LOCATION_BINANCE,
-                location_name=location_name,
-                queried_pair='ETHBTC',
-            ) == expected
-            assert (database.get_used_query_range(
-                cursor,
-                f'{LOCATION_BINANCE!s}_lending_history_{location_name}',
-            ) is None) == (expected is None)
-        # the binance history start range written by add_exchange itself must survive
-        assert database.get_used_query_range(
-            cursor,
-            f'{LOCATION_BINANCE!s}_history_events_{name}',
-        ) is not None
+        database.remove_exchange(write_cursor, main_id)
+    assert progress(main_id) == (None, None, None)
+    assert progress(backup_id) == ((Timestamp(0), Timestamp(10)), 7, 42)
 
 
 def test_remove_multichain_address_keeps_tags_on_other_chains(database: DBHandler) -> None:
@@ -2693,27 +2293,20 @@ def test_ignored_assets_cache_consistency(database: DBHandler) -> None:
     assert database._may_cache_ignored_assets(flush_generation) is False
 
 
-@pytest.mark.parametrize('db_settings', [
-    {
-        'non_syncing_exchanges': [
-            ExchangeLocationID(name='Coinbase', location=LOCATION_COINBASE),
-            ExchangeLocationID(name='Bittrex', location=LOCATION_BITTREX),
-            ExchangeLocationID(name='Ftx', location=LOCATION_FTX),
-        ],
-    },
-])
 def test_startup_check_settings(database: DBHandler) -> None:
     """
-    Test that after first connection we remove locations from the non syncing exchanges setting
-    that are no longer available in the app
+    Test that after first connection we remove connections from the non syncing exchanges
+    setting that no longer exist
     """
+    coinbase_id = database.add_exchange('Coinbase', LOCATION_COINBASE, make_api_key(), make_api_secret())  # noqa: E501
+    with database.user_write() as write_cursor:
+        database.set_non_syncing_exchanges(write_cursor, [coinbase_id, ConnectionIdentifier('gone')])  # noqa: E501
+
     database._run_actions_after_first_connection()
     with database.conn.read_ctx() as cursor:
         settings: DBSettings = database.get_settings(cursor)
 
-    assert settings.non_syncing_exchanges == frozenset({
-        ExchangeLocationID(name='Coinbase', location=LOCATION_COINBASE),
-    })
+    assert settings.non_syncing_exchanges == frozenset({coinbase_id})
 
 
 def test_address_book_primary_key(database: DBHandler):

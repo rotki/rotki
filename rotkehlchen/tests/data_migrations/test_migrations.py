@@ -105,13 +105,10 @@ class MockRotkiForMigrationsWithExchangeManager(MockRotkiForMigrations):
     def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
-        with db.conn.write_ctx() as cursor:
-            exchange_credentials = db.get_exchange_credentials(cursor)
+        with db.conn.read_ctx() as cursor:
+            connections = db.get_exchange_credentials(cursor)
 
-        self.exchange_manager.initialize_exchanges(
-            exchange_credentials=exchange_credentials,
-            database=db,
-        )
+        self.exchange_manager.initialize_exchanges(connections=connections, database=db)
 
 
 def assert_progress_message(msg: dict[str, Any], step_num: int, description: str | None, migration_version: int, migration_steps: int) -> None:  # noqa: E501
@@ -290,9 +287,8 @@ def test_migration_1(database: DBHandler) -> None:
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    check_saved_events_for_exchange(LOCATION_BINANCE, rotki.data.db, should_exist=False)
-    check_saved_events_for_exchange(LOCATION_POLONIEX, rotki.data.db, should_exist=True)
-    check_saved_events_for_exchange(LOCATION_KRAKEN, rotki.data.db, should_exist=False)
+    for location, should_exist in ((LOCATION_BINANCE, False), (LOCATION_POLONIEX, True), (LOCATION_KRAKEN, False)):  # noqa: E501
+        check_saved_events_for_exchange(location, rotki.data.db, should_exist=should_exist, queryrange_formatstr='{exchange}_{type}_{exchange}')  # noqa: E501
     with database.conn.read_ctx() as cursor:
         assert rotki.data.db.get_settings(cursor).last_data_migration == LAST_USERDB_DATA_MIGRATION
 
