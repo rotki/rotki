@@ -9,6 +9,9 @@ import '@test/i18n';
 const submitTask = vi.fn();
 const useIsActive = vi.fn();
 const getPath = vi.fn();
+const importFile = vi.fn();
+const resolveLocations = vi.fn();
+const rememberAliases = vi.fn();
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: vi.fn().mockImplementation(() => ({ submitTask })),
@@ -25,7 +28,17 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 vi.mock('@/modules/user-data/use-import-data-api', () => ({
   useImportDataApi: vi.fn().mockImplementation(() => ({
     importDataFrom: vi.fn(),
-    importFile: vi.fn(),
+    importFile,
+  })),
+}));
+
+vi.mock('@/modules/user-data/use-import-location-mapping', () => ({
+  useImportLocationMapping: vi.fn().mockImplementation(() => ({
+    cancelMappings: vi.fn(),
+    confirmMappings: vi.fn(),
+    pending: ref(),
+    rememberAliases,
+    resolveLocations,
   })),
 }));
 
@@ -54,6 +67,7 @@ describe('importSource', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useIsActive.mockReturnValue(computed<boolean>(() => false));
+    rememberAliases.mockResolvedValue(undefined);
     vi.useFakeTimers();
   });
 
@@ -68,6 +82,7 @@ describe('importSource', () => {
         stubs: {
           DateFormatHelp: true,
           FileUpload: fileUploadStub,
+          ImportLocationMappingDialog: true,
           RuiSwitch: {
             emits: ['update:modelValue'],
             name: 'RuiSwitch',
@@ -256,6 +271,7 @@ describe('importSource', () => {
         stubs: {
           DateFormatHelp: true,
           FileUpload: fileUploadStub,
+          ImportLocationMappingDialog: true,
           RuiSwitch: {
             emits: ['update:modelValue'],
             name: 'RuiSwitch',
@@ -271,5 +287,52 @@ describe('importSource', () => {
 
     expect(field('import-date-format-switch').exists()).toBe(false);
     expect(wrapper.find('[data-testid=import-timezone-switch]').exists()).toBe(false);
+  });
+
+  describe('a rotki generic import', () => {
+    function createRotkiWrapper(): VueWrapper<InstanceType<typeof ImportSource>> {
+      return mount(ImportSource, {
+        global: { stubs: { DateFormatHelp: true, FileUpload: fileUploadStub, ImportLocationMappingDialog: true } },
+        props: { source: 'rotki_events' },
+      });
+    }
+
+    async function submitFile(): Promise<void> {
+      await attachFile();
+      await wrapper.find('form').trigger('submit');
+      await vi.advanceTimersToNextTimerAsync();
+    }
+
+    it('should import with the locations the user mapped, then save the chosen aliases', async () => {
+      resolveLocations.mockResolvedValue({ mappings: { 'My old exchange': 'custom:old' }, proceed: true });
+      submitTask.mockResolvedValue(ok(true));
+      importFile.mockResolvedValue({ taskId: 1 });
+      wrapper = createRotkiWrapper();
+      await submitFile();
+
+      expect(resolveLocations).toHaveBeenCalledWith('rotki_events', { file: expect.any(File) });
+      await submitTask.mock.calls[0][0].run({ runTask: async (task: () => Promise<unknown>) => ok(await task()) });
+      const data: unknown = importFile.mock.calls[0][0];
+      assert(data instanceof FormData);
+      expect(data.get('location_mappings')).toBe('{"My old exchange":"custom:old"}');
+      expect(rememberAliases).toHaveBeenCalledOnce();
+    });
+
+    it('should not import when the user leaves the locations unmapped', async () => {
+      resolveLocations.mockResolvedValue({ proceed: false });
+      wrapper = createRotkiWrapper();
+      await submitFile();
+
+      expect(submitTask).not.toHaveBeenCalled();
+      expect(rememberAliases).not.toHaveBeenCalled();
+    });
+
+    it('should show why the locations could not be checked', async () => {
+      resolveLocations.mockResolvedValue({ error: 'Could not read the file', proceed: false });
+      wrapper = createRotkiWrapper();
+      await submitFile();
+
+      expect(wrapper.findComponent<StubInstance>({ name: 'FileUpload' }).props('errorMessage')).toBe('Could not read the file');
+    });
   });
 });

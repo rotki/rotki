@@ -97,6 +97,7 @@ describe('locationFormDialog', () => {
     await confirm();
 
     expect(createLocation).toHaveBeenCalledExactlyOnceWith({ icon: 'lu-vault', name: 'DKB', parentIdentifier: 'banks' });
+    expect(wrapper.emitted('created')).toEqual([[ing]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 

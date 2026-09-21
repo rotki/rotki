@@ -4463,6 +4463,15 @@
       "line_one": "We support the import of trades csv file type.",
       "name": "Kucoin"
     },
+    "location_mapping": {
+      "alias_error": "The import succeeded, but the location aliases could not be saved: {error}",
+      "ambiguous": "Ambiguous",
+      "create": "Create location",
+      "save_aliases": "Remember these choices as location aliases for later imports",
+      "subtitle": "Choose where the rows of these location values go. Nothing is imported until every value has a location.",
+      "title": "Unknown locations in the file",
+      "unknown": "Unknown"
+    },
     "nexo": {
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",

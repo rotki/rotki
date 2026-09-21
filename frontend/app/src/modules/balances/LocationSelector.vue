@@ -12,8 +12,8 @@ defineOptions({
 const model = defineModel<string>({ default: '', required: true });
 
 const { dense, excludes = [], items = [] } = defineProps<{
-  items?: string[];
-  excludes?: string[];
+  items?: readonly string[];
+  excludes?: readonly string[];
   dense?: boolean;
 }>();
 

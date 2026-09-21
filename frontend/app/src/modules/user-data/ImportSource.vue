@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
+import { startPromise } from '@shared/utils';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useForm } from '@/modules/core/form/use-form';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
@@ -14,7 +16,9 @@ import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
+import ImportLocationMappingDialog from '@/modules/user-data/ImportLocationMappingDialog.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
+import { useImportLocationMapping } from '@/modules/user-data/use-import-location-mapping';
 
 const { source } = defineProps<{ source: ImportSourceType }>();
 
@@ -37,6 +41,8 @@ const file = ref<File>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { getPath } = useInterop();
+
+const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'));
 
 /**
  * The empty-value rule only ever fires on a pattern that is truthy but blank once trimmed, because
@@ -78,12 +84,17 @@ const { useIsActive } = useTaskCenter();
 
 const loading = useIsActive(ActivityKind.CSV_IMPORT, source);
 const { importDataFrom, importFile } = useImportDataApi();
+const { cancelMappings, confirmMappings, pending, rememberAliases, resolveLocations } = useImportLocationMapping();
 
 /** An import only counts as done when the task both settled and reported a completed import. */
 function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
   if (!isErr(outcome)) {
-    if (outcome.value)
+    if (outcome.value) {
       set(uploaded, true);
+      startPromise(rememberAliases().catch((error: unknown) => {
+        set(errorMessage, t('import_data.location_mapping.alias_error', { error: getErrorMessage(error) }));
+      }));
+    }
 
     return outcome.value;
   }
@@ -94,7 +105,7 @@ function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
   return false;
 }
 
-async function uploadPackaged(file: string): Promise<boolean> {
+async function uploadPackaged(file: string, locationMappings: string | undefined): Promise<boolean> {
   const outcome = await submitTask<boolean>({
     id: makeActivityId(ActivityKind.CSV_IMPORT, source),
     kind: ActivityKind.CSV_IMPORT,
@@ -106,6 +117,7 @@ async function uploadPackaged(file: string): Promise<boolean> {
           source,
           timestampFormat: form.state.dateInputFormat || null,
           timezone: get(timezone) || null,
+          ...(locationMappings ? { locationMappings } : {}),
         }),
       ),
       value => value,
@@ -117,14 +129,39 @@ async function uploadPackaged(file: string): Promise<boolean> {
   return applyOutcome(outcome);
 }
 
+/**
+ * The locations the user mapped the file's location values to, as the JSON the import takes.
+ *
+ * @remarks
+ * Only rotki's own formats name a location per row. Their unknown or ambiguous values have to be
+ * mapped before importing, and backing out of the mapping backs out of the import.
+ */
+async function locationMappingsFor(target: { path: string } | { file: File }): Promise<{ proceed: boolean; mappings?: string }> {
+  if (!get(isRotkiCustomImport))
+    return { proceed: true };
+  const resolution = await resolveLocations(source, target);
+  if (!resolution.proceed) {
+    if (resolution.error)
+      set(errorMessage, resolution.error);
+    return { proceed: false };
+  }
+  const mapped = Object.keys(resolution.mappings).length > 0;
+  return { mappings: mapped ? JSON.stringify(resolution.mappings) : undefined, proceed: true };
+}
+
 async function uploadFile(): Promise<boolean> {
   const fileVal = get(file);
   if (!fileVal)
     return false;
 
   const path = getPath(fileVal);
+  const locations = await locationMappingsFor(path ? { path } : { file: fileVal });
+  if (!locations.proceed)
+    return false;
+  const { mappings: locationMappings } = locations;
+
   if (path)
-    return uploadPackaged(path);
+    return uploadPackaged(path, locationMappings);
 
   const formData = new FormData();
   formData.append('source', source);
@@ -136,6 +173,8 @@ async function uploadFile(): Promise<boolean> {
   const timezoneVal = get(timezone);
   if (timezoneVal)
     formData.append('timezone', timezoneVal);
+  if (locationMappings)
+    formData.append('location_mappings', locationMappings);
 
   const outcome = await submitTask<boolean>({
     id: makeActivityId(ActivityKind.CSV_IMPORT, source),
@@ -165,8 +204,6 @@ function toggleCustomTimezone(enabled: boolean): void {
   if (!enabled)
     set(timezone, undefined);
 }
-
-const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'));
 </script>
 
 <template>
@@ -280,5 +317,10 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
       </div>
     </form>
     <DateFormatHelp v-model="formatHelp" />
+    <ImportLocationMappingDialog
+      :resolutions="pending"
+      @confirm="confirmMappings($event.mappings, $event.saveAsAliases)"
+      @cancel="cancelMappings()"
+    />
   </div>
 </template>

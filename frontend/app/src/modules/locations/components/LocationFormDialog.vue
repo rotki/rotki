@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { LocationNode } from '@/modules/locations/use-location-tree-api';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -18,6 +19,10 @@ import { useLocationTreeStore } from '@/modules/locations/use-location-tree-stor
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<LocationFormData | undefined>({ required: true });
+
+const emit = defineEmits<{
+  created: [location: LocationNode];
+}>();
 
 const submitting = ref<boolean>(false);
 
@@ -67,10 +72,10 @@ function reportFailure(message: string): void {
 async function create(): Promise<void> {
   const { icon, name, parentIdentifier } = form.state;
   const outcome = await createLocation({ icon, name: name.trim(), parentIdentifier });
-  if (outcome.ok)
-    close();
-  else
-    reportFailure(outcome.error);
+  if (!outcome.ok)
+    return reportFailure(outcome.error);
+  emit('created', outcome.value);
+  close();
 }
 
 async function saveEdit(identifier: string, payload: ReturnType<typeof locationEditPayload>): Promise<void> {

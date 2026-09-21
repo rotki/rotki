@@ -11,12 +11,12 @@ export interface LocationFormState {
 
 /** A location being created below `parentIdentifier`, or the custom location being edited. */
 export type LocationFormData =
-  | { readonly mode: 'add'; readonly parentIdentifier: string }
+  | { readonly mode: 'add'; readonly parentIdentifier: string; readonly name?: string }
   | { readonly mode: 'edit'; readonly location: LocationNode };
 
 export function toLocationFormState(data: LocationFormData): LocationFormState {
   if (data.mode === 'add')
-    return { icon: DEFAULT_LOCATION_ICON, name: '', parentIdentifier: data.parentIdentifier };
+    return { icon: DEFAULT_LOCATION_ICON, name: data.name ?? '', parentIdentifier: data.parentIdentifier };
   const { icon, name, parentIdentifier } = data.location;
   return {
     icon: isLocationIcon(icon) ? icon : DEFAULT_LOCATION_ICON,
