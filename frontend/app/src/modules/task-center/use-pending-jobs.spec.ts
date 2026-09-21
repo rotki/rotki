@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { assembleActivityModel } from './core/model';
+import { type ActivityModel, assembleActivityModel } from './core/model';
 import {
   type Activity,
   type ActivityKind,
-  type ActivityModel,
   ActivitySourceType,
   type ActivityStatus,
   ActivityKind as Kind,

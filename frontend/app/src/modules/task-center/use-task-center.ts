@@ -1,10 +1,8 @@
 import type { ComputedRef } from 'vue';
-import { assembleActivityModel } from './core/model';
+import { type ActivityModel, type ActivityOverall, assembleActivityModel } from './core/model';
 import {
   type Activity,
   ActivityKind,
-  type ActivityModel,
-  type ActivityOverall,
   ActivityPhase,
   type TranslateFn,
   type WorkStatus,

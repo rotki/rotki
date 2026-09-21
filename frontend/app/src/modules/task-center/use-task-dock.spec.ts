@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,
