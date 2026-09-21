@@ -61,7 +61,7 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         reportsDirectory: 'tests/unit/coverage',
-        reporter: ['json', 'lcov', 'html'],
+        reporter: ['lcov', 'html'],
         include: ['src/**'],
         exclude: [
           'node_modules',
