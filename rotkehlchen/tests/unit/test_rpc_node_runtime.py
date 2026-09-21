@@ -1,5 +1,8 @@
 """Tests for RPC node runtime state, cooldown, and configured-node cache."""
 import time
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from threading import Event
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -331,3 +334,54 @@ def test_maybe_connect_to_nodes_refreshes_stale_configured_nodes_cache() -> None
     with patch.object(manager, 'connect_to_multiple_nodes') as mock_connect:
         manager.maybe_connect_to_nodes(when_tracked_accounts=False)
         mock_connect.assert_called_once_with([fresh_node])
+
+
+def _load_nodes_before_refresh(
+        loaded: Event,
+        release: Event,
+        nodes: list[WeightedNode],
+        **kwargs: object,
+) -> list[WeightedNode]:
+    loaded.set()
+    assert release.wait(timeout=5)
+    return nodes
+
+
+def test_refresh_waits_for_inflight_cache_load() -> None:
+    old_nodes = [_make_weighted_node('provider', 'https://old.example.com')]
+    new_nodes = [_make_weighted_node('provider', 'https://new.example.com')]
+    manager = _make_manager(old_nodes)
+    manager.invalidate_nodes_cache()
+    loaded, release = Event(), Event()
+    with (
+        ThreadPoolExecutor(max_workers=2) as executor,
+        patch.object(manager.database, 'get_rpc_nodes', side_effect=partial(
+            _load_nodes_before_refresh, loaded, release, old_nodes,
+        )),
+    ):
+        reader = executor.submit(manager._get_configured_nodes)
+        assert loaded.wait(timeout=5)
+        refresh = executor.submit(
+            manager.refresh_nodes,
+            added={new_nodes[0].node_info},
+            removed={old_nodes[0].node_info},
+        )
+        with pytest.raises(TimeoutError):
+            refresh.result(timeout=0.1)
+        release.set()
+        reader.result(timeout=5)
+        refresh.result(timeout=5)
+    with patch.object(manager.database, 'get_rpc_nodes', return_value=new_nodes):
+        assert manager._get_configured_nodes() == new_nodes
+
+
+def test_refresh_allows_explicitly_readded_node() -> None:
+    node = _make_node('provider', 'https://rpc.example.com')
+    manager = _make_manager([])
+    manager.refresh_nodes(added=set(), removed={node})
+    manager.mark_node_failure(node, 'old request failed')
+    assert manager.get_runtime_state(node) is None
+    manager.refresh_nodes(added={node}, removed=set())
+    assert node not in manager._removed_nodes
+    manager.mark_node_success(node)
+    assert manager.get_runtime_state(node) is not None
