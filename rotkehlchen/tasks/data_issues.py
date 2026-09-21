@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -331,6 +332,8 @@ def _check_issue(
         asset=issue.asset,
     )
     decoder = chains_aggregator.get_evm_manager(chain_id).transactions_decoder
+    # TODO: Replace preview-only comparison with stale-marked production
+    # reprocessing for the full issue window.
     preview_exceptions: tuple[type[Exception], ...] = (
         RuntimeError,
         *decoder.possible_decoding_exceptions,
@@ -488,6 +491,10 @@ def run_data_issue_remediation(
         chains_aggregator: ChainsAggregator,
 ) -> None:
     """Run registered remediation strategies for applicable data issues."""
+    database.msg_aggregator.add_message(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION)},
+    )
     issues_manager = DataIssuesManager(database)
     _write_tracked_address_transfer_issues(
         database=database,

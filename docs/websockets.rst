@@ -770,6 +770,24 @@ Sent during historical balance processing to track progress. This runs as a peri
 - ``processed``: Number of events processed so far
 
 
+Data Issue Remediation Running
+=================================
+
+Sent when the periodic data-issue remediation job starts.
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "subtype": "data_issue_remediation"
+        }
+    }
+
+
+- ``subtype``: Set to ``data_issue_remediation`` to indicate that automatic data-issue remediation is running.
+
+
 Negative Balance Detected
 =================================
 

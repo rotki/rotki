@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from freezegun import freeze_time
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.concurrency import TaskCancelledError
@@ -163,6 +164,16 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
     task.join(timeout=10)
     assert task.dead, f'{task.task_name} did not finish'
     task.get()
+
+
+def test_remediation_sends_running_websocket_update(database: DBHandler) -> None:
+    with patch.object(database.msg_aggregator, 'add_message') as add_message:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    add_message.assert_called_once_with(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION)},
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
