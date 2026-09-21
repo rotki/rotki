@@ -136,6 +136,34 @@ describe('dockActivityRow', () => {
       expect(wrapper.findComponent({ name: 'LocationIcon' }).exists()).toBe(false);
     });
 
+    it('should keep an empty icon column on a nested row with no icon, so its label lines up with its siblings\'', () => {
+      const prices = activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES });
+
+      const nested = createWrapper({ activity: prices, parent: activity() });
+      expect(nested.find('[data-testid=dock-subject-icon-column]').exists()).toBe(true);
+      expect(nested.find('[data-testid=dock-subject-icon]').exists()).toBe(false);
+
+      expect(createWrapper({ activity: prices }).find('[data-testid=dock-subject-icon-column]').exists()).toBe(false);
+    });
+
+    it('should give a nested account row no icon column, since its avatar takes that place', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS) });
+
+      const wrapper = createWrapper({ activity: account, parent: activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth') }) });
+
+      expect(wrapper.find('[data-testid=dock-subject-icon-column]').exists()).toBe(false);
+    });
+
+    it('should fade a settled nested label but keep a settled job\'s title at full strength', () => {
+      const label = (wrapper: VueWrapper): string[] => wrapper.find('[data-testid=activity-label]').classes();
+      const settled = activity({ status: ActivityStatus.COMPLETE });
+      const parent = activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES });
+
+      expect(label(createWrapper({ activity: settled }))).not.toContain('text-rui-text-secondary');
+      expect(label(createWrapper({ activity: settled, parent }))).toContain('text-rui-text-secondary');
+      expect(label(createWrapper({ activity: activity(), parent }))).not.toContain('text-rui-text-secondary');
+    });
+
     it('should show no subject icon for work that acts on no chain or location', () => {
       const wrapper = createWrapper({ activity: activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES }) });
 
