@@ -292,6 +292,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
+          # The action otherwise also uploads every coverage-looking file it finds.
+          disable_search: true
           flags: frontend_integration
           fail_ci_if_error: false
 

@@ -50,5 +50,7 @@ jobs:
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
           files: ./frontend/app/tests/unit/coverage/lcov.info
+          # The action otherwise also uploads every coverage-looking file it finds.
+          disable_search: true
           flags: frontend_unit
           token: ${{ secrets.CODECOV_TOKEN }}
