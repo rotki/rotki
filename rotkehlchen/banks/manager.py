@@ -223,7 +223,7 @@ class BankManager:
         if location is None:
             raise InputError(f'{manifest.display_name} connections need the location of their bank')  # noqa: E501
         node = DBLocations().validate_assignable(cursor, location)
-        if node.identifier not in DBLocations.descendants(cursor, [LOCATION_BANKS]):
+        if LOCATION_BANKS not in DBLocations.ancestor_identifiers(cursor, [node.identifier]):
             raise InputError(f'Location {location} is not a bank')
         return node.identifier
 

@@ -7,6 +7,7 @@ from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     UnsupportedCSVEntry,
     process_rotki_generic_import_csv_fields,
+    resolved_csv_locations,
 )
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
@@ -44,6 +46,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             sequence_index: int,
+            locations: dict[str, LocationIdentifier],
     ) -> None:
         """Consume rotki generic events import CSV file.
         May raise:
@@ -58,7 +61,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         except KeyError as e:
             raise UnsupportedCSVEntry(f'Unsupported entry {csv_row["Type"]}. Data: {csv_row}') from e  # noqa: E501
         events: list[HistoryBaseEntry] = []
-        asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Currency')  # noqa: E501
+        asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Currency', locations)  # noqa: E501
         history_event = HistoryEvent(
             group_identifier=identifier,
             sequence_index=sequence_index,
@@ -87,15 +90,23 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         self.add_history_events(write_cursor, events)  # event assets are always resolved here
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
-        """May raise:
+        """`location_mappings` maps location values of the file to locations.
+
+        May raise:
         - InputError if one of the rows is malformed
+        - UnresolvedLocationsError if a location value is neither known nor mapped
         """
+        locations = resolved_csv_locations(self.db, filepath, kwargs.get('location_mappings'))
         with open(filepath, encoding='utf-8-sig') as csvfile:
             for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
                     self.total_entries += 1
-                    kwargs['sequence_index'] = index - 1
-                    self._consume_rotki_event(write_cursor, row, **kwargs)
+                    self._consume_rotki_event(
+                        write_cursor=write_cursor,
+                        csv_row=row,
+                        sequence_index=index - 1,
+                        locations=locations,
+                    )
                     self.imported_entries += 1
                 except UnknownAsset as e:
                     self.send_message(

@@ -44,6 +44,7 @@ class HistoryEventsService:
                         cursor=cursor,
                         identifier=location,
                         allow_archived=allow_archived,
+                        allow_category=True,
                     )
                 except InputError as e:
                     return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}  # noqa: E501

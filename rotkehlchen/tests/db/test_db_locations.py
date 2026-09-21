@@ -3,8 +3,12 @@ from typing import TYPE_CHECKING
 import pytest
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.locations.catalog import load_builtin_catalog
 
 if TYPE_CHECKING:
@@ -110,7 +114,11 @@ def test_custom_location_rules(database: DBHandler) -> None:
 
         with pytest.raises(InputError, match='cannot be assigned directly'):
             db_locations.validate_assignable(write_cursor, 'total')
-        assert db_locations.validate_assignable(write_cursor, 'banks').identifier == 'banks'
+        assert db_locations.validate_assignable(write_cursor, 'banks', allow_category=True).identifier == 'banks'  # noqa: E501
+        for category in ('banks', 'evm chains', 'other'):  # imports, aliases and connections
+            with pytest.raises(InputError, match='only groups other locations'):
+                db_locations.validate_assignable(write_cursor, category)
+        assert db_locations.validate_assignable(write_cursor, 'qonto').identifier == 'qonto'
 
 
 def test_location_foreign_keys(database: DBHandler) -> None:
@@ -125,3 +133,82 @@ def test_location_foreign_keys(database: DBHandler) -> None:
         )
         with pytest.raises(sqlcipher.IntegrityError, match='FOREIGN KEY'):  # pylint: disable=no-member
             write_cursor.execute("DELETE FROM locations WHERE identifier='kraken'")
+
+
+def test_location_resolution(database: DBHandler) -> None:
+    """Imported values resolve by identifier, then alias, then a unique name. Ambiguous names,
+    the total, archived locations and categories new with the tree never resolve; the old
+    banks and blockchain locations still do by identifier, as rotki's exports name them."""
+    db_locations = DBLocations()
+    with database.user_write() as write_cursor:
+        ing = db_locations.add_custom(write_cursor, name='ING', parent_identifier='banks')
+        other_ing = db_locations.add_custom(write_cursor, name='ing', parent_identifier='other')
+        old = db_locations.add_custom(write_cursor, name='My old exchange', parent_identifier='exchanges')  # noqa: E501
+        closed = db_locations.add_custom(write_cursor, name='Closed bank', parent_identifier='banks')  # noqa: E501
+        db_locations.set_alias(write_cursor, 'ING Diba', ing.identifier)
+        db_locations.set_alias(write_cursor, 'Kraken', old.identifier)  # an identifier wins
+        db_locations.edit_custom(write_cursor, closed.identifier, is_active=False)
+
+        for value, status, location, candidates in (
+            ('KRAKEN', 'resolved', 'kraken', ()),
+            ('polygon_pos', 'resolved', 'polygon pos', ()),
+            (f' {old.identifier} ', 'resolved', old.identifier, ()),
+            ('ing diba', 'resolved', ing.identifier, ()),
+            ('my OLD exchange', 'resolved', old.identifier, ()),
+            ('Coinbase Pro', 'resolved', 'coinbasepro', ()),
+            ('ING', 'ambiguous', None, tuple(sorted((ing.identifier, other_ing.identifier)))),
+            ('total', 'unresolved', None, ()),
+            ('Banks', 'resolved', 'banks', ()),
+            ('blockchain', 'resolved', 'blockchain', ()),
+            ('Blockchains', 'unresolved', None, ()),
+            ('EVM Chains', 'unresolved', None, ()),
+            ('exchanges', 'unresolved', None, ()),
+            ('Closed bank', 'unresolved', None, ()),
+            (closed.identifier, 'unresolved', None, ()),
+            ('luno', 'unresolved', None, ()),
+            ('', 'unresolved', None, ()),
+        ):
+            resolution = db_locations.resolve(write_cursor, value)
+            assert (resolution.status, resolution.location, resolution.candidates) == (status, location, candidates), value  # noqa: E501
+
+        # aliases can not point at what data can not be assigned to, and go with their location
+        for alias, target, message in (
+            (' ', 'kraken', 'can not be empty'),
+            ('Everything', 'total', 'is the total'),
+            ('All banks', 'banks', 'only groups other locations'),
+            ('Chains', 'evm chains', 'only groups other locations'),
+            ('Closed', closed.identifier, 'is archived'),
+            ('Nowhere', 'custom:missing', 'does not exist'),
+        ):
+            with pytest.raises(InputError, match=message):
+                db_locations.set_alias(write_cursor, alias, target)
+        db_locations.set_alias(write_cursor, 'ing diba', other_ing.identifier)  # case-insensitive replace  # noqa: E501
+        assert db_locations.get_aliases(write_cursor) == {'Kraken': old.identifier, 'ing diba': other_ing.identifier}  # noqa: E501
+        db_locations.delete_custom(write_cursor, other_ing.identifier)
+        assert db_locations.get_aliases(write_cursor) == {'Kraken': old.identifier}
+        db_locations.delete_alias(write_cursor, 'KRAKEN')
+        with pytest.raises(InputError, match='does not exist'):
+            db_locations.delete_alias(write_cursor, 'kraken')
+
+
+def test_manual_balances_name_the_first_unusable_location(database: DBHandler) -> None:
+    with database.user_write() as write_cursor:
+        db_locations = DBLocations()
+        archived = [
+            db_locations.add_custom(write_cursor, name=name, parent_identifier='other').identifier
+            for name in ('Zeta', 'Alpha', 'Mid')
+        ]
+        for identifier in archived:
+            db_locations.edit_custom(write_cursor, identifier, is_active=False)
+
+    balances = [ManuallyTrackedBalance(
+        identifier=-1,
+        asset=A_EUR,
+        label=f'Cash {index}',
+        amount=FVal(1),
+        location=location,
+        tags=None,
+        balance_type=BalanceType.ASSET,
+    ) for index, location in enumerate(archived * 2)]
+    with pytest.raises(InputError, match=f'Location {archived[0]} is archived'):
+        add_manually_tracked_balances(database, balances)

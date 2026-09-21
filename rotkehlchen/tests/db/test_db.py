@@ -185,6 +185,7 @@ TABLES_AT_INIT = [
     'evm_tx_mappings',
     'manually_tracked_balances',
     'locations',
+    'location_aliases',
     'settings',
     'used_query_ranges',
     'margin_positions',

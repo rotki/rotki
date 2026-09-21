@@ -8,13 +8,17 @@ from types import EllipsisType
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
+from rotkehlchen.locations.constants import LOCATION_BANKS, LOCATION_BLOCKCHAIN
 from rotkehlchen.locations.types import (
     CUSTOM_LOCATION_PREFIX,
     ROOT_LOCATION_IDENTIFIER,
     LocationIdentifier,
     LocationNode,
+    LocationResolution,
     LocationTreeError,
+    deserialize_location_identifier,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +39,8 @@ LOCATION_REFERENCES: Final = (
     ('data_issues', 'location'),
     ('integration_connections', 'location_identifier'),
 )
+# Categories that were locations of their own before the tree, so old data may name them
+_PRE_TREE_CATEGORIES: Final = frozenset({LOCATION_BANKS, LOCATION_BLOCKCHAIN})
 _NODE_COLUMNS: Final = 'identifier, name, parent_identifier, is_builtin, is_active, icon, image'
 
 
@@ -180,11 +186,16 @@ class DBLocations:
             cursor: DBCursor,
             identifier: str,
             allow_archived: bool = False,
+            allow_category: bool = False,
     ) -> LocationNode:
         """Check that data can be assigned directly to the given location.
 
-        May raise InputError if the location does not exist, is the root, or is archived
-        and allow_archived is False.
+        A category, a built-in location with built-in locations below it such as Banks, only
+        groups others, so it is refused unless allow_category is True. Manual balances and
+        history events pass it to keep accepting categories, as before the tree.
+
+        May raise InputError if the location does not exist, is the root, is archived and
+        allow_archived is False, or is a category and allow_category is False.
         """
         if (node := self.get(cursor, identifier)) is None:
             raise InputError(f'Location {identifier} does not exist')
@@ -192,7 +203,17 @@ class DBLocations:
             raise InputError(f'Location {identifier} is the total and cannot be assigned directly')
         if not allow_archived and not node.is_active:
             raise InputError(f'Location {identifier} is archived')
+        if not allow_category and self.is_category(cursor, node):
+            raise InputError(f'Location {identifier} only groups other locations')
         return node
+
+    @staticmethod
+    def is_category(cursor: DBCursor, node: LocationNode) -> bool:
+        """Whether a location only groups others: a built-in one with built-in children"""
+        return node.is_builtin and cursor.execute(
+            'SELECT EXISTS(SELECT 1 FROM locations WHERE parent_identifier=? AND is_builtin=1)',
+            (node.identifier,),
+        ).fetchone()[0] == 1
 
     def usage(self, cursor: DBCursor, identifier: str) -> dict[str, int]:
         """Rows referencing the location directly and its number of children, only counting
@@ -349,3 +370,76 @@ class DBLocations:
             'UPDATE locations SET image=? WHERE identifier=?', (image, identifier),
         )
         return node.image
+
+    @staticmethod
+    def get_aliases(cursor: DBCursor) -> dict[str, LocationIdentifier]:
+        """Every alias with the location it resolves to"""
+        return {
+            alias: LocationIdentifier(identifier) for alias, identifier in cursor.execute(
+                'SELECT alias, location_identifier FROM location_aliases ORDER BY alias',
+            )
+        }
+
+    def set_alias(self, write_cursor: DBCursor, alias: str, identifier: str) -> None:
+        """Make the alias resolve to the location, replacing where it resolved before.
+
+        May raise InputError if the alias is empty or the location can not be assigned data or
+        is a category.
+        """
+        if (alias := alias.strip()) == '':
+            raise InputError('A location alias can not be empty')
+        self.validate_assignable(write_cursor, identifier)
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO location_aliases(alias, location_identifier) VALUES (?, ?)',
+            (alias, identifier),
+        )
+
+    @staticmethod
+    def delete_alias(write_cursor: DBCursor, alias: str) -> None:
+        """May raise InputError if the alias does not exist"""
+        if write_cursor.execute(
+            'DELETE FROM location_aliases WHERE alias=?', (alias.strip(),),
+        ).rowcount == 0:
+            raise InputError(f'Location alias {alias} does not exist')
+
+    def _assignable(
+            self,
+            cursor: DBCursor,
+            identifier: str,
+            allow_category: bool = False,
+    ) -> LocationIdentifier | None:
+        try:
+            return self.validate_assignable(cursor, identifier, allow_category=allow_category).identifier  # noqa: E501
+        except InputError:
+            return None
+
+    def resolve(self, cursor: DBCursor, value: str) -> LocationResolution:
+        """Find the location a value from imported data means, in order: an exact location
+        identifier, a saved alias, then a unique case-insensitive name. Only locations data can
+        be assigned to count, so the total and archived locations never match. A category matches
+        only by the exact identifier of a location from before the tree, such as banks, which
+        rotki's own exports name for old data. A name several locations share stays ambiguous
+        instead of picking one.
+        """
+        value = value.strip()
+        try:
+            identifier = deserialize_location_identifier(value)
+            if (location := self._assignable(cursor, identifier, allow_category=identifier in _PRE_TREE_CATEGORIES)) is not None:  # noqa: E501
+                return LocationResolution(value=value, location=location)
+        except DeserializationError:
+            return LocationResolution(value=value)
+
+        if (alias := cursor.execute(
+            'SELECT location_identifier FROM location_aliases WHERE alias=?', (value,),
+        ).fetchone()) is not None and (location := self._assignable(cursor, alias[0])) is not None:
+            return LocationResolution(value=value, location=location)
+
+        matches = tuple(
+            location for (identifier,) in cursor.execute(
+                'SELECT identifier FROM locations WHERE name=? COLLATE NOCASE ORDER BY identifier',
+                (value,),
+            ).fetchall() if (location := self._assignable(cursor, identifier)) is not None
+        )
+        if len(matches) == 1:
+            return LocationResolution(value=value, location=matches[0])
+        return LocationResolution(value=value, candidates=matches)

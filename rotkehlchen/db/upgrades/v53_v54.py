@@ -197,6 +197,12 @@ def _add_location_tree(write_cursor: DBCursor) -> None:
         'CREATE UNIQUE INDEX unique_locations_sibling_name '
         'ON locations(parent_identifier, name COLLATE NOCASE);',
     )
+    write_cursor.execute("""
+    CREATE TABLE location_aliases (
+        alias TEXT NOT NULL COLLATE NOCASE PRIMARY KEY,
+        location_identifier TEXT NOT NULL REFERENCES locations(identifier) ON DELETE CASCADE,
+        CHECK(alias != '')
+    );""")
     DBLocations.seed_builtin_locations(write_cursor)
 
     # the old location table lists every enum member, so only real references count as usage

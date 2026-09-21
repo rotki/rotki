@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from http import HTTPStatus
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -33,9 +34,13 @@ from rotkehlchen.banks.manager import BankCredentialInput, BankManager, BankSync
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
 from rotkehlchen.connections.types import ConnectionIdentifier, IntegrationConnection
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
+
+if TYPE_CHECKING:
+    from rotkehlchen.locations.types import LocationIdentifier
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {
@@ -263,6 +268,7 @@ def create_fints(
         messages,
         transport: FinTSFixtureTransport,
         connection_identifier: ConnectionIdentifier | None = None,
+        location: LocationIdentifier = LOCATION_BANKS,
 ) -> Fints:
     """A FinTS connection. Passing the identifier of an earlier one restores its session."""
     credentials = Fints.api_credentials_from_values(values=FINTS_VALUES)
@@ -273,7 +279,7 @@ def create_fints(
         secret=credentials.api_secret,
         database=database,
         msg_aggregator=messages,
-        location=LOCATION_BANKS,
+        location=location,
         connection_identifier=connection_identifier,
         product_id=PRODUCT_ID,
         client_factory=transport,
@@ -777,13 +783,15 @@ def test_adding_a_connection_again_does_not_resume_an_abandoned_setup(
     if not restarted:
         manager.pending_setups[abandoned.connection_identifier] = abandoned
 
-    added = create_fints(database, function_scope_messages_aggregator, FinTSFixtureTransport())
+    with database.user_write() as write_cursor:
+        bank = DBLocations().add_custom(write_cursor, 'ING', LOCATION_BANKS).identifier
+    added = create_fints(database, function_scope_messages_aggregator, FinTSFixtureTransport(), location=bank)  # noqa: E501
     assert not added.has_pending_authentication(), 'a new connection has no session to restore'
     with patch.object(manager, '_instantiate', return_value=added):
         assert manager.setup_bank(
             name=added.name,
             connector=FINTS_CONNECTOR,
-            location=LOCATION_BANKS,
+            location=bank,
             credentials=BankCredentialInput(values=FINTS_VALUES),
             database=database,
         ) == (added.connection_identifier, '')
