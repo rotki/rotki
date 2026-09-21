@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING
+from unittest.mock import Mock, patch
 
 import pytest
 
-from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.concurrency import Task, TaskCancelledError, cancellable_sleep
+from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.remediation.base import (
@@ -16,10 +20,14 @@ from rotkehlchen.history.data_issues.remediation.base import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.data_issues.types import DataIssue
 
-pytestmark = pytest.mark.parametrize('use_clean_caching_directory', [True])
+pytestmark = [
+    pytest.mark.accounting_update,
+    pytest.mark.parametrize('use_clean_caching_directory', [True]),
+]
 
 
 class StubStrategy(BaseRemediationStrategy):
@@ -176,3 +184,98 @@ def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> No
 
     assert DataIssuesManager(database).get_issue(issue.id).state == IssueState.OPEN
     assert calls == []
+
+
+@pytest.mark.parametrize('error_type', [RemoteError, DeserializationError, InputError])
+@pytest.mark.parametrize('fallback', [False, True])
+def test_pipeline_records_operational_failure_and_continues(
+        database: DBHandler,
+        error_type: type[Exception],
+        fallback: bool,
+) -> None:
+    """Record operational errors and either run the fallback or leave the issue unresolved."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    failing = StubStrategy('failing', RemediationOutcome(False, 'system', ''), calls)
+    strategies: tuple[BaseRemediationStrategy, ...] = (failing,)
+    if fallback:
+        strategies += (StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),)
+
+    with patch.object(failing, 'attempt', side_effect=error_type('receipt unavailable')):
+        RemediationPipeline(manager, strategies).run(issue)
+
+    issue = manager.get_issue(issue.id)
+    assert issue.state == (IssueState.RESOLVED if fallback else IssueState.UNRESOLVED)
+    assert calls == (['fallback'] if fallback else [])
+    assert len(issue.auto_remediation_attempts) == (2 if fallback else 1)
+    attempt = issue.auto_remediation_attempts[0]
+    assert attempt['strategy'] == 'failing'
+    assert attempt['success'] is False
+    assert attempt['attribution'] == 'strategy_failed'
+    assert attempt['reason'] == 'receipt unavailable'
+
+
+def test_pipeline_propagates_cancellation_without_running_fallback(database: DBHandler) -> None:
+    """Propagate cancellation without running the fallback or recording a normal failure."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    cancelled = StubStrategy('cancelled', RemediationOutcome(False, 'system', ''), calls)
+    with (
+        patch.object(cancelled, 'attempt', side_effect=TaskCancelledError('cancelled')),
+        pytest.raises(TaskCancelledError),
+    ):
+        RemediationPipeline(manager, (
+            cancelled,
+            StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),
+        )).run(issue)
+
+    assert calls == []
+    issue = manager.get_issue(issue.id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert issue.auto_remediation_attempts == []
+
+
+@pytest.mark.parametrize('preview', [False, True])
+def test_pipeline_timeout_cancels_decoder_lock_wait(
+        database: DBHandler,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        preview: bool,
+) -> None:
+    """A busy decoder must yield to the timeout without releasing another worker's lock."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    strategy = StubStrategy('busy', RemediationOutcome(False, 'system', ''), calls, timeout=0.02)
+    decoder = ethereum_transaction_decoder
+    decode = (
+        partial(
+            decoder.decode_transaction_without_persistence, transaction=Mock(), tx_receipt=Mock(),
+        )
+        if preview else partial(decoder.decode_transaction_hashes, ignore_cache=True, tx_hashes=[])
+    )
+    pipeline = RemediationPipeline(manager, (
+        strategy,
+        StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),
+    ))
+    with patch.object(strategy, 'attempt', side_effect=lambda issue: decode()):
+        decoder.undecoded_tx_query_lock.acquire()
+        task = Task(
+            name='test remediation lock timeout', target=pipeline.run, args=(issue,),
+        ).start()
+        try:
+            task.join(timeout=1)
+            assert task.dead, 'Remediation kept waiting for the decoder lock after timeout'
+            task.get()
+            assert decoder.undecoded_tx_query_lock.acquire(blocking=False) is False
+        finally:
+            decoder.undecoded_tx_query_lock.release()
+            task.join(timeout=5)
+
+    assert calls == ['fallback']
+    issue = manager.get_issue(issue.id)
+    assert issue.state == IssueState.RESOLVED
+    assert issue.auto_remediation_attempts[0]['attribution'] == 'timeout'
+    assert decoder.undecoded_tx_query_lock.acquire(blocking=False)
+    decoder.undecoded_tx_query_lock.release()
