@@ -39,7 +39,7 @@ vi.mock('@/modules/banks/use-banks-api', () => ({
 }));
 
 function listed(identity: BankConnectionIdentity, authChallenge: BankConnection['syncStatus']['authChallenge']): BankConnection {
-  return { ...identity, displayName: 'FinTS', syncStatus: { authChallenge, lastError: null, lastSyncTs: null, running: false } };
+  return { ...identity, connector: 'qonto', displayName: 'FinTS', syncStatus: { authChallenge, lastError: null, lastSyncTs: null, running: false } };
 }
 
 const tanChallenge = { challenge: 'Enter the TAN', challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter the TAN' };
@@ -50,8 +50,8 @@ vi.mock('@/modules/history/use-events-query-status-store', () => ({
 
 describe('useBankEventsRefresh', () => {
   const banks: BankConnectionIdentity[] = [
-    { location: 'qonto', name: 'Qonto main' },
-    { location: 'qonto', name: 'Qonto side' },
+    { identifier: 'c1', location: 'qonto', name: 'Qonto main' },
+    { identifier: 'c2', location: 'qonto', name: 'Qonto side' },
   ];
 
   beforeEach(() => {
@@ -115,7 +115,7 @@ describe('useBankEventsRefresh', () => {
       assert(notification.action && !Array.isArray(notification.action));
       await notification.action.action();
 
-      expect(mocks.push).toHaveBeenCalledExactlyOnceWith({ name: '/api-keys/banks/', query: { authenticate: 'Qonto main', location: 'qonto' } });
+      expect(mocks.push).toHaveBeenCalledExactlyOnceWith({ name: '/api-keys/banks/', query: { authenticate: 'c1' } });
     });
 
     it.each([
@@ -127,7 +127,7 @@ describe('useBankEventsRefresh', () => {
 
       await useBankEventsRefresh().queryAllBankEvents([banks[0]]);
 
-      expect(mocks.markLocationCancelled).toHaveBeenCalledExactlyOnceWith(banks[0]);
+      expect(mocks.markLocationCancelled).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main' });
       expect(mocks.notify).not.toHaveBeenCalled();
     });
 
@@ -152,8 +152,9 @@ describe('useBankEventsRefresh', () => {
     expect(mockNotifyError.mock.calls[0][1]).toContain('boom');
   });
 
-  it('should name the bank by its display name in the failure notification', async () => {
-    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+  it('should name the bank by its connector display name in the failure notification', async () => {
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ connectorIdentifier: 'qonto', displayName: 'Qonto Business' })]);
+    useBankConnectionsStore().setConnections([listed(banks[0], null)]);
     mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
     const { queryAllBankEvents } = useBankEventsRefresh();

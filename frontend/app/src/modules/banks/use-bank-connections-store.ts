@@ -4,13 +4,26 @@ import { toSentenceCase } from '@rotki/common';
 export const useBankConnectionsStore = defineStore('banks/connections', () => {
   const manifests = ref<BankManifest[]>([]);
   const connections = ref<BankConnection[]>([]);
+  /** The locations the last bank balance query filled, which a later one replaces. */
+  const balanceLocations = ref<string[]>([]);
 
-  const manifestFor = (location: string): BankManifest | undefined =>
-    get(manifests).find(manifest => manifest.location === location);
+  /** The locations the connected banks put their balances and history in. */
+  const bankLocations = computed<string[]>(() => [...new Set(get(connections).map(connection => connection.location))]);
 
-  /** The bank's manifest display name, or its location in sentence case while the manifests have not loaded. */
-  const bankNameFor = (location: string): string =>
-    manifestFor(location)?.displayName ?? toSentenceCase(location);
+  const manifestFor = (connector: string): BankManifest | undefined =>
+    get(manifests).find(manifest => manifest.connectorIdentifier === connector);
+
+  /** The connector's display name, or its identifier in sentence case while the manifests have not loaded. */
+  const bankNameFor = (connector: string): string =>
+    manifestFor(connector)?.displayName ?? toSentenceCase(connector);
+
+  /** The connector of a connection, or an empty string if it is not loaded. */
+  const connectorOf = (identifier: string): string =>
+    get(connections).find(connection => connection.identifier === identifier)?.connector ?? '';
+
+  /** The user given name of a connection, or its identifier if it is not loaded. */
+  const connectionName = (identifier: string): string =>
+    get(connections).find(connection => connection.identifier === identifier)?.name ?? identifier;
 
   const setManifests = (value: BankManifest[]): void => {
     set(manifests, value);
@@ -20,11 +33,20 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
     set(connections, value);
   };
 
+  const setBalanceLocations = (value: string[]): void => {
+    set(balanceLocations, value);
+  };
+
   return {
+    balanceLocations,
+    bankLocations,
     bankNameFor,
+    connectionName,
     connections,
+    connectorOf,
     manifestFor,
     manifests,
+    setBalanceLocations,
     setConnections,
     setManifests,
   };

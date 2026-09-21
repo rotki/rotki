@@ -503,8 +503,7 @@ defineExpose({
     />
     <BinancePairsSelector
       v-if="isBinance"
-      :name="modelValue.name"
-      :edit="editMode"
+      :identifier="editMode ? modelValue.identifier : undefined"
       :location="modelValue.location"
       :error-messages="form.errors('binanceMarkets')"
       @update:selection="form.state.binanceMarkets = $event"

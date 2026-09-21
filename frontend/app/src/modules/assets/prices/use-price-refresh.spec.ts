@@ -1,5 +1,5 @@
 import { bigNumberify, Blockchain } from '@rotki/common';
-import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
+import { createTestBalance, createTestExchange, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,10 +52,7 @@ describe('usePriceRefresh', () => {
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { adjustPrices } = await createPriceRefresh();
 
-      set(connectedExchanges, [{
-        location: 'kraken',
-        name: 'Bitrex Acc',
-      }]);
+      set(connectedExchanges, [createTestExchange('kraken', 'Bitrex Acc')]);
 
       set(exchangeBalances, {
         kraken: {

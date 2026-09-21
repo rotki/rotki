@@ -99,7 +99,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   const connectedBanks = (): BankConnectionIdentity[] =>
-    get(bankConnections).map(({ location, name }) => ({ location, name }));
+    get(bankConnections).map(({ identifier, location, name }) => ({ identifier, location, name }));
 
   /** Every bank connection syncs; there is no per-connection opt-out as there is for exchanges. */
   function filterSyncingBanks(banks: BankConnectionIdentity[] | undefined): BankConnectionIdentity[] {

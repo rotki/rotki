@@ -1,11 +1,13 @@
+import type { BankConnection } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBankData } from '@/modules/banks/use-bank-data';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 
 function balance(amount: number): { amount: ReturnType<typeof bigNumberify>; value: ReturnType<typeof bigNumberify> } {
   return { amount: bigNumberify(amount), value: bigNumberify(amount) };
@@ -14,13 +16,10 @@ function balance(amount: number): { amount: ReturnType<typeof bigNumberify>; val
 describe('useBankData', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
-    useLocationStore().$patch({
-      allLocations: {
-        kraken: { image: 'kraken.svg' },
-        qonto: { image: 'qonto.svg', isBank: true },
-        revolut: { image: 'revolut.svg', isBank: true },
-      },
-    });
+    useBankConnectionsStore().setConnections([
+      createMock<BankConnection>({ identifier: 'c1', location: 'qonto' }),
+      createMock<BankConnection>({ identifier: 'c2', location: 'revolut' }),
+    ]);
     useBalancesStore().exchangeBalances = {
       kraken: { EUR: balance(1000) },
       qonto: { EUR: balance(200), SPAM: balance(5000) },
@@ -42,7 +41,7 @@ describe('useBankData', () => {
     ]);
   });
 
-  it('should tell bank locations from exchanges', () => {
+  it('should tell the locations of bank connections from exchanges', () => {
     const { isBankLocation } = useBankData();
     expect(isBankLocation('qonto')).toBe(true);
     expect(isBankLocation('kraken')).toBe(false);

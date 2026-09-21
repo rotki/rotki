@@ -2,15 +2,16 @@ import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import { createTestExchange } from '@test/utils/create-data';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import RepullingExchangeForm from '@/modules/history/events/tx/RepullingExchangeForm.vue';
 import '@test/i18n';
 
-const KRAKEN: Exchange = { location: 'kraken', name: 'my kraken' };
+const KRAKEN: Exchange = createTestExchange('kraken', 'my kraken');
 /** One of the exchanges that reports no date range, so the picker is hidden for it. */
-const BITMEX: Exchange = { location: 'bitmex', name: 'my bitmex' };
+const BITMEX: Exchange = createTestExchange('bitmex', 'my bitmex');
 
 vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: (): Record<string, unknown> => ({

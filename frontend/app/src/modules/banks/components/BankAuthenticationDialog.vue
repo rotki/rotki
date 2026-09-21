@@ -31,7 +31,7 @@ async function confirm(): Promise<void> {
 
   set(submitting, true);
   const result = await answerBankAuthentication(
-    { location: request.location, name: request.name },
+    { identifier: request.identifier },
     get(response).trim() || undefined,
   );
   set(submitting, false);

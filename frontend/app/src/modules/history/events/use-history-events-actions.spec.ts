@@ -3,6 +3,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type Blockchain, HistoryEventEntryType, Priority, Severity } from '@rotki/common';
+import { createTestExchange } from '@test/utils/create-data';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -214,7 +215,7 @@ describe('useHistoryEventsActions', () => {
       const options = createOptions();
       const { dialogHandlers } = useHistoryEventsActions(options);
 
-      const exchanges: Exchange[] = [{ location: 'kraken', name: 'My Kraken' }];
+      const exchanges: Exchange[] = [createTestExchange('kraken', 'My Kraken')];
       await dialogHandlers.onRepullExchangeEvents?.(exchanges);
 
       expect(mockRefreshTransactions).toHaveBeenCalledWith({

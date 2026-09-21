@@ -1,6 +1,7 @@
 import type { ExchangeFormData, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
+import { createTestExchange } from '@test/utils/create-data';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExchangeApi } from './use-exchange-api';
@@ -27,12 +28,9 @@ describe('composables/api/balances/exchanges', () => {
       );
 
       const { queryRemoveExchange } = useExchangeApi();
-      const result = await queryRemoveExchange({ location: 'binance', name: 'my_binance' });
+      const result = await queryRemoveExchange(createTestExchange('binance', 'my_binance'));
 
-      expect(capturedBody).toEqual({
-        location: 'binance',
-        name: 'my_binance',
-      });
+      expect(capturedBody).toEqual({ identifier: 'binance-my_binance' });
       expect(result).toBe(true);
     });
 
@@ -47,7 +45,7 @@ describe('composables/api/balances/exchanges', () => {
 
       const { queryRemoveExchange } = useExchangeApi();
 
-      await expect(queryRemoveExchange({ location: 'binance', name: 'unknown' }))
+      await expect(queryRemoveExchange(createTestExchange('binance', 'unknown')))
         .rejects
         .toThrow('Exchange not found');
     });
@@ -119,7 +117,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('callSetupExchange', () => {
-    it('should send PUT request for add mode with snake_case payload', async () => {
+    it('should add through PUT, sending the location as the connector', async () => {
       let capturedBody: DefaultBodyType = null;
       let requestMethod = '';
 
@@ -128,7 +126,7 @@ describe('composables/api/balances/exchanges', () => {
           requestMethod = request.method;
           capturedBody = await request.json();
           return HttpResponse.json({
-            result: true,
+            result: { identifier: 'c1' },
             message: '',
           });
         }),
@@ -150,7 +148,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(requestMethod).toBe('PUT');
       expect(capturedBody).toEqual({
         name: 'my_binance',
-        location: 'binance',
+        connector: 'binance',
         api_key: 'key123',
         api_secret: 'secret456',
         binance_history_start_ts: 1700000000,
@@ -158,7 +156,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('should send PATCH request for edit mode with snake_case payload', async () => {
+    it('should edit through PATCH, addressing the connection by its identifier only', async () => {
       let capturedBody: DefaultBodyType = null;
       let requestMethod = '';
 
@@ -175,8 +173,10 @@ describe('composables/api/balances/exchanges', () => {
 
       const { callSetupExchange } = useExchangeApi();
       const payload: ExchangeFormData = {
+        identifier: 'c1',
         mode: 'edit',
         name: 'my_binance',
+        newName: 'renamed',
         location: 'binance',
         apiKey: 'new_key',
         apiSecret: 'new_secret',
@@ -188,8 +188,8 @@ describe('composables/api/balances/exchanges', () => {
 
       expect(requestMethod).toBe('PATCH');
       expect(capturedBody).toEqual({
-        name: 'my_binance',
-        location: 'binance',
+        identifier: 'c1',
+        new_name: 'renamed',
         api_key: 'new_key',
         api_secret: 'new_secret',
         binance_markets: ['BTCUSDT', 'ETHUSDT'],
@@ -227,8 +227,8 @@ describe('composables/api/balances/exchanges', () => {
         http.get(`${backendUrl}/api/1/exchanges`, () =>
           HttpResponse.json({
             result: [
-              { location: 'binance', name: 'my_binance' },
-              { location: 'kraken', name: 'my_kraken' },
+              { connector: 'binance', identifier: 'c1', location: 'binance', name: 'my_binance' },
+              { connector: 'kraken', identifier: 'c2', location: 'kraken', name: 'my_kraken' },
             ],
             message: '',
           })),
@@ -298,15 +298,12 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('queryBinanceUserMarkets', () => {
-    it('should fetch user-specific binance markets', async () => {
-      let capturedParams: URLSearchParams | null = null;
+    it('should fetch the binance markets of one connection by its identifier', async () => {
       let capturedUrl = '';
 
       server.use(
-        http.get(`${backendUrl}/api/1/exchanges/binance/pairs/my_binance`, ({ request }) => {
+        http.get(`${backendUrl}/api/1/exchanges/binance/pairs/c1`, ({ request }) => {
           capturedUrl = request.url;
-          const url = new URL(request.url);
-          capturedParams = url.searchParams;
           return HttpResponse.json({
             result: ['BTCUSDT', 'ETHUSDT'],
             message: '',
@@ -315,10 +312,9 @@ describe('composables/api/balances/exchanges', () => {
       );
 
       const { queryBinanceUserMarkets } = useExchangeApi();
-      const result = await queryBinanceUserMarkets('my_binance', 'binance');
+      const result = await queryBinanceUserMarkets('c1');
 
-      expect(capturedUrl).toContain('/pairs/my_binance');
-      expect(capturedParams!.get('location')).toBe('binance');
+      expect(capturedUrl).toContain('/pairs/c1');
       expect(result).toEqual(['BTCUSDT', 'ETHUSDT']);
     });
   });

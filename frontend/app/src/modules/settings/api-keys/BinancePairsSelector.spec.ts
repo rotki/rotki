@@ -34,6 +34,7 @@ describe('binance-pairs-selector', () => {
       getExchangeSavings: vi.fn<UseExchangeApiReturn['getExchangeSavings']>(),
       getExchangeSavingsTask: vi.fn<UseExchangeApiReturn['getExchangeSavingsTask']>(),
       getExchanges: vi.fn<UseExchangeApiReturn['getExchanges']>(),
+      getSupportedExchanges: vi.fn<UseExchangeApiReturn['getSupportedExchanges']>(),
       queryBinanceHistoryStartTimestamp: vi.fn<UseExchangeApiReturn['queryBinanceHistoryStartTimestamp']>(),
       queryBinanceMarkets: queryBinanceMarketsMock,
       queryBinanceUserMarkets: queryBinanceUserMarketsMock,
@@ -48,9 +49,7 @@ describe('binance-pairs-selector', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof BinancePairsSelector> = {}): VueWrapper<InstanceType<typeof BinancePairsSelector>> => mount(BinancePairsSelector, {
     props: {
-      edit: false,
       location: 'binance',
-      name: 'test-exchange',
     },
     ...options,
   });
@@ -223,25 +222,22 @@ describe('binance-pairs-selector', () => {
       expect(queryBinanceMarketsMock).toHaveBeenCalledWith('binance');
     });
 
-    it('should fetch user markets on mount when in edit mode', async () => {
+    it('should fetch the markets of the connection being edited on mount', async () => {
       wrapper = createWrapper({
         props: {
-          edit: true,
+          identifier: 'c1',
           location: 'binance',
-          name: 'test-exchange',
         },
       });
       await flushPromises();
 
-      expect(queryBinanceUserMarketsMock).toHaveBeenCalledWith('test-exchange', 'binance');
+      expect(queryBinanceUserMarketsMock).toHaveBeenCalledWith('c1');
     });
 
-    it('should not fetch user markets when not in edit mode', async () => {
+    it('should not fetch user markets while adding a connection', async () => {
       wrapper = createWrapper({
         props: {
-          edit: false,
           location: 'binance',
-          name: 'test-exchange',
         },
       });
       await flushPromises();

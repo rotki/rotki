@@ -1,6 +1,8 @@
+import type { BankConnection } from '@/modules/banks/types';
+import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
 import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
@@ -67,7 +69,7 @@ describe('createEventsStatusHandler', () => {
 
   it('should publish a bank location frame on the bank activity, not the exchange one', async () => {
     const qonto = { location: 'qonto', name: 'rotki Solutions GmbH' };
-    useLocationStore().$patch({ allLocations: { qonto: { image: 'qonto.svg', isBank: true } } });
+    useBankConnectionsStore().setConnections([createMock<BankConnection>({ identifier: 'c1', location: 'qonto' })]);
     useEventsQueryStatusStore().initializeQueryStatus([qonto], { extend: true });
     const handler = createEventsStatusHandler();
 

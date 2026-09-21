@@ -35,15 +35,33 @@ function isValidOkxLocation(val: unknown): val is OkxLocation {
   return typeof val === 'string' && OKX_LOCATION_VALUES.has(val);
 }
 
+/** Which exchange connection to pull the history of. */
 export const QueryExchangeEventsPayload = z.object({
-  location: z.string(),
-  name: z.string(),
+  identifier: z.string(),
 });
 
 export type QueryExchangeEventsPayload = z.infer<typeof QueryExchangeEventsPayload>;
 
+/** An exchange connector and what setting up an API key for it needs. */
+export const ExchangeConnector = z.object({
+  connector: z.string(),
+  location: z.string(),
+  isExchangeWithPassphrase: z.boolean(),
+  isExchangeWithoutApiSecret: z.boolean(),
+  experimental: z.boolean(),
+});
+
+export type ExchangeConnector = z.infer<typeof ExchangeConnector>;
+
+export const ExchangeConnectors = z.array(ExchangeConnector);
+
 export const Exchange = z.object({
-  ...QueryExchangeEventsPayload.shape,
+  /** The stable identifier of the connection, which survives renames. */
+  identifier: z.string(),
+  name: z.string(),
+  connector: z.string(),
+  /** The exchange location the connection's data belongs to. */
+  location: z.string(),
   krakenAccountType: KrakenAccountType.optional(),
   gateLocation: z.preprocess(
     (val) => {
@@ -87,7 +105,10 @@ export interface EditExchange {
 }
 
 interface ExchangePayload {
+  /** Set when editing an existing connection. */
+  readonly identifier?: string;
   readonly name: string;
+  /** The exchange connector; for exchanges it is spelled like the exchange's location. */
   readonly location: string;
   readonly apiKey: string;
   readonly apiSecret: string;

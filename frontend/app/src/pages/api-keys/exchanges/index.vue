@@ -26,7 +26,7 @@ definePage({
   },
 });
 
-const nonSyncingExchanges = ref<Exchange[]>([]);
+const nonSyncingExchanges = ref<string[]>([]);
 const exchange = ref<ExchangeFormData>();
 const sort = ref<DataTableSortColumn<Exchange>>({
   column: 'name',
@@ -88,34 +88,19 @@ function createNewExchange(): ExchangeFormData {
   };
 }
 
-function findNonSyncExchangeIndex(exchange: Exchange) {
-  return get(nonSyncingExchanges).findIndex(
-    (item: Exchange) => item.name === exchange.name && item.location === exchange.location,
-  );
+function isNonSyncExchange(exchange: Exchange): boolean {
+  return get(nonSyncingExchanges).includes(exchange.identifier);
 }
 
-function isNonSyncExchange(exchange: Exchange) {
-  return findNonSyncExchangeIndex(exchange) > -1;
-}
-
-function resetNonSyncingExchanges() {
+function resetNonSyncingExchanges(): void {
   set(nonSyncingExchanges, get(current));
 }
 
-async function toggleSync(exchange: Exchange) {
-  const index = findNonSyncExchangeIndex(exchange);
-
-  const data = [...get(nonSyncingExchanges)];
-
-  let enable = true;
-
-  if (index > -1) {
-    enable = false;
-    data.splice(index);
-  }
-  else {
-    data.push({ location: exchange.location, name: exchange.name });
-  }
+async function toggleSync(exchange: Exchange): Promise<void> {
+  const enable = isNonSyncExchange(exchange);
+  const data = enable
+    ? get(nonSyncingExchanges).filter(identifier => identifier !== exchange.identifier)
+    : [...get(nonSyncingExchanges), exchange.identifier];
 
   const status = await update({
     nonSyncingExchanges: data,
@@ -282,7 +267,7 @@ watch(route, async (route) => {
       <RuiDataTable
         v-model:sort="sort"
         outlined
-        row-attr="name"
+        row-attr="identifier"
         data-testid="exchange-table"
         :rows="rows"
         :cols="cols"

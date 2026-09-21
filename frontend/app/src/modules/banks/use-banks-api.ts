@@ -2,7 +2,6 @@ import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
   BankAuthChallenge,
   type BankConnectionEditPayload,
-  type BankConnectionIdentity,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
@@ -35,7 +34,7 @@ function toCamelCase(slot: string): string {
  * @param payload - what was sent, which decides whether an error key names one of its fields
  * @returns the error the dialog branches on
  */
-function toBankSetupError(cause: unknown, payload: BankConnectionPayload): BankSetupError {
+function toBankSetupError(cause: unknown, payload: BankConnectionPayload | BankConnectionEditPayload): BankSetupError {
   if (!(cause instanceof ApiValidationError))
     return { message: getErrorMessage(cause), type: 'rejected' };
 
@@ -57,9 +56,9 @@ interface UseBanksApiReturn {
   getSupportedBanks: () => Promise<BankManifests>;
   getBanks: () => Promise<BankConnections>;
   addBank: (payload: BankConnectionPayload) => ResultAsync<BankSetupResult, BankSetupError>;
-  answerAuthentication: (payload: BankConnectionIdentity & { response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
+  answerAuthentication: (payload: { identifier: string; response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
   editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
-  removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
+  removeBank: (payload: { identifier: string }) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
   /** Starts a backend task that queries every bank's balances, keyed by location. */
@@ -97,7 +96,7 @@ export function useBanksApi(): UseBanksApiReturn {
     );
 
   const answerAuthentication = async (
-    payload: BankConnectionIdentity & { response?: string },
+    payload: { identifier: string; response?: string },
   ): ResultAsync<BankSetupResult, BankSetupError> => fromAsync(
     async () => parseSetupResult(await api.post<unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
     cause => ({ message: getErrorMessage(cause), type: 'rejected' }),
@@ -109,8 +108,8 @@ export function useBanksApi(): UseBanksApiReturn {
       cause => toBankSetupError(cause, payload),
     );
 
-  const removeBank = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
-    api.delete<boolean>('/banks', { body: { location, name } });
+  const removeBank = async ({ identifier }: { identifier: string }): Promise<boolean> =>
+    api.delete<boolean>('/banks', { body: { identifier } });
 
   const syncBanks = async (payload: BankSyncPayload): Promise<PendingTask> => {
     const response = await api.post<PendingTask>('/banks/sync', { ...payload, asyncQuery: true }, { filterEmptyProperties: true });

@@ -1,5 +1,6 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createTestExchange } from '@test/utils/create-data';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,8 +37,8 @@ vi.mock('@/modules/history/use-events-query-status-store', () => ({
 
 describe('useExchangeEventsRefresh', () => {
   const exchanges: Exchange[] = [
-    { location: 'kraken', name: 'kraken 1' },
-    { location: 'binance', name: 'binance 1' },
+    createTestExchange('kraken', 'kraken 1'),
+    createTestExchange('binance', 'binance 1'),
   ];
 
   beforeEach(() => {
@@ -66,7 +67,7 @@ describe('useExchangeEventsRefresh', () => {
     mocks.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
     const { queryAllExchangeEvents } = useExchangeEventsRefresh();
-    await queryAllExchangeEvents([{ location: 'kraken', name: 'kraken 1' }]);
+    await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
     expect(mocks.markLocationCancelled).toHaveBeenCalledWith({ location: 'kraken', name: 'kraken 1' });
     expect(mockNotifyError).not.toHaveBeenCalled();
@@ -76,7 +77,7 @@ describe('useExchangeEventsRefresh', () => {
     mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
     const { queryAllExchangeEvents } = useExchangeEventsRefresh();
-    await queryAllExchangeEvents([{ location: 'kraken', name: 'kraken 1' }]);
+    await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
     expect(mockNotifyError).toHaveBeenCalledOnce();
     expect(mocks.markLocationCancelled).not.toHaveBeenCalled();
@@ -84,7 +85,7 @@ describe('useExchangeEventsRefresh', () => {
 
   it('should stay quiet on success', async () => {
     const { queryAllExchangeEvents } = useExchangeEventsRefresh();
-    await queryAllExchangeEvents([{ location: 'kraken', name: 'kraken 1' }]);
+    await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
     expect(mockNotifyError).not.toHaveBeenCalled();
     expect(mocks.markLocationCancelled).not.toHaveBeenCalled();

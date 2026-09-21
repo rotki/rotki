@@ -1,11 +1,6 @@
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import { type AssetBalanceWithPrice, bigNumberify, Blockchain, Zero } from '@rotki/common';
-import {
-  createProtocolTestBalance,
-  createTestBalance,
-  createTestManualBalance,
-  createTestPriceInfo,
-} from '@test/utils/create-data';
+import { createProtocolTestBalance, createTestBalance, createTestExchange, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import {
   createMockExchangeBalances,
@@ -77,10 +72,7 @@ describe('useAggregatedBalances', () => {
     const { prices } = storeToRefs(useBalancePricesStore());
     const { getBalances } = useAggregatedBalances();
 
-    set(connectedExchanges, [{
-      location: 'kraken',
-      name: 'Bitrex Acc',
-    }]);
+    set(connectedExchanges, [createTestExchange('kraken', 'Bitrex Acc')]);
 
     set(exchangeBalances, {
       kraken: {
@@ -625,7 +617,7 @@ describe('useAggregatedBalances', () => {
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { useLocationBreakdown } = useAggregatedBalances();
 
-      set(connectedExchanges, [{ location: 'ethereum', name: 'Bogus' }]);
+      set(connectedExchanges, [createTestExchange('ethereum', 'Bogus')]);
       set(exchangeBalances, {
         ethereum: {
           ETH: createTestBalance(999, 999),
@@ -641,10 +633,7 @@ describe('useAggregatedBalances', () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
-      set(connectedExchanges, [{
-        location: 'kraken',
-        name: 'Kraken 1',
-      }]);
+      set(connectedExchanges, [createTestExchange('kraken', 'Kraken 1')]);
 
       set(manualBalances, testManualBalances);
       set(exchangeBalances, testExchangeBalances);
@@ -738,10 +727,7 @@ describe('useAggregatedBalances', () => {
       };
 
       set(exchangeBalances, mockBalances);
-      set(connectedExchanges, [{
-        location: 'kraken',
-        name: 'Kraken',
-      }]);
+      set(connectedExchanges, [createTestExchange('kraken', 'Kraken')]);
 
       updateGeneralSettings({ treatEth2AsEth: false });
 
@@ -787,13 +773,7 @@ describe('useAggregatedBalances', () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
       set(exchangeBalances, createMockExchangeBalances());
 
-      set(connectedExchanges, [{
-        location: 'kraken',
-        name: 'Kraken',
-      }, {
-        location: 'coinbase',
-        name: 'Coinbase',
-      }]);
+      set(connectedExchanges, [createTestExchange('kraken', 'Kraken'), createTestExchange('coinbase', 'Coinbase')]);
 
       updateGeneralSettings({ treatEth2AsEth: false });
 

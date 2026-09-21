@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { connections } = storeToRefs(useBankConnectionsStore());
 
 const banks = computed<BankConnectionIdentity[]>(() =>
-  get(connections).map(({ location, name }) => ({ location, name })),
+  get(connections).map(({ identifier, location, name }) => ({ identifier, location, name })),
 );
 
 const filteredBanks = computed<BankConnectionIdentity[]>(() => {
@@ -30,13 +30,13 @@ const filteredBanks = computed<BankConnectionIdentity[]>(() => {
 });
 
 function isSelected(bank: BankConnectionIdentity): boolean {
-  return get(modelValue).some(item => item.location === bank.location && item.name === bank.name);
+  return get(modelValue).some(item => item.identifier === bank.identifier);
 }
 
 function toggleSelect(bank: BankConnectionIdentity): void {
   const model = get(modelValue);
   if (isSelected(bank))
-    updateSelection(model.filter(item => !(item.location === bank.location && item.name === bank.name)));
+    updateSelection(model.filter(item => item.identifier !== bank.identifier));
   else
     updateSelection([...model, bank]);
 }
@@ -48,8 +48,8 @@ function toggleSelectAll(): void {
 function updateSelection(selection: BankConnectionIdentity[]): void {
   set(modelValue, selection);
   emit('update:all-selected', isEqual(
-    sortBy(selection, ['location', 'name']),
-    sortBy(get(banks), ['location', 'name']),
+    sortBy(selection, ['identifier']),
+    sortBy(get(banks), ['identifier']),
   ));
 }
 
@@ -61,7 +61,7 @@ defineExpose({
 <template>
   <div
     v-for="bank in filteredBanks"
-    :key="`${bank.location}#${bank.name}`"
+    :key="bank.identifier"
     class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
     data-testid="refresh-bank-row"
     @click="toggleSelect(bank)"

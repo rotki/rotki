@@ -6,6 +6,7 @@ import { usePriceSeed } from '@/modules/assets/prices/use-price-seed';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
@@ -27,8 +28,9 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchIgnoredAssets } = useIgnoredAssetOperations();
   const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
   const { fetchNetValue } = useStatisticsDataFetching();
-  const { allLocations } = storeToRefs(useLocationStore());
+  const { allLocations, exchangeConnectors } = storeToRefs(useLocationStore());
   const { fetchAllLocations } = useHistoryApi();
+  const { getSupportedExchanges } = useExchangeApi();
   const { fetchCached, refreshFromChain } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { seedFromHistoric } = usePriceSeed();
@@ -74,6 +76,9 @@ export function useDataLoader(): UseDataLoaderReturn {
     startPromise(fetchTags());
     startPromise(fetchAllLocations().then(({ locations }) => {
       set(allLocations, locations);
+    }));
+    startPromise(getSupportedExchanges().then((connectors) => {
+      set(exchangeConnectors, connectors);
     }));
 
     if (isAutoFetchDisabled) {
