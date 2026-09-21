@@ -72,6 +72,15 @@ const secondary = computed<string | undefined>(() => (get(nested) ? undefined : 
 
 const subject = computed<ActivitySubject | undefined>(() => activitySubject(activity));
 
+/** The chain or location icon is left off when the parent's row already shows the same one. */
+const repeatsParentIcon = computed<boolean>(() => {
+  const own = get(subject);
+  const above = parent === undefined ? undefined : activitySubject(parent);
+  if (own === undefined || above === undefined)
+    return false;
+  return own.chain !== undefined ? own.chain === above.chain : own.location !== undefined && own.location === above.location;
+});
+
 /** A nested account row is named by its address, so it gets the copy and explorer link an address has everywhere else. */
 const linkedAddress = computed<boolean>(() => get(nested) && get(subject)?.address !== undefined);
 
@@ -108,8 +117,14 @@ const elapsed = computed<string | undefined>(() => {
   return formatElapsed(now - activity.startedAt);
 });
 
-/** A bar earns its line only with a real number to fill it; indeterminate work says so with its mark. */
-const showMeter = computed<boolean>(() => get(isRunning) && percentage >= 0);
+/** The mark turns into a progress ring only with a real number to fill it; indeterminate work keeps its icon. */
+const showRing = computed<boolean>(() => get(isRunning) && percentage >= 0);
+
+/**
+ * A bar only on a job or a parent. A nested leaf sits under its parent's bar, so a second one would
+ * repeat it; the ring already carries the leaf's own progress, and a tally it has stays as text.
+ */
+const showBar = computed<boolean>(() => get(showRing) && (!get(nested) || steps !== undefined));
 
 const count = computed<string>(() => {
   const tally = get(rowSteps);
@@ -135,7 +150,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
     data-testid="dock-activity-row"
   >
     <RuiProgress
-      v-if="showMeter"
+      v-if="showRing"
       class="shrink-0 mt-0.5"
       color="primary"
       circular
@@ -169,14 +184,14 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
     <div class="flex flex-col flex-1 min-w-0 gap-0.5">
       <div class="flex items-center gap-1.5 min-w-0">
         <ChainIcon
-          v-if="subject?.chain"
+          v-if="subject?.chain && !repeatsParentIcon"
           class="shrink-0"
           :chain="subject.chain"
           size="1rem"
           data-testid="dock-subject-icon"
         />
         <LocationIcon
-          v-else-if="subject?.location"
+          v-else-if="subject?.location && !repeatsParentIcon"
           class="shrink-0"
           :item="subject.location"
           icon
@@ -189,6 +204,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
           :text="subject.address"
           :location="subject.chain"
           size="12"
+          reveal-actions
           data-testid="dock-subject-address"
         />
         <div
@@ -224,7 +240,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         {{ reasonLine }}
       </div>
       <div
-        v-if="showMeter"
+        v-if="showBar"
         class="flex items-center gap-2"
         data-testid="activity-meter"
       >
