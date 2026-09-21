@@ -24,7 +24,11 @@ from rotkehlchen.history.data_issues.types import (
     RedecodeComparisonResult,
     TransactionDecodingComparison,
 )
-from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import (
@@ -51,6 +55,81 @@ REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
+
+
+def _redecode_tracked_address_transfers(
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        issues_manager: DataIssuesManager,
+) -> None:
+    """Redecode plain transfers once both their addresses are tracked.
+
+    A transaction with customized events must remain untouched, so its plain transfer is
+    surfaced for review instead.
+    """
+    chain_locations = tuple(
+        (
+            location.serialize_for_db(),
+            ChainID(location.to_chain_id()).to_blockchain().value,
+            location.to_chain_id(),
+        )
+        for location in EVM_LOCATIONS
+    )
+    with database.conn.read_ctx() as cursor:
+        candidates = cursor.execute(
+            'WITH evm_chain_locations(location, blockchain, chain_id) AS ('
+            f'VALUES {",".join("(?, ?, ?)" for _ in chain_locations)}) '
+            'SELECT H.identifier, C.tx_ref, L.chain_id, H.timestamp, H.location, '
+            'H.location_label, H.asset, EXISTS('
+            'SELECT 1 FROM history_events H2 JOIN history_events_mappings M '
+            'ON M.parent_identifier = H2.identifier '
+            'WHERE H2.group_identifier = H.group_identifier '
+            'AND M.name = ? AND M.value = ?) FROM evm_chain_locations L '
+            'JOIN blockchain_accounts S ON S.blockchain = L.blockchain '
+            'CROSS JOIN history_events H INDEXED BY idx_history_events_location_label '
+            'ON H.location = L.location AND H.location_label = S.account '
+            'JOIN chain_events_info C ON C.identifier = H.identifier '
+            'JOIN blockchain_accounts R ON R.blockchain = L.blockchain AND R.account = C.address '
+            'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = L.chain_id '
+            'WHERE H.type IN (?, ?) AND H.subtype = ?',
+            (
+                *(value for chain_location in chain_locations for value in chain_location),
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        ).fetchall()
+
+    transactions_by_chain: defaultdict[
+        EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        set[EVMTxHash],
+    ] = defaultdict(set)
+    for candidate in candidates:
+        event_id, tx_hash, chain_id_raw, timestamp = candidate[:4]
+        location, location_label, asset, is_customized = candidate[4:]
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(chain_id_raw))
+
+        if is_customized:
+            issues_manager.write_issue(
+                kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
+                location=location,
+                location_label=location_label,
+                protocol=None,
+                asset=asset,
+                payload={'event_identifier': event_id},
+                ts_start=timestamp,
+                ts_end=timestamp,
+            )
+        else:
+            transactions_by_chain[chain_id].add(tx_hash)
+
+    for chain_id, tx_hashes in transactions_by_chain.items():
+        chains_aggregator.get_evm_manager(chain_id).transactions_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=list(tx_hashes),
+        )
 
 
 def _get_bucket_effects(
@@ -324,6 +403,11 @@ def run_data_issue_remediation(
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
     preview_cache: PreviewCache = {}
     reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+    _redecode_tracked_address_transfers(
+        database=database,
+        chains_aggregator=chains_aggregator,
+        issues_manager=issues_manager,
+    )
     for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
         kinds=[IssueKind.NEGATIVE_BALANCE],
         states=[IssueState.OPEN, IssueState.UNRESOLVED],

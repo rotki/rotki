@@ -22,7 +22,14 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumAddress,
+    EvmTransaction,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -44,6 +51,7 @@ def _make_event(
         timestamp: int = 1_000,
         event_type: HistoryEventType = HistoryEventType.SPEND,
         location_label: str = TEST_ADDR1,
+        address: ChecksumAddress | None = None,
 ) -> EvmEvent:
     return EvmEvent(
         tx_ref=tx_hash,
@@ -55,6 +63,7 @@ def _make_event(
         asset=A_ETH,
         amount=FVal(amount),
         location_label=location_label,
+        address=address,
         notes='saved customized event',
     )
 
@@ -124,6 +133,29 @@ def _get_saved_event_rows(database: DBHandler) -> tuple[list[tuple], list[tuple]
         )
 
 
+def _add_plain_tracked_address_transfer(
+        database: DBHandler,
+        customized: bool,
+) -> tuple[int, EVMTxHash]:
+    tx_hash = make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(tx_hash)],
+            relevant_address=TEST_ADDR1,
+        )
+        event_id = DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2),
+            mapping_values=(
+                {HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED}
+                if customized else None
+            ),
+        )
+    assert event_id is not None
+    return event_id, tx_hash
+
+
 def _wait_for_background_task(tasks: list[Task] | None) -> None:
     assert tasks is not None
     assert len(tasks) == 1
@@ -131,6 +163,54 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
     task.join(timeout=10)
     assert task.dead, f'{task.task_name} did not finish'
     task.get()
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_remediation_redecodes_plain_transfer_between_tracked_addresses(
+        database: DBHandler,
+) -> None:
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    chains_aggregator = MagicMock()
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.decode_transaction_hashes.assert_called_once_with(
+        ignore_cache=True,
+        tx_hashes=[tx_hash],
+    )
+    assert DataIssuesManager(database).list_issues() == []
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+@pytest.mark.parametrize('polygon_pos_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_remediation_redecodes_transfer_on_its_event_chain_only(database: DBHandler) -> None:
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[replace(_make_transaction(tx_hash), chain_id=ChainID.POLYGON_POS)],
+            relevant_address=TEST_ADDR1,
+        )
+    chains_aggregator = MagicMock()
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    chains_aggregator.get_evm_manager.assert_called_once_with(ChainID.ETHEREUM)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_remediation_reports_customized_tracked_address_transfer(database: DBHandler) -> None:
+    event_id, _tx_hash = _add_plain_tracked_address_transfer(database, customized=True)
+    chains_aggregator = MagicMock()
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    chains_aggregator.get_evm_manager.assert_not_called()
+    issues = DataIssuesManager(database).list_issues()
+    assert len(issues) == 1
+    assert issues[0].kind == IssueKind.TRACKED_ADDRESS_TRANSFER
+    assert issues[0].payload == {'event_identifier': event_id}
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])

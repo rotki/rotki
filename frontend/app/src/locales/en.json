@@ -2790,6 +2790,7 @@
       "rebasing_token_historical_balance_query_failed": "rotki could not verify the historical balance of rebasing token {asset} because the archive-node query failed. Check the configured node or retry auto-remediation later.",
       "rebasing_token_missing_transaction": "rotki could not verify the historical balance of rebasing token {asset} because its transaction block data is missing. Refresh the transaction history before retrying auto-remediation.",
       "rebasing_token_unsupported_bucket": "rotki could not verify the historical balance of rebasing token {asset} because this balance bucket cannot be checked using the token contract's wallet balance. Review the related event and resolve the issue manually.",
+      "tracked_address_transfer": "This transfer is between two tracked addresses but has customized events, so rotki could not safely re-decode it. Review the related event and re-decode the transaction after preserving any edits you need.",
       "unknown": "rotki flagged a data issue. Open the details below to see what was recorded.",
       "unmatched_bridge_deposit": "A {asset} bridge deposit has no matched counterpart event on the destination chain. Match it manually or resolve it as an external payment.",
       "unmatched_bridge_withdrawal": "A {asset} bridge withdrawal has no matched counterpart deposit on the source chain. Match it manually to link the two legs."
@@ -2802,6 +2803,7 @@
       "rebasing_token_historical_balance_query_failed": "The historical on-chain query for {asset} failed.",
       "rebasing_token_missing_transaction": "Transaction block data is missing for the {asset} balance check.",
       "rebasing_token_unsupported_bucket": "The {asset} balance is held in a bucket that cannot be verified on-chain.",
+      "tracked_address_transfer": "Customized transfer between tracked addresses needs review.",
       "unknown": "rotki flagged a data issue. Open the details for more.",
       "unmatched_bridge_deposit": "Unmatched {asset} bridge deposit. Match it manually.",
       "unmatched_bridge_withdrawal": "Unmatched {asset} bridge withdrawal. Match it manually."
@@ -2879,6 +2881,7 @@
       "current_balance_mismatch": "Balance mismatch",
       "negative_balance": "Negative balance",
       "rebasing_token": "Rebasing token",
+      "tracked_address_transfer": "Tracked-address transfer",
       "unmatched_bridge": "Unmatched bridge"
     },
     "panel": {

@@ -47,6 +47,11 @@ class NegativeBalanceIssuePayload(BaseIssuePayload):
     reason: NotRequired[Literal['untracked_exchange']]
 
 
+class TrackedAddressTransferIssuePayload(BaseIssuePayload):
+    """Payload for a customized transfer between two tracked addresses."""
+    event_identifier: int
+
+
 class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     """Payload for a bucket-scoped issue comparing derived and live chain balances."""
     derived_balance: str
@@ -79,6 +84,7 @@ class UnmatchedBridgeIssuePayload(BaseIssuePayload):
 
 type DataIssuePayload = (
     NegativeBalanceIssuePayload |
+    TrackedAddressTransferIssuePayload |
     CurrentBalanceMismatchIssuePayload |
     RebasingTokenIssuePayload |
     UnmatchedBridgeIssuePayload
