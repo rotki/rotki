@@ -186,6 +186,7 @@ class UserMessageFeature(StrEnum):
 
 
 class ProgressUpdateSubType(StrEnum):
+    DATA_ISSUE_REMEDIATION = auto()
     UNDECODED_TRANSACTIONS = auto()
     PROTOCOL_CACHE_UPDATES = auto()
     CSV_IMPORT_RESULT = auto()
