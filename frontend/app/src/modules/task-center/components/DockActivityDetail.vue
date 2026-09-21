@@ -16,16 +16,20 @@ const detail = useDockActivityDetail(() => activity);
 <template>
   <div
     v-if="detail?.type === 'query' && (detail.step || detail.period)"
-    class="flex flex-wrap items-center gap-x-1 text-xs leading-4 text-rui-text-secondary"
+    class="flex flex-col text-xs leading-4 text-rui-text-secondary"
     data-testid="dock-activity-detail"
   >
-    <span v-if="detail.step">{{ detail.step }}</span>
-    <template v-if="detail.period">
-      <span
-        v-if="detail.step"
-        class="before:content-['·']"
-        aria-hidden="true"
-      />
+    <span
+      v-if="detail.step"
+      class="truncate"
+    >
+      {{ detail.step }}
+    </span>
+    <div
+      v-if="detail.period"
+      class="flex items-center gap-x-1"
+      data-testid="dock-activity-period"
+    >
       <DateDisplay
         v-if="detail.period.from !== undefined"
         :timestamp="detail.period.from"
@@ -42,7 +46,7 @@ const detail = useDockActivityDetail(() => activity);
         no-time
         hide-tooltip
       />
-    </template>
+    </div>
   </div>
   <DockCacheList
     v-else-if="detail?.type === 'caches'"

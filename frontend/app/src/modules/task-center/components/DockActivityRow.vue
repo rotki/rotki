@@ -44,8 +44,8 @@ defineSlots<{
   /** Extra lines under everything else, aligned with the label; a job puts its sections and hints here. */
   details?: () => unknown;
   /**
-   * A control at the start of the row's actions; a job puts its expand toggle here, so every row's
-   * icon and label start at the same place whether it expands or not.
+   * The row's last control; a job puts its expand toggle here, so every toggle sits in one column at
+   * the row's end. A row without one keeps the space when it has other buttons, so theirs line up.
    */
   toggle?: () => unknown;
 }>();
@@ -153,6 +153,10 @@ const showsIcon = computed<boolean>(() => (get(subject)?.chain !== undefined || 
  * since its avatar already takes that place.
  */
 const iconColumn = computed<boolean>(() => get(showsIcon) || (get(nested) && !get(linkedAddress)));
+
+const cancellable = computed<boolean>(() => activity.cancellable && !isTerminalStatus(activity.status));
+
+const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || dismissible);
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
@@ -287,16 +291,18 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       </div>
     </div>
 
-    <div class="flex items-center gap-1 shrink-0">
+    <div
+      class="flex items-center gap-1 shrink-0 -my-0.5"
+      data-testid="activity-actions"
+    >
       <span
         v-if="elapsed"
         class="text-xs text-rui-text-secondary tabular-nums"
       >
         {{ elapsed }}
       </span>
-      <slot name="toggle" />
       <RuiTooltip
-        v-if="activity.cancellable && !isTerminalStatus(activity.status)"
+        v-if="cancellable"
         :options="{ placement: 'top' }"
         :open-delay="400"
       >
@@ -327,16 +333,36 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       >
         {{ t('pending_task.retry') }}
       </RuiButton>
-      <RuiButton
+      <RuiTooltip
         v-if="dismissible"
-        variant="text"
-        color="primary"
-        size="sm"
-        data-testid="dismiss-activity"
-        @click="emit('dismiss', activity)"
+        :options="{ placement: 'top' }"
+        :open-delay="400"
       >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            color="primary"
+            size="sm"
+            icon
+            :aria-label="t('pending_task.dismiss')"
+            data-testid="dismiss-activity"
+            @click="emit('dismiss', activity)"
+          >
+            <RuiIcon
+              name="lu-x"
+              size="16"
+            />
+          </RuiButton>
+        </template>
         {{ t('pending_task.dismiss') }}
-      </RuiButton>
+      </RuiTooltip>
+      <slot name="toggle">
+        <div
+          v-if="hasButtons"
+          class="size-6 shrink-0"
+          data-testid="activity-toggle-slot"
+        />
+      </slot>
     </div>
   </div>
 </template>

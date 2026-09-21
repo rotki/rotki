@@ -393,6 +393,29 @@ describe('dockActivityRow', () => {
       expect(wrapper.find('[data-testid=retry-activity]').exists()).toBe(false);
     });
 
+    it('should offer dismiss as a labelled icon button', () => {
+      const dismiss = createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }), dismissible: true }).find('[data-testid=dismiss-activity]');
+
+      expect(dismiss.attributes('aria-label')).toBe('pending_task.dismiss');
+      expect(dismiss.text()).toBe('lu-x');
+    });
+
+    it('should put the toggle last, so every toggle sits in one column at the row\'s end', () => {
+      const wrapper = mount(DockActivityRow, {
+        props: { activity: activity(), now: NOW, percentage: -1 },
+        slots: { toggle: '<button data-testid="toggle-under-test" />' },
+      });
+
+      const last = wrapper.findAll('[data-testid=activity-actions] > *').at(-1);
+      expect(last?.attributes('data-testid')).toBe('toggle-under-test');
+      expect(wrapper.find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
+    });
+
+    it('should keep the toggle\'s space on a row with buttons but no toggle, so its buttons line up', () => {
+      expect(createWrapper().find('[data-testid=activity-toggle-slot]').exists()).toBe(true);
+      expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
+    });
+
     it('should offer no dismiss control unless the caller asks for one', () => {
       expect(createWrapper().find('[data-testid=dismiss-activity]').exists()).toBe(false);
     });

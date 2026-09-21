@@ -41,7 +41,7 @@ const names = computed<string>(() => {
       </div>
       <div
         v-if="reason"
-        class="text-xs leading-4 text-rui-warning break-words"
+        class="text-xs leading-4 text-rui-text-secondary break-words"
       >
         {{ reason }}
       </div>
