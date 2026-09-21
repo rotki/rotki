@@ -56,14 +56,36 @@ function mountList(props: Partial<ListProps> = {}): VueWrapper {
 }
 
 describe('modules/core/action-center/ActionCenterList', () => {
-  it('should render a row per item and the cleared ones as a summary', () => {
-    const wrapper = mountList({
-      cleared: [createItem({ count: 0, id: 'undecoded', title: 'Undecoded transactions' })],
-    });
+  it('should render a row per item', () => {
+    const wrapper = mountList();
 
     expect(wrapper.findAll('[data-testid=actions-center-row]')).toHaveLength(1);
     expect(wrapper.find('[data-testid=actions-center-row-count]').text()).toBe('3');
-    expect(wrapper.find('[data-testid=actions-center-cleared]').text()).toContain('Undecoded transactions');
+  });
+
+  describe('the checked categories', () => {
+    const cleared = [createItem({ count: 0, id: 'undecoded', title: 'Undecoded transactions' })];
+
+    it('should fold them into a count next to rows that need attention, and list them on demand', async () => {
+      const wrapper = mountList({ cleared });
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-toggle]').attributes('aria-expanded')).toBe('false');
+      expect(wrapper.find('[data-testid=actions-center-cleared-row]').exists()).toBe(false);
+
+      await wrapper.find('[data-testid=actions-center-cleared-toggle]').trigger('click');
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-row]').text()).toBe('Undecoded transactions');
+    });
+
+    it('should list them when nothing needs attention, since they are the evidence of an all clear', async () => {
+      const wrapper = mountList({ cleared, count: 0, sections: [] });
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-row]').text()).toBe('Undecoded transactions');
+
+      await wrapper.find('[data-testid=actions-center-cleared-toggle]').trigger('click');
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-row]').exists()).toBe(false);
+    });
   });
 
   it('should hand the row target up when a row is actioned', async () => {
