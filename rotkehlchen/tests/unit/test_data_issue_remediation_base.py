@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from time import monotonic
 from typing import TYPE_CHECKING
 
@@ -92,6 +93,11 @@ def test_pipeline_runs_strategies_in_order_until_success(database: DBHandler) ->
         'first',
         'second',
     ]
+    assert issue.payload['resolution'] == {
+        'attribution': 'second_succeeded',
+        'notes': '',
+        'strategy': 'second',
+    }
 
 
 def test_pipeline_cancels_strategy_when_its_budget_expires(database: DBHandler) -> None:
@@ -123,6 +129,37 @@ def test_pipeline_marks_issue_unresolved_when_strategy_fails(database: DBHandler
 
     assert calls == ['failing']
     assert manager.get_issue(issue.id).state == IssueState.UNRESOLVED
+
+
+def test_pipeline_records_every_exhausted_attempt(
+        database: DBHandler,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    caplog.set_level(logging.DEBUG, logger='rotkehlchen.history.data_issues.remediation.base')
+
+    RemediationPipeline(manager, (
+        StubStrategy('first', RemediationOutcome(False, 'system', 'first_failed'), calls),
+        StubStrategy('second', RemediationOutcome(False, 'system', 'second_failed'), calls),
+    )).run(issue)
+
+    issue = manager.get_issue(issue.id)
+    assert calls == ['first', 'second']
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['strategy'] for attempt in issue.auto_remediation_attempts] == [
+        'first',
+        'second',
+    ]
+    logged_strategies = [
+        record.message.split("'strategy': ")[1].split(',', maxsplit=1)[0]
+        for record in caplog.records
+    ]
+    assert logged_strategies == [
+        "'first'",
+        "'second'",
+    ]
 
 
 def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> None:
