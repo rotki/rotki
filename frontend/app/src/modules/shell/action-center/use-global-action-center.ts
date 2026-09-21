@@ -1,4 +1,5 @@
 import type { ComputedRef } from 'vue';
+import type { LocationQuery } from 'vue-router';
 import type { ActionCenterSection, ActionItem, ActionTarget } from '@/modules/core/action-center/types';
 import { startPromise } from '@shared/utils';
 import { useActionCenter } from '@/modules/core/action-center/use-action-center';
@@ -57,13 +58,19 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const { autoMatchLoading } = useUnmatchedAssetMovements();
   const { autoMatchLoading: bridgeAutoMatchLoading } = useUnmatchedBridgeTransactions();
 
-  const historyRows = computed<ActionItem[]>(() => get(history.issues).map(issue => ({
-    ...issue,
-    checkTarget: toGlobalTarget(issue.checkTarget),
-    choices: issue.choices.map(choice => ({ ...choice, target: toGlobalTarget(choice.target) })),
-    options: issue.options.map(option => ({ ...option, target: toGlobalTarget(option.target) })),
-    target: toGlobalTarget(issue.target),
-  })));
+  const route = useRoute();
+  const historyPageQuery = computed<LocationQuery | undefined>(() => (route.name === '/history/events/' ? route.query : undefined));
+
+  const historyRows = computed<ActionItem[]>(() => {
+    const pageQuery = get(historyPageQuery);
+    return get(history.issues).map(issue => ({
+      ...issue,
+      checkTarget: toGlobalTarget(issue.checkTarget, pageQuery),
+      choices: issue.choices.map(choice => ({ ...choice, target: toGlobalTarget(choice.target, pageQuery) })),
+      options: issue.options.map(option => ({ ...option, target: toGlobalTarget(option.target, pageQuery) })),
+      target: toGlobalTarget(issue.target, pageQuery),
+    }));
+  });
 
   const groups = computed<ActionCenterSection[]>(() => [
     { id: 'history', items: [...get(historySyncRow), ...get(historyRows)], title: t('action_center.sections.history') },

@@ -4,28 +4,19 @@ import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 
 const {
   checking = false,
-  checkingHint,
   cleared,
-  clearHint,
   count,
-  items = [],
   refreshing = false,
-  sections = [],
+  sections,
 } = defineProps<{
-  /** the rows worth showing, in the order they should appear */
-  items?: ActionItem<TTarget>[];
-  /** rows grouped under headings; when there are any they are shown instead of `items` */
-  sections?: ActionCenterSection<TTarget>[];
+  /** the rows worth showing, grouped under headings in the order they should appear */
+  sections: ActionCenterSection<TTarget>[];
   /** categories with nothing pending, rendered as the checked strip */
   cleared: ActionItem<TTarget>[];
   /** how many categories are actually asking for something (drives the subtitle) */
   count: number;
   checking?: boolean;
   refreshing?: boolean;
-  /** what the center is waiting for, when the domain can say something better than the default */
-  checkingHint?: string;
-  /** what came back clean, when the domain can say something better than the default */
-  clearHint?: string;
 }>();
 
 const emit = defineEmits<{
@@ -45,8 +36,8 @@ const subtitle = computed<string>(() => {
   if (count > 0)
     return t('action_center.subtitle', { count }, count);
   if (checking)
-    return checkingHint ?? t('action_center.subtitle_checking');
-  return clearHint ?? t('action_center.subtitle_clear');
+    return t('action_center.subtitle_checking');
+  return t('action_center.subtitle_clear');
 });
 </script>
 
@@ -90,40 +81,25 @@ const subtitle = computed<string>(() => {
       </RuiButton>
     </div>
 
-    <template v-if="sections.length > 0">
-      <section
-        v-for="section in sections"
-        :key="section.id"
-        data-testid="actions-center-section"
-        :data-key="section.id"
-      >
-        <h6 class="px-4 pt-3 text-caption font-medium uppercase text-rui-text-secondary">
-          {{ section.title }}
-        </h6>
-        <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
-          <ActionCenterRow
-            v-for="item in section.items"
-            :key="item.id"
-            :item="item"
-            @action="emit('open', $event.target)"
-            @option="emit('open', $event)"
-          />
-        </div>
-      </section>
-    </template>
-
-    <div
-      v-else-if="items.length > 0"
-      class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
+    <section
+      v-for="section in sections"
+      :key="section.id"
+      data-testid="actions-center-section"
+      :data-key="section.id"
     >
-      <ActionCenterRow
-        v-for="item in items"
-        :key="item.id"
-        :item="item"
-        @action="emit('open', $event.target)"
-        @option="emit('open', $event)"
-      />
-    </div>
+      <h6 class="px-4 pt-3 text-caption font-medium uppercase text-rui-text-secondary">
+        {{ section.title }}
+      </h6>
+      <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
+        <ActionCenterRow
+          v-for="item in section.items"
+          :key="item.id"
+          :item="item"
+          @action="emit('open', $event.target)"
+          @option="emit('open', $event)"
+        />
+      </div>
+    </section>
 
     <div
       v-if="!checking && cleared.length > 0"

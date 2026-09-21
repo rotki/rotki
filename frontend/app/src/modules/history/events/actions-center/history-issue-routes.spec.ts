@@ -20,6 +20,28 @@ describe('modules/history/events/actions-center/history-issue-routes', () => {
     });
   });
 
+  it('should open a dialog over the history page the user is on, keeping its filters and replacing the entry', () => {
+    const pageQuery = { limit: '25', location: 'kraken', page: '3' };
+
+    expect(toGlobalTarget({ kind: 'dialog', options: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS } }, pageQuery)).toEqual({
+      kind: 'route',
+      to: {
+        name: '/history/events/',
+        query: { ...pageQuery, openMatchAssetMovementsDialog: 'true' },
+        replace: true,
+      },
+    });
+  });
+
+  it('should leave the history page as it is for a dialog no query can open', () => {
+    const pageQuery = { location: 'kraken' };
+
+    expect(toGlobalTarget({ kind: 'dialog', options: { type: DIALOG_TYPES.ADD_TRANSACTION } }, pageQuery)).toEqual({
+      kind: 'route',
+      to: { name: '/history/events/', query: pageQuery, replace: true },
+    });
+  });
+
   it('should route duplicates to the events list filtered to their groups', () => {
     expect(toGlobalTarget({ groupIds: ['a', 'b'], kind: 'duplicates', status: DuplicateHandlingStatus.AUTO_FIX })).toEqual({
       kind: 'route',

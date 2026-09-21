@@ -1,4 +1,5 @@
 import type { EffectScope } from 'vue';
+import type { LocationQuery } from 'vue-router';
 import type { HistoryEventIssue } from '@/modules/history/events/actions-center/use-history-event-issues';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -55,6 +56,12 @@ vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
   useUnmatchedBridgeTransactions: (): object => ({ autoMatchLoading: ref(false) }),
 }));
 
+const route = reactive<{ name: string; query: LocationQuery }>({ name: '/dashboard/', query: {} });
+
+vi.mock('vue-router', () => ({
+  useRoute: (): object => route,
+}));
+
 vi.mock('@/modules/core/common/use-ref-debounce', () => ({
   useRefWithDebounce: (source: Ref<boolean>): Ref<boolean> => source,
 }));
@@ -88,6 +95,8 @@ describe('modules/shell/action-center/use-global-action-center', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    route.name = '/dashboard/';
+    route.query = {};
     state.refreshAssets.mockResolvedValue();
     state.refreshHistory.mockResolvedValue();
     set(state.assetRows, []);
@@ -156,6 +165,28 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(get(sections)[0].items[0].target).toEqual({
       kind: 'route',
       to: { name: '/history/events/', query: { openMatchAssetMovementsDialog: 'true' } },
+    });
+  });
+
+  it('should open a history dialog over the history page the user is on, keeping its filters', async () => {
+    route.name = '/history/events/';
+    route.query = { location: 'kraken', page: '3' };
+    set(state.historyIssues, [{
+      ...row('unmatched-movements'),
+      checkTarget: { kind: 'dialog', options: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS } },
+      id: 'unmatched-movements',
+      target: { kind: 'dialog', options: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS } },
+    }]);
+    const { sections } = center();
+    await flushPromises();
+
+    expect(get(sections)[0].items[0].target).toEqual({
+      kind: 'route',
+      to: {
+        name: '/history/events/',
+        query: { location: 'kraken', openMatchAssetMovementsDialog: 'true', page: '3' },
+        replace: true,
+      },
     });
   });
 

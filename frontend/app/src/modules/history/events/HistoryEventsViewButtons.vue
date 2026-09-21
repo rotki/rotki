@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import HistoryEventsActionsCenter from '@/modules/history/events/actions-center/HistoryEventsActionsCenter.vue';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
 
@@ -21,8 +20,6 @@ const menuOpen = ref<boolean>(false);
 </script>
 
 <template>
-  <HistoryEventsActionsCenter @show:dialog="emit('show:dialog', $event)" />
-
   <HistoryRefreshButton
     :processing="processing"
     @refresh="emit('refresh', $event)"
