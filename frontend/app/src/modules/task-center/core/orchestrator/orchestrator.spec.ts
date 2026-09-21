@@ -11,6 +11,7 @@ import {
   makeActivityId,
   makeGroupId,
   ActivityStatus as Status,
+  WaitingReason,
 } from '../types';
 import { createTaskOrchestrator } from './orchestrator';
 import { type ActivitySpec, Priority } from './spec';
@@ -1312,6 +1313,67 @@ describe('createTaskOrchestrator', () => {
         orchestrator.rerun(id);
         orchestrator.reset();
       }).not.toThrow();
+    });
+  });
+
+  describe('why queued work waits', () => {
+    const heldBack = { reason: WaitingReason.HISTORY_SYNC };
+    const holdHeld = (candidate: Activity): typeof heldBack | undefined => (candidate.title === 'held' ? heldBack : undefined);
+
+    it('should say a job waits for a free slot when only its lane holds it', () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const runningId = orchestrator.submit(controllable('running').spec);
+      const queuedId = orchestrator.submit(controllable('queued').spec);
+
+      expect(byId(orchestrator, queuedId)?.waiting).toEqual({ reason: WaitingReason.SLOT });
+      expect(byId(orchestrator, runningId)?.waiting).toBeUndefined();
+    });
+
+    it('should name the dependency a job waits for', () => {
+      const orchestrator = createTaskOrchestrator();
+      const firstId = orchestrator.submit(controllable('first').spec);
+      const secondId = orchestrator.submit(controllable('second', { deps: [firstId] }).spec);
+
+      expect(byId(orchestrator, secondId)?.waiting).toEqual({ on: firstId, reason: WaitingReason.DEPENDENCY });
+    });
+
+    it('should name the parent a child waits for, the parent itself waiting for a slot', () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      orchestrator.submit(controllable('running').spec);
+      const parentId = orchestrator.submit(controllable('parent').spec);
+      const childId = orchestrator.submit(controllable('child', { parent: parentId }).spec);
+
+      expect(byId(orchestrator, childId)?.waiting).toEqual({ on: parentId, reason: WaitingReason.PARENT });
+      expect(byId(orchestrator, parentId)?.waiting).toEqual({ reason: WaitingReason.SLOT });
+    });
+
+    it('should report a rule\'s hold over a full lane, since the rule would still hold it with a slot free', () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 }, rules: [holdHeld] });
+      orchestrator.submit(controllable('running').spec);
+      const heldId = orchestrator.submit(controllable('held').spec);
+
+      expect(byId(orchestrator, heldId)?.waiting).toBe(heldBack);
+    });
+
+    it('should report a dependency over a rule, in the order the scheduler checks them', () => {
+      const orchestrator = createTaskOrchestrator({ rules: [holdHeld] });
+      const firstId = orchestrator.submit(controllable('first').spec);
+      const heldId = orchestrator.submit(controllable('held', { deps: [firstId] }).spec);
+
+      expect(byId(orchestrator, heldId)?.waiting).toEqual({ on: firstId, reason: WaitingReason.DEPENDENCY });
+    });
+
+    it('should drop the reason once the job starts', async () => {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const running = controllable('running');
+      orchestrator.submit(running.spec);
+      const queuedId = orchestrator.submit(controllable('queued').spec);
+
+      running.settle({ ok: true, value: 1 });
+      await flush();
+
+      expect(byId(orchestrator, queuedId)?.status).toBe(Status.RUNNING);
+      expect(byId(orchestrator, queuedId)?.waiting).toBeUndefined();
     });
   });
 });
