@@ -31,7 +31,7 @@ class ExchangesService:
     def setup_exchange(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -42,10 +42,11 @@ class ExchangesService:
             binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
-    ) -> tuple[bool | None, str, HTTPStatus]:
-        result, msg = self.rotkehlchen.setup_exchange(
+    ) -> tuple[dict[str, str] | None, str, HTTPStatus]:
+        """Returns the identifier of the new connection"""
+        identifier, msg = self.rotkehlchen.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -57,9 +58,9 @@ class ExchangesService:
             okx_location=okx_location,
             gate_location=gate_location,
         )
-        if not result:
+        if identifier is None:
             return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+        return {'identifier': identifier}, msg, HTTPStatus.OK
 
     def get_binance_history_start_timestamp(self) -> Timestamp:
         """Return the inclusive API start timestamp suggested for a new Binance key."""
@@ -74,8 +75,7 @@ class ExchangesService:
 
     def edit_exchange(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -88,8 +88,7 @@ class ExchangesService:
             gate_location: GateLocation | None,
     ) -> tuple[bool | None, str, HTTPStatus]:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -105,28 +104,21 @@ class ExchangesService:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def remove_exchange(
-            self,
-            name: str,
-            location: LocationIdentifier,
-    ) -> tuple[bool | None, str, HTTPStatus]:
-        result, message = self.rotkehlchen.exchange_manager.delete_exchange(
-            name=name,
-            location=location,
-        )
+    def remove_exchange(self, identifier: str) -> tuple[bool | None, str, HTTPStatus]:
+        result, message = self.rotkehlchen.exchange_manager.delete_exchange(identifier)
         if not result:
             return None, message, HTTPStatus.CONFLICT
         return True, message, HTTPStatus.OK
 
     def query_exchange_history_events(
             self,
-            location: LocationIdentifier,
-            name: str | None,
+            location: LocationIdentifier | None,
+            identifier: str | None,
     ) -> dict[str, Any]:
         try:
             self.rotkehlchen.exchange_manager.query_exchange_history_events(
-                name=name,
                 location=location,
+                identifier=identifier,
             )
         except RemoteError as e:
             return {
@@ -145,16 +137,14 @@ class ExchangesService:
 
     def query_exchange_history_events_in_range(
             self,
-            location: LocationIdentifier,
-            name: str,
+            identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> dict[str, Any]:
         try:
             total_events, stored_events, skipped_events, actual_end_ts = (
                 self.rotkehlchen.exchange_manager.requery_exchange_history_events(
-                    location=location,
-                    name=name,
+                    identifier=identifier,
                     start_ts=start_ts,
                     end_ts=end_ts,
                 )

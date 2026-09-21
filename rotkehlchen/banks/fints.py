@@ -46,13 +46,9 @@ from rotkehlchen.banks.normalization import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.locations.constants import (
-    LOCATION_BANKS,
-)
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    ExchangeApiCredentials,
     ExchangeAuthCredentials,
     Timestamp,
     TimestampMS,
@@ -64,6 +60,7 @@ if TYPE_CHECKING:
     from mt940.models import Balance as FinTSBalance, Transaction as MT940Transaction
 
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import HistoryEventQueue
     from rotkehlchen.locations.types import LocationIdentifier
@@ -131,12 +128,6 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
 class Fints(BankConnector):
     manifest = FINTS_MANIFEST
 
-    @property
-    def data_location(self) -> LocationIdentifier:
-        """FinTS is a connector and never a location. Until connections point at their
-        institution location its data belongs to the broad Banks location."""
-        return LOCATION_BANKS
-
     def __init__(
             self,
             name: str,
@@ -144,10 +135,20 @@ class Fints(BankConnector):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            location: LocationIdentifier,
+            connection_identifier: ConnectionIdentifier | None = None,
             product_id: str | None = None,
             client_factory: Callable[..., FinTS3PinTanClient] | None = None,
     ) -> None:
-        super().__init__(name, api_key, secret, database, msg_aggregator)
+        super().__init__(
+            name=name,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+            msg_aggregator=msg_aggregator,
+            location=location,
+            connection_identifier=connection_identifier,
+        )
         self._set_configuration(api_key)
         self._validate_connection(self.bank_code, self.endpoint)
         self.product_id = product_id if product_id is not None else FINTS_PRODUCT_ID
@@ -192,11 +193,9 @@ class Fints(BankConnector):
     @classmethod
     def api_credentials_from_values(
             cls,
-            name: str,
-            location: LocationIdentifier,
             values: dict[str, str],
             current: ExchangeAuthCredentials | None = None,
-    ) -> ExchangeApiCredentials:
+    ) -> ExchangeAuthCredentials:
         existing: dict[str, str] = {}
         if current is not None and current.api_key is not None:
             try:
@@ -222,15 +221,14 @@ class Fints(BankConnector):
         )
         if pin is None:
             raise BankError('FinTS requires an online banking PIN')
-        return ExchangeApiCredentials(
-            name=name,
-            location=location,
+        return ExchangeAuthCredentials(
             api_key=ApiKey(json.dumps({
                 'bank_code': bank_code,
                 'endpoint': endpoint,
                 'username': username,
             }, separators=(',', ':'), sort_keys=True)),
             api_secret=ApiSecret(pin.encode()),
+            passphrase=None,
         )
 
     def _restore_session(self) -> None:

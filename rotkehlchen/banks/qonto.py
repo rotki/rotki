@@ -47,13 +47,16 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import LOCATION_QONTO
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -87,6 +90,8 @@ class Qonto(BankConnector):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            location: LocationIdentifier = LOCATION_QONTO,
+            connection_identifier: ConnectionIdentifier | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -94,6 +99,8 @@ class Qonto(BankConnector):
             secret=secret,
             database=database,
             msg_aggregator=msg_aggregator,
+            location=location,
+            connection_identifier=connection_identifier,
         )
         self._reported_drift: set[str] = set()
         self._set_auth_header()

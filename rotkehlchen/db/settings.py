@@ -1,6 +1,6 @@
 import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from contextvars import ContextVar
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, NamedTuple
@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     SerializableChainIndexerOrder,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -32,7 +33,6 @@ from rotkehlchen.types import (
     AddressNameSource,
     ChainID,
     CostBasisMethod,
-    ExchangeLocationID,
     ExternalService,
     ModuleName,
     SupportedBlockchain,
@@ -106,7 +106,6 @@ DEFAULT_BEACON_RPC: Final = 'https://ethereum-beacon-api.publicnode.com'
 LIST_KEYS: Final = (
     'current_price_oracles',
     'historical_price_oracles',
-    'non_syncing_exchanges',
     'evmchains_to_skip_detection',
     'default_evm_indexer_order',
     'suppress_missing_key_msg_services',
@@ -245,7 +244,7 @@ DBSettingsFieldTypes = (
     Sequence[CurrentPriceOracle] |
     Sequence[HistoricalPriceOracle] |
     Mapping[ChainID, Sequence[EvmIndexer]] |
-    Sequence[ExchangeLocationID] |
+    Collection[ConnectionIdentifier] |
     CostBasisMethod |
     Sequence[AddressNameSource] |
     Sequence[ExternalService] |
@@ -286,7 +285,7 @@ class DBSettings:
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
-    non_syncing_exchanges: frozenset[ExchangeLocationID] = field(default_factory=frozenset)
+    non_syncing_exchanges: frozenset[ConnectionIdentifier] = field(default_factory=frozenset)
     evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = DEFAULT_CHAINS_TO_SKIP_DETECTION  # Both EVM and EVMLike chains # noqa: E501
     disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]] = field(default_factory=dict)  # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
@@ -371,7 +370,7 @@ class ModifiableDBSettings(NamedTuple):
     pnl_csv_with_formulas: bool | None = None
     pnl_csv_have_summary: bool | None = None
     ssf_graph_multiplier: int | None = None
-    non_syncing_exchanges: list[ExchangeLocationID] | None = None
+    non_syncing_exchanges: list[ConnectionIdentifier] | None = None
     evmchains_to_skip_detection: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None
     disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]] | None = None
     cost_basis_method: CostBasisMethod | None = None
@@ -503,7 +502,7 @@ def db_settings_from_dict(
             specified_args[key] = [EvmIndexer.deserialize(entry) for entry in json.loads(value)]
         elif key == 'non_syncing_exchanges':
             values = json.loads(value)
-            specified_args[key] = frozenset(ExchangeLocationID.deserialize(x) for x in values)
+            specified_args[key] = frozenset(ConnectionIdentifier(x) for x in values)
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
             specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
@@ -540,6 +539,8 @@ def serialize_db_setting(
         return value.serialize()  # pylint: disable=no-member
     if setting in FVAL_KEYS:
         return str(value)  # FVal isn't json serializable so needs converted to string in all cases
+    if setting == 'non_syncing_exchanges':  # connection identifiers
+        return json.dumps(sorted(value)) if is_modifiable else sorted(value)
     if setting == 'disabled_chain_queries':
         serialized = {chain.serialize(): sorted(addrs) for chain, addrs in value.items()}
         return json.dumps(serialized) if is_modifiable else serialized

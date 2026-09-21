@@ -39,13 +39,17 @@ def test_event_mapping_per_operation_type(qonto):
     transport = QontoFixtureTransport()
     with patch_bank_transport(qonto, transport):
         events, _ = qonto.query_online_history_events(Timestamp(0), ts_now())
+    # the identity of an event is the bank, the account and the bank's transaction id
     raw_by_group_id = {
-        create_group_identifier_from_unique_id(LOCATION_QONTO, t['id']): t
+        create_group_identifier_from_unique_id(LOCATION_QONTO, f"{t['bank_account_id']}:{t['id']}"): t  # noqa: E501
         for t in transport.transactions
     }
     assert len(events) == 28
     for event in events:
         raw = raw_by_group_id[event.group_identifier]
+        assert event.extra_data is not None
+        assert event.extra_data['source_id'] == raw['id']
+        assert event.extra_data['connection_identifier'] == qonto.connection_identifier
         assert event.asset == A_EUR
         assert event.amount == FVal(raw['amount_cents']) / 100
         assert event.extra_data['bank_account_id'] == raw['bank_account_id']

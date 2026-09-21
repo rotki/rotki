@@ -2,31 +2,34 @@
 
 The bank counterpart of the exchange manager: it owns the connected connector objects,
 persists their credentials, validates them at setup, and drives balance and history
-queries. Credentials live in the same ``user_credentials`` table as exchange keys (the
-location column tells them apart), but banks have their own manager, API surface and
-setup flow because their credentials are described by a manifest, not a fixed
-api key / secret / passphrase triple.
+queries. Connections live in ``integration_connections`` next to the exchange ones (the
+connector tells them apart), but banks have their own manager, API surface and setup flow
+because their credentials are described by a manifest, not a fixed api key / secret /
+passphrase triple, and a connector may let each connection choose its bank location.
 """
 import logging
 import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib import import_module
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
-from rotkehlchen.banks.constants import SUPPORTED_BANKS
+from rotkehlchen.banks.constants import FINTS_CONNECTOR, QONTO_CONNECTOR, SUPPORTED_BANKS
 from rotkehlchen.banks.errors import BankAuthChallenge, BankError, BankMFARequired
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
-from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ApiKey,
-    ApiSecret,
-    ExchangeApiCredentials,
-    ExchangeAuthCredentials,
-    ExchangeLocationID,
+from rotkehlchen.connections.types import (
+    ConnectionIdentifier,
+    ConnectorIdentifier,
+    IntegrationConnection,
+    new_connection_identifier,
 )
+from rotkehlchen.db.connections import DBConnections
+from rotkehlchen.db.locations import DBLocations
+from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.locations.constants import LOCATION_BANKS
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ExchangeAuthCredentials
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -35,6 +38,7 @@ if TYPE_CHECKING:
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankManifest
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
@@ -67,16 +71,6 @@ class BankCredentialInput:
     """Credentials as the API receives them: one value per manifest secret slot"""
     values: dict[str, str] = field(default_factory=dict)
 
-    def to_exchange_credentials(self, name: str, location: LocationIdentifier) -> ExchangeApiCredentials:  # noqa: E501
-        secret = self.values.get('api_secret')
-        return ExchangeApiCredentials(
-            name=name,
-            location=location,
-            api_key=ApiKey(self.values['api_key']),
-            api_secret=ApiSecret(secret.encode()) if secret is not None else None,
-            passphrase=self.values.get('passphrase'),
-        )
-
     def validate_against(self, manifest: BankManifest, complete: bool) -> None:
         """Raise InputError when the given values do not fit the manifest's secrets.
 
@@ -97,12 +91,20 @@ class BankCredentialInput:
                 raise InputError(f'The {slot} credential field must not be empty')
 
 
+# The module and class implementing every bank connector
+BANK_CONNECTOR_CLASSES: Final[dict[str, tuple[str, str]]] = {
+    QONTO_CONNECTOR: ('rotkehlchen.banks.qonto', 'Qonto'),
+    FINTS_CONNECTOR: ('rotkehlchen.banks.fints', 'Fints'),
+}
+
+
 class BankManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
-        self.connected_banks: dict[LocationIdentifier, list[BankConnector]] = defaultdict(list)
-        self.pending_setups: dict[ExchangeLocationID, BankConnector] = {}
-        self.sync_status: dict[ExchangeLocationID, BankSyncStatus] = defaultdict(BankSyncStatus)
+        # the connected banks of every connector
+        self.connected_banks: dict[str, list[BankConnector]] = defaultdict(list)
+        self.pending_setups: dict[ConnectionIdentifier, BankConnector] = {}
+        self.sync_status: dict[ConnectionIdentifier, BankSyncStatus] = defaultdict(BankSyncStatus)
         self.msg_aggregator = msg_aggregator
         # serializes registry mutations together with their DB persistence, like the
         # exchange manager does. Never held across network calls.
@@ -110,16 +112,22 @@ class BankManager:
         self.database: DBHandler | None = None
 
     @staticmethod
-    def get_manifest(location: LocationIdentifier) -> BankManifest:
-        return BANK_MANIFESTS[location]
+    def get_manifest(connector: str) -> BankManifest:
+        return BANK_MANIFESTS[ConnectorIdentifier(connector)]
 
     @staticmethod
-    def _connector_class(location: LocationIdentifier) -> type[BankConnector]:
-        module = import_module(f'rotkehlchen.banks.{location!s}')
-        return getattr(module, str(location).capitalize())
+    def _connector_class(connector: str) -> type[BankConnector]:
+        module_name, class_name = BANK_CONNECTOR_CLASSES[connector]
+        return getattr(import_module(module_name), class_name)
 
-    def get_bank(self, name: str, location: LocationIdentifier) -> BankConnector | None:
-        for bank in self.connected_banks.get(location, ()):
+    def get_bank(self, identifier: str) -> BankConnector | None:
+        for bank in self.iterate_banks():
+            if bank.connection_identifier == identifier:
+                return bank
+        return None
+
+    def get_bank_by_name(self, connector: str, name: str) -> BankConnector | None:
+        for bank in self.connected_banks.get(connector, ()):
             if bank.name == name:
                 return bank
         return None
@@ -133,87 +141,139 @@ class BankManager:
 
     def get_connected_banks_info(self) -> list[dict[str, Any]]:
         return [{
+            'identifier': bank.connection_identifier,
             'name': bank.name,
+            'connector': bank.manifest.connector_identifier,
             'location': bank.location,
             'display_name': bank.manifest.display_name,
-            'sync_status': self.sync_status[bank.location_id()].serialize(),
+            'sync_status': self.sync_status[bank.connection_identifier].serialize(),
         } for bank in self.iterate_banks()]
 
     def _instantiate(
             self,
-            credentials: ExchangeApiCredentials,
+            connector: str,
+            name: str,
+            location: LocationIdentifier,
+            credentials: ExchangeAuthCredentials,
             database: DBHandler,
+            connection_identifier: ConnectionIdentifier,
     ) -> BankConnector:
-        assert credentials.api_secret is not None, 'validated against the manifest'
-        return self._connector_class(credentials.location)(
-            name=credentials.name,
+        assert credentials.api_key is not None and credentials.api_secret is not None, 'validated against the manifest'  # noqa: E501
+        return self._connector_class(connector)(
+            name=name,
             api_key=credentials.api_key,
             secret=credentials.api_secret,
             database=database,
             msg_aggregator=self.msg_aggregator,
+            location=location,
+            connection_identifier=connection_identifier,
         )
 
     @staticmethod
-    def _location_id(name: str, location: LocationIdentifier) -> ExchangeLocationID:
-        return ExchangeLocationID(location=location, name=name)
+    def _connection_location(
+            cursor: DBCursor,
+            manifest: BankManifest,
+            location: LocationIdentifier | None,
+    ) -> LocationIdentifier:
+        """The location a new connection of the connector puts its data in.
+
+        May raise InputError if the connector needs a location in the Banks subtree and none
+        or another one is given.
+        """
+        if manifest.fixed_location is not None:
+            if location is not None and location != manifest.fixed_location:
+                raise InputError(
+                    f'{manifest.display_name} connections always use the '
+                    f'{manifest.fixed_location} location',
+                )
+            return manifest.fixed_location
+        if location is None:
+            raise InputError(f'{manifest.display_name} connections need the location of their bank')  # noqa: E501
+        node = DBLocations().validate_assignable(cursor, location)
+        if node.identifier not in DBLocations.descendants(cursor, [LOCATION_BANKS]):
+            raise InputError(f'Location {location} is not a bank')
+        return node.identifier
 
     def setup_bank(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
+            location: LocationIdentifier | None,
             credentials: BankCredentialInput,
             database: DBHandler,
-    ) -> tuple[bool, str]:
-        """Validate the credentials against the bank and persist the connection.
+    ) -> tuple[ConnectionIdentifier | None, str]:
+        """Validate the credentials against the bank and persist the connection. Returns the
+        new connection's identifier, or None and the reason the setup failed.
 
-        May raise InputError when the credentials do not fit the bank's manifest.
+        May raise InputError when the credentials do not fit the bank's manifest or the
+        location does not fit the connector, and BankMFARequired when the bank asks for an
+        authentication, which then continues under the identifier the exception carries.
         """
-        if location not in SUPPORTED_BANKS:
-            return False, f'{location!s} is not a supported bank'
-        credentials.validate_against(self.get_manifest(location), complete=True)
-        if self.get_bank(name=name, location=location) is not None:
-            return False, f'{location!s} bank connection {name} already exists'
+        if connector not in SUPPORTED_BANKS:
+            return None, f'{connector!s} is not a supported bank'
+        manifest = self.get_manifest(connector)
+        credentials.validate_against(manifest, complete=True)
+        with database.conn.read_ctx() as cursor:
+            location = self._connection_location(cursor, manifest, location)
+        if self.get_bank_by_name(connector=connector, name=name) is not None:
+            return None, f'{connector!s} bank connection {name} already exists'
 
-        connector_class = self._connector_class(location)
+        connector_class = self._connector_class(connector)
         try:
-            api_credentials = connector_class.api_credentials_from_values(
-                name=name,
-                location=location,
-                values=credentials.values,
-            )
+            api_credentials = connector_class.api_credentials_from_values(values=credentials.values)  # noqa: E501
         except BankError as e:
-            return False, str(e)
-        bank = self._instantiate(api_credentials, database)
+            return None, str(e)
+        bank = self._instantiate(
+            connector=connector,
+            name=name,
+            location=location,
+            credentials=api_credentials,
+            database=database,
+            connection_identifier=new_connection_identifier(),
+        )
         try:
             valid, message = bank.validate_api_key()
-        except BankMFARequired:
-            self.pending_setups[self._location_id(name=name, location=location)] = bank
+        except BankMFARequired as e:
+            self.pending_setups[bank.connection_identifier] = bank
+            e.connection_identifier = bank.connection_identifier
             raise
         except RemoteError as e:
             valid, message = False, str(e)
         if not valid:
-            log.error('Failed to validate %s bank credentials for %s: %s', location, name, message)
-            return False, message
+            log.error('Failed to validate %s bank credentials for %s: %s', connector, name, message)  # noqa: E501
+            return None, message
 
         with self.registry_lock:
-            if self.get_bank(name=name, location=location) is not None:
-                return False, f'{location!s} bank connection {name} already exists'
-            database.add_bank_credentials(api_credentials)
-            self.connected_banks[location].append(bank)
-        return True, ''
+            if self.get_bank_by_name(connector=connector, name=name) is not None:
+                return None, f'{connector!s} bank connection {name} already exists'
+            self._persist(database, bank)
+            self.connected_banks[connector].append(bank)
+        return bank.connection_identifier, ''
+
+    @staticmethod
+    def _persist(database: DBHandler, bank: BankConnector) -> None:
+        """May raise InputError if the connection can not be saved"""
+        with database.user_write() as write_cursor:
+            DBConnections.add(
+                write_cursor=write_cursor,
+                name=bank.name,
+                connector=bank.manifest.connector_identifier,
+                location=bank.location,
+                api_key=bank.api_key,
+                api_secret=bank.secret,
+                identifier=bank.connection_identifier,
+            )
 
     def answer_bank_authentication(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: ConnectionIdentifier,
             response: str | None,
     ) -> tuple[bool, str]:
         """Resume a pending connector challenge and finish setup when it was an add flow."""
-        location_id = self._location_id(name=name, location=location)
-        pending_setup = self.pending_setups.get(location_id)
-        bank = pending_setup or self.get_bank(name=name, location=location)
+        pending_setup = self.pending_setups.get(identifier)
+        bank = pending_setup or self.get_bank(identifier)
         if bank is None:
-            return False, f'{location!s} bank connection {name} has no pending authentication'
+            return False, f'Bank connection {identifier} has no pending authentication'
         resume_history = (
             pending_setup is None and bank.pending_authentication_resumes_history()
         )
@@ -221,9 +281,10 @@ class BankManager:
         try:
             bank.answer_authentication(response)
         except BankMFARequired as e:
-            self.sync_status[location_id].auth_challenge = e.challenge
+            e.connection_identifier = identifier
+            self.sync_status[identifier].auth_challenge = e.challenge
             raise
-        self.sync_status[location_id].auth_challenge = None
+        self.sync_status[identifier].auth_challenge = None
         if pending_setup is None:
             if resume_history:
                 self.sync_one(bank)
@@ -234,20 +295,14 @@ class BankManager:
             return False, message
         assert self.database is not None, 'authentication answered before login'
         with self.registry_lock:
-            self.database.add_bank_credentials(ExchangeApiCredentials(
-                name=bank.name,
-                location=bank.location,
-                api_key=bank.api_key,
-                api_secret=bank.secret,
-            ))
-            self.connected_banks[location].append(bank)
-            self.pending_setups.pop(location_id, None)
+            self._persist(self.database, bank)
+            self.connected_banks[bank.manifest.connector_identifier].append(bank)
+            self.pending_setups.pop(identifier, None)
         return True, ''
 
     def edit_bank(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: ConnectionIdentifier,
             new_name: str | None,
             credentials: BankCredentialInput,
     ) -> tuple[bool, str]:
@@ -257,23 +312,23 @@ class BankManager:
         May raise InputError when they do not fit the manifest.
         """
         assert self.database is not None, 'edit_bank called before login'
-        bank = self.get_bank(name=name, location=location)
-        if bank is None:
-            return False, f'Could not find {location!s} bank connection {name} for editing'
-        credentials.validate_against(self.get_manifest(location), complete=False)
-        if new_name is not None and new_name != name and self.get_bank(new_name, location):
-            return False, f'{location!s} bank connection {new_name} already exists'
+        if (bank := self.get_bank(identifier)) is None:
+            return False, f'Could not find bank connection {identifier} for editing'
+        connector = bank.manifest.connector_identifier
+        credentials.validate_against(bank.manifest, complete=False)
+        if (
+                new_name is not None and new_name != bank.name and
+                self.get_bank_by_name(connector=connector, name=new_name) is not None
+        ):
+            return False, f'{connector!s} bank connection {new_name} already exists'
 
         try:
-            packed = type(bank).api_credentials_from_values(
-                name=name,
-                location=location,
+            auth = type(bank).api_credentials_from_values(
                 values=credentials.values,
                 current=ExchangeAuthCredentials(bank.api_key, bank.secret, None),
             )
         except BankError as e:
             return False, str(e)
-        auth = ExchangeAuthCredentials(packed.api_key, packed.api_secret, packed.passphrase)
         credentials_changed = bank.edit_exchange_credentials(auth)
         if credentials_changed:
             try:
@@ -288,10 +343,9 @@ class BankManager:
             persisted = False
             try:
                 with self.database.user_write() as write_cursor:
-                    self.database.edit_bank_credentials(
+                    DBConnections(self.database).edit(
                         write_cursor=write_cursor,
-                        name=name,
-                        location=location,
+                        identifier=identifier,
                         new_name=new_name,
                         credentials=auth,
                     )
@@ -300,33 +354,23 @@ class BankManager:
                 if not persisted and credentials_changed:
                     bank.reset_to_db_credentials()
             if new_name is not None:
-                old_location_id = bank.location_id()
                 bank.name = new_name
-                if (status := self.sync_status.pop(old_location_id, None)) is not None:
-                    self.sync_status[bank.location_id()] = status
         return True, ''
 
-    def delete_bank(self, name: str, location: LocationIdentifier) -> tuple[bool, str]:
+    def delete_bank(self, identifier: ConnectionIdentifier) -> tuple[bool, str]:
         assert self.database is not None, 'delete_bank called before login'
         with self.registry_lock:
-            bank = self.get_bank(name=name, location=location)
-            if bank is None:
-                return False, f'{location!s} bank connection {name} does not exist'
+            if (bank := self.get_bank(identifier)) is None:
+                return False, f'Bank connection {identifier} does not exist'
 
             with self.database.user_write() as write_cursor:
-                self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)  # noqa: E501
-                self.database.delete_used_query_range_for_exchange(
-                    write_cursor=write_cursor,
-                    location=location,
-                    exchange_name=name,
-                )
-                bank.purge_local_state(write_cursor)
-            remaining = [entry for entry in self.connected_banks[location] if entry.name != name]
-            if len(remaining) == 0:
-                self.connected_banks.pop(location)
+                self.database.remove_exchange(write_cursor=write_cursor, identifier=identifier)
+            connector = bank.manifest.connector_identifier
+            if len(remaining := [x for x in self.connected_banks[connector] if x is not bank]) == 0:  # noqa: E501
+                self.connected_banks.pop(connector)
             else:
-                self.connected_banks[location] = remaining
-            self.sync_status.pop(bank.location_id(), None)
+                self.connected_banks[connector] = remaining
+            self.sync_status.pop(identifier, None)
         return True, ''
 
     def delete_all_banks(self) -> None:
@@ -337,47 +381,56 @@ class BankManager:
 
     def initialize_banks(
             self,
-            credentials: dict[LocationIdentifier, list[ExchangeApiCredentials]],
+            connections: list[IntegrationConnection],
             database: DBHandler,
     ) -> None:
-        """Instantiate the connectors of every saved bank credential at login"""
+        """Instantiate the connectors of every saved bank connection at login"""
         self.database = database
-        for location, entries in credentials.items():
-            if location not in SUPPORTED_BANKS:
+        for connection in connections:
+            if connection.connector not in SUPPORTED_BANKS:
                 continue
-            for entry in entries:
-                if entry.api_secret is None:
-                    log.error('Skipping %s bank credentials %s: no secret', location, entry.name)
-                    continue
-                bank = self._instantiate(entry, database)
-                with self.registry_lock:
-                    self.connected_banks[location].append(bank)
-                try:
-                    if (challenge := bank.pending_authentication()) is not None:
-                        self.sync_status[bank.location_id()].auth_challenge = challenge
-                except BankError as e:
-                    log.warning(
-                        'Could not restore pending authentication for %s bank %s: %s',
-                        location,
-                        entry.name,
-                        e,
-                    )
+            if connection.api_secret is None:
+                log.error('Skipping %s bank connection %s: no secret', connection.connector, connection.name)  # noqa: E501
+                continue
+            try:
+                bank = self._instantiate(
+                    connector=connection.connector,
+                    name=connection.name,
+                    location=connection.location,
+                    credentials=ExchangeAuthCredentials(connection.api_key, connection.api_secret, connection.passphrase),  # noqa: E501
+                    database=database,
+                    connection_identifier=connection.identifier,
+                )
+            except BankError as e:
+                log.error('Could not restore %s bank connection %s: %s', connection.connector, connection.name, e)  # noqa: E501
+                continue
+            with self.registry_lock:
+                self.connected_banks[connection.connector].append(bank)
+            try:
+                if (challenge := bank.pending_authentication()) is not None:
+                    self.sync_status[connection.identifier].auth_challenge = challenge
+            except BankError as e:
+                log.warning(
+                    'Could not restore pending authentication for %s bank %s: %s',
+                    connection.connector,
+                    connection.name,
+                    e,
+                )
 
-    def query_bank_history_events(self, location: LocationIdentifier | None, name: str | None) -> None:  # noqa: E501
-        """Sync the history of one connection, of every connection at a location, or of all.
+    def query_bank_history_events(self, connector: str | None, identifier: str | None) -> None:
+        """Sync the history of one connection, of every connection of a connector, or of all.
 
         May raise RemoteError when one or more syncs fail and InputError when the
         connection does not exist.
         """
-        if location is None:
-            banks = list(self.iterate_banks())
-        elif name is None:
-            banks = list(self.connected_banks.get(location, ()))
-        else:
-            bank = self.get_bank(name=name, location=location)
-            if bank is None:
-                raise InputError(f'{location!s} bank connection {name} does not exist')
+        if identifier is not None:
+            if (bank := self.get_bank(identifier)) is None:
+                raise InputError(f'Bank connection {identifier} does not exist')
             banks = [bank]
+        elif connector is None:
+            banks = list(self.iterate_banks())
+        else:
+            banks = list(self.connected_banks.get(connector, ()))
 
         errors = []
         for bank in banks:
@@ -395,7 +448,7 @@ class BankManager:
 
         May raise RemoteError.
         """
-        status = self.sync_status[bank.location_id()]
+        status = self.sync_status[bank.connection_identifier]
         status.running = True
         try:
             bank.query_history_events()

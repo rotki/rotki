@@ -180,7 +180,6 @@ from rotkehlchen.types import (
     CostBasisMethod,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    ExchangeLocationID,
     ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1717,19 +1716,6 @@ class DisabledChainQueriesField(fields.Field):
         return deserialized
 
 
-class ExchangeLocationIDSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(required=True)
-
-    @post_load()
-    def make_exchange_location_id(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> ExchangeLocationID:
-        return ExchangeLocationID(name=data['name'], location=data['location'])
-
-
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(load_default=None)
@@ -1805,7 +1791,7 @@ class ModifiableSettingsSchema(Schema):
         load_default=None,
     )
     non_syncing_exchanges = fields.List(
-        fields.Nested(ExchangeLocationIDSchema),
+        NonEmptyStringField(),
         load_default=None,
         # Check that all values are unique
         validate=validate_predicate(lambda data: len(data) == len(set(data))),
@@ -2127,7 +2113,6 @@ class GnosisPaySiweChallengeSchema(AsyncQueryArgumentSchema):
 
 class BinanceMarketsSchemaMixin(Schema):
     """Additional logic for adding/editing Binance exchanges credentials"""
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     binance_markets = fields.List(NonEmptyStringField, load_default=None)
 
     @validates_schema
@@ -2136,10 +2121,12 @@ class BinanceMarketsSchemaMixin(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        """Setting up a Binance connection needs markets. An edit that gives them may not
+        remove them all."""
         if (
-            data['location'] in (LOCATION_BINANCE, LOCATION_BINANCEUS) and
-            (data['binance_markets'] is None or len(data['binance_markets']) == 0)
-        ):
+            data.get('connector') in (LOCATION_BINANCE, LOCATION_BINANCEUS) and
+            data['binance_markets'] is None
+        ) or (data['binance_markets'] is not None and len(data['binance_markets']) == 0):
             raise ValidationError(
                 message='Binance API key requires at least one market pair to be selected. '
                 'Please choose the trading pairs you want to monitor before adding the API key.',
@@ -2169,7 +2156,7 @@ class KrakenFutureKeysSchemaMixin(Schema):
 
 
 class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
-    name = NonEmptyStringField(required=True)
+    identifier = NonEmptyStringField(required=True)
     new_name = EmptyAsNoneStringField(load_default=None)
     api_key = ApiKeyField(load_default=None)
     api_secret = ApiSecretField(load_default=None)
@@ -2181,6 +2168,10 @@ class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSch
 
 class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
     name = NonEmptyStringField(required=True)
+    connector = NonEmptyStringField(
+        required=True,
+        validate=webargs.validate.OneOf(SUPPORTED_EXCHANGES, error='{input} is not a supported exchange'),  # noqa: E501
+    )
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(load_default=None)
     passphrase = EmptyAsNoneStringField(load_default=None)
@@ -2196,7 +2187,7 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
             **_kwargs: Any,
     ) -> None:
         super().validate_schema(data)
-        location = data['location']
+        location = data['connector']
         if (
             (binance_history_start_ts := data['binance_history_start_ts']) is not None and
             (
@@ -2232,18 +2223,18 @@ class ExchangesDataResourceSchema(Schema):
 
 
 class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
-    name = EmptyAsNoneStringField(required=False)
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
+    """One exchange connection, or every connection of an exchange"""
+    identifier = EmptyAsNoneStringField(load_default=None)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
+
+    @validates_schema
+    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if (data['identifier'] is None) == (data['location'] is None):
+            raise ValidationError('Either a connection identifier or an exchange location is needed')  # noqa: E501
 
 
-class ExchangeLocationWithNameSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-
-
-class BankLocationWithNameSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_BANKS, required=True)
+class ConnectionIdentifierSchema(Schema):
+    identifier = NonEmptyStringField(required=True)
 
 
 class BankCredentialsField(fields.Dict):
@@ -2254,38 +2245,44 @@ class BankCredentialsField(fields.Dict):
         super().__init__(keys=fields.String(), values=fields.String(), **kwargs)
 
 
-class BanksResourceAddSchema(BankLocationWithNameSchema):
+class BanksResourceAddSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    connector = NonEmptyStringField(
+        required=True,
+        validate=webargs.validate.OneOf(SUPPORTED_BANKS, error='{input} is not a supported bank'),
+    )
+    # the bank the data belongs to, for connectors without a fixed location
+    location = LocationField(load_default=None)
     credentials = BankCredentialsField(required=True)
 
 
-class BanksResourceEditSchema(BankLocationWithNameSchema):
+class BanksResourceEditSchema(ConnectionIdentifierSchema):
     new_name = EmptyAsNoneStringField(load_default=None)
     credentials = BankCredentialsField(load_default=dict)
 
 
-class BankAuthenticationSchema(BankLocationWithNameSchema):
+class BankAuthenticationSchema(ConnectionIdentifierSchema):
     response = EmptyAsNoneStringField(load_default=None)
 
 
 class BankSyncSchema(AsyncQueryArgumentSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
-    name = EmptyAsNoneStringField(load_default=None)
-
-    @validates_schema
-    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
-        if data['name'] is not None and data['location'] is None:
-            raise ValidationError('A bank connection name needs its location')
+    """One connection, every connection of a connector, or everything"""
+    connector = NonEmptyStringField(
+        load_default=None,
+        validate=webargs.validate.OneOf(SUPPORTED_BANKS, error='{input} is not a supported bank'),
+    )
+    identifier = EmptyAsNoneStringField(load_default=None)
 
 
 class BankBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    location = LocationField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 
 
 class ExchangeEventsRangeQuerySchema(
     AsyncQueryArgumentSchema,
     TimestampRangeSchema,
-    ExchangeLocationWithNameSchema,
+    ConnectionIdentifierSchema,
 ):
     ...
 
@@ -3507,11 +3504,6 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 class ERC20InfoSchema(AsyncQueryArgumentSchema):
     address = EvmAddressField(required=True)
     evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
-
-
-class BinanceMarketsUserSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=(LOCATION_BINANCEUS, LOCATION_BINANCE), required=True)
 
 
 class ManualPriceSchema(Schema):

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.connector import BankConnector
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.fval import FVal
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -35,6 +36,7 @@ class BanksService:
         retention_days = bank.history_retention_days()
         return {
             'success': True,
+            'identifier': bank.connection_identifier,
             'history_start_ts': (
                 ts_now() - retention_days * DAY_IN_SECONDS
                 if retention_days is not None else None
@@ -44,63 +46,67 @@ class BanksService:
     def setup_bank(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
+            location: LocationIdentifier | None,
             credentials: dict[str, str],
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+        """Returns the new connection's identifier, or when the bank asks for an
+        authentication its challenge together with the identifier to answer it under"""
         try:
-            result, msg = self.rotkehlchen.bank_manager.setup_bank(
+            identifier, msg = self.rotkehlchen.bank_manager.setup_bank(
                 name=name,
+                connector=connector,
                 location=location,
                 credentials=BankCredentialInput(values=credentials),
                 database=self.rotkehlchen.data.db,
             )
         except BankMFARequired as e:
-            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+            return self._challenge(e), '', HTTPStatus.ACCEPTED
         except InputError as e:
             return None, str(e), HTTPStatus.BAD_REQUEST
-        if not result:
+        if identifier is None:
             return None, msg, HTTPStatus.CONFLICT
-        if (bank := self.rotkehlchen.bank_manager.get_bank(name=name, location=location)) is None:
+        if (bank := self.rotkehlchen.bank_manager.get_bank(identifier)) is None:
             raise AssertionError('successful bank setup did not register the connection')
         return self._setup_success(bank), msg, HTTPStatus.OK
 
+    @staticmethod
+    def _challenge(error: BankMFARequired) -> dict[str, Any]:
+        return error.challenge.serialize() | {'identifier': error.connection_identifier}
+
     def answer_authentication(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: ConnectionIdentifier,
             response: str | None,
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         manager = self.rotkehlchen.bank_manager
-        completes_setup = manager.get_bank(name=name, location=location) is None
+        completes_setup = manager.get_bank(identifier) is None
         try:
             result, message = manager.answer_bank_authentication(
-                name=name,
-                location=location,
+                identifier=identifier,
                 response=response,
             )
         except BankMFARequired as e:
-            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+            return self._challenge(e), '', HTTPStatus.ACCEPTED
         except RemoteError as e:
             return None, str(e), HTTPStatus.CONFLICT
         if result is False:
             return None, message, HTTPStatus.CONFLICT
         if completes_setup:
-            if (bank := manager.get_bank(name=name, location=location)) is None:
+            if (bank := manager.get_bank(identifier)) is None:
                 raise AssertionError('successful bank setup authentication did not register it')
             return self._setup_success(bank), '', HTTPStatus.OK
         return True, '', HTTPStatus.OK
 
     def edit_bank(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: ConnectionIdentifier,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> tuple[bool | None, str, HTTPStatus]:
         try:
             result, msg = self.rotkehlchen.bank_manager.edit_bank(
-                name=name,
-                location=location,
+                identifier=identifier,
                 new_name=new_name,
                 credentials=BankCredentialInput(values=credentials),
             )
@@ -110,15 +116,18 @@ class BanksService:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def remove_bank(self, name: str, location: LocationIdentifier) -> tuple[bool | None, str, HTTPStatus]:  # noqa: E501
-        result, msg = self.rotkehlchen.bank_manager.delete_bank(name=name, location=location)
+    def remove_bank(self, identifier: ConnectionIdentifier) -> tuple[bool | None, str, HTTPStatus]:
+        result, msg = self.rotkehlchen.bank_manager.delete_bank(identifier)
         if not result:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
+    def sync_banks(self, connector: str | None, identifier: str | None) -> dict[str, Any]:
         try:
-            self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
+            self.rotkehlchen.bank_manager.query_bank_history_events(
+                connector=connector,
+                identifier=identifier,
+            )
         except BankMFARequired:
             return {'result': None, 'message': '', 'status_code': HTTPStatus.ACCEPTED}
         except RemoteError as e:
@@ -133,29 +142,30 @@ class BanksService:
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
-        """Balances per bank location, in the shape of the exchange balances endpoint"""
+        """Balances per bank location, in the shape of the exchange balances endpoint.
+        Connections at the same bank add up."""
         manager = self.rotkehlchen.bank_manager
-        if location is not None and location not in manager.connected_banks:
+        banks = [x for x in manager.iterate_banks() if location is None or x.location == location]
+        if location is not None and len(banks) == 0:
             return {
                 'result': None,
-                'message': f'No {location!s} bank connection exists',
+                'message': f'No bank connection at {location!s} exists',
                 'status_code': HTTPStatus.CONFLICT,
             }
 
         final: dict[str, dict[AssetWithOracles, Balance]] = {}
         error_msg = ''
-        banks = manager.connected_banks.get(location, []) if location is not None else list(manager.iterate_banks())  # noqa: E501
         for bank in banks:
             try:
                 balances, msg = bank.query_balances(ignore_cache=ignore_cache)
             except BankMFARequired as e:
-                manager.sync_status[bank.location_id()].auth_challenge = e.challenge
+                manager.sync_status[bank.connection_identifier].auth_challenge = e.challenge
                 error_msg += f'{bank.manifest.display_name} {bank.name} requires authentication. '
                 continue
             if balances is None:
                 error_msg += msg
                 continue
-            manager.sync_status[bank.location_id()].auth_challenge = None
+            manager.sync_status[bank.connection_identifier].auth_challenge = None
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}
             key = str(bank.location)

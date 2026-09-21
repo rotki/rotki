@@ -16,6 +16,7 @@ from rsqlite import IntegrityError
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -705,7 +706,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         history_events_db = DBHistoryEvents(self.db)
 
         # Query and save flexible simple earn history
-        range_query_name = f'{self.location}_lending_history_{self.name}'
+        range_query_name = connection_range_name(self.connection_identifier, 'lending_history')
         ranges_to_query = ranges.get_location_query_ranges(
             cursor=cursor,
             location_string=range_query_name,
@@ -1065,23 +1066,20 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             last_query_ts: Timestamp,
     ) -> None:
         """Persist all progress for a successfully queried Binance pair."""
-        cache_args = {
-            'location': self.location,
-            'location_name': self.name,
-            'queried_pair': queried_pair,
-        }
         self.db.set_dynamic_cache(
             write_cursor=write_cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
             value=last_query_ts,
-            **cache_args,
+            connection=self.connection_identifier,
+            queried_pair=queried_pair,
         )
         if last_trade_id is not None:
             self.db.set_dynamic_cache(
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
                 value=last_trade_id,
-                **cache_args,
+                connection=self.connection_identifier,
+                queried_pair=queried_pair,
             )
 
     def _set_pairs_query_progress(
@@ -1144,15 +1142,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
                         cursor=cursor,
                         name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                        location=self.location,
-                        location_name=self.name,
+                        connection=self.connection_identifier,
                         queried_pair=symbol,
                     )
                     last_query_ts = self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-                        location=self.location,
-                        location_name=self.name,
+                        connection=self.connection_identifier,
                         queried_pair=symbol,
                     )
 

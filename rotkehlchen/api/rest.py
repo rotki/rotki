@@ -87,6 +87,7 @@ from rotkehlchen.concurrency import (
     TaskCancelledError,
     wait,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     DEFAULT_LOGLEVEL,
@@ -149,7 +150,11 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import (
+    ALL_SUPPORTED_EXCHANGES,
+    SUPPORTED_EXCHANGES,
+    serialize_exchange_connectors,
+)
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.feature_flags import is_accounting_update_enabled
@@ -832,9 +837,16 @@ class RestAPI:
     def get_banks(self) -> Response:
         return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
 
-    def setup_bank(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
+    def setup_bank(
+            self,
+            name: str,
+            connector: str,
+            location: LocationIdentifier | None,
+            credentials: dict[str, str],
+    ) -> Response:
         result, msg, status_code = self.banks_service.setup_bank(
             name=name,
+            connector=connector,
             location=location,
             credentials=credentials,
         )
@@ -842,39 +854,31 @@ class RestAPI:
 
     def edit_bank(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         result, msg, status_code = self.banks_service.edit_bank(
-            name=name,
-            location=location,
+            identifier=ConnectionIdentifier(identifier),
             new_name=new_name,
             credentials=credentials,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_bank(self, name: str, location: LocationIdentifier) -> Response:
-        result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
+    def remove_bank(self, identifier: str) -> Response:
+        result, msg, status_code = self.banks_service.remove_bank(ConnectionIdentifier(identifier))
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def answer_bank_authentication(
-            self,
-            name: str,
-            location: LocationIdentifier,
-            response: str | None,
-    ) -> Response:
+    def answer_bank_authentication(self, identifier: str, response: str | None) -> Response:
         result, msg, status_code = self.banks_service.answer_authentication(
-            name=name,
-            location=location,
+            identifier=ConnectionIdentifier(identifier),
             response=response,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @async_api_call()
-    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
-        return self.banks_service.sync_banks(location=location, name=name)
+    def sync_banks(self, connector: str | None, identifier: str | None) -> dict[str, Any]:
+        return self.banks_service.sync_banks(connector=connector, identifier=identifier)
 
     @async_api_call()
     def query_bank_balances(
@@ -889,6 +893,13 @@ class RestAPI:
             value_threshold=value_threshold,
         )
 
+    @staticmethod
+    def get_supported_exchanges() -> Response:
+        return api_response(
+            _wrap_in_ok_result(serialize_exchange_connectors()),
+            status_code=HTTPStatus.OK,
+        )
+
     def get_exchanges(self) -> Response:
         exchanges = self.exchanges_service.get_exchanges()
         return api_response(
@@ -899,7 +910,7 @@ class RestAPI:
     def setup_exchange(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -913,7 +924,7 @@ class RestAPI:
     ) -> Response:
         result, msg, status_code = self.exchanges_service.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -935,8 +946,7 @@ class RestAPI:
 
     def edit_exchange(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -949,8 +959,7 @@ class RestAPI:
             gate_location: GateLocation | None,
     ) -> Response:
         result, msg, status_code = self.exchanges_service.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -964,36 +973,32 @@ class RestAPI:
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_exchange(self, name: str, location: LocationIdentifier) -> Response:
-        result, message, status_code = self.exchanges_service.remove_exchange(
-            name=name,
-            location=location,
-        )
+    def remove_exchange(self, identifier: str) -> Response:
+        result, message, status_code = self.exchanges_service.remove_exchange(identifier)
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
     @async_api_call()
     def query_exchange_history_events(
             self,
-            location: LocationIdentifier,
-            name: str | None,
+            location: LocationIdentifier | None,
+            identifier: str | None,
     ) -> dict[str, Any]:
-        """Queries new history events for the specified exchange and saves them in the database."""
+        """Queries new history events of one exchange connection, or of every connection of
+        an exchange, and saves them in the database."""
         return self.exchanges_service.query_exchange_history_events(
             location=location,
-            name=name,
+            identifier=identifier,
         )
 
     @async_api_call()
     def query_exchange_history_events_in_range(
             self,
-            location: LocationIdentifier,
-            name: str,
+            identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> dict[str, Any]:
         response = self.exchanges_service.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -2872,10 +2877,10 @@ class RestAPI:
             )
         return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
 
-    def get_user_binance_pairs(self, name: str, location: LocationIdentifier) -> Response:
+    def get_user_binance_pairs(self, identifier: str) -> Response:
         return api_response(
             _wrap_in_ok_result(
-                self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
+                self.rotkehlchen.exchange_manager.get_user_binance_pairs(identifier),
             ),
             status_code=HTTPStatus.OK,
         )

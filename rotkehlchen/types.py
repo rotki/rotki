@@ -31,7 +31,6 @@ from rotkehlchen.locations.constants import (
     LOCATION_SHAPESHIFT,
     LOCATION_UPHOLD,
 )
-from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.enums import (
     DBCharEnumMixIn,
@@ -53,6 +52,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -792,18 +792,6 @@ class ExchangeAuthCredentials(NamedTuple):
     passphrase: str | None
 
 
-class ExchangeApiCredentials(NamedTuple):
-    """Represents Credentials for Exchanges
-
-    The Api in question must at least have an API key.
-    """
-    name: str  # A unique name to identify this particular Location credentials
-    location: LocationIdentifier
-    api_key: ApiKey
-    api_secret: ApiSecret | None
-    passphrase: str | None = None
-
-
 EXTERNAL_EXCHANGES = (
     LOCATION_CRYPTOCOM,
     LOCATION_BLOCKFI,
@@ -813,28 +801,6 @@ EXTERNAL_EXCHANGES = (
     LOCATION_BISQ,
     LOCATION_BITMEX,
 )
-
-
-class ExchangeLocationID(NamedTuple):
-    name: str
-    location: LocationIdentifier
-
-    def serialize(self) -> dict:
-        return {'name': self.name, 'location': self.location}
-
-    @classmethod
-    def deserialize(
-            cls: type[ExchangeLocationID],
-            data: dict[str, Any],
-    ) -> ExchangeLocationID:
-        """May raise DeserializationError"""
-        try:
-            return cls(
-                name=data['name'],
-                location=deserialize_location_identifier(data['location']),
-            )
-        except KeyError as e:
-            raise DeserializationError(f'Missing key {e!s}') from e
 
 
 class EnsMapping(NamedTuple):

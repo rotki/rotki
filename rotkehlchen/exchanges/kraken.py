@@ -18,6 +18,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import (
     KRAKEN_API_VERSION,
     KRAKEN_BASE_URL,
@@ -1227,12 +1228,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
         try:
             self._query_and_save_history_event_ranges(
-                location_string=f'{self.location!s}_history_events_{self.name}',
+                location_string=connection_range_name(self.connection_identifier, 'history_events'),  # noqa: E501
                 query_method=self.query_online_history_events_into_queue,
             )
             if self._has_futures_keys():
                 self._query_and_save_history_event_ranges(
-                    location_string=f'{self.location!s}_history_events_futures_{self.name}',
+                    location_string=connection_range_name(self.connection_identifier, 'history_events_futures'),  # noqa: E501
                     query_method=self.query_futures_history_into_queue,
                 )
         finally:

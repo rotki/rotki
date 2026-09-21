@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
 from rotkehlchen.concurrency import result_of, spawn, wait
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -539,7 +540,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         chunk avoids re-querying already processed chunks if a later chunk fails.
         """
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        location_string = f'{self.location!s}_history_events_{self.name}'
+        location_string = connection_range_name(self.connection_identifier, 'history_events')
         with self.db.conn.read_ctx() as cursor:
             ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
                 cursor=cursor,

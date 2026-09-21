@@ -72,14 +72,25 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 );
 """
 
-DB_CREATE_USER_CREDENTIALS_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS user_credentials_mappings (
-    credential_name TEXT NOT NULL,
-    credential_location TEXT NOT NULL,
+DB_CREATE_INTEGRATION_CONNECTIONS = """
+CREATE TABLE IF NOT EXISTS integration_connections (
+    identifier TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    connector_identifier TEXT NOT NULL,
+    location_identifier TEXT NOT NULL REFERENCES locations(identifier),
+    api_key TEXT,
+    api_secret TEXT,
+    passphrase TEXT,
+    UNIQUE(connector_identifier, name)
+);
+"""
+
+DB_CREATE_INTEGRATION_CONNECTION_SETTINGS = """
+CREATE TABLE IF NOT EXISTS integration_connection_settings (
+    connection_identifier TEXT NOT NULL REFERENCES integration_connections(identifier) ON DELETE CASCADE,
     setting_name TEXT NOT NULL,
     setting_value TEXT NOT NULL,
-    FOREIGN KEY(credential_name, credential_location) REFERENCES user_credentials(name, location) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY (credential_name, credential_location, setting_name)
+    PRIMARY KEY (connection_identifier, setting_name)
 );
 """  # noqa: E501
 
@@ -1028,7 +1039,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_TIMED_BALANCES}
 {DB_CREATE_TIMED_LOCATION_DATA}
 {DB_CREATE_USER_CREDENTIALS}
-{DB_CREATE_USER_CREDENTIALS_MAPPINGS}
+{DB_CREATE_INTEGRATION_CONNECTIONS}
+{DB_CREATE_INTEGRATION_CONNECTION_SETTINGS}
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
 {DB_CREATE_EVM_ACCOUNTS_DETAILS}

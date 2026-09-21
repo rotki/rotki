@@ -288,8 +288,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             if not force_refresh and (result := self.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                location=self.location,
-                location_name=self.name,
+                connection=self.connection_identifier,
             )) is not None:
                 offset = result
 
@@ -360,8 +359,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 self.db.set_dynamic_cache,
                 name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
                 value=new_offset,
-                location=self.location,
-                location_name=self.name,
+                connection=self.connection_identifier,
             )
             if event_queue is None:
                 with self.db.user_write() as write_cursor:

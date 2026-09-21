@@ -154,11 +154,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
-    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -438,13 +438,13 @@ class Rotkehlchen:
             )
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
 
-            exchange_credentials = self.data.db.get_exchange_credentials(cursor)
+            connections = self.data.db.get_exchange_credentials(cursor)
             self.exchange_manager.initialize_exchanges(
-                exchange_credentials=exchange_credentials,
+                connections=connections,
                 database=self.data.db,
             )
             self.bank_manager.initialize_banks(
-                credentials=exchange_credentials,  # same table; the manager keeps bank locations
+                connections=connections,  # each manager keeps its own connectors
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
@@ -1594,7 +1594,7 @@ class Rotkehlchen:
     def setup_exchange(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None = None,
@@ -1605,14 +1605,15 @@ class Rotkehlchen:
             binance_history_start_ts: Timestamp | None = None,
             okx_location: OkxLocation | None = None,
             gate_location: GateLocation | None = None,
-    ) -> tuple[bool, str]:
+    ) -> tuple[ConnectionIdentifier | None, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase.
         The manager registers it and saves it in the DB atomically w.r.t. concurrent deletes.
+        Returns the new connection's identifier or None and the reason it failed.
         """
         return self.exchange_manager.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             kraken_account_type=kraken_account_type,

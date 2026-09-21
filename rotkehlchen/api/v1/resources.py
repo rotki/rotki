@@ -48,13 +48,11 @@ from rotkehlchen.api.v1.schemas import (
     AsyncTaskSchema,
     BankAuthenticationSchema,
     BankBalanceQuerySchema,
-    BankLocationWithNameSchema,
     BanksResourceAddSchema,
     BanksResourceEditSchema,
     BankSyncSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
-    BinanceMarketsUserSchema,
     BinanceSavingsSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -69,6 +67,7 @@ from rotkehlchen.api.v1.schemas import (
     ClearCacheSchema,
     ClearIconsCacheSchema,
     ConfigurationUpdateSchema,
+    ConnectionIdentifierSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -106,7 +105,6 @@ from rotkehlchen.api.v1.schemas import (
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
-    ExchangeLocationWithNameSchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
@@ -631,7 +629,7 @@ class ExchangesResource(BaseMethodView):
 
     put_schema = ExchangesResourceAddSchema()
     patch_schema = ExchangesResourceEditSchema()
-    delete_schema = ExchangeLocationWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -642,7 +640,7 @@ class ExchangesResource(BaseMethodView):
     def put(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -656,7 +654,7 @@ class ExchangesResource(BaseMethodView):
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -673,8 +671,7 @@ class ExchangesResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -687,8 +684,7 @@ class ExchangesResource(BaseMethodView):
             gate_location: GateLocation | None,
     ) -> Response:
         return self.rest_api.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -703,8 +699,8 @@ class ExchangesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.remove_exchange(name=name, location=location)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_exchange(identifier=identifier)
 
 
 class ExchangesDataResource(BaseMethodView):
@@ -1109,7 +1105,7 @@ class BanksResource(BaseMethodView):
 
     put_schema = BanksResourceAddSchema()
     patch_schema = BanksResourceEditSchema()
-    delete_schema = BankLocationWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1117,35 +1113,50 @@ class BanksResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
-        return self.rest_api.setup_bank(name=name, location=location, credentials=credentials)
+    def put(
+            self,
+            name: str,
+            connector: str,
+            location: LocationIdentifier | None,
+            credentials: dict[str, str],
+    ) -> Response:
+        return self.rest_api.setup_bank(
+            name=name,
+            connector=connector,
+            location=location,
+            credentials=credentials,
+        )
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         return self.rest_api.edit_bank(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             credentials=credentials,
         )
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.remove_bank(name=name, location=location)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_bank(identifier=identifier)
 
 
 class SupportedBanksResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_supported_banks()
+
+
+class SupportedExchangesResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_exchanges()
 
 
 class BankAuthenticationResource(BaseMethodView):
@@ -1155,8 +1166,8 @@ class BankAuthenticationResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: str, location: LocationIdentifier, response: str | None) -> Response:
-        return self.rest_api.answer_bank_authentication(name, location, response)
+    def post(self, identifier: str, response: str | None) -> Response:
+        return self.rest_api.answer_bank_authentication(identifier, response)
 
 
 class BankSyncResource(BaseMethodView):
@@ -1166,8 +1177,12 @@ class BankSyncResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, location: LocationIdentifier | None, name: str | None, async_query: bool) -> Response:  # noqa: E501
-        return self.rest_api.sync_banks(location=location, name=name, async_query=async_query)
+    def post(self, connector: str | None, identifier: str | None, async_query: bool) -> Response:
+        return self.rest_api.sync_banks(
+            connector=connector,
+            identifier=identifier,
+            async_query=async_query,
+        )
 
 
 class BankBalancesResource(BaseMethodView):
@@ -1538,13 +1553,13 @@ class ExchangeEventsQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: LocationIdentifier,
+            location: LocationIdentifier | None,
+            identifier: str | None,
             async_query: bool,
-            name: str | None = None,
     ) -> Response:
         return self.rest_api.query_exchange_history_events(
-            name=name,
             location=location,
+            identifier=identifier,
             async_query=async_query,
         )
 
@@ -1557,15 +1572,13 @@ class ExchangeEventsRangeQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: LocationIdentifier,
-            name: str,
+            identifier: str,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
         return self.rest_api.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             async_query=async_query,
@@ -3052,11 +3065,11 @@ class BinanceHistoryStartTimestampResource(BaseMethodView):
 
 class BinanceUserMarkets(BaseMethodView):
 
-    get_schema = BinanceMarketsUserSchema()
+    get_schema = ConnectionIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.get_user_binance_pairs(name=name, location=location)
+    def get(self, identifier: str) -> Response:
+        return self.rest_api.get_user_binance_pairs(identifier=identifier)
 
 
 class BinanceSavingsResource(BaseMethodView):

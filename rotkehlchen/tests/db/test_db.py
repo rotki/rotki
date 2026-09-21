@@ -142,7 +142,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     CostBasisMethod,
-    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -275,12 +274,10 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-@pytest.mark.parametrize('db_settings', [
-    {'non_syncing_exchanges': [ExchangeLocationID(name='Coinbase', location=LOCATION_COINBASE)]}])
 def test_add_remove_exchange(database: DBHandler) -> None:
     """
-    Tests that adding and removing an exchange in the DB works. It also test that
-    deleting an exchange also removes it from the non_syncing_exchanges setting
+    Tests that adding and removing an exchange connection in the DB works. It also tests
+    that deleting a connection removes its progress and its non_syncing_exchanges entry.
 
     Also unknown exchanges should fail.
     """
@@ -288,88 +285,45 @@ def test_add_remove_exchange(database: DBHandler) -> None:
         database.add_exchange('foo', LOCATION_EXTERNAL, ApiKey('api_key'), ApiSecret(b'api_secret'))  # noqa: E501
 
     with database.conn.read_ctx() as cursor:
-        credentials = database.get_exchange_credentials(cursor)
-        assert len(credentials) == 0
+        assert database.get_exchange_credentials(cursor) == []
 
-        kraken_api_key1 = ApiKey('kraken_api_key')
-        kraken_api_secret1 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQ=')
-        kraken_api_key2 = ApiKey('kraken_api_key2')
-        kraken_api_secret2 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')
-        binance_api_key = ApiKey('binance_api_key')
-        binance_api_secret = ApiSecret(b'binance_api_secret')
+    # add mock kraken and binance
+    kraken1_id = database.add_exchange('kraken1', LOCATION_KRAKEN, (kraken_api_key1 := ApiKey('kraken_api_key')), (kraken_api_secret1 := ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQ=')))  # noqa: E501
+    kraken2_id = database.add_exchange('kraken2', LOCATION_KRAKEN, (kraken_api_key2 := ApiKey('kraken_api_key2')), (kraken_api_secret2 := ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')))  # noqa: E501
+    binance_id = database.add_exchange('binance', LOCATION_BINANCE, (binance_api_key := ApiKey('binance_api_key')), (binance_api_secret := ApiSecret(b'binance_api_secret')))  # noqa: E501
+    with pytest.raises(InputError, match='already exists'):  # names are unique per connector
+        database.add_exchange('kraken1', LOCATION_KRAKEN, make_api_key(), make_api_secret())
 
-        # add mock kraken and binance
-        database.add_exchange('kraken1', LOCATION_KRAKEN, kraken_api_key1, kraken_api_secret1)
-        database.add_exchange('kraken2', LOCATION_KRAKEN, kraken_api_key2, kraken_api_secret2)
-        database.add_exchange('binance', LOCATION_BINANCE, binance_api_key, binance_api_secret)
-        # and check the credentials can be retrieved
-        credentials = database.get_exchange_credentials(cursor)
+    def saved() -> set[tuple]:
+        with database.conn.read_ctx() as cursor:
+            return {
+                (x.identifier, x.name, x.connector, x.location, x.api_key, x.api_secret)
+                for x in database.get_exchange_credentials(cursor)
+            }
 
-        # check that we have the coinbase exchange in the list of exchanges to not sync
-        settings = database.get_settings(cursor=cursor)
-        assert next(iter(settings.non_syncing_exchanges)).location == LOCATION_COINBASE
-
-    assert len(credentials) == 2
-    assert len(credentials[LOCATION_KRAKEN]) == 2
-    kraken1 = credentials[LOCATION_KRAKEN][0]
-    assert kraken1.name == 'kraken1'
-    assert kraken1.api_key == kraken_api_key1
-    assert kraken1.api_secret == kraken_api_secret1
-    kraken2 = credentials[LOCATION_KRAKEN][1]
-    assert kraken2.name == 'kraken2'
-    assert kraken2.api_key == kraken_api_key2
-    assert kraken2.api_secret == kraken_api_secret2
-    assert len(credentials[LOCATION_BINANCE]) == 1
-    binance = credentials[LOCATION_BINANCE][0]
-    assert binance.name == 'binance'
-    assert binance.api_key == binance_api_key
-    assert binance.api_secret == binance_api_secret
-
-    # remove an exchange and see it works
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken1', LOCATION_KRAKEN)
-        credentials = database.get_exchange_credentials(cursor)
-    assert len(credentials) == 2
-    assert len(credentials[LOCATION_KRAKEN]) == 1
-    kraken2 = credentials[LOCATION_KRAKEN][0]
-    assert kraken2.name == 'kraken2'
-    assert kraken2.api_key == kraken_api_key2
-    assert kraken2.api_secret == kraken_api_secret2
-    assert len(credentials[LOCATION_BINANCE]) == 1
-    binance = credentials[LOCATION_BINANCE][0]
-    assert binance.name == 'binance'
-    assert binance.api_key == binance_api_key
-    assert binance.api_secret == binance_api_secret
-
-    # remove last exchange of a location and see nothing is returned
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken2', LOCATION_KRAKEN)
-        credentials = database.get_exchange_credentials(cursor)
-    assert len(credentials) == 1
-    assert len(credentials[LOCATION_BINANCE]) == 1
-    binance = credentials[LOCATION_BINANCE][0]
-    assert binance.name == 'binance'
-    assert binance.api_key == binance_api_key
-    assert binance.api_secret == binance_api_secret
-
-    # check that deleting an exchange also removes it from the list of ignored for sync
-    database.add_exchange('Coinbase', LOCATION_COINBASE, make_api_key(), make_api_secret())
-    database.add_exchange('Coinbase 2', LOCATION_COINBASE, make_api_key(), make_api_secret())
-
-    with database.user_write() as write_cursor:
-        database.remove_exchange(
-            write_cursor=write_cursor,
-            name='Coinbase',
-            location=LOCATION_COINBASE,
-        )
-
+    assert saved() == {
+        (kraken1_id, 'kraken1', LOCATION_KRAKEN, LOCATION_KRAKEN, kraken_api_key1, kraken_api_secret1),  # noqa: E501
+        (kraken2_id, 'kraken2', LOCATION_KRAKEN, LOCATION_KRAKEN, kraken_api_key2, kraken_api_secret2),  # noqa: E501
+        (binance_id, 'binance', LOCATION_BINANCE, LOCATION_BINANCE, binance_api_key, binance_api_secret),  # noqa: E501
+    }
+    # a connection is its own location reference, so the exchange location is in use
     with database.conn.read_ctx() as cursor:
-        settings = database.get_settings(cursor=cursor)
-        assert len(settings.non_syncing_exchanges) == 0
-        updated_credentials = database.get_exchange_credentials(cursor)
+        assert DBLocations().usage(cursor, LOCATION_KRAKEN) == {'integration_connections': 2}
 
-    assert len(updated_credentials[LOCATION_BINANCE]) == 1
-    assert updated_credentials[LOCATION_COINBASE][0].name == 'Coinbase 2'
+    # remove an exchange and see it works, along with its progress
+    with database.user_write() as cursor:
+        database.update_used_query_range(cursor, f'{kraken1_id}_history_events', Timestamp(0), Timestamp(1))  # noqa: E501
+        database.set_non_syncing_exchanges(cursor, [kraken1_id, binance_id])
+        database.remove_exchange(cursor, kraken1_id)
+        assert database.get_used_query_range(cursor, f'{kraken1_id}_history_events') is None
+        assert database.get_settings(cursor).non_syncing_exchanges == {binance_id}
+        with pytest.raises(InputError, match='does not exist'):
+            database.remove_exchange(cursor, kraken1_id)
+    assert {x[0] for x in saved()} == {kraken2_id, binance_id}
+
+    with database.user_write() as cursor:
+        database.remove_exchange(cursor, kraken2_id)
+    assert {x[0] for x in saved()} == {binance_id}
 
 
 def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb: int) -> None:
