@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import type { JobBreakdownEntry } from '@/modules/task-center/use-job-breakdown';
+import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { ActivityStatus } from '@/modules/task-center/core/types';
 
 defineProps<{
@@ -15,25 +16,38 @@ interface SectionMark {
   readonly label: string;
 }
 
+/** Tailwind only sees class names written out in full, so each outcome colour is spelled here. */
+const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
+  error: 'text-rui-error',
+  grey: 'text-rui-text-secondary',
+  primary: 'text-rui-primary',
+  success: 'text-rui-success',
+  warning: 'text-rui-warning',
+};
+
+/** The status a section reads as. Trouble outranks completion, so a fully counted section with a failure beneath it never reads as a clean one. */
+function statusOf(entry: JobBreakdownEntry): ActivityStatus {
+  if (entry.problem !== undefined)
+    return entry.problem;
+  return entry.total > 0 && entry.settled === entry.total ? ActivityStatus.COMPLETE : ActivityStatus.PENDING;
+}
+
 /**
- * The one coloured element per section. Trouble outranks completion, so a fully counted section
- * with a failure beneath it never reads as a clean one; unfinished work waits in grey rather than
- * spinning, since a column of spinners says less than the job's own bar.
+ * The one coloured element per section, in the same icons and colours a row's mark uses, so a
+ * cancelled section and a cancelled row read alike. Unfinished work waits rather than spinning,
+ * since a column of spinners says less than the job's own bar.
  */
 function markOf(entry: JobBreakdownEntry): SectionMark {
-  if (entry.problem === ActivityStatus.FAILED)
-    return { className: 'text-rui-error', icon: 'lu-circle-x', label: t('pending_task.status.failed') };
-  if (entry.problem === ActivityStatus.CANCELLED)
-    return { className: 'text-rui-warning', icon: 'lu-circle-alert', label: t('pending_task.status.cancelled') };
-  if (entry.total > 0 && entry.settled === entry.total)
-    return { className: 'text-rui-success', icon: 'lu-circle-check', label: t('pending_task.status.done') };
-  return { className: 'text-rui-text-disabled', icon: 'lu-clock', label: t('pending_task.status.running') };
+  const status = statusOf(entry);
+  const { color, icon, key } = activityOutcome(status);
+  const label = status === ActivityStatus.PENDING ? t('pending_task.status.running') : t(key);
+  return { className: TEXT_COLOR[color], icon, label };
 }
 </script>
 
 <template>
   <div
-    class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs leading-5 text-rui-text-secondary"
+    class="flex flex-wrap gap-x-3 gap-y-1 text-xs leading-4 text-rui-text-secondary"
     data-testid="dock-job-breakdown"
   >
     <div
