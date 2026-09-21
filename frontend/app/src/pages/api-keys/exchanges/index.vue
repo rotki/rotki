@@ -5,16 +5,14 @@ import { externalLinks } from '@shared/external-links';
 import { msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -26,7 +24,6 @@ definePage({
   },
 });
 
-const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();
 const sort = ref<DataTableSortColumn<Exchange>>({
   column: 'name',
@@ -36,15 +33,13 @@ const sort = ref<DataTableSortColumn<Exchange>>({
 const { exchangesWithKey } = storeToRefs(useLocationStore());
 const { removeExchange } = useExchanges();
 const { connectedExchanges: rows } = storeToRefs(useConnectedExchangesStore());
-const current = useSetting('nonSyncingExchanges');
-const { update } = useSettingsOperations();
 const { show } = useConfirmStore();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/api-keys/exchanges/');
 const { getExchangeName } = useLocations();
-const { notify } = useNotificationDispatcher();
+const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   align: 'center',
@@ -86,55 +81,6 @@ function createNewExchange(): ExchangeFormData {
     okxLocation: 'global',
     passphrase: '',
   };
-}
-
-function findNonSyncExchangeIndex(exchange: Exchange) {
-  return get(nonSyncingExchanges).findIndex(
-    (item: Exchange) => item.name === exchange.name && item.location === exchange.location,
-  );
-}
-
-function isNonSyncExchange(exchange: Exchange) {
-  return findNonSyncExchangeIndex(exchange) > -1;
-}
-
-function resetNonSyncingExchanges() {
-  set(nonSyncingExchanges, get(current));
-}
-
-async function toggleSync(exchange: Exchange) {
-  const index = findNonSyncExchangeIndex(exchange);
-
-  const data = [...get(nonSyncingExchanges)];
-
-  let enable = true;
-
-  if (index > -1) {
-    enable = false;
-    data.splice(index);
-  }
-  else {
-    data.push({ location: exchange.location, name: exchange.name });
-  }
-
-  const status = await update({
-    nonSyncingExchanges: data,
-  });
-
-  if (!status.success) {
-    notify({
-      display: true,
-      message: t('exchange_settings.sync.messages.description', {
-        action: enable ? t('exchange_settings.sync.messages.enable') : t('exchange_settings.sync.messages.disable'),
-        location: exchange.location,
-        message: status.message,
-        name: exchange.name,
-      }),
-      title: t('exchange_settings.sync.messages.title'),
-    });
-  }
-
-  resetNonSyncingExchanges();
 }
 
 const { highlight: highlightExchange, rowClass } = useRowHighlight<{ location: string; name: string }>(
