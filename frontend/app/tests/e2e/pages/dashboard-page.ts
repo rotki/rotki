@@ -83,11 +83,8 @@ export class DashboardPage {
       await showMore.click();
 
     const balances = new Map<string, BigNumber>();
-    const tiles = this.page.locator('[data-testid=dashboard-location-tile]');
-    const count = await tiles.count();
 
-    for (let i = 0; i < count; i++) {
-      const tile = tiles.nth(i);
+    for (const tile of await this.settledLocationTiles()) {
       const key = await tile.getAttribute(attribute);
       if (!key)
         continue;
@@ -99,6 +96,31 @@ export class DashboardPage {
 
     await legendRow.click();
     return balances;
+  }
+
+  /**
+   * Resolves the location tiles once the strip has stopped re-rendering.
+   *
+   * @remarks
+   * Selecting a legend row narrows the strip, so a tile count taken while that render is still
+   * in flight can exceed the tiles that survive it. Indexing into the list afterwards then
+   * resolves to nothing at all rather than to an empty amount, which surfaces as
+   * `element(s) not found` on a tile that did render. The strip has settled once every tile
+   * carries its amount, so that is what this waits for before snapshotting the list.
+   *
+   * @returns the settled tiles, in strip order
+   */
+  private async settledLocationTiles(): Promise<Locator[]> {
+    const tiles = this.page.locator('[data-testid=dashboard-location-tile]');
+    const amounts = tiles.locator('[data-testid=display-amount]');
+
+    await expect(async () => {
+      const tileCount = await tiles.count();
+      expect(tileCount).toBeGreaterThan(0);
+      expect(await amounts.count()).toBe(tileCount);
+    }).toPass({ timeout: 60_000 });
+
+    return tiles.all();
   }
 
   async amountDisplayIsBlurred(): Promise<void> {
