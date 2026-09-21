@@ -287,6 +287,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/location-manager/': RouteRecordInfo<
+      '/location-manager/',
+      '/location-manager',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/locations/[identifier]': RouteRecordInfo<
       '/locations/[identifier]',
       '/locations/:identifier',
@@ -835,6 +842,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/import/index.vue': {
       routes:
         | '/import/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/location-manager/index.vue': {
+      routes:
+        | '/location-manager/'
       views:
         | never
       pathParamNames:
