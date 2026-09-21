@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -21,6 +21,7 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage, MockRotkiNotifier
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
@@ -166,14 +167,32 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
     task.get()
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_remediation_sends_running_websocket_update(database: DBHandler) -> None:
-    with patch.object(database.msg_aggregator, 'add_message') as add_message:
-        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
-    add_message.assert_called_once_with(
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.PROGRESS_UPDATES,
         data={'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION)},
     )
+
+
+@pytest.mark.parametrize('state', [IssueState.RESOLVED, IssueState.DISMISSED])
+def test_remediation_skips_final_issues(database: DBHandler, state: IssueState) -> None:
+    manager = DataIssuesManager(database)
+    issue_id, _ = _add_negative_balance_issue(database=database, customized=True)
+    if state == IssueState.RESOLVED:
+        manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+        manager.update_state(issue_id, IssueState.RESOLVED)
+    else:
+        manager.dismiss(issue_id)
+
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    issue = manager.get_issue(issue_id)
+    assert issue.state == state
+    assert issue.auto_remediation_attempts == []
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
@@ -642,7 +661,9 @@ def test_repeated_failed_comparison_records_every_attempt(database: DBHandler) -
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
     assert len(issue.auto_remediation_attempts) == 2
-    assert all(attempt['result'] == 'redecoding_failed' for attempt in issue.auto_remediation_attempts)
+    assert all(
+        attempt['result'] == 'redecoding_failed' for attempt in issue.auto_remediation_attempts
+    )
 
 
 def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
