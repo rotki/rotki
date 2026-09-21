@@ -1347,8 +1347,8 @@ class DBHandler:
 
             write_cursor.execute(
                 'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
-                'AND label=? AND category=?',
-                (chain, address, DEFAULT_BALANCE_LABEL, asset_category),
+                'AND label=? AND category=? AND asset!=?',
+                (chain, address, DEFAULT_BALANCE_LABEL, asset_category, blockchain.get_native_token_id()),  # noqa: E501
             )
             write_cursor.executemany(
                 'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
