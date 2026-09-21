@@ -59,7 +59,10 @@ function toggle(): void {
         :total="total"
         @collapse="modelExpanded = false"
       />
-      <div class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1">
+      <div
+        class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
+        data-testid="dock-sections"
+      >
         <div
           v-for="section in sections"
           :key="section.key"

@@ -36,6 +36,8 @@ function retryAll(): void {
         size="16"
         class="shrink-0 mt-0.5 text-rui-error"
       />
+      <!-- The subject icon's slot, empty, so the label lines up with the rows beside it. -->
+      <div class="size-5 shrink-0 -ml-1" />
       <div class="flex flex-col flex-1 min-w-0 gap-0.5">
         <div class="text-sm leading-5 font-medium text-rui-error">
           {{ t('task_dock.panel.outcome.failed', { count: activities.length }) }}
