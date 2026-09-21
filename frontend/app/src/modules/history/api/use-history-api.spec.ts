@@ -67,7 +67,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAssociatedLocations', () => {
-    it('should return the directly used locations without their ancestors', async () => {
+    it('should return the directly used locations, then their ancestors below the total', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
@@ -79,7 +79,7 @@ describe('composables/api/history/index', () => {
       const { fetchAssociatedLocations } = useHistoryApi();
       const result = await fetchAssociatedLocations();
 
-      expect(result).toEqual(['binance', 'ethereum', 'kraken']);
+      expect(result).toEqual(['binance', 'ethereum', 'kraken', 'blockchain', 'evm chains', 'exchanges']);
     });
 
     it('should return empty array when no locations', async () => {

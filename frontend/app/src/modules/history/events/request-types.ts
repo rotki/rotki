@@ -10,6 +10,7 @@ import type {
   EditSwapEventPayload,
   NewHistoryEventPayload,
 } from '@/modules/history/events/event-edit-payloads';
+import type { LocationScope } from '@/modules/history/events/location-scope';
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
@@ -22,6 +23,7 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly asset?: string;
   readonly counterparties?: string | string[];
   readonly location?: string | string[];
+  readonly locationScope?: LocationScope;
   readonly products?: string | string[];
   readonly entryTypes?: FilterObjectWithBehaviour<string | string[]>;
   readonly txHashes?: string | string[];
