@@ -8,9 +8,8 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { bankEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -30,7 +29,6 @@ interface UseBankEventsRefreshReturn {
 export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notify, notifyError } = useNotifications();
-  const { markLocationCancelled } = useEventsQueryStatusStore();
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
   const store = useBankConnectionsStore();
@@ -94,9 +92,6 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
     if (isErr(outcome)) {
       if (hasTag(outcome.error, 'BackendCancelled') && await pendingChallenge(bank)) {
         notifyAuthenticationRequired(bank);
-      }
-      else if (isCancellation(outcome.error)) {
-        markLocationCancelled({ location, name });
       }
       else if (isActionable(outcome.error)) {
         logger.error(outcome.error);

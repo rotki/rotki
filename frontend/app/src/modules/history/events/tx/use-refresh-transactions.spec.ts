@@ -35,12 +35,6 @@ const mockExchanges: Exchange[] = [
   { location: 'binance', name: 'Binance1' },
 ];
 
-const mockEventsQueryStatusStore = {
-  initializeQueryStatus: vi.fn(),
-  resetQueryStatus: vi.fn(),
-  stopSyncing: vi.fn(),
-};
-
 const mockDisabledChains = {
   filterAccounts: vi.fn((accounts: ChainAddress[]) => accounts),
 };
@@ -203,10 +197,6 @@ vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: vi.fn(() => mockExchangeData),
 }));
 
-vi.mock('@/modules/history/use-events-query-status-store', () => ({
-  useEventsQueryStatusStore: vi.fn(() => mockEventsQueryStatusStore),
-}));
-
 describe('useRefreshTransactions', () => {
   let scope: ReturnType<typeof effectScope>;
 
@@ -308,7 +298,6 @@ describe('useRefreshTransactions', () => {
       });
 
       expect(mockRefreshHandlers.queryAllExchangeEvents).not.toHaveBeenCalled();
-      expect(mockEventsQueryStatusStore.resetQueryStatus).toHaveBeenCalled();
     });
   });
 
@@ -320,7 +309,6 @@ describe('useRefreshTransactions', () => {
         payload: { exchanges: mockExchanges },
       });
 
-      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(mockExchanges, { extend: false });
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges, HISTORY_SYNC_ID);
     });
 
@@ -330,7 +318,6 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges, HISTORY_SYNC_ID);
-      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
     });
   });
 
@@ -375,13 +362,12 @@ describe('useRefreshTransactions', () => {
       ]);
     }
 
-    it('should query and seed the progress of the banks the caller picks', async () => {
+    it('should query the banks the caller picks', async () => {
       connectBank();
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({ payload: { banks: [bank] } });
 
-      expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith([bank], { extend: false });
       expect(mockRefreshHandlers.queryAllBankEvents).toHaveBeenCalledWith([bank], HISTORY_SYNC_ID);
     });
 
@@ -645,7 +631,6 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockOnHistoryFinished).toHaveBeenCalled();
-      expect(mockEventsQueryStatusStore.stopSyncing).toHaveBeenCalled();
     });
   });
 

@@ -1,44 +1,52 @@
 import type { StateHandler } from '@/modules/core/messaging/interfaces';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
-import { HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
+import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createStateHandler } from '@/modules/core/messaging/utils';
 import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
+import { useLiveActivityEntries } from '@/modules/task-center/use-live-activity-entries';
 
+/** One exchange's query, as the frames of its run have described it so far. */
+type ExchangeQueryTracking = Pick<HistoryEventsQueryData, 'eventType' | 'period' | 'status'>;
+
+/**
+ * Turns the backend's exchange and bank query frames into detail on each location's activity.
+ *
+ * @remarks
+ * A frame only updates a location whose query activity is live, so one that lands after the query
+ * ended, or after the user cancelled it, leaves the detail where the query had reached. A range an
+ * earlier frame established is kept when a later frame omits it, for as long as the activity is live;
+ * see `useLiveActivityEntries`.
+ *
+ * Detail only. The activity's status is its own, and an exchange query streams no cursor to report
+ * as progress; `ExchangeEventsDetail` carries why the range it does stream is not one.
+ */
 export function createEventsStatusHandler(): StateHandler {
-  const { getQueryStatus, setQueryStatus } = useEventsQueryStatusStore();
   const { banks } = storeToRefs(useLocationStore());
+  const tracking = useLiveActivityEntries<ExchangeQueryTracking>();
 
-  /**
-   * Mirror one exchange's stored entry onto its activity.
-   *
-   * Read back from the store rather than taken from the frame, so what is published is the merged
-   * entry: the range an earlier message established and a later one omitted, and nothing at all for
-   * a message that arrived while no sync was running.
-   *
-   * A cancelled exchange is left frozen at its last real detail. The store refuses the update but
-   * keeps the entry, so mirroring it anyway would re-publish the seeded range over what the query
-   * had actually reached — an activity that stopped would start reading as one that never began.
-   *
-   * Detail only. The activity's status is its own, and an exchange query streams no cursor to
-   * report as progress — `ExchangeEventsDetail` carries why the range it does stream is not one.
-   */
-  function mirrorToActivity(subject: { location: string; name: string }): void {
-    const entry = getQueryStatus(subject);
-    if (entry === undefined || entry.status === HistoryEventsQueryStatus.CANCELLED)
-      return;
-
-    // a bank streams the same frames as an exchange, but its activity is its own kind
-    const activity = get(banks).includes(entry.location) ? bankEventsActivity : exchangeEventsActivity;
-    publishActivityDetail(activity, { location: entry.location, name: entry.name }, {
-      eventType: entry.eventType,
-      period: entry.period,
-    });
+  /** A bank streams the same frames as an exchange, but its query is an activity of its own kind. */
+  function activityOf(location: string): typeof exchangeEventsActivity {
+    return get(banks).includes(location) ? bankEventsActivity : exchangeEventsActivity;
   }
 
   return createStateHandler((data) => {
-    setQueryStatus(data);
-    mirrorToActivity({ location: data.location, name: data.name });
+    const subject = { location: data.location, name: data.name };
+    const activity = activityOf(data.location);
+    const address = { kind: activity.kind, parts: activity.partsOf(subject) };
+    if (!tracking.isLive(address))
+      return;
+
+    const entry: ExchangeQueryTracking = {
+      eventType: data.eventType,
+      period: data.period ?? tracking.read(address)?.period,
+      status: data.status,
+    };
+    tracking.write(address, entry);
+
+    if (entry.status === HistoryEventsQueryStatus.CANCELLED)
+      return;
+
+    publishActivityDetail(activity, subject, { eventType: entry.eventType, period: entry.period });
   });
 }

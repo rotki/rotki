@@ -10,14 +10,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 async function setup(): Promise<{
   status: ReturnType<typeof import('./use-history-events-status').useHistoryEventsStatus>;
   orchestrator: ReturnType<typeof import('@/modules/task-center/use-task-orchestrator').useTaskOrchestrator>;
-  eventsStore: ReturnType<typeof import('@/modules/history/use-events-query-status-store').useEventsQueryStatusStore>;
   types: typeof import('@/modules/task-center/core/types');
 }> {
   vi.resetModules();
-  const [statusModule, orchestratorModule, eventsModule, types] = await Promise.all([
+  const [statusModule, orchestratorModule, types] = await Promise.all([
     import('./use-history-events-status'),
     import('@/modules/task-center/use-task-orchestrator'),
-    import('@/modules/history/use-events-query-status-store'),
     import('@/modules/task-center/core/types'),
   ]);
 
@@ -25,7 +23,6 @@ async function setup(): Promise<{
   orchestrator.reset();
 
   return {
-    eventsStore: eventsModule.useEventsQueryStatusStore(),
     orchestrator,
     status: statusModule.useHistoryEventsStatus(),
     types,
@@ -38,10 +35,8 @@ describe('useHistoryEventsStatus', () => {
   });
 
   describe('shouldFetchEventsRegularly', () => {
-    it('should be off when the store still lists unfinished work but the ledger is idle', async () => {
-      const { eventsStore, status } = await setup();
-
-      eventsStore.initializeQueryStatus([{ location: 'kraken', name: 'Kraken' }]);
+    it('should be off while nothing runs', async () => {
+      const { status } = await setup();
 
       expect(get(status.shouldFetchEventsRegularly)).toBe(false);
     });

@@ -40,10 +40,6 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
 
-vi.mock('@/modules/history/use-events-query-status-store', () => ({
-  useEventsQueryStatusStore: vi.fn(() => ({ markLocationCancelled: vi.fn() })),
-}));
-
 vi.mock('@/modules/session/use-module-enabled', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/modules/session/use-module-enabled')>();
   return {

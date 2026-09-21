@@ -12,7 +12,6 @@ import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-hand
 import { useTransactionSync } from '@/modules/history/events/tx/use-transaction-sync';
 import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
@@ -41,7 +40,6 @@ interface PlannedOperation {
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
 
-  const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
   const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
@@ -86,21 +84,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (targets.fullRefresh || disableEvmEvents)
       return [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS];
     return queries ?? [];
-  }
-
-  /** Same continuation rule as {@link initializeRefresh}, for the exchange half of the panel. */
-  function seedExchangeProgress(targets: RefreshTargets, wave: RefreshWave): void {
-    const continuation = wave === RefreshWave.CONTINUATION;
-
-    if (!continuation)
-      resetExchangesQueryStatus();
-
-    if (targets.shouldShowSyncProgress) {
-      initializeExchangeEventsQueryStatus([
-        ...(targets.queryExchanges ? targets.usedExchanges : []),
-        ...(targets.queryBanks ? targets.usedBanks : []),
-      ], { extend: continuation });
-    }
   }
 
   /**
@@ -150,12 +133,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     disableEvmEvents: boolean,
     queries: OnlineHistoryEventsQueryType[] | undefined,
     umbrella: ActivityId,
-    wave: RefreshWave,
   ): Promise<Result<void, TaskError>> {
     if (targets.fullRefresh || targets.decodableAccounts.length > 0)
       await fetchUndecodedTransactionsBreakdown();
-
-    seedExchangeProgress(targets, wave);
 
     const asyncOperations = planOperations(targets, historySyncFlow.children({
       accounts: targets.accounts,
@@ -280,7 +260,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         initializeRefresh(targets, wave);
 
         try {
-          return await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId, wave);
+          return await executeOperations(targets, disableEvmEvents, payload.queries, umbrellaId);
         }
         catch (error) {
           logger.error(error);
@@ -288,7 +268,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         }
         finally {
           onHistoryFinished();
-          stopEventsSyncing();
           sigilBus.emit('history:ready');
         }
       },
