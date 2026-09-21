@@ -321,7 +321,7 @@ def test_add_edit_delete_entries(
     json_data['asset'] = A_ETH.identifier
     for location, error_msg in (
         (LOCATION_BITCOIN, 'bitcoin events must use BTC as the asset'),
-        (LOCATION_BITCOIN_CASH, 'bitcoin_cash events must use BCH as the asset'),
+        (LOCATION_BITCOIN_CASH, 'bitcoin cash events must use BCH as the asset'),
     ):
         json_data['location'] = location
         assert_error_response(
@@ -1537,7 +1537,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
         'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'counterparty': 'some counterparty',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
-        'auto_notes': 'Swap 50 USDT in Ethereum',
+        'auto_notes': 'Swap 50 USDT in Ethereum Mainnet',
     }
 
 

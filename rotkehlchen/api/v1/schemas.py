@@ -56,6 +56,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_substrate_address,
 )
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_ETH2
+from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.constants.misc import ONE, VALID_LOGLEVELS, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
@@ -1060,7 +1061,7 @@ class CreateHistoryEventSchema(Schema):
             ):
                 expected_asset = 'BTC' if location == LOCATION_BITCOIN else 'BCH'
                 raise ValidationError(
-                    message=f'{location.name.lower()} events must use {expected_asset} as the asset',  # noqa: E501
+                    message=f'{location} events must use {expected_asset} as the asset',
                     field_name='asset',
                 )
 
@@ -2207,13 +2208,13 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
 
         if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
             raise ValidationError(
-                f'{location.name.title()} requires an API secret',
+                f'{get_formatted_location_name(location)} requires an API secret',
                 field_name='api_secret',
             )
 
         if location in EXCHANGES_WITH_PASSPHRASE and not data.get('passphrase'):
             raise ValidationError(
-                f'{location.name.title()} requires a passphrase',
+                f'{get_formatted_location_name(location)} requires a passphrase',
                 field_name='passphrase',
             )
 
@@ -3988,7 +3989,7 @@ class LocationDataSnapshotSchema(Schema):
     ) -> LocationData:
         return LocationData(
             time=data['timestamp'],
-            location=data['location'].serialize_for_db(),
+            location=data['location'],
             usd_value=str(data['usd_value']),
         )
 
