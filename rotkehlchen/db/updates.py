@@ -227,6 +227,11 @@ class RotkiDataUpdater:
                 }
                 if chain_added or chain_removed:
                     inquirer.refresh_nodes(added=chain_added, removed=chain_removed)
+                    inquirer.connect_to_multiple_nodes([
+                        node for node in self.user_db.get_rpc_nodes(
+                            blockchain=inquirer.blockchain, only_active=True,
+                        ) if node.node_info in chain_added
+                    ])
 
     def update_accounting_rules(
             self,
