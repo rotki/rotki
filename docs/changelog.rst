@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Turning syncing back on for one exchange under API Keys -> Exchanges no longer turns it back on for every exchange listed after it that you had paused.
 * :bug:`-` Updates to the default RPC node lists now take effect immediately, so newly added nodes can be used without logging out and back in.
 * :bug:`-` Pasting a date into a date and time field, such as the one in the add event form, now works when the text leaves out the seconds or milliseconds, uses ISO format, carries a timezone, or is a unix timestamp. Text that is not a date shows a message instead of doing nothing.
 * :bug:`-` Profit and loss reports no longer show a misleading missing accounting rule warning for trade receive events when the spent asset is ignored.
