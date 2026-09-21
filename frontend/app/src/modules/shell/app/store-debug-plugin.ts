@@ -65,6 +65,21 @@ function setState(key: string, state: any): void {
   storage.setItem(PREFIX + key, JSON.stringify(convert(state)));
 }
 
+/**
+ * Puts a persisted state back into its store, one top-level key at a time.
+ *
+ * @remarks
+ * Not `$patch` with the object: Pinia deep-merges an object patch into the live state, and it
+ * treats a class instance as a plain object, so it writes the persisted fields into whatever the
+ * state holds, shared instances included, such as the settings store's `Currency` from the
+ * currencies list. Assigning each key replaces the value instead.
+ */
+function restoreState(store: PiniaPluginContext['store'], persisted: Record<string, unknown>): void {
+  store.$patch((state) => {
+    Object.assign(state, persisted);
+  });
+}
+
 function shouldPersistStore(): any {
   const debugSettings = window.interop?.debugSettings?.();
   const menuEnabled = debugSettings?.persistStore;
@@ -92,7 +107,7 @@ export function StoreStatePersistsPlugin(context: PiniaPluginContext): void {
         fromStorage.componentsLoaded = false;
         fromStorage.componentsReady = false;
       }
-      store.$patch(fromStorage);
+      restoreState(store, fromStorage);
     }
   }
   catch (error) {
