@@ -1,5 +1,6 @@
 import type { ShallowRef } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
+import type { LocationQueryRaw, RouteLocationRaw } from 'vue-router';
+import { omit } from 'es-toolkit';
 import { DIALOG_TYPES, type DialogShowOptions, type DialogType } from '@/modules/history/events/dialog-types';
 
 /**
@@ -29,10 +30,15 @@ export function isRoutableDialogType(type: DialogType): type is RoutableDialogTy
   return Object.values(QUERY_TO_DIALOG).some(options => options.type === type);
 }
 
+/** The query that opens the given dialog once the history events page reads it. */
+export function historyDialogQuery(type: RoutableDialogType): LocationQueryRaw {
+  const key = Object.keys(QUERY_TO_DIALOG).filter(isDialogQueryKey).find(candidate => QUERY_TO_DIALOG[candidate].type === type);
+  return key ? { [key]: 'true' } : {};
+}
+
 /** The route that lands on the history events page with the given dialog open. */
 export function historyDialogRoute(type: RoutableDialogType): RouteLocationRaw {
-  const key = Object.keys(QUERY_TO_DIALOG).filter(isDialogQueryKey).find(candidate => QUERY_TO_DIALOG[candidate].type === type);
-  return { name: '/history/events/', query: key ? { [key]: 'true' } : {} };
+  return { name: '/history/events/', query: historyDialogQuery(type) };
 }
 
 interface DialogOpener {
@@ -42,6 +48,10 @@ interface DialogOpener {
 /**
  * Opens the dialog an incoming route asked for, then drops the key so a back-navigation or a
  * reload does not reopen it.
+ *
+ * @remarks
+ * Only the dialog's key is dropped. The rest of the query is the table's filters, page and sort,
+ * which a request made from this page carries along and must keep.
  *
  * `nextTick` before showing: on the immediate run the container has not mounted yet, so the ref is
  * still null.
@@ -57,6 +67,6 @@ export function useHistoryEventsDialogRouting(container: ShallowRef<DialogOpener
 
     await nextTick();
     get(container)?.show(QUERY_TO_DIALOG[key]);
-    await router.replace({ query: {} });
+    await router.replace({ query: omit(query, [key]) });
   });
 }

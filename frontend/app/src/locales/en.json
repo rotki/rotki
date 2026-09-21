@@ -6635,9 +6635,7 @@
           "title": "Unmatched asset movements"
         }
       },
-      "review_ignored": "Review ignored",
-      "subtitle_checking": "Waiting for the history sync to finish.",
-      "subtitle_clear": "Everything in your history has been checked."
+      "review_ignored": "Review ignored"
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",

@@ -51,6 +51,16 @@ describe('modules/history/events/use-history-events-dialog-routing', () => {
     expect(replace).toHaveBeenCalledExactlyOnceWith({ query: {} });
   });
 
+  it('should drop only the dialog key, keeping the filters a request from this page carried along', async () => {
+    route.query = { limit: '25', location: 'kraken', openMatchBridgesDialog: 'true', page: '3' };
+
+    const show = setup();
+    await flushPromises();
+
+    expect(show).toHaveBeenCalledExactlyOnceWith({ type: DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS });
+    expect(replace).toHaveBeenCalledExactlyOnceWith({ query: { limit: '25', location: 'kraken', page: '3' } });
+  });
+
   it('should leave the page alone when the query names no dialog', async () => {
     route.query = { groupIdentifiers: 'a,b' };
 

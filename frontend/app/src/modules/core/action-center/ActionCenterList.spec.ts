@@ -25,19 +25,21 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
+/** One section holding the given rows, for the cases that are not about grouping. */
+function history(items: ActionItem[]): ActionCenterSection[] {
+  return [{ id: 'history', items, title: 'History' }];
+}
+
 interface ListProps {
-  items: ActionItem[];
   sections: ActionCenterSection[];
   cleared: ActionItem[];
   count: number;
   checking?: boolean;
   refreshing?: boolean;
-  checkingHint?: string;
-  clearHint?: string;
 }
 
 /**
- * Mounts the list with one item and the remaining required props filled in.
+ * Mounts the list with one row and the remaining required props filled in.
  *
  * @remarks
  * The wrapper carries no type argument because a generic SFC has no `InstanceType` to name.
@@ -47,7 +49,7 @@ function mountList(props: Partial<ListProps> = {}): VueWrapper {
     props: {
       cleared: [],
       count: 1,
-      items: [createItem()],
+      sections: history([createItem()]),
       ...props,
     },
   });
@@ -66,7 +68,7 @@ describe('modules/core/action-center/ActionCenterList', () => {
 
   it('should hand the row target up when a row is actioned', async () => {
     const target: ActionTarget = { kind: 'run', run: (): void => {} };
-    const wrapper = mountList({ items: [createItem({ target })] });
+    const wrapper = mountList({ sections: history([createItem({ target })]) });
 
     await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
 
@@ -74,7 +76,7 @@ describe('modules/core/action-center/ActionCenterList', () => {
   });
 
   it('should show a premium gate instead of the action on a locked row', () => {
-    const wrapper = mountList({ items: [createItem({ locked: true, minimumTier: 'Basic' })] });
+    const wrapper = mountList({ sections: history([createItem({ locked: true, minimumTier: 'Basic' })]) });
 
     expect(wrapper.find('[data-testid=actions-center-row-count]').text()).toBe('3');
     expect(wrapper.find('[data-testid=actions-center-row-locked]').exists()).toBe(true);
@@ -86,7 +88,7 @@ describe('modules/core/action-center/ActionCenterList', () => {
     const wrapper = mountList({
       cleared: [createItem({ checkTarget, count: 0, id: 'auto-fix-duplicates' })],
       count: 0,
-      items: [],
+      sections: [],
     });
 
     await wrapper.find('[data-testid=actions-center-cleared-row][data-key="auto-fix-duplicates"]').trigger('click');
@@ -107,26 +109,15 @@ describe('modules/core/action-center/ActionCenterList', () => {
       checking: true,
       cleared: [createItem({ count: 0, id: 'undecoded' })],
       count: 0,
-      items: [],
+      sections: [],
     });
 
     expect(wrapper.find('[data-testid=actions-center-cleared]').exists()).toBe(false);
     expect(wrapper.text()).toContain('action_center.title_checking');
   });
 
-  it('should prefer the domain hints over the generic wording', () => {
-    const checking = mountList({ checking: true, checkingHint: 'waiting for the sync', count: 0, items: [] });
-    const clear = mountList({ clearHint: 'your history is clean', count: 0, items: [] });
-
-    expect(checking.text()).toContain('waiting for the sync');
-    expect(checking.text()).not.toContain('action_center.subtitle_checking');
-    expect(clear.text()).toContain('your history is clean');
-    expect(clear.text()).not.toContain('action_center.subtitle_clear');
-  });
-
   it('should group rows under their section headings, in the order the sections come', () => {
     const wrapper = mountList({
-      items: [createItem({ id: 'ignored-flat-row' })],
       sections: [
         { id: 'history', items: [createItem({ id: 'undecoded' })], title: 'History' },
         {
@@ -141,39 +132,15 @@ describe('modules/core/action-center/ActionCenterList', () => {
     expect(sections.map(section => section.attributes('data-key'))).toEqual(['history', 'chains']);
     expect(sections[1].text()).toContain('Chains & nodes');
     expect(sections[1].findAll('[data-testid=actions-center-row]')).toHaveLength(2);
-    expect(wrapper.find('[data-testid=actions-center-row][data-key="ignored-flat-row"]').exists()).toBe(false);
   });
 
-  it('should hand a sectioned row target up the same way as a flat one', async () => {
-    const target: ActionTarget = { kind: 'run', run: (): void => {} };
-    const wrapper = mountList({
-      items: [],
-      sections: [{ id: 'assets', items: [createItem({ id: 'missing-exchange-mappings', target })], title: 'Assets' }],
-    });
-
-    await wrapper.find('[data-testid=actions-center-row-action]').trigger('click');
-
-    expect(wrapper.emitted('open')).toEqual([[target]]);
-  });
-
-  describe('a row option', () => {
+  it('should hand a row option target up as an open', async () => {
     const guide: ActionTarget = { kind: 'external', url: 'https://docs.rotki.com' };
     const item = createItem({ options: [{ icon: 'lu-book-open', id: 'guide', label: 'Guide', target: guide }] });
+    const wrapper = mountList({ sections: [{ id: 'integrations', items: [item], title: 'Integrations' }] });
 
-    it('should hand its target up as an open from a flat list', async () => {
-      const wrapper = mountList({ items: [item] });
+    await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
 
-      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
-
-      expect(wrapper.emitted('open')).toEqual([[guide]]);
-    });
-
-    it('should hand its target up as an open from a section', async () => {
-      const wrapper = mountList({ items: [], sections: [{ id: 'integrations', items: [item], title: 'Integrations' }] });
-
-      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
-
-      expect(wrapper.emitted('open')).toEqual([[guide]]);
-    });
+    expect(wrapper.emitted('open')).toEqual([[guide]]);
   });
 });
