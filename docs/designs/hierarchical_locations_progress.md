@@ -18,7 +18,7 @@ section.
 | 5 | Custom location API (CRUD, usage, image upload) | B | done |
 | 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | done |
 | 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | done |
-| 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
+| 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | done |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
 
 Transitional state: none left from sections 1-5. Section 6 gave FinTS connections their own
@@ -329,4 +329,43 @@ needs no change.
   exports carry identifiers and paths (section 4).
 - Until section 8 adds the preflight UI, a generic import with an unknown location value fails
   in the frontend with the 409 message instead of landing at External.
+
+## Section 8 notes
+
+- `modules/locations/`: `useLocationTreeStore` (nodes from `GET /locations`, `pathOf`,
+  `childrenOf`, `subtreeOf`, `assignableNodes`) loaded with the session by `useLocationTree`;
+  `useLocationTreeApi` covers the tree, usage, image and alias endpoints. `/locations/all` stays
+  the source of the packaged display details of built-ins (images, dark mode images, detail
+  paths); `useLocationStore.tradeLocations` appends the custom nodes, so `LocationIcon`,
+  `LocationDisplay` and every existing view render custom locations. A custom image is served by
+  the backend (`locationImageUrl`, the stored name busting the cache).
+- Icons: the app registers only icon names that appear in its source (`virtual:rotki-icons`), so
+  custom locations pick from `LOCATION_ICONS` (`location-icons.ts`); an icon the backend holds
+  that is not in the list shows the default `lu-map-pin`.
+- `LocationSelector` is tree aware for every form using it: without explicit `items` it offers
+  the active non-root locations plus the current value (old records at archived locations still
+  show), labelled and searched by path (`location-options.ts`). Explicit `items` (purge, snapshot
+  lists) are offered as given.
+- Location manager page (`pages/location-manager`, drawer section 2): tree table
+  (`location-rows.ts`), create/edit dialog with icon picker and image upload, a move is
+  previewed with `dry_run` and only saved after confirming the old and new path, archive and
+  restore, delete that shows the usage dialog (with an archive shortcut) when the location is
+  used, and the location aliases card.
+- History: a location filter always covers the subtree (`withLocationScope` in the history
+  events API client, for fetch, export, delete and group position), and the filter suggests the
+  ancestors of the used locations too. Exact scope stays available through the API; the filter
+  bar has no scope pill because params need their own plumbing through the history query sources
+  and a leaf filters the same either way.
+- Import: rotki events/trades imports run `/import/preflight` first; unknown or ambiguous values
+  open `ImportLocationMappingDialog` (choose, or create a location named after the value), the
+  mappings go to `/import` as a JSON string (the request's key conversion would rename the
+  values), and the choices can be saved as aliases after the import succeeds.
+- The cex mapping screen already says "Exchange" to the user; its model keeps `location`
+  internally and the API client translates to `connector` (section 6).
+- Not done here: report (PnL) location filters do not exist in the frontend, so there is nothing
+  to make subtree aware.
+- e2e: the CSV import page object maps unknown locations (`mapUnknownLocations`) and the rotki
+  generic import specs map `luno`/`cex` to External. The e2e suite could not be run in the
+  development sandbox (Chromium lacks system libraries there); run the manual balances, history
+  events, snapshot edit, exchange purge and CSV import specs before merging.
 

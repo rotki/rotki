@@ -31,7 +31,7 @@ test.describe.serial('csv import', () => {
   test('import rotki generic events', async () => {
     await importPage.visit();
     await importPage.selectSource('Custom');
-    await importPage.importCsv('rotki_events', 'rotki_generic_events.csv');
+    await importPage.importCsv('rotki_events', 'rotki_generic_events.csv', 'External');
 
     // Navigate to history and filter by coinbase (unique to this CSV: 0.091 BTC loss)
     await historyPage.visit();
@@ -50,7 +50,7 @@ test.describe.serial('csv import', () => {
   test('import rotki generic trades', async () => {
     await importPage.visit();
     await importPage.selectSource('Custom');
-    await importPage.importCsv('rotki_trades', 'rotki_generic_trades.csv');
+    await importPage.importCsv('rotki_trades', 'rotki_generic_trades.csv', 'External');
 
     // Navigate to history and filter by kraken (has LTC→BTC trade from this CSV)
     await historyPage.visit();
