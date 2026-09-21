@@ -10,6 +10,7 @@ import {
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,
+  WaitingReason,
 } from '@/modules/task-center/core/types';
 
 const NOW = 1_000_000;
@@ -48,6 +49,20 @@ describe('dockActivityRow', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
+  });
+
+  describe('why it waits', () => {
+    it('should say why a queued row has not started', () => {
+      const wrapper = createWrapper({
+        activity: activity({ status: ActivityStatus.PENDING, waiting: { reason: WaitingReason.HISTORY_SYNC } }),
+      });
+
+      expect(wrapper.find('[data-testid=activity-waiting]').text()).toBe('task_dock.waiting.history_sync');
+    });
+
+    it('should leave the line out for a row that is not waiting', () => {
+      expect(createWrapper().find('[data-testid=activity-waiting]').exists()).toBe(false);
+    });
   });
 
   describe('what it names', () => {
