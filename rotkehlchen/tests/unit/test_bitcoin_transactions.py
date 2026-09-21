@@ -1720,6 +1720,71 @@ def test_mempool_pagination_stops_on_a_repeated_page(bitcoin_manager: BitcoinMan
     assert [x.tx_id for x in txs] == [tx['txid']]
 
 
+@pytest.mark.parametrize('first_page_confirmed', [True, False])
+def test_mempool_pagination_falls_back_to_chain_pages(
+        bitcoin_manager: BitcoinManager,
+        first_page_confirmed: bool,
+) -> None:
+    """The esplora of blockstream ignores `after_txid` and serves the first page again. A
+    repeated page with more than one transaction known means that, so the confirmed
+    history is paged via esplora's `/txs/chain/{txid}` from the last confirmed transaction
+    of the first page, or from the start when the first page held only mempool entries.
+    """
+    address = P2WPKH_ADDRESS
+    unconfirmed_txs = [_esplora_tx(block_height=None, block_time=1), _esplora_tx(block_height=None, block_time=2)]  # noqa: E501
+    confirmed_txs = [
+        _esplora_tx(block_height=900_010, block_time=1700000300),
+        _esplora_tx(block_height=900_005, block_time=1700000200),
+        _esplora_tx(block_height=899_990, block_time=1699999000),
+        _esplora_tx(block_height=850_000, block_time=1600000000),
+    ]
+    if first_page_confirmed:
+        page_1 = unconfirmed_txs + confirmed_txs[:2]
+        chain_page_1_path = f'/address/{address}/txs/chain/{confirmed_txs[1]["txid"]}'
+    else:
+        page_1 = unconfirmed_txs
+        chain_page_1_path = f'/address/{address}/txs/chain'
+
+    with _mock_esplora_pages({
+        f'/address/{address}/txs': page_1,
+        f'/address/{address}/txs?after_txid={page_1[-1]["txid"]}': page_1,
+        chain_page_1_path: confirmed_txs[2:3] if first_page_confirmed else confirmed_txs[:3],
+        f'/address/{address}/txs/chain/{confirmed_txs[2]["txid"]}': confirmed_txs[3:],
+    }) as requests_mock:
+        block_height, txs = bitcoin_manager._query_mempool_transactions(
+            base_url='https://mempool.example/api',
+            accounts=[address],
+            options={'last_queried_block': 880_000, 'to_timestamp': ts_now()},
+        )
+
+    assert requests_mock.call_count == 4  # no request for the page after 850_000
+    assert block_height == 900_010
+    assert [tx.block_height for tx in txs] == [900_010, 900_005, 899_990]
+
+
+def test_mempool_pagination_fails_when_chain_pages_repeat_too(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """An api serving a known page under both paginations can't be paged. That must fail the
+    query, so that no block height gets cached past the history it never reached.
+    """
+    address = P2WPKH_ADDRESS
+    page = [_esplora_tx(block_height=900_010), _esplora_tx(block_height=900_005)]
+    with (
+        _mock_esplora_pages({
+            f'/address/{address}/txs': page,
+            f'/address/{address}/txs?after_txid={page[-1]["txid"]}': page,
+            f'/address/{address}/txs/chain/{page[-1]["txid"]}': page,
+        }),
+        pytest.raises(RemoteError, match='served an already seen page'),
+    ):
+        bitcoin_manager._query_mempool_transactions(
+            base_url='https://mempool.example/api',
+            accounts=[address],
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+
+
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
 def test_custom_mempool_api_queries_transactions(
         bitcoin_manager: BitcoinManager,
