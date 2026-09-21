@@ -3,9 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
-const APP_ROOT = join(import.meta.dirname, '../..');
+const DIST_DIR = join(import.meta.dirname, '../../dist');
+
+/** Raw V8 coverage waiting for `scripts/e2e-coverage-report.ts`, which reads it from here. */
 const V8_COVERAGE_DIR = join(import.meta.dirname, '.v8-coverage');
+
+/** How long a responsive page needs to hand over its coverage; well under the test timeout. */
+const STOP_TIMEOUT_MS = 15_000;
 
 /**
  * Check if coverage collection is enabled via environment variable.
@@ -15,55 +21,20 @@ export function isCoverageEnabled(): boolean {
 }
 
 /**
- * Paths to exclude from coverage (similar to istanbul ignore file).
- */
-const EXCLUDED_PATHS = [
-  '/src/main.ts',
-  '/src/router/index.ts',
-];
-
-/**
- * Check if a filename looks like a bundled/hashed file (e.g., utils-D1WHamuv.js)
+ * Finds the bundle chunk in `dist/` that the preview server answered `url` with.
  *
  * @remarks
- * Matches `Name-[hash].js` or `.css`, where the hash is eight alphanumeric characters.
+ * Only the preview bundle is covered: the report reads each chunk and its source map from disk.
+ * The Vite dev server that interactive runs use serves modules that exist only as responses, so
+ * their coverage is dropped here.
  */
-function isBundledFile(pathname: string): boolean {
-  return /^\/[^/]+-\w{8}\.(js|css)$/.test(pathname);
-}
+function bundleChunkOf(url: string): string | undefined {
+  const { hostname, pathname } = new URL(url);
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1')
+    return undefined;
 
-/**
- * Convert a URL from the dev/preview server to a local file path.
- * Dev server: http://localhost:8080/src/App.vue → /absolute/path/to/src/App.vue
- * Preview (bundled): http://localhost:8080/utils-D1WHamuv.js → /absolute/path/to/dist/utils-D1WHamuv.js
- */
-function urlToFilePath(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    // Only process localhost URLs
-    if (!parsed.hostname.includes('localhost'))
-      return null;
-
-    const pathname = parsed.pathname;
-
-    // Skip node_modules and vite internals
-    if (pathname.includes('node_modules') || pathname.startsWith('/@'))
-      return null;
-
-    // Skip excluded paths
-    if (EXCLUDED_PATHS.some(excluded => pathname.endsWith(excluded)))
-      return null;
-
-    // A bundled asset maps to dist, from which c8 follows source maps back to the source.
-    if (isBundledFile(pathname))
-      return join(APP_ROOT, 'dist', pathname);
-
-    // For dev server, convert to source path
-    return join(APP_ROOT, pathname);
-  }
-  catch {
-    return null;
-  }
+  const chunk = join(DIST_DIR, decodeURIComponent(pathname));
+  return chunk.endsWith('.js') && existsSync(chunk) ? chunk : undefined;
 }
 
 /**
@@ -80,42 +51,37 @@ export async function startCoverage(page: Page): Promise<void> {
 }
 
 /**
- * Stop V8 coverage collection and save to temp directory.
- * Coverage files accumulate across tests and are converted to lcov
- * by running the test:e2e:coverage:report script after all tests complete.
+ * Stop V8 coverage collection and save it for the report.
+ *
+ * @remarks
+ * Coverage files accumulate across tests and are converted to lcov by the
+ * `test:e2e:coverage:report` script after all tests complete.
+ *
+ * Stopping needs the page to answer, so a test that leaves its tab frozen would otherwise only
+ * fail on the teardown timeout, with nothing pointing at the cause.
  */
 export async function stopCoverage(page: Page): Promise<void> {
   if (!isCoverageEnabled())
     return;
 
-  const coverage = await page.coverage.stopJSCoverage();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const unresponsive = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`Could not collect coverage: the page at ${page.url()} stopped responding`));
+    }, STOP_TIMEOUT_MS);
+  });
+  const coverage = await Promise.race([page.coverage.stopJSCoverage(), unresponsive]).finally(() => {
+    clearTimeout(timer);
+  });
 
-  if (coverage.length === 0)
+  const result = coverage.flatMap((entry) => {
+    const chunk = bundleChunkOf(entry.url);
+    return chunk ? [{ scriptId: '0', url: pathToFileURL(chunk).href, functions: entry.functions }] : [];
+  });
+
+  if (result.length === 0)
     return;
 
-  // Ensure coverage directory exists
-  if (!existsSync(V8_COVERAGE_DIR)) {
-    mkdirSync(V8_COVERAGE_DIR, { recursive: true });
-  }
-
-  // Convert URLs to file paths and filter out non-source files
-  const v8CoverageData = coverage
-    .map((entry) => {
-      const filePath = urlToFilePath(entry.url);
-      if (!filePath)
-        return null;
-
-      return {
-        scriptId: '0',
-        url: `file://${filePath}`,
-        functions: entry.functions,
-      };
-    })
-    .filter(Boolean);
-
-  if (v8CoverageData.length === 0)
-    return;
-
-  const coverageFile = join(V8_COVERAGE_DIR, `coverage-${randomUUID()}.json`);
-  writeFileSync(coverageFile, JSON.stringify({ result: v8CoverageData }));
+  mkdirSync(V8_COVERAGE_DIR, { recursive: true });
+  writeFileSync(join(V8_COVERAGE_DIR, `coverage-${randomUUID()}.json`), JSON.stringify({ result }));
 }
