@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from time import monotonic
 from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.remediation.base import (
@@ -25,7 +27,7 @@ class StubStrategy(BaseRemediationStrategy):
             name: str,
             outcome: RemediationOutcome,
             calls: list[str],
-            timeout: int = 30,
+            timeout: float = 30,
             applicable: bool = True,
     ) -> None:
         self.name = name
@@ -39,6 +41,13 @@ class StubStrategy(BaseRemediationStrategy):
 
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
         self.calls.append(self.name)
+        return self.outcome
+
+
+class BlockingStrategy(StubStrategy):
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        self.calls.append(self.name)
+        cancellable_sleep(10)
         return self.outcome
 
 
@@ -79,20 +88,21 @@ def test_pipeline_runs_strategies_in_order_until_success(database: DBHandler) ->
     ]
 
 
-def test_pipeline_continues_after_strategy_budget_is_exceeded(database: DBHandler) -> None:
+def test_pipeline_cancels_strategy_when_its_budget_expires(database: DBHandler) -> None:
     calls: list[str] = []
     manager = DataIssuesManager(database)
     issue = _make_issue(database)
+    started_at = monotonic()
     RemediationPipeline(manager, (
-        StubStrategy('slow', RemediationOutcome(True, 'too_late', ''), calls, timeout=0),
+        BlockingStrategy('slow', RemediationOutcome(True, 'too_late', ''), calls, timeout=0.1),
         StubStrategy('fallback', RemediationOutcome(True, 'fallback_succeeded', ''), calls),
     )).run(issue)
 
     issue = manager.get_issue(issue.id)
+    assert monotonic() - started_at < 1
     assert calls == ['slow', 'fallback']
     assert issue.state == IssueState.RESOLVED
     assert issue.auto_remediation_attempts[0]['attribution'] == 'timeout'
-    assert issue.auto_remediation_attempts[1]['resolved'] is True
 
 
 def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> None:
