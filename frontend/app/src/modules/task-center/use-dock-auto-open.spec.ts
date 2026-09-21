@@ -216,9 +216,40 @@ describe('useDockAutoOpen', () => {
       expect(get(modelExpanded)).toBe(false);
     });
 
-    it('should leave a panel the user already has open as it is', async () => {
+    it('should leave a panel the user opened themselves as it is', async () => {
+      set(modelExpanded, true);
+      await nextTick();
       await start(job('refresh', true));
       await settle(DockState.DONE);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(get(modelExpanded)).toBe(true);
+    });
+
+    it('should fold a panel it opened for the user\'s job once that job finishes cleanly', async () => {
+      await start(job('import', true));
+      await settle(DockState.DONE);
+
+      expect(get(modelExpanded)).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should close a panel it opened for the user\'s job at once when the summary is off', async () => {
+      set(showSummary, false);
+      await start(job('import', true));
+      await settle(DockState.DONE);
+
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should keep a panel it opened for the user\'s job open when that job fails', async () => {
+      set(showSummary, false);
+      await start(job('import', true));
+      await settle(DockState.FAILED);
 
       await vi.advanceTimersByTimeAsync(60_000);
 
