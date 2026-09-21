@@ -326,6 +326,24 @@ def test_current_balance_detection_scope_follows_processing_passes(
         assert spawn_task.call_args.kwargs['from_ts'] is None
 
 
+def test_data_issue_remediation_does_not_run_when_scheduler_disabled(
+        task_manager: TaskManager,
+) -> None:
+    with task_manager.database.user_write() as write_cursor:
+        task_manager.database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            value=ts_now(),
+        )
+    task_manager.should_schedule = False
+    task_manager.potential_tasks = [task_manager._maybe_run_data_issue_remediation]
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        task_manager.schedule()
+
+    spawn_task.assert_not_called()
+
+
 @pytest.mark.parametrize('force', [False, True])
 @pytest.mark.parametrize('active_task', [
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
