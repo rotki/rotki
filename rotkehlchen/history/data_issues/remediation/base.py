@@ -105,36 +105,38 @@ class RemediationPipeline:
         if issue.state in {IssueState.OPEN, IssueState.UNRESOLVED}:
             issue = self.manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
 
-        for strategy in strategies:
-            outcome = self._attempt_with_budget(strategy, issue)
+        try:
+            for strategy in strategies:
+                outcome = self._attempt_with_budget(strategy, issue)
 
-            attempt = {
-                'attribution': outcome.attribution,
-                'strategy': strategy.name,
-                'timestamp': ts_now(),
-                **outcome.attempt_data,
-            }
-            if len(outcome.attempt_data) == 0:
-                attempt['resolved'] = outcome.resolved
-                attempt['success'] = outcome.resolved
-                if outcome.notes != '':
-                    attempt['notes'] = outcome.notes
-                    attempt['reason'] = outcome.notes
-            if outcome.record_attempt:
-                log.debug('Data issue remediation attempt: %s', attempt)
-                self.manager.append_auto_remediation_attempt(issue.id, attempt)
-            if outcome.resolved:
-                self.manager.update_state(
-                    issue_id=issue.id,
-                    state=IssueState.RESOLVED,
-                    resolution={
-                        'attribution': outcome.attribution,
-                        'notes': outcome.notes,
-                        'strategy': strategy.name,
-                    },
-                )
-                return
+                attempt = {
+                    'attribution': outcome.attribution,
+                    'strategy': strategy.name,
+                    'timestamp': ts_now(),
+                    **outcome.attempt_data,
+                }
+                if len(outcome.attempt_data) == 0:
+                    attempt['resolved'] = outcome.resolved
+                    attempt['success'] = outcome.resolved
+                    if outcome.notes != '':
+                        attempt['notes'] = outcome.notes
+                        attempt['reason'] = outcome.notes
+                if outcome.record_attempt:
+                    log.debug('Data issue remediation attempt: %s', attempt)
+                    self.manager.append_auto_remediation_attempt(issue.id, attempt)
+                if outcome.resolved:
+                    self.manager.update_state(
+                        issue_id=issue.id,
+                        state=IssueState.RESOLVED,
+                        resolution={
+                            'attribution': outcome.attribution,
+                            'notes': outcome.notes,
+                            'strategy': strategy.name,
+                        },
+                    )
+                    return
 
-            sleep(0)
-
-        self.manager.update_state(issue.id, IssueState.UNRESOLVED)
+                sleep(0)
+        finally:
+            if self.manager.get_issue(issue.id).state == IssueState.AUTO_REMEDIATING:
+                self.manager.update_state(issue.id, IssueState.UNRESOLVED)
