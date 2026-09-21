@@ -117,8 +117,23 @@ async function checkForTaskCompletion(
 }
 
 /**
- * Creates a new user account via API.
- * Also logs in to colibri to establish the session.
+ * Turns off the task dock's end-of-batch summary for the logged-in user.
+ *
+ * @remarks
+ * The summary opens the panel in the bottom-right corner and holds it open while the pointer is
+ * over it. A click aimed at anything underneath moves the pointer there, so the panel never folds
+ * and the click times out.
+ */
+async function apiDisableDockSummary(request: APIRequestContext): Promise<void> {
+  const response = await request.patch(`${backendUrl}/api/1/settings/frontend`, {
+    data: { patch: { dock_show_summary: false } },
+  });
+  await response.body();
+}
+
+/**
+ * Creates a new user account via API, with the task dock summary off (see
+ * {@link apiDisableDockSummary}). Also logs in to colibri to establish the session.
  */
 export async function apiCreateAccount(
   request: APIRequestContext,
@@ -143,6 +158,8 @@ export async function apiCreateAccount(
   if (body.result?.task_id) {
     await checkForTaskCompletion(request, body.result.task_id);
   }
+
+  await apiDisableDockSummary(request);
 
   // Login to colibri after account creation
   await apiColibriLogin(request, username, password);
