@@ -326,6 +326,7 @@ def test_current_balance_detection_scope_follows_processing_passes(
         assert spawn_task.call_args.kwargs['from_ts'] is None
 
 
+@pytest.mark.accounting_update
 def test_data_issue_remediation_does_not_run_when_scheduler_disabled(
         task_manager: TaskManager,
 ) -> None:

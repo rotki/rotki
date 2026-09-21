@@ -13,6 +13,8 @@ from rotkehlchen.concurrency import (
     checkpoint,
     result_of,
 )
+from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.data_issues.constants import IssueState
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -37,7 +39,11 @@ class RemediationOutcome:
 
 
 class BaseRemediationStrategy(ABC):
-    """Interface for automatic data issue remediation strategies."""
+    """Interface for automatic data issue remediation strategies.
+
+    The timeout is a cooperative budget: attempts must use cancellation-aware waits
+    and checkpoints between units of work. Blocking I/O must have its own timeout.
+    """
 
     name: str
     timeout: float = DEFAULT_REMEDIATION_TIMEOUT
@@ -67,6 +73,11 @@ class RemediationPipeline:
             strategy: BaseRemediationStrategy,
             issue: DataIssue,
     ) -> RemediationOutcome:
+        """Cancel on budget expiry and join before allowing another strategy to mutate data.
+
+        Cancellation finishes at the next checkpoint, so in-flight blocking I/O can
+        extend elapsed time beyond the budget. Never abandon a mutating worker.
+        """
         token = CancellationToken()
         task = Task(
             name=f'data issue remediation: {strategy.name}',
@@ -107,7 +118,17 @@ class RemediationPipeline:
 
         try:
             for strategy in strategies:
-                outcome = self._attempt_with_budget(strategy, issue)
+                try:
+                    outcome = self._attempt_with_budget(strategy, issue)
+                except (RemoteError, DeserializationError, InputError) as e:
+                    log.exception(
+                        'Remediation strategy %s failed for issue %s', strategy.name, issue.id,
+                    )
+                    outcome = RemediationOutcome(
+                        resolved=False,
+                        attribution='strategy_failed',
+                        notes=str(e),
+                    )
 
                 attempt = {
                     'attribution': outcome.attribution,

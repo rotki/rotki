@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from contextlib import suppress
+from contextlib import contextmanager, nullcontext, suppress
 from threading import Semaphore
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -26,6 +26,7 @@ from .tools import BaseDecoderTools
 from .types import CounterpartyDetails, DecodingRulesBase
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.chain.solana.rpc import Signature
@@ -209,6 +210,18 @@ class TransactionDecoder[
             filter_query=self._get_tx_not_decoded_filter_query(limit=None),
         )
 
+    @contextmanager
+    def _decoding_lock(self) -> Iterator[None]:
+        """Acquire the decoder lock cooperatively, releasing it if cancellation wins the race."""
+        checkpoint()
+        while not self.undecoded_tx_query_lock.acquire(timeout=0.1):
+            checkpoint()
+        try:
+            checkpoint()
+            yield
+        finally:
+            self.undecoded_tx_query_lock.release()
+
     def get_and_decode_undecoded_transactions(
             self,
             limit: int | None = None,
@@ -221,10 +234,9 @@ class TransactionDecoder[
         was recently deferred, for requests of the user.
 
         This is protected by concurrent access from a lock"""
-        with self.undecoded_tx_query_lock:
+        with self._decoding_lock():
             if retry_deferred:
                 self._prepare_retry_of_deferred()
-
             log.debug(f'Starting task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             hashes = self.dbtx.get_transaction_hashes_not_decoded(
                 filter_query=self._get_tx_not_decoded_filter_query(
@@ -417,13 +429,9 @@ class TransactionDecoder[
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
-        if ignore_cache:
-            self.undecoded_tx_query_lock.acquire()
-
-        try:
+        with self._decoding_lock() if ignore_cache else nullcontext():
             if ignore_cache and retry_deferred:
                 self._prepare_retry_of_deferred()
-
             return self._do_decode_transaction_hashes(
                 ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
@@ -431,9 +439,6 @@ class TransactionDecoder[
                 send_ws_notifications=send_ws_notifications,
                 delete_customized=delete_customized,
             )
-        finally:
-            if ignore_cache:
-                self.undecoded_tx_query_lock.release()
 
     def _do_decode_transaction_hashes(
             self,
