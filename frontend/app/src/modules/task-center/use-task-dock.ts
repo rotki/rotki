@@ -7,8 +7,12 @@ import { useDockAutoOpen } from '@/modules/task-center/use-dock-auto-open';
 import { type PendingJob, usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
-/** How long the panel stays open after the last task settles. */
-const COLLAPSE_DEBOUNCE = 1000;
+/**
+ * How long work has to stay idle before its batch counts as over. Work often goes idle for a moment
+ * between stages, as the login load does between balances and prices; work that resumes sooner
+ * belongs to the same batch.
+ */
+const BATCH_GRACE = 1000;
 
 interface UseTaskDockReturn {
   /** What the dock is showing, or `undefined` when it is not rendered. */
@@ -47,7 +51,8 @@ function isFailed(activity: Activity): boolean {
  *
  * - A failure stays until dismissed, and clears on its own when the job is rerun, because a rerun
  * puts the same record back to PENDING.
- * - A clean run stays until dismissed, or until a new run starts, which replaces it.
+ * - A clean run stays until dismissed, or until a new batch starts, which replaces it. Work that
+ * resumes within {@link BATCH_GRACE} is the same batch, so it adds to the outcome instead.
  * - A dismissed job shrinks to an icon rather than vanishing, so it can still be reopened. The dock
  * only goes away once everything is dismissed, the panel is collapsed, and nobody has touched the
  * dock for {@link DISMISSED_HIDE_DELAY}; hovering or focusing it starts that wait over.
@@ -68,6 +73,8 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const failedBeforeMount = get(model).roots.filter(root => isTerminalStatus(root.status) && hasFailure(root)).map(root => root.id);
 
   const modelExpanded = shallowRef<boolean>(false);
+  /** Whether a batch is under way: set as soon as work runs, cleared once it stays idle for {@link BATCH_GRACE}. */
+  const batchActive = shallowRef<boolean>(get(isActive));
   const tracked = shallowRef<ReadonlySet<ActivityId>>(new Set(failedBeforeMount));
   const acknowledged = shallowRef<ReadonlySet<ActivityId>>(new Set());
 
@@ -115,7 +122,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   }
 
   /**
-   * Forgets the previous run's settled jobs that hold no failure when a new run starts, so its
+   * Forgets the previous batch's settled jobs that hold no failure when a new batch starts, so its
    * outcome replaces theirs. Failures stay: they are only cleared by dismissing or rerunning them.
    */
   function replacePreviousRun(active: boolean, wasActive: boolean | undefined): void {
@@ -166,11 +173,24 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
       startHide();
   }
 
+  const { start: startBatchEnd, stop: stopBatchEnd } = useTimeoutFn(() => set(batchActive, false), BATCH_GRACE, { immediate: false });
+
+  function followActivity(active: boolean): void {
+    if (active) {
+      stopBatchEnd();
+      set(batchActive, true);
+    }
+    else {
+      startBatchEnd();
+    }
+  }
+
   watch(jobs, track, { immediate: true });
-  watch(isActive, replacePreviousRun);
-  watchDebounced(isActive, collapseWhenIdle, { debounce: COLLAPSE_DEBOUNCE });
+  watch(isActive, followActivity);
+  watch(batchActive, replacePreviousRun);
+  watch(batchActive, collapseWhenIdle);
   watch([state, modelExpanded, interacting], scheduleHide, { immediate: true });
-  useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive, jobs, modelExpanded });
+  useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive: batchActive, jobs, modelExpanded, working: isActive });
 
   return {
     acknowledge,

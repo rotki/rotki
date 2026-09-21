@@ -7,7 +7,10 @@ import { useSetting } from '@/modules/settings/use-setting';
 const SUMMARY_PEEK = 6000;
 
 interface DockAutoOpenSources {
+  /** Whether a batch is under way; it outlasts a short pause in the work. */
   readonly isActive: Readonly<Ref<boolean>>;
+  /** Whether work is running right now, with no allowance for a pause. */
+  readonly working: Readonly<Ref<boolean>>;
   readonly jobs: Readonly<Ref<PendingJob[]>>;
   /** Settled jobs with a failure, not yet dismissed; they may belong to an earlier batch. */
   readonly failed: Readonly<Ref<Activity[]>>;
@@ -34,12 +37,15 @@ interface DockAutoOpenSources {
  * the jobs of the batch that settled count: a failure left from an earlier batch does not open
  * the panel again.
  *
- * Collapsing the panel while work runs is taken as "leave me alone" for that batch: nothing opens it
- * again until the batch settles, and that batch's summary is skipped. The next batch starts fresh.
+ * Collapsing the panel while work runs is taken as "leave me alone" for that batch: its summary is
+ * skipped, and a job the user starts does not open the panel while that work is still running.
+ * Once the work goes idle, a job the user starts is a new request and opens it again, even inside
+ * the batch's grace period. The next batch starts fresh.
  */
-export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive, jobs, modelExpanded }: DockAutoOpenSources): void {
+export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive, jobs, modelExpanded, working }: DockAutoOpenSources): void {
   const showSummary = useSetting('dockShowSummary');
   const collapsedDuringBatch = shallowRef<boolean>(false);
+  const collapsedWhileWorking = shallowRef<boolean>(false);
   const peeking = shallowRef<boolean>(false);
   const seen = new Set<string>(get(isActive) ? failedBeforeMount : []);
 
@@ -60,7 +66,7 @@ export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacti
     for (const job of started)
       seen.add(job.activity.id);
 
-    if (get(collapsedDuringBatch) || !started.some(job => job.activity.userStarted))
+    if (get(collapsedWhileWorking) || !started.some(job => job.activity.userStarted))
       return;
 
     stopPeek();
@@ -72,10 +78,20 @@ export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacti
   function rememberCollapse(open: boolean, wasOpen: boolean | undefined): void {
     if (open || !wasOpen)
       return;
-    if (get(peeking))
+    if (get(peeking)) {
       set(peeking, false);
-    else if (get(isActive))
+      return;
+    }
+    if (get(isActive))
       set(collapsedDuringBatch, true);
+    if (get(working))
+      set(collapsedWhileWorking, true);
+  }
+
+  /** Once the work goes idle, the user's next job is a new request, so the collapse no longer holds it shut. */
+  function releaseCollapse(running: boolean): void {
+    if (!running)
+      set(collapsedWhileWorking, false);
   }
 
   function inBatch(roots: Activity[]): boolean {
@@ -127,6 +143,7 @@ export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacti
 
   watch(jobs, openForUserStartedJobs, { immediate: true });
   watch(modelExpanded, rememberCollapse);
+  watch(working, releaseCollapse);
   watch(isActive, summarize);
   watch(interacting, holdPeek);
 }

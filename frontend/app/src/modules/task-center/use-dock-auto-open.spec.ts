@@ -27,6 +27,7 @@ function job(name: string, userStarted = false): PendingJob {
 }
 
 const isActive = ref<boolean>(false);
+const working = ref<boolean>(false);
 const jobs = ref<PendingJob[]>([]);
 const failed = ref<Activity[]>([]);
 const finished = ref<Activity[]>([]);
@@ -47,6 +48,7 @@ function autoOpen(failedBeforeMount: Activity[] = []): void {
     isActive,
     jobs,
     modelExpanded,
+    working,
   }));
 }
 
@@ -56,12 +58,21 @@ async function start(...list: PendingJob[]): Promise<void> {
   set(jobs, list);
   set(finished, []);
   set(isActive, true);
+  set(working, true);
+  await nextTick();
+}
+
+/** The work goes idle for a moment, inside the batch's grace period. */
+async function pause(): Promise<void> {
+  set(jobs, []);
+  set(working, false);
   await nextTick();
 }
 
 async function settle(outcome: typeof DockState.DONE | typeof DockState.FAILED): Promise<void> {
   set(jobs, []);
   set(isActive, false);
+  set(working, false);
   if (outcome === DockState.FAILED)
     set(failed, [...get(failed), ...batch]);
   else
@@ -74,6 +85,7 @@ describe('useDockAutoOpen', () => {
     vi.useFakeTimers();
     set(showSummary, true);
     set(isActive, false);
+    set(working, false);
     batch = [];
     set(jobs, []);
     set(failed, []);
@@ -108,6 +120,29 @@ describe('useDockAutoOpen', () => {
 
       set(jobs, [job('refresh', true), job('report', true)]);
       await nextTick();
+
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should open for a job the user starts once the collapsed work went idle, though the batch has not ended', async () => {
+      await start(job('refresh', true));
+      set(modelExpanded, false);
+      await nextTick();
+      await pause();
+
+      await start(job('report', true));
+
+      expect(get(modelExpanded)).toBe(true);
+    });
+
+    it('should still skip the summary of a batch collapsed before a pause in it', async () => {
+      await start(job('refresh', true));
+      set(modelExpanded, false);
+      await nextTick();
+      await pause();
+      await start(job('prices'));
+
+      await settle(DockState.DONE);
 
       expect(get(modelExpanded)).toBe(false);
     });
