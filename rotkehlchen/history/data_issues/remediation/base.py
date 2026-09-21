@@ -60,12 +60,15 @@ class RemediationPipeline:
             return
         strategies = tuple(strategy for strategy in self.strategies if strategy.applies_to(issue))
         if len(strategies) == 0:
+            # TODO: Persist the exhausted/no-applicable outcome instead of leaving the issue open.
             return
         if issue.state in {IssueState.OPEN, IssueState.UNRESOLVED}:
             issue = self.manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
 
         for strategy in strategies:
             started_at = monotonic()
+            # TODO: Enforce the budget while attempt() runs; this currently only
+            # detects overruns after return.
             outcome = strategy.attempt(issue)
             if monotonic() - started_at > strategy.timeout:
                 outcome = RemediationOutcome(
