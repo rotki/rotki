@@ -141,6 +141,12 @@ export const NegativeBalancePayload = z.object({
 
 export type NegativeBalancePayload = z.infer<typeof NegativeBalancePayload>;
 
+export const TrackedAddressTransferPayload = z.object({
+  eventIdentifier: z.number(),
+});
+
+export type TrackedAddressTransferPayload = z.infer<typeof TrackedAddressTransferPayload>;
+
 export const RebasingTokenPayload = z.object({
   blockNumber: z.number().nullable(),
   eventIdentifier: z.number(),

@@ -5,6 +5,7 @@ from typing import Final
 class IssueKind(StrEnum):
     CURRENT_BALANCE_MISMATCH = 'current_balance_mismatch'
     NEGATIVE_BALANCE = 'negative_balance'
+    TRACKED_ADDRESS_TRANSFER = 'tracked_address_transfer'
     REBASING_TOKEN = 'rebasing_token'
     UNMATCHED_BRIDGE = 'unmatched_bridge'
 
@@ -24,6 +25,7 @@ class IssueSeverity(StrEnum):
 ISSUE_KIND_SEVERITY: Final[dict[IssueKind, IssueSeverity]] = {
     IssueKind.CURRENT_BALANCE_MISMATCH: IssueSeverity.WARNING,
     IssueKind.NEGATIVE_BALANCE: IssueSeverity.WARNING,
+    IssueKind.TRACKED_ADDRESS_TRANSFER: IssueSeverity.WARNING,
     IssueKind.REBASING_TOKEN: IssueSeverity.WARNING,
     IssueKind.UNMATCHED_BRIDGE: IssueSeverity.WARNING,
 }

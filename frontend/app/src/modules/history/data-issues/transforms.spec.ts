@@ -184,6 +184,19 @@ describe('data-issues transforms', () => {
       expect(result.asset).toBe('ETH');
     });
 
+    it('should describe a customized transfer between tracked addresses', () => {
+      const issue = createIssue({
+        kind: IssueKind.TRACKED_ADDRESS_TRANSFER,
+        payload: { eventIdentifier: 12 },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.tracked_address_transfer');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.tracked_address_transfer');
+      expect(result.eventIdentifier).toBe(12);
+    });
+
     it('should describe an unmatched bridge withdrawal with the withdrawal message', () => {
       const issue = createIssue({
         kind: IssueKind.UNMATCHED_BRIDGE,
