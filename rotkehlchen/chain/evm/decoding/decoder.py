@@ -849,7 +849,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         Rule failures propagate instead of returning partially decoded events.
         """
-        with self.undecoded_tx_query_lock:
+        with self._decoding_lock():
             if reload:
                 with self.database.conn.read_ctx() as cursor:
                     self.reload_data(cursor)

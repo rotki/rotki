@@ -176,16 +176,42 @@ class TrackedAddressTransferStrategy(BaseRemediationStrategy):
 
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
         chain_id, tx_hash = self.candidates.pop(issue.id)
+        with self.database.conn.read_ctx() as cursor:
+            original = cursor.execute(
+                'SELECT H.type, H.amount, H.location_label, C.address FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier WHERE H.identifier = ?',
+                (issue.payload['event_identifier'],),
+            ).fetchone()
+        if original is None:
+            return RemediationOutcome(False, 'system', 'Original transfer is no longer available')
+        event_type, amount, sender, receiver = original
+        if event_type == HistoryEventType.RECEIVE.serialize():
+            sender, receiver = receiver, sender
+
         self.chains_aggregator.get_evm_manager(
             chain_id,
         ).transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,
             tx_hashes=[tx_hash],
         )
+        with self.database.conn.read_ctx() as cursor:
+            resolved = cursor.execute(
+                'SELECT 1 FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier '
+                'WHERE C.tx_ref = ? AND H.location = ? AND H.asset = ? AND H.amount = ? '
+                'AND H.location_label = ? AND C.address = ? AND H.type = ? AND H.subtype = ?',
+                (
+                    tx_hash, issue.location, issue.asset, amount, sender, receiver,
+                    HistoryEventType.TRANSFER.serialize(), HistoryEventSubType.NONE.serialize(),
+                ),
+            ).fetchone() is not None
         return RemediationOutcome(
-            resolved=True,
+            resolved=resolved,
             attribution='system',
-            notes='Redecoded transfer after both counterparties became tracked',
+            notes=(
+                'Verified internal transfer after redecoding'
+                if resolved else 'Redecoding did not produce the expected internal transfer'
+            ),
         )
 
 
@@ -525,10 +551,15 @@ def run_data_issue_remediation(
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Return whether a failed comparison should be retried on the next scheduled run."""
+    """Retry timed-out strategies and failed comparisons on the next scheduled run."""
     return (
         issue.state == IssueState.UNRESOLVED and
         len(issue.auto_remediation_attempts) != 0 and
-        issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
-        issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
+        (
+            (attempt := issue.auto_remediation_attempts[-1]).get('attribution') == 'timeout' or
+            (
+                attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
+                attempt.get('result') == 'redecoding_failed'
+            )
+        )
     )

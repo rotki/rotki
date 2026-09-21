@@ -185,6 +185,7 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
         assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
 
 
+@pytest.mark.accounting_update
 def test_data_issue_remediation_does_not_run_when_scheduler_disabled(
         task_manager: TaskManager,
 ) -> None:

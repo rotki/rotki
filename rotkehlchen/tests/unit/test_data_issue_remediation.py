@@ -18,6 +18,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import RemediationOutcome
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
@@ -196,9 +197,10 @@ def test_remediation_skips_final_issues(database: DBHandler, state: IssueState) 
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_remediation_redecodes_plain_transfer_between_tracked_addresses(
+def test_remediation_keeps_unchanged_transfer_unresolved(
         database: DBHandler,
 ) -> None:
+    """A decoder that leaves the transfer unchanged must not resolve its issue."""
     _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
     chains_aggregator = MagicMock()
 
@@ -211,10 +213,58 @@ def test_remediation_redecodes_plain_transfer_between_tracked_addresses(
     )
     issues = DataIssuesManager(database).list_issues()
     assert len(issues) == 1
-    assert issues[0].state == IssueState.RESOLVED
+    assert issues[0].state == IssueState.UNRESOLVED
+    assert issues[0].auto_remediation_attempts[0]['success'] is False
     assert issues[0].auto_remediation_attempts[0]['strategy'] == (
         'redecode_tracked_address_transfer'
     )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+@pytest.mark.parametrize('event_type', [HistoryEventType.SPEND, HistoryEventType.RECEIVE])
+@pytest.mark.parametrize('decoded_amount', [0, 1, 2])
+def test_remediation_verifies_saved_internal_transfer(
+        database: DBHandler,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        event_type: HistoryEventType,
+        decoded_amount: int,
+) -> None:
+    """Resolve spend/receive issues only when the decoder saves a matching internal transfer."""
+    event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE evm_transactions SET value = ? WHERE tx_hash = ?',
+            (str(decoded_amount * 10**18), tx_hash),
+        )
+        if event_type == HistoryEventType.RECEIVE:
+            write_cursor.execute(
+                'UPDATE history_events SET type = ?, location_label = ? WHERE identifier = ?',
+                (event_type.serialize(), TEST_ADDR2, event_id),
+            )
+            write_cursor.execute(
+                'UPDATE chain_events_info SET address = ? WHERE identifier = ?',
+                (TEST_ADDR1, event_id),
+            )
+        DBEvmTx(database).add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
+            'transactionHash': str(tx_hash),
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [],
+        })
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = (
+        ethereum_transaction_decoder
+    )
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    issues = DataIssuesManager(database).list_issues()
+    assert len(issues) == 1
+    assert issues[0].state == (
+        IssueState.RESOLVED if decoded_amount == 1 else IssueState.UNRESOLVED
+    )
+    assert issues[0].auto_remediation_attempts[0]['success'] is (decoded_amount == 1)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
@@ -782,3 +832,58 @@ def test_decoder_rule_failure_is_reported_as_failed_comparison(
         assert failing_rule.call_count == 2
         assert len(events) != 0
         assert any('failed' in message for message in decoder.msg_aggregator.consume_errors())
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_remediation_continues_to_next_issue_after_decoder_failure(database: DBHandler) -> None:
+    """Record a decoder failure, process the next issue, and persist batch completion."""
+    _add_plain_tracked_address_transfer(database, customized=False)
+    _add_plain_tracked_address_transfer(database, customized=False)
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decode = decoder.decode_transaction_hashes
+    decode.side_effect = [RemoteError('receipt unavailable'), None]
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    assert decode.call_count == 2
+    issues = DataIssuesManager(database).list_issues()
+    assert len(issues) == 2
+    assert all(issue.state == IssueState.UNRESOLVED for issue in issues)
+    assert all(len(issue.auto_remediation_attempts) == 1 for issue in issues)
+    assert issues[0].auto_remediation_attempts[0]['reason'] == 'receipt unavailable'
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+        ) is not None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+@pytest.mark.parametrize('kind', [IssueKind.NEGATIVE_BALANCE, IssueKind.TRACKED_ADDRESS_TRANSFER])
+def test_timed_out_remediation_is_retried(database: DBHandler, kind: IssueKind) -> None:
+    """Retry either strategy after a timeout, but stop retrying after a completed attempt."""
+    if kind == IssueKind.NEGATIVE_BALANCE:
+        _add_negative_balance_issue(database=database, customized=True)
+    else:
+        _add_plain_tracked_address_transfer(database, customized=False)
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.base.RemediationPipeline._attempt_with_budget',
+        side_effect=[
+            RemediationOutcome(False, 'timeout', 'Time budget exceeded'),
+            RemediationOutcome(False, 'system', 'No change needed'),
+        ],
+    ) as attempt:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        issue = DataIssuesManager(database).list_issues()[0]
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts[-1]['attribution'] == 'timeout'
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        assert attempt.call_count == 2
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        assert attempt.call_count == 2
+
+    issue = DataIssuesManager(database).get_issue(issue.id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert len(issue.auto_remediation_attempts) == 2
+    assert issue.auto_remediation_attempts[-1]['attribution'] == 'system'
