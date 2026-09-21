@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.tokens import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
@@ -633,6 +633,45 @@ def test_last_queried_ts(tokens, freezer):
             assert len(after_second_query) == 1
             assert after_second_query[0][0] == 'last_queried_timestamp'
             assert int(after_second_query[0][1]) >= continuation
+
+
+@pytest.mark.parametrize('has_tokens', [False, True])
+@pytest.mark.parametrize('detection_failed', [False, True])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_query_new_tokens_preserves_native_balance(
+        tokens: EthereumTokens,
+        has_tokens: bool,
+        detection_failed: bool,
+) -> None:
+    """Refreshing ERC20 detection must preserve the separately queried native balance."""
+    address = make_evm_address()
+    blockchain = SupportedBlockchain.ETHEREUM
+    native_balance = Balance(amount=FVal('2'))
+    account_balances = BalanceSheet()
+    account_balances.assets[A_ETH][DEFAULT_BALANCE_LABEL] = native_balance
+    token_balances = {A_DAI.resolve_to_evm_token(): FVal('12')} if has_tokens else {}
+    with tokens.db.user_write() as write_cursor:
+        tokens.db.set_blockchain_balances_cache(
+            write_cursor=write_cursor,
+            blockchain=blockchain,
+            balances={address: account_balances},
+        )
+
+    with (
+        patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+        patch.object(tokens, '_detect_tokens', return_value=(
+            {address: list(token_balances)},
+            {address} if detection_failed else set(),
+            {address: token_balances},
+        )),
+        patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+    ):
+        tokens._query_new_tokens(addresses=[address])
+
+    with tokens.db.conn.read_ctx() as cursor:
+        balances = tokens.db.get_blockchain_balances_cache(cursor, blockchain=blockchain)
+
+    assert balances.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == native_balance
 
 
 def test_query_new_tokens_caches_balances_without_duplicates(tokens: EthereumTokens) -> None:
