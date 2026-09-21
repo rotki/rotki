@@ -318,7 +318,7 @@
   "action_center": {
     "button_checking": "Checking for actions",
     "button_clear": "All clear",
-    "cleared": "Checked:",
+    "checks_passed": "{count} check passed | {count} checks passed",
     "dismiss": "Dismiss",
     "locked": "Premium",
     "locked_hint": "This requires the {tier} tier.",

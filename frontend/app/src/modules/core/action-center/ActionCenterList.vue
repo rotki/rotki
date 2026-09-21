@@ -39,6 +39,22 @@ const subtitle = computed<string>(() => {
     return t('action_center.subtitle_checking');
   return t('action_center.subtitle_clear');
 });
+
+const clearedToggled = ref<boolean>();
+
+/**
+ * Whether the checked categories are listed, not just counted.
+ *
+ * @remarks
+ * With nothing asking for attention the list is the evidence that everything was checked, so it
+ * opens; next to rows that need something it is background, so it stays folded. The default follows
+ * the count until the user toggles it.
+ */
+const clearedExpanded = computed<boolean>(() => get(clearedToggled) ?? count === 0);
+
+function toggleCleared(): void {
+  set(clearedToggled, !get(clearedExpanded));
+}
 </script>
 
 <template>
@@ -103,28 +119,43 @@ const subtitle = computed<string>(() => {
 
     <div
       v-if="!checking && cleared.length > 0"
-      class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 bg-rui-grey-50 dark:bg-rui-grey-900"
+      class="px-4 py-3 bg-rui-grey-50 dark:bg-rui-grey-900"
       data-testid="actions-center-cleared"
     >
-      <span class="text-caption text-rui-text-disabled">
-        {{ t('action_center.cleared') }}
-      </span>
       <button
-        v-for="item in cleared"
-        :key="item.id"
         type="button"
-        class="flex items-center gap-1.5 text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
-        data-testid="actions-center-cleared-row"
-        :data-key="item.id"
-        @click="emit('open', item.checkTarget)"
+        class="flex items-center gap-1.5 text-caption text-rui-text-secondary hover:text-rui-text"
+        :aria-expanded="clearedExpanded"
+        data-testid="actions-center-cleared-toggle"
+        @click="toggleCleared()"
       >
         <RuiIcon
           name="lu-circle-check"
           size="14"
           color="success"
         />
-        {{ item.title }}
+        {{ t('action_center.checks_passed', { count: cleared.length }, cleared.length) }}
+        <RuiIcon
+          :name="clearedExpanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+          size="14"
+        />
       </button>
+      <div
+        v-if="clearedExpanded"
+        class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 pl-5"
+      >
+        <button
+          v-for="item in cleared"
+          :key="item.id"
+          type="button"
+          class="text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
+          data-testid="actions-center-cleared-row"
+          :data-key="item.id"
+          @click="emit('open', item.checkTarget)"
+        >
+          {{ item.title }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
