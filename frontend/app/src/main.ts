@@ -6,7 +6,7 @@ import { i18n } from '@/i18n';
 import { setupFormatter } from '@/modules/assets/amount-display/setup-formatter';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import { attemptPolyfillResizeObserver } from '@/modules/core/common/helpers/e2e';
-import { useItemsPerPage } from '@/modules/session/use-items-per-page';
+import { TABLE_LIMITS, useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { StoreStatePersistsPlugin } from '@/modules/shell/app/store-debug-plugin';
 import { StoreResetPlugin, StoreTrackPlugin } from '@/modules/shell/app/store-plugins';
 import { registerDevtools } from '@/plugins/devtools';
@@ -36,7 +36,7 @@ const rui = createRuiPlugin({
   table: {
     globalItemsPerPage: true,
     itemsPerPage,
-    limits: [10, 25, 50, 100],
+    limits: [...TABLE_LIMITS],
     stickyOffset: computed(() => get(isMdAndDown) ? 56 : 64),
   },
 });

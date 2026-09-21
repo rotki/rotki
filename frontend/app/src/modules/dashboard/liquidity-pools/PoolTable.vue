@@ -10,6 +10,7 @@ import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTab
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
+import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
@@ -34,7 +35,7 @@ const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { balances, fetch, getPoolLabel, loading, total } = usePoolBalances();
 
-const fitsOnePage = computed<boolean>(() => get(balances).length <= PAGE_SIZE);
+const hidePagination = computed<boolean>(() => fitsEveryLimit(get(balances).length));
 const { t } = useI18n({ useScope: 'global' });
 
 const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
@@ -133,10 +134,10 @@ watch(currencySymbol, async () => {
       v-model:sort="sort"
       dense
       :items-per-page="PAGE_SIZE"
-      :hide-default-header="fitsOnePage"
-      :hide-default-footer="fitsOnePage"
+      :hide-default-header="hidePagination"
+      :hide-default-footer="hidePagination"
       class="!rounded-t-none"
-      :class="{ 'border-t border-default': !fitsOnePage }"
+      :class="{ 'border-t border-default': !hidePagination }"
       :cols="tableHeaders"
       :rows="balances"
       :loading="loading"

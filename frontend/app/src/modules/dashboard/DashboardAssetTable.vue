@@ -12,6 +12,7 @@ import { useDashboardAssetOperations } from '@/modules/dashboard/use-dashboard-a
 import { useDashboardStores } from '@/modules/dashboard/use-dashboard-stores';
 import { useDashboardTableConfig } from '@/modules/dashboard/use-dashboard-table-config';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
+import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -62,7 +63,7 @@ const totalPending = computed<boolean>(() => isTotalPending(get(sorted)));
 
 const searchable = computed<boolean>(() => balances.length >= SEARCH_MIN_ROWS);
 
-const fitsOnePage = computed<boolean>(() => get(sorted).length <= get(pagination).itemsPerPage);
+const hidePagination = computed<boolean>(() => fitsEveryLimit(get(sorted).length));
 
 /** With one row the row is its own total. */
 const showTotal = computed<boolean>(() => get(sorted).length > 1 && get(modelSearch).length === 0);
@@ -121,10 +122,10 @@ watch(modelSearch, () => setPage(1));
       sticky-header
       single-expand
       dense
-      :hide-default-header="fitsOnePage"
-      :hide-default-footer="fitsOnePage"
+      :hide-default-header="hidePagination"
+      :hide-default-footer="hidePagination"
       class="!rounded-t-none"
-      :class="{ 'border-t border-default': !fitsOnePage }"
+      :class="{ 'border-t border-default': !hidePagination }"
       @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">

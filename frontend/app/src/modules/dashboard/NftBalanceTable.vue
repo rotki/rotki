@@ -6,6 +6,7 @@ import { useNftData } from '@/modules/balances/non-fungible/use-nft-data';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
+import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -51,7 +52,7 @@ onMounted(async () => {
  */
 const hasBalances = computed<boolean>(() => get(found) > 0);
 
-const fitsOnePage = computed<boolean>(() => get(found) <= get(pagination).limit);
+const hidePagination = computed<boolean>(() => fitsEveryLimit(get(found)));
 
 watch(sectionLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
@@ -107,10 +108,10 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       row-attr="id"
       sticky-header
       dense
-      :hide-default-header="fitsOnePage"
-      :hide-default-footer="fitsOnePage"
+      :hide-default-header="hidePagination"
+      :hide-default-footer="hidePagination"
       class="!rounded-t-none"
-      :class="{ 'border-t border-default': !fitsOnePage }"
+      :class="{ 'border-t border-default': !hidePagination }"
     >
       <template #item.name="{ row }">
         <NftDetails

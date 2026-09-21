@@ -160,12 +160,20 @@ describe('dashboardAssetTable', () => {
     expect(wrapper.find('[data-testid=search]').exists()).toBe(true);
   });
 
-  it('should hide both pagers while every row fits on one page, and show both once it does not', () => {
+  it('should hide both pagers while every rows-per-page option fits all rows, and show both once one does not', () => {
     wrapper = createWrapper(createBalances(10));
     expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('no-top,no-bottom');
 
     wrapper.unmount();
     wrapper = createWrapper(createBalances(11));
+    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('top,bottom');
+  });
+
+  it('should keep both pagers when rows fit one page only at a raised limit, so the limit can come back down', async () => {
+    wrapper = createWrapper(createBalances(12));
+    wrapper.findComponent(RuiDataTableStub).vm.$emit('update:pagination', { limit: 25, page: 1, total: 12 });
+    await nextTick();
+
     expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('top,bottom');
   });
 });
