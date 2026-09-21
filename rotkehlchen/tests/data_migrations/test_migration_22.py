@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.connections.types import ConnectorIdentifier
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.locations.constants import (
     LOCATION_COINBASE,
 )
@@ -11,6 +13,7 @@ from rotkehlchen.tests.data_migrations.test_migrations import (
     MockRotkiForMigrationsWithExchangeManager,
 )
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
+from rotkehlchen.types import ApiKey, ApiSecret
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -23,12 +26,12 @@ def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
     since they are not referenced in the migration.
     """
     with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'INSERT INTO user_credentials (name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
-            [('Coinbase 1', LOCATION_COINBASE, 'BADKEY', '', None),
-            ('Coinbase 2', LOCATION_COINBASE, str(uuid.uuid4()), '', None),
-            ('Coinbase 3', LOCATION_COINBASE, f'organizations/{uuid.uuid4()!s}/apiKeys/{uuid.uuid4()!s}', '', None)],  # noqa: E501
-        )
+        for name, api_key in (
+                ('Coinbase 1', 'BADKEY'),
+                ('Coinbase 2', str(uuid.uuid4())),
+                ('Coinbase 3', f'organizations/{uuid.uuid4()!s}/apiKeys/{uuid.uuid4()!s}'),
+        ):
+            DBConnections.add(write_cursor, name=name, connector=ConnectorIdentifier(LOCATION_COINBASE), location=LOCATION_COINBASE, api_key=ApiKey(api_key), api_secret=ApiSecret(b''))  # noqa: E501
 
     with (patch(
         target='rotkehlchen.tests.utils.data_migrations.MockRotkiForMigrations',
@@ -38,7 +41,7 @@ def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
 
     assert [x.name for x in rotki.exchange_manager.connected_exchanges[LOCATION_COINBASE]] == ['Coinbase 2', 'Coinbase 3']  # noqa: E501
     with database.conn.read_ctx() as cursor:
-        result = cursor.execute('SELECT name FROM user_credentials').fetchall()
+        result = cursor.execute('SELECT name FROM integration_connections ORDER BY name').fetchall()  # noqa: E501
         assert result == [('Coinbase 2',), ('Coinbase 3',)]
 
 

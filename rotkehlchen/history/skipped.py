@@ -118,7 +118,7 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
     identifiers_to_delete = set()
     # Now that we got the skipped kraken events from the DB, find the kraken instances
     for kraken_name, raw_events in raw_kraken_events.items():
-        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=LOCATION_KRAKEN)
+        exchange = rotki.exchange_manager.get_exchange_by_name(LOCATION_KRAKEN, kraken_name)
         if exchange is None:  # we have deleted the exchange, so the skipped events can also go
             identifiers_to_delete.update({x[0] for x in raw_events})
             continue
@@ -144,7 +144,7 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
                 continue
 
     for (kraken_name, account_uid), raw_events in raw_kraken_futures_events.items():
-        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=LOCATION_KRAKEN)
+        exchange = rotki.exchange_manager.get_exchange_by_name(LOCATION_KRAKEN, kraken_name)
         if exchange is None:
             identifiers_to_delete.update({entry[0] for entry in raw_events})
             continue

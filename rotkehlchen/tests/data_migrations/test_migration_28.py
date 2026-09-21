@@ -1,4 +1,3 @@
-import json
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -10,7 +9,9 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L1_ORIGINATED_TX_TYPE,
     L2WithL1FeesTransaction,
 )
+from rotkehlchen.connections.types import ConnectorIdentifier
 from rotkehlchen.data_migrations.manager import MIGRATION_LIST, DataMigrationManager
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
@@ -32,7 +33,7 @@ from rotkehlchen.locations.constants import (
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChainID, Timestamp, TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, ChainID, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -205,37 +206,34 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
 
 @pytest.mark.parametrize('data_migration_version', [27])
 def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
-    """BitMEX API keys, their mappings, query ranges and non syncing setting entries are
+    """BitMEX connections, their settings, query ranges and non syncing setting entries are
     removed while the BitMEX history events, margin positions and the data of other
     exchanges are kept."""
+    bitmex = LOCATION_BITMEX
     with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'INSERT INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
-            [
-                ('bitmex1', (bitmex := LOCATION_BITMEX), 'key', 'secret'),
-                ('bitmex2', bitmex, 'key', 'secret'),
-                ('kraken1', (kraken := LOCATION_KRAKEN), 'key', 'secret'),
-            ],
-        )
-        write_cursor.executemany(
-            'INSERT INTO user_credentials_mappings VALUES (?, ?, ?, ?)',
-            [('bitmex1', bitmex, 'setting', 'value'), ('kraken1', kraken, 'setting', 'value')],
-        )
+        bitmex1, bitmex2, kraken1 = (DBConnections.add(
+            write_cursor=write_cursor,
+            name=name,
+            connector=ConnectorIdentifier(location),
+            location=location,
+            api_key=ApiKey('key'),
+            api_secret=ApiSecret(b'secret'),
+        ).identifier for name, location in (
+            ('bitmex1', bitmex),
+            ('bitmex2', bitmex),
+            ('kraken1', LOCATION_KRAKEN),
+        ))
+        DBConnections.set_settings(write_cursor, bitmex1, {'setting': 'value'})
+        DBConnections.set_settings(write_cursor, kraken1, {'setting': 'value'})
         write_cursor.executemany(
             'INSERT INTO used_query_ranges VALUES (?, ?, ?)',
             [
-                ('bitmex_history_events_bitmex1', 0, 1),
-                ('bitmex_margins_bitmex2', 0, 1),
-                ('kraken_history_events_kraken1', 0, 1),
+                (f'{bitmex1}_history_events', 0, 1),
+                (f'{bitmex2}_margins', 0, 1),
+                (kraken_range := f'{kraken1}_history_events', 0, 1),
             ],
         )
-        write_cursor.execute(
-            "INSERT OR REPLACE INTO settings(name, value) VALUES ('non_syncing_exchanges', ?)",
-            (json.dumps([
-                {'name': 'bitmex1', 'location': 'bitmex'},
-                {'name': 'kraken1', 'location': 'kraken'},
-            ]),),
-        )
+        database.set_non_syncing_exchanges(write_cursor, [bitmex1, kraken1])
         DBHistoryEvents(database).add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
@@ -266,12 +264,10 @@ def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
     run_single_migration(database=database, migration=28)
 
     with database.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT name, location FROM user_credentials').fetchall() == [('kraken1', kraken)]  # noqa: E501
-        assert cursor.execute('SELECT credential_name FROM user_credentials_mappings').fetchall() == [('kraken1',)]  # noqa: E501
-        assert cursor.execute('SELECT name FROM used_query_ranges').fetchall() == [('kraken_history_events_kraken1',)]  # noqa: E501
-        assert json.loads(cursor.execute(
-            "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
-        ).fetchone()[0]) == [{'name': 'kraken1', 'location': 'kraken'}]
+        assert cursor.execute('SELECT identifier FROM integration_connections').fetchall() == [(kraken1,)]  # noqa: E501
+        assert cursor.execute('SELECT connection_identifier FROM integration_connection_settings').fetchall() == [(kraken1,)]  # noqa: E501
+        assert cursor.execute('SELECT name FROM used_query_ranges').fetchall() == [(kraken_range,)]
+        assert database.get_settings(cursor).non_syncing_exchanges == {kraken1}
         assert cursor.execute(
             'SELECT COUNT(*) FROM history_events WHERE location=?', (bitmex,),
         ).fetchone()[0] == 1

@@ -138,7 +138,7 @@ def asset_from_bitfinex(bitfinex_name: str) -> AssetWithOracles:
     - UnknownAsset
 
     Currency map fetched in `<Bitfinex>._query_currency_map()` is already
-    inserted into location_asset_mappings (prevent updating it on each call)
+    inserted into connector_asset_mappings (prevent updating it on each call)
     """
     if not isinstance(bitfinex_name, str):
         raise DeserializationError(f'Got non-string type {type(bitfinex_name)} for bitfinex asset')

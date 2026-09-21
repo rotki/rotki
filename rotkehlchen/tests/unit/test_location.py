@@ -4,26 +4,30 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITH_PASSPHRASE,
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
+    serialize_exchange_connectors,
 )
 from rotkehlchen.locations.catalog import load_builtin_catalog
 
 
 def test_location_details_coverage():
-    """Test that all locations are covered in the location details"""
+    """Test that all locations are covered in the location details and every exchange
+    location is flagged as one"""
     for location in (x.identifier for x in load_builtin_catalog()):
         assert location in LOCATION_DETAILS
         if location in ALL_SUPPORTED_EXCHANGES:
-            location_detail = LOCATION_DETAILS[location]
-            if location in SUPPORTED_EXCHANGES:
-                assert 'exchange_details' in location_detail
-                exchange_details = location_detail['exchange_details']
-                assert 'is_exchange_with_key' in exchange_details
-                if location in EXCHANGES_WITH_PASSPHRASE:
-                    assert 'is_exchange_with_passphrase' in exchange_details
-                if location in EXCHANGES_WITHOUT_API_SECRET:
-                    assert 'is_exchange_without_api_secret' in exchange_details
-                continue
-            assert 'is_exchange' in location_detail
+            assert LOCATION_DETAILS[location]['is_exchange'] is True
+
+
+def test_exchange_connectors_serialization():
+    """Every supported exchange connector is listed with what its setup needs, and its data
+    goes to a known location"""
+    connectors = {x['connector']: x for x in serialize_exchange_connectors()}
+    assert connectors.keys() == set(SUPPORTED_EXCHANGES)
+    builtin = {x.identifier for x in load_builtin_catalog()}
+    for connector, details in connectors.items():
+        assert details['location'] in builtin
+        assert details['is_exchange_with_passphrase'] is (connector in EXCHANGES_WITH_PASSPHRASE)
+        assert details['is_exchange_without_api_secret'] is (connector in EXCHANGES_WITHOUT_API_SECRET)  # noqa: E501
 
 
 def test_coinex_exists_in_db_schema():

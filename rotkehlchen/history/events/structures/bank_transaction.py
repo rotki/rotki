@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 class BankTransactionExtraData(TypedDict):
     """What a bank transaction carries beyond the common event columns"""
     bank_account_id: str
+    source_id: str  # the bank's id of the transaction, see BankTransaction.source_id
+    connection_identifier: str  # the connection that imported it
     kind: str  # the serialized BankTransactionKind
     counterparty_account: NotRequired[str]  # IBAN or whatever the bank shows
     reference: NotRequired[str]  # the payment reference

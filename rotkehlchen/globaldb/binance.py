@@ -29,7 +29,7 @@ class GlobalDBBinance:
     def save_all_binance_pairs(
             self,
             new_pairs: Iterable[BinancePair],
-            location: LocationIdentifier,
+            connector: LocationIdentifier,
     ) -> None:
         """Saves all possible binance pairs into the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
@@ -37,7 +37,7 @@ class GlobalDBBinance:
         May raise:
         - InputError if there is a DB insertion failure
         """
-        query = 'INSERT OR IGNORE INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)'  # noqa: E501
+        query = 'INSERT OR IGNORE INTO binance_pairs(pair, base_asset, quote_asset, connector) VALUES (?, ?, ?, ?)'  # noqa: E501
         with self.db.conn.write_ctx() as write_cursor:
             try:
                 write_cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
@@ -46,17 +46,17 @@ class GlobalDBBinance:
                     f'Tried to add a binance pair to the database but failed due to {e!s}',
                 ) from e
 
-        self.db.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
+        self.db.add_setting_value(name=f'binance_pairs_queried_at_{connector}', value=ts_now())
 
-    def get_all_binance_pairs(self, location: LocationIdentifier) -> list[BinancePair]:
+    def get_all_binance_pairs(self, connector: LocationIdentifier) -> list[BinancePair]:
         """Gets all possible binance pairs from the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
         """
         pairs = []
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',  # noqa: E501
-                (location,),
+                'SELECT pair, base_asset, quote_asset, connector FROM binance_pairs WHERE connector=?',  # noqa: E501
+                (connector,),
             )
             for pair in cursor:
                 try:

@@ -340,7 +340,7 @@ KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE = """{"result":"success","logs":[{"asset":"e
 def get_kraken_assets_from_globaldb() -> list[str]:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         return cursor.execute(
-            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
+            'SELECT exchange_symbol FROM connector_asset_mappings WHERE connector IS ? OR connector IS NULL;',  # noqa: E501
             (LOCATION_KRAKEN,),
         ).fetchall()
 
@@ -372,10 +372,10 @@ def generate_random_kraken_id() -> str:
 
 def get_exchange_name_from_assetid(exchange: LocationIdentifier, asset_identifier: str) -> str | None:  # noqa: E501
     """Returns the ticker symbol used in the given exchange from asset's identifier according
-        to location_asset_mappings table. If the mapping is not present returns None."""
+        to connector_asset_mappings table. If the mapping is not present returns None."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         identifier = cursor.execute(
-            'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
+            'SELECT exchange_symbol FROM connector_asset_mappings WHERE (connector IS ? OR connector IS NULL) AND local_id=?',  # noqa: E501
             (exchange, asset_identifier),
         ).fetchone()
 

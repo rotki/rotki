@@ -48,6 +48,8 @@ class BankMFARequired(BankError):
     def __init__(self, challenge: BankAuthChallenge) -> None:
         super().__init__(challenge.prompt)
         self.challenge = challenge
+        # set by the bank manager: the connection the authentication continues under
+        self.connection_identifier: str | None = None
 
 
 class BankRateLimited(BankError):

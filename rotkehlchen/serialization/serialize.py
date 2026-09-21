@@ -54,7 +54,6 @@ from rotkehlchen.types import (
     AddressbookEntryWithSource,
     ChainID,
     CostBasisMethod,
-    ExchangeLocationID,
     SupportedBlockchain,
     TokenKind,
 )
@@ -157,7 +156,6 @@ HANDLERS.update(dict.fromkeys((
     Trove,
     DillBalance,
     NFTResult,
-    ExchangeLocationID,
     WeightedNode,
 ), lambda x: _process_dict(x.serialize())))
 HANDLERS.update(dict.fromkeys((
