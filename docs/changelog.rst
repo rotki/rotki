@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` Work waiting in the task centre now says why it has not started, for example "Waiting for the history sync to finish" or "Waiting for Ethereum to finish". Work held back this way is also listed while it waits, so balances paused behind a history sync no longer disappear until they start.
+* :bug:`-` Refreshing your blockchain balances while a history sync is running now starts right away. Before, the refresh waited for the whole sync to finish.
 * :feature:`-` Tables across the app are easier to read. Rows keep an even height whatever they hold, the sorted column stands out in the header, and the pagination reads as "1–10 of 13". A table that is refreshing dims its rows until the new ones arrive, and an expanded row holding a wide table no longer pushes the whole page sideways.
 * :feature:`-` The task centre in the corner now opens by itself when it has something for you. Starting a job yourself, such as a balance refresh, a redecode or a PnL report, opens it so you can follow along, while work rotki does in the background only updates the small pill. When a batch of work finishes, the task centre briefly shows how it went and then folds away, and it stays open if something failed. Closing it while work runs keeps it closed until that work is done. The summary can be turned off under Settings -> Interface with "Show a summary when tasks finish".
 * :bug:`-` The "Sync history" button on the profit and loss report page now syncs your history. Once history had loaded, it did nothing unless there was something new to find, such as an account added since.
