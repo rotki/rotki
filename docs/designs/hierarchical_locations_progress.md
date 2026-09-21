@@ -17,7 +17,7 @@ section.
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | done |
 | 5 | Custom location API (CRUD, usage, image upload) | B | done |
 | 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | done |
-| 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | todo |
+| 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | done |
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
 
@@ -298,4 +298,35 @@ needs no change.
   entries keep `location`/`location_symbol`, which the updater renames on the way in.
 - The frontend cex mapping module still calls the connector its location; its API client
   translates. Renaming that UI vocabulary belongs with the connector/location split of section 8.
+
+## Section 7 notes
+
+- `location_aliases(alias COLLATE NOCASE PRIMARY KEY, location_identifier ON DELETE CASCADE)`
+  is created by the unreleased v53->v54 upgrade and the fresh schema. `DBLocations` owns it:
+  `get_aliases`, `set_alias` (the target must be assignable: not the total, not archived),
+  `delete_alias`. Aliases do not count as usage; deleting a location deletes its aliases. No
+  alias is created automatically, not even the old name on a rename, because an alias
+  resolves before names and would shadow a later location of that name.
+- `DBLocations.resolve(cursor, value)` returns a `LocationResolution` (`resolved`,
+  `ambiguous` with the candidates, `unresolved`) in the design's order: identifier (built-ins
+  case-insensitive, as `deserialize_location_identifier`), alias, then a unique
+  case-insensitive name. Only assignable locations match, so `total` and archived locations
+  never do.
+- Generic CSV import (`rotki_events`, `rotki_trades`, the `SOURCES_WITH_LOCATION_COLUMN`) no
+  longer falls back to External. `resolve_csv_locations` resolves every distinct `Location`
+  value; user `location_mappings` win. `PUT/POST /import/preflight` reports the resolutions;
+  `/import` takes `location_mappings` and answers 409 with the same `locations` list, importing
+  nothing, while a value is unresolved or ambiguous. Aliases are saved separately through
+  `/locations/aliases` (GET/PUT/DELETE). Third party formats (cointracking, blockpit,
+  bitcoin_tax, coinledger) keep mapping their own venue names and falling back to External:
+  their venue columns name platforms of those tools, not the user's locations.
+- User data: custom locations and aliases live in the user DB, so DB backups and premium sync
+  carry them with the rows that reference them. Decision (user, 2026-09-21): uploaded custom
+  location images stay files in the user data directory and are NOT part of backups or sync; a
+  restored or synced DB shows the icon or generic fallback until the image is uploaded again.
+  This departs from the design's "backup and restore include uploaded location images".
+  Snapshot CSV import already takes identifiers and rejects unknown locations; history event
+  exports carry identifiers and paths (section 4).
+- Until section 8 adds the preflight UI, a generic import with an unknown location value fails
+  in the frontend with the 409 message instead of landing at External.
 

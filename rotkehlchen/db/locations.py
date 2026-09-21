@@ -8,13 +8,16 @@ from types import EllipsisType
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
 from rotkehlchen.locations.types import (
     CUSTOM_LOCATION_PREFIX,
     ROOT_LOCATION_IDENTIFIER,
     LocationIdentifier,
     LocationNode,
+    LocationResolution,
     LocationTreeError,
+    deserialize_location_identifier,
 )
 
 if TYPE_CHECKING:
@@ -359,3 +362,66 @@ class DBLocations:
             'UPDATE locations SET image=? WHERE identifier=?', (image, identifier),
         )
         return node.image
+
+    @staticmethod
+    def get_aliases(cursor: DBCursor) -> dict[str, LocationIdentifier]:
+        """Every alias with the location it resolves to"""
+        return {
+            alias: LocationIdentifier(identifier) for alias, identifier in cursor.execute(
+                'SELECT alias, location_identifier FROM location_aliases ORDER BY alias',
+            )
+        }
+
+    def set_alias(self, write_cursor: DBCursor, alias: str, identifier: str) -> None:
+        """Make the alias resolve to the location, replacing where it resolved before.
+
+        May raise InputError if the alias is empty or the location can not be assigned data.
+        """
+        if (alias := alias.strip()) == '':
+            raise InputError('A location alias can not be empty')
+        self.validate_assignable(write_cursor, identifier)
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO location_aliases(alias, location_identifier) VALUES (?, ?)',
+            (alias, identifier),
+        )
+
+    @staticmethod
+    def delete_alias(write_cursor: DBCursor, alias: str) -> None:
+        """May raise InputError if the alias does not exist"""
+        if write_cursor.execute(
+            'DELETE FROM location_aliases WHERE alias=?', (alias.strip(),),
+        ).rowcount == 0:
+            raise InputError(f'Location alias {alias} does not exist')
+
+    def _assignable(self, cursor: DBCursor, identifier: str) -> LocationIdentifier | None:
+        try:
+            return self.validate_assignable(cursor, identifier).identifier
+        except InputError:
+            return None
+
+    def resolve(self, cursor: DBCursor, value: str) -> LocationResolution:
+        """Find the location a value from imported data means, in order: an exact location
+        identifier, a saved alias, then a unique case-insensitive name. Only locations data can
+        be assigned to count, so the total and archived locations never match. A name several
+        locations share stays ambiguous instead of picking one.
+        """
+        value = value.strip()
+        try:
+            if (location := self._assignable(cursor, deserialize_location_identifier(value))) is not None:  # noqa: E501
+                return LocationResolution(value=value, location=location)
+        except DeserializationError:
+            return LocationResolution(value=value)
+
+        if (alias := cursor.execute(
+            'SELECT location_identifier FROM location_aliases WHERE alias=?', (value,),
+        ).fetchone()) is not None and (location := self._assignable(cursor, alias[0])) is not None:
+            return LocationResolution(value=value, location=location)
+
+        matches = tuple(LocationIdentifier(row[0]) for row in cursor.execute(
+            'SELECT identifier FROM locations WHERE name=? COLLATE NOCASE AND is_active=1 '
+            'AND identifier!=? ORDER BY identifier',
+            (value, ROOT_LOCATION_IDENTIFIER),
+        ))
+        if len(matches) == 1:
+            return LocationResolution(value=value, location=matches[0])
+        return LocationResolution(value=value, candidates=matches)

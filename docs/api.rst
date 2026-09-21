@@ -11785,6 +11785,7 @@ Data imports
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
    :reqjson str timezone: Optional. IANA timezone name to use for dates in the CSV file that do not include timezone information. Defaults to ``"UTC"``. Example: ``"Europe/Madrid"``.
+   :reqjson object location_mappings: Optional. Only for ``"rotki_events"`` and ``"rotki_trades"``, whose rows name their location. Maps values of the ``Location`` column to location identifiers, for values that do not resolve by themselves. A multipart POST sends it as a JSON string. See `Check the locations of an import`_ for how values resolve.
 
    **Example Response**:
 
@@ -11800,8 +11801,54 @@ Data imports
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
-   :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 400: Provided JSON or data is in some way malformed, or a mapping points at a location data can not be assigned to.
+   :statuscode 409: User is not logged in, or a location value of the file is unknown or ambiguous and not mapped. Nothing is imported then, and the result holds ``locations`` exactly like `Check the locations of an import`_.
+   :statuscode 500: Internal rotki error
+
+Check the locations of an import
+================================
+
+.. http:put:: /api/(version)/import/preflight
+
+   Doing a PUT on this endpoint with the same ``source`` and ``file`` as an import reports what every distinct value of the file's ``Location`` column resolves to, before importing it. Only ``"rotki_events"`` and ``"rotki_trades"`` files have such a column; for other sources the list is empty. A POST takes the file as a multipart upload instead.
+
+   A value resolves in this order: a location identifier, a saved location alias, then the case-insensitive name of exactly one location. Only locations data can be assigned to count, so ``total`` and archived locations never match. A value matching the names of several locations is ambiguous and never resolves on its own. A value no rule resolves used to be imported at ``external``; it now has to be mapped.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/import/preflight HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"source": "rotki_events", "file": "/path/to/events.csv", "location_mappings": {"luno": "external"}}
+
+   :reqjson str source: The source of the data, as for the import
+   :reqjson str file: The file to check
+   :reqjson object location_mappings: Optional. Mappings to check together with the file, as for the import
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"locations": [
+              {"value": "ING", "status": "ambiguous", "location": null, "candidates": ["custom:1b0c...", "custom:9f3e..."]},
+              {"value": "kraken", "status": "resolved", "location": "kraken", "candidates": []},
+              {"value": "luno", "status": "resolved", "location": "external", "candidates": []},
+              {"value": "My old exchange", "status": "unresolved", "location": null, "candidates": []}
+          ]},
+          "message": ""
+      }
+
+   :resjson list locations: One entry per distinct value, sorted by value. ``status`` is ``resolved`` (``location`` is where its rows go), ``ambiguous`` (``candidates`` are the locations with that name) or ``unresolved``.
+   :statuscode 200: Locations checked
+   :statuscode 400: Provided JSON or file is malformed, or a mapping points at a location data can not be assigned to
+   :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -12421,6 +12468,44 @@ Locations form a tree rooted at ``total``. rotki ships the built-in locations, w
    :statuscode 401: No user is currently logged in.
    :statuscode 404: The location does not exist.
    :statuscode 500: Internal rotki error.
+
+Location aliases
+================
+
+.. http:get:: /api/(version)/locations/aliases
+
+   Doing a GET on this endpoint returns every location alias. An alias is another name a location is known by in imported files, such as a bank's name in its CSV export. It resolves imported values to its location after exact identifiers and before names, see `Check the locations of an import`_.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": [{"alias": "ING Diba", "location_identifier": "custom:1b0c..."}], "message": ""}
+
+   :statuscode 200: Aliases returned
+   :statuscode 401: No user is logged in
+
+.. http:put:: /api/(version)/locations/aliases
+
+   Doing a PUT on this endpoint makes an alias resolve to a location, replacing the location it resolved to before. Aliases compare case-insensitively and are deleted with their location.
+
+   :reqjson str alias: The alias
+   :reqjson str location_identifier: The location, one data can be assigned to
+   :statuscode 200: Alias saved
+   :statuscode 400: The alias is empty or the location is the total, archived or does not exist
+   :statuscode 401: No user is logged in
+
+.. http:delete:: /api/(version)/locations/aliases
+
+   Doing a DELETE on this endpoint removes an alias.
+
+   :reqjson str alias: The alias
+   :statuscode 200: Alias removed
+   :statuscode 404: The alias does not exist
+   :statuscode 401: No user is logged in
 
 Get associated locations
 ========================

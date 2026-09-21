@@ -225,6 +225,7 @@ from .fields import (
     IncludeExcludeListField,
     LocationField,
     LocationIconField,
+    LocationMappingsField,
     MaybeAssetField,
     NonEmptyList,
     NonEmptyStringField,
@@ -3142,11 +3143,18 @@ class LidoCsmNodeOperatorSchema(Schema):
     node_operator_id = fields.Integer(required=True, validate=validate.Range(min=0))
 
 
+class DataImportPreflightSchema(Schema):
+    source = SerializableEnumField(enum_class=DataImportSource, required=True)
+    file = FileField(required=True, allowed_extensions=('.csv',))
+    location_mappings = LocationMappingsField(load_default=None)
+
+
 class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
     timestamp_format = EmptyAsNoneStringField(load_default=None)
     timezone = TimezoneField(load_default=None)
+    location_mappings = LocationMappingsField(load_default=None)
 
     @post_load
     def transform_data(
@@ -3159,6 +3167,8 @@ class DataImportSchema(AsyncQueryArgumentSchema):
             data.pop('timestamp_format')
         if data['timezone'] is None:
             data.pop('timezone')
+        if data['location_mappings'] is None:
+            data.pop('location_mappings')
         return data
 
 
@@ -3990,6 +4000,14 @@ class LocationEditSchema(LocationIdentifierSchema):
     icon = LocationIconField(load_default=..., allow_none=True)
     is_active = fields.Boolean(load_default=None)
     dry_run = fields.Boolean(load_default=False)
+
+
+class LocationAliasDeleteSchema(Schema):
+    alias = NonEmptyStringField(required=True)
+
+
+class LocationAliasSchema(LocationAliasDeleteSchema):
+    location_identifier = LocationField(required=True)
 
 
 class LocationImageUploadSchema(LocationIdentifierSchema):

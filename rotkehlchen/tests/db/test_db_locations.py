@@ -126,3 +126,51 @@ def test_location_foreign_keys(database: DBHandler) -> None:
         )
         with pytest.raises(sqlcipher.IntegrityError, match='FOREIGN KEY'):  # pylint: disable=no-member
             write_cursor.execute("DELETE FROM locations WHERE identifier='kraken'")
+
+
+def test_location_resolution(database: DBHandler) -> None:
+    """Imported values resolve by identifier, then alias, then a unique name. Ambiguous names,
+    the total and archived locations never resolve."""
+    db_locations = DBLocations()
+    with database.user_write() as write_cursor:
+        ing = db_locations.add_custom(write_cursor, name='ING', parent_identifier='banks')
+        other_ing = db_locations.add_custom(write_cursor, name='ing', parent_identifier='other')
+        old = db_locations.add_custom(write_cursor, name='My old exchange', parent_identifier='exchanges')  # noqa: E501
+        closed = db_locations.add_custom(write_cursor, name='Closed bank', parent_identifier='banks')  # noqa: E501
+        db_locations.set_alias(write_cursor, 'ING Diba', ing.identifier)
+        db_locations.set_alias(write_cursor, 'Kraken', old.identifier)  # an identifier wins
+        db_locations.edit_custom(write_cursor, closed.identifier, is_active=False)
+
+        for value, status, location, candidates in (
+            ('KRAKEN', 'resolved', 'kraken', ()),
+            ('polygon_pos', 'resolved', 'polygon pos', ()),
+            (f' {old.identifier} ', 'resolved', old.identifier, ()),
+            ('ing diba', 'resolved', ing.identifier, ()),
+            ('my OLD exchange', 'resolved', old.identifier, ()),
+            ('Coinbase Pro', 'resolved', 'coinbasepro', ()),
+            ('ING', 'ambiguous', None, tuple(sorted((ing.identifier, other_ing.identifier)))),
+            ('total', 'unresolved', None, ()),
+            ('Closed bank', 'unresolved', None, ()),
+            (closed.identifier, 'unresolved', None, ()),
+            ('luno', 'unresolved', None, ()),
+            ('', 'unresolved', None, ()),
+        ):
+            resolution = db_locations.resolve(write_cursor, value)
+            assert (resolution.status, resolution.location, resolution.candidates) == (status, location, candidates), value  # noqa: E501
+
+        # aliases can not point at what data can not be assigned to, and go with their location
+        for alias, target, message in (
+            (' ', 'kraken', 'can not be empty'),
+            ('Everything', 'total', 'is the total'),
+            ('Closed', closed.identifier, 'is archived'),
+            ('Nowhere', 'custom:missing', 'does not exist'),
+        ):
+            with pytest.raises(InputError, match=message):
+                db_locations.set_alias(write_cursor, alias, target)
+        db_locations.set_alias(write_cursor, 'ing diba', other_ing.identifier)  # case-insensitive replace  # noqa: E501
+        assert db_locations.get_aliases(write_cursor) == {'Kraken': old.identifier, 'ing diba': other_ing.identifier}  # noqa: E501
+        db_locations.delete_custom(write_cursor, other_ing.identifier)
+        assert db_locations.get_aliases(write_cursor) == {'Kraken': old.identifier}
+        db_locations.delete_alias(write_cursor, 'KRAKEN')
+        with pytest.raises(InputError, match='does not exist'):
+            db_locations.delete_alias(write_cursor, 'kraken')

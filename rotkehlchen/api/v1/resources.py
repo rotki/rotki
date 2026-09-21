@@ -82,6 +82,7 @@ from rotkehlchen.api.v1.schemas import (
     CustomAssetsQuerySchema,
     CustomizedEventDuplicatesFixSchema,
     CustomizedEventDuplicatesIgnoreSchema,
+    DataImportPreflightSchema,
     DataImportSchema,
     DataIssueManualResolveSchema,
     DataIssuesFilterSchema,
@@ -136,6 +137,8 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
+    LocationAliasDeleteSchema,
+    LocationAliasSchema,
     LocationCreateSchema,
     LocationEditSchema,
     LocationIdentifierSchema,
@@ -739,6 +742,25 @@ class LocationsTreeResource(BaseMethodView):
             parent_identifier=parent_identifier,
             icon=icon,
         )
+
+
+class LocationAliasesResource(BaseMethodView):
+    put_schema = LocationAliasSchema()
+    delete_schema = LocationAliasDeleteSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_location_aliases()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, alias: str, location_identifier: LocationIdentifier) -> Response:
+        return self.rest_api.set_location_alias(alias=alias, identifier=location_identifier)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, alias: str) -> Response:
+        return self.rest_api.delete_location_alias(alias=alias)
 
 
 class CustomLocationResource(BaseMethodView):
@@ -2382,6 +2404,39 @@ class PingResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.ping()
+
+
+class DataImportPreflightResource(BaseMethodView):
+    """How the location values of a file resolve, so unknown ones can be mapped first"""
+    upload_schema = DataImportPreflightSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='json')
+    def put(
+            self,
+            source: DataImportSource,
+            file: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='form_and_file')
+    def post(
+            self,
+            source: DataImportSource,
+            file: FileStorage,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
 
 
 class DataImportResource(BaseMethodView):

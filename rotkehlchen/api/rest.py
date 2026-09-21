@@ -177,7 +177,7 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
-from rotkehlchen.locations.types import LocationIdentifier
+from rotkehlchen.locations.types import LocationIdentifier, LocationResolutionStatus
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -2227,6 +2227,53 @@ class RestAPI:
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    def _unresolved_import_locations(
+            self,
+            source: DataImportSource,
+            filepath: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> dict[str, Any] | None:
+        """The failure response of an import whose location values are not all resolved"""
+        try:
+            resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                source=source,
+                filepath=filepath,
+                location_mappings=location_mappings,
+            )
+        except InputError as e:
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.BAD_REQUEST)
+        if all(x.status == LocationResolutionStatus.RESOLVED for x in resolutions):
+            return None
+        return {
+            'result': {'locations': [x.serialize() for x in resolutions]},
+            'message': 'Some locations of the file are unknown or ambiguous. Map them first',
+            'status_code': HTTPStatus.CONFLICT,
+        }
+
+    def import_preflight(
+            self,
+            source: DataImportSource,
+            filepath: FileStorage | Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        """How the location values of a file resolve before importing it"""
+        with tempfile.TemporaryDirectory() as temp_directory:
+            if isinstance(filepath, FileStorage):
+                filepath.save(temp_path := Path(temp_directory) / 'import.csv')
+                filepath = temp_path
+            try:
+                resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                    source=source,
+                    filepath=filepath,
+                    location_mappings=location_mappings,
+                )
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+
+        return api_response(_wrap_in_ok_result({
+            'locations': [x.serialize() for x in resolutions],
+        }), status_code=HTTPStatus.OK)
+
     @async_api_call()
     def _import_data(
             self,
@@ -2234,6 +2281,13 @@ class RestAPI:
             filepath: Path,
             **kwargs: Any,
     ) -> dict[str, Any]:
+        if (unresolved := self._unresolved_import_locations(
+            source=source,
+            filepath=filepath,
+            location_mappings=kwargs.get('location_mappings'),
+        )) is not None:
+            return unresolved
+
         success, msg = self.rotkehlchen.data_importer.import_csv(
             source=source,
             filepath=filepath,
@@ -3125,6 +3179,15 @@ class RestAPI:
 
     def get_locations(self) -> Response:
         return make_response_from_dict(self.locations_service.get_locations())
+
+    def get_location_aliases(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_aliases())
+
+    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.set_location_alias(alias, identifier))  # noqa: E501
+
+    def delete_location_alias(self, alias: str) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_alias(alias))
 
     def add_location(
             self,

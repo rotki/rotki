@@ -1,3 +1,4 @@
+import csv
 import hashlib
 import logging
 from abc import ABC, abstractmethod
@@ -7,12 +8,9 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.locations.catalog import deserialize_builtin_location
-from rotkehlchen.locations.constants import (
-    LOCATION_EXTERNAL,
-)
+from rotkehlchen.locations.types import LocationResolution, LocationResolutionStatus
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import TimestampMS
@@ -173,6 +171,66 @@ class BaseExchangeImporter(ABC):
         self.append_msg(row_index=row_index, msg=msg, is_error=is_error)
 
 
+class UnresolvedLocationsError(InputError):
+    """Raised when locations of an imported file are not known and not mapped"""
+
+    def __init__(self, resolutions: list[LocationResolution]) -> None:
+        self.resolutions = resolutions
+        values = ', '.join(x.value for x in resolutions if x.status != LocationResolutionStatus.RESOLVED)  # noqa: E501
+        super().__init__(f'Could not resolve the locations {values}. Map them to a location first')
+
+
+def resolve_csv_locations(
+        db: DBHandler,
+        filepath: Path,
+        location_mappings: Mapping[str, LocationIdentifier] | None,
+        column: str = 'Location',
+) -> tuple[dict[str, LocationIdentifier], list[LocationResolution]]:
+    """Resolve every distinct value of the location column of a CSV file.
+
+    A mapping chosen by the user wins over the resolution rules of DBLocations.resolve.
+    Returns the location of every resolved value and the resolution of every value, sorted
+    by value. May raise InputError if a mapping points at a location data can not be
+    assigned to.
+    """
+    with open(filepath, encoding='utf-8-sig') as csvfile:
+        values = sorted({
+            value.strip() for row in csv.DictReader(csvfile)
+            if (value := row.get(column)) is not None
+        })
+
+    mappings = location_mappings or {}
+    db_locations, resolutions = DBLocations(), []
+    with db.conn.read_ctx() as cursor:
+        for value in values:
+            if (mapped := mappings.get(value)) is not None:
+                db_locations.validate_assignable(cursor, mapped)
+                resolutions.append(LocationResolution(value=value, location=mapped))
+            else:
+                resolutions.append(db_locations.resolve(cursor, value))
+
+    return {
+        x.value: x.location for x in resolutions if x.location is not None
+    }, resolutions
+
+
+def resolved_csv_locations(
+        db: DBHandler,
+        filepath: Path,
+        location_mappings: Mapping[str, LocationIdentifier] | None,
+) -> dict[str, LocationIdentifier]:
+    """The location of every value of the location column of a CSV file.
+
+    May raise:
+    - UnresolvedLocationsError if a value resolves to no location or to several
+    - InputError if a mapping points at a location data can not be assigned to
+    """
+    locations, resolutions = resolve_csv_locations(db, filepath, location_mappings)
+    if len(locations) != len(resolutions):
+        raise UnresolvedLocationsError(resolutions)
+    return locations
+
+
 class UnsupportedCSVEntry(Exception):
     """Raised for csv entries we fail to import."""
 
@@ -184,15 +242,11 @@ class SkippedCSVEntry(Exception):
 def process_rotki_generic_import_csv_fields(
         csv_row: dict[str, Any],
         currency_colname: str,
+        locations: Mapping[str, LocationIdentifier],
 ) -> tuple[AssetWithOracles, FVal | None, Asset | None, LocationIdentifier, TimestampMS]:
-    """
-    Process the imported csv for generic rotki trades and events
-    """
-    try:
-        location = deserialize_builtin_location(csv_row['Location'])
-    except DeserializationError:
-        location = LOCATION_EXTERNAL
-
+    """Process the imported csv for generic rotki trades and events. `locations` are the
+    resolved values of the location column."""
+    location = locations[csv_row['Location'].strip()]
     timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
     fee = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else None
     asset_mapping = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)

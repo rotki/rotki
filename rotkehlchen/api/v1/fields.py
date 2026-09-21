@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import urllib
@@ -965,6 +966,36 @@ class LocationField(fields.Field):
             )
 
         return location
+
+
+class LocationMappingsField(fields.Field):
+    """Location values of an imported file mapped to the locations they stand for. A
+    multipart form upload carries the mapping as a JSON string."""
+
+    def _deserialize(
+            self,
+            value: Any,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> dict[str, LocationIdentifier]:
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as e:
+                raise ValidationError(f'Location mappings are not valid JSON: {e!s}') from e
+        if not isinstance(value, dict):
+            raise ValidationError('Location mappings must map values to location identifiers')
+
+        mappings = {}
+        for raw_value, raw_location in value.items():
+            if not isinstance(raw_value, str) or (import_value := raw_value.strip()) == '':
+                raise ValidationError(f'Invalid mapped location value {raw_value!r}')
+            try:
+                mappings[import_value] = deserialize_location_identifier(raw_location)
+            except DeserializationError as e:
+                raise ValidationError(str(e)) from e
+        return mappings
 
 
 LOCATION_ICON_RE: Final = re.compile(r'lu-[a-z0-9-]+')

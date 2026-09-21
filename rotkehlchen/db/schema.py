@@ -15,6 +15,16 @@ CREATE TABLE IF NOT EXISTS locations (
 );
 """
 
+# Other names a location is known by in imported files, such as an exchange's old spelling or a
+# bank's name in a CSV export. Each alias resolves to exactly one location.
+DB_CREATE_LOCATION_ALIASES = """
+CREATE TABLE IF NOT EXISTS location_aliases (
+    alias TEXT NOT NULL COLLATE NOCASE PRIMARY KEY,
+    location_identifier TEXT NOT NULL REFERENCES locations(identifier) ON DELETE CASCADE,
+    CHECK(alias != '')
+);
+"""
+
 
 # Custom enum table for Balance categories (asset/liability)
 DB_CREATE_BALANCE_CATEGORY = """
@@ -1034,6 +1044,7 @@ DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
 {DB_CREATE_LOCATIONS}
+{DB_CREATE_LOCATION_ALIASES}
 {DB_CREATE_BALANCE_CATEGORY}
 {DB_CREATE_ASSETS}
 {DB_CREATE_TIMED_BALANCES}
