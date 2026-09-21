@@ -225,6 +225,7 @@ from .fields import (
     HistoricalPriceOracleField,
     IncludeExcludeListField,
     LocationField,
+    LocationIconField,
     MaybeAssetField,
     NonEmptyList,
     NonEmptyStringField,
@@ -3977,6 +3978,29 @@ class BalanceSnapshotSchema(Schema):
             amount=data['amount'],
             usd_value=data['usd_value'],
         )
+
+
+class LocationCreateSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    parent_identifier = LocationField(required=True)
+    icon = LocationIconField(load_default=None)
+
+
+class LocationIdentifierSchema(Schema):
+    identifier = LocationField(required=True)
+
+
+class LocationEditSchema(LocationIdentifierSchema):
+    name = NonEmptyStringField(load_default=None)
+    parent_identifier = LocationField(load_default=None)
+    # absent keeps the icon, null removes it
+    icon = LocationIconField(load_default=..., allow_none=True)
+    is_active = fields.Boolean(load_default=None)
+    dry_run = fields.Boolean(load_default=False)
+
+
+class LocationImageUploadSchema(LocationIdentifierSchema):
+    file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
 class LocationDataSnapshotSchema(Schema):

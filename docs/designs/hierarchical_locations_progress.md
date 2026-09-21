@@ -15,7 +15,7 @@ section.
 | 2 | `locations` schema, v54 upgrade, `DBLocations`, migration fixtures/assertions | A, B | done |
 | 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | done |
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | done |
-| 5 | Custom location API (CRUD, usage, image upload) | B | todo |
+| 5 | Custom location API (CRUD, usage, image upload) | B | done |
 | 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | todo |
 | 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | todo |
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
@@ -234,3 +234,26 @@ needs no change.
 - More pre-existing failures in this sandbox, identical on HEAD:
   `test_history_events_export.py::test_history_export_download_path_traversal`,
   `test_exchanges.py::test_setup_exchange` (live exchanges, skipped in CI).
+
+## Section 5 notes
+
+- Endpoints (documented in `docs/api.rst`, "Location tree"): `GET/POST /locations`,
+  `PATCH/DELETE /locations/<identifier>`, `GET /locations/<identifier>/usage`,
+  `GET/POST/DELETE /locations/<identifier>/image`. `LocationsService`
+  (`api/services/locations.py`) owns request handling; the tree rules stay in `DBLocations`.
+  `/locations/all` (flat `LOCATION_DETAILS`) stays until the frontend moves to the tree in
+  section 8.
+- `PATCH` changes only the given fields. `icon: null` removes the icon (in `edit_custom` the
+  `...` default means unchanged). `dry_run` checks the edit without saving; every edit returns
+  `old_path` and `new_path` (display names from the root) for the move warning.
+- Status codes: unknown location 404; tree rule violations and edits of built-ins 400; deleting a
+  used, parent or built-in location 409 (with `usage` explaining why).
+- Images reuse the asset icon machinery: `ALLOWED_ICON_EXTENSIONS`, `FileField` validation and
+  the image/etag responses of `rotkehlchen/icons.py`. Only multipart uploads are accepted, no
+  backend paths or URLs (the asset icon PUT with a path is deliberately not mirrored). Files live
+  per user in `<user dir>/images/locations/`, named `<quoted identifier>_<md5 prefix><ext>`; the
+  `image` column holds that name, so the name changes with the content and clients can cache by
+  it. The old file is removed only after the DB points at the new one; deleting a location or
+  its image removes the file. Built-in `image` values are packaged frontend names and are never
+  served by the backend, so a client tells the two apart by `is_builtin`.
+- User-data backup and restore of the images belongs to section 7.

@@ -41,6 +41,7 @@ from rotkehlchen.api.services.external_services import ExternalServicesService
 from rotkehlchen.api.services.history import HistoryService
 from rotkehlchen.api.services.history_events import HistoryEventsService
 from rotkehlchen.api.services.integrations import IntegrationsService
+from rotkehlchen.api.services.locations import LocationsService
 from rotkehlchen.api.services.settings import SettingsService, serialize_settings
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.api.services.user_data import UserDataService
@@ -254,6 +255,7 @@ from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
+    from types import EllipsisType
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -466,6 +468,7 @@ class RestAPI:
         self.history_events_service = HistoryEventsService(rotkehlchen)
         self.history_service = HistoryService(rotkehlchen)
         self.integrations_service = IntegrationsService(rotkehlchen)
+        self.locations_service = LocationsService(rotkehlchen)
         self.settings_service = SettingsService(rotkehlchen)
         self.transactions_service = TransactionsService(rotkehlchen)
         self.user_data_service = UserDataService(rotkehlchen)
@@ -3114,6 +3117,56 @@ class RestAPI:
             }),
             status_code=HTTPStatus.OK,
         )
+
+    def get_locations(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_locations())
+
+    def add_location(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        ))
+
+    def edit_location(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        ))
+
+    def delete_location(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location(identifier))
+
+    def get_location_usage(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_usage(identifier))
+
+    def get_location_image(self, identifier: LocationIdentifier, match_header: str | None) -> Response:  # noqa: E501
+        return self.locations_service.get_location_image(identifier, match_header)
+
+    def upload_location_image(self, identifier: LocationIdentifier, filepath: Path) -> Response:
+        return make_response_from_dict(
+            self.locations_service.upload_location_image(identifier, filepath),
+        )
+
+    def delete_location_image(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_image(identifier))
 
     def get_location_labels(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:

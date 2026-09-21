@@ -138,6 +138,10 @@ from rotkehlchen.api.v1.schemas import (
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
     LocationAssetMappingsUpdateSchema,
+    LocationCreateSchema,
+    LocationEditSchema,
+    LocationIdentifierSchema,
+    LocationImageUploadSchema,
     ManualBalanceQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
@@ -281,6 +285,7 @@ from .types import ModuleWithBalances, ModuleWithStats, TaskName
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from types import EllipsisType
 
     from werkzeug.datastructures import FileStorage
 
@@ -716,6 +721,94 @@ class AssociatedLocations(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_associated_locations()
+
+
+class LocationsTreeResource(BaseMethodView):
+    post_schema = LocationCreateSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_locations()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return self.rest_api.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        )
+
+
+class CustomLocationResource(BaseMethodView):
+    patch_schema = LocationEditSchema()
+    delete_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_view_args')
+    def patch(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return self.rest_api.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location(identifier=identifier)
+
+
+class LocationUsageResource(BaseMethodView):
+    get_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_usage(identifier=identifier)
+
+
+class LocationImageResource(BaseMethodView):
+    identifier_schema = LocationIdentifierSchema()
+    upload_schema = LocationImageUploadSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_image(
+            identifier=identifier,
+            match_header=get_match_header(),
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='view_args_and_file')
+    def post(self, identifier: LocationIdentifier, file: FileStorage) -> Response:
+        """Only multipart uploads are accepted, never a path on the backend's filesystem"""
+        with TemporaryDirectory() as temp_directory:
+            filepath = Path(temp_directory) / (file.filename or 'image.png')
+            file.save(str(filepath))
+            return self.rest_api.upload_location_image(identifier=identifier, filepath=filepath)
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location_image(identifier=identifier)
 
 
 class LocationLabelsResource(BaseMethodView):

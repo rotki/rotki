@@ -1,4 +1,5 @@
 import logging
+import re
 import urllib
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -964,6 +965,25 @@ class LocationField(fields.Field):
             )
 
         return location
+
+
+LOCATION_ICON_RE: Final = re.compile(r'lu-[a-z0-9-]+')
+
+
+class LocationIconField(fields.String):
+    """The name of an icon of the frontend icon library"""
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,
+            data: Mapping[str, Any] | None,
+            **kwargs: Any,
+    ) -> str:
+        icon = super()._deserialize(value, attr, data, **kwargs)
+        if LOCATION_ICON_RE.fullmatch(icon) is None:
+            raise ValidationError(f'{icon} is not an icon name such as lu-landmark')
+        return icon
 
 
 class ApiKeyField(fields.Field):

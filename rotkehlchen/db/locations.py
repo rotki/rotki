@@ -4,6 +4,7 @@ All location SQL, ancestry and descendant queries and the mutation rules live he
 importers, filters and connection setup agree on what the tree contains.
 """
 import uuid
+from types import EllipsisType
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.errors.misc import InputError
@@ -276,11 +277,14 @@ class DBLocations:
             identifier: str,
             name: str | None = None,
             parent_identifier: str | None = None,
-            icon: str | None = None,
+            icon: str | EllipsisType | None = ...,
             is_active: bool | None = None,
+            dry_run: bool = False,
     ) -> LocationNode:
         """Rename, move, change the icon of or (un)archive a custom location. Only the
-        given fields change.
+        given fields change: None leaves a field unchanged, except for the icon where ...
+        leaves it unchanged and None removes it. A dry run checks the edit and returns the
+        resulting location without writing it.
 
         May raise InputError if the location is built-in, the move would create a cycle or
         place an active location below an archived one, archiving would leave active
@@ -309,12 +313,13 @@ class DBLocations:
             parent_identifier=new_parent_id,
             exclude_identifier=identifier,
         )
-        new_icon = node.icon if icon is None else icon
-        write_cursor.execute(
-            'UPDATE locations SET name=?, parent_identifier=?, icon=?, is_active=? '
-            'WHERE identifier=?',
-            (new_name, new_parent_id, new_icon, new_active, identifier),
-        )
+        new_icon = node.icon if isinstance(icon, EllipsisType) else icon
+        if not dry_run:
+            write_cursor.execute(
+                'UPDATE locations SET name=?, parent_identifier=?, icon=?, is_active=? '
+                'WHERE identifier=?',
+                (new_name, new_parent_id, new_icon, new_active, identifier),
+            )
         return LocationNode(
             identifier=node.identifier,
             name=new_name,
@@ -325,12 +330,31 @@ class DBLocations:
             image=node.image,
         )
 
-    def delete_custom(self, write_cursor: DBCursor, identifier: str) -> None:
+    def delete_custom(self, write_cursor: DBCursor, identifier: str) -> LocationNode:
         """Delete a custom location that has no children and is referenced by no data.
+        Returns the deleted location.
 
         May raise InputError if the location is built-in, still has children or is used.
         """
-        self._get_custom(write_cursor, identifier)
+        node = self._get_custom(write_cursor, identifier)
         if len(usage := self.usage(write_cursor, identifier)) != 0:
             raise InputError(f'Location {identifier} is still in use: {usage}')
         write_cursor.execute('DELETE FROM locations WHERE identifier=?', (identifier,))
+        return node
+
+    def set_custom_image(
+            self,
+            write_cursor: DBCursor,
+            identifier: str,
+            image: str | None,
+    ) -> str | None:
+        """Set or with None remove the uploaded image of a custom location. Returns the
+        image it replaces.
+
+        May raise InputError if the location does not exist or is built-in.
+        """
+        node = self._get_custom(write_cursor, identifier)
+        write_cursor.execute(
+            'UPDATE locations SET image=? WHERE identifier=?', (image, identifier),
+        )
+        return node.image
