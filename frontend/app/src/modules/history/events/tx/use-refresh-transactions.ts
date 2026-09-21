@@ -8,13 +8,11 @@ import { combineOutcomes, type TaskError, TaskFailed } from '@/modules/core/task
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
 import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
-import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-handlers';
 import { useTransactionSync } from '@/modules/history/events/tx/use-transaction-sync';
 import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
-import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
@@ -43,9 +41,7 @@ interface PlannedOperation {
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
 
-  const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
-  const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
   const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
@@ -66,15 +62,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   /**
    * A continuation carries only what the previous wave did not know about, so everything here that
-   * clears state has to be skipped for it: the first wave's finished addresses and its online
-   * warnings belong to the same sync, and wiping them is what made the progress bar restart with a
-   * smaller denominator instead of growing.
+   * clears state has to be skipped for it: the first wave's undecoded counts belong to the same
+   * sync, and wiping them would restart what that wave already reported.
    */
   function initializeRefresh(targets: RefreshTargets, wave: RefreshWave): void {
     const continuation = wave === RefreshWave.CONTINUATION;
-
-    if (!continuation)
-      resetQueryStatus();
 
     if (!(targets.accounts.length > 0 || targets.exchanges.length > 0 || targets.banks.length > 0)) {
       return;
@@ -82,16 +74,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     onHistoryStarted();
 
-    if (!(targets.accounts.length > 0 && targets.shouldShowSyncProgress)) {
-      return;
-    }
-
-    initializeQueryStatus(
-      targets.accounts.map(account => ({ ...account, subtype: getTransactionTypeFromChain(account.chain) })),
-      { extend: continuation },
-    );
-
-    if (!continuation)
+    if (!continuation && targets.accounts.length > 0 && targets.shouldShowSyncProgress)
       resetUndecodedTransactionsStatus();
   }
 
@@ -135,7 +118,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     return [
       ...(targets.accounts.length > 0
-        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
+        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, umbrella) }]
         : []),
       ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
       ...(banks.length > 0 ? [{ accounts: false, work: queryAllBankEvents(banks, umbrella) }] : []),
@@ -305,7 +288,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         }
         finally {
           onHistoryFinished();
-          stopTxSyncing();
           stopEventsSyncing();
           sigilBus.emit('history:ready');
         }

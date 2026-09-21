@@ -10,15 +10,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 async function setup(): Promise<{
   status: ReturnType<typeof import('./use-history-events-status').useHistoryEventsStatus>;
   orchestrator: ReturnType<typeof import('@/modules/task-center/use-task-orchestrator').useTaskOrchestrator>;
-  txStore: ReturnType<typeof import('@/modules/history/use-tx-query-status-store').useTxQueryStatusStore>;
   eventsStore: ReturnType<typeof import('@/modules/history/use-events-query-status-store').useEventsQueryStatusStore>;
   types: typeof import('@/modules/task-center/core/types');
 }> {
   vi.resetModules();
-  const [statusModule, orchestratorModule, txModule, eventsModule, types] = await Promise.all([
+  const [statusModule, orchestratorModule, eventsModule, types] = await Promise.all([
     import('./use-history-events-status'),
     import('@/modules/task-center/use-task-orchestrator'),
-    import('@/modules/history/use-tx-query-status-store'),
     import('@/modules/history/use-events-query-status-store'),
     import('@/modules/task-center/core/types'),
   ]);
@@ -30,7 +28,6 @@ async function setup(): Promise<{
     eventsStore: eventsModule.useEventsQueryStatusStore(),
     orchestrator,
     status: statusModule.useHistoryEventsStatus(),
-    txStore: txModule.useTxQueryStatusStore(),
     types,
   };
 }
@@ -41,10 +38,9 @@ describe('useHistoryEventsStatus', () => {
   });
 
   describe('shouldFetchEventsRegularly', () => {
-    it('should be off when the stores still list unfinished work but the ledger is idle', async () => {
-      const { eventsStore, status, txStore } = await setup();
+    it('should be off when the store still lists unfinished work but the ledger is idle', async () => {
+      const { eventsStore, status } = await setup();
 
-      txStore.initializeQueryStatus([{ address: '0x123', chain: 'eth', subtype: 'evm' }]);
       eventsStore.initializeQueryStatus([{ location: 'kraken', name: 'Kraken' }]);
 
       expect(get(status.shouldFetchEventsRegularly)).toBe(false);

@@ -1,6 +1,5 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { SeededAccount } from '@/modules/history/use-tx-query-status-store';
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -35,12 +34,6 @@ const mockExchanges: Exchange[] = [
   { location: 'kraken', name: 'Kraken1' },
   { location: 'binance', name: 'Binance1' },
 ];
-
-const mockTxQueryStatusStore = {
-  initializeQueryStatus: vi.fn<(accounts: SeededAccount[], options?: { extend?: boolean }) => void>(),
-  resetQueryStatus: vi.fn(),
-  stopSyncing: vi.fn(),
-};
 
 const mockEventsQueryStatusStore = {
   initializeQueryStatus: vi.fn(),
@@ -142,7 +135,7 @@ async function defaultQueryExchanges(exchanges: Exchange[] = []): SyncOutcomes {
 }
 
 const mockTransactionSync = {
-  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], showProgress: boolean, parent?: string) => SyncOutcomes>(
+  syncTransactionsByChains: vi.fn<(accounts: ChainAddress[], parent?: string) => SyncOutcomes>(
     defaultSyncByChains,
   ),
 };
@@ -210,10 +203,6 @@ vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: vi.fn(() => mockExchangeData),
 }));
 
-vi.mock('@/modules/history/use-tx-query-status-store', () => ({
-  useTxQueryStatusStore: vi.fn(() => mockTxQueryStatusStore),
-}));
-
 vi.mock('@/modules/history/use-events-query-status-store', () => ({
   useEventsQueryStatusStore: vi.fn(() => mockEventsQueryStatusStore),
 }));
@@ -267,7 +256,6 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining([...mockEvmAccounts, ...mockBitcoinAccounts]),
-        expect.anything(),
         HISTORY_SYNC_ID,
       );
     });
@@ -278,7 +266,6 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
       await settleRefresh();
 
-      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
       expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).toHaveBeenCalled();
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalled();
@@ -298,27 +285,6 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
     });
-
-    it('should show sync progress on first load', async () => {
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
-      await refreshTransactions();
-
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(expect.anything(), true, HISTORY_SYNC_ID);
-    });
-
-    it('should not show sync progress on subsequent loads without novelty', async () => {
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      await refreshTransactions();
-      await settleRefresh();
-
-      markAttempted();
-      mockTransactionSync.syncTransactionsByChains.mockClear();
-
-      await refreshTransactions({ userInitiated: true });
-
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(expect.anything(), false, HISTORY_SYNC_ID);
-    });
   });
 
   describe('account-specific refresh', () => {
@@ -331,11 +297,7 @@ describe('useRefreshTransactions', () => {
         userInitiated: true, // Ensure it bypasses any "already refreshed" logic
       });
 
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
-        specificAccounts,
-        true, // shouldShowSyncProgress is true because history has not loaded yet
-        HISTORY_SYNC_ID,
-      );
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(specificAccounts, HISTORY_SYNC_ID);
     });
 
     it('should not query exchanges when only accounts are specified', async () => {
@@ -469,38 +431,7 @@ describe('useRefreshTransactions', () => {
 
       // Twice: the first refresh over every account, then the drain over the late arrival alone.
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(2);
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], expect.anything(), HISTORY_SYNC_ID);
-
-      vi.useRealTimers();
-    });
-
-    it('should extend the progress panel on the drained wave instead of replacing it, because a reseed drops every address the first wave finished and the denominator falls mid-sync', async () => {
-      vi.useFakeTimers();
-
-      const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
-
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      const firstRefresh = refreshTransactions();
-
-      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts, addedMidRefresh]);
-
-      await refreshTransactions({ payload: { accounts: [addedMidRefresh] } });
-      await firstRefresh;
-      await vi.advanceTimersByTimeAsync(150);
-      await settleRefresh();
-
-      const [initial, drained] = mockTxQueryStatusStore.initializeQueryStatus.mock.calls;
-      expect(initial).toEqual([
-        [
-          ...mockEvmAccounts.map(account => ({ ...account, subtype: 'evm' })),
-          ...mockBitcoinAccounts.map(account => ({ ...account, subtype: 'bitcoin' })),
-        ],
-        { extend: false },
-      ]);
-      expect(drained).toEqual([[{ ...addedMidRefresh, subtype: 'evm' }], { extend: true }]);
-
-      // One reset for the sync as a whole, not one per wave.
-      expect(mockTxQueryStatusStore.resetQueryStatus).toHaveBeenCalledTimes(1);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], HISTORY_SYNC_ID);
 
       vi.useRealTimers();
     });
@@ -691,7 +622,6 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining(mockEvmAccounts),
-        expect.anything(),
         HISTORY_SYNC_ID,
       );
       expect(historySyncStatus().everCompleted).toBe(true);
@@ -714,7 +644,7 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockTxQueryStatusStore.stopSyncing).toHaveBeenCalled();
+      expect(mockOnHistoryFinished).toHaveBeenCalled();
       expect(mockEventsQueryStatusStore.stopSyncing).toHaveBeenCalled();
     });
   });
@@ -730,7 +660,6 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'eth' }),
           expect.objectContaining({ chain: 'optimism' }),
         ]),
-        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
         HISTORY_SYNC_ID,
       );
     });
@@ -744,7 +673,6 @@ describe('useRefreshTransactions', () => {
         expect.arrayContaining([
           expect.objectContaining({ chain: 'btc' }),
         ]),
-        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
         HISTORY_SYNC_ID,
       );
     });
@@ -757,34 +685,6 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('query status management', () => {
-    it('should initialize query status from the same set that gets synced, bitcoin included', async () => {
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
-      await refreshTransactions();
-
-      expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalledWith(
-        [
-          ...mockEvmAccounts.map(account => ({ ...account, subtype: 'evm' })),
-          ...mockBitcoinAccounts.map(account => ({ ...account, subtype: 'bitcoin' })),
-        ],
-        { extend: false },
-      );
-    });
-
-    it('should reset query status when no accounts to refresh', async () => {
-      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
-
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-
-      await refreshTransactions({
-        payload: { accounts: [], exchanges: [] },
-      });
-
-      expect(mockTxQueryStatusStore.resetQueryStatus).toHaveBeenCalled();
     });
   });
 
@@ -924,19 +824,17 @@ describe('useRefreshTransactions', () => {
     });
   });
 
-  describe('sync progress', () => {
-    it('should not initialize query status when not first load and no novel items', async () => {
+  describe('undecoded counts', () => {
+    it('should not reset the undecoded counts when not first load and no novel items', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       await refreshTransactions();
       await settleRefresh();
 
       markAttempted();
-      mockTxQueryStatusStore.initializeQueryStatus.mockClear();
       mockDecodingStatusStore.resetUndecodedTransactionsStatus.mockClear();
 
       await refreshTransactions({ userInitiated: true });
 
-      expect(mockTxQueryStatusStore.initializeQueryStatus).not.toHaveBeenCalled();
       expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).not.toHaveBeenCalled();
     });
   });
@@ -964,7 +862,6 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining(mockEvmAccounts),
-        expect.anything(),
         HISTORY_SYNC_ID,
       );
     });
@@ -1007,7 +904,6 @@ describe('useRefreshTransactions', () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       await refreshTransactions({ payload: { accounts: mockEvmAccounts } });
 
-      expect(mockTxQueryStatusStore.initializeQueryStatus).not.toHaveBeenCalled();
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
       expect(mockOnHistoryStarted).not.toHaveBeenCalled();
     });
