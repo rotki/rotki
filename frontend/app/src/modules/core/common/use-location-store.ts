@@ -2,6 +2,22 @@ import type { ExchangeConnector } from '@/modules/balances/types/exchanges';
 import type { AllLocation, TradeLocationData } from '@/modules/core/common/location';
 import { toSentenceCase } from '@rotki/common';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
+import { DEFAULT_LOCATION_ICON, isLocationIcon } from '@/modules/locations/location-icons';
+import { locationImageUrl, type LocationNode } from '@/modules/locations/use-location-tree-api';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
+
+/**
+ * The display data of a location the user created. Its image, if uploaded, is served by the
+ * backend rather than packaged with the app.
+ */
+function toCustomLocationData(node: LocationNode): TradeLocationData {
+  return {
+    icon: isLocationIcon(node.icon) ? node.icon : DEFAULT_LOCATION_ICON,
+    identifier: node.identifier,
+    image: node.image === null ? null : locationImageUrl(node.identifier, node.image),
+    name: node.name,
+  };
+}
 
 export const useLocationStore = defineStore('locations', () => {
   const allLocations = ref<AllLocation>({});
@@ -37,7 +53,13 @@ export const useLocationStore = defineStore('locations', () => {
       return mapped;
     });
 
-  const tradeLocations = computed(() => toTradeLocationData(get(allLocations)));
+  const { nodes } = storeToRefs(useLocationTreeStore());
+
+  /** The built-in locations with their packaged details, then the locations the user created. */
+  const tradeLocations = computed<TradeLocationData[]>(() => [
+    ...toTradeLocationData(get(allLocations)),
+    ...get(nodes).filter(node => !node.isBuiltin).map(toCustomLocationData),
+  ]);
 
   const allExchanges = computed<string[]>(() => {
     const locations = get(allLocations);

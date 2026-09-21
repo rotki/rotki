@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { TradeLocationData } from '@/modules/core/common/location';
 import { isEqual } from 'es-toolkit';
 import { useLocations } from '@/modules/core/common/use-locations';
+import { type LocationOption, locationOptions } from '@/modules/locations/location-options';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 defineOptions({
@@ -17,12 +18,16 @@ const { dense, excludes = [], items = [] } = defineProps<{
 }>();
 
 const { tradeLocations } = useLocations();
+const treeStore = useLocationTreeStore();
+const { assignableNodes, nodes } = storeToRefs(treeStore);
 
-const locations = computed<TradeLocationData[]>(() => get(tradeLocations).filter((item) => {
-  const included = items && items.length > 0 ? items.includes(item.identifier) : true;
-  const excluded = excludes && excludes.length > 0 ? excludes.includes(item.identifier) : false;
-
-  return included && !excluded;
+const locations = computed<LocationOption[]>(() => locationOptions({
+  assignable: get(nodes).length > 0 ? new Set(get(assignableNodes).map(node => node.identifier)) : undefined,
+  current: get(model),
+  excludes,
+  items,
+  locations: get(tradeLocations),
+  pathOf: treeStore.pathOf,
 }));
 
 watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
@@ -41,20 +46,31 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     data-testid="location-input"
     :options="locations"
     key-attr="identifier"
-    text-attr="name"
-    :item-height="dense ? 36 : 52"
+    text-attr="label"
+    :item-height="dense ? 44 : 60"
     :dense="dense"
     auto-select-first
     v-bind="$attrs"
   >
     <template #item="{ disabled, item }">
-      <LocationIcon
-        :id="`balance-location__${item.identifier}`"
-        class="!justify-start"
+      <div
+        class="flex flex-col"
         :class="{ 'opacity-40': disabled }"
-        horizontal
-        :item="item.identifier"
-      />
+      >
+        <LocationIcon
+          :id="`balance-location__${item.identifier}`"
+          class="!justify-start"
+          horizontal
+          :item="item.identifier"
+        />
+        <span
+          v-if="item.parentPath"
+          class="text-caption text-rui-text-secondary pl-8"
+          data-testid="location-option-path"
+        >
+          {{ item.parentPath }}
+        </span>
+      </div>
     </template>
     <template #selection="{ item }">
       <LocationIcon

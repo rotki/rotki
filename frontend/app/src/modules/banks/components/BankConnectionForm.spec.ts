@@ -2,22 +2,12 @@ import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
-
-vi.mock('@/modules/locations/use-location-tree-api', () => ({
-  useLocationTreeApi: (): { fetchLocationTree: () => Promise<unknown[]> } => ({
-    fetchLocationTree: async (): Promise<unknown[]> => [
-      { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
-      { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
-      { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
-      { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
-    ],
-  }),
-}));
 
 const manifest: BankManifest = {
   accessTier: 'official api',
@@ -85,6 +75,12 @@ describe('bankConnectionForm', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     useBankConnectionsStore().setManifests([manifest, fints]);
+    useLocationTreeStore().setNodes([
+      { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
+      { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
+      { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
+      { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
+    ]);
   });
 
   function menuSelect(testId: string): VueWrapper | undefined {

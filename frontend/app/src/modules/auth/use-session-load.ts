@@ -12,6 +12,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { useHistoryApi } from '@/modules/history/api/use-history-api';
+import { useLocationTree } from '@/modules/locations/use-location-tree';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
@@ -31,6 +32,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { allLocations, exchangeConnectors } = storeToRefs(useLocationStore());
   const { fetchAllLocations } = useHistoryApi();
   const { getSupportedExchanges } = useExchangeApi();
+  const { refreshLocationTree } = useLocationTree();
   const { fetchCached, refreshFromChain } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { seedFromHistoric } = usePriceSeed();
@@ -77,6 +79,7 @@ export function useDataLoader(): UseDataLoaderReturn {
     startPromise(fetchAllLocations().then(({ locations }) => {
       set(allLocations, locations);
     }));
+    startPromise(refreshLocationTree());
     startPromise(getSupportedExchanges().then((connectors) => {
       set(exchangeConnectors, connectors);
     }));

@@ -11,10 +11,9 @@ import {
 } from '@/modules/banks/bank-connection-form';
 import { type BankLocationOption, bankLocationOptions } from '@/modules/banks/bank-locations';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
-import { logger } from '@/modules/core/common/logging/logging';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { type LocationNode, useLocationTreeApi } from '@/modules/locations/use-location-tree-api';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<BankFormData>({ required: true });
@@ -25,10 +24,9 @@ const { manifests } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
 
-const locationTree = ref<LocationNode[]>([]);
 const connector = ref<string>(get(modelValue).connector);
 
-const { fetchLocationTree } = useLocationTreeApi();
+const { nodes: locationTree } = storeToRefs(useLocationTreeStore());
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
 const manifest = computed<BankManifest | undefined>(() => manifestFor(get(connector)));
@@ -67,15 +65,6 @@ function selectConnector(selection: string | undefined): void {
   form.state.location = selected?.fixedLocation ?? '';
   form.state.credentials = emptyCredentials(selected);
 }
-
-onMounted(async () => {
-  try {
-    set(locationTree, await fetchLocationTree());
-  }
-  catch (error: unknown) {
-    logger.error(error);
-  }
-});
 
 defineExpose({
   validate: (): boolean => form.validate(),
