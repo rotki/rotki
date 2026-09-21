@@ -120,6 +120,22 @@ describe('dockActivityRow', () => {
       expect(wrapper.findComponent({ name: 'ChainIcon' }).exists()).toBe(false);
     });
 
+    it('should leave out the chain icon its parent\'s row already shows, and keep one that differs', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS) });
+      const icon = (parent: Activity): boolean => createWrapper({ activity: account, parent }).findComponent({ name: 'ChainIcon' }).exists();
+
+      expect(icon(activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth') }))).toBe(false);
+      expect(icon(activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'optimism') }))).toBe(true);
+    });
+
+    it('should leave out the location icon its parent\'s row already shows', () => {
+      const exchange = (name: string): Activity => activity({ id: makeActivityId(ActivityKind.EXCHANGE_EVENTS, 'kraken', name), kind: ActivityKind.EXCHANGE_EVENTS });
+
+      const wrapper = createWrapper({ activity: exchange('second'), parent: exchange('main') });
+
+      expect(wrapper.findComponent({ name: 'LocationIcon' }).exists()).toBe(false);
+    });
+
     it('should show no subject icon for work that acts on no chain or location', () => {
       const wrapper = createWrapper({ activity: activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES }) });
 
@@ -134,6 +150,14 @@ describe('dockActivityRow', () => {
       expect(nested.props('location')).toBe('eth');
 
       expect(createWrapper({ activity: account }).findComponent({ name: 'HashLink' }).exists()).toBe(false);
+    });
+
+    it('should keep a nested account\'s copy and explorer buttons out of sight until the address is hovered', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS), subtitle: 'Account' });
+
+      const link = createWrapper({ activity: account, parent: activity() }).findComponent({ name: 'HashLink' });
+
+      expect(link.props('revealActions')).toBe(true);
     });
 
     it('should scramble every address when a batch joins several into one param', () => {
@@ -186,6 +210,34 @@ describe('dockActivityRow', () => {
       expect(createWrapper({ activity: decode(ActivityStatus.RUNNING), percentage: 25 }).find('[data-testid=activity-meter]').text())
         .toBe('pending_task.steps::1234, 5000');
       expect(createWrapper({ activity: decode(ActivityStatus.COMPLETE), parent: activity() }).text()).toContain('pending_task.steps::1234, 5000');
+    });
+
+    it('should give a nested leaf only its ring, not a second bar under its parent\'s', () => {
+      const wrapper = createWrapper({ parent: activity(), percentage: 40 });
+
+      expect(wrapper.findComponent({ name: 'RuiProgress' }).props('value')).toBe(40);
+      expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
+    });
+
+    it('should keep the bar on a nested parent, which rolls up the rows under it', () => {
+      const wrapper = createWrapper({ parent: activity(), percentage: 25, steps: { current: 1, total: 4 } });
+
+      expect(wrapper.find('[data-testid=activity-meter]').text()).toBe('pending_task.steps::1, 4');
+    });
+
+    it('should keep a running nested leaf\'s own tally as text, with no bar', () => {
+      const wrapper = createWrapper({
+        activity: activity({
+          id: makeActivityId(ActivityKind.TX_DECODING, 'eth', 'cached'),
+          kind: ActivityKind.TX_DECODING,
+          steps: { current: 1234, total: 5000 },
+        }),
+        parent: activity(),
+        percentage: 25,
+      });
+
+      expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
+      expect(wrapper.text()).toContain('pending_task.steps::1234, 5000');
     });
 
     it('should keep an account sync at a percentage, since its steps are seconds of range', () => {

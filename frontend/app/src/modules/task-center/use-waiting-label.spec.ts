@@ -1,6 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { msg } from '@/message-key';
+import { truncateAddress } from '@/modules/core/common/display/truncate';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { type ActivityModel, assembleActivityModel } from './core/model';
 import {
   type Activity,
@@ -14,6 +16,12 @@ import {
 import { useWaitingLabel } from './use-waiting-label';
 
 const activities = ref<Activity[]>([]);
+
+const getAddressName = vi.fn<(address: string, blockchain?: string) => string | undefined>();
+
+vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
+  useAddressNameResolution: (): { getAddressName: typeof getAddressName } => ({ getAddressName }),
+}));
 
 vi.mock('./use-task-center', () => ({
   useTaskCenter: (): { model: ComputedRef<ActivityModel> } => ({
@@ -33,6 +41,20 @@ const ethereum: Activity = {
   title: 'Blockchain balances',
 };
 
+const ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
+
+const account: Activity = {
+  cancellable: true,
+  id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS),
+  kind: ActivityKind.TX_SYNC,
+  percentage: -1,
+  rerunnable: false,
+  source: { type: ActivitySourceType.NATIVE },
+  status: ActivityStatus.RUNNING,
+  subtitle: { key: msg.$t('task_center.activity.tx_sync.address'), params: { address: ADDRESS, chain: 'Ethereum' } },
+  title: 'Transaction sync',
+};
+
 function queued(waiting?: ActivityWaiting): Activity {
   return {
     cancellable: true,
@@ -50,7 +72,32 @@ function queued(waiting?: ActivityWaiting): Activity {
 describe('useWaitingLabel', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    set(activities, [ethereum]);
+    set(activities, [ethereum, account]);
+    getAddressName.mockReset();
+  });
+
+  it('should name an account it waits on by its saved or ENS name', () => {
+    getAddressName.mockImplementation((address, chain) => (address === ADDRESS && chain === 'eth' ? 'vitalik.eth' : undefined));
+
+    const label = useWaitingLabel().waitingLabel(queued({ on: account.id, reason: WaitingReason.DEPENDENCY }));
+
+    expect(label).toBe('task_dock.waiting.dependency::vitalik.eth');
+  });
+
+  it('should name an unnamed account by its truncated address, never the whole one', () => {
+    const label = useWaitingLabel().waitingLabel(queued({ on: account.id, reason: WaitingReason.DEPENDENCY }));
+
+    expect(label).toBe(`task_dock.waiting.dependency::${truncateAddress(ADDRESS)}`);
+  });
+
+  it('should neither name nor show the account while privacy mode is on', () => {
+    getAddressName.mockReturnValue('vitalik.eth');
+    useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
+
+    const label = useWaitingLabel().waitingLabel(queued({ on: account.id, reason: WaitingReason.DEPENDENCY }));
+
+    expect(label).not.toContain('vitalik.eth');
+    expect(label).not.toContain(truncateAddress(ADDRESS));
   });
 
   it('should say nothing for an activity that is not waiting', () => {

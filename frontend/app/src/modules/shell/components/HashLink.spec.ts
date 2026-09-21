@@ -96,6 +96,7 @@ describe('hash-link', () => {
     truncateLength?: number;
     type?: 'address' | 'block' | 'transaction' | 'token';
     noScramble?: boolean;
+    revealActions?: boolean;
   }): VueWrapper<InstanceType<typeof HashLink>> =>
     mount(HashLink, {
       global: {
@@ -175,6 +176,21 @@ describe('hash-link', () => {
 
       expect(wrapper.findComponent({ name: 'InlineCopyButton' }).exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'LinkButton' }).exists()).toBe(false);
+    });
+
+    it('should keep the buttons rendered but hidden until hover or focus when revealActions is set', () => {
+      wrapper = createWrapper({ text: address, location: 'eth', revealActions: true });
+
+      const actions = wrapper.find('[data-testid=hash-link-actions]');
+      expect(actions.classes()).toEqual(expect.arrayContaining(['opacity-0', 'group-hover/hash-link:opacity-100', 'group-focus-within/hash-link:opacity-100']));
+      expect(wrapper.findComponent({ name: 'InlineCopyButton' }).exists()).toBe(true);
+      expect(wrapper.findComponent({ name: 'LinkButton' }).exists()).toBe(true);
+    });
+
+    it('should show the buttons at all times by default', () => {
+      wrapper = createWrapper({ text: address, location: 'eth' });
+
+      expect(wrapper.find('[data-testid=hash-link-actions]').classes()).not.toContain('opacity-0');
     });
   });
 
