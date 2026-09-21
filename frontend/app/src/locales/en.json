@@ -6447,7 +6447,16 @@
       "etherscan": "A personal (free) Etherscan API key speeds this up significantly.",
       "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready."
     },
-    "updating": "Updating data"
+    "updating": "Updating data",
+    "waiting": {
+      "dependency": "Waiting for {name} to finish",
+      "history_sync": "Waiting for the history sync to finish",
+      "matching": "Waiting for event matching to finish",
+      "other_work": "Waiting for other work to finish",
+      "parent": "Waiting for {name} to start",
+      "redecode": "Waiting for the redecode to finish",
+      "slot": "Waiting its turn"
+    }
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"

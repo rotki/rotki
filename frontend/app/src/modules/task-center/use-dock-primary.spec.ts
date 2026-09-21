@@ -7,6 +7,7 @@ import {
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,
+  WaitingReason,
 } from '@/modules/task-center/core/types';
 import { useDockPrimary } from './use-dock-primary';
 import { usePendingJobs } from './use-pending-jobs';
@@ -53,6 +54,19 @@ describe('useDockPrimary', () => {
     expect(get(primary)?.activity.kind).toBe(ActivityKind.HISTORY_SYNC);
     expect(get(otherJobs)).toBe(1);
     expect(get(primarySteps)).toEqual({ current: 0, total: 1 });
+  });
+
+  it('should name work that has started ahead of a job the user started that is still held back', () => {
+    const { primary } = primaryOf([
+      {
+        ...activity(ActivityKind.PNL_REPORT, 'report', ActivityStatus.PENDING),
+        userStarted: true,
+        waiting: { reason: WaitingReason.DEPENDENCY },
+      },
+      activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING),
+    ]);
+
+    expect(get(primary)?.activity.kind).toBe(ActivityKind.PRICES);
   });
 
   it('should never name upkeep work ahead of a ranked job', () => {

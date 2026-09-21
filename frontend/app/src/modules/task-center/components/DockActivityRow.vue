@@ -9,6 +9,7 @@ import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
+import { useWaitingLabel } from '@/modules/task-center/use-waiting-label';
 
 const { activity, dismissible = false, hideReason = false, now, outcomeStatus, parent, percentage, steps } = defineProps<{
   activity: Activity;
@@ -52,6 +53,7 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { labelOf, subtitleOf } = useActivityLabel();
+const { waitingLabel } = useWaitingLabel();
 
 /** Tailwind only sees class names written out in full, so each outcome colour is spelled here. */
 const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
@@ -119,6 +121,8 @@ const count = computed<string>(() => {
 const reasonColor = computed<string>(() => (get(isFailed) ? 'text-rui-error' : 'text-rui-warning'));
 
 const reasonLine = computed<string | undefined>(() => (hideReason ? undefined : activity.reason));
+
+const waitingLine = computed<string | undefined>(() => waitingLabel(activity));
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
@@ -204,6 +208,13 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         {{ secondary }}
       </div>
       <DockActivityDetail :activity="activity" />
+      <div
+        v-if="waitingLine"
+        class="text-xs leading-4 text-rui-text-secondary break-words"
+        data-testid="activity-waiting"
+      >
+        {{ waitingLine }}
+      </div>
       <div
         v-if="reasonLine"
         class="text-xs leading-4 break-words"
