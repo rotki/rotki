@@ -82,8 +82,7 @@ def test_swap_with_temp_token_account(
         solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
-    """This swaps from CORL to Wrapped SOL and uses a temporary token account in some of its
-    internal transfers, which requires special handling to get the correct owner address."""
+    """Swap from CORL to native SOL using a temporary WSOL account that is closed at the end."""
     signature = deserialize_tx_signature('53TUfpGbKBGjYNw2w84fXbEDpGGbdo3dLcnJs5sKiL3v3eKAuxTZWCcoXjgzgS3J14bEDEkHJ9qmWnDCLQRwUm5N')  # noqa: E501
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     assert events == [SolanaEvent(
@@ -112,10 +111,54 @@ def test_swap_with_temp_token_account(
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_WSOL,
+        asset=A_SOL,
         amount=FVal(receive_amount := '0.029137025'),
         location_label=solana_accounts[0],
-        notes=f'Receive {receive_amount} WSOL as the result of a swap in Jupiter',
+        notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['GwpdvR5VzUZ84spFV3eA3eMGDTi2cqsX7abu4EwmqNsq']])
+def test_swap_native_sol_to_token(
+        solana_inquirer: SolanaInquirer,
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """Swap native SOL after wrapping it in a temporary WSOL account."""
+    signature = deserialize_tx_signature('5dDbDRXLA6MPjMnFDfkhCjUryUqHe8MvDzeM6NZGYBwkPoSUEYbY5zmpca2V3yGqPJtupMTuXaRXUVhk8ZZr5n7f')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1742934449000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal('0.000005725'),
+        location_label=(user_address := solana_accounts[0]),
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_SOL,
+        amount=FVal(spend_amount := '0.1'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} SOL in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:BEsbuSGpxN5PSFTNjC6k1K9yRaLvtyCMe8342EUjpump'),
+        amount=FVal(receive_amount := '4871485.560396'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} AIOS as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
     )]
@@ -281,10 +324,10 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
-        asset=A_WSOL,
+        asset=A_SOL,
         amount=FVal(wsol_receive_amount := '0.000128863'),
         location_label=user_address,
-        notes=f'Receive {wsol_receive_amount} WSOL due to positive slippage in a Jupiter swap',
+        notes=f'Receive {wsol_receive_amount} SOL due to positive slippage in a Jupiter swap',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('6n9VhCwQ7EwK6NqFDjnHPzEk6wZdRBTfh43RFgHQWHuQ'),
     ), SolanaEvent(
@@ -293,10 +336,10 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_WSOL,
+        asset=A_SOL,
         amount=FVal(pump_fee_amount1 := '0.000096195'),
         location_label=user_address,
-        notes=f'Spend {pump_fee_amount1} WSOL as Pump.fun protocol fee',
+        notes=f'Spend {pump_fee_amount1} SOL as Pump.fun protocol fee',
         counterparty=CPT_PUMP_FUN,
         address=SolanaAddress('7VtfL8fvgNfhz17qKRMjzQEXgbdpnHHHQRh54R9jP2RJ'),
     ), SolanaEvent(
@@ -305,10 +348,10 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_WSOL,
+        asset=A_SOL,
         amount=FVal(pump_fee_amount2 := '0.000031031'),
         location_label=user_address,
-        notes=f'Spend {pump_fee_amount2} WSOL as Pump.fun coin creator fee',
+        notes=f'Spend {pump_fee_amount2} SOL as Pump.fun coin creator fee',
         counterparty=CPT_PUMP_FUN,
         address=SolanaAddress('4M53NgcosencncUqMaWMTu7qt2CeGGLZwNCnou5Q3SLW'),
     )]

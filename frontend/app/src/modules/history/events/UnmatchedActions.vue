@@ -93,17 +93,31 @@ function accept(): void {
     v-else-if="isCard"
     class="flex items-center gap-1"
   >
-    <RuiButton
-      v-if="spec.showRestore"
-      size="sm"
-      color="primary"
-      :class="LABELLED_BUTTON_CLASS"
-      :loading="ignoreLoading"
-      data-testid="unmatched-action-restore"
-      @click="request(UNMATCHED_ACTIONS.RESTORE)"
-    >
-      {{ spec.labels.restore }}
-    </RuiButton>
+    <template v-if="spec.showRestore">
+      <RuiButton
+        size="sm"
+        color="primary"
+        :class="LABELLED_BUTTON_CLASS"
+        :loading="ignoreLoading"
+        data-testid="unmatched-action-restore"
+        @click="request(UNMATCHED_ACTIONS.RESTORE)"
+      >
+        {{ spec.labels.restore }}
+      </RuiButton>
+      <!-- An ignored row is only kept out of automatic matching, so matching it by hand
+           stays available and clears the ignore on its own. -->
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        color="primary"
+        :class="LABELLED_BUTTON_CLASS"
+        :disabled="spec.matchDisabled"
+        data-testid="unmatched-action-find-match"
+        @click="request(UNMATCHED_ACTIONS.FIND_MATCH)"
+      >
+        {{ spec.labels.findMatch }}
+      </RuiButton>
+    </template>
 
     <template v-else>
       <RuiButton
@@ -305,24 +319,40 @@ function accept(): void {
       {{ spec.labels.showInEventsTooltip }}
     </RuiTooltip>
 
-    <RuiTooltip
+    <div
       v-if="spec.showRestore"
-      :open-delay="400"
-      :options="{ placement: 'top' }"
+      class="flex gap-2"
     >
-      <template #activator>
-        <RuiButton
-          size="sm"
-          color="primary"
-          :loading="ignoreLoading"
-          data-testid="unmatched-action-restore"
-          @click="request(UNMATCHED_ACTIONS.RESTORE)"
-        >
-          {{ spec.labels.restore }}
-        </RuiButton>
-      </template>
-      {{ spec.labels.restoreTooltip }}
-    </RuiTooltip>
+      <RuiTooltip
+        :open-delay="400"
+        :options="{ placement: 'top' }"
+      >
+        <template #activator>
+          <RuiButton
+            size="sm"
+            color="primary"
+            :loading="ignoreLoading"
+            data-testid="unmatched-action-restore"
+            @click="request(UNMATCHED_ACTIONS.RESTORE)"
+          >
+            {{ spec.labels.restore }}
+          </RuiButton>
+        </template>
+        {{ spec.labels.restoreTooltip }}
+      </RuiTooltip>
+      <!-- An ignored row is only kept out of automatic matching, so matching it by hand
+           stays available and clears the ignore on its own. -->
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        color="primary"
+        :disabled="spec.matchDisabled"
+        data-testid="unmatched-action-find-match"
+        @click="request(UNMATCHED_ACTIONS.FIND_MATCH)"
+      >
+        {{ spec.labels.findMatch }}
+      </RuiButton>
+    </div>
 
     <div
       v-else

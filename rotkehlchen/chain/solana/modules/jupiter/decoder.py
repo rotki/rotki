@@ -83,6 +83,21 @@ class JupiterDecoder(SolanaDecoderInterface):
             log.error(f'Failed to find Jupiter route instruction in transaction {context.transaction!s}')  # noqa: E501
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
+        wsol_token = A_WSOL.resolve_to_solana_token()
+        wrapping_ata = self._maybe_get_wsol_ata(
+            operation_token=wsol_token,
+            context=context,
+            is_out_operation=True,
+        )
+        unwrapping_ata = self._maybe_get_wsol_ata(
+            operation_token=wsol_token,
+            context=context,
+            is_out_operation=False,
+        )
+        native_wsol_atas = {
+            ata for ata in (wrapping_ata, unwrapping_ata)
+            if ata is not None
+        }
         unrelated_events, other_events, platform_fee_event = [], [], None
         out_events_by_asset: dict[Asset, SolanaEvent] = {}
         in_events_by_asset: dict[Asset, SolanaEvent] = {}
@@ -93,6 +108,14 @@ class JupiterDecoder(SolanaDecoderInterface):
             ):
                 unrelated_events.append(event)
                 continue
+
+            if (
+                event.asset == A_WSOL and
+                any(ata in event_instruction.accounts for ata in native_wsol_atas)
+            ):  # WSOL is only an intermediate asset when Jupiter wraps/unwraps native SOL
+                event.asset = A_SOL
+                if event.notes is not None:
+                    event.notes = event.notes.replace(' WSOL', ' SOL')
 
             if (  # platform fee comes immediately after the swap events instruction
                 event_instruction.execution_index == context.instruction.execution_index + 1 and
@@ -122,6 +145,17 @@ class JupiterDecoder(SolanaDecoderInterface):
                     in_events_by_asset[event.asset] = event
             else:
                 other_events.append(event)
+
+        if wrapping_ata is not None:
+            unrelated_events = [
+                event for event in unrelated_events
+                if not (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == A_SOL and
+                    event.address == wrapping_ata
+                )
+            ]
 
         # Combine any opposite side events that have the same asset
         events_to_skip = set()
@@ -154,7 +188,12 @@ class JupiterDecoder(SolanaDecoderInterface):
                 trade_event.counterparty = CPT_JUPITER
                 if (
                     sub_type == HistoryEventSubType.RECEIVE and
-                    destination_mint not in trade_event.asset.identifier
+                    destination_mint not in trade_event.asset.identifier and
+                    not (
+                        trade_event.asset == A_SOL and
+                        unwrapping_ata is not None and
+                        destination_mint in A_WSOL.identifier
+                    )
                 ):
                     trade_event.event_type = HistoryEventType.RECEIVE
                     trade_event.event_subtype = HistoryEventSubType.NONE

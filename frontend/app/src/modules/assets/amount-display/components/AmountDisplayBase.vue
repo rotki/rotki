@@ -63,7 +63,7 @@ const copyValue = computed<string>(() => {
   if (get(isNaN)) {
     return '-';
   }
-  return value.toString();
+  return value.toFixed();
 });
 </script>
 

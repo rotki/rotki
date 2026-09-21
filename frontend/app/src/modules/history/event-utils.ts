@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
+import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
 import {
@@ -98,6 +99,42 @@ export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): 
 
 export function isBankTransactionEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.BANK_TRANSACTION_EVENT;
+}
+
+/**
+ * What it takes to unlink a joined matched-bridge subgroup, or undefined when it is not one.
+ *
+ * Both legs carry the joined group id and the backend accepts either side, so the first matched
+ * one anchors the unlink call. The legs are also ignored afterwards, which a synthetic
+ * counterpart is left out of: unlinking deletes it, so there is nothing left to ignore.
+ */
+export function getMatchedBridgeUnlink(events: HistoryEventEntry[]): HistoryEventBridgeUnlinkPayload | undefined {
+  const legs = events.filter(event => event.eventSubtype === 'bridge');
+  const anchor = legs.find(leg => !!leg.actualGroupIdentifier);
+  if (!anchor)
+    return undefined;
+
+  const isSynthetic = (leg: HistoryEventEntry): boolean => !!leg.states?.includes(HistoryEventState.SYNTHETIC);
+  return {
+    hasSynthetic: legs.some(isSynthetic),
+    identifier: anchor.identifier,
+    ignoredIdentifiers: legs.filter(leg => !isSynthetic(leg)).map(leg => leg.identifier),
+    type: 'bridge',
+  };
+}
+
+/**
+ * The movement legs of a matched subgroup that unlinking should also ignore.
+ *
+ * Only asset movements are ignorable: the unmatched pool is built from them alone, so an ignore
+ * on a matched chain event would be an inert row. Fee legs are skipped for the same reason, and a
+ * movement matched to another movement contributes both sides. Adjustment events created during
+ * matching need no entry either, since unlinking deletes them.
+ */
+export function getMatchedMovementIgnoreIds(events: HistoryEventEntry[]): number[] {
+  return events
+    .filter(event => isAssetMovementEvent(event) && event.eventSubtype !== 'fee' && !!event.actualGroupIdentifier)
+    .map(event => event.identifier);
 }
 
 export function isBitcoinEventType(type: HistoryEventEntryType): boolean {

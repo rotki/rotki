@@ -47,9 +47,28 @@ interface HistoryEventDeletionPayload {
 
 export type HistoryEventDeletePayload = HistoryEventIgnorePayload | HistoryEventDeletionPayload;
 
-export interface HistoryEventUnlinkPayload {
+interface HistoryEventAssetMovementUnlinkPayload {
   readonly identifier: number;
+  readonly type: 'asset-movement';
+  /** The movement legs to ignore once unlinked, so automatic matching cannot relink them. */
+  readonly ignoredIdentifiers: number[];
 }
+
+export interface HistoryEventBridgeUnlinkPayload {
+  readonly identifier: number;
+  readonly type: 'bridge';
+  /**
+   * The legs to add to the bridge ignore list once unlinked, so the automatic matching that
+   * runs right after cannot link them straight back. Excludes a synthetic counterpart, which
+   * unlinking deletes.
+   */
+  readonly ignoredIdentifiers: number[];
+  /** Whether the match includes a counterpart rotki manufactured, which unlinking deletes. */
+  readonly hasSynthetic: boolean;
+}
+
+/** Which match the event belongs to, since each link type has its own unlink endpoint. */
+export type HistoryEventUnlinkPayload = HistoryEventAssetMovementUnlinkPayload | HistoryEventBridgeUnlinkPayload;
 
 export interface HistoryEventsTableEmits {
   'clear-filters': [];

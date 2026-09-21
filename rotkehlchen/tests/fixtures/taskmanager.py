@@ -65,7 +65,11 @@ def fixture_task_manager(
         query_balances=lambda: None,
         activate_premium=lambda _: None,
         msg_aggregator=msg_aggregator,
-        data_updater=RotkiDataUpdater(msg_aggregator=msg_aggregator, user_db=database),
+        data_updater=RotkiDataUpdater(
+            msg_aggregator=msg_aggregator,
+            user_db=database,
+            chains_aggregator=blockchain,
+        ),
         username=username,
         history_processing_coordinator=HistoryProcessingCoordinator(),
     )

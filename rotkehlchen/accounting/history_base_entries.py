@@ -84,7 +84,12 @@ class EventsAccountant:
                     f'Multi trade events are not supported in accounting yet, so the '
                     f'multi trade with identifier {group_id} is not included in the report.',
                 )
-            self.pot.events_skipped_no_rule += 1
+            if (
+                    event.event_type != HistoryEventType.TRADE or
+                    event.event_subtype != HistoryEventSubType.RECEIVE or
+                    (event.group_identifier, event.sequence_index - 1) not in self.pot.ignored_trade_spends  # noqa: E501
+            ):  # suppress only receives whose spend was skipped for an ignored asset
+                self.pot.events_skipped_no_rule += 1
             log.debug(
                 f'During transaction accounting found history base entry {event} '
                 f'with no mapped event settings. Skipping...',

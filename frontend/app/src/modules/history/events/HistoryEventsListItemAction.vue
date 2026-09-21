@@ -18,7 +18,7 @@ import { editTargetFor } from '@/modules/history/events/history-event-edit-targe
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
-const { item, index, completeGroupEvents, canUnlink, collapsed, collapseAction } = defineProps<{
+const { item, index, completeGroupEvents, canUnlink, collapseAction } = defineProps<{
   item: HistoryEventEntry;
   index: number;
   /**
@@ -27,7 +27,6 @@ const { item, index, completeGroupEvents, canUnlink, collapsed, collapseAction }
    */
   completeGroupEvents: HistoryEventEntry[];
   canUnlink?: boolean;
-  collapsed?: boolean;
   collapseAction?: boolean;
 }>();
 
@@ -86,8 +85,10 @@ function deleteEvent(item: HistoryEventEntry) {
       @edit-click="editEvent(item)"
       @delete-click="deleteEvent(item)"
     >
+      <!-- A missing rule replaces the overflow menu, so unlink gets its own button or it is unreachable here. -->
       <RuiButton
-        v-if="canUnlink && collapsed"
+        v-if="canUnlink && hasMissingRule"
+        data-testid="row-unlink"
         :title="t('transactions.events.actions.unlink')"
         variant="text"
         icon

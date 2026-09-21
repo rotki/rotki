@@ -12,7 +12,10 @@ from rotkehlchen.types import deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0xbC6668371b69FD94110a9E24dCCe517CaFA2B2d1']])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xbC6668371b69FD94110a9E24dCCe517CaFA2B2d1',
+    '0x0000000000000000000000000000000000000001',
+]])
 def test_frankencoin_savings_balances(ethereum_inquirer, ethereum_accounts, inquirer):
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
