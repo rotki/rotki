@@ -40,9 +40,12 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.constants import (
     LOCATION_BANKS,
     LOCATION_BINANCE,
+    LOCATION_BITCOIN,
     LOCATION_BLOCKCHAIN,
     LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
     LOCATION_EXTERNAL,
+    LOCATION_OPTIMISM,
     LOCATION_POLONIEX,
     LOCATION_TOTAL,
 )
@@ -111,8 +114,6 @@ def assert_all_balances(
     total_btc = get_asset_balance_total(A_BTC, setup)
     total_eur = get_asset_balance_total(A_EUR, setup)
 
-    got_external = any(x.location == LOCATION_EXTERNAL for x in setup.manually_tracked_balances)
-
     assert len(result) == 4
     assert result['liabilities'] == {}
     assets = result['assets']
@@ -130,20 +131,22 @@ def assert_all_balances(
         assert assets['EUR']['percentage_of_net_value'] is not None
 
     assert result['net_value'] is not None
-    # Check that the 4 locations are there
-    assert len(result['location']) == 5 if got_external else 4
-    assert result['location']['binance']['value'] is not None
-    assert result['location']['binance']['percentage_of_net_value'] is not None
-    assert result['location']['poloniex']['value'] is not None
-    assert result['location']['poloniex']['percentage_of_net_value'] is not None
-    assert result['location']['blockchain']['value'] is not None
-    assert result['location']['blockchain']['percentage_of_net_value'] is not None
-    if total_eur != ZERO:
-        assert result['location']['banks']['value'] is not None
-        assert result['location']['banks']['percentage_of_net_value'] is not None
-    if got_external:
-        assert result['location']['external']['value'] is not None
-        assert result['location']['external']['percentage_of_net_value'] is not None
+    # every chain holding balances is its own location
+    chain_locations = set()
+    if total_eth != ZERO or total_rdn != ZERO:
+        chain_locations.add(LOCATION_ETHEREUM)
+    if any(FVal(x) != ZERO for x in setup.btc_balances):
+        chain_locations.add(LOCATION_BITCOIN)
+    expected_locations = {
+        LOCATION_BINANCE,
+        LOCATION_POLONIEX,
+        *chain_locations,
+        *(x.location for x in setup.manually_tracked_balances),
+    }
+    assert result['location'].keys() == expected_locations
+    for location in expected_locations:
+        assert result['location'][location]['value'] is not None
+        assert result['location'][location]['percentage_of_net_value'] is not None
 
     with db.conn.read_ctx() as cursor:
         eth_tbalances = db.query_timed_balances(cursor=cursor, asset=A_ETH, balance_type=BalanceType.ASSET)  # noqa: E501
@@ -179,18 +182,7 @@ def assert_all_balances(
         if not expected_data_in_db:
             assert len(location_data) == 0
         else:
-            expected_locations = {
-                LOCATION_POLONIEX,  # pylint: disable=no-member
-                LOCATION_BINANCE,
-                LOCATION_TOTAL,
-                LOCATION_BLOCKCHAIN,
-            }
-            if got_external:
-                expected_locations.add(LOCATION_EXTERNAL)  # pylint: disable=no-member
-            if total_eur != ZERO:
-                expected_locations.add(LOCATION_BANKS)  # pylint: disable=no-member
-            locations = {x.location for x in location_data}
-            assert locations == expected_locations
+            assert {x.location for x in location_data} == expected_locations | {LOCATION_TOTAL}
 
 
 # Use real current price querying in this test since it's very extensive
@@ -1667,7 +1659,7 @@ def test_blockchain_balances_partial_chain_failure(
                 json={'async_query': False, 'save_data': True, 'ignore_errors': ignore_errors},
             ))
             assert result['assets'][A_ETH.identifier]['amount'] == '6'
-            assert result['location'].keys() == {'blockchain'}
+            assert result['location'].keys() == {LOCATION_ETHEREUM, LOCATION_OPTIMISM}
             websocket_connection.wait_until_messages_num(num=1, timeout=10)
             assert websocket_connection.pop_message() == {
                 'type': 'balance_snapshot_error',
@@ -1678,6 +1670,6 @@ def test_blockchain_balances_partial_chain_failure(
             }
             with rotki.data.db.conn.read_ctx() as cursor:
                 assert cursor.execute(
-                    'SELECT COUNT(*) FROM timed_location_data WHERE location=?',
-                    (LOCATION_BLOCKCHAIN,),
-                ).fetchone()[0] == int(ignore_errors)
+                    'SELECT COUNT(*) FROM timed_location_data WHERE location IN (?, ?)',
+                    (LOCATION_ETHEREUM, LOCATION_OPTIMISM),
+                ).fetchone()[0] == 2 * int(ignore_errors)

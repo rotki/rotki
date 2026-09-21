@@ -112,10 +112,8 @@ from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.locations.constants import (
-    LOCATION_BLOCKCHAIN,
-    LOCATION_COINBASE,
-)
+from rotkehlchen.locations.chains import EVM_CHAIN_ID_TO_LOCATION, location_of_chain_balances
+from rotkehlchen.locations.constants import LOCATION_COINBASE, LOCATION_EVM_CHAINS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import (
@@ -1302,6 +1300,7 @@ class Rotkehlchen:
                     )
 
         liabilities: dict[Asset, Balance]
+        liabilities_value_per_location: defaultdict[str, FVal] = defaultdict(FVal)
         try:
             # copies below since if cache is used we end up modifying the balance sheet object
             blockchain_result = result_of(blockchain_task)
@@ -1313,16 +1312,18 @@ class Rotkehlchen:
                     data={'location': f'{chain!s} balances query', 'error': error},
                 )
 
-            blockchain_assets: dict[Asset, Balance] = {}
-            for asset, asset_balances in blockchain_result.totals.assets.items():
-                total_balance = Balance()
-                for balance in asset_balances.values():
-                    total_balance += balance
-                if total_balance.amount != ZERO:
-                    blockchain_assets[asset] = total_balance
+            # every chain is its own location bucket, so a snapshot keeps the chain breakdown
+            for chain, chain_totals in blockchain_result.per_account.totals_per_chain().items():
+                chain_location = str(location_of_chain_balances(chain))
+                for asset, asset_balances in chain_totals.assets.items():
+                    if (total_balance := sum(asset_balances.values(), start=Balance())).amount != ZERO:  # noqa: E501
+                        chain_balances = balances.setdefault(chain_location, {})
+                        chain_balances[asset] = chain_balances.get(asset, Balance()) + total_balance  # noqa: E501
 
-            if len(blockchain_assets) != 0:
-                balances[str(LOCATION_BLOCKCHAIN)] = blockchain_assets
+                for asset_balances in chain_totals.liabilities.values():
+                    liabilities_value_per_location[chain_location] += sum(
+                        (balance.value for balance in asset_balances.values()), start=ZERO,
+                    )
 
             liabilities = {}
             for asset, asset_balances in blockchain_result.totals.liabilities.items():
@@ -1348,6 +1349,7 @@ class Rotkehlchen:
         manual_liabilities_as_dict: defaultdict[Asset, Balance] = defaultdict(Balance)
         for manual_liability in manually_tracked_liabilities:
             manual_liabilities_as_dict[manual_liability.asset] += manual_liability.value
+            liabilities_value_per_location[str(manual_liability.location)] += manual_liability.value.value  # noqa: E501
 
         liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
         # retrieve nft balances if module is activated
@@ -1362,9 +1364,6 @@ class Rotkehlchen:
                 )
             else:
                 if len(nft_balances) != 0:
-                    if (blockchain_location := str(LOCATION_BLOCKCHAIN)) not in balances:
-                        balances[str(LOCATION_BLOCKCHAIN)] = {}
-
                     for balance_entry in nft_balances:
                         if balance_entry['price'] == ZERO:
                             continue
@@ -1373,8 +1372,11 @@ class Rotkehlchen:
                         # as a token and we don't want to ignore NFTs from the token query since
                         # they might not be tracked by Opensea. In case of them being already
                         # in the chain balances we update the price and continue
-                        blockchain_balances = balances[blockchain_location]
                         nft = Nft(balance_entry['id'])
+                        blockchain_balances = balances.setdefault(
+                            str(EVM_CHAIN_ID_TO_LOCATION.get(nft.chain_id, LOCATION_EVM_CHAINS)),
+                            {},
+                        )
                         if (nft_as_token := GlobalDBHandler.get_evm_token(
                             address=nft.evm_address,
                             chain_id=nft.chain_id,
@@ -1390,12 +1392,16 @@ class Rotkehlchen:
 
         # Calculate value totals (in main currency)
         assets_total_balance: defaultdict[Asset, Balance] = defaultdict(Balance)
-        total_value_per_location: dict[str, FVal] = {}
+        # each location's value is net of the liabilities held there, so the values add up
+        # to the net value
+        total_value_per_location: defaultdict[str, FVal] = defaultdict(FVal)
         for location, asset_balance in balances.items():
             total_value_per_location[location] = ZERO
             for asset, balance in asset_balance.items():
                 assets_total_balance[asset] += balance
                 total_value_per_location[location] += balance.value
+        for location, liabilities_value in liabilities_value_per_location.items():
+            total_value_per_location[location] -= liabilities_value
 
         net_value = sum((balance.value for balance in assets_total_balance.values()), ZERO)
         liabilities_total_value = sum((liability.value for liability in liabilities.values()), ZERO)  # noqa: E501
@@ -1404,9 +1410,6 @@ class Rotkehlchen:
         # Calculate location stats
         location_stats: dict[str, Any] = {}
         for location, total_value in total_value_per_location.items():
-            if location == str(LOCATION_BLOCKCHAIN):
-                total_value -= liabilities_total_value  # noqa: PLW2901
-
             percentage = (total_value / net_value).to_percentage() if net_value != ZERO else '0%'
             location_stats[location] = {
                 'value': total_value,

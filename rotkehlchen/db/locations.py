@@ -36,6 +36,22 @@ LOCATION_REFERENCES: Final = (
 _NODE_COLUMNS: Final = 'identifier, name, parent_identifier, is_builtin, is_active, icon, image'
 
 
+def subtree_query(placeholders: str) -> str:
+    """A query selecting the identifiers of the locations bound to the given placeholders and of
+    all their descendants.
+
+    Filters use it as an uncorrelated `location IN (...)` subquery. SQLite evaluates that once
+    per statement and probes the location index with the result, so the tree is not joined
+    against every data row.
+    """
+    return (
+        'WITH RECURSIVE subtree(identifier) AS ('
+        f'SELECT identifier FROM locations WHERE identifier IN ({placeholders}) '
+        'UNION SELECT L.identifier FROM locations L JOIN subtree S '
+        'ON L.parent_identifier=S.identifier) SELECT identifier FROM subtree'
+    )
+
+
 def _node_from_row(row: tuple) -> LocationNode:
     return LocationNode(
         identifier=LocationIdentifier(row[0]),
@@ -87,14 +103,32 @@ class DBLocations:
             return set()
         result = {
             LocationIdentifier(row[0]) for row in cursor.execute(
-                'WITH RECURSIVE subtree(identifier) AS ('
-                f'SELECT identifier FROM locations WHERE identifier IN ({",".join("?" * len(identifiers))}) '  # noqa: E501
-                'UNION SELECT L.identifier FROM locations L JOIN subtree S '
-                'ON L.parent_identifier=S.identifier) SELECT identifier FROM subtree',
+                subtree_query(','.join('?' * len(identifiers))),
                 tuple(identifiers),
             )
         }
         return result if include_self else result - {LocationIdentifier(x) for x in identifiers}
+
+    @staticmethod
+    def ancestor_identifiers(
+            cursor: DBCursor,
+            identifiers: Collection[str],
+    ) -> set[LocationIdentifier]:
+        """Identifiers of every proper ancestor of the given locations, the root included"""
+        if len(identifiers) == 0:
+            return set()
+        return {
+            LocationIdentifier(row[0]) for row in cursor.execute(
+                'WITH RECURSIVE path(identifier) AS ('
+                'SELECT parent_identifier FROM locations '
+                f'WHERE identifier IN ({",".join("?" * len(identifiers))}) '
+                'AND parent_identifier IS NOT NULL '
+                'UNION SELECT L.parent_identifier FROM locations L JOIN path P '
+                'ON L.identifier=P.identifier WHERE L.parent_identifier IS NOT NULL) '
+                'SELECT identifier FROM path',
+                tuple(identifiers),
+            )
+        }
 
     @staticmethod
     def ancestors(cursor: DBCursor, identifier: str) -> list[LocationNode]:
@@ -110,6 +144,26 @@ class DBLocations:
             (identifier,),
         ).fetchall()
         return [_node_from_row(row) for row in rows]
+
+    def display_paths(self, cursor: DBCursor) -> dict[LocationIdentifier, str]:
+        """The display path of every location, e.g. Blockchains > EVM Chains > Ethereum Mainnet.
+        The root is left out since every path starts there, so its own path is its name."""
+        nodes = {x.identifier: x for x in self.get_all(cursor)}
+        paths: dict[LocationIdentifier, str] = {}
+
+        def path_of(node: LocationNode) -> str:
+            if (path := paths.get(node.identifier)) is not None:
+                return path
+            if node.parent_identifier is None or node.parent_identifier == ROOT_LOCATION_IDENTIFIER:  # noqa: E501
+                path = node.name
+            else:
+                path = f'{path_of(nodes[node.parent_identifier])} > {node.name}'
+            paths[node.identifier] = path
+            return path
+
+        for node in nodes.values():
+            path_of(node)
+        return paths
 
     def path_names(self, cursor: DBCursor, identifier: str) -> list[str]:
         """Display names from the root to the given location, itself included"""

@@ -424,12 +424,14 @@ class HistoryBaseEntry[
             self,
             fiat_value: FVal,
             settings: DBSettings,
+            location_path: str,
     ) -> dict[str, Any]:
         """Serialize event data for CSV export.
 
         This method serializes event data, adding 'amount' and 'fiat_value'
-        right after the 'asset' in the serialized dictionary. Note that
-        'fiat_value' is not in USD but in the user-selected currency.
+        right after the 'asset' and the display path of the location right after
+        'location' in the serialized dictionary. Note that 'fiat_value' is not in USD
+        but in the user-selected currency.
         """
         new_dict: dict[str, Any] = {}
         entry = self.serialize()
@@ -447,6 +449,9 @@ class HistoryBaseEntry[
 
             if key == 'sequence_index':
                 new_dict['direction'] = self.maybe_get_direction()
+
+            if key == 'location':
+                new_dict['location_path'] = location_path
 
         return new_dict
 

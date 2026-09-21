@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.locations import constants as location_constants
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
+from rotkehlchen.locations.chains import location_of_chain_balances
 from rotkehlchen.locations.legacy_chars import (
     LEGACY_LOCATIONS_PARENT,
     V53_LEGACY_LOCATION_CHARS,
@@ -63,6 +64,8 @@ def test_every_supported_blockchain_has_a_node():
     for chain in SupportedBlockchain:
         expected = 'ethereum' if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN else chain.name.lower().replace('_', ' ')  # noqa: E501
         assert expected in catalog_ids, f'{chain} has no location node'
+        # balance snapshots keep every chain's balances at that node
+        assert location_of_chain_balances(chain) == expected
 
 
 def test_catalog_visuals():

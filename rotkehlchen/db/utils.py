@@ -111,7 +111,7 @@ class SingleDBAssetBalance:
 
 class LocationData(NamedTuple):
     time: Timestamp
-    location: str  # Location serialized in a DB enum
+    location: LocationIdentifier
     usd_value: str
 
     def serialize(
@@ -126,12 +126,12 @@ class LocationData(NamedTuple):
                     formatstr='%Y-%m-%d %H:%M:%S',
                     treat_as_local=display_date_in_localtime,
                 ),
-                'location': LocationIdentifier(self.location),
+                'location': self.location,
                 f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: E501
             }
         return {
             'timestamp': int(self.time),
-            'location': LocationIdentifier(self.location),
+            'location': self.location,
             'usd_value': self.usd_value,
         }
 

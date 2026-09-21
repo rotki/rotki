@@ -5,7 +5,7 @@ import tempfile
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import pytest
 import requests
@@ -23,6 +23,7 @@ from rotkehlchen.db.snapshots import (
 )
 from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import LOCATION_EXTERNAL, LOCATION_KRAKEN, LOCATION_TOTAL
 from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tests.utils.api import (
@@ -83,6 +84,13 @@ def _populate_db_with_balances_unknown_asset(write_cursor: DBCursor, ts: Timesta
     )
 
 
+LOCATION_PATHS: Final[dict[str, str]] = {
+    LOCATION_EXTERNAL: 'Other > External',
+    LOCATION_KRAKEN: 'Exchanges > Kraken',
+    LOCATION_TOTAL: 'Total',
+}
+
+
 def _populate_db_with_location_data(
         write_cursor: DBCursor,
         db: DBHandler,
@@ -93,17 +101,17 @@ def _populate_db_with_location_data(
         location_data=[
             LocationData(
                 time=ts,
-                location='external',
+                location=LOCATION_EXTERNAL,
                 usd_value='100.00',
             ),
             LocationData(
                 time=ts,
-                location='kraken',
+                location=LOCATION_KRAKEN,
                 usd_value='200.00',
             ),
             LocationData(
                 time=ts,
-                location='total',
+                location=LOCATION_TOTAL,
                 usd_value='50.00',
             ),
         ],
@@ -384,7 +392,8 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 3
+            assert len(row) == 4
+            assert row['location_path'] == LOCATION_PATHS[row['location']]
             if timestamp_validation_data is None:
                 assert row['timestamp'] is not None
             else:

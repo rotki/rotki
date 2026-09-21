@@ -325,8 +325,9 @@ def test_query_statistics_value_distribution(
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
             result = assert_proper_sync_response_with_result(response)
-            assert len(result) == 6
-            locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total', 'kraken'}
+            assert len(result) == 7
+            # the chains are separate locations, not one blockchain bucket
+            locations = {'poloniex', 'binance', 'banks', 'ethereum', 'bitcoin', 'total', 'kraken'}
             for entry in result:
                 assert len(entry) == 3
                 assert entry['time'] >= start_time

@@ -1997,7 +1997,10 @@ class DBHandler:
         return Timestamp(int(result[0]))
 
     def add_multiple_location_data(self, write_cursor: DBCursor, location_data: list[LocationData]) -> None:  # noqa: E501
-        """Execute addition of multiple location data in the DB"""
+        """Execute addition of multiple location data in the DB
+
+        May raise InputError if a location does not exist or already has data at the timestamp.
+        """
         for entry in location_data:
             try:
                 write_cursor.execute(
@@ -2007,10 +2010,13 @@ class DBHandler:
                     (entry.time, entry.location, entry.usd_value),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                if DBLocations.get(write_cursor, entry.location) is None:
+                    raise InputError(
+                        f'Tried to add a timed_location_data for unknown location {entry.location}',  # noqa: E501
+                    ) from e
                 raise InputError(
                     f'Tried to add a timed_location_data for '
-                    f'{LocationIdentifier(entry.location)!s} at'
-                    f' already existing timestamp {entry.time}.',
+                    f'{entry.location} at already existing timestamp {entry.time}.',
                 ) from e
 
     def add_blockchain_accounts(
@@ -4696,11 +4702,14 @@ class DBHandler:
         return new_db_path
 
     def get_associated_locations(self) -> set[LocationIdentifier]:
+        """Locations that data or a connection is directly assigned to"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT location FROM margin_positions UNION '
-                'SELECT location FROM user_credentials UNION '
-                'SELECT location FROM history_events',
+                'SELECT location FROM history_events UNION '
+                # credentials are keyed by connector, which is not always a location (FinTS)
+                'SELECT location FROM user_credentials WHERE location IN '
+                '(SELECT identifier FROM locations)',
             )
             return {LocationIdentifier(loc[0]) for loc in cursor}
 

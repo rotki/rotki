@@ -14,7 +14,7 @@ section.
 | 1 | Inventory, catalog, old-to-new mapping, catalog validation tests | A, B (catalog) | done |
 | 2 | `locations` schema, v54 upgrade, `DBLocations`, migration fixtures/assertions | A, B | done |
 | 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | done |
-| 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | todo |
+| 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | done |
 | 5 | Custom location API (CRUD, usage, image upload) | B | todo |
 | 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | todo |
 | 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | todo |
@@ -192,3 +192,45 @@ needs no change.
 - Tests: `tests/utils/locations.py` freezes the v53 enum order so migration tests keep an
   independent source; `try_get_first_exchange` takes the expected exchange class instead of
   location-literal overloads.
+
+## Section 4 notes
+
+- `LocationScope` (`exact`, `subtree`) in `rotkehlchen/locations/types.py`. The API field is
+  `location_scope`, default `exact`, on every endpoint with a location filter: history events
+  (query, export, deletion, group position), data issues, and the three historical balance
+  endpoints (event metrics).
+- `DBLocationFilter(location, scope, exclude, column)` in `db/filtering.py` is the only location
+  filter. The subtree scope is an uncorrelated `location IN (<recursive CTE>)` subquery built by
+  `db.locations.subtree_query`, so filters need no cursor. SQLite evaluates it once and probes
+  `idx_history_events_location` with the result
+  (`tests/db/test_location_filtering.py::test_subtree_filter_uses_location_index` asserts the
+  plan). This departs from the design's literal `IN (?, ?, ...)` only in where the descendant set
+  is resolved; the query shape and index use are the same. The subtree of `total` adds no
+  predicate. `excluded_locations` (internal only, no API) expands with the same scope.
+- Balance snapshots now write the most specific location: every chain is its own
+  `timed_location_data` bucket (`BlockchainBalances.totals_per_chain` +
+  `locations.chains.location_of_chain_balances`, where beacon chain validators count as
+  `ethereum` and Kusama, Polkadot and Avalanche map to their catalog nodes). NFTs go to their
+  chain (`evm chains` if unknown). Each location's value is net of the liabilities held there
+  (chain liabilities to their chain, manual liabilities to their own location), so the values add
+  up to the net value; previously every liability was subtracted from the one `blockchain`
+  bucket. `/balances` `location` stats change the same way (per chain instead of `blockchain`).
+  Old `blockchain` rows stay valid broad buckets and `total` stays the stored aggregate.
+- There is no backend endpoint reading a per-location snapshot history for a selected node, so
+  read-side subtree aggregation of snapshots (sum direct + descendants, root read directly) belongs
+  to the frontend tree store in section 8, using `/statistics/value_distribution` rows.
+- `/locations/associated` returns `{"locations": [...], "ancestors": [...]}`: directly used
+  locations, and the further ancestors needed for their paths (`DBLocations.ancestor_identifiers`).
+  Credential rows whose connector is not a location (FinTS) are left out. The frontend reads
+  `locations` only for now.
+- Exports: history events CSV adds `location_path` after `location`; the PnL CSV adds it as the
+  last column so the formula column letters do not move; the human-readable snapshot location CSV
+  adds it too (the import CSV is unchanged). Paths come from `DBLocations.display_paths`
+  (`Blockchains > EVM Chains > Ethereum Mainnet`, root left out).
+- Fixed section 3 leftovers found by the scoped test run: three API error messages still called
+  `.name` on the location (Bitcoin asset check, exchange secret/passphrase checks) and a stale
+  auto-notes expectation. The frontend backend-icons extractor now also scans
+  `rotkehlchen/data/locations.json`, otherwise regenerating dropped `lu-book-text` (External).
+- More pre-existing failures in this sandbox, identical on HEAD:
+  `test_history_events_export.py::test_history_export_download_path_traversal`,
+  `test_exchanges.py::test_setup_exchange` (live exchanges, skipped in CI).

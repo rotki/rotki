@@ -391,6 +391,10 @@ def test_get_historical_balance_with_filters(
         # Location filters
         ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (aave)
         ({'timestamp': START_TS, 'location': 'base'}, '3'),
+        ({'timestamp': START_TS, 'location': 'evm chains', 'location_scope': 'subtree'}, '22'),
+        ({'timestamp': START_TS, 'location': 'total', 'location_scope': 'subtree'}, '22'),
+        ({'timestamp': START_TS, 'location': 'ethereum', 'location_scope': 'subtree'}, '19'),
+        ({'timestamp': START_TS, 'location': 'evm chains', 'location_scope': 'exact'}, None),
         # Location label filters
         ({'timestamp': START_TS, 'location_label': addr1}, '18'),  # 5 + 3 + 10 (aave)
         ({'timestamp': START_TS, 'location_label': addr2}, '4'),
@@ -412,7 +416,10 @@ def test_get_historical_balance_with_filters(
             json=filters,
         ))
         assert result['processing_required'] is False, f'Failed for filters: {filters}'
-        assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
+        if expected_eth is None:  # no balances at all
+            assert 'entries' not in result, f'Failed for filters: {filters}'
+        else:
+            assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
 
     result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),

@@ -6894,7 +6894,8 @@ Exporting History Events
    :reqjson list[string] group_identifiers: An optional list of group identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
-   :reqjson list location: An optional location name to filter events only for that location.
+   :reqjson string location: An optional location identifier to filter events only for that location.
+   :reqjson string location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
    :reqjson string notes_substring: An optional string to filter events by searching for a substring in the notes field. This searches both user notes and auto-generated notes. Auto-generated notes are matched without the asset symbol, so search for an asset with the asset filter rather than by its symbol in the notes.
    :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
@@ -12196,7 +12197,7 @@ Get associated locations
 
 .. http:get:: /api/(version)/locations/associated
 
-   Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
+   Doing a GET on this endpoint will return the locations where the user has information: locations of history events and margin positions, and locations of connected exchanges and banks. ``locations`` lists only the locations the data is directly assigned to. ``ancestors`` lists the further locations needed to display their paths in the location tree. A parent is not directly used merely because one of its descendants is.
 
    **Example Request**:
 
@@ -12213,10 +12214,15 @@ Get associated locations
       Content-Type: application/json
 
       {
-          "result": ["nexo", "kraken", "uniswap"],
+          "result": {
+              "locations": ["ethereum", "kraken", "nexo"],
+              "ancestors": ["blockchain", "evm chains", "exchanges", "total"]
+          },
           "message": ""
       }
 
+   :resjson list[string] locations: Identifiers of the locations data is directly assigned to.
+   :resjson list[string] ancestors: Identifiers of every further ancestor of those locations.
    :statuscode 200: Locations successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
@@ -15364,6 +15370,7 @@ Data Issues
     :query state: Optional comma separated or repeated list of states.
     :query kind: Optional comma separated or repeated list of issue kinds.
     :query location: Optional location filter.
+    :query location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
     :query location_label: Optional account/location label filter.
     :query asset: Optional asset identifier filter.
     :query from_timestamp: Optional lower bound for issue time range overlap.
@@ -15676,6 +15683,7 @@ Historical Balance Queries
       :reqjsonarr integer timestamp: The timestamp to query the balance for
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
       :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
       :reqjsonarr boolean group_by_account: (Optional, default false) If true, returns one record per location, location label, protocol and asset bucket instead of aggregating by asset.
@@ -15806,6 +15814,7 @@ Historical Balance Queries
 
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
@@ -15949,6 +15958,7 @@ Historical Balance Queries
       :reqjsonarr integer from_timestamp: (Optional, default 0) Inclusive start timestamp.
       :reqjsonarr integer to_timestamp: (Optional, default now) Inclusive end timestamp.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
     **Example Response:**

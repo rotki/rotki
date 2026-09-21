@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.locations.constants import (
     LOCATION_ARBITRUM_ONE,
+    LOCATION_AVALANCHE,
     LOCATION_BASE,
     LOCATION_BINANCE_SC,
     LOCATION_BITCOIN,
@@ -11,8 +12,10 @@ from rotkehlchen.locations.constants import (
     LOCATION_GNOSIS,
     LOCATION_HYPERLIQUID,
     LOCATION_INK,
+    LOCATION_KUSAMA,
     LOCATION_MONAD,
     LOCATION_OPTIMISM,
+    LOCATION_POLKADOT,
     LOCATION_POLYGON_POS,
     LOCATION_ROBINHOOD,
     LOCATION_SCROLL,
@@ -61,10 +64,23 @@ _CHAIN_TO_LOCATION: Final[dict[SupportedBlockchain, LocationIdentifier]] = {
     SupportedBlockchain.SOLANA: LOCATION_SOLANA,
 }
 BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS + BITCOIN_LOCATIONS + (LOCATION_SOLANA,)
+_BALANCES_CHAIN_TO_LOCATION: Final[dict[SupportedBlockchain, LocationIdentifier]] = {
+    **_CHAIN_TO_LOCATION,
+    SupportedBlockchain.ETHEREUM_BEACONCHAIN: LOCATION_ETHEREUM,
+    SupportedBlockchain.KUSAMA: LOCATION_KUSAMA,
+    SupportedBlockchain.POLKADOT: LOCATION_POLKADOT,
+    SupportedBlockchain.AVALANCHE: LOCATION_AVALANCHE,
+}
 
 
 def location_from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> LocationIdentifier:
     return EVM_CHAIN_ID_TO_LOCATION[chain_id]
+
+
+def location_of_chain_balances(chain: SupportedBlockchain) -> LocationIdentifier:
+    """The location holding the balances of a chain's accounts. Validator balances of the
+    beacon chain are ETH of Ethereum Mainnet, so they belong to Ethereum."""
+    return _BALANCES_CHAIN_TO_LOCATION[chain]
 
 
 def location_to_chain_id(location: LocationIdentifier) -> int:

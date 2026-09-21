@@ -51,6 +51,17 @@ export const AllLocationResponseSchema = z.object({
 
 export type AllLocationResponse = z.infer<typeof AllLocationResponseSchema>;
 
+/**
+ * Locations the user's data is directly assigned to, and the further ancestors needed to show
+ * their paths in the location tree.
+ */
+export const AssociatedLocationsSchema = z.object({
+  locations: z.array(z.string()),
+  ancestors: z.array(z.string()),
+});
+
+export type AssociatedLocations = z.infer<typeof AssociatedLocationsSchema>;
+
 const LocationLabelSchema = z.object({
   location: z.string(),
   locationLabel: z.string(),
