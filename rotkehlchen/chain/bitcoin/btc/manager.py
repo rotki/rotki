@@ -530,8 +530,10 @@ class BitcoinManager(BitcoinCommonManager):
         """
         script = bytes.fromhex(data['scriptpubkey'])
         # The api gives no address for P2PK scripts (and none for op_return, which is
-        # decoded from the script). Derive it like the other explorers report it.
-        if (address := data.get('scriptpubkey_address')) is None and data.get('scriptpubkey_type') == 'p2pk':  # noqa: E501
+        # decoded from the script): mempool.space omits the key or sets it to null, an
+        # instance on an electrum backend sets it to an empty string. Derive the P2PK
+        # address like the other explorers report it.
+        if (address := data.get('scriptpubkey_address') or None) is None and data.get('scriptpubkey_type') == 'p2pk':  # noqa: E501
             try:
                 address = scriptpubkey_to_p2pk_address(script)
             except EncodingError as e:

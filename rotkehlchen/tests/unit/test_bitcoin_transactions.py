@@ -1492,15 +1492,29 @@ def test_deserialize_mempool_tx(bitcoin_manager: BitcoinManager) -> None:
     assert tx.is_complete
 
 
+# How the mempool backends report a TxIO without an address: mempool.space omits the key or
+# sets it to null, an instance on an electrum backend sets it to an empty string.
+NO_ADDRESS_VARIANTS = pytest.mark.parametrize('no_address', [
+    pytest.param({}, id='omitted'),
+    pytest.param({'scriptpubkey_address': None}, id='null'),
+    pytest.param({'scriptpubkey_address': ''}, id='empty'),
+])
+
+
+@NO_ADDRESS_VARIANTS
 @pytest.mark.parametrize('btc_accounts', [[P2PK_ADDRESS]])
 def test_deserialize_mempool_p2pk_tx(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
+        no_address: dict[str, Any],
 ) -> None:
     """Esplora gives no address for P2PK scripts, so it is derived from the public key in the
     script and the transaction decodes exactly like test_p2pk does from the other explorers.
     """
-    tx = bitcoin_manager.deserialize_tx_from_mempool(ESPLORA_P2PK_TX)
+    tx = bitcoin_manager.deserialize_tx_from_mempool(ESPLORA_P2PK_TX | {
+        'vin': [ESPLORA_P2PK_TX['vin'][0] | {'prevout': ESPLORA_P2PK_TX['vin'][0]['prevout'] | no_address}],  # noqa: E501
+        'vout': [ESPLORA_P2PK_TX['vout'][0], ESPLORA_P2PK_TX['vout'][1] | no_address],
+    })
     assert tx is not None
     assert tx.inputs[0].address == P2PK_ADDRESS
     assert tx.outputs[1].address == P2PK_ADDRESS
@@ -1535,10 +1549,12 @@ def test_deserialize_mempool_malformed_p2pk_script(
         ))
 
 
+@NO_ADDRESS_VARIANTS
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
 def test_deserialize_mempool_op_return_tx(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
+        no_address: dict[str, Any],
 ) -> None:
     """An op_return output has no address and keeps its script for decoding."""
     tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
@@ -1546,7 +1562,7 @@ def test_deserialize_mempool_op_return_tx(
         block_time=1700000000,
         vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000)}],
         vout=[
-            {'scriptpubkey': '6a0b68656c6c6f20776f726c64', 'scriptpubkey_type': 'op_return', 'value': 0},  # noqa: E501
+            {'scriptpubkey': '6a0b68656c6c6f20776f726c64', 'scriptpubkey_type': 'op_return', 'value': 0} | no_address,  # noqa: E501
             _esplora_p2wpkh_txio(value=99_000),
         ],
         fee=1_000,
