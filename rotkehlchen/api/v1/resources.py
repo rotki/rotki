@@ -68,6 +68,9 @@ from rotkehlchen.api.v1.schemas import (
     ClearIconsCacheSchema,
     ConfigurationUpdateSchema,
     ConnectionIdentifierSchema,
+    ConnectorAssetMappingsDeleteSchema,
+    ConnectorAssetMappingsPostSchema,
+    ConnectorAssetMappingsUpdateSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -133,9 +136,6 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
-    LocationAssetMappingsDeleteSchema,
-    LocationAssetMappingsPostSchema,
-    LocationAssetMappingsUpdateSchema,
     LocationCreateSchema,
     LocationEditSchema,
     LocationIdentifierSchema,
@@ -229,7 +229,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
     MONERIUM_CAPABILITY,
@@ -257,6 +256,8 @@ from rotkehlchen.types import (
     ChainID,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -267,8 +268,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -313,6 +312,7 @@ if TYPE_CHECKING:
         AccountingRulesFilterQuery,
         AddressbookFilterQuery,
         AssetsFilterQuery,
+        ConnectorAssetMappingsFilterQuery,
         CounterpartyAssetMappingsFilterQuery,
         CustomAssetsFilterQuery,
         DataIssuesFilterQuery,
@@ -322,7 +322,6 @@ if TYPE_CHECKING:
         HistoryEventFilterQuery,
         InternalTxConflictsFilterQuery,
         LevenshteinFilterQuery,
-        LocationAssetMappingsFilterQuery,
         NFTFilterQuery,
         ReportDataFilterQuery,
         UserNotesFilterQuery,
@@ -336,6 +335,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def _combine_parser_data(
@@ -2741,55 +2741,48 @@ class AssetIconsResource(BaseMethodView):
         return self.rest_api.refresh_asset_icon(asset=asset)
 
 
-class LocationAssetMappingsResource(BaseMethodView):
-    post_schema = LocationAssetMappingsPostSchema()
-    put_and_patch_schema = LocationAssetMappingsUpdateSchema()
-    delete_schema = LocationAssetMappingsDeleteSchema()
+class ConnectorAssetMappingsResource(BaseMethodView):
+    post_schema = ConnectorAssetMappingsPostSchema()
+    put_and_patch_schema = ConnectorAssetMappingsUpdateSchema()
+    delete_schema = ConnectorAssetMappingsDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
+    def post(self, filter_query: ConnectorAssetMappingsFilterQuery) -> Response:
         return self.rest_api.query_asset_mappings_by_type(
-            mapping_type='location',
+            mapping_type='connector',
             filter_query=filter_query,
-            dict_keys=('asset', 'location', 'location_symbol'),
-            query_columns='local_id, location, exchange_symbol',
-            location_or_counterparty_reader_callback=self._location_mapping_reader,
+            dict_keys=('asset', 'connector', 'connector_symbol'),
+            query_columns='local_id, connector, exchange_symbol',
+            connector_or_counterparty_reader_callback=lambda entry: entry,
         )
-
-    @staticmethod
-    def _location_mapping_reader(entry: dict[str, Any]) -> dict[str, Any]:
-        if (loc := entry['location']) is not None:
-            entry['location'] = str(LocationIdentifier(loc))
-
-        return entry
 
     @use_kwargs(put_and_patch_schema, location='json')
     def put(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.add_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.add_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(put_and_patch_schema, location='json')
     def patch(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.update_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.update_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            entries: list[LocationAssetMappingDeleteEntry],
+            entries: list[ConnectorAssetMappingDeleteEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.delete_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.delete_connector_asset_mappings,
             entries=entries,
         )
 
@@ -2818,7 +2811,7 @@ class CounterpartyAssetMappingsResource(BaseMethodView):
             filter_query=filter_query,
             mapping_type='counterparty',
             query_columns='local_id, counterparty, symbol',
-            location_or_counterparty_reader_callback=lambda x: x,
+            connector_or_counterparty_reader_callback=lambda x: x,
             dict_keys=('asset', 'counterparty', 'counterparty_symbol'),
         )
 

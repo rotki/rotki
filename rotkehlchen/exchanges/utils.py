@@ -217,13 +217,13 @@ def query_binance_exchange_pairs(location: LocationIdentifier) -> dict[str, Bina
                 msg = f'Missing key: {msg} in Binance response: {response.text}'  # pyright: ignore # KeyError can be raised only by create_binance_symbols_to_pair so by then response exists
             log.error(f'Failed to obtain market pairs from {location}. {msg}')
             # If request fails try to get them from the database
-            database_pairs = gdb_binance.get_all_binance_pairs(location)
+            database_pairs = gdb_binance.get_all_binance_pairs(connector=location)
             return {pair.symbol: pair for pair in database_pairs}
 
-        gdb_binance.save_all_binance_pairs(new_pairs=pairs.values(), location=location)
+        gdb_binance.save_all_binance_pairs(new_pairs=pairs.values(), connector=location)
 
     else:
-        database_pairs = gdb_binance.get_all_binance_pairs(location)
+        database_pairs = gdb_binance.get_all_binance_pairs(connector=location)
         pairs = {pair.symbol: pair for pair in database_pairs}
 
     return pairs

@@ -1390,5 +1390,5 @@ def get_exchange_asset_symbols(
     ' OR location IS NULL;' includes exchange-specific and generic symbols.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        querystr = 'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ?' + query_suffix  # noqa: E501
+        querystr = 'SELECT exchange_symbol FROM connector_asset_mappings WHERE connector IS ?' + query_suffix  # noqa: E501
         return {asset[0] for asset in cursor.execute(querystr, (exchange,))}

@@ -20,7 +20,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.types import deserialize_location_identifier
-from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
+from rotkehlchen.tests.api.test_connector_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -693,9 +693,9 @@ def test_reset_accounting_rules(data_updater: RotkiDataUpdater) -> None:
         ).fetchone()[0] == '1'  # the version pointer is set to the latest applied version
 
 
-def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> None:
+def _check_connector_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> None:
     """Auxiliary function to check the db values before and after the upgrade"""
-    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM connector_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
 
     for addition, is_present_count in zip(
         LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['additions'],
@@ -704,7 +704,7 @@ def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> Non
     ):
         result = cursor.execute(  # additions are not present already
             f"SELECT {'COUNT(*)' if after_upgrade is False else 'local_id'} "
-            'FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?', (
+            'FROM connector_asset_mappings WHERE connector IS ? AND exchange_symbol IS ?', (
                 None if addition['location'] is None else
                 deserialize_location_identifier(addition['location']),
                 addition['location_symbol'],
@@ -714,27 +714,27 @@ def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> Non
 
     for update in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['updates']:
         asset_id = cursor.execute(  # mappings to be updated are not updated already
-            'SELECT local_id FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
+            'SELECT local_id FROM connector_asset_mappings WHERE connector IS ? AND exchange_symbol IS ?',  # noqa: E501
             (deserialize_location_identifier(update['location']), update['location_symbol']),
         ).fetchone()[0]
         assert (asset_id == update['asset']) == after_upgrade
 
     for deletion in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['deletions']:
         not_exists = cursor.execute(  # mappings to be deleted are present already
-            'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
+            'SELECT COUNT(*) FROM connector_asset_mappings WHERE connector IS ? AND exchange_symbol IS ?',  # noqa: E501
             (deserialize_location_identifier(deletion['location']), deletion['location_symbol']),
         ).fetchone()[0] == 0
         assert not_exists == after_upgrade
 
 
-def test_location_asset_mappings_updates(
+def test_connector_asset_mappings_updates(
         data_updater: RotkiDataUpdater,
         globaldb: GlobalDBHandler,
 ) -> None:
     """Test that remote updates for location asset mappings work"""
     # check state of the location asset mappings before updating
     with globaldb.conn.read_ctx() as cursor:
-        _check_location_asset_mappings(cursor, after_upgrade=False)
+        _check_connector_asset_mappings(cursor, after_upgrade=False)
 
     with patch(
         'requests.get',
@@ -743,7 +743,7 @@ def test_location_asset_mappings_updates(
         data_updater.check_for_updates()
 
     with globaldb.conn.read_ctx() as cursor:
-        _check_location_asset_mappings(cursor, after_upgrade=True)
+        _check_connector_asset_mappings(cursor, after_upgrade=True)
 
 
 def _check_counterparty_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> None:

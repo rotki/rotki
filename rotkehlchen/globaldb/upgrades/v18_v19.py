@@ -18,8 +18,8 @@ def migrate_to_v19(
         connection: DBConnection,
         progress_handler: DBUpgradeProgressHandler,
 ) -> None:
-    """Add Birdeye as a historical price source and store the locations of exchange asset
-    mappings and binance pairs as text identifiers instead of one character.
+    """Add Birdeye as a historical price source and key exchange asset mappings and binance
+    pairs by connector identifier instead of a location character.
 
     This upgrade takes place in v1.45
     """
@@ -51,6 +51,16 @@ def migrate_to_v19(
                 f'WHERE old={table}.location) WHERE location IS NOT NULL',
             )
         write_cursor.execute('DROP TABLE location_char_mapping')
+
+    @progress_step('Keying asset mappings and binance pairs by connector')
+    def _rename_to_connectors(write_cursor: DBCursor) -> None:
+        """The rows describe the symbol namespace of a connector, not where an event
+        happened. The converted names are already the connector identifiers."""
+        write_cursor.execute('DROP INDEX IF EXISTS idx_location_mappings_identifier')
+        write_cursor.execute('ALTER TABLE location_asset_mappings RENAME TO connector_asset_mappings')  # noqa: E501
+        write_cursor.execute('ALTER TABLE connector_asset_mappings RENAME COLUMN location TO connector')  # noqa: E501
+        write_cursor.execute('CREATE INDEX IF NOT EXISTS idx_connector_mappings_identifier ON connector_asset_mappings (local_id)')  # noqa: E501
+        write_cursor.execute('ALTER TABLE binance_pairs RENAME COLUMN location TO connector')
 
     perform_globaldb_upgrade_steps(
         connection=connection,

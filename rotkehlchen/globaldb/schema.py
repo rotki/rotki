@@ -277,10 +277,10 @@ CREATE TABLE IF NOT EXISTS binance_pairs (
     pair TEXT NOT NULL,
     base_asset TEXT NOT NULL,
     quote_asset TEXT NOT NULL,
-    location TEXT NOT NULL,
+    connector TEXT NOT NULL,
     FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY(pair, location)
+    PRIMARY KEY(pair, connector)
 );
 """
 
@@ -349,15 +349,14 @@ CREATE TABLE IF NOT EXISTS contract_data (
 );
 """
 
-# Used to store exchange specific asset's symbol mappings with their identifiers.
-# location column is not made as FK like in user DB because it can be NULL,
-# which means the asset mapping is common for all the exchanges.
-DB_CREATE_LOCATION_ASSET_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS location_asset_mappings (
-    location TEXT,
+# The symbols a connector (an exchange API or import format) uses for assets, mapped to their
+# identifiers. A NULL connector is a mapping shared by every connector.
+DB_CREATE_CONNECTOR_ASSET_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS connector_asset_mappings (
+    connector TEXT,
     exchange_symbol TEXT NOT NULL,
     local_id TEXT NOT NULL COLLATE NOCASE,
-    UNIQUE (location, exchange_symbol)
+    UNIQUE (connector, exchange_symbol)
 );
 """
 
@@ -380,7 +379,7 @@ CREATE INDEX IF NOT EXISTS idx_user_owned_assets_asset_id ON user_owned_assets (
 CREATE INDEX IF NOT EXISTS idx_common_assets_identifier ON common_asset_details (identifier);
 CREATE INDEX IF NOT EXISTS idx_price_history_pair_timestamp ON price_history (from_asset, to_asset, timestamp, source_type);
 CREATE INDEX IF NOT EXISTS idx_price_history_timestamp_desc_order ON price_history (timestamp DESC, from_asset, to_asset, source_type);
-CREATE INDEX IF NOT EXISTS idx_location_mappings_identifier ON location_asset_mappings (local_id);
+CREATE INDEX IF NOT EXISTS idx_connector_mappings_identifier ON connector_asset_mappings (local_id);
 CREATE INDEX IF NOT EXISTS idx_underlying_tokens_lists_identifier ON underlying_tokens_list (identifier, parent_token_entry);
 CREATE INDEX IF NOT EXISTS idx_underlying_tokens_parent_entry ON underlying_tokens_list (parent_token_entry);
 CREATE INDEX IF NOT EXISTS idx_binance_pairs_identifier ON binance_pairs (base_asset, quote_asset);
@@ -413,7 +412,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CONTRACT_ABI}
 {DB_CREATE_CONTRACT_DATA}
 {DB_CREATE_DEFAULT_RPC_NODES}
-{DB_CREATE_LOCATION_ASSET_MAPPINGS}
+{DB_CREATE_CONNECTOR_ASSET_MAPPINGS}
 {DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS}
 {DB_CREATE_SOLANA_TOKENS}
 {DB_CREATE_HYPERLIQUID_TOKENS}

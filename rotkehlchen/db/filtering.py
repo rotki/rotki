@@ -406,11 +406,11 @@ class DBLocationFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBNullableLocationFilter(DBFilter):
-    location: LocationIdentifier | None
+class DBNullableConnectorFilter(DBFilter):
+    connector: LocationIdentifier | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        return (['location IS ?'], [None if self.location is None else self.location])
+        return ['connector IS ?'], [self.connector]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -2220,44 +2220,42 @@ class AssetsFilterQuery(DBFilterQuery):
         return filter_query
 
 
-class LocationAssetMappingsFilterQuery(DBFilterQuery):
-    """DBFilterQuery with a nullable DB Location filter. Here the if location_filter is None then
-    no filter is applied. If location_filter exists, but with the `location` value as None then the
-    filter will be applied with `location IS NULL` clause. Other normal values of location in
-    location filter will work similar to DBLocationFilter."""
-    location_filter: DBNullableLocationFilter | None = None
+class ConnectorAssetMappingsFilterQuery(DBFilterQuery):
+    """DBFilterQuery with a nullable connector filter. Without a connector_filter no filter is
+    applied. A connector_filter whose connector is None matches the mappings shared by every
+    connector (`connector IS NULL`)."""
+    connector_filter: DBNullableConnectorFilter | None = None
 
     @classmethod
     def make(
-            cls: type[LocationAssetMappingsFilterQuery],
+            cls: type[ConnectorAssetMappingsFilterQuery],
             limit: int,
             offset: int,
-            location: LocationIdentifier | Literal['common'] | None = None,
-            location_symbol: str | None = None,
+            connector: LocationIdentifier | Literal['common'] | None = None,
+            connector_symbol: str | None = None,
             and_op: bool = True,
-    ) -> LocationAssetMappingsFilterQuery:
-        """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
+    ) -> ConnectorAssetMappingsFilterQuery:
+        """Make and return the ConnectorAssetMappingsFilterQuery instance according to the passed
         arguments. `limit` and `offset` are for pagination and works with DBFilterPagination.
-        `location` can be a valid Location value, None, or "common". If `location` is None, filter
-        will not be applied. If valid Location value is given, that location will be filtered. If
-        `location` is "common" then filter will be applied for columns where location is NULL."""
+        `connector` None applies no filter, "common" selects the mappings shared by every
+        connector and any other value the mappings of that connector."""
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
         )
-        if location_symbol is not None:
+        if connector_symbol is not None:
             filter_query.filters.append(DBSubStringFilter(
                 and_op=True,
                 field='exchange_symbol',
-                search_string=location_symbol,
+                search_string=connector_symbol,
             ))
-        if location is not None:
-            filter_query.location_filter = DBNullableLocationFilter(
+        if connector is not None:
+            filter_query.connector_filter = DBNullableConnectorFilter(
                 and_op=True,
-                location=None if location == 'common' else location,
+                connector=None if connector == 'common' else connector,
             )
-            filter_query.filters.append(filter_query.location_filter)
+            filter_query.filters.append(filter_query.connector_filter)
         return filter_query
 
 

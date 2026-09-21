@@ -110,6 +110,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    ConnectorAssetMappingsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DataIssuesFilterQuery,
@@ -119,7 +120,6 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TimestampProximityOrder,
@@ -231,6 +231,8 @@ from rotkehlchen.types import (
     BTCTxId,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -241,8 +243,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -2747,15 +2747,15 @@ class RestAPI:
     def query_asset_mappings_by_type(
             self,
             dict_keys: tuple[str, str, str],
-            mapping_type: Literal['location', 'counterparty'],
-            location_or_counterparty_reader_callback: Callable,
-            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
-            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+            mapping_type: Literal['connector', 'counterparty'],
+            connector_or_counterparty_reader_callback: Callable,
+            filter_query: ConnectorAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            query_columns: Literal['local_id, connector, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.query_asset_mappings_by_type(
             dict_keys=dict_keys,
             mapping_type=mapping_type,
-            location_or_counterparty_reader_callback=location_or_counterparty_reader_callback,
+            connector_or_counterparty_reader_callback=connector_or_counterparty_reader_callback,
             filter_query=filter_query,
             query_columns=query_columns,
         )
@@ -2764,7 +2764,7 @@ class RestAPI:
     def perform_asset_mapping_operation(
             self,
             mapping_fn: Callable,
-            entries: Sequence[LocationAssetMappingUpdateEntry | LocationAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
+            entries: Sequence[ConnectorAssetMappingUpdateEntry | ConnectorAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.perform_asset_mapping_operation(
             mapping_fn=mapping_fn,

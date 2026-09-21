@@ -73,6 +73,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    ConnectorAssetMappingsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DataIssuesFilterQuery,
@@ -84,7 +85,6 @@ from rotkehlchen.db.filtering import (
     HistoryEventWithTxRefFilterQuery,
     InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     PaginatedFilterQuery,
     ReportDataFilterQuery,
@@ -177,6 +177,8 @@ from rotkehlchen.types import (
     ChainID,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CostBasisMethod,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
@@ -184,8 +186,6 @@ from rotkehlchen.types import (
     ExternalService,
     ExternalServiceApiCredentials,
     HistoryEventQueryType,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OnlyPurgeableModuleName,
     OptionalBlockchainAddress,
@@ -3167,78 +3167,79 @@ class AssetIconUploadSchema(Schema):
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
-class LocationAssetMappingsBaseSchema(Schema):
-    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, allow_none=True)
+class ConnectorAssetMappingsBaseSchema(Schema):
+    # exchange connectors are named like the location of their data
+    connector = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, allow_none=True)
 
 
-class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):
-    location_symbol = EmptyAsNoneStringField(load_default=None)
+class ConnectorAssetMappingsPostSchema(DBPaginationSchema, ConnectorAssetMappingsBaseSchema):
+    connector_symbol = EmptyAsNoneStringField(load_default=None)
 
     @post_load
-    def make_location_asset_mappings_post_query(
+    def make_connector_asset_mappings_post_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        """Make and return LocationAssetMappingsFilterQuery instance. `limit` and `offset` are used
-        for pagination, and optional `location` to filter by location. If `location` is explicitly
-        passed with `null` value (parsed as None here) then that is used to filter the common
-        mappings."""
-        filter_query = LocationAssetMappingsFilterQuery.make(
-            location='common' if 'location' in data and data['location'] is None else data.get('location'),  # noqa: E501
+        """Make and return ConnectorAssetMappingsFilterQuery instance. `limit` and `offset` are
+        used for pagination, and optional `connector` to filter by connector. If `connector` is
+        explicitly passed with `null` value (parsed as None here) then that is used to filter the
+        common mappings."""
+        filter_query = ConnectorAssetMappingsFilterQuery.make(
+            connector='common' if 'connector' in data and data['connector'] is None else data.get('connector'),  # noqa: E501
             limit=data['limit'],
-            location_symbol=data['location_symbol'],
+            connector_symbol=data['connector_symbol'],
             offset=data['offset'],
         )
         return {'filter_query': filter_query}
 
 
-class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
+class ConnectorAssetMappingUpdateEntrySchema(ConnectorAssetMappingsBaseSchema):
     asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-    location_symbol = NonEmptyStringField(required=True)
+    connector_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> LocationAssetMappingUpdateEntry:
+    ) -> ConnectorAssetMappingUpdateEntry:
         try:
-            entry = LocationAssetMappingUpdateEntry.deserialize(data)
+            entry = ConnectorAssetMappingUpdateEntry.deserialize(data)
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
-        if entry.location in (LOCATION_COINBASEPRIME, LOCATION_BINANCEUS, LOCATION_COINBASEPRO):
-            replacement_location = LOCATION_BINANCE if entry.location == LOCATION_BINANCEUS else LOCATION_COINBASE  # noqa: E501
+        if entry.connector in (LOCATION_COINBASEPRIME, LOCATION_BINANCEUS, LOCATION_COINBASEPRO):
+            replacement = LOCATION_BINANCE if entry.connector == LOCATION_BINANCEUS else LOCATION_COINBASE  # noqa: E501
             raise ValidationError(
-                message=f'Mappings for {entry.location} should use a location of {replacement_location}.',  # noqa: E501
-                field_name='location',
+                message=f'Mappings for {entry.connector} should use the {replacement} connector.',
+                field_name='connector',
             )
 
         return entry
 
 
-class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
-    location_symbol = NonEmptyStringField(required=True)
+class ConnectorAssetMappingDeleteEntrySchema(ConnectorAssetMappingsBaseSchema):
+    connector_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> LocationAssetMappingDeleteEntry:
+    ) -> ConnectorAssetMappingDeleteEntry:
         try:
-            return LocationAssetMappingDeleteEntry.deserialize(data)
+            return ConnectorAssetMappingDeleteEntry.deserialize(data)
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
 
-class LocationAssetMappingsUpdateSchema(Schema):
-    entries = NonEmptyList(fields.Nested(LocationAssetMappingUpdateEntrySchema), required=True)
+class ConnectorAssetMappingsUpdateSchema(Schema):
+    entries = NonEmptyList(fields.Nested(ConnectorAssetMappingUpdateEntrySchema), required=True)
 
 
-class LocationAssetMappingsDeleteSchema(Schema):
-    entries = NonEmptyList(fields.Nested(LocationAssetMappingDeleteEntrySchema), required=True)
+class ConnectorAssetMappingsDeleteSchema(Schema):
+    entries = NonEmptyList(fields.Nested(ConnectorAssetMappingDeleteEntrySchema), required=True)
 
 
 class CounterpartyAssetMappingsBaseSchema(Schema):

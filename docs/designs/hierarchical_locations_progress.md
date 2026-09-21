@@ -16,7 +16,7 @@ section.
 | 3 | Replace the enum with `LocationIdentifier` + constants in all backend consumers | C | done |
 | 4 | Exact/subtree filtering and aggregation (history, balances, snapshots, accounting, exports) | C | done |
 | 5 | Custom location API (CRUD, usage, image upload) | B | done |
-| 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | in progress (connections done; global connector mappings next) |
+| 6 | Connector separation (`integration_connections`, registries, Qonto, FinTS, global v19 mappings) | D | done |
 | 7 | Generic import preflight, aliases, user-data export/import | C, section 12 | todo |
 | 8 | Frontend (tree store, selectors, filters, management, bank flow, preflight) | E | todo |
 | 9 | Cleanup, performance measurements, docs, full test runs | F, section 17 | todo |
@@ -287,4 +287,15 @@ needs no change.
   `GET /locations` limited to the Banks subtree (`bank-locations.ts`). Bank locations are the
   locations of the bank connections (`useBankConnectionsStore().bankLocations`); `isBank` and the
   exchange details of the flat location map are gone.
+- Global DB: `location_asset_mappings` became `connector_asset_mappings(connector, exchange_symbol,
+  local_id)` and `binance_pairs.location` became `connector`, in the unreleased v18->v19 upgrade
+  (after the character conversion), the fresh schema and the packaged `global.db`. The names are
+  already the connector identifiers. The setting `binance_pairs_queried_at_{connector}` kept its
+  key. The API is `/assets/connectormappings` with `connector` and `connector_symbol`
+  (`ConnectorAssetMapping*` entries and `ConnectorAssetMappingsFilterQuery`).
+- The data repo contract is unchanged: the update type stays `location_asset_mappings` (so the
+  updater method keeps the `update_location_asset_mappings` name the type selects), and its
+  entries keep `location`/`location_symbol`, which the updater renames on the way in.
+- The frontend cex mapping module still calls the connector its location; its API client
+  translates. Renaming that UI vocabulary belongs with the connector/location split of section 8.
 

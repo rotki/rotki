@@ -939,44 +939,45 @@ class AddressbookEntryWithSource(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class LocationAssetMappingDeleteEntry:
-    location: LocationIdentifier | None
-    location_symbol: str
+class ConnectorAssetMappingDeleteEntry:
+    """A symbol of a connector, or of every connector when ``connector`` is None"""
+    connector: LocationIdentifier | None
+    connector_symbol: str
 
     @classmethod
-    def deserialize(cls: type[LocationAssetMappingDeleteEntry], data: dict[str, Any]) -> LocationAssetMappingDeleteEntry:  # noqa: E501
+    def deserialize(cls: type[ConnectorAssetMappingDeleteEntry], data: dict[str, Any]) -> ConnectorAssetMappingDeleteEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
         try:
             return cls(
-                location=data['location'],
-                location_symbol=data['location_symbol'],
+                connector=data['connector'],
+                connector_symbol=data['connector_symbol'],
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
 
     def serialize_for_db(self) -> tuple[Any, ...]:
-        return self.location_symbol, self.location
+        return self.connector_symbol, self.connector
 
     def __str__(self) -> str:
-        return f'{self.location_symbol} in {self.location}'
+        return f'{self.connector_symbol} in {self.connector}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
+class ConnectorAssetMappingUpdateEntry(ConnectorAssetMappingDeleteEntry):
     asset: Asset
 
     @classmethod
-    def deserialize(cls: type[LocationAssetMappingUpdateEntry], data: dict[str, Any]) -> LocationAssetMappingUpdateEntry:  # noqa: E501
+    def deserialize(cls: type[ConnectorAssetMappingUpdateEntry], data: dict[str, Any]) -> ConnectorAssetMappingUpdateEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
         try:
             return cls(
                 asset=data['asset'],
-                location=data['location'],
-                location_symbol=data['location_symbol'],
+                connector=data['connector'],
+                connector_symbol=data['connector_symbol'],
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e

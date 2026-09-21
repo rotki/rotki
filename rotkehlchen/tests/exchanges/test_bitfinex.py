@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
-    LocationAssetMappingUpdateEntry,
+    ConnectorAssetMappingUpdateEntry,
     Timestamp,
     TimestampMS,
     TokenKind,
@@ -196,8 +196,8 @@ def test_first_connection(mock_bitfinex, globaldb):
     bitfinex_db_serialized = LOCATION_BITFINEX
     with globaldb.conn.read_ctx() as cursor:
         mappings_before = set(cursor.execute(
-            'SELECT exchange_symbol, local_id FROM location_asset_mappings '
-            'WHERE location=?;',
+            'SELECT exchange_symbol, local_id FROM connector_asset_mappings '
+            'WHERE connector=?;',
             (bitfinex_db_serialized,),
         ).fetchall())
 
@@ -205,8 +205,8 @@ def test_first_connection(mock_bitfinex, globaldb):
 
     with globaldb.conn.read_ctx() as cursor:
         mappings_after = set(cursor.execute(
-            'SELECT exchange_symbol, local_id FROM location_asset_mappings '
-            'WHERE location=?;',
+            'SELECT exchange_symbol, local_id FROM connector_asset_mappings '
+            'WHERE connector=?;',
             (bitfinex_db_serialized,),
         ).fetchall())
 
@@ -275,10 +275,10 @@ def test_query_balances_asset_balance(
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
     """
     mock_bitfinex.first_connection = MagicMock()  # type: ignore
-    globaldb.add_location_asset_mappings([
-        LocationAssetMappingUpdateEntry(
-            location=LOCATION_BITFINEX,
-            location_symbol='GNT',
+    globaldb.add_connector_asset_mappings([
+        ConnectorAssetMappingUpdateEntry(
+            connector=LOCATION_BITFINEX,
+            connector_symbol='GNT',
             asset=A_GLM,
         ),
     ])

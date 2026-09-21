@@ -30,7 +30,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.schema import DB_CREATE_LOCATION_ASSET_MAPPINGS
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.globaldb.upgrades.v3_v4 import (
@@ -576,7 +575,12 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(
             cursor=cursor,
             name='location_asset_mappings',
-            schema=DB_CREATE_LOCATION_ASSET_MAPPINGS,
+            schema="""CREATE TABLE IF NOT EXISTS location_asset_mappings (
+                location TEXT,
+                exchange_symbol TEXT NOT NULL,
+                local_id TEXT NOT NULL COLLATE NOCASE,
+                UNIQUE (location, exchange_symbol)
+            );""",
         ) is True
 
         # check that location_unsupported_assets table is present in the database
@@ -1922,7 +1926,8 @@ def test_upgrade_v18_v19(
         messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test the global DB upgrade from v18 to v19 that adds Birdeye to the
-    historical price sources table and stores exchange locations as text identifiers."""
+    historical price sources table and keys exchange asset mappings and binance pairs by
+    connector identifier."""
     assert globaldb.get_setting_value('version', 0) == 18
     with globaldb.conn.write_ctx() as write_cursor:
         assert write_cursor.execute(
@@ -1952,13 +1957,17 @@ def test_upgrade_v18_v19(
             "SELECT seq FROM price_history_source_types WHERE type='L'",
         ).fetchone() == (12,)
         assert set(cursor.execute(
-            'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+            'SELECT connector, exchange_symbol, local_id FROM connector_asset_mappings',
         ).fetchall()) == {
             (None if location is None else V53_CHAR_TO_NAME[location], symbol, local_id)
             for location, symbol, local_id in mappings_before
         }
+        assert not table_exists(cursor, 'location_asset_mappings')
+        assert {row[0] for row in cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='connector_asset_mappings'",  # noqa: E501
+        )} >= {'idx_connector_mappings_identifier'}
         assert cursor.execute(
-            'SELECT location FROM binance_pairs ORDER BY location',
+            'SELECT connector FROM binance_pairs ORDER BY connector',
         ).fetchall() == [('binance',), ('binanceus',)]
 
 

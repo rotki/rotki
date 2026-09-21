@@ -50,11 +50,11 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     HyperliquidTokenAddress,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     Price,
     SolanaAddress,
     Timestamp,
@@ -75,8 +75,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import (
         AssetsFilterQuery,
+        ConnectorAssetMappingsFilterQuery,
         CounterpartyAssetMappingsFilterQuery,
-        LocationAssetMappingsFilterQuery,
     )
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
@@ -2538,9 +2538,9 @@ class GlobalDBHandler:
                     'ON related.collection_id=requested_mapping.collection_id'
                     ') SELECT DISTINCT RA.requested_identifier, LM.exchange_symbol, CAD.symbol '
                     'FROM related_assets AS RA '
-                    'JOIN location_asset_mappings AS LM ON LM.local_id=RA.identifier '
+                    'JOIN connector_asset_mappings AS LM ON LM.local_id=RA.identifier '
                     'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
-                    'WHERE LM.location=? OR LM.location IS NULL',
+                    'WHERE LM.connector=? OR LM.connector IS NULL',
                     (
                         *(asset.identifier for asset in chunk),
                         location,
@@ -2557,15 +2557,15 @@ class GlobalDBHandler:
     @staticmethod
     def get_assetid_from_exchange_name(exchange: LocationIdentifier | None, symbol: str, default: str) -> str:  # noqa: E501
         """Returns the asset's identifier from the ticker symbol of the given exchange according to
-        location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
+        connector_asset_mappings table. Use exchange=None to get the common id for all exchanges.
         If the mapping is not present returns default."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            location_filter, bindings = '', [symbol]
+            connector_filter, bindings = '', [symbol]
             if exchange is not None:
-                location_filter = 'location IS ? OR'
+                connector_filter = 'connector IS ? OR'
                 bindings.append(exchange)
             identifier = cursor.execute(
-                f'SELECT local_id FROM location_asset_mappings WHERE exchange_symbol=? AND ({location_filter} location IS NULL)',  # noqa: E501
+                f'SELECT local_id FROM connector_asset_mappings WHERE exchange_symbol=? AND ({connector_filter} connector IS NULL)',  # noqa: E501
                 bindings,
             ).fetchone()
 
@@ -2579,12 +2579,12 @@ class GlobalDBHandler:
     ) -> str:
         """Return an exchange symbol for an asset identifier, or ``default`` if unmapped.
 
-        A location-specific mapping wins over a shared mapping.
+        A connector-specific mapping wins over a shared mapping.
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             result = cursor.execute(
-                'SELECT exchange_symbol FROM location_asset_mappings WHERE local_id=? AND '
-                '(location=? OR location IS NULL) ORDER BY location IS NULL LIMIT 1',
+                'SELECT exchange_symbol FROM connector_asset_mappings WHERE local_id=? AND '
+                '(connector=? OR connector IS NULL) ORDER BY connector IS NULL LIMIT 1',
                 (identifier, exchange),
             ).fetchone()
 
@@ -2593,10 +2593,10 @@ class GlobalDBHandler:
     @staticmethod
     def query_asset_mappings_by_type(
             dict_keys: tuple[str, str, str],
-            mapping_type: Literal['location', 'counterparty'],
-            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
-            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
-            location_or_counterparty_reader_callback: Callable,
+            mapping_type: Literal['connector', 'counterparty'],
+            query_columns: Literal['local_id, connector, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+            filter_query: ConnectorAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            connector_or_counterparty_reader_callback: Callable,
     ) -> tuple[list[dict[str, str | LocationIdentifier | None]], int, int]:
         """Query asset mappings based on the mapping type.
 
@@ -2605,7 +2605,7 @@ class GlobalDBHandler:
           - The count of mappings matching the filter.
           - The total count of mappings.
 
-        For location mappings, keys are: 'asset', 'location', 'location_symbol'.
+        For connector mappings, keys are: 'asset', 'connector', 'connector_symbol'.
         For counterparty mappings, keys are: 'asset', 'counterparty', 'counterparty_symbol'.
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -2623,17 +2623,17 @@ class GlobalDBHandler:
                 f'SELECT {query_columns} FROM {mapping_type}_asset_mappings {query}', bindings,
             )
             return [
-                location_or_counterparty_reader_callback(dict(zip(dict_keys, entry, strict=False)))
+                connector_or_counterparty_reader_callback(dict(zip(dict_keys, entry, strict=False)))  # noqa: E501
                 for entry in cursor
             ], mappings_count, mappings_total
 
     @staticmethod
     def _execute_mapping_operation(
-            entries: list[LocationAssetMappingUpdateEntry] | list[LocationAssetMappingDeleteEntry] | list[CounterpartyAssetMappingDeleteEntry] | list[CounterpartyAssetMappingUpdateEntry],  # noqa: E501
+            entries: list[ConnectorAssetMappingUpdateEntry] | list[ConnectorAssetMappingDeleteEntry] | list[CounterpartyAssetMappingDeleteEntry] | list[CounterpartyAssetMappingUpdateEntry],  # noqa: E501
             sql_query: str,
             sql_bindings_fn: Callable,
             operation_name: Literal['add', 'update', 'delete'],
-            mapping_type: Literal['location', 'counterparty'],
+            mapping_type: Literal['connector', 'counterparty'],
             skip_errors: bool = False,
             pre_check_fn: Callable | None = None,
     ) -> None:
@@ -2673,72 +2673,72 @@ class GlobalDBHandler:
                 log.debug(f'Skipping {operation_name} of {msg}')
 
     @staticmethod
-    def add_location_asset_mappings(
-            entries: list[LocationAssetMappingUpdateEntry],
+    def add_connector_asset_mappings(
+            entries: list[ConnectorAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
         """Adds the given mapping entries of asset identifiers and their symbols in the given
-        location to the location_asset_mappings table.
+        connector to the connector_asset_mappings table.
 
         May Raise (if skip_errors is False):
-        - InputError if any of the pairs of location and exchange_symbol already exist"""
+        - InputError if any of the pairs of connector and exchange_symbol already exist"""
         GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
-            pre_check_fn=GlobalDBHandler._location_asset_mapping_null_precheck,
+            pre_check_fn=GlobalDBHandler._connector_asset_mapping_null_precheck,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
-            sql_query='INSERT INTO location_asset_mappings(local_id, exchange_symbol, location) VALUES(?, ?, ?)',  # noqa: E501
+            sql_query='INSERT INTO connector_asset_mappings(local_id, exchange_symbol, connector) VALUES(?, ?, ?)',  # noqa: E501
             operation_name='add',
-            mapping_type='location',
+            mapping_type='connector',
         )
 
     @staticmethod
-    def _location_asset_mapping_null_precheck(cursor: DBCursor, entry: LocationAssetMappingUpdateEntry) -> None:  # noqa: E501
+    def _connector_asset_mapping_null_precheck(cursor: DBCursor, entry: ConnectorAssetMappingUpdateEntry) -> None:  # noqa: E501
         if (
-                entry.location is None and
+                entry.connector is None and
                 cursor.execute(
-                    'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS NULL AND local_id=? AND exchange_symbol=?',  # noqa: E501
+                    'SELECT COUNT(*) FROM connector_asset_mappings WHERE connector IS NULL AND local_id=? AND exchange_symbol=?',  # noqa: E501
                     entry.serialize_for_db()[:2],  # the asset and the exchange symbol.
                 ).fetchone()[0] > 0
         ):
             raise rsqlite.IntegrityError('Entry already exists in the DB')
 
     @staticmethod
-    def update_location_asset_mappings(
-            entries: list[LocationAssetMappingUpdateEntry],
+    def update_connector_asset_mappings(
+            entries: list[ConnectorAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
-        """Updates the mapped asset identifiers in the location_asset_mappings table based on their
-        location symbol.
+        """Updates the mapped asset identifiers in the connector_asset_mappings table based on
+        their connector symbol.
 
         May Raise (if skip_errors is False):
-        - InputError if any of the pairs of location and exchange_symbol does not exist"""
+        - InputError if any of the pairs of connector and exchange_symbol does not exist"""
         GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
-            sql_query='UPDATE location_asset_mappings SET local_id=? WHERE exchange_symbol=? AND location IS ?',  # noqa: E501
+            sql_query='UPDATE connector_asset_mappings SET local_id=? WHERE exchange_symbol=? AND connector IS ?',  # noqa: E501
             operation_name='update',
-            mapping_type='location',
+            mapping_type='connector',
         )
 
     @staticmethod
-    def delete_location_asset_mappings(
-            entries: list[LocationAssetMappingDeleteEntry],
+    def delete_connector_asset_mappings(
+            entries: list[ConnectorAssetMappingDeleteEntry],
             skip_errors: bool = False,
     ) -> None:
-        """Deletes the mappings of given asset identifiers in the given location from the
-        location_asset_mappings table.
+        """Deletes the mappings of given asset identifiers in the given connector from the
+        connector_asset_mappings table.
 
         May Raise (if skip_errors is False):
-        - InputError if any of the pairs of location and exchange_symbol does not exist"""
+        - InputError if any of the pairs of connector and exchange_symbol does not exist"""
         GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
-            sql_query='DELETE FROM location_asset_mappings WHERE exchange_symbol=? AND location IS ?',  # noqa: E501
+            sql_query='DELETE FROM connector_asset_mappings WHERE exchange_symbol=? AND connector IS ?',  # noqa: E501
             operation_name='delete',
-            mapping_type='location',
+            mapping_type='connector',
         )
 
     @staticmethod
