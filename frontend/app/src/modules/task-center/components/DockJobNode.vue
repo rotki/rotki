@@ -134,63 +134,59 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
 
 <template>
   <div class="flex flex-col">
-    <div class="flex items-start gap-1">
-      <RuiButton
+    <DockActivityRow
+      :activity="activity"
+      :now="now"
+      :percentage="percentage"
+      :steps="steps"
+      :dismissible="dismissible"
+      :outcome-status="outcomeStatus"
+      :parent="parent"
+      :hide-reason="repeatsChildReason"
+      @cancel="emit('cancel', $event)"
+      @dismiss="emit('dismiss', $event)"
+      @retry="emit('retry', $event)"
+    >
+      <template
         v-if="isParent"
-        variant="text"
-        size="sm"
-        icon
-        class="shrink-0 mt-0.5"
-        :aria-expanded="expanded"
-        :aria-label="expanded ? t('pending_task.collapse') : t('pending_task.expand')"
-        @click="expanded = !expanded"
+        #toggle
       >
-        <RuiIcon
-          :name="expanded ? 'lu-chevron-down' : 'lu-chevron-right'"
-          size="16"
+        <RuiButton
+          variant="text"
+          size="sm"
+          icon
+          :aria-expanded="expanded"
+          :aria-label="expanded ? t('pending_task.collapse') : t('pending_task.expand')"
+          data-testid="dock-job-toggle"
+          @click="expanded = !expanded"
+        >
+          <RuiIcon
+            :name="expanded ? 'lu-chevron-down' : 'lu-chevron-right'"
+            size="16"
+          />
+        </RuiButton>
+      </template>
+      <template
+        v-if="leafTally"
+        #summary
+      >
+        <DockOutcomeSummary :tally="leafTally" />
+      </template>
+      <template
+        v-if="breakdown.length > 0 || showSyncHint"
+        #details
+      >
+        <DockJobBreakdown
+          v-if="breakdown.length > 0"
+          class="mt-1"
+          :entries="breakdown"
         />
-      </RuiButton>
-      <div
-        v-else-if="depth > 0"
-        class="w-6 shrink-0"
-      />
-
-      <DockActivityRow
-        class="flex-1 min-w-0"
-        :activity="activity"
-        :now="now"
-        :percentage="percentage"
-        :steps="steps"
-        :dismissible="dismissible"
-        :outcome-status="outcomeStatus"
-        :parent="parent"
-        :hide-reason="repeatsChildReason"
-        @cancel="emit('cancel', $event)"
-        @dismiss="emit('dismiss', $event)"
-        @retry="emit('retry', $event)"
-      >
-        <template
-          v-if="leafTally"
-          #summary
-        >
-          <DockOutcomeSummary :tally="leafTally" />
-        </template>
-        <template
-          v-if="breakdown.length > 0 || showSyncHint"
-          #details
-        >
-          <DockJobBreakdown
-            v-if="breakdown.length > 0"
-            class="mt-1"
-            :entries="breakdown"
-          />
-          <DockSyncHint
-            v-if="showSyncHint"
-            class="mt-1"
-          />
-        </template>
-      </DockActivityRow>
-    </div>
+        <DockSyncHint
+          v-if="showSyncHint"
+          class="mt-1"
+        />
+      </template>
+    </DockActivityRow>
 
     <!--
       16px of indent per level, not 24. The panel is 400px and a history refresh nests three deep,
@@ -222,21 +218,15 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
           :now="now"
           @retry="emit('retry', $event)"
         />
-        <div
+        <DockSkippedGroup
           v-else
-          class="flex items-start gap-1"
-        >
-          <div class="w-6 shrink-0" />
-          <DockSkippedGroup
-            class="flex-1 min-w-0"
-            :activities="entry.activities"
-            :reason="entry.reason"
-          />
-        </div>
+          :activities="entry.activities"
+          :reason="entry.reason"
+        />
       </template>
       <RuiButton
         v-if="limited"
-        class="self-start ml-6"
+        class="self-start"
         variant="text"
         size="sm"
         data-testid="dock-show-more-children"
@@ -254,20 +244,14 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
         v-for="entry in failedEntries"
         :key="entry.type === 'node' ? entry.activity.id : entry.key"
       >
-        <div
+        <DockActivityRow
           v-if="entry.type === 'node'"
-          class="flex items-start gap-1"
-        >
-          <div class="w-6 shrink-0" />
-          <DockActivityRow
-            class="flex-1 min-w-0"
-            :activity="entry.activity"
-            :now="now"
-            :percentage="entry.activity.percentage"
-            :parent="activity"
-            @retry="emit('retry', $event)"
-          />
-        </div>
+          :activity="entry.activity"
+          :now="now"
+          :percentage="entry.activity.percentage"
+          :parent="activity"
+          @retry="emit('retry', $event)"
+        />
         <DockFailedGroup
           v-else-if="entry.type === 'failed'"
           :activities="entry.activities"
@@ -277,24 +261,21 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
           @retry="emit('retry', $event)"
         />
       </template>
-      <!-- The same spacers a row has before its label, so the button's text lines up with the labels above it. -->
+      <!-- The same spacer a row has for its icon, so the button's text lines up with the labels above it. -->
       <div
         v-if="hiddenCount > 0"
-        class="flex items-center gap-1"
+        class="flex items-center gap-2.5 px-1"
       >
-        <div class="w-6 shrink-0" />
-        <div class="flex items-center gap-2.5 px-1">
-          <div class="w-4 shrink-0" />
-          <RuiButton
-            class="-ml-2"
-            variant="text"
-            size="sm"
-            data-testid="dock-show-all"
-            @click="expanded = true"
-          >
-            {{ t('task_dock.panel.show_all', { count: hiddenCount }, hiddenCount) }}
-          </RuiButton>
-        </div>
+        <div class="w-4 shrink-0" />
+        <RuiButton
+          class="-ml-2"
+          variant="text"
+          size="sm"
+          data-testid="dock-show-all"
+          @click="expanded = true"
+        >
+          {{ t('task_dock.panel.show_all', { count: hiddenCount }, hiddenCount) }}
+        </RuiButton>
       </div>
     </div>
   </div>
