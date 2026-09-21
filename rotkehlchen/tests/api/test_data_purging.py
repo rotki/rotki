@@ -11,6 +11,7 @@ from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteTransaction,
     ZKSyncLiteTXType,
 )
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_SOL
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -74,6 +75,13 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
+
+def _poloniex_id(rotki: Rotkehlchen) -> str:
+    poloniex = rotki.exchange_manager.get_exchange_by_name(LOCATION_POLONIEX, 'poloniex')
+    assert poloniex is not None
+    return poloniex.connection_identifier
 
 
 @pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
@@ -84,7 +92,7 @@ def test_purge_all_exchange_data(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     exchange_locations = added_exchanges + (LOCATION_FTX,)  # Also check that data for dead exchanges is purged  # noqa: E501
     mock_exchange_data_in_db(exchange_locations, rotki)
-    for exchange_location in exchange_locations:
+    for exchange_location in added_exchanges:  # a dead exchange has no connection to query
         check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=True)
     response = requests.delete(
         api_url_for(
@@ -93,8 +101,10 @@ def test_purge_all_exchange_data(
         ),
     )
     assert_simple_ok_response(response)
-    for exchange_location in exchange_locations:
+    for exchange_location in added_exchanges:
         check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=False)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location=?', (LOCATION_FTX,)).fetchone()[0] == 0  # noqa: E501
 
 
 @pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
@@ -174,19 +184,7 @@ def test_purge_exchange_data_by_category(
         ])
         db.update_used_query_range(
             write_cursor=cursor,
-            name='poloniex_trades_poloniex',
-            start_ts=Timestamp(0),
-            end_ts=Timestamp(10),
-        )
-        db.update_used_query_range(
-            write_cursor=cursor,
-            name='poloniex_asset_movements_poloniex',
-            start_ts=Timestamp(0),
-            end_ts=Timestamp(10),
-        )
-        db.update_used_query_range(
-            write_cursor=cursor,
-            name='poloniex_history_events_poloniex',
+            name=(events_range := connection_range_name(_poloniex_id(rotki), 'history_events')),
             start_ts=Timestamp(0),
             end_ts=Timestamp(10),
         )
@@ -207,9 +205,7 @@ def test_purge_exchange_data_by_category(
             HistoryEventType.TRADE.serialize(),
             HistoryEventType.STAKING.serialize(),
         }
-        assert db.get_used_query_range(cursor, 'poloniex_asset_movements_poloniex') is None
-        assert db.get_used_query_range(cursor, 'poloniex_trades_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
-        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
+        assert db.get_used_query_range(cursor, events_range) == (Timestamp(0), Timestamp(10))
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -222,7 +218,7 @@ def test_purge_exchange_data_by_category_without_shared_range_fallback(
     with db.user_write() as cursor:
         db.update_used_query_range(
             write_cursor=cursor,
-            name='poloniex_history_events_poloniex',
+            name=(events_range := connection_range_name(_poloniex_id(rotki), 'history_events')),
             start_ts=Timestamp(0),
             end_ts=Timestamp(10),
         )
@@ -232,7 +228,7 @@ def test_purge_exchange_data_by_category_without_shared_range_fallback(
     )
     assert_simple_ok_response(response)
     with db.conn.read_ctx() as cursor:
-        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
+        assert db.get_used_query_range(cursor, events_range) == (Timestamp(0), Timestamp(10))
 
 
 def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) -> None:

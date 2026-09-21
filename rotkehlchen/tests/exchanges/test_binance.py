@@ -13,6 +13,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.assets import A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -362,8 +363,7 @@ def test_binance_query_trade_history(function_scope_binance: Binance):
         assert function_scope_binance.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-            location=function_scope_binance.location,
-            location_name=function_scope_binance.name,
+            connection=function_scope_binance.connection_identifier,
             queried_pair='BNBBTC',
         ) == 28457
 
@@ -590,27 +590,24 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
             assert binance.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                location=binance.location,
-                location_name=binance.name,
+                connection=binance.connection_identifier,
                 queried_pair='BNBBTC',
             ) == 1
             assert binance.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-                location=binance.location,
-                location_name=binance.name,
+                connection=binance.connection_identifier,
                 queried_pair='BNBBTC',
             ) == Timestamp(1800000000)
             assert binance.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                location=binance.location,
-                location_name=binance.name,
+                connection=binance.connection_identifier,
                 queried_pair='ETHBTC',
             ) is None
             assert cursor.execute(
                 'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-                (f'{LOCATION_BINANCE!s}_history_events_{binance.name}',),
+                (connection_range_name(binance.connection_identifier, 'history_events'),),
             ).fetchone()[0] == 0
 
         binance.query_history_events()
@@ -632,20 +629,18 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
         assert binance.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-            location=binance.location,
-            location_name=binance.name,
+            connection=binance.connection_identifier,
             queried_pair='ETHBTC',
         ) == 2
         assert binance.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-            location=binance.location,
-            location_name=binance.name,
+            connection=binance.connection_identifier,
             queried_pair='ETHBTC',
         ) == Timestamp(1800000000)
         assert cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{LOCATION_BINANCE!s}_history_events_{binance.name}',),
+            (connection_range_name(binance.connection_identifier, 'history_events'),),
         ).fetchone()[0] == 1
 
 
@@ -1165,9 +1160,9 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
     """Test that custom pairs are queried correctly"""
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
-    function_scope_binance.db.add_exchange(
+    function_scope_binance.connection_identifier = function_scope_binance.db.add_exchange(
         name='binance',
-        location=LOCATION_BINANCE,
+        connector=LOCATION_BINANCE,
         api_key=binance_api_key,
         api_secret=binance_api_secret,
     )
@@ -1257,8 +1252,7 @@ def test_binance_new_pair_trade_query_starts_at_history_range(
         assert function_scope_binance.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-            location=function_scope_binance.location,
-            location_name=function_scope_binance.name,
+            connection=function_scope_binance.connection_identifier,
             queried_pair='BNBBTC',
         ) == second_end_ts
 
@@ -1322,8 +1316,7 @@ def test_binance_cursorless_pair_finds_later_trade_with_start_time(
         assert function_scope_binance.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-            location=function_scope_binance.location,
-            location_name=function_scope_binance.name,
+            connection=function_scope_binance.connection_identifier,
             queried_pair='BNBBTC',
         ) == Timestamp(1600172800)
 
@@ -1379,9 +1372,9 @@ def test_binance_query_lending_interests_history(
 ):
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
-    function_scope_binance.db.add_exchange(
+    function_scope_binance.connection_identifier = function_scope_binance.db.add_exchange(
         name='binance',
-        location=LOCATION_BINANCE,
+        connector=LOCATION_BINANCE,
         api_key=binance_api_key,
         api_secret=binance_api_secret,
     )
@@ -1471,9 +1464,9 @@ def test_binance_query_lending_interests_history_chunks_30_days(
     split into chunks of at most 30 days, otherwise the very first request fails.
     """
     binance = function_scope_binance
-    binance.db.add_exchange(
+    binance.connection_identifier = binance.db.add_exchange(
         name='binance',
-        location=LOCATION_BINANCE,
+        connector=LOCATION_BINANCE,
         api_key=ApiKey('binance_api_key'),
         api_secret=ApiSecret(b'binance_api_secret'),
     )

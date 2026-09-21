@@ -49,13 +49,11 @@ from rotkehlchen.api.v1.schemas import (
     AsyncTaskSchema,
     BankAuthenticationSchema,
     BankBalanceQuerySchema,
-    BankConnectorWithNameSchema,
     BanksResourceAddSchema,
     BanksResourceEditSchema,
     BankSyncSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
-    BinanceMarketsUserSchema,
     BinanceSavingsSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -70,6 +68,10 @@ from rotkehlchen.api.v1.schemas import (
     ClearCacheSchema,
     ClearIconsCacheSchema,
     ConfigurationUpdateSchema,
+    ConnectionIdentifierSchema,
+    ConnectorAssetMappingsDeleteSchema,
+    ConnectorAssetMappingsPostSchema,
+    ConnectorAssetMappingsUpdateSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -108,7 +110,6 @@ from rotkehlchen.api.v1.schemas import (
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
-    ExchangeLocationWithNameSchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
@@ -139,9 +140,6 @@ from rotkehlchen.api.v1.schemas import (
     LidoCsmNodeOperatorSchema,
     LocationAliasDeleteSchema,
     LocationAliasSchema,
-    LocationAssetMappingsDeleteSchema,
-    LocationAssetMappingsPostSchema,
-    LocationAssetMappingsUpdateSchema,
     LocationCreateSchema,
     LocationEditSchema,
     LocationIdentifierSchema,
@@ -235,7 +233,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
     MONERIUM_CAPABILITY,
@@ -264,6 +261,8 @@ from rotkehlchen.types import (
     ChainID,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -274,8 +273,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -321,6 +318,7 @@ if TYPE_CHECKING:
         AccountingRulesFilterQuery,
         AddressbookFilterQuery,
         AssetsFilterQuery,
+        ConnectorAssetMappingsFilterQuery,
         CounterpartyAssetMappingsFilterQuery,
         CustomAssetsFilterQuery,
         DataIssuesFilterQuery,
@@ -330,7 +328,6 @@ if TYPE_CHECKING:
         HistoryEventFilterQuery,
         InternalTxConflictsFilterQuery,
         LevenshteinFilterQuery,
-        LocationAssetMappingsFilterQuery,
         NFTFilterQuery,
         ReportDataFilterQuery,
         UserNotesFilterQuery,
@@ -344,6 +341,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def _combine_parser_data(
@@ -637,7 +635,7 @@ class ExchangesResource(BaseMethodView):
 
     put_schema = ExchangesResourceAddSchema()
     patch_schema = ExchangesResourceEditSchema()
-    delete_schema = ExchangeLocationWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -648,7 +646,7 @@ class ExchangesResource(BaseMethodView):
     def put(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -662,7 +660,7 @@ class ExchangesResource(BaseMethodView):
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -679,8 +677,7 @@ class ExchangesResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -693,8 +690,7 @@ class ExchangesResource(BaseMethodView):
             gate_location: GateLocation | None,
     ) -> Response:
         return self.rest_api.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -709,8 +705,8 @@ class ExchangesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.remove_exchange(name=name, location=location)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_exchange(identifier=identifier)
 
 
 class ExchangesDataResource(BaseMethodView):
@@ -1135,11 +1131,11 @@ class AllBalancesResource(BaseMethodView):
 
 class BanksResource(BaseMethodView):
     """The user's bank connections. Setup takes the credentials a bank's manifest
-    declares (see the bank_details of the locations endpoint), keyed by slot."""
+    declares (see the supported banks endpoint), keyed by slot."""
 
     put_schema = BanksResourceAddSchema()
     patch_schema = BanksResourceEditSchema()
-    delete_schema = BankConnectorWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1159,22 +1155,20 @@ class BanksResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            connector: BankConnectorType,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         return self.rest_api.edit_bank(
-            name=name,
-            connector=connector,
+            identifier=identifier,
             new_name=new_name,
             credentials=credentials,
         )
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, connector: BankConnectorType) -> Response:
-        return self.rest_api.remove_bank(name=name, connector=connector)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_bank(identifier=identifier)
 
 
 class SupportedBanksResource(BaseMethodView):
@@ -1183,22 +1177,28 @@ class SupportedBanksResource(BaseMethodView):
         return self.rest_api.get_supported_banks()
 
 
+class SupportedExchangesResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_exchanges()
+
+
 class BankAuthenticationResource(BaseMethodView):
     """Continue a TAN, challenge, or decoupled app-approval request."""
 
     post_schema = BankAuthenticationSchema()
-    delete_schema = BankConnectorWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: str, connector: BankConnectorType, response: str | None) -> Response:
-        return self.rest_api.answer_bank_authentication(name, connector, response)
+    def post(self, identifier: str, response: str | None) -> Response:
+        return self.rest_api.answer_bank_authentication(identifier, response)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, connector: BankConnectorType) -> Response:
+    def delete(self, identifier: str) -> Response:
         """Drop the pending challenge, so the next query asks the bank for a fresh one."""
-        return self.rest_api.cancel_bank_authentication(name, connector)
+        return self.rest_api.cancel_bank_authentication(identifier)
 
 
 class BankSyncResource(BaseMethodView):
@@ -1211,10 +1211,14 @@ class BankSyncResource(BaseMethodView):
     def post(
             self,
             connector: BankConnectorType | None,
-            name: str | None,
+            identifier: str | None,
             async_query: bool,
     ) -> Response:
-        return self.rest_api.sync_banks(connector=connector, name=name, async_query=async_query)
+        return self.rest_api.sync_banks(
+            connector=connector,
+            identifier=identifier,
+            async_query=async_query,
+        )
 
 
 class BankBalancesResource(BaseMethodView):
@@ -1226,14 +1230,14 @@ class BankBalancesResource(BaseMethodView):
     def get(
             self,
             connector: BankConnectorType | None,
-            name: str | None,
+            identifier: str | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
     ) -> Response:
         return self.rest_api.query_bank_balances(
             connector=connector,
-            name=name,
+            identifier=identifier,
             async_query=async_query,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,
@@ -1586,13 +1590,13 @@ class ExchangeEventsQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: LocationIdentifier,
+            location: LocationIdentifier | None,
+            identifier: str | None,
             async_query: bool,
-            name: str | None = None,
     ) -> Response:
         return self.rest_api.query_exchange_history_events(
-            name=name,
             location=location,
+            identifier=identifier,
             async_query=async_query,
         )
 
@@ -1605,15 +1609,13 @@ class ExchangeEventsRangeQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: LocationIdentifier,
-            name: str,
+            identifier: str,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
         return self.rest_api.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             async_query=async_query,
@@ -2828,55 +2830,48 @@ class AssetIconsResource(BaseMethodView):
         return self.rest_api.refresh_asset_icon(asset=asset)
 
 
-class LocationAssetMappingsResource(BaseMethodView):
-    post_schema = LocationAssetMappingsPostSchema()
-    put_and_patch_schema = LocationAssetMappingsUpdateSchema()
-    delete_schema = LocationAssetMappingsDeleteSchema()
+class ConnectorAssetMappingsResource(BaseMethodView):
+    post_schema = ConnectorAssetMappingsPostSchema()
+    put_and_patch_schema = ConnectorAssetMappingsUpdateSchema()
+    delete_schema = ConnectorAssetMappingsDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
+    def post(self, filter_query: ConnectorAssetMappingsFilterQuery) -> Response:
         return self.rest_api.query_asset_mappings_by_type(
-            mapping_type='location',
+            mapping_type='connector',
             filter_query=filter_query,
-            dict_keys=('asset', 'location', 'location_symbol'),
-            query_columns='local_id, location, exchange_symbol',
-            location_or_counterparty_reader_callback=self._location_mapping_reader,
+            dict_keys=('asset', 'connector', 'connector_symbol'),
+            query_columns='local_id, connector, exchange_symbol',
+            connector_or_counterparty_reader_callback=lambda entry: entry,
         )
-
-    @staticmethod
-    def _location_mapping_reader(entry: dict[str, Any]) -> dict[str, Any]:
-        if (loc := entry['location']) is not None:
-            entry['location'] = str(LocationIdentifier(loc))
-
-        return entry
 
     @use_kwargs(put_and_patch_schema, location='json')
     def put(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.add_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.add_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(put_and_patch_schema, location='json')
     def patch(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.update_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.update_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            entries: list[LocationAssetMappingDeleteEntry],
+            entries: list[ConnectorAssetMappingDeleteEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.delete_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.delete_connector_asset_mappings,
             entries=entries,
         )
 
@@ -2905,7 +2900,7 @@ class CounterpartyAssetMappingsResource(BaseMethodView):
             filter_query=filter_query,
             mapping_type='counterparty',
             query_columns='local_id, counterparty, symbol',
-            location_or_counterparty_reader_callback=lambda x: x,
+            connector_or_counterparty_reader_callback=lambda x: x,
             dict_keys=('asset', 'counterparty', 'counterparty_symbol'),
         )
 
@@ -3152,11 +3147,11 @@ class BinanceHistoryStartTimestampResource(BaseMethodView):
 
 class BinanceUserMarkets(BaseMethodView):
 
-    get_schema = BinanceMarketsUserSchema()
+    get_schema = ConnectionIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.get_user_binance_pairs(name=name, location=location)
+    def get(self, identifier: str) -> Response:
+        return self.rest_api.get_user_binance_pairs(identifier=identifier)
 
 
 class BinanceSavingsResource(BaseMethodView):

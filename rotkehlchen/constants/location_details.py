@@ -1,17 +1,12 @@
 """Display details of every location the backend can report, keyed by location identifier.
 
-Names, icons and images come from the location tree catalog. Exchange details are merged in
-for exchange locations, and the shared banks location is marked for bank integrations.
+Names, icons and images come from the location tree catalog. Which exchange and bank connectors
+exist and what they need is connector metadata, served by /exchanges/supported and
+/banks/supported instead.
 """
 from typing import Any, Final
 
-from rotkehlchen.exchanges.constants import (
-    ALL_SUPPORTED_EXCHANGES,
-    EXCHANGES_WITH_PASSPHRASE,
-    EXCHANGES_WITHOUT_API_SECRET,
-    EXPERIMENTAL_EXCHANGES,
-    SUPPORTED_EXCHANGES,
-)
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.locations.catalog import load_builtin_catalog
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
@@ -32,15 +27,6 @@ def _location_details() -> dict[LocationIdentifier, dict[str, Any]]:
 
     for key, value in details.items():
         if key in ALL_SUPPORTED_EXCHANGES:
-            if key in SUPPORTED_EXCHANGES:
-                value['exchange_details'] = {'is_exchange_with_key': True}
-                if key in EXCHANGES_WITH_PASSPHRASE:
-                    value['exchange_details']['is_exchange_with_passphrase'] = True
-                if key in EXCHANGES_WITHOUT_API_SECRET:
-                    value['exchange_details']['is_exchange_without_api_secret'] = True
-                if key in EXPERIMENTAL_EXCHANGES:
-                    value['exchange_details']['experimental'] = True
-                continue
             value['is_exchange'] = True
         elif key == LOCATION_BANKS:
             value['is_bank'] = True

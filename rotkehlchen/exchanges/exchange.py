@@ -16,7 +16,13 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.connections.types import (
+    ConnectionIdentifier,
+    connection_range_name,
+    new_connection_identifier,
+)
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
@@ -26,7 +32,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     ExchangeAuthCredentials,
-    ExchangeLocationID,
     T_ApiKey,
     T_ApiSecret,
     Timestamp,
@@ -214,6 +219,7 @@ class ExchangeWithExtras:
     db: DBHandler
     name: str
     location: LocationIdentifier
+    connection_identifier: ConnectionIdentifier
 
     @abstractmethod
     def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
@@ -223,7 +229,7 @@ class ExchangeWithExtras:
 
     def reset_to_db_extras(self) -> None:
         """Resets the exchange extras to the ones saved in the DB"""
-        extras = self.db.get_exchange_credentials_extras(location=self.location, name=self.name)
+        extras = self.db.get_exchange_credentials_extras(self.connection_identifier)
         self.edit_exchange_extras(extras)
 
 
@@ -244,6 +250,9 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         super().__init__()
         self.name = name
         self.location = location
+        # The manager replaces this with the identifier of the saved connection. An exchange
+        # object that is never saved (a setup being validated, a test) gets its own.
+        self.connection_identifier = new_connection_identifier()
         self.db = database
         self.api_key = api_key
         self.msg_aggregator = msg_aggregator
@@ -264,12 +273,8 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
     def reset_to_db_credentials(self) -> None:
         """Resets the exchange credentials to the ones saved in the DB"""
         with self.db.conn.read_ctx() as cursor:
-            credentials_in_db = self.db.get_exchange_credentials(
-                cursor=cursor,
-                location=self.location,
-                name=self.name,
-            )
-        credentials = credentials_in_db[self.location][0]
+            credentials = DBConnections.get(cursor, self.connection_identifier)
+        assert credentials is not None, 'only reset for a connection that is saved'
         self.edit_exchange_credentials(ExchangeAuthCredentials(
             api_key=credentials.api_key,
             api_secret=credentials.api_secret,
@@ -280,10 +285,6 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
     def data_location(self) -> LocationIdentifier:
         """The location of the events, balances and snapshots this connection produces"""
         return self.location
-
-    def location_id(self) -> ExchangeLocationID:
-        """Returns unique location identifier for this exchange object (name + location)"""
-        return ExchangeLocationID(name=self.name, location=self.location)
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         """Edits the exchange object with new credentials given from the API
@@ -446,7 +447,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                 location=self.location,
             )
             ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_margins_{self.name}'
+            location_string = connection_range_name(self.connection_identifier, 'margins')
             ranges_to_query = ranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
@@ -511,7 +512,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        location_string = f'{self.location!s}_history_events_{self.name}'
+        location_string = connection_range_name(self.connection_identifier, 'history_events')
         with self.db.conn.read_ctx() as cursor:
             ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
                 cursor=cursor,

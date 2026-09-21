@@ -32,7 +32,7 @@ ADDRESS_COLUMNS: Final = (
 )
 # columns holding an asset identifier without declaring a foreign key for it
 UNLINKED_IDENTIFIER_COLUMNS: Final = (
-    ('location_asset_mappings', 'local_id'),
+    ('connector_asset_mappings', 'local_id'),
     ('counterparty_asset_mappings', 'local_id'),
 )
 

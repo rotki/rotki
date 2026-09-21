@@ -13,7 +13,7 @@ type Translate = (key: string) => string;
  *
  * Both were `extraParams` before, which is what a table reaches for when a filter has no field to
  * live in. Neither needed to be: the backend takes them as ordinary filters
- * (`LocationAssetMappingsPostSchema`), so they ride the filter bag like every other string filter.
+ * (`ConnectorAssetMappingsPostSchema`), so they ride the filter bag like every other string filter.
  *
  * The symbol is typed rather than picked, the way a name is: there is no list of every symbol every
  * exchange uses, and the backend matches what is given.

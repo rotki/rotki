@@ -90,6 +90,7 @@ from rotkehlchen.concurrency import (
     join_forwarding_cancellation,
     wait,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     DEFAULT_LOGLEVEL,
@@ -112,6 +113,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    ConnectorAssetMappingsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DataIssuesFilterQuery,
@@ -121,7 +123,6 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TimestampProximityOrder,
@@ -155,7 +156,11 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import (
+    ALL_SUPPORTED_EXCHANGES,
+    SUPPORTED_EXCHANGES,
+    serialize_exchange_connectors,
+)
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.feature_flags import is_accounting_update_enabled
@@ -234,6 +239,8 @@ from rotkehlchen.types import (
     BTCTxId,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -244,8 +251,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -874,40 +879,31 @@ class RestAPI:
 
     def edit_bank(
             self,
-            name: str,
-            connector: BankConnectorType,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         result, msg, status_code = self.banks_service.edit_bank(
-            name=name,
-            connector=connector,
+            identifier=ConnectionIdentifier(identifier),
             new_name=new_name,
             credentials=credentials,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_bank(self, name: str, connector: BankConnectorType) -> Response:
-        result, msg, status_code = self.banks_service.remove_bank(name=name, connector=connector)
+    def remove_bank(self, identifier: str) -> Response:
+        result, msg, status_code = self.banks_service.remove_bank(ConnectionIdentifier(identifier))
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def answer_bank_authentication(
-            self,
-            name: str,
-            connector: BankConnectorType,
-            response: str | None,
-    ) -> Response:
+    def answer_bank_authentication(self, identifier: str, response: str | None) -> Response:
         result, msg, status_code = self.banks_service.answer_authentication(
-            name=name,
-            connector=connector,
+            identifier=ConnectionIdentifier(identifier),
             response=response,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def cancel_bank_authentication(self, name: str, connector: BankConnectorType) -> Response:
+    def cancel_bank_authentication(self, identifier: str) -> Response:
         result, msg, status_code = self.banks_service.cancel_authentication(
-            name=name,
-            connector=connector,
+            ConnectionIdentifier(identifier),
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
@@ -915,23 +911,30 @@ class RestAPI:
     def sync_banks(
             self,
             connector: BankConnectorType | None,
-            name: str | None,
+            identifier: str | None,
     ) -> dict[str, Any]:
-        return self.banks_service.sync_banks(connector=connector, name=name)
+        return self.banks_service.sync_banks(connector=connector, identifier=identifier)
 
     @async_api_call()
     def query_bank_balances(
             self,
             connector: BankConnectorType | None,
-            name: str | None,
+            identifier: str | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         return self.banks_service.query_bank_balances(
             connector=connector,
-            name=name,
+            identifier=identifier,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,
+        )
+
+    @staticmethod
+    def get_supported_exchanges() -> Response:
+        return api_response(
+            _wrap_in_ok_result(serialize_exchange_connectors()),
+            status_code=HTTPStatus.OK,
         )
 
     def get_exchanges(self) -> Response:
@@ -944,7 +947,7 @@ class RestAPI:
     def setup_exchange(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -958,7 +961,7 @@ class RestAPI:
     ) -> Response:
         result, msg, status_code = self.exchanges_service.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -980,8 +983,7 @@ class RestAPI:
 
     def edit_exchange(
             self,
-            name: str,
-            location: LocationIdentifier,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -994,8 +996,7 @@ class RestAPI:
             gate_location: GateLocation | None,
     ) -> Response:
         result, msg, status_code = self.exchanges_service.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -1009,36 +1010,32 @@ class RestAPI:
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_exchange(self, name: str, location: LocationIdentifier) -> Response:
-        result, message, status_code = self.exchanges_service.remove_exchange(
-            name=name,
-            location=location,
-        )
+    def remove_exchange(self, identifier: str) -> Response:
+        result, message, status_code = self.exchanges_service.remove_exchange(identifier)
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
     @async_api_call()
     def query_exchange_history_events(
             self,
-            location: LocationIdentifier,
-            name: str | None,
+            location: LocationIdentifier | None,
+            identifier: str | None,
     ) -> dict[str, Any]:
-        """Queries new history events for the specified exchange and saves them in the database."""
+        """Queries new history events of one exchange connection, or of every connection of
+        an exchange, and saves them in the database."""
         return self.exchanges_service.query_exchange_history_events(
             location=location,
-            name=name,
+            identifier=identifier,
         )
 
     @async_api_call()
     def query_exchange_history_events_in_range(
             self,
-            location: LocationIdentifier,
-            name: str,
+            identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> dict[str, Any]:
         response = self.exchanges_service.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -2905,15 +2902,15 @@ class RestAPI:
     def query_asset_mappings_by_type(
             self,
             dict_keys: tuple[str, str, str],
-            mapping_type: Literal['location', 'counterparty'],
-            location_or_counterparty_reader_callback: Callable,
-            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
-            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+            mapping_type: Literal['connector', 'counterparty'],
+            connector_or_counterparty_reader_callback: Callable,
+            filter_query: ConnectorAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            query_columns: Literal['local_id, connector, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.query_asset_mappings_by_type(
             dict_keys=dict_keys,
             mapping_type=mapping_type,
-            location_or_counterparty_reader_callback=location_or_counterparty_reader_callback,
+            connector_or_counterparty_reader_callback=connector_or_counterparty_reader_callback,
             filter_query=filter_query,
             query_columns=query_columns,
         )
@@ -2922,7 +2919,7 @@ class RestAPI:
     def perform_asset_mapping_operation(
             self,
             mapping_fn: Callable,
-            entries: Sequence[LocationAssetMappingUpdateEntry | LocationAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
+            entries: Sequence[ConnectorAssetMappingUpdateEntry | ConnectorAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.perform_asset_mapping_operation(
             mapping_fn=mapping_fn,
@@ -3044,10 +3041,10 @@ class RestAPI:
             )
         return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
 
-    def get_user_binance_pairs(self, name: str, location: LocationIdentifier) -> Response:
+    def get_user_binance_pairs(self, identifier: str) -> Response:
         return api_response(
             _wrap_in_ok_result(
-                self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
+                self.rotkehlchen.exchange_manager.get_user_binance_pairs(identifier),
             ),
             status_code=HTTPStatus.OK,
         )
