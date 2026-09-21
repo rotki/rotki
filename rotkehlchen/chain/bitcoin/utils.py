@@ -368,11 +368,12 @@ def query_mempool_address_transactions(
     """
     txs: list[dict[str, Any]] = []
     seen_tx_ids: set[str] = set()
+    timeout = CachedSettings().get_timeout_tuple()
     url = f'{base_url}/address/{address}/txs'
     while True:
         if not isinstance(page := request_get(
             url=url,
-            timeout=CachedSettings().get_timeout_tuple(),
+            timeout=timeout,
             handle_429=True,
             backoff_in_seconds=4,
         ), list):
