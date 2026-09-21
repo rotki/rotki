@@ -2,6 +2,7 @@
 # Created at 2026-11-02 20:28:42 UTC with rotki version 1.44.2.dev938+ge24d6790d2 by codex
 MINIMIZED_USER_DB_SCHEMA = {
     "locations": "identifiertextprimarykeynotnull,nametextnotnull,parent_identifiertextreferenceslocations(identifier),is_builtinintegernotnullcheck(is_builtinin(0,1)),is_activeintegernotnulldefault1check(is_activein(0,1)),icontext,imagetext,check(identifier!=''),check(name!=''),check(parent_identifierisnullorparent_identifier!=identifier)",
+    "location_aliases": "aliastextnotnullcollatenocaseprimarykey,location_identifiertextnotnullreferenceslocations(identifier)ondeletecascade,check(alias!='')",
     "balance_category": "categorychar(1)primarykeynotnull,seqintegerunique",
     "assets": "identifiertextnotnullprimarykey",
     "timed_balances": "categorychar(1)notnulldefault('a')referencesbalance_category(category),timestampinteger,currencytext,amounttext,usd_valuetext,foreignkey(currency)referencesassets(identifier)onupdatecascade,primarykey(timestamp,currency,category)",

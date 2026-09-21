@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.data_import.importers.binance import BinanceImporter
 from rotkehlchen.data_import.importers.bisq_trades import BisqTradesImporter
@@ -19,13 +19,16 @@ from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImp
 from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.importers.shapeshift_trades import ShapeshiftTradesImporter
 from rotkehlchen.data_import.importers.uphold_transactions import UpholdTransactionsImporter
+from rotkehlchen.data_import.utils import resolve_csv_locations
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
     from rotkehlchen.data_import.utils import BaseExchangeImporter
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier, LocationResolution
 
 
 class DataImportSource(SerializableEnumNameMixin):
@@ -50,10 +53,33 @@ class DataImportSource(SerializableEnumNameMixin):
     COINBASEPRO = 19
 
 
+# The formats naming the location of each row in a Location column. The others know the
+# location of their data or map the venues of their own format.
+SOURCES_WITH_LOCATION_COLUMN: Final = frozenset({
+    DataImportSource.ROTKI_TRADES,
+    DataImportSource.ROTKI_EVENTS,
+})
+
+
 class CSVDataImporter:
     """This class is responsible for importation of csv files."""
     def __init__(self, db: DBHandler):
         self.db = db
+
+    def resolve_locations(
+            self,
+            source: DataImportSource,
+            filepath: Path,
+            location_mappings: Mapping[str, LocationIdentifier] | None = None,
+    ) -> list[LocationResolution]:
+        """How every location value of the file resolves, so that unknown ones can be mapped
+        before importing. Empty for formats without a location column.
+
+        May raise InputError if a mapping points at a location data can not be assigned to.
+        """
+        if source not in SOURCES_WITH_LOCATION_COLUMN:
+            return []
+        return resolve_csv_locations(self.db, filepath, location_mappings)[1]
 
     def import_csv(
             self,
@@ -62,8 +88,11 @@ class CSVDataImporter:
             **kwargs: Any,
     ) -> tuple[bool, str]:
         """Imports csv data from `filepath`.`source` determines the format of the file.
-        Returns (True, '') if imported successfully and (False, message) otherwise."""
+        Returns (True, '') if imported successfully and (False, message) otherwise.
+        `location_mappings` only applies to formats with a location column."""
         importer: BaseExchangeImporter
+        if source not in SOURCES_WITH_LOCATION_COLUMN:
+            kwargs.pop('location_mappings', None)
 
         if source == DataImportSource.COINTRACKING:
             importer = CointrackingImporter(db=self.db)

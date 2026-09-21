@@ -122,6 +122,30 @@ class LocationsService:
         delete_location_image(self._images_dir, node.image)
         return _ok(True)
 
+    def get_location_aliases(self) -> dict[str, Any]:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            aliases = self.db_locations.get_aliases(cursor)
+        return _ok([
+            {'alias': alias, 'location_identifier': identifier}
+            for alias, identifier in aliases.items()
+        ])
+
+    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> dict[str, Any]:
+        try:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                self.db_locations.set_alias(write_cursor, alias, identifier)
+        except InputError as e:
+            return _error(str(e), HTTPStatus.BAD_REQUEST)
+        return _ok(True)
+
+    def delete_location_alias(self, alias: str) -> dict[str, Any]:
+        try:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                self.db_locations.delete_alias(write_cursor, alias)
+        except InputError as e:
+            return _error(str(e), HTTPStatus.NOT_FOUND)
+        return _ok(True)
+
     def get_location_usage(self, identifier: LocationIdentifier) -> dict[str, Any]:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if (node := self.db_locations.get(cursor, identifier)) is None:

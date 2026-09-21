@@ -3395,7 +3395,9 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'bucket_processing_stops', 'bucket_balance_checks', 'locations'}
+    assert new_tables == {
+        'bucket_processing_stops', 'bucket_balance_checks', 'locations', 'location_aliases',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
