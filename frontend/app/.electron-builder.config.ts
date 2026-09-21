@@ -99,6 +99,7 @@ export default {
     }],
     category: 'public.app-category.finance',
     icon: 'public/assets/images/rotki.icns',
+    minimumSystemVersion: '12.0',
     ...(isCI || process.env.CERTIFICATE_OSX_APPLICATION
       ? {
           identity: 'Rotki Solutions GmbH (6H86XUVS7L)',
