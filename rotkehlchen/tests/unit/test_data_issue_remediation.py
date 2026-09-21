@@ -179,7 +179,12 @@ def test_remediation_redecodes_plain_transfer_between_tracked_addresses(
         ignore_cache=True,
         tx_hashes=[tx_hash],
     )
-    assert DataIssuesManager(database).list_issues() == []
+    issues = DataIssuesManager(database).list_issues()
+    assert len(issues) == 1
+    assert issues[0].state == IssueState.RESOLVED
+    assert issues[0].auto_remediation_attempts[0]['strategy'] == (
+        'redecode_tracked_address_transfer'
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])

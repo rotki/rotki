@@ -14,10 +14,14 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import (
+    BaseRemediationStrategy,
+    RemediationOutcome,
+    RemediationPipeline,
+)
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
@@ -57,16 +61,11 @@ type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
 
 
-def _redecode_tracked_address_transfers(
+def _write_tracked_address_transfer_issues(
         database: DBHandler,
-        chains_aggregator: ChainsAggregator,
         issues_manager: DataIssuesManager,
 ) -> None:
-    """Redecode plain transfers once both their addresses are tracked.
-
-    A transaction with customized events must remain untouched, so its plain transfer is
-    surfaced for review instead.
-    """
+    """Write issues for plain transfers whose sender and receiver are tracked."""
     chain_locations = tuple(
         (
             location.serialize_for_db(),
@@ -102,33 +101,90 @@ def _redecode_tracked_address_transfers(
             ),
         ).fetchall()
 
-    transactions_by_chain: defaultdict[
-        EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-        set[EVMTxHash],
-    ] = defaultdict(set)
     for candidate in candidates:
-        event_id, tx_hash, chain_id_raw, timestamp = candidate[:4]
-        location, location_label, asset, is_customized = candidate[4:]
-        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(chain_id_raw))
+        event_id, _tx_hash, _chain_id, timestamp = candidate[:4]
+        location, location_label, asset, _is_customized = candidate[4:]
+        issues_manager.write_issue(
+            kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
+            location=location,
+            location_label=location_label,
+            protocol=None,
+            asset=asset,
+            payload={'event_identifier': event_id},
+            ts_start=timestamp,
+            ts_end=timestamp,
+        )
 
-        if is_customized:
-            issues_manager.write_issue(
-                kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
-                location=location,
-                location_label=location_label,
-                protocol=None,
-                asset=asset,
-                payload={'event_identifier': event_id},
-                ts_start=timestamp,
-                ts_end=timestamp,
-            )
-        else:
-            transactions_by_chain[chain_id].add(tx_hash)
 
-    for chain_id, tx_hashes in transactions_by_chain.items():
-        chains_aggregator.get_evm_manager(chain_id).transactions_decoder.decode_transaction_hashes(
+class TrackedAddressTransferStrategy(BaseRemediationStrategy):
+    """Redecode a plain transfer after both counterparties become tracked."""
+
+    name: Final = 'redecode_tracked_address_transfer'
+
+    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+        self.database = database
+        self.chains_aggregator = chains_aggregator
+        self.candidates: dict[
+            int,
+            tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash],
+        ] = {}
+
+    def _get_candidate(
+            self,
+            issue: DataIssue,
+    ) -> tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash] | None:
+        if issue.kind != IssueKind.TRACKED_ADDRESS_TRANSFER:
+            return None
+
+        location = Location.deserialize_from_db(issue.location)
+        if location not in EVM_LOCATIONS:
+            return None
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+
+        with self.database.conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT C.tx_ref, T.chain_id, EXISTS('
+                'SELECT 1 FROM history_events H2 JOIN history_events_mappings M '
+                'ON M.parent_identifier = H2.identifier '
+                'WHERE H2.group_identifier = H.group_identifier '
+                'AND M.name = ? AND M.value = ?) FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier '
+                'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = ? '
+                'WHERE H.identifier = ?',
+                (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    chain_id.serialize_for_db(),
+                    issue.payload['event_identifier'],
+                ),
+            ).fetchone()
+        if row is None or row[2]:
+            return None
+
+        return (
+            chain_id,
+            EVMTxHash(row[0]),
+        )
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        if (candidate := self._get_candidate(issue)) is None:
+            return False
+
+        self.candidates[issue.id] = candidate
+        return True
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        chain_id, tx_hash = self.candidates.pop(issue.id)
+        self.chains_aggregator.get_evm_manager(
+            chain_id,
+        ).transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,
-            tx_hashes=list(tx_hashes),
+            tx_hashes=[tx_hash],
+        )
+        return RemediationOutcome(
+            resolved=True,
+            attribution='system',
+            notes='Redecoded transfer after both counterparties became tracked',
         )
 
 
@@ -261,14 +317,12 @@ def _check_issue(
         chains_aggregator: ChainsAggregator,
         issues_manager: DataIssuesManager,
         issue: DataIssue,
+        transactions: dict[EVMTxHash, list[EvmEvent]],
         treat_eth2_as_eth: bool,
         preview_cache: PreviewCache,
         reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
-) -> None:
+) -> RemediationOutcome:
     location = Location.deserialize_from_db(issue.location)
-    if location not in EVM_LOCATIONS or issue.location_label == '':
-        return
-
     chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
     bucket = Bucket(
         location=issue.location,
@@ -276,19 +330,6 @@ def _check_issue(
         protocol=issue.protocol or None,
         asset=issue.asset,
     )
-    if len(transactions := _get_customized_transactions_for_issue(
-        database=database,
-        issue=issue,
-        chain_id=chain_id,
-        location=location,
-    )) == 0:
-        return
-
-    try:
-        issues_manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
-    except InputError:
-        return
-
     decoder = chains_aggregator.get_evm_manager(chain_id).transactions_decoder
     preview_exceptions: tuple[type[Exception], ...] = (
         RuntimeError,
@@ -383,47 +424,90 @@ def _check_issue(
 
     if comparisons:
         attempt['transactions'] = comparisons
-    issues_manager.update_state(
-        issue_id=issue.id,
-        state=IssueState.UNRESOLVED,
-        attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+    return RemediationOutcome(
+        resolved=False,
+        attribution=attempt['attribution'],
+        notes=attempt.get('reason', attempt.get('result', '')),
+        attempt_data={
+            key: value for key, value in attempt.items()
+            if key not in {'attribution', 'strategy', 'timestamp'}
+        },
+        record_attempt=_is_repeated_failure(issue, attempt) is False,
     )
+
+
+class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
+    """Compare customized negative-balance transactions with current decoder output."""
+
+    name: Final = REDECODE_CUSTOMIZED_TRANSACTIONS
+
+    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+        self.database = database
+        self.chains_aggregator = chains_aggregator
+        self.issues_manager = DataIssuesManager(database)
+        self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+        self.preview_cache: PreviewCache = {}
+        self.reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+        self.transactions: dict[int, dict[EVMTxHash, list[EvmEvent]]] = {}
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        if issue.kind != IssueKind.NEGATIVE_BALANCE or issue.location_label == '':
+            return False
+        location = Location.deserialize_from_db(issue.location)
+        if location not in EVM_LOCATIONS:
+            return False
+
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+        transactions = _get_customized_transactions_for_issue(
+            database=self.database,
+            issue=issue,
+            chain_id=chain_id,
+            location=location,
+        )
+        if len(transactions) == 0:
+            return False
+
+        self.transactions[issue.id] = transactions
+        return True
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        return _check_issue(
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
+            issues_manager=self.issues_manager,
+            issue=issue,
+            transactions=self.transactions.pop(issue.id),
+            treat_eth2_as_eth=self.treat_eth2_as_eth,
+            preview_cache=self.preview_cache,
+            reloaded_chains=self.reloaded_chains,
+        )
 
 
 def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
-    """Check whether current decoders would change customized negative-balance transactions.
-
-    Saved events are never removed or replaced. Each applicable issue receives a diagnostic
-    timeline entry and remains unresolved for the user to review.
-    """
+    """Run registered remediation strategies for applicable data issues."""
     issues_manager = DataIssuesManager(database)
-    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
-    preview_cache: PreviewCache = {}
-    reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
-    _redecode_tracked_address_transfers(
+    _write_tracked_address_transfer_issues(
         database=database,
-        chains_aggregator=chains_aggregator,
         issues_manager=issues_manager,
     )
+    pipeline = RemediationPipeline(
+        manager=issues_manager,
+        strategies=(
+            TrackedAddressTransferStrategy(database, chains_aggregator),
+            RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
+        ),
+    )
     for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-        kinds=[IssueKind.NEGATIVE_BALANCE],
+        kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.TRACKED_ADDRESS_TRANSFER],
         states=[IssueState.OPEN, IssueState.UNRESOLVED],
     )):
         if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
             continue
 
-        _check_issue(
-            database=database,
-            chains_aggregator=chains_aggregator,
-            issues_manager=issues_manager,
-            issue=issue,
-            treat_eth2_as_eth=treat_eth2_as_eth,
-            preview_cache=preview_cache,
-            reloaded_chains=reloaded_chains,
-        )
+        pipeline.run(issue)
         checkpoint()
 
     with database.user_write() as write_cursor:
