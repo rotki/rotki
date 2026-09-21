@@ -6,6 +6,13 @@ from dataclasses import dataclass, field
 from time import monotonic, sleep
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.concurrency import (
+    CancellationToken,
+    Task,
+    TaskCancelledError,
+    checkpoint,
+    result_of,
+)
 from rotkehlchen.history.data_issues.constants import IssueState
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -33,7 +40,7 @@ class BaseRemediationStrategy(ABC):
     """Interface for automatic data issue remediation strategies."""
 
     name: str
-    timeout: int = DEFAULT_REMEDIATION_TIMEOUT
+    timeout: float = DEFAULT_REMEDIATION_TIMEOUT
 
     @abstractmethod
     def applies_to(self, issue: DataIssue) -> bool:
@@ -55,6 +62,39 @@ class RemediationPipeline:
         self.manager = manager
         self.strategies = strategies
 
+    def _attempt_with_budget(
+            self,
+            strategy: BaseRemediationStrategy,
+            issue: DataIssue,
+    ) -> RemediationOutcome:
+        token = CancellationToken()
+        task = Task(
+            name=f'data issue remediation: {strategy.name}',
+            target=strategy.attempt,
+            args=(issue,),
+            token=token,
+        ).start()
+        deadline = monotonic() + strategy.timeout
+        try:
+            while task.dead is False and (remaining := deadline - monotonic()) > 0:
+                task.join(min(remaining, 0.1))
+                checkpoint()
+        except TaskCancelledError:
+            task.request_cancellation('Data issue remediation was cancelled')
+            task.join()
+            raise
+
+        if task.dead is False:
+            task.request_cancellation(f'Strategy exceeded {strategy.timeout}s time budget')
+            task.join()
+            return RemediationOutcome(
+                resolved=False,
+                attribution='timeout',
+                notes=f'Strategy exceeded {strategy.timeout}s time budget',
+            )
+
+        return result_of(task)
+
     def run(self, issue: DataIssue) -> None:
         if issue.state in {IssueState.RESOLVED, IssueState.DISMISSED}:
             return
@@ -66,16 +106,7 @@ class RemediationPipeline:
             issue = self.manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
 
         for strategy in strategies:
-            started_at = monotonic()
-            # TODO: Enforce the budget while attempt() runs; this currently only
-            # detects overruns after return.
-            outcome = strategy.attempt(issue)
-            if monotonic() - started_at > strategy.timeout:
-                outcome = RemediationOutcome(
-                    resolved=False,
-                    attribution='timeout',
-                    notes=f'Strategy exceeded {strategy.timeout}s time budget',
-                )
+            outcome = self._attempt_with_budget(strategy, issue)
 
             attempt = {
                 'attribution': outcome.attribution,
