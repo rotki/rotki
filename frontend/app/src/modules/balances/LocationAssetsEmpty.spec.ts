@@ -1,9 +1,10 @@
+import { createLocationNode } from '@test/utils/location-tree';
 import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LocationAssetsEmpty from '@/modules/balances/LocationAssetsEmpty.vue';
-import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { ChainType } from '@/modules/core/api/types/chains';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 const chainTypes: Record<string, string | undefined> = {
   btc: ChainType.BITCOIN,
@@ -43,14 +44,7 @@ describe('modules/balances/LocationAssetsEmpty', () => {
       cash: { label: 'Cash' },
       kraken: { isExchange: true, label: 'Kraken' },
     });
-    useBankConnectionsStore().setConnections([{
-      connector: 'fints',
-      displayName: 'FinTS',
-      identifier: 'c1',
-      location: 'custom:ing',
-      name: 'main',
-      syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
-    }]);
+    useLocationTreeStore().setNodes([createLocationNode('custom:ing', 'banks', 'ING', { isBuiltin: false })]);
   });
 
   it('should name the location in the title', () => {

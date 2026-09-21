@@ -58,7 +58,6 @@ const labelClass = computed<string>(() => {
 
       <span
         v-if="!icon"
-        class="capitalize"
         :class="labelClass"
       >
         {{ location.name }}

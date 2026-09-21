@@ -2,22 +2,12 @@ import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
-
-vi.mock('@/modules/locations/use-location-tree-api', () => ({
-  useLocationTreeApi: (): { fetchLocationTree: () => Promise<unknown[]> } => ({
-    fetchLocationTree: async (): Promise<unknown[]> => [
-      { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
-      { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
-      { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
-      { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
-    ],
-  }),
-}));
 
 const manifest: BankManifest = {
   accessTier: 'official api',
@@ -66,7 +56,9 @@ describe('bankConnectionForm', () => {
         plugins: [pinia],
         stubs: {
           ExternalLink: true,
+          LocationDisplay: true,
           LocationIcon: true,
+          LocationSelector: true,
           RuiMenuSelect: true,
         },
       },
@@ -85,6 +77,13 @@ describe('bankConnectionForm', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     useBankConnectionsStore().setManifests([manifest, fints]);
+    useLocationTreeStore().setNodes([
+      { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
+      { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
+      { icon: null, identifier: 'qonto', image: null, isActive: true, isBuiltin: true, name: 'Qonto', parentIdentifier: 'banks' },
+      { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
+      { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
+    ]);
   });
 
   function menuSelect(testId: string): VueWrapper | undefined {
@@ -95,7 +94,7 @@ describe('bankConnectionForm', () => {
     menuSelect('bank-connection-connector')?.vm.$emit('update:modelValue', connector);
   }
 
-  it('should ask for the bank only for a connector that does not fix it, offering the Banks subtree', async () => {
+  it('should ask for the bank only for a connector that does not fix it, offering the banks by name', async () => {
     const model = ref({ ...createForm('add'), connector: '', location: '' });
     wrapper = createWrapper(model);
     await flushPromises();
@@ -105,10 +104,7 @@ describe('bankConnectionForm', () => {
     await nextTick();
     await wrapper.setProps({ modelValue: model.value });
     expect(model.value).toMatchObject({ connector: 'fints', credentials: { api_key: '' }, location: '' });
-    expect(Reflect.get(menuSelect('bank-connection-location')?.props() ?? {}, 'options')).toEqual([
-      { identifier: 'banks', label: 'Banks' },
-      { identifier: 'custom:ing', label: 'Banks › ING' },
-    ]);
+    expect(wrapper.findComponent({ name: 'LocationSelector' }).props('items')).toEqual(['custom:ing', 'qonto']);
     expect(wrapper.vm.validate()).toBe(false);
 
     selectConnector('qonto');

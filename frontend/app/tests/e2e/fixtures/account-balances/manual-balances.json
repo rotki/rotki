@@ -5,7 +5,7 @@
     "label": "My monero wallet",
     "amount": "50.315",
     "tags": ["public"],
-    "location": "blockchain"
+    "location": "external"
   },
   {
     "asset": "EUR",
@@ -13,7 +13,7 @@
     "label": "My Bank Account",
     "amount": "150",
     "tags": [],
-    "location": "banks"
+    "location": "qonto"
   },
   {
     "asset": "USD",
@@ -21,6 +21,6 @@
     "label": "My USD Bank Account",
     "amount": "100",
     "tags": [],
-    "location": "banks"
+    "location": "qonto"
   }
 ]

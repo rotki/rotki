@@ -15,6 +15,7 @@ import { isValidHistoryEventState, useHistoryEventStateMapping } from '@/modules
 import { HistoryEventState } from '@/modules/history/events/schemas';
 import { useAccountFilterOptions } from '@/modules/history/use-account-filter-options';
 import { useHistoryStore } from '@/modules/history/use-history-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 export interface HistoryEventFieldsOptions {
   /**
@@ -61,6 +62,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { options: accountOptions, resolveCaption, resolveLabel } = useAccountFilterOptions();
   const { associatedLocations } = storeToRefs(useHistoryStore());
+  const { sortByTree } = useLocationTreeStore();
   const { assetSearch } = useAssetInfoRetrieval();
   const { stateConfigs } = useHistoryEventStateMapping();
   const { rows: actionRows } = useEventActionPicker();
@@ -140,7 +142,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
       entryTypes: entryTypes(),
       eventSubtypes: (): string[] => subtypesFor(get(selectedEventTypes)),
       eventTypes: (): string[] => get(historyEventTypes),
-      locations: (): string[] => get(associatedLocations),
+      locations: (): string[] => sortByTree(get(associatedLocations)),
       searchAsset,
       subtypesFor,
     });

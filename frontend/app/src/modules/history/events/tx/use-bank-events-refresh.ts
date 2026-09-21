@@ -3,6 +3,7 @@ import type { ActivityId } from '@/modules/task-center/core/types';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useBankName } from '@/modules/banks/use-bank-name';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
@@ -27,6 +28,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
+  const { bankNameOf } = useBankName();
   const store = useBankConnectionsStore();
 
   /**
@@ -48,7 +50,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
-    const bankName = store.bankNameFor(store.connectorOf(bank.identifier));
+    const bankName = bankNameOf({ connector: store.connectorOf(bank.identifier), location });
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),

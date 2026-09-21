@@ -8,6 +8,7 @@ import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -20,7 +21,10 @@ import { useSetting } from '@/modules/settings/use-setting';
  * they are answered once here rather than per table.
  */
 export interface SharedFieldResolvers {
-  /** Maps a raw location id such as `polygon_pos` to its display name, `Polygon PoS`. */
+  /**
+   * Maps a raw location id such as `polygon_pos` to its display name, `Polygon PoS`, or to its path
+   * when another location shares the name.
+   */
   readonly resolveLocationName: (value: string) => string;
   /** Maps a raw chain id such as `optimism` to its display name, `Optimism`. */
   readonly resolveChainName: (value: string) => string;
@@ -48,13 +52,15 @@ export interface SharedFieldResolvers {
  */
 export function useSharedFieldResolvers(): SharedFieldResolvers {
   const { getLocationData } = useLocations();
+  const { distinctNameOf } = useLocationTreeStore();
   const { getChainName } = useSupportedChains();
   const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
   const { getAssetField, getAssetInfo } = useAssetInfoRetrieval();
   const { scrambleAddress } = useScramble();
   const dateInputFormat = useSetting('dateInputFormat');
 
-  const resolveLocationName = (value: string): string => getLocationData(value)?.name ?? value;
+  const resolveLocationName = (value: string): string =>
+    distinctNameOf(value) ?? getLocationData(value)?.name ?? value;
 
   const resolveProtocolName = (value: string): string =>
     toHumanReadable(get(getCounterpartyData(value)).label, 'sentence');

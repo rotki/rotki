@@ -1,7 +1,9 @@
 import type { BankAuthChallenge, BankConnection } from '@/modules/banks/types';
+import { createLocationNode } from '@test/utils/location-tree';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { ActionUrgency } from '@/modules/core/action-center/types';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import { useBankRows } from '@/modules/shell/action-center/use-bank-rows';
 
 const { startOverAuthentication, syncBanks } = vi.hoisted(() => ({
@@ -64,6 +66,13 @@ describe('modules/shell/action-center/use-bank-rows', () => {
       target: { kind: 'route', to: { name: '/api-keys/banks/', query: { authenticate: identifierOf('Main Account') } } },
       urgency: ActionUrgency.BLOCKING,
     });
+  });
+
+  it('should name the bank a connection belongs to rather than its connector', () => {
+    useLocationTreeStore().setNodes([createLocationNode('custom:ing', 'banks', 'ING', { isBuiltin: false })]);
+    useBankConnectionsStore().setConnections([connection('Main Account', { authChallenge: challenge })]);
+
+    expect(get(useBankRows())[0].description).toBe('action_center.rows.integrations.bank_authentication.description::ING, Main Account');
   });
 
   it('should offer to start over from a TAN the user will not answer', () => {

@@ -1,12 +1,13 @@
 import type { Result } from 'plainfp/result';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import { createLocationNode } from '@test/utils/location-tree';
 import { neverSettles } from '@test/utils/never-settles';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useLocationBalanceStatus } from '@/modules/balances/use-location-balance-status';
-import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -45,14 +46,7 @@ describe('useLocationBalanceStatus', () => {
       binance: { isExchange: true, label: 'Binance' },
       cash: { label: 'Cash' },
     });
-    useBankConnectionsStore().setConnections([{
-      connector: 'fints',
-      displayName: 'FinTS',
-      identifier: 'c1',
-      location: 'custom:ing',
-      name: 'main',
-      syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
-    }]);
+    useLocationTreeStore().setNodes([createLocationNode('custom:ing', 'banks', 'ING', { isBuiltin: false })]);
   });
 
   it('should answer a chain from its own balance status', () => {

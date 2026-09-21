@@ -1,7 +1,10 @@
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { toSentenceCase } from '@rotki/common';
+import { BANKS_LOCATION } from '@/modules/banks/bank-locations';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 export const useBankConnectionsStore = defineStore('banks/connections', () => {
+  const treeStore = useLocationTreeStore();
   const manifests = ref<BankManifest[]>([]);
   const connections = ref<BankConnection[]>([]);
   /** Why the supported banks could not be loaded, until a later load succeeds. */
@@ -14,10 +17,13 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
   /** The locations the connected banks put their balances and history in. */
   const bankLocations = computed<string[]>(() => [...new Set(get(connections).map(connection => connection.location))]);
 
-  /** The locations bank balances come from: those of the connections, and every fixed connector location. */
+  /**
+   * The locations bank balances come from: every location under Banks, and those of the
+   * connections while the location tree has not loaded.
+   */
   const bankBalanceLocations = computed<string[]>(() => [...new Set([
     ...get(bankLocations),
-    ...get(manifests).flatMap(({ fixedLocation }) => (fixedLocation ? [fixedLocation] : [])),
+    ...treeStore.subtreeOf(BANKS_LOCATION),
   ])]);
 
   const manifestFor = (connector: string): BankManifest | undefined =>

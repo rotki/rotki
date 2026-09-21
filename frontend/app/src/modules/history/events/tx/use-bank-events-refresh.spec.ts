@@ -1,8 +1,13 @@
-import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnection, BankConnectionIdentity, BankManifest } from '@/modules/banks/types';
+import { createMock } from '@test/utils/create-mock';
+import { createLocationNode } from '@test/utils/location-tree';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { BackendCancelled, Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useBankEventsRefresh } from './use-bank-events-refresh';
 
@@ -123,5 +128,19 @@ describe('useBankEventsRefresh', () => {
 
     expect(outcomes).toHaveLength(1);
     expect(mockNotifyError).not.toHaveBeenCalled();
+  });
+
+  it('should name a FinTS connection in its dock row by the bank its data belongs to, not by the connector', async () => {
+    const giro: BankConnectionIdentity = { identifier: 'c3', location: 'custom:ing', name: 'Giro' };
+    useLocationTreeStore().setNodes([createLocationNode('custom:ing', 'banks', 'ING', { isBuiltin: false })]);
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ connectorIdentifier: 'fints', displayName: 'FinTS/HBCI' })]);
+    useBankConnectionsStore().setConnections([{ ...listed(giro, null), connector: 'fints' }]);
+    mocks.submitTask.mockResolvedValue(ok(undefined));
+
+    await useBankEventsRefresh().queryAllBankEvents([giro]);
+
+    expect(mocks.submitTask.mock.calls[0][0].subtitle).toEqual(
+      activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: 'Giro', bank: 'ING' }),
+    );
   });
 });
