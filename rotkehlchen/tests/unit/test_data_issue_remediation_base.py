@@ -51,6 +51,12 @@ class BlockingStrategy(StubStrategy):
         return self.outcome
 
 
+class FailingStrategy(StubStrategy):
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        self.calls.append(self.name)
+        raise RuntimeError('strategy failed unexpectedly')
+
+
 def _make_issue(database: DBHandler) -> DataIssue:
     manager = DataIssuesManager(database)
     issue_id = manager.write_issue(
@@ -103,6 +109,20 @@ def test_pipeline_cancels_strategy_when_its_budget_expires(database: DBHandler) 
     assert calls == ['slow', 'fallback']
     assert issue.state == IssueState.RESOLVED
     assert issue.auto_remediation_attempts[0]['attribution'] == 'timeout'
+
+
+def test_pipeline_marks_issue_unresolved_when_strategy_fails(database: DBHandler) -> None:
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+
+    with pytest.raises(RuntimeError, match='strategy failed unexpectedly'):
+        RemediationPipeline(manager, (
+            FailingStrategy('failing', RemediationOutcome(False, 'failed', ''), calls),
+        )).run(issue)
+
+    assert calls == ['failing']
+    assert manager.get_issue(issue.id).state == IssueState.UNRESOLVED
 
 
 def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> None:
