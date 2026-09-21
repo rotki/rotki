@@ -3,15 +3,45 @@ import { INDETERMINATE, rollupPercentage, rollupStatus, statusRank } from './sta
 import { buildTree } from './tree';
 import {
   type Activity,
-  type ActivityGroup,
   type ActivityId,
   type ActivityKind,
-  type ActivityModel,
   type ActivityPhase,
   ActivityStatus,
   ActivityPhase as Phase,
   type TranslateFn,
 } from './types';
+
+interface ActivityGroup {
+  readonly kind: ActivityKind;
+  readonly title: string;
+  readonly activities: Activity[];
+  /** Rolled up from {@link activities}. */
+  readonly status: ActivityStatus;
+  /** Rolled up 0-100; `-1` when indeterminate. */
+  readonly percentage: number;
+}
+
+export interface ActivityOverall {
+  readonly percentage: number;
+  readonly phase: ActivityPhase;
+}
+
+export interface ActivityModel {
+  readonly groups: ActivityGroup[];
+  /** Flat, currently running. */
+  readonly active: Activity[];
+  /** Flat, waiting to start. */
+  readonly pending: Activity[];
+  /**
+   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
+   * out into. See `tree.ts`; `children` holds the rest, keyed by parent id.
+   */
+  readonly roots: Activity[];
+  readonly children: ReadonlyMap<ActivityId, Activity[]>;
+  readonly overall: ActivityOverall;
+  /** The single activity the header bar labels; see the selection rule below. */
+  readonly current?: Activity;
+}
 
 /** Stable ordering: by kind priority, then by start time, then by id. */
 function compareActivities(a: Activity, b: Activity): number {

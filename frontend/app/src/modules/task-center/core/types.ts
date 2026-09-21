@@ -205,38 +205,6 @@ export interface Activity {
   readonly userStarted?: boolean;
 }
 
-export interface ActivityGroup {
-  readonly kind: ActivityKind;
-  readonly title: string;
-  readonly activities: Activity[];
-  /** Rolled up from {@link activities}. */
-  readonly status: ActivityStatus;
-  /** Rolled up 0-100; `-1` when indeterminate. */
-  readonly percentage: number;
-}
-
-export interface ActivityOverall {
-  readonly percentage: number;
-  readonly phase: ActivityPhase;
-}
-
-export interface ActivityModel {
-  readonly groups: ActivityGroup[];
-  /** Flat, currently running. */
-  readonly active: Activity[];
-  /** Flat, waiting to start. */
-  readonly pending: Activity[];
-  /**
-   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
-   * out into. See `tree.ts`; `children` holds the rest, keyed by parent id.
-   */
-  readonly roots: Activity[];
-  readonly children: ReadonlyMap<ActivityId, Activity[]>;
-  readonly overall: ActivityOverall;
-  /** The single activity the header bar labels; see the selection rule in `model.ts`. */
-  readonly current?: Activity;
-}
-
 /**
  * What the work-history remembers about one settled activity, keyed by its {@link ActivityId}
  * and overwritten on each settle. Tiny and durable: it survives `clearTerminal` so the

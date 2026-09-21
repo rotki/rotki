@@ -2,12 +2,11 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,

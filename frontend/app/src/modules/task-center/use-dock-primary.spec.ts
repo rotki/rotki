@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,
