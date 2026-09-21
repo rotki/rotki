@@ -42,6 +42,11 @@ defineSlots<{
   summary?: () => unknown;
   /** Extra lines under everything else, aligned with the label; a job puts its sections and hints here. */
   details?: () => unknown;
+  /**
+   * A control at the start of the row's actions; a job puts its expand toggle here, so every row's
+   * icon and label start at the same place whether it expands or not.
+   */
+  toggle?: () => unknown;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -241,6 +246,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       >
         {{ elapsed }}
       </span>
+      <slot name="toggle" />
       <RuiTooltip
         v-if="activity.cancellable && !isTerminalStatus(activity.status)"
         :options="{ placement: 'top' }"
