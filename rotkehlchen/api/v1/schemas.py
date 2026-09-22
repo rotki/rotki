@@ -3724,6 +3724,7 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     _NON_FILTER_FIELDS: Final = frozenset((
         'force_delete',  # deletion flag, not a filter
         'exclude_ignored_assets',  # display preference, not a filter
+        'location_scope',  # only widens the location filter, not a filter by itself
     ))
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:

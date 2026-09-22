@@ -2209,6 +2209,17 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
     )
     assert get_event_identifiers() == {1, 2, 3, 4}
 
+    # Test: deletion with only a location scope (no location) should fail
+    assert_error_response(
+        response=requests.delete(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'location_scope': 'subtree'},
+        ),
+        contained_in_msg='Either identifiers or filter parameters must be provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert get_event_identifiers() == {1, 2, 3, 4}
+
     # Test: delete by asset filter (DAI) - should remove event 2
     assert_simple_ok_response(requests.delete(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
