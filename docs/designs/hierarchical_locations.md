@@ -1,6 +1,7 @@
 # Hierarchical and custom locations
 
-Status: Proposed design (2026-09-18)
+Status: Implemented for rotki 1.45 (user DB v54). Where the implementation differs, section 20 says
+how; section 21 records the placement of the built-in locations.
 
 ## 1. Summary
 
@@ -814,3 +815,65 @@ The feature is complete when:
 - Alias support is optional import functionality and needs no provenance field.
 - Location visuals extend the existing icon/image contract and support custom uploads.
 - The work may ship in one large PR, but all dependency-ordered workstreams remain required.
+
+## 20. Deviations from this design
+
+- **Subtree query.** Filters do not resolve the descendants in Python and bind a literal
+  `IN (?, ?, ...)` list. `DBLocationFilter` emits an uncorrelated `location IN (<recursive CTE>)`
+  subquery (`db.locations.subtree_query`), which SQLite evaluates once before probing the location
+  index. Measurements at 400,000 and 2,000,000 history events showed it as fast as a literal list,
+  with the same plan. The subtree of `total` adds no predicate.
+- **Scope in the UI.** History location filters always use the subtree scope. There is no
+  exact/subtree choice; exact scope is available through the API only. The frontend has no report
+  (PnL) location filters, so there was nothing there to make subtree aware.
+- **Icons of custom locations.** A custom location picks from a fixed list of icons
+  (`LOCATION_ICONS` in the frontend), not from the whole icon library: the app only registers
+  icon names that appear in its source. An unknown icon falls back to `lu-map-pin`.
+- **Images and backups.** Uploaded custom location images are files in the user data directory
+  (`images/locations/`). They are not part of DB backups or premium sync; a restored or synced DB
+  shows the icon or the generic fallback until the image is uploaded again. Custom locations and
+  aliases live in the user DB and travel with it.
+- **Third-party CSV formats.** Only rotki's own formats (`rotki_events`, `rotki_trades` and the
+  sources with a location column) go through import preflight. The cointracking, blockpit,
+  bitcoin_tax and coinledger importers keep mapping their own venue names and fall back to
+  External, because those names are platforms of those tools rather than the user's locations.
+- **Aliases.** No alias is created automatically, not even the old name on a rename: an alias
+  resolves before names and would shadow a later location of that name.
+- **Performance validation.** The comparison script and its results were not committed; they are
+  in the PR description. Text identifiers stayed within about 3% of the character encoding, so
+  there are no integer surrogate keys. At 2,000,000 events the upgrade takes about 190 s, with peak
+  disk use of about 3.3 times the database (database, backup copy and WAL) and peak memory of about
+  1.2 times the database size.
+
+## 21. Placement of the built-in locations
+
+The catalog is `rotkehlchen/data/locations.json`. Identifiers of locations that existed before
+equal their old API serialization, so string keys built from them (query ranges, key-value cache,
+settings) stay valid.
+
+- `total` ("Total") is the root. `blockchain` is displayed as "Blockchains" and `banks` as "Banks":
+  the old broad snapshot buckets and the new structural nodes are the same nodes.
+- Structural built-ins: `evm chains` below `blockchain`, and `exchanges` and `other` below `total`.
+- EVM Chains: ethereum ("Ethereum Mainnet"), optimism, arbitrum one, base, polygon pos, gnosis,
+  scroll, binance sc, hyperliquid (HyperEVM), monad, sonic, robinhood, ink and avalanche. rotki's
+  Avalanche support is the C-Chain, an EVM chain, even though the code does not count it among
+  `EVM_LOCATIONS`.
+- Directly below Blockchains: bitcoin, bitcoin cash, solana, polkadot, kusama, zksync lite
+  (EVM-like, not EVM) and loopring (a shut-down zk-rollup kept for historical data).
+- Exchanges: every exchange location, including dead ones (ftx, ftxus, bittrex, coinbasepro) and
+  import-only ones (blockfi, nexo, shapeshift, uphold, bisq, cryptocom, ...). All of them are
+  active, because users still enter historical data for dead exchanges by hand.
+- Banks: qonto. Other: external, equities, realestate ("Real estate") and commodities.
+- Legacy: `legacy locations` (inactive, below `other`) with `legacy:uniswap`, `legacy:balancer`,
+  `legacy:gitcoin` and `legacy:sushiswap`, created only when data references them. They are
+  defined in `rotkehlchen/locations/legacy_chars.py`, never in the catalog.
+- Icons of the structural nodes: total `lu-wallet`, blockchain `lu-link`, evm chains `lu-layers`,
+  exchanges `lu-arrow-left-right`, other `lu-ellipsis`, legacy `lu-archive`.
+
+The reviewed old-character mapping is `V53_LOCATION_CHAR_TO_IDENTIFIER` in
+`rotkehlchen/locations/legacy_chars.py`, the frozen codec that the historical upgrades
+(v36..v53), the v54 upgrade and the global v18->v19 conversion use. It covers the 57 characters a
+v53 database can hold besides the four legacy ones; Sonic, Robinhood, Ink, Qonto and FinTS were
+only introduced by the unreleased v53->v54 upgrade, so no released database contains their
+characters. `rotkehlchen/tests/unit/test_location_catalog.py` checks that every old value is
+handled exactly once.
