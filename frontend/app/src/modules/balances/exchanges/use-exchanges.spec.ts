@@ -1,6 +1,9 @@
+import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { bigNumberify } from '@rotki/common';
+import { createTestExchange } from '@test/utils/create-data';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -8,6 +11,7 @@ import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 const runTaskMock = vi.fn();
 const notifyError = vi.fn();
 const queryExchangeBalances = vi.fn();
+const callSetupExchange = vi.fn<(payload: ExchangeFormData) => Promise<string>>();
 
 vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -24,7 +28,7 @@ vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
 
 vi.mock('@/modules/balances/api/use-exchange-api', () => ({
   useExchangeApi: vi.fn(() => ({
-    callSetupExchange: vi.fn(),
+    callSetupExchange,
     queryExchangeBalances,
     queryRemoveExchange: vi.fn(),
   })),
@@ -78,6 +82,32 @@ describe('useExchanges', () => {
       await exchanges.fetchExchangeBalances({ ignoreCache: true, location: 'kraken' });
 
       expect(notifyError).not.toHaveBeenCalled();
+    });
+  });
+  describe('setupExchange', () => {
+    const form: ExchangeFormData = { apiKey: 'key', apiSecret: 'secret', location: 'kraken', mode: 'add', name: 'main', passphrase: '' };
+
+    it('should keep a new connection under the identifier the backend gave it, without its secrets', async () => {
+      callSetupExchange.mockResolvedValue('c1');
+
+      expect(await exchanges.setupExchange(form)).toBe(true);
+
+      expect(get(storeToRefs(useConnectedExchangesStore()).connectedExchanges)).toEqual([
+        { connector: 'kraken', identifier: 'c1', location: 'kraken', name: 'main' },
+      ]);
+    });
+
+    it('should rename an edited connection found by its identifier', async () => {
+      const kraken = createTestExchange('kraken', 'main');
+      useConnectedExchangesStore().setConnectedExchanges([createTestExchange('kraken', 'other'), kraken]);
+      callSetupExchange.mockResolvedValue(kraken.identifier);
+
+      await exchanges.setupExchange({ ...form, identifier: kraken.identifier, mode: 'edit', newName: 'renamed' });
+
+      expect(get(storeToRefs(useConnectedExchangesStore()).connectedExchanges).map(({ identifier, name }) => [identifier, name])).toEqual([
+        ['kraken-other', 'other'],
+        [kraken.identifier, 'renamed'],
+      ]);
     });
   });
 });

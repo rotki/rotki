@@ -117,7 +117,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('callSetupExchange', () => {
-    it('should add through PUT, sending the location as the connector', async () => {
+    it('should add through PUT, sending the location as the connector and returning the new identifier', async () => {
       let capturedBody: DefaultBodyType = null;
       let requestMethod = '';
 
@@ -153,7 +153,7 @@ describe('composables/api/balances/exchanges', () => {
         api_secret: 'secret456',
         binance_history_start_ts: 1700000000,
       });
-      expect(result).toBe(true);
+      expect(result).toBe('c1');
     });
 
     it('should edit through PATCH, addressing the connection by its identifier only', async () => {
@@ -194,7 +194,7 @@ describe('composables/api/balances/exchanges', () => {
         api_secret: 'new_secret',
         binance_markets: ['BTCUSDT', 'ETHUSDT'],
       });
-      expect(result).toBe(true);
+      expect(result).toBe('c1');
     });
 
     it('should throw error on failure', async () => {

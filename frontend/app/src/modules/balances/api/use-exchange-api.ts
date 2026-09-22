@@ -1,4 +1,4 @@
-import { transformCase } from '@rotki/common';
+import { assert, transformCase } from '@rotki/common';
 import {
   type Exchange,
   type ExchangeConnector,
@@ -18,7 +18,7 @@ import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types'
 export interface UseExchangeApiReturn {
   queryRemoveExchange: ({ identifier }: Exchange) => Promise<boolean>;
   queryExchangeBalances: (location: string, ignoreCache?: boolean, valueThreshold?: string) => Promise<PendingTask>;
-  callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;
+  callSetupExchange: (payload: ExchangeFormData) => Promise<string>;
   getExchanges: () => Promise<Exchanges>;
   getSupportedExchanges: () => Promise<ExchangeConnector[]>;
   queryBinanceHistoryStartTimestamp: () => Promise<number>;
@@ -54,10 +54,14 @@ export function useExchangeApi(): UseExchangeApiReturn {
    * Adds a connection for the connector in `location`, or edits the connection `identifier`.
    * Name and connector identify nothing once a connection exists, so an edit only sends its
    * identifier.
+   *
+   * @returns the identifier of the connection: the one the backend gave a new connection, or the
+   * edited one
    */
-  const callSetupExchange = async ({ identifier, location, mode, name, ...payload }: ExchangeFormData): Promise<boolean> => {
+  const callSetupExchange = async ({ identifier, location, mode, name, ...payload }: ExchangeFormData): Promise<string> => {
     if (mode === 'edit') {
-      return api.patch<boolean>(
+      assert(identifier !== undefined, 'editing an exchange needs its connection identifier');
+      await api.patch<boolean>(
         '/exchanges',
         { ...payload, identifier },
         {
@@ -67,9 +71,10 @@ export function useExchangeApi(): UseExchangeApiReturn {
           },
         },
       );
+      return identifier;
     }
 
-    await api.put<{ identifier: string }>(
+    const added = await api.put<{ identifier: string }>(
       '/exchanges',
       { ...payload, connector: location, name },
       {
@@ -78,7 +83,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
         },
       },
     );
-    return true;
+    return added.identifier;
   };
 
   const getSupportedExchanges = async (): Promise<ExchangeConnector[]> =>
