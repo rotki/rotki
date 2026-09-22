@@ -514,6 +514,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         transaction_not_found_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
+            if node_info in self._removed_nodes:
+                continue
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
@@ -521,7 +523,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 if node_info.name != EVM_INDEXERS_NODE_NAME:
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
-                        self.failed_to_connect_nodes.add(node_info.name)
+                        with self._nodes_lock:
+                            if node_info not in self._removed_nodes:
+                                self.failed_to_connect_nodes.add(node_info.name)
                         continue
 
                     if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -561,8 +565,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'{method.__name__}: {e!s}. Skipping this node in future queries.',
                 )
                 self.mark_node_failure(node_info, str(e))
-                self.failed_to_connect_nodes.add(node_info.name)
-                self.rpc_mapping.pop(node_info, None)
+                with self._nodes_lock:
+                    if node_info not in self._removed_nodes:
+                        self.failed_to_connect_nodes.add(node_info.name)
+                        self.rpc_mapping.pop(node_info, None)
                 continue
             except (
                     RemoteError,

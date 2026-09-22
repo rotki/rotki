@@ -203,6 +203,7 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       resets: targetedRedecodeFlow.resets,
+      userStarted: true,
       run: async (): Promise<Result<void, TaskError>> => {
         await Promise.allSettled(await subtree);
         return ok(undefined);

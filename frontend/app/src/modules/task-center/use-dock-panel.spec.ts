@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,
@@ -26,6 +25,10 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 
 vi.mock('@/modules/task-center/use-task-controller', () => ({
   useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
+}));
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<boolean> => ref<boolean>(false),
 }));
 
 function activity(kind: ActivityKind, name: string, status: ActivityStatus, parent?: ActivityId, partial: Partial<Activity> = {}): Activity {

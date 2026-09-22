@@ -1,4 +1,8 @@
+import type { ResultAsync } from 'plainfp/result-async';
+import type { TaskError } from '@/modules/core/tasks/task-result';
+import { ok, type Result } from 'plainfp/result';
 import { describe, expect, it, vi } from 'vitest';
+import { Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -73,6 +77,32 @@ describe('useActivityBatch', () => {
 
     await expect(results).rejects.toThrow('boom');
     expect(seen).toStrictEqual(['b', 'c']);
+  });
+
+  it('should let a user-priority umbrella through the balance pause of a running history sync', async () => {
+    const { runActivityBatch } = useActivityBatch();
+    const { statusOf, submit } = useTaskOrchestrator();
+    let finishSync!: () => void;
+    submit({
+      id: makeActivityId(ActivityKind.HISTORY_SYNC, 'batch-spec'),
+      kind: ActivityKind.HISTORY_SYNC,
+      run: async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>((resolve) => {
+        finishSync = (): void => resolve(ok(undefined));
+      }),
+      title: 'sync',
+    });
+    const refreshId = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'batch-spec');
+
+    try {
+      await runActivityBatch({ id: refreshId, kind: ActivityKind.BLOCKCHAIN_BALANCES, priority: Priority.USER, title: 'balances' }, ['eth', 'btc'], async item => item);
+
+      await vi.waitFor(() => {
+        expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'batch-spec').active).toBe(false);
+      });
+    }
+    finally {
+      finishSync();
+    }
   });
 
   it('should settle the umbrella activity itself, a tick after its own promise resolves', async () => {

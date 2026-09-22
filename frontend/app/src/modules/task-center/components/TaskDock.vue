@@ -2,11 +2,12 @@
 import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
 import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
 import DockPill from '@/modules/task-center/components/DockPill.vue';
+import { DockState } from '@/modules/task-center/dock-state';
 import { useCancelConfirmation } from '@/modules/task-center/use-cancel-confirmation';
 import { useDockPanel } from '@/modules/task-center/use-dock-panel';
 import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
-import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -58,7 +59,10 @@ function toggle(): void {
         :total="total"
         @collapse="modelExpanded = false"
       />
-      <div class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1">
+      <div
+        class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
+        data-testid="dock-sections"
+      >
         <div
           v-for="section in sections"
           :key="section.key"

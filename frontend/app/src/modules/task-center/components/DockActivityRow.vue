@@ -9,6 +9,7 @@ import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
 import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
+import { useWaitingLabel } from '@/modules/task-center/use-waiting-label';
 
 const { activity, dismissible = false, hideReason = false, now, outcomeStatus, parent, percentage, steps } = defineProps<{
   activity: Activity;
@@ -42,11 +43,17 @@ defineSlots<{
   summary?: () => unknown;
   /** Extra lines under everything else, aligned with the label; a job puts its sections and hints here. */
   details?: () => unknown;
+  /**
+   * The row's last control; a job puts its expand toggle here, so every toggle sits in one column at
+   * the row's end. A row without one keeps the space when it has other buttons, so theirs line up.
+   */
+  toggle?: () => unknown;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { labelOf, subtitleOf } = useActivityLabel();
+const { waitingLabel } = useWaitingLabel();
 
 /** Tailwind only sees class names written out in full, so each outcome colour is spelled here. */
 const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
@@ -64,6 +71,15 @@ const label = computed<string>(() => labelOf(activity, get(nested), parent));
 const secondary = computed<string | undefined>(() => (get(nested) ? undefined : subtitleOf(activity)));
 
 const subject = computed<ActivitySubject | undefined>(() => activitySubject(activity));
+
+/** The chain or location icon is left off when the parent's row already shows the same one. */
+const repeatsParentIcon = computed<boolean>(() => {
+  const own = get(subject);
+  const above = parent === undefined ? undefined : activitySubject(parent);
+  if (own === undefined || above === undefined)
+    return false;
+  return own.chain !== undefined ? own.chain === above.chain : own.location !== undefined && own.location === above.location;
+});
 
 /** A nested account row is named by its address, so it gets the copy and explorer link an address has everywhere else. */
 const linkedAddress = computed<boolean>(() => get(nested) && get(subject)?.address !== undefined);
@@ -101,8 +117,14 @@ const elapsed = computed<string | undefined>(() => {
   return formatElapsed(now - activity.startedAt);
 });
 
-/** A bar earns its line only with a real number to fill it; indeterminate work says so with its mark. */
-const showMeter = computed<boolean>(() => get(isRunning) && percentage >= 0);
+/** The mark turns into a progress ring only with a real number to fill it; indeterminate work keeps its icon. */
+const showRing = computed<boolean>(() => get(isRunning) && percentage >= 0);
+
+/**
+ * A bar only on a job or a parent. A nested leaf sits under its parent's bar, so a second one would
+ * repeat it; the ring already carries the leaf's own progress, and a tally it has stays as text.
+ */
+const showBar = computed<boolean>(() => get(showRing) && (!get(nested) || steps !== undefined));
 
 const count = computed<string>(() => {
   const tally = get(rowSteps);
@@ -115,6 +137,27 @@ const reasonColor = computed<string>(() => (get(isFailed) ? 'text-rui-error' : '
 
 const reasonLine = computed<string | undefined>(() => (hideReason ? undefined : activity.reason));
 
+const waitingLine = computed<string | undefined>(() => waitingLabel(activity));
+
+/**
+ * A settled nested row's label fades, so the rows still working stand out among its siblings. A
+ * job's title keeps its strength once settled, since it heads the rows beneath it.
+ */
+const recedes = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(isFailed));
+
+const showsIcon = computed<boolean>(() => (get(subject)?.chain !== undefined || get(subject)?.location !== undefined) && !get(repeatsParentIcon));
+
+/**
+ * Whether the row has the fixed-width column its subject icon sits in. A nested row keeps the column
+ * even with no icon to show, so its label starts where its siblings' do; an account row is exempt,
+ * since its avatar already takes that place.
+ */
+const iconColumn = computed<boolean>(() => get(showsIcon) || (get(nested) && !get(linkedAddress)));
+
+const cancellable = computed<boolean>(() => activity.cancellable && !isTerminalStatus(activity.status));
+
+const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || dismissible);
+
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
 </script>
@@ -126,7 +169,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
     data-testid="dock-activity-row"
   >
     <RuiProgress
-      v-if="showMeter"
+      v-if="showRing"
       class="shrink-0 mt-0.5"
       color="primary"
       circular
@@ -157,84 +200,101 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       {{ outcomeText }}
     </RuiTooltip>
 
-    <div class="flex flex-col flex-1 min-w-0 gap-0.5">
-      <div class="flex items-center gap-1.5 min-w-0">
+    <!-- The subject icon has a column of its own, so every line of the row starts where the label does. -->
+    <div class="flex flex-1 min-w-0 gap-1.5">
+      <div
+        v-if="iconColumn"
+        class="size-5 shrink-0 flex items-center justify-center"
+        data-testid="dock-subject-icon-column"
+      >
         <ChainIcon
-          v-if="subject?.chain"
-          class="shrink-0"
+          v-if="subject?.chain && !repeatsParentIcon"
           :chain="subject.chain"
           size="1rem"
           data-testid="dock-subject-icon"
         />
         <LocationIcon
-          v-else-if="subject?.location"
-          class="shrink-0"
+          v-else-if="subject?.location && !repeatsParentIcon"
           :item="subject.location"
           icon
           size="16px"
           data-testid="dock-subject-icon"
         />
+      </div>
+      <div class="flex flex-col flex-1 min-w-0 gap-0.5">
         <HashLink
           v-if="linkedAddress && subject?.address"
           class="min-w-0 text-sm"
           :text="subject.address"
           :location="subject.chain"
           size="12"
+          reveal-actions
           data-testid="dock-subject-address"
         />
         <div
           v-else
           class="truncate text-sm leading-5"
-          :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': isTerminalStatus(activity.status) && !isFailed }]"
+          :class="[nested ? 'font-normal' : 'font-medium', { 'text-rui-text-secondary': recedes }]"
           :title="label"
+          data-testid="activity-label"
         >
           {{ label }}
         </div>
-      </div>
-      <div
-        v-if="secondary"
-        class="truncate text-xs leading-4 text-rui-text-secondary"
-        :title="secondary"
-      >
-        {{ secondary }}
-      </div>
-      <DockActivityDetail :activity="activity" />
-      <div
-        v-if="reasonLine"
-        class="text-xs leading-4 break-words"
-        :class="reasonColor"
-        data-testid="activity-reason"
-      >
-        {{ reasonLine }}
-      </div>
-      <div
-        v-if="showMeter"
-        class="flex items-center gap-2"
-        data-testid="activity-meter"
-      >
-        <div class="h-1 flex-1 rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 overflow-hidden">
-          <div
-            class="h-full bg-rui-primary transition-[width] duration-500"
-            :style="{ width: `${percentage}%` }"
-          />
-        </div>
-        <span class="text-xs text-rui-text-secondary tabular-nums shrink-0">{{ count }}</span>
-      </div>
-      <slot
-        v-else
-        name="summary"
-      >
         <div
-          v-if="rowSteps && rowSteps.total > 0"
-          class="text-xs leading-4 text-rui-text-secondary tabular-nums"
+          v-if="secondary"
+          class="truncate text-xs leading-4 text-rui-text-secondary"
+          :title="secondary"
         >
-          {{ t('pending_task.steps', { current: rowSteps.current, total: rowSteps.total }) }}
+          {{ secondary }}
         </div>
-      </slot>
-      <slot name="details" />
+        <DockActivityDetail :activity="activity" />
+        <div
+          v-if="waitingLine"
+          class="text-xs leading-4 text-rui-text-secondary break-words"
+          data-testid="activity-waiting"
+        >
+          {{ waitingLine }}
+        </div>
+        <div
+          v-if="reasonLine"
+          class="text-xs leading-4 break-words"
+          :class="reasonColor"
+          data-testid="activity-reason"
+        >
+          {{ reasonLine }}
+        </div>
+        <div
+          v-if="showBar"
+          class="flex items-center gap-2"
+          data-testid="activity-meter"
+        >
+          <div class="h-1 flex-1 rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 overflow-hidden">
+            <div
+              class="h-full bg-rui-primary transition-[width] duration-500"
+              :style="{ width: `${percentage}%` }"
+            />
+          </div>
+          <span class="text-xs text-rui-text-secondary tabular-nums shrink-0">{{ count }}</span>
+        </div>
+        <slot
+          v-else
+          name="summary"
+        >
+          <div
+            v-if="rowSteps && rowSteps.total > 0"
+            class="text-xs leading-4 text-rui-text-secondary tabular-nums"
+          >
+            {{ t('pending_task.steps', { current: rowSteps.current, total: rowSteps.total }) }}
+          </div>
+        </slot>
+        <slot name="details" />
+      </div>
     </div>
 
-    <div class="flex items-center gap-1 shrink-0">
+    <div
+      class="flex items-center gap-1 shrink-0 -my-0.5"
+      data-testid="activity-actions"
+    >
       <span
         v-if="elapsed"
         class="text-xs text-rui-text-secondary tabular-nums"
@@ -242,7 +302,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         {{ elapsed }}
       </span>
       <RuiTooltip
-        v-if="activity.cancellable && !isTerminalStatus(activity.status)"
+        v-if="cancellable"
         :options="{ placement: 'top' }"
         :open-delay="400"
       >
@@ -252,6 +312,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
             color="primary"
             size="sm"
             icon
+            :aria-label="t('collapsed_pending_tasks.cancel_task')"
             data-testid="cancel-activity"
             @click="emit('cancel', activity)"
           >
@@ -273,16 +334,36 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
       >
         {{ t('pending_task.retry') }}
       </RuiButton>
-      <RuiButton
+      <RuiTooltip
         v-if="dismissible"
-        variant="text"
-        color="primary"
-        size="sm"
-        data-testid="dismiss-activity"
-        @click="emit('dismiss', activity)"
+        :options="{ placement: 'top' }"
+        :open-delay="400"
       >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            color="primary"
+            size="sm"
+            icon
+            :aria-label="t('pending_task.dismiss')"
+            data-testid="dismiss-activity"
+            @click="emit('dismiss', activity)"
+          >
+            <RuiIcon
+              name="lu-x"
+              size="16"
+            />
+          </RuiButton>
+        </template>
         {{ t('pending_task.dismiss') }}
-      </RuiButton>
+      </RuiTooltip>
+      <slot name="toggle">
+        <div
+          v-if="hasButtons"
+          class="size-6 shrink-0"
+          data-testid="activity-toggle-slot"
+        />
+      </slot>
     </div>
   </div>
 </template>

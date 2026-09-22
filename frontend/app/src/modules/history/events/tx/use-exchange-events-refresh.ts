@@ -6,10 +6,9 @@ import { msg } from '@/message-key';
 import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -29,7 +28,6 @@ interface UseExchangeEventsRefreshReturn {
 export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
-  const { markLocationCancelled } = useEventsQueryStatusStore();
   const { queryExchangeEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
 
@@ -53,20 +51,15 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
       title: t('task_center.group.exchange_events'),
     });
 
-    if (isErr(outcome)) {
-      if (isCancellation(outcome.error)) {
-        markLocationCancelled({ location: exchange.location, name: exchange.name });
-      }
-      else if (isActionable(outcome.error)) {
-        logger.error(outcome.error);
-        notifyError(
-          t('actions.exchange_events.error.title'),
-          t('actions.exchange_events.error.description', {
-            error: outcome.error.message,
-            ...payload,
-          }),
-        );
-      }
+    if (isErr(outcome) && isActionable(outcome.error)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.exchange_events.error.title'),
+        t('actions.exchange_events.error.description', {
+          error: outcome.error.message,
+          ...payload,
+        }),
+      );
     }
 
     return outcome;

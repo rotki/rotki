@@ -116,15 +116,23 @@ describe('modules/history/events/UnmatchedActions', () => {
       expect(wrapper.emitted('action')).toEqual([[UNMATCHED_ACTIONS.FIND_MATCH]]);
     });
 
-    it('should offer restore and the history link alone on an ignored row', () => {
+    it('should offer restore, find-match and the history link on an ignored row', () => {
       const wrapper = mountActions(UNMATCHED_LAYOUTS.CARD, { markExternal, showRestore: true });
 
       expect(wrapper.find('[data-testid=unmatched-action-restore]').text()).toBe('Restore');
+      // ignoring only keeps the row out of automatic matching, so matching by hand stays offered
+      expect(wrapper.find('[data-testid=unmatched-action-find-match]').text()).toBe('Find match');
       expect(wrapper.find('[data-testid=unmatched-action-show-in-events]').exists()).toBe(true);
       expect(wrapper.find('[data-testid=unmatched-action-primary]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=unmatched-action-ignore]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=unmatched-action-mark-external]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=unmatched-action-overflow]').exists()).toBe(false);
+    });
+
+    it('should gate find-match on an ignored row behind the same premium tier', () => {
+      const wrapper = mountActions(UNMATCHED_LAYOUTS.CARD, { matchDisabled: true, showRestore: true });
+
+      expect(wrapper.find('[data-testid=unmatched-action-find-match]').attributes('disabled')).toBeDefined();
     });
 
     it('should disable find-match when matching is not allowed', () => {
@@ -144,15 +152,26 @@ describe('modules/history/events/UnmatchedActions', () => {
       expect(wrapper.text()).not.toContain('Mark external');
     });
 
-    it('should show restore instead of the match actions on an ignored row', async () => {
-      const wrapper = mountActions(UNMATCHED_LAYOUTS.ROW, { showRestore: true });
+    it('should show restore alongside find-match on an ignored row', async () => {
+      const wrapper = mountActions(UNMATCHED_LAYOUTS.ROW, { markExternal, showRestore: true });
 
       expect(wrapper.text()).toContain('Restore');
-      expect(wrapper.text()).not.toContain('Find match');
+      // the resolution actions go, but matching by hand stays: an ignore is not a refusal to match
+      expect(wrapper.text()).toContain('Find match');
+      expect(wrapper.find('[data-testid=unmatched-action-mark-external]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=unmatched-action-ignore]').exists()).toBe(false);
 
       await wrapper.find('[data-testid=unmatched-action-restore]').trigger('click');
 
       expect(wrapper.emitted('action')).toEqual([[UNMATCHED_ACTIONS.RESTORE]]);
+    });
+
+    it('should emit find-match from an ignored row', async () => {
+      const wrapper = mountActions(UNMATCHED_LAYOUTS.ROW, { showRestore: true });
+
+      await wrapper.find('[data-testid=unmatched-action-find-match]').trigger('click');
+
+      expect(wrapper.emitted('action')).toEqual([[UNMATCHED_ACTIONS.FIND_MATCH]]);
     });
 
     it('should render an optional action only when one is given', async () => {

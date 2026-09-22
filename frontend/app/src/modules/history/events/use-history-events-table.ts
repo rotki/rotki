@@ -11,6 +11,7 @@ import type { HistoryEventsRowContext } from '@/modules/history/events/use-histo
 import { useHistoryEventsData } from '@/modules/history/events/use-history-events-data';
 import { useHistoryEventsForms } from '@/modules/history/events/use-history-events-forms';
 import { useHistoryEventsOperations } from '@/modules/history/events/use-history-events-operations';
+import { useMatchedEventsUnlink } from '@/modules/history/events/use-matched-events-unlink';
 import { useVirtualRows, type VirtualRow } from '@/modules/history/events/use-virtual-rows';
 import { useVirtualScrollHighlight } from '@/modules/history/events/use-virtual-scroll-highlight';
 
@@ -119,6 +120,8 @@ export function useHistoryEventsTable(
     flattenedEvents: data.events,
   }, emit);
 
+  const unlinking = useMatchedEventsUnlink(data.completeEventsMapped, emit);
+
   const forms = useHistoryEventsForms(operations.suggestNextSequenceId, emit);
 
   /** Lookup map for O(1) group access from a row's group id. */
@@ -164,8 +167,8 @@ export function useHistoryEventsTable(
       toggleMovementExpanded: rows.toggleMovementExpanded,
       toggleShowIgnoredAssets: data.toggleShowIgnoredAssets,
       toggleSwapExpanded: rows.toggleSwapExpanded,
-      unlinkEvent: operations.confirmUnlink,
-      unlinkGroup: operations.unlinkGroup,
+      unlinkEvent: unlinking.confirmUnlink,
+      unlinkGroup: unlinking.unlinkGroup,
     },
     display: {
       duplicateHandlingStatus: computed<DuplicateHandlingStatus | undefined>(() => toValue(duplicateHandlingStatus)),

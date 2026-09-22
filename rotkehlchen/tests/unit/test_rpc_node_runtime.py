@@ -1,15 +1,21 @@
 """Tests for RPC node runtime state, cooldown, and configured-node cache."""
 import time
-from unittest.mock import MagicMock, patch
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from threading import Event
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import (
     RPCManagerMixin,
+    RPCNode,
     _is_rate_limit_error,
     _normalize_endpoint,
 )
+from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain, Timestamp
 
@@ -331,3 +337,181 @@ def test_maybe_connect_to_nodes_refreshes_stale_configured_nodes_cache() -> None
     with patch.object(manager, 'connect_to_multiple_nodes') as mock_connect:
         manager.maybe_connect_to_nodes(when_tracked_accounts=False)
         mock_connect.assert_called_once_with([fresh_node])
+
+
+def _load_nodes_before_refresh(
+        loaded: Event,
+        release: Event,
+        nodes: list[WeightedNode],
+        **kwargs: object,
+) -> list[WeightedNode]:
+    loaded.set()
+    assert release.wait(timeout=5)
+    return nodes
+
+
+def test_refresh_waits_for_inflight_cache_load() -> None:
+    old_nodes = [_make_weighted_node('provider', 'https://old.example.com')]
+    new_nodes = [_make_weighted_node('provider', 'https://new.example.com')]
+    manager = _make_manager(old_nodes)
+    manager.invalidate_nodes_cache()
+    loaded, release = Event(), Event()
+    with (
+        ThreadPoolExecutor(max_workers=2) as executor,
+        patch.object(manager.database, 'get_rpc_nodes', side_effect=partial(
+            _load_nodes_before_refresh, loaded, release, old_nodes,
+        )),
+    ):
+        reader = executor.submit(manager._get_configured_nodes)
+        assert loaded.wait(timeout=5)
+        refresh = executor.submit(
+            manager.refresh_nodes,
+            added={new_nodes[0].node_info},
+            removed={old_nodes[0].node_info},
+        )
+        with pytest.raises(TimeoutError):
+            refresh.result(timeout=0.1)
+        release.set()
+        reader.result(timeout=5)
+        refresh.result(timeout=5)
+    with patch.object(manager.database, 'get_rpc_nodes', return_value=new_nodes):
+        assert manager._get_configured_nodes() == new_nodes
+
+
+def test_refresh_allows_explicitly_readded_node() -> None:
+    node = _make_node('provider', 'https://rpc.example.com')
+    manager = _make_manager([])
+    manager.refresh_nodes(added=set(), removed={node})
+    manager.mark_node_failure(node, 'old request failed')
+    assert manager.get_runtime_state(node) is None
+    manager.refresh_nodes(added={node}, removed=set())
+    assert node not in manager._removed_nodes
+    manager.mark_node_success(node)
+    assert manager.get_runtime_state(node) is not None
+
+
+def _refresh_during_capability_check(
+        inquirer: SolanaInquirer,
+        old_node: NodeName,
+        replacement: NodeName,
+) -> bool:
+    inquirer.refresh_nodes(added={replacement}, removed={old_node})
+    return False
+
+
+@pytest.mark.parametrize('capability', ['is_archive', 'supports_program_accounts'])
+def test_solana_refresh_during_capability_check(capability: str) -> None:
+    """An old query must not publish capabilities for a same-name replacement."""
+    inquirer = SolanaInquirer(MagicMock(), MagicMock(), MagicMock())
+    old = _make_node('provider', 'https://old.example.com')
+    replacement = _make_node('provider', 'https://new.example.com')
+    rpc = MagicMock()
+    setattr(type(rpc), capability, PropertyMock(side_effect=partial(
+        _refresh_during_capability_check, inquirer, old, replacement,
+    )))
+    inquirer.rpc_mapping[old] = rpc
+    with pytest.raises(RemoteError):
+        inquirer.query(
+            method=MagicMock(),
+            call_order=[WeightedNode(node_info=old, active=True, weight=FVal(1))],
+            only_archive_nodes=capability == 'is_archive',
+            only_program_accounts_nodes=capability == 'supports_program_accounts',
+        )
+    assert old.name not in inquirer.known_node_capabilities
+    inquirer.rpc_mapping[replacement] = RPCNode(
+        rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+        supports_program_accounts=True,
+    )
+    assert inquirer.query(
+        method=MagicMock(return_value=123),
+        call_order=[WeightedNode(node_info=replacement, active=True, weight=FVal(1))],
+        only_archive_nodes=True, only_program_accounts_nodes=True,
+    ) == 123
+
+
+def _pause_backoff_transition(entered: Event, release: Event, message: str, *args: object) -> None:
+    if 'backoff end time is in the future' in message:
+        entered.set()
+        assert release.wait(timeout=5)
+
+
+def test_solana_refresh_waits_for_backoff_transition() -> None:
+    """Refresh cannot clear backoff between its pop and reinsertion."""
+    inquirer = SolanaInquirer(MagicMock(), MagicMock(), MagicMock())
+    old = _make_node('provider', 'https://old.example.com')
+    healthy = _make_node('healthy', 'https://healthy.example.com')
+    replacement = _make_node('provider', 'https://new.example.com')
+    inquirer.node_backoff_info[old.name] = (Timestamp(int(time.time()) + 1000), 1, 8)
+    inquirer.rpc_mapping[healthy] = RPCNode(
+        rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+    )
+    entered, release = Event(), Event()
+    with (
+        ThreadPoolExecutor(max_workers=2) as executor,
+        patch('rotkehlchen.chain.solana.node_inquirer.log.debug', side_effect=partial(
+            _pause_backoff_transition, entered, release,
+        )),
+    ):
+        query = executor.submit(
+            inquirer.query, method=MagicMock(return_value=123),
+            call_order=[WeightedNode(node_info=node, active=True, weight=FVal(1))
+                        for node in (old, healthy)],
+        )
+        assert entered.wait(timeout=5)
+        refresh = executor.submit(inquirer.refresh_nodes, {replacement}, {old})
+        try:
+            with pytest.raises(TimeoutError):
+                refresh.result(timeout=0.1)
+        finally:
+            release.set()
+        assert query.result(timeout=5) == 123
+        refresh.result(timeout=5)
+    assert old.name not in inquirer.node_backoff_info
+
+
+class _PausedBackoff(dict):  # noqa: FURB189  # Probe the concrete dict boundary used by the inquirer.
+    """Pause after retry membership is checked, before the deadline is indexed."""
+
+    def __init__(self, name: str, entered: Event, release: Event) -> None:
+        super().__init__({name: (Timestamp(int(time.time()) + 1000), 1, 8)})
+        self.entered = entered
+        self.release = release
+
+    def __contains__(self, key: object) -> bool:
+        present = super().__contains__(key)
+        self.entered.set()
+        assert self.release.wait(timeout=5)
+        return present
+
+
+def _wait_for_refresh(finished: Event, seconds: float) -> None:
+    assert finished.wait(timeout=5)
+
+
+def test_solana_refresh_waits_for_retry_snapshot() -> None:
+    """Refresh cannot clear a retry entry between membership and deadline lookup."""
+    inquirer = SolanaInquirer(MagicMock(), MagicMock(), MagicMock())
+    old = _make_node('provider', 'https://old.example.com')
+    entered, release, finished = Event(), Event(), Event()
+    inquirer.node_backoff_info = _PausedBackoff(old.name, entered, release)
+    with (
+        ThreadPoolExecutor(max_workers=2) as executor,
+        patch('rotkehlchen.chain.solana.node_inquirer.cancellable_sleep', side_effect=partial(
+            _wait_for_refresh, finished,
+        )),
+    ):
+        query = executor.submit(
+            inquirer.query, method=MagicMock(),
+            call_order=[WeightedNode(node_info=old, active=True, weight=FVal(1))],
+        )
+        assert entered.wait(timeout=5)
+        refresh = executor.submit(inquirer.refresh_nodes, set(), {old})
+        try:
+            with pytest.raises(TimeoutError):
+                refresh.result(timeout=0.1)
+        finally:
+            release.set()
+        refresh.result(timeout=5)
+        finished.set()
+        with pytest.raises(RemoteError):
+            query.result(timeout=5)

@@ -1,19 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,
 } from '@/modules/task-center/core/types';
-import { DockState, useTaskDock } from './use-task-dock';
+import { DockState } from './dock-state';
+import { useTaskDock } from './use-task-dock';
 
 const activities = ref<Activity[]>([]);
+const showSummary = ref<boolean>(false);
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<boolean> => showSummary,
+}));
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { isActive: ComputedRef<boolean>; model: ComputedRef<ActivityModel> } => {
@@ -59,9 +64,15 @@ async function transition(next: Activity[]): Promise<void> {
   await nextTick();
 }
 
+/** Leaves the work idle long enough for its batch to end; the next run starts a new one. */
+async function endBatch(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(1000);
+}
+
 describe('useTaskDock', () => {
   beforeEach(() => {
     set(activities, []);
+    set(showSummary, false);
   });
 
   afterEach(() => {
@@ -79,10 +90,19 @@ describe('useTaskDock', () => {
       expect(get(visible)).toBe(true);
     });
 
-    it('should hide for work that had already settled before the dock saw it running', () => {
-      set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.FAILED)]);
+    it('should hide for a clean run that had already settled before the dock saw it running', () => {
+      set(activities, refresh(ActivityStatus.COMPLETE));
 
       expect(get(dock().visible)).toBe(false);
+    });
+
+    it('should report a failure beneath a job that settled before the dock mounted, as one started during login', () => {
+      set(activities, refresh(ActivityStatus.COMPLETE, ActivityStatus.FAILED));
+
+      const { failed, state } = dock();
+
+      expect(get(state)).toBe(DockState.FAILED);
+      expect(get(failed).map(root => root.id)).toEqual([refreshId]);
     });
   });
 
@@ -118,6 +138,7 @@ describe('useTaskDock', () => {
 
       await transition(refresh(ActivityStatus.COMPLETE));
       acknowledge(refreshId);
+      await endBatch();
       await transition([...refresh(ActivityStatus.COMPLETE), report(ActivityStatus.RUNNING)]);
       await transition([...refresh(ActivityStatus.COMPLETE), report(ActivityStatus.COMPLETE)]);
 
@@ -284,10 +305,26 @@ describe('useTaskDock', () => {
       const { finished } = dock();
 
       await transition([report(ActivityStatus.COMPLETE)]);
+      await endBatch();
       await transition([report(ActivityStatus.COMPLETE), prices(ActivityStatus.RUNNING)]);
       await transition([report(ActivityStatus.COMPLETE), prices(ActivityStatus.COMPLETE)]);
 
       expect(get(finished).map(root => root.kind)).toEqual([ActivityKind.PRICES]);
+    });
+
+    it('should keep a run\'s outcome when more work starts within a second of it, as the same batch', async () => {
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      const prices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status);
+      set(activities, [report(ActivityStatus.RUNNING)]);
+      const { finished } = dock();
+
+      await transition([report(ActivityStatus.COMPLETE)]);
+      await vi.advanceTimersByTimeAsync(50);
+      await transition([report(ActivityStatus.COMPLETE), prices(ActivityStatus.RUNNING)]);
+      await transition([report(ActivityStatus.COMPLETE), prices(ActivityStatus.COMPLETE)]);
+
+      expect(get(finished).map(root => root.kind)).toHaveLength(2);
+      expect(get(finished).map(root => root.kind)).toEqual(expect.arrayContaining([ActivityKind.PNL_REPORT, ActivityKind.PRICES]));
     });
   });
 
@@ -331,6 +368,24 @@ describe('useTaskDock', () => {
       set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING)]);
       await nextTick();
       await vi.advanceTimersByTimeAsync(1000);
+
+      expect(get(modelExpanded)).toBe(true);
+    });
+
+    it('should summarize work that pauses for a moment between stages once, after the last stage', async () => {
+      const balances = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'balances', status);
+      const prices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status);
+      set(showSummary, true);
+      set(activities, [balances(ActivityStatus.RUNNING)]);
+      const { modelExpanded } = dock();
+
+      await transition([balances(ActivityStatus.COMPLETE)]);
+      await vi.advanceTimersByTimeAsync(50);
+      expect(get(modelExpanded)).toBe(false);
+
+      await transition([balances(ActivityStatus.COMPLETE), prices(ActivityStatus.RUNNING)]);
+      await transition([balances(ActivityStatus.COMPLETE), prices(ActivityStatus.COMPLETE)]);
+      await endBatch();
 
       expect(get(modelExpanded)).toBe(true);
     });

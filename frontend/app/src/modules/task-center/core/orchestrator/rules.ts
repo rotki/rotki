@@ -1,14 +1,22 @@
 import { isTerminalStatus } from '../status';
-import { type Activity, ActivityKind, ActivityPart, activityParts, ActivityStatus } from '../types';
+import { type Activity, ActivityKind, ActivityPart, activityParts, ActivityStatus, type ActivityWaiting, WaitingReason } from '../types';
 import { Priority } from './spec';
 
 /**
- * Decides whether a queued `candidate` may start, given a snapshot of `all` activities. Pure
- * and composable — the orchestrator ANDs every configured rule with its generic dependency
- * gate. Rules express domain ordering/blocking (e.g. don't query balances mid-decode) without
- * the orchestrator knowing any domain.
+ * What holds a queued `candidate` back, given a snapshot of `all` activities, or `undefined` when
+ * the rule lets it start.
+ *
+ * @remarks
+ * Pure and composable: the orchestrator checks every configured rule after its generic parent and
+ * dependency gates, and the first hold found is both why the candidate may not start and the
+ * reason the dock shows for it. Rules express domain ordering and blocking (for example, do not
+ * query balances mid-sync) without the orchestrator knowing any domain.
  */
-export type EligibilityRule = (candidate: Activity, all: readonly Activity[]) => boolean;
+export type EligibilityRule = (candidate: Activity, all: readonly Activity[]) => ActivityWaiting | undefined;
+
+function holdBy(reason: WaitingReason, blocker: Activity | undefined): ActivityWaiting | undefined {
+  return blocker === undefined ? undefined : { on: blocker.id, reason };
+}
 
 const BALANCE_KINDS = new Set<ActivityKind>([
   ActivityKind.BLOCKCHAIN_BALANCES,
@@ -26,9 +34,12 @@ const BALANCE_KINDS = new Set<ActivityKind>([
  */
 export const pauseBalancesDuringHistorySync: EligibilityRule = (candidate, all) => {
   if (!BALANCE_KINDS.has(candidate.kind) || candidate.priority === Priority.USER)
-    return true;
+    return undefined;
 
-  return !all.some(activity => activity.kind === ActivityKind.HISTORY_SYNC && activity.status === ActivityStatus.RUNNING);
+  return holdBy(
+    WaitingReason.HISTORY_SYNC,
+    all.find(activity => activity.kind === ActivityKind.HISTORY_SYNC && activity.status === ActivityStatus.RUNNING),
+  );
 };
 
 /**
@@ -55,18 +66,23 @@ function isMatching(activity: Activity): boolean {
  */
 export const excludeMatchingDuringReset: EligibilityRule = (candidate, all) => {
   if (isMatching(candidate))
-    return !all.some(activity => activity.resets === true && !isTerminalStatus(activity.status));
+    return holdBy(WaitingReason.REDECODE, all.find(activity => activity.resets === true && !isTerminalStatus(activity.status)));
 
   if (candidate.resets === true)
-    return !all.some(activity => isMatching(activity) && activity.status === ActivityStatus.RUNNING);
+    return holdBy(WaitingReason.MATCHING, all.find(activity => isMatching(activity) && activity.status === ActivityStatus.RUNNING));
 
-  return true;
+  return undefined;
 };
 
 /** The rule set the reactive orchestrator is configured with by default. */
 export const DEFAULT_RULES: readonly EligibilityRule[] = [pauseBalancesDuringHistorySync, excludeMatchingDuringReset];
 
-/** True when every rule admits the candidate. */
-export function allRulesPass(rules: readonly EligibilityRule[], candidate: Activity, all: readonly Activity[]): boolean {
-  return rules.every(rule => rule(candidate, all));
+/** The first hold any rule puts on the candidate, in rule order, or `undefined` when every rule lets it start. */
+export function firstRuleHold(rules: readonly EligibilityRule[], candidate: Activity, all: readonly Activity[]): ActivityWaiting | undefined {
+  for (const rule of rules) {
+    const hold = rule(candidate, all);
+    if (hold !== undefined)
+      return hold;
+  }
+  return undefined;
 }

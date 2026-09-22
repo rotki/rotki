@@ -70,6 +70,12 @@ interface HashLinkProps {
    * Requires `location` to be set.
    */
   showLocationIcon?: boolean;
+  /**
+   * Shows the copy and explorer buttons only while the link is hovered or has focus. For dense
+   * lists, where the buttons on every row crowd out what the rows say. They keep their space, so
+   * revealing them does not shift the text.
+   */
+  revealActions?: boolean;
 }
 
 const {
@@ -82,6 +88,7 @@ const {
   type = 'address',
   noScramble,
   showLocationIcon,
+  revealActions,
 } = defineProps<HashLinkProps>();
 
 const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
@@ -204,7 +211,7 @@ const tags = useAccountTags(() => text);
 </script>
 
 <template>
-  <div class="flex shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px] min-w-0">
+  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px] min-w-0">
     <LocationIcon
       v-if="showLocationIcon && location"
       icon
@@ -279,6 +286,8 @@ const tags = useAccountTags(() => text);
     <div
       v-if="showLink || showCopy"
       class="flex items-center gap-1 shrink-0"
+      :class="{ 'opacity-0 transition-opacity group-hover/hash-link:opacity-100 group-focus-within/hash-link:opacity-100': revealActions }"
+      data-testid="hash-link-actions"
     >
       <InlineCopyButton
         v-if="showCopy"

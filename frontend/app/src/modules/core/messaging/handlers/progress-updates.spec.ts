@@ -12,15 +12,11 @@ import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-cente
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
 
 const mockSetUndecodedTransactionsStatus = vi.fn();
-const mockSetProtocolCacheStatus = vi.fn();
-const mockSetReceivingProtocolCacheStatus = vi.fn();
 const mockSetHistoricalDailyPriceStatus = vi.fn();
 const mockSetHistoricalPriceStatus = vi.fn();
 const mockSetStatsPriceQueryStatus = vi.fn();
 const mockReportProgress = vi.fn();
 const mockReportProgressByPrefix = vi.fn();
-/** What the protocol-cache store has accumulated, as the handler reads it back. */
-let protocolCacheRows: { chain: string; protocol: string; processed: number; total: number }[] = [];
 /** Which activity ids count as running, so a test can put one parent or the other in flight. */
 let runningIds: string[] = [];
 const mockStatusOf = vi.fn((kind: ActivityKind, ...parts: (string | number)[]) => ({
@@ -52,16 +48,6 @@ vi.mock('@/modules/history/use-decoding-status-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/history/use-protocol-cache-status-store', () => ({
-  useProtocolCacheStatusStore: vi.fn(() => ({
-    get protocolCacheStatus(): typeof protocolCacheRows {
-      return protocolCacheRows;
-    },
-    setProtocolCacheStatus: mockSetProtocolCacheStatus,
-    setReceivingProtocolCacheStatus: mockSetReceivingProtocolCacheStatus,
-  })),
-}));
-
 vi.mock('@/modules/assets/prices/use-historic-cache-price-store', () => ({
   useHistoricCachePriceStore: vi.fn(() => ({
     setHistoricalDailyPriceStatus: mockSetHistoricalDailyPriceStatus,
@@ -87,15 +73,13 @@ describe('createProgressUpdateHandler', () => {
     setActivePinia(createPinia());
     useActivityDetail().resetDetails();
     vi.clearAllMocks();
-    protocolCacheRows = [];
     runningIds = [];
   });
 
-  it('should route undecoded transaction updates and stop the receiving flag', async () => {
+  it('should route undecoded transaction updates', async () => {
     const handler = createProgressUpdateHandler(mockT);
     const result = await handler.handle(data(SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS));
 
-    expect(mockSetReceivingProtocolCacheStatus).toHaveBeenCalledWith(false);
     expect(mockSetUndecodedTransactionsStatus).toHaveBeenCalledOnce();
     expect(result).toBeNull();
   });
@@ -133,60 +117,63 @@ describe('createProgressUpdateHandler', () => {
     );
   });
 
-  it('should route protocol cache updates', async () => {
-    const handler = createProgressUpdateHandler(mockT);
-    await handler.handle(data(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES));
-
-    expect(mockSetProtocolCacheStatus).toHaveBeenCalledOnce();
-  });
-
   describe('protocol cache rows', () => {
     const curveOnEthereum = { chain: 'ethereum', processed: 2, protocol: 'curve', total: 8 };
+    const aaveOnEthereum = { chain: 'ethereum', processed: 1, protocol: 'aave', total: 4 };
     const aaveOnOptimism = { chain: 'optimism', processed: 1, protocol: 'aave', total: 4 };
 
-    async function handleProtocolCacheFrame(chain = 'ethereum'): Promise<void> {
+    async function handleProtocolCacheFrame(frame: typeof curveOnEthereum): Promise<void> {
       await createProgressUpdateHandler(mockT).handle(createMock<ProgressUpdateResultData>({
-        chain,
+        ...frame,
         subtype: SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES,
       }));
     }
 
-    it('should attach every accumulated row to a running cache refresh', async () => {
-      protocolCacheRows = [curveOnEthereum, aaveOnOptimism];
+    it('should accumulate every pair a running cache refresh has reached, the newest first', async () => {
       runningIds = [protocolCacheActivity.id()];
 
-      await handleProtocolCacheFrame();
+      await handleProtocolCacheFrame(curveOnEthereum);
+      await handleProtocolCacheFrame(aaveOnOptimism);
 
       expect(get(readActivityDetail(protocolCacheActivity, undefined))?.protocols)
-        .toStrictEqual([curveOnEthereum, aaveOnOptimism]);
+        .toStrictEqual([aaveOnOptimism, { ...curveOnEthereum, processed: 8 }]);
     });
 
-    it('should attach only the decoding chain\'s rows to its decode, under the canonical chain id', async () => {
-      protocolCacheRows = [curveOnEthereum, aaveOnOptimism];
+    it('should attach only the decoding chain\'s frames to its decode, under the canonical chain id', async () => {
       const subject = { chain: 'eth', ignoreCache: false };
       runningIds = [decodeActivity.id(subject)];
 
-      // The frame says 'ethereum' while the activity is keyed by 'eth'.
-      await handleProtocolCacheFrame();
+      // The frames say 'ethereum' while the activity is keyed by 'eth'.
+      await handleProtocolCacheFrame(curveOnEthereum);
+      await handleProtocolCacheFrame(aaveOnOptimism);
+      await handleProtocolCacheFrame(aaveOnEthereum);
 
-      expect(get(readActivityDetail(decodeActivity, subject))?.protocols).toStrictEqual([curveOnEthereum]);
+      expect(get(readActivityDetail(decodeActivity, subject))?.protocols)
+        .toStrictEqual([aaveOnEthereum, { ...curveOnEthereum, processed: 8 }]);
     });
 
     it('should publish nothing when neither parent is running', async () => {
-      protocolCacheRows = [curveOnEthereum];
-
-      await handleProtocolCacheFrame();
+      await handleProtocolCacheFrame(curveOnEthereum);
 
       expect(get(readActivityDetail(protocolCacheActivity, undefined))).toBeUndefined();
       expect(get(readActivityDetail(decodeActivity, { chain: 'eth', ignoreCache: false }))).toBeUndefined();
     });
 
+    it('should keep a stopped refresh\'s rows as they were when it stopped', async () => {
+      runningIds = [protocolCacheActivity.id()];
+      await handleProtocolCacheFrame(curveOnEthereum);
+
+      runningIds = [];
+      await handleProtocolCacheFrame(aaveOnEthereum);
+
+      expect(get(readActivityDetail(protocolCacheActivity, undefined))?.protocols).toStrictEqual([curveOnEthereum]);
+    });
+
     it('should publish against the forced decode when that is the live variant', async () => {
-      protocolCacheRows = [curveOnEthereum];
       const forced = { chain: 'eth', ignoreCache: true };
       runningIds = [decodeActivity.id(forced)];
 
-      await handleProtocolCacheFrame();
+      await handleProtocolCacheFrame(curveOnEthereum);
 
       expect(get(readActivityDetail(decodeActivity, forced))?.protocols).toStrictEqual([curveOnEthereum]);
       expect(get(readActivityDetail(decodeActivity, { chain: 'eth', ignoreCache: false }))).toBeUndefined();
@@ -313,7 +300,7 @@ describe('createProgressUpdateHandler', () => {
     const result = await handler.handle(createMock<ProgressUpdateResultData>({}));
 
     expect(result).toBeNull();
-    expect(mockSetProtocolCacheStatus).not.toHaveBeenCalled();
+    expect(mockSetUndecodedTransactionsStatus).not.toHaveBeenCalled();
     expect(mockReportProgress).not.toHaveBeenCalled();
   });
 });

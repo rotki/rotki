@@ -126,6 +126,34 @@ export const ActivityStatus = {
 
 export type ActivityStatus = (typeof ActivityStatus)[keyof typeof ActivityStatus];
 
+/**
+ * Why a queued activity has not started: the first check that holds it, in the order the scheduler
+ * makes them. See {@link ActivityWaiting}.
+ */
+export const WaitingReason = {
+  /** Its parent has not started. */
+  PARENT: 'parent',
+  /** A dependency has not settled. */
+  DEPENDENCY: 'dependency',
+  /** A background balance query, paused while a history sync runs. */
+  HISTORY_SYNC: 'history-sync',
+  /** Matching, held back by a redecode that deletes the events it writes onto. */
+  REDECODE: 'redecode',
+  /** A redecode, held back by matching that is already running. */
+  MATCHING: 'matching',
+  /** Everything else lets it start; its lane, or its lane family, has no free slot. */
+  SLOT: 'slot',
+} as const;
+
+export type WaitingReason = (typeof WaitingReason)[keyof typeof WaitingReason];
+
+/** Why a queued activity waits, derived on every snapshot and never stored. */
+export interface ActivityWaiting {
+  readonly reason: WaitingReason;
+  /** The activity it waits on, when there is one to name. */
+  readonly on?: ActivityId;
+}
+
 export const ActivityPhase = {
   IDLE: 'idle',
   WORKING: 'working',
@@ -201,38 +229,10 @@ export interface Activity {
    * user-initiated work from background work; see `Priority` in `orchestrator/spec.ts`.
    */
   readonly priority?: number;
-}
-
-export interface ActivityGroup {
-  readonly kind: ActivityKind;
-  readonly title: string;
-  readonly activities: Activity[];
-  /** Rolled up from {@link activities}. */
-  readonly status: ActivityStatus;
-  /** Rolled up 0-100; `-1` when indeterminate. */
-  readonly percentage: number;
-}
-
-export interface ActivityOverall {
-  readonly percentage: number;
-  readonly phase: ActivityPhase;
-}
-
-export interface ActivityModel {
-  readonly groups: ActivityGroup[];
-  /** Flat, currently running. */
-  readonly active: Activity[];
-  /** Flat, waiting to start. */
-  readonly pending: Activity[];
-  /**
-   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
-   * out into. See `tree.ts`; `children` holds the rest, keyed by parent id.
-   */
-  readonly roots: Activity[];
-  readonly children: ReadonlyMap<ActivityId, Activity[]>;
-  readonly overall: ActivityOverall;
-  /** The single activity the header bar labels; see the selection rule in `model.ts`. */
-  readonly current?: Activity;
+  /** See `ActivitySpec.userStarted` in `orchestrator/spec.ts`. */
+  readonly userStarted?: boolean;
+  /** Why a PENDING activity has not started yet; absent once it may start, and on any other status. */
+  readonly waiting?: ActivityWaiting;
 }
 
 /**

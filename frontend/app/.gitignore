@@ -32,6 +32,7 @@ tests/e2e/test-results*
 playwright-report
 tests/**/coverage
 tests/**/.v8-coverage
+tests/e2e/.unit-structure
 .eslintcache
 
 rotki_config.json

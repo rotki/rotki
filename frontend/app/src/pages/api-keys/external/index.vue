@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
 import { getTextToken } from '@rotki/common';
 import { msg } from '@/message-key';
+import { EXTERNAL_API_KEY_SERVICES, type ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
+import ExternalApiKeyCard from '@/modules/settings/api-keys/external/ExternalApiKeyCard.vue';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+
+/** A plain key card built from the services table, or an integration with its own component. */
+type ServiceEntry =
+  | { readonly name: string; readonly service: ExternalApiKeyService }
+  | { readonly name: string; readonly component: Component };
 
 definePage({
   meta: {
@@ -15,67 +23,34 @@ const { t } = useI18n({ useScope: 'global' });
 const search = ref<string>('');
 const { load } = useExternalApiKeys();
 
-const services = [
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/EtherscanApiKey.vue')),
-    name: 'etherscan',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/BlockscoutApiKey.vue')),
-    name: 'blockscout',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/HeliusApiKey.vue')),
-    name: 'helius',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/CryptoCompareApiKey.vue')),
-    name: 'cryptocompare',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/BeaconchainApiKey.vue')),
-    name: 'beaconchain',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/OpenSeaApiKey.vue')),
-    name: 'opensea',
-  },
+function card(service: ExternalApiKeyService): ServiceEntry {
+  return { name: service.name, service };
+}
+
+const services: ServiceEntry[] = [
+  card(EXTERNAL_API_KEY_SERVICES.etherscan),
+  card(EXTERNAL_API_KEY_SERVICES.blockscout),
+  card(EXTERNAL_API_KEY_SERVICES.helius),
+  card(EXTERNAL_API_KEY_SERVICES.cryptocompare),
+  card(EXTERNAL_API_KEY_SERVICES.beaconchain),
+  card(EXTERNAL_API_KEY_SERVICES.opensea),
   {
     component: defineAsyncComponent(() => import('@/modules/integrations/monerium/MoneriumAuth.vue')),
     name: 'monerium',
   },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/TheGraphApiKey.vue')),
-    name: 'thegraph',
-  },
+  card(EXTERNAL_API_KEY_SERVICES.thegraph),
   {
     component: defineAsyncComponent(() => import('@/modules/integrations/gnosis-pay/components/GnosisPayAuth.vue')),
     name: 'gnosispay',
   },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/DefiLlamaApiKey.vue')),
-    name: 'defillama',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/CoinGeckoApiKey.vue')),
-    name: 'coingecko',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/AlchemyApiKey.vue')),
-    name: 'alchemy',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/MoralisApiKey.vue')),
-    name: 'moralis',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/BirdeyeApiKey.vue')),
-    name: 'birdeye',
-  },
+  card(EXTERNAL_API_KEY_SERVICES.defillama),
+  card(EXTERNAL_API_KEY_SERVICES.coingecko),
+  card(EXTERNAL_API_KEY_SERVICES.alchemy),
+  card(EXTERNAL_API_KEY_SERVICES.moralis),
+  card(EXTERNAL_API_KEY_SERVICES.birdeye),
 ];
 
-// Update the filteredServices computed property
-const filteredServices = computed(() => {
+const filteredServices = computed<ServiceEntry[]>(() => {
   const searchVal = get(search);
   if (!searchVal) {
     return services;
@@ -115,11 +90,19 @@ onMounted(async () => {
     </RuiAlert>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
       <template v-if="filteredServices.length > 0">
-        <Component
-          :is="service.component"
-          v-for="(service) in filteredServices"
-          :key="service.name"
-        />
+        <template
+          v-for="entry in filteredServices"
+          :key="entry.name"
+        >
+          <ExternalApiKeyCard
+            v-if="'service' in entry"
+            :service="entry.service"
+          />
+          <Component
+            :is="entry.component"
+            v-else
+          />
+        </template>
       </template>
       <template v-else>
         <div class="p-4">

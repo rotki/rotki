@@ -61,7 +61,7 @@ from .types import SolanaTransaction, pubkey_to_solana_address
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.chain.evm.types import NodeName, WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.helius import Helius
     from rotkehlchen.tasks.supervisor import TaskSupervisor
@@ -94,6 +94,11 @@ class SolanaInquirer(SolanaRPCMixin):
         self.known_node_capabilities: dict[str, SolanaNodeCapabilities] = {}
         self.node_backoff_info: dict[str, tuple[Timestamp | None, int, int]] = {}
 
+    def clear_runtime_state(self, node: NodeName) -> None:
+        super().clear_runtime_state(node)
+        self.node_backoff_info.pop(node.name, None)
+        self.known_node_capabilities.pop(node.name, None)
+
     def default_call_order(self) -> list[WeightedNode]:
         """Default call order for solana nodes.
         Adds the helius rpc as a fallback in case there are no other active RPCs. This is mostly
@@ -124,49 +129,60 @@ class SolanaInquirer(SolanaRPCMixin):
         if call_order is None:
             call_order = self.default_call_order()
 
-        call_order = [
-            weighted_node for weighted_node in call_order
-            if (
-                (capabilities := self.known_node_capabilities.get(weighted_node.node_info.name)) is None or  # noqa: E501
-                (
-                    (only_archive_nodes is False or capabilities.is_archive) and
+        with self._nodes_lock:
+            call_order = [
+                weighted_node for weighted_node in call_order
+                if (
+                    (capabilities := self.known_node_capabilities.get(weighted_node.node_info.name)) is None or  # noqa: E501
                     (
-                        only_program_accounts_nodes is False or
-                        capabilities.supports_program_accounts
+                        (only_archive_nodes is False or capabilities.is_archive) and
+                        (
+                            only_program_accounts_nodes is False or
+                            capabilities.supports_program_accounts
+                        )
                     )
                 )
-            )
-        ]
+            ]
         if only_archive_nodes:
             call_order.sort(key=lambda weighted_node: weighted_node.node_info.name != HELIUS_RPC_NODE_NAME)  # noqa: E501
 
         is_retry = False
-        while is_retry is False or len(call_order := [
-            x for x in call_order
-            if x.node_info.name in self.node_backoff_info
-        ]) != 0:  # Retry any rate-limited nodes if other nodes are not available
+        while True:
             if is_retry:
-                # Retrying with one or more rate-limited nodes. Filter and sort call order to
-                # contain the rate-limited nodes with the node with closest backoff end ts first.
-                # Then wait until that backoff time is up before continuing.
-                call_order.sort(  # call_order is a list here
-                    key=lambda node: self.node_backoff_info[node.node_info.name][0] or 0,
-                )
-                backoff_end_ts, _, _ = self.node_backoff_info[call_order[0].node_info.name]
+                # Snapshot the retry order and deadline together; refresh may clear backoff.
+                with self._nodes_lock:
+                    call_order = [
+                        node for node in call_order
+                        if node.node_info not in self._removed_nodes and
+                        node.node_info.name in self.node_backoff_info
+                    ]
+                    if not call_order:
+                        break
+                    call_order.sort(
+                        key=lambda node: self.node_backoff_info[node.node_info.name][0] or 0,
+                    )
+                    backoff_end_ts, _, _ = self.node_backoff_info[call_order[0].node_info.name]
                 if (wait_time := (backoff_end_ts or 0) - ts_now()) > 0:
                     cancellable_sleep(wait_time)
 
             is_retry = True  # Any iteration of the main loop is a retry after the first run.
             for weighted_node in call_order:
                 node_info = weighted_node.node_info
-                # Pop the node from the backoff info dict to ensure its only included again in
-                # future iterations if it actually fails with a rate limit again, or still has a
-                # backoff end time in the future.
-                backoff_end_ts, attempts, backoff = self.node_backoff_info.pop(node_info.name, (None, 0, INITIAL_BACKOFF))  # noqa: E501
-                if backoff_end_ts is not None and ts_now() < backoff_end_ts:
-                    log.debug(f'Skipping {node_info.name} since backoff end time is in the future')
-                    self.node_backoff_info[node_info.name] = (backoff_end_ts, attempts, backoff)
-                    continue
+                with self._nodes_lock:
+                    if node_info in self._removed_nodes:
+                        continue
+                    # Retry only if the deadline is still in the future or the node is
+                    # rate-limited again. Keep the pop/reinsert atomic with refresh.
+                    backoff_end_ts, attempts, backoff = self.node_backoff_info.pop(node_info.name, (None, 0, INITIAL_BACKOFF))  # noqa: E501
+                    if backoff_end_ts is not None and ts_now() < backoff_end_ts:
+                        log.debug(
+                            'Skipping %s since backoff end time is in the future',
+                            node_info.name,
+                        )
+                        self.node_backoff_info[node_info.name] = (
+                            backoff_end_ts, attempts, backoff,
+                        )
+                        continue
 
                 if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                     if node_info.name in self.failed_to_connect_nodes:
@@ -174,7 +190,9 @@ class SolanaInquirer(SolanaRPCMixin):
 
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
-                        self.failed_to_connect_nodes.add(node_info.name)
+                        with self._nodes_lock:
+                            if node_info not in self._removed_nodes:
+                                self.failed_to_connect_nodes.add(node_info.name)
                         continue
 
                     if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -182,18 +200,22 @@ class SolanaInquirer(SolanaRPCMixin):
                         continue
 
                 if only_archive_nodes and not rpc_node.is_archive:
-                    self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
-                        is_archive=False,
-                        supports_program_accounts=rpc_node.supports_program_accounts,
-                    )
+                    with self._nodes_lock:
+                        if node_info not in self._removed_nodes:
+                            self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
+                                is_archive=False,
+                                supports_program_accounts=rpc_node.supports_program_accounts,
+                            )
                     log.debug(f'Skipping non-archive node {node_info.name} for solana query requiring only archive nodes')  # noqa: E501
                     continue
 
                 if only_program_accounts_nodes and not rpc_node.supports_program_accounts:
-                    self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
-                        is_archive=rpc_node.is_archive,
-                        supports_program_accounts=False,
-                    )
+                    with self._nodes_lock:
+                        if node_info not in self._removed_nodes:
+                            self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
+                                is_archive=rpc_node.is_archive,
+                                supports_program_accounts=False,
+                            )
                     log.debug(f'Skipping solana node {node_info.name} that does not support getProgramAccounts')  # noqa: E501
                     continue
 
@@ -221,11 +243,13 @@ class SolanaInquirer(SolanaRPCMixin):
                             backoff = int(retry_after) + 1
 
                         log.warning(f'Got rate limited from solana node {node_info.name}. Backing off {backoff} seconds on this node...')  # noqa: E501
-                        self.node_backoff_info[node_info.name] = (
-                            Timestamp(ts_now() + backoff),  # Time when we can retry this node
-                            attempts,  # Number of retry attempts
-                            backoff * BACKOFF_MULTIPLIER,  # Next backoff length
-                        )
+                        with self._nodes_lock:
+                            if node_info not in self._removed_nodes:
+                                self.node_backoff_info[node_info.name] = (
+                                    Timestamp(ts_now() + backoff),  # Next retry time
+                                    attempts,  # Number of retry attempts
+                                    backoff * BACKOFF_MULTIPLIER,  # Next backoff length
+                                )
                         continue
 
                     log.error(f'Failed to call solana node {node_info.name} due to {e}')

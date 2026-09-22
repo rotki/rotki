@@ -1,3 +1,4 @@
+import type { ActivityModel } from './core/model';
 import { ok } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
@@ -6,7 +7,6 @@ import { EditKind } from './core/rerun/policy';
 import {
   type Activity,
   ActivityKind,
-  type ActivityModel,
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,

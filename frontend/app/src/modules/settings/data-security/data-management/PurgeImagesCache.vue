@@ -117,6 +117,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
           :disabled="!source || pending"
           :loading="pending"
           color="error"
+          data-testid="purge-images-cache-button"
           @click="showConfirmation(source)"
         >
           <template #prepend>

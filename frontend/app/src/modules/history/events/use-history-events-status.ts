@@ -14,9 +14,9 @@ interface UseHistoryEventStatusReturn {
    * Whether the events table should keep re-reading because history work is in flight.
    *
    * @remarks
-   * Read from the ledger only. The websocket status stores keep an entry for anything they were
-   * seeded with until a frame settles it, and a sync that fails before reporting never sends one, so
-   * gating on them kept the table polling after the work had ended and swallowed the settle read.
+   * Read from the ledger only, which settles every activity whether or not the backend reported on
+   * it. A sync that fails before sending any status frame still ends there, so the table stops
+   * polling when the work does.
    */
   shouldFetchEventsRegularly: ComputedRef<boolean>;
 }

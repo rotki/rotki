@@ -13,8 +13,6 @@ const { spies } = vi.hoisted(() => ({
     notifyError: vi.fn(),
     getChain: vi.fn((location: string) => location),
     deleteTransactions: vi.fn(),
-    unlinkAssetMovement: vi.fn(),
-    refreshUnmatchedAssetMovements: vi.fn(),
     deleteHistoryEvent: vi.fn(),
     ignoreSingle: vi.fn(),
     toggle: vi.fn(),
@@ -35,12 +33,6 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({ deleteTransactions: spies.deleteTransactions }),
-}));
-vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
-  useAssetMovementMatchingApi: (): object => ({ unlinkAssetMovement: spies.unlinkAssetMovement }),
-}));
-vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
-  useUnmatchedAssetMovements: (): object => ({ refreshUnmatchedAssetMovements: spies.refreshUnmatchedAssetMovements }),
 }));
 vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: (): object => ({ deleteHistoryEvent: spies.deleteHistoryEvent }),
@@ -175,13 +167,5 @@ describe('useHistoryEventsOperations', () => {
     setup().confirmTxAndEventsDelete({ location: 'ethereum', txRef: '0x2' });
     await spies.show.mock.calls[1][1]();
     expect(spies.notifyError).toHaveBeenCalledOnce();
-  });
-
-  it('should unlink an asset movement through the confirmation callback', async () => {
-    setup().confirmUnlink({ identifier: 9 });
-    await spies.show.mock.calls[0][1]();
-    expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(9);
-    expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-    expect(emit).toHaveBeenCalledWith('refresh');
   });
 });

@@ -62,6 +62,7 @@ describe('user-types', () => {
       },
       defaultThemeVersion: 1,
       dismissedApiKeyNotices: [],
+      dockShowSummary: true,
       graphZeroBased: true,
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,

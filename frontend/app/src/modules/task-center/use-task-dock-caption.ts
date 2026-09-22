@@ -2,9 +2,10 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
+import { DockState } from '@/modules/task-center/dock-state';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
-import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 function isFailed(activity: Activity): boolean {
   return activity.status === ActivityStatus.FAILED;

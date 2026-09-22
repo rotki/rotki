@@ -10,7 +10,6 @@ import { useExchangeEventsRefresh } from './use-exchange-events-refresh';
 
 const mockNotifyError = vi.fn();
 const mocks = vi.hoisted(() => ({
-  markLocationCancelled: vi.fn(),
   submitTask: vi.fn(),
 }));
 
@@ -29,10 +28,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
-}));
-
-vi.mock('@/modules/history/use-events-query-status-store', () => ({
-  useEventsQueryStatusStore: vi.fn(() => ({ markLocationCancelled: mocks.markLocationCancelled })),
 }));
 
 describe('useExchangeEventsRefresh', () => {
@@ -63,13 +58,12 @@ describe('useExchangeEventsRefresh', () => {
     });
   });
 
-  it('should mark the location cancelled when an activity is cancelled', async () => {
+  it('should not notify when an activity is cancelled', async () => {
     mocks.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
     const { queryAllExchangeEvents } = useExchangeEventsRefresh();
     await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
-    expect(mocks.markLocationCancelled).toHaveBeenCalledWith({ location: 'kraken', name: 'kraken 1' });
     expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
@@ -80,7 +74,6 @@ describe('useExchangeEventsRefresh', () => {
     await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
     expect(mockNotifyError).toHaveBeenCalledOnce();
-    expect(mocks.markLocationCancelled).not.toHaveBeenCalled();
   });
 
   it('should stay quiet on success', async () => {
@@ -88,6 +81,5 @@ describe('useExchangeEventsRefresh', () => {
     await queryAllExchangeEvents([createTestExchange('kraken', 'kraken 1')]);
 
     expect(mockNotifyError).not.toHaveBeenCalled();
-    expect(mocks.markLocationCancelled).not.toHaveBeenCalled();
   });
 });

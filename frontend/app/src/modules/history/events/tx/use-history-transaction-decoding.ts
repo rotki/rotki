@@ -3,7 +3,7 @@ import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import {
   TransactionChainType,
@@ -42,7 +42,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const { decodeTransactions } = useHistoryEventsApi();
   const { cancelByKind, submitTask } = useNativeTask();
-  const { getUndecodedTransactionStatus, markDecodingCancelled, resetUndecodedTransactionsStatus } = useDecodingStatusStore();
+  const { getUndecodedTransactionStatus, resetUndecodedTransactionsStatus } = useDecodingStatusStore();
   const { decodableTxChainsInfo, getChainName, isBtcChains, isEvmLikeChains } = useSupportedChains();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
@@ -83,10 +83,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
     if (isErr(outcome)) {
       const { error } = outcome;
-      if (isCancellation(error)) {
-        markDecodingCancelled(chain);
-      }
-      else if (isActionable(error)) {
+      if (isActionable(error)) {
         logger.error(error.message);
         notifyError(
           t('actions.transactions_redecode_by_chain.error.title'),
@@ -146,6 +143,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       lane: UMBRELLA_LANE,
       rerunnable: false,
       resets: redecodeFlow.resets,
+      userStarted: true,
       run: async (): Promise<Result<void, TaskError>> => {
         const outcomes = await Promise.allSettled(await subtree);
         const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;

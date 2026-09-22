@@ -5,6 +5,7 @@ import {
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
+  HistoryEventState,
 } from '@/modules/history/events/schemas';
 import { useHistorySwapItem } from './use-history-swap-item';
 
@@ -32,13 +33,17 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/history/event-utils', () => ({
-  isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
-    event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
-}));
+vi.mock('@/modules/history/event-utils', async () => {
+  const actual = await vi.importActual<typeof import('@/modules/history/event-utils')>('@/modules/history/event-utils');
+  return {
+    getMatchedBridgeUnlink: actual.getMatchedBridgeUnlink,
+    isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
+      event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
+  };
+});
 
 /** Builds an EVM history event fixture, defaulting to the spend leg of a trade. */
-function createMockEvent(overrides: Partial<EvmHistoryEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus }> = {}): HistoryEventEntry {
+function createMockEvent(overrides: Partial<HistoryEventEntry & EvmHistoryEvent> = {}): HistoryEventEntry {
   return {
     identifier: 1,
     entryType: HistoryEventEntryType.EVM_EVENT,
@@ -390,6 +395,45 @@ describe('useHistorySwapItem', () => {
       expect(get(spendEvents)[0].identifier).toBe(1);
       expect(get(receiveEvents)).toHaveLength(1);
       expect(get(receiveEvents)[0].identifier).toBe(2);
+    });
+
+    it('should unlink a joined bridge transfer by its matched leg, ignoring both legs', () => {
+      const events = ref([
+        createMockEvent({ eventSubtype: 'fee', identifier: 1 }),
+        createMockEvent({ actualGroupIdentifier: 'arbitrum-tx', eventSubtype: 'bridge', eventType: 'deposit', identifier: 2, location: 'arbitrum_one' }),
+        createMockEvent({ actualGroupIdentifier: 'ethereum-tx', eventSubtype: 'bridge', eventType: 'withdrawal', identifier: 3 }),
+      ]);
+      const { bridgeUnlink } = useHistorySwapItem({ events });
+
+      expect(get(bridgeUnlink)).toStrictEqual({
+        hasSynthetic: false,
+        identifier: 2,
+        ignoredIdentifiers: [2, 3],
+        type: 'bridge',
+      });
+    });
+
+    it('should leave a synthetic counterpart out of the legs to ignore', () => {
+      const events = ref([
+        createMockEvent({ actualGroupIdentifier: 'arbitrum-tx', eventSubtype: 'bridge', eventType: 'deposit', identifier: 2, location: 'arbitrum_one' }),
+        createMockEvent({ actualGroupIdentifier: 'ethereum-tx', eventSubtype: 'bridge', eventType: 'withdrawal', identifier: 3, states: [HistoryEventState.SYNTHETIC] }),
+      ]);
+      const { bridgeUnlink } = useHistorySwapItem({ events });
+
+      // unlinking deletes the synthetic leg, so there is nothing left of it to ignore
+      expect(get(bridgeUnlink)).toStrictEqual({
+        hasSynthetic: true,
+        identifier: 2,
+        ignoredIdentifiers: [2],
+        type: 'bridge',
+      });
+    });
+
+    it('should not offer unlink for a swap inside a joined group', () => {
+      const events = ref(createSwapEvents().map(event => ({ ...event, actualGroupIdentifier: 'tx-123' })));
+      const { bridgeUnlink } = useHistorySwapItem({ events });
+
+      expect(get(bridgeUnlink)).toBeUndefined();
     });
   });
 

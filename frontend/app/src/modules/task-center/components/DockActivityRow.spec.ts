@@ -10,6 +10,7 @@ import {
   ActivitySourceType,
   ActivityStatus,
   makeActivityId,
+  WaitingReason,
 } from '@/modules/task-center/core/types';
 
 const NOW = 1_000_000;
@@ -48,6 +49,20 @@ describe('dockActivityRow', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
+  });
+
+  describe('why it waits', () => {
+    it('should say why a queued row has not started', () => {
+      const wrapper = createWrapper({
+        activity: activity({ status: ActivityStatus.PENDING, waiting: { reason: WaitingReason.HISTORY_SYNC } }),
+      });
+
+      expect(wrapper.find('[data-testid=activity-waiting]').text()).toBe('task_dock.waiting.history_sync');
+    });
+
+    it('should leave the line out for a row that is not waiting', () => {
+      expect(createWrapper().find('[data-testid=activity-waiting]').exists()).toBe(false);
+    });
   });
 
   describe('what it names', () => {
@@ -105,6 +120,50 @@ describe('dockActivityRow', () => {
       expect(wrapper.findComponent({ name: 'ChainIcon' }).exists()).toBe(false);
     });
 
+    it('should leave out the chain icon its parent\'s row already shows, and keep one that differs', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS) });
+      const icon = (parent: Activity): boolean => createWrapper({ activity: account, parent }).findComponent({ name: 'ChainIcon' }).exists();
+
+      expect(icon(activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth') }))).toBe(false);
+      expect(icon(activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'optimism') }))).toBe(true);
+    });
+
+    it('should leave out the location icon its parent\'s row already shows', () => {
+      const exchange = (name: string): Activity => activity({ id: makeActivityId(ActivityKind.EXCHANGE_EVENTS, 'kraken', name), kind: ActivityKind.EXCHANGE_EVENTS });
+
+      const wrapper = createWrapper({ activity: exchange('second'), parent: exchange('main') });
+
+      expect(wrapper.findComponent({ name: 'LocationIcon' }).exists()).toBe(false);
+    });
+
+    it('should keep an empty icon column on a nested row with no icon, so its label lines up with its siblings\'', () => {
+      const prices = activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES });
+
+      const nested = createWrapper({ activity: prices, parent: activity() });
+      expect(nested.find('[data-testid=dock-subject-icon-column]').exists()).toBe(true);
+      expect(nested.find('[data-testid=dock-subject-icon]').exists()).toBe(false);
+
+      expect(createWrapper({ activity: prices }).find('[data-testid=dock-subject-icon-column]').exists()).toBe(false);
+    });
+
+    it('should give a nested account row no icon column, since its avatar takes that place', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS) });
+
+      const wrapper = createWrapper({ activity: account, parent: activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth') }) });
+
+      expect(wrapper.find('[data-testid=dock-subject-icon-column]').exists()).toBe(false);
+    });
+
+    it('should fade a settled nested label but keep a settled job\'s title at full strength', () => {
+      const label = (wrapper: VueWrapper): string[] => wrapper.find('[data-testid=activity-label]').classes();
+      const settled = activity({ status: ActivityStatus.COMPLETE });
+      const parent = activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES });
+
+      expect(label(createWrapper({ activity: settled }))).not.toContain('text-rui-text-secondary');
+      expect(label(createWrapper({ activity: settled, parent }))).toContain('text-rui-text-secondary');
+      expect(label(createWrapper({ activity: activity(), parent }))).not.toContain('text-rui-text-secondary');
+    });
+
     it('should show no subject icon for work that acts on no chain or location', () => {
       const wrapper = createWrapper({ activity: activity({ id: makeActivityId(ActivityKind.PRICES, 'latest'), kind: ActivityKind.PRICES }) });
 
@@ -119,6 +178,14 @@ describe('dockActivityRow', () => {
       expect(nested.props('location')).toBe('eth');
 
       expect(createWrapper({ activity: account }).findComponent({ name: 'HashLink' }).exists()).toBe(false);
+    });
+
+    it('should keep a nested account\'s copy and explorer buttons out of sight until the address is hovered', () => {
+      const account = activity({ id: makeActivityId(ActivityKind.TX_SYNC, 'eth', ADDRESS), subtitle: 'Account' });
+
+      const link = createWrapper({ activity: account, parent: activity() }).findComponent({ name: 'HashLink' });
+
+      expect(link.props('revealActions')).toBe(true);
     });
 
     it('should scramble every address when a batch joins several into one param', () => {
@@ -171,6 +238,34 @@ describe('dockActivityRow', () => {
       expect(createWrapper({ activity: decode(ActivityStatus.RUNNING), percentage: 25 }).find('[data-testid=activity-meter]').text())
         .toBe('pending_task.steps::1234, 5000');
       expect(createWrapper({ activity: decode(ActivityStatus.COMPLETE), parent: activity() }).text()).toContain('pending_task.steps::1234, 5000');
+    });
+
+    it('should give a nested leaf only its ring, not a second bar under its parent\'s', () => {
+      const wrapper = createWrapper({ parent: activity(), percentage: 40 });
+
+      expect(wrapper.findComponent({ name: 'RuiProgress' }).props('value')).toBe(40);
+      expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
+    });
+
+    it('should keep the bar on a nested parent, which rolls up the rows under it', () => {
+      const wrapper = createWrapper({ parent: activity(), percentage: 25, steps: { current: 1, total: 4 } });
+
+      expect(wrapper.find('[data-testid=activity-meter]').text()).toBe('pending_task.steps::1, 4');
+    });
+
+    it('should keep a running nested leaf\'s own tally as text, with no bar', () => {
+      const wrapper = createWrapper({
+        activity: activity({
+          id: makeActivityId(ActivityKind.TX_DECODING, 'eth', 'cached'),
+          kind: ActivityKind.TX_DECODING,
+          steps: { current: 1234, total: 5000 },
+        }),
+        parent: activity(),
+        percentage: 25,
+      });
+
+      expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
+      expect(wrapper.text()).toContain('pending_task.steps::1234, 5000');
     });
 
     it('should keep an account sync at a percentage, since its steps are seconds of range', () => {
@@ -264,6 +359,10 @@ describe('dockActivityRow', () => {
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 
+    it('should name the cancel icon button for assistive technology', () => {
+      expect(createWrapper().find('[data-testid=cancel-activity]').attributes('aria-label')).toBe('collapsed_pending_tasks.cancel_task');
+    });
+
     it('should render no cancel control for work that cannot be cancelled', () => {
       expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=cancel-activity]').exists()).toBe(false);
     });
@@ -296,6 +395,29 @@ describe('dockActivityRow', () => {
       });
 
       expect(wrapper.find('[data-testid=retry-activity]').exists()).toBe(false);
+    });
+
+    it('should offer dismiss as a labelled icon button', () => {
+      const dismiss = createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }), dismissible: true }).find('[data-testid=dismiss-activity]');
+
+      expect(dismiss.attributes('aria-label')).toBe('pending_task.dismiss');
+      expect(dismiss.text()).toBe('lu-x');
+    });
+
+    it('should put the toggle last, so every toggle sits in one column at the row\'s end', () => {
+      const wrapper = mount(DockActivityRow, {
+        props: { activity: activity(), now: NOW, percentage: -1 },
+        slots: { toggle: '<button data-testid="toggle-under-test" />' },
+      });
+
+      const last = wrapper.findAll('[data-testid=activity-actions] > *').at(-1);
+      expect(last?.attributes('data-testid')).toBe('toggle-under-test');
+      expect(wrapper.find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
+    });
+
+    it('should keep the toggle\'s space on a row with buttons but no toggle, so its buttons line up', () => {
+      expect(createWrapper().find('[data-testid=activity-toggle-slot]').exists()).toBe(true);
+      expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
     });
 
     it('should offer no dismiss control unless the caller asks for one', () => {

@@ -4,6 +4,7 @@ import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/mod
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
+import { getMatchedMovementIgnoreIds } from '@/modules/history/event-utils';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
@@ -63,6 +64,14 @@ const isSelectedModel = computed<boolean>({
 });
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+function unlink(): void {
+  emit('unlink-event', {
+    identifier: get(primaryEvent).identifier,
+    ignoredIdentifiers: getMatchedMovementIgnoreIds(get(events)),
+    type: 'asset-movement',
+  });
+}
 
 const noteContext = computed<HistoryEventNoteContext>(() => ({
   amount: get(primaryEvent).amount,
@@ -146,7 +155,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-        @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier })"
+        @unlink-event="unlink()"
       />
     </div>
   </div>
@@ -221,7 +230,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       @edit-event="emit('edit-event', $event)"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-      @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier })"
+      @unlink-event="unlink()"
     />
   </div>
 </template>

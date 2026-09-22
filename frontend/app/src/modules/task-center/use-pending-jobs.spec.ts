@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { assembleActivityModel } from './core/model';
+import { type ActivityModel, assembleActivityModel } from './core/model';
 import {
   type Activity,
   type ActivityKind,
-  type ActivityModel,
   ActivitySourceType,
   type ActivityStatus,
+  type ActivityWaiting,
   ActivityKind as Kind,
   makeActivityId,
   ActivityStatus as Status,
+  WaitingReason,
 } from './core/types';
 import { usePendingJobs } from './use-pending-jobs';
 
@@ -23,10 +24,11 @@ vi.mock('./use-task-center', () => ({
 function activity(
   id: string,
   status: ActivityStatus,
-  options: { kind?: ActivityKind; parent?: string; percentage?: number } = {},
+  options: { kind?: ActivityKind; parent?: string; percentage?: number; waiting?: ActivityWaiting } = {},
 ): Activity {
-  const { kind = Kind.TX_SYNC, parent, percentage = -1 } = options;
+  const { kind = Kind.TX_SYNC, parent, percentage = -1, waiting } = options;
   return {
+    waiting,
     cancellable: false,
     id: makeActivityId(kind, id),
     kind,
@@ -55,6 +57,24 @@ function umbrella(status: ActivityStatus): Activity {
 describe('usePendingJobs', () => {
   beforeEach(() => {
     set(activities, []);
+  });
+
+  it('should list a fully queued job that a rule or a dependency holds back', () => {
+    set(activities, [
+      activity('balances', Status.PENDING, { kind: Kind.BLOCKCHAIN_BALANCES, waiting: { reason: WaitingReason.HISTORY_SYNC } }),
+      activity('report', Status.PENDING, { kind: Kind.PNL_REPORT, waiting: { reason: WaitingReason.DEPENDENCY } }),
+    ]);
+    const { jobs } = usePendingJobs();
+
+    expect(get(jobs).map(job => job.activity.kind)).toEqual(expect.arrayContaining([Kind.BLOCKCHAIN_BALANCES, Kind.PNL_REPORT]));
+    expect(get(jobs)).toHaveLength(2);
+  });
+
+  it('should keep a fully queued job hidden while it only waits its turn', () => {
+    set(activities, [activity('prices', Status.PENDING, { kind: Kind.PRICES, waiting: { reason: WaitingReason.SLOT } })]);
+    const { jobs } = usePendingJobs();
+
+    expect(get(jobs)).toEqual([]);
   });
 
   it('should list one job for a whole subtree, not one per activity', () => {

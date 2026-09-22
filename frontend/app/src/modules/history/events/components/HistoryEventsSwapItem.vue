@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
@@ -30,6 +30,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [data: HistoryEventUnlinkPayload];
   'refresh': [];
   'toggle-expand': [];
 }>();
@@ -41,6 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
 const selection = injectHistoryEventsSelection();
 
 const {
+  bridgeUnlink,
   chain,
   compactNotes,
   counterparty,
@@ -82,6 +84,12 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 const typeLabel = computed<string | undefined>(() =>
   get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
 );
+
+function unlink(): void {
+  const payload = get(bridgeUnlink);
+  if (payload)
+    emit('unlink-event', payload);
+}
 </script>
 
 <template>
@@ -194,10 +202,12 @@ const typeLabel = computed<string | undefined>(() =>
         :item="primaryEvent"
         :index="0"
         :complete-group-events="completeGroupEvents"
+        :can-unlink="bridgeUnlink !== undefined"
         class="shrink-0"
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+        @unlink-event="unlink()"
       />
     </div>
   </div>
@@ -314,11 +324,13 @@ const typeLabel = computed<string | undefined>(() =>
       :item="primaryEvent"
       :index="0"
       :complete-group-events="completeGroupEvents"
+      :can-unlink="bridgeUnlink !== undefined"
       collapse-action
       class="shrink-0 self-center"
       @edit-event="emit('edit-event', $event)"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+      @unlink-event="unlink()"
     />
   </div>
 </template>

@@ -8,19 +8,22 @@ import {
   type ActivityKind,
   type ActivityStatus,
   type ActivitySteps,
+  type ActivityWaiting,
   type CompletionRecord,
   type GroupId,
   makeActivityId,
   ActivityStatus as Status,
+  WaitingReason,
   type WorkStatus,
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
 import { endedIncomplete, liveChildrenOf, runActivity, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
-import { allRulesPass, DEFAULT_RULES } from './rules';
+import { DEFAULT_RULES } from './rules';
 import { createScheduler } from './scheduler';
 import { type ActivitySpec, DEFAULT_LANE, DEFAULT_PRIORITY, type ReportProgress, type StaleAfterEdge } from './spec';
+import { holdOf } from './waiting';
 
 interface ActivityRecord {
   readonly spec: ActivitySpec;
@@ -154,9 +157,28 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   const project = (record: ActivityRecord, children?: Map<ActivityId, ActivitySteps>): Activity =>
     projectActivity(record, children?.get(record.spec.id));
 
-  function snapshot(): Activity[] {
+  function projectAll(): Activity[] {
     const children = childProgress(records);
     return Array.from(records.values(), record => project(record, children));
+  }
+
+  /** Why a pending record has not started: a hold first, then a full lane; `undefined` when it may start. */
+  function waitingOf(record: ActivityRecord, candidate: Activity, all: readonly Activity[]): ActivityWaiting | undefined {
+    if (record.status !== Status.PENDING || record.cancelRequested)
+      return undefined;
+
+    const lane = record.spec.lane ?? DEFAULT_LANE;
+    return holdOf(record, candidate, { all, records, rules }) ?? (scheduler.hasFreeSlot(lane) ? undefined : { reason: WaitingReason.SLOT });
+  }
+
+  /** Every activity, each queued one carrying why it waits. */
+  function snapshot(): Activity[] {
+    const all = projectAll();
+    const list = [...records.values()];
+    return all.map((activity, index) => {
+      const waiting = waitingOf(list[index], activity, all);
+      return waiting === undefined ? activity : { ...activity, waiting };
+    });
   }
 
   function statusOf(kind: ActivityKind, ...parts: (string | number)[]): WorkStatus {
@@ -188,20 +210,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (record.status !== Status.PENDING || record.cancelRequested)
       return false;
 
-    if (record.spec.parent !== undefined) {
-      const parent = records.get(record.spec.parent);
-      if (parent?.status === Status.PENDING)
-        return false;
-    }
-
-    const depsSatisfied = (record.spec.deps ?? []).every((depId) => {
-      const dep = records.get(depId);
-      return dep === undefined || isTerminalStatus(dep.status);
-    });
-    if (!depsSatisfied)
-      return false;
-
-    return allRulesPass(rules, project(record), snapshot());
+    return holdOf(record, project(record), { all: projectAll(), records, rules }) === undefined;
   }
 
   async function execute(record: ActivityRecord): Promise<void> {

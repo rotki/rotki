@@ -33,13 +33,15 @@ const names = computed<string>(() => {
       size="16"
       class="shrink-0 mt-0.5 text-rui-warning"
     />
+    <!-- The subject icon's slot, empty, so the label lines up with the chain rows beside it. -->
+    <div class="size-5 shrink-0 -ml-1" />
     <div class="flex flex-col flex-1 min-w-0 gap-0.5">
       <div class="text-sm leading-5 text-rui-text-secondary">
         {{ t('task_dock.panel.skipped_count', { count: activities.length }, activities.length) }}
       </div>
       <div
         v-if="reason"
-        class="text-xs leading-4 text-rui-warning break-words"
+        class="text-xs leading-4 text-rui-text-secondary break-words"
       >
         {{ reason }}
       </div>

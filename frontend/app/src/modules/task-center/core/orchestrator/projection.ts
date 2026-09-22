@@ -178,6 +178,7 @@ export interface RenderableRecord {
     readonly parent?: ActivityId;
     readonly resets?: Activity['resets'];
     readonly priority?: Activity['priority'];
+    readonly userStarted?: boolean;
     readonly ephemeral?: boolean;
     readonly rerunnable?: boolean;
     readonly cancel?: () => void;
@@ -210,5 +211,6 @@ export function projectActivity(record: RenderableRecord, childSteps?: ActivityS
     steps,
     subtitle: spec.subtitle,
     title: spec.title,
+    userStarted: spec.userStarted,
   };
 }

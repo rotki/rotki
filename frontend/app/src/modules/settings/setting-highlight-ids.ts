@@ -24,6 +24,7 @@ export const SettingsHighlightIds = {
   DISABLED_CHAIN_QUERIES: 'setting-disabled-chain-queries',
   DISMISSAL_THRESHOLD: 'setting-dismissal-threshold',
   DISPLAY_DATE_IN_LOCALTIME: 'setting-display-date-in-localtime',
+  DOCK_SHOW_SUMMARY: 'setting-dock-show-summary',
   EXPLORERS: 'setting-explorers',
   GLOBALDB_INFO: 'setting-globaldb-info',
   GRAPH_BASIS: 'setting-graph-basis',

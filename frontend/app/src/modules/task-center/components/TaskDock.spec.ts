@@ -2,12 +2,11 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
-import { assembleActivityModel } from '@/modules/task-center/core/model';
+import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
   type ActivityId,
   ActivityKind,
-  type ActivityModel,
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,
@@ -32,6 +31,10 @@ vi.mock('@/modules/task-center/use-cancel-confirmation', () => ({
 
 vi.mock('@/modules/task-center/use-task-controller', () => ({
   useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
+}));
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<boolean> => ref<boolean>(false),
 }));
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({

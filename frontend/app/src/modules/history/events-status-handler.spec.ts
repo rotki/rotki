@@ -1,30 +1,53 @@
 import type { BankConnection } from '@/modules/banks/types';
 import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
 import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
+import { type ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
+
+/** The activities the stub orchestrator reports as active, by id. */
+const live = new Set<string>();
+const changeListeners: (() => void)[] = [];
+
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: vi.fn(() => ({
+    onChange: (listener: () => void): (() => void) => {
+      changeListeners.push(listener);
+      return (): void => {};
+    },
+    statusOf: (kind: ActivityKind, ...parts: (string | number)[]): { active: boolean } => ({
+      active: live.has(makeActivityId(kind, ...parts)),
+    }),
+  })),
+}));
 
 const kraken = { location: 'kraken', name: 'my kraken' };
 
 /**
  * A parsed frame. `period` is spread in only when present, because that is what the schema does
- * with an absent optional — and the store merges by spreading, so an explicit `undefined` would
- * erase the range instead of leaving it, testing a frame the backend never sends.
+ * with an absent optional, and it is the absent key a later frame's merge has to survive.
  */
-function frame(status: HistoryEventsQueryStatus, period?: [number, number]): HistoryEventsQueryData {
-  return { eventType: 'history_query', ...kraken, ...(period && { period }), status };
+function frame(status: HistoryEventsQueryStatus, period?: [number, number], subject = kraken): HistoryEventsQueryData {
+  return { eventType: 'history_query', ...subject, ...(period && { period }), status };
+}
+
+/** Settles an exchange's query as far as the handler can tell, and lets it prune. */
+function settle(subject = kraken): void {
+  live.delete(exchangeEventsActivity.id(subject));
+  changeListeners.forEach(listener => listener());
 }
 
 describe('createEventsStatusHandler', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     useActivityDetail().resetDetails();
-    useEventsQueryStatusStore().initializeQueryStatus([kraken]);
+    live.clear();
+    changeListeners.length = 0;
+    live.add(exchangeEventsActivity.id(kraken));
   });
 
   it('should publish the queried range as detail on the exchange activity', async () => {
@@ -41,13 +64,12 @@ describe('createEventsStatusHandler', () => {
     await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200]));
     await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED));
 
-    // The store merges onto the stored entry, so reading it back survives what the frame drops.
     expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toStrictEqual([100, 200]);
   });
 
   it('should key detail by name, so two accounts on one exchange stay apart', async () => {
     const second = { location: 'kraken', name: 'other kraken' };
-    useEventsQueryStatusStore().initializeQueryStatus([kraken, second], { extend: true });
+    live.add(exchangeEventsActivity.id(second));
     const handler = createEventsStatusHandler();
 
     await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200]));
@@ -60,25 +82,48 @@ describe('createEventsStatusHandler', () => {
     const handler = createEventsStatusHandler();
     await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200]));
 
-    useEventsQueryStatusStore().markLocationCancelled(kraken);
+    settle();
     await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [200, 300]));
 
-    // The store refuses the update but keeps the entry, whose seeded range would overwrite this.
+    expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toStrictEqual([100, 200]);
+  });
+
+  it('should publish nothing for an exchange whose query is not running', async () => {
+    const idle = { location: 'binance', name: 'my binance' };
+    const handler = createEventsStatusHandler();
+
+    await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200], idle));
+
+    expect(get(readActivityDetail(exchangeEventsActivity, idle))).toBeUndefined();
+  });
+
+  it('should not carry the last run\'s range into a new run', async () => {
+    const handler = createEventsStatusHandler();
+    await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200]));
+
+    settle();
+    live.add(exchangeEventsActivity.id(kraken));
+    await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED));
+
+    expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toBeUndefined();
+  });
+
+  it('should leave the detail alone for a frame that itself reports the query cancelled', async () => {
+    const handler = createEventsStatusHandler();
+    await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200]));
+
+    await handler.handle(frame(HistoryEventsQueryStatus.CANCELLED, [0, 0]));
+
     expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toStrictEqual([100, 200]);
   });
 
   it('should publish a bank location frame on the bank activity, not the exchange one', async () => {
     const qonto = { location: 'qonto', name: 'rotki Solutions GmbH' };
     useBankConnectionsStore().setConnections([createMock<BankConnection>({ identifier: 'c1', location: 'qonto' })]);
-    useEventsQueryStatusStore().initializeQueryStatus([qonto], { extend: true });
+    live.add(bankEventsActivity.id(qonto));
     const handler = createEventsStatusHandler();
 
-    await handler.handle({
-      eventType: 'history_query',
-      ...qonto,
-      period: [100, 200],
-      status: HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE,
-    });
+    await handler.handle(frame(HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE, [100, 200], qonto));
 
     expect(get(readActivityDetail(bankEventsActivity, qonto))?.period).toStrictEqual([100, 200]);
     expect(get(readActivityDetail(exchangeEventsActivity, qonto))).toBeUndefined();

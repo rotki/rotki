@@ -19,7 +19,6 @@ export const DIALOG_TYPES = {
   MATCH_ASSET_MOVEMENTS: 'matchAssetMovements',
   MATCH_BRIDGE_TRANSACTIONS: 'matchBridgeTransactions',
   MISSING_RULES: 'missingRules',
-  PROTOCOL_CACHE: 'protocolCache',
   REPULLING_TRANSACTION: 'repullingTransaction',
   TRANSACTION_FORM: 'transactionForm',
 } as const;
@@ -36,7 +35,6 @@ export type DialogShowOptions =
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS }
   | { type: typeof DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS }
   | { type: typeof DIALOG_TYPES.MISSING_RULES; data: HistoryEventEditData }
-  | { type: typeof DIALOG_TYPES.PROTOCOL_CACHE }
   | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION }
   | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data?: AddTransactionHashPayload };
 

@@ -36,6 +36,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 PROTOCOLS_WITH_BALANCES = Literal[
     'across',
+    'aztec',
     'aerodrome',
     'curve',
     'convex',

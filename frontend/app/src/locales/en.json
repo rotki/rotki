@@ -1308,7 +1308,7 @@
       "find_match_anyway": "Find match anyway",
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
-      "ignored_description": "These asset movements have been marked as having no corresponding event. Restore them to retry matching.",
+      "ignored_description": "These asset movements are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this deposit as income from an untracked source, so its whole amount is accounted and not just the fee.",
@@ -1988,7 +1988,7 @@
       "direction_in": "Bridge in",
       "direction_out": "Bridge out",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
-      "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
+      "ignored_description": "These bridge transactions are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
@@ -3605,6 +3605,13 @@
         "error": "Error setting animations state: {message}"
       }
     },
+    "dock_show_summary": {
+      "subtitle": "Open the task panel briefly when a batch of work finishes, to show how it went. Failures stay until you dismiss them either way.",
+      "title": "Show a summary when tasks finish",
+      "validation": {
+        "error": "Error setting the task summary: {message}"
+      }
+    },
     "graph_basis": {
       "range_selector": {
         "label": "Show graph range selector for line chart"
@@ -4245,7 +4252,7 @@
         "return": "Return a receipt token to a protocol to reclaim the underlying asset.",
         "self_transaction": "A transaction you sent to your own address.",
         "send": "Send crypto out as a payment or expense, with nothing tradeable received back.",
-        "spam": "Spam or phishing tokens sent to you. Ignored in accounting.",
+        "spam": "Spam, phishing or dust sent to you. Counted in accounting like any other receive.",
         "stake_deposit": "Stake assets into a protocol or validator.",
         "stake_exit": "Exit a staking position, withdrawing the staked principal.",
         "staking_reward": "Receive staking rewards. Taxed as income.",
@@ -6515,7 +6522,16 @@
       "etherscan": "A personal (free) Etherscan API key speeds this up significantly.",
       "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready."
     },
-    "updating": "Updating data"
+    "updating": "Updating data",
+    "waiting": {
+      "dependency": "Waiting for {name} to finish",
+      "history_sync": "Waiting for the history sync to finish",
+      "matching": "Waiting for event matching to finish",
+      "other_work": "Waiting for other work to finish",
+      "parent": "Waiting for {name} to start",
+      "redecode": "Waiting for the redecode to finish",
+      "slot": "Waiting its turn"
+    }
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
@@ -6745,7 +6761,9 @@
           "indexer_order_title": "Indexer Order"
         },
         "unlink": {
-          "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",
+          "bridge_message": "Are you sure you want to unlink this bridge transfer? Both legs are restored to how they were before matching and then ignored, so automatic matching leaves them alone instead of linking them straight back. They stay in the ignored tab of the bridge matching window, where you can restore them or match them by hand.",
+          "bridge_synthetic_message": "Are you sure you want to unlink this bridge transfer? The counterpart event rotki created to complete the match is deleted, and the remaining leg is restored to how it was before matching and then ignored, so automatic matching leaves it alone. It stays in the ignored tab of the bridge matching window, where you can restore it or match it by hand.",
+          "message": "Are you sure you want to unlink these matched events? The movement is restored to how it was before matching and then ignored, so automatic matching leaves it alone instead of linking it straight back. It stays in the ignored tab of the asset movement matching window, where you can restore it or match it by hand.",
           "title": "Unlink Matched Events"
         }
       },
@@ -7002,6 +7020,7 @@
           }
         }
       },
+      "unlink_bridge_error": "Failed to unlink bridge transfer",
       "unlink_error": "Failed to unlink asset movement",
       "view": {
         "load_more": "Load more events ({length})"
@@ -7081,15 +7100,6 @@
       }
     },
     "ignore": "Exclude from Accounting",
-    "protocol_cache_updates": {
-      "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
-      "no_ongoing": "No ongoing refresh happening.",
-      "outdated_data": "Outdated pools",
-      "pools_refreshed": "{processed} / {total} pools refreshed",
-      "protocol_pools_refreshed": "{processed} / {total} {protocol} pools refreshed",
-      "refreshing": "Refreshing protocol cache",
-      "title": "Protocol cache updates status"
-    },
     "refresh_tooltip": "Fetch latest events",
     "repulling": {
       "action": "Re-Pull Events",

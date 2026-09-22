@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Activity, ActivityId } from '@/modules/task-center/core/types';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
+import { DockState } from '@/modules/task-center/dock-state';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
-import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 import { useTaskDockCaption } from '@/modules/task-center/use-task-dock-caption';
 
 const { children, expanded, jobs } = defineProps<{

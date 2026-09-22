@@ -12,6 +12,7 @@ import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
@@ -328,6 +329,16 @@ describe('useBlockchainBalances', () => {
         .find(spec => spec.id === makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
       assert(chainSpec !== undefined);
       expect(chainSpec.container).toBeUndefined();
+    });
+
+    it('should give a user refresh\'s umbrella the user priority, or a history sync would hold every chain under it', async () => {
+      await blockchainBalances.refreshBlockchainBalances({}, 'user');
+
+      const umbrella = submitTask.mock.calls
+        .map(([spec]) => spec)
+        .find(spec => spec.id.includes(`:${ActivityPart.RUN}:`));
+      assert(umbrella !== undefined);
+      expect(umbrella.priority).toBe(Priority.USER);
     });
 
     it('should give a run a different identity per scope and per mode', async () => {

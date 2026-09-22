@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import { INDETERMINATE } from './core/status';
 import { someInSubtree, subtreeProgress, subtreeSteps } from './core/tree';
-import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps } from './core/types';
+import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps, WaitingReason } from './core/types';
 import { useTaskCenter } from './use-task-center';
 
 /**
@@ -29,13 +29,20 @@ function isRunning(activity: Activity): boolean {
   return activity.status === ActivityStatus.RUNNING;
 }
 
+/** A queued job something holds back on purpose, a rule or a dependency, rather than one only waiting its turn. */
+function isHeldBack(activity: Activity): boolean {
+  return activity.waiting !== undefined && activity.waiting.reason !== WaitingReason.SLOT;
+}
+
 /**
  * The panel's view of the orchestrator: live work as a list of jobs rather than a flat list of
  * every activity in flight.
  *
- * A job is listed while **anything in its subtree is RUNNING**. A fully queued tree stays hidden,
- * because producers declare every account of every chain up front and listing those would bury the
- * running work; and cancelling the last running leaf drops the job along with its queued siblings.
+ * A job is listed while **anything in its subtree is RUNNING**, or while it is **held back** by a
+ * rule or a dependency, such as balances paused behind a history sync, which would otherwise be
+ * invisible for as long as it waits. A tree that is only waiting its turn stays hidden, because a
+ * burst of queued work would bury the running work; and cancelling the last running leaf drops the
+ * job along with its queued siblings.
  */
 export function usePendingJobs(): UsePendingJobsReturn {
   const { model } = useTaskCenter();
@@ -45,7 +52,7 @@ export function usePendingJobs(): UsePendingJobsReturn {
   const jobs = computed<PendingJob[]>(() => {
     const tree = get(children);
 
-    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning)).map(activity => ({
+    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning) || isHeldBack(root)).map(activity => ({
       activity,
       percentage: subtreeProgress(tree, activity),
       steps: subtreeSteps(tree, activity),

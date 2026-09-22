@@ -4,8 +4,9 @@ import { groupTitle, isSafeToStop } from '@/modules/task-center/core/kinds';
 import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, type ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
+import { DockState } from '@/modules/task-center/dock-state';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
-import { DockState, useTaskDock } from '@/modules/task-center/use-task-dock';
+import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 /** A run of panel rows, under a kind heading when more than one job of that kind is listed. */
 interface DockSection {

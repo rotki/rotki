@@ -70,6 +70,7 @@ async function importData() {
         <RuiButton
           variant="text"
           color="primary"
+          data-testid="accounting-rule-import-cancel"
           @click="model = false"
         >
           {{ t('common.actions.cancel') }}
@@ -78,6 +79,7 @@ async function importData() {
           color="primary"
           :disabled="!importFile"
           :loading="loading"
+          data-testid="accounting-rule-import-confirm"
           @click="importData()"
         >
           {{ t('common.actions.import') }}

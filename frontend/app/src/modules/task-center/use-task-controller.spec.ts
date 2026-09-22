@@ -1,9 +1,10 @@
+import type { ActivityModel } from './core/model';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { type ControlError, NotCancellable, NotRerunnable } from './core/orchestrator/errors';
-import { type Activity, ActivityKind, type ActivityModel, ActivitySourceType, ActivityStatus, makeActivityId, makeGroupId } from './core/types';
+import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId, makeGroupId } from './core/types';
 import { useTaskController } from './use-task-controller';
 
 const orchestrator = {

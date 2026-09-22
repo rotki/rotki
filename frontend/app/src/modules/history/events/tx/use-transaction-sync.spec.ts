@@ -5,15 +5,13 @@ import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 import { useTransactionSync } from './use-transaction-sync';
 
 const mockNotifyError = vi.fn();
 const mocks = vi.hoisted(() => ({
-  markAddressCancelled: vi.fn(),
-  markAddressFailed: vi.fn(),
-  removeQueryStatus: vi.fn(),
-  setEvmlikeStatus: vi.fn(),
+  decodeTransactionsTask: vi.fn(),
+  statusOf: vi.fn(),
   submitTask: vi.fn(),
 }));
 
@@ -26,17 +24,8 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
     cancelByType: vi.fn(() => vi.fn()),
     reportProgress: vi.fn(),
     runTaskResult: vi.fn(),
+    statusOf: mocks.statusOf,
     submitTask: mocks.submitTask,
-  })),
-}));
-
-vi.mock('@/modules/history/use-tx-query-status-store', () => ({
-  useTxQueryStatusStore: vi.fn(() => ({
-    isAddressCancelled: vi.fn(() => false),
-    markAddressCancelled: mocks.markAddressCancelled,
-    markAddressFailed: mocks.markAddressFailed,
-    removeQueryStatus: mocks.removeQueryStatus,
-    setEvmlikeStatus: mocks.setEvmlikeStatus,
   })),
 }));
 
@@ -49,7 +38,7 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
-  useHistoryTransactionDecoding: vi.fn(() => ({ decodeTransactionsTask: vi.fn() })),
+  useHistoryTransactionDecoding: vi.fn(() => ({ decodeTransactionsTask: mocks.decodeTransactionsTask })),
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-accounts', () => ({
@@ -63,12 +52,13 @@ describe('useTransactionSync', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     mocks.submitTask.mockResolvedValue(ok(undefined));
+    mocks.statusOf.mockReturnValue({ lastOutcome: undefined });
   });
 
   describe('syncTransactionTask', () => {
     it('should submit a native TX_SYNC activity keyed by chain and address', async () => {
       const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
+      await syncTransactionTask(account);
 
       expect(mocks.submitTask).toHaveBeenCalledOnce();
       expect(mocks.submitTask.mock.calls[0][0]).toMatchObject({
@@ -78,56 +68,26 @@ describe('useTransactionSync', () => {
       });
     });
 
-    it('should remove the query status when the backend cancels', async () => {
-      mocks.submitTask.mockResolvedValue(err(BackendCancelled({ message: 'backend cancelled' })));
-
-      const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
-
-      expect(mocks.removeQueryStatus).toHaveBeenCalledWith(account);
-      expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
-      expect(mockNotifyError).not.toHaveBeenCalled();
-    });
-
-    it('should mark the address cancelled on a user cancel', async () => {
-      mocks.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
-
-      const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
-
-      expect(mocks.markAddressCancelled).toHaveBeenCalledWith(account);
-      expect(mockNotifyError).not.toHaveBeenCalled();
-    });
-
-    it('should notify on an actionable failure and mark the address failed with the chain type it was queried under', async () => {
+    it('should notify on an actionable failure', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
+      await syncTransactionTask(account);
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account, TransactionChainType.EVM);
-      expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
-      expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
     });
 
-    it('should leave a task skipped for a missing api key alone, rather than reporting it as failed', async () => {
-      mocks.submitTask.mockResolvedValue(err(Skipped({ message: 'no api key' })));
+    it.each([
+      ['a cancel from the backend', BackendCancelled({ message: 'backend cancelled' })],
+      ['a cancel from the user', Cancelled({ message: 'cancelled' })],
+      ['a task skipped for a missing api key', Skipped({ message: 'no api key' })],
+    ])('should not notify on %s, which is nothing to act on', async (_case, error) => {
+      mocks.submitTask.mockResolvedValue(err(error));
 
       const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVM);
+      await syncTransactionTask(account);
 
-      expect(mocks.markAddressFailed).not.toHaveBeenCalled();
-      expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
       expect(mockNotifyError).not.toHaveBeenCalled();
-    });
-
-    it('should bracket evmlike progress with started/finished', async () => {
-      const { syncTransactionTask } = useTransactionSync();
-      await syncTransactionTask(account, TransactionChainType.EVMLIKE);
-
-      expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(1, account, 'started');
-      expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
     });
   });
 
@@ -206,29 +166,37 @@ describe('useTransactionSync', () => {
 
       expect(mocks.submitTask).toHaveBeenCalledWith(expect.objectContaining({ container: true, id: chainId }));
     });
-  });
 
-  describe('evmlike failure against the real query-status store', () => {
-    const evmlikeAccount: ChainAddress = { address: '0xABC', chain: 'zksync_lite' };
+    /** The decode's skip check, as the chain declared it. */
+    async function decodeSkipWhen(): Promise<() => boolean> {
+      const { syncAndReDecodeEvents } = useTransactionSync();
+      await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
 
-    beforeEach(() => {
-      vi.resetModules();
-      vi.doUnmock('@/modules/history/use-tx-query-status-store');
-      setActivePinia(createPinia());
+      const placement = mocks.decodeTransactionsTask.mock.calls[0][2];
+      assert(placement?.skipWhen);
+      return placement.skipWhen;
+    }
+
+    it('should skip the decode when every account\'s sync ended cancelled', async () => {
+      mocks.statusOf.mockReturnValue({ lastOutcome: ActivityStatus.CANCELLED });
+
+      expect((await decodeSkipWhen())()).toBe(true);
     });
 
-    it('should leave a failed evmlike address failed, not complete', async () => {
-      const { useTxQueryStatusStore } = await import('@/modules/history/use-tx-query-status-store');
-      const { TransactionsQueryStatus } = await import('@/modules/core/messaging/types');
-      const { useTransactionSync: useRealStoreSync } = await import('./use-transaction-sync');
+    it('should still run the decode when any account\'s sync finished', async () => {
+      mocks.statusOf.mockImplementation((_kind: ActivityKind, _chain: string, address: string) => ({
+        lastOutcome: address === '0xAAA' ? ActivityStatus.CANCELLED : ActivityStatus.COMPLETE,
+      }));
 
-      mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
-      const store = useTxQueryStatusStore();
+      expect((await decodeSkipWhen())()).toBe(false);
+    });
 
-      const { syncTransactionTask } = useRealStoreSync();
-      await syncTransactionTask(evmlikeAccount, TransactionChainType.EVMLIKE);
+    it('should ask about each account by the id its sync runs under before skipping the decode', async () => {
+      mocks.statusOf.mockReturnValue({ lastOutcome: ActivityStatus.CANCELLED });
+      (await decodeSkipWhen())();
 
-      expect(get(store.queryStatus)['0xABCzksync_lite'].status).toBe(TransactionsQueryStatus.FAILED);
+      expect(mocks.statusOf).toHaveBeenCalledWith(ActivityKind.TX_SYNC, 'eth', '0xAAA');
+      expect(mocks.statusOf).toHaveBeenCalledWith(ActivityKind.TX_SYNC, 'eth', '0xBBB');
     });
   });
 });

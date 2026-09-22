@@ -15,19 +15,19 @@ from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import EncodingError
+from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import ensure_type
+from rotkehlchen.serialization.deserialize import deserialize_timestamp, ensure_type
 from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.base58 import b58encode
 from rotkehlchen.utils.misc import satoshis_to_btc
-from rotkehlchen.utils.network import request_get_dict, retry_calls
+from rotkehlchen.utils.network import request_get, request_get_dict, retry_calls
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import SupportedBlockchain
+    from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -193,6 +193,26 @@ def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
     return BTCAddress(address.decode('ascii'))
 
 
+def scriptpubkey_to_p2pk_address(data: bytes) -> BTCAddress:
+    """Return the P2PKH address of the public key in a P2PK scriptpubkey. That is how the
+    explorers which support P2PK report such TxIOs, and how a user tracks the coins.
+
+    P2PK: <pubkey length> <pubkey> OP_CHECKSIG, with a 33 byte compressed or a 65 byte
+    uncompressed public key.
+
+    May raise EncodingError if the scriptpubkey is invalid.
+    """
+    pubkey_length = data[0] if len(data) != 0 else 0
+    if (
+        pubkey_length not in (33, 65) or
+        len(data) != pubkey_length + 2 or
+        data[-1:] != OpCodes.OP_CHECKSIG
+    ):
+        raise EncodingError(f'Invalid P2PK scriptpubkey: {data.hex()}')
+
+    return pubkey_to_base58_address(data[1:-1])
+
+
 def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
     """Return a P2SH address given a scriptpubkey
 
@@ -317,6 +337,112 @@ def query_blockstream_like_has_transactions(
         balance, tx_count = query_blockstream_like_account_info(base_url, account)
         have_transactions[account] = ((tx_count != 0), balance)
     return have_transactions
+
+
+def query_mempool_address_transactions(
+        base_url: str,
+        address: BTCAddress,
+        last_queried_block: int,
+        progress_callback: Callable[[Timestamp], None] | None = None,
+) -> list[dict[str, Any]]:
+    """Query the transactions of an address from a mempool api (mempool.space or an instance
+    of the user), newest to oldest, following the pagination until a page ends at or below
+    `last_queried_block`. Mempool entries come first and are returned too; the caller
+    skips them like it drops the transactions of the last page that are already known.
+
+    Pages are followed via `after_txid`, which the backends of mempool support, and the
+    page size can't be relied on: mempool.space serves 25 transactions per page but an
+    electrum backend serves 10, so only an empty page ends the history. An electrum
+    backend serves the first page again when the cursor is the only transaction of the
+    address, so a repeated page ends the history when that is all that is known.
+
+    The esplora of blockstream (blockstream.info and self-hosted instances of it) ignores
+    `after_txid` and serves the first page again too. That is told apart by the page
+    repeating a longer history, and the confirmed transactions are then paged via its
+    own `/txs/chain/{txid}`, which an instance on an electrum backend does not serve.
+
+    Note that mempool indexes transactions by scriptpubkey, so a transaction touching the
+    address only through a P2PK script is not part of its history.
+
+    May raise:
+    - RemoteError if got problems with querying the API
+    - UnableToDecryptRemoteData if unable to load json in request_get
+    - KeyError if got unexpected json structure
+    - DeserializationError if got unexpected json values
+    """
+    txs: list[dict[str, Any]] = []
+    seen_tx_ids: set[str] = set()
+    timeout = CachedSettings().get_timeout_tuple()
+    url = (history_url := f'{base_url}/address/{address}/txs')
+    use_chain_pages = False
+    while True:
+        if len(page := _request_mempool_page(url=url, timeout=timeout)) == 0:
+            return txs
+
+        if page[0]['txid'] in seen_tx_ids:
+            if len(txs) == 1:  # the electrum backend quirk above, the history is complete
+                return txs
+            if use_chain_pages:
+                raise RemoteError(f'{url} served an already seen page. The address history can not be paged')  # noqa: E501
+
+            use_chain_pages = True
+            url = _mempool_chain_page_url(history_url, cursor=_last_confirmed_txid(txs))
+            continue
+
+        txs.extend(page)
+        seen_tx_ids.update(tx['txid'] for tx in page)
+        if (status := (last_tx := page[-1])['status']).get('confirmed') is True:
+            _report_mempool_query_progress(progress_callback, last_tx)
+            if ensure_type(
+                symbol=status['block_height'],
+                expected_type=int,
+                location='mempool API block_height',
+            ) <= last_queried_block:
+                return txs
+
+        url = (
+            _mempool_chain_page_url(history_url, cursor=last_tx['txid'])
+            if use_chain_pages else f'{history_url}?after_txid={last_tx["txid"]}'
+        )
+
+
+def _request_mempool_page(url: str, timeout: tuple[int, int]) -> list[dict[str, Any]]:
+    """Request one page of a mempool address history. May raise RemoteError."""
+    if not isinstance(page := request_get(
+        url=url,
+        timeout=timeout,
+        handle_429=True,
+        backoff_in_seconds=4,
+    ), list):
+        raise RemoteError(f'{url} returned unexpected data. Response is not a list: {page}')
+
+    return page
+
+
+def _mempool_chain_page_url(history_url: str, cursor: str | None) -> str:
+    """The esplora url of the confirmed transactions after `cursor`, or the newest ones."""
+    return f'{history_url}/chain/{cursor}' if cursor is not None else f'{history_url}/chain'
+
+
+def _last_confirmed_txid(txs: list[dict[str, Any]]) -> str | None:
+    return next(
+        (tx['txid'] for tx in reversed(txs) if tx['status'].get('confirmed') is True),
+        None,
+    )
+
+
+def _report_mempool_query_progress(
+        progress_callback: Callable[[Timestamp], None] | None,
+        tx: dict[str, Any],
+) -> None:
+    """Report the oldest transaction of a fetched mempool page, when available."""
+    if progress_callback is None:
+        return
+
+    try:
+        progress_callback(deserialize_timestamp(tx['status']['block_time']))
+    except (DeserializationError, KeyError, ValueError) as e:
+        log.debug('Unable to report mempool query progress due to %s', e)
 
 
 def is_valid_bitcoin_address(chain: SupportedBlockchain, value: str) -> bool:

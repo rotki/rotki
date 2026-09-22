@@ -110,6 +110,7 @@ async function uploadPackaged(file: string, locationMappings: string | undefined
     id: makeActivityId(ActivityKind.CSV_IMPORT, source),
     kind: ActivityKind.CSV_IMPORT,
     rerunnable: false,
+    userStarted: true,
     run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
       await runTask<boolean>(
         () => importDataFrom({
@@ -180,6 +181,7 @@ async function uploadFile(): Promise<boolean> {
     id: makeActivityId(ActivityKind.CSV_IMPORT, source),
     kind: ActivityKind.CSV_IMPORT,
     rerunnable: false,
+    userStarted: true,
     run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
       await runTask<boolean>(
         () => importFile(formData),
