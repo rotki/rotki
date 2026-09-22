@@ -671,7 +671,7 @@ class EtherscanLikeApi(ABC):
                             dbevents.delete_events_by_tx_ref(
                                 write_cursor=write_cursor,
                                 tx_refs=[GENESIS_HASH],
-                                location=location_from_chain_id(chain_id.to_blockchain()),  # type: ignore
+                                location=location_from_chain_id(chain_id),
                             )
                             write_cursor.execute(
                                 'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '
