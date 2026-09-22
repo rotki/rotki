@@ -37,7 +37,7 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
         for result in credentials_result:
             try:  # this migration only runs against the pre-v54 schema
                 location = location_from_v53_char(result[1])
-            except (KeyError, DeserializationError) as e:
+            except DeserializationError as e:
                 log.error(
                     f'During data migration 1 found location {result[1]} '
                     f'that could not be deserialized due to {e!s}',

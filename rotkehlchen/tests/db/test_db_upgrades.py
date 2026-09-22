@@ -5134,6 +5134,10 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
     )
     with db_v53.conn.write_ctx() as write_cursor:
         write_cursor.execute("INSERT OR IGNORE INTO assets(identifier) VALUES ('ETH')")
+        write_cursor.execute(  # a leftover of v34, whose foreign key would block dropping location
+            "CREATE TABLE amm_swaps (tx_hash TEXT NOT NULL, location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location))",  # noqa: E501
+        )
+        write_cursor.execute("INSERT INTO amm_swaps(tx_hash, location) VALUES ('0x1', 'A')")
         idx = 0
         for char in V53_LOCATION_CHAR_TO_IDENTIFIER:  # every normal location in history events
             query, builder = _LOCATION_ROW_INSERTS['history_events']
@@ -5210,6 +5214,7 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         kr_id, kr2_id = connections['kr'][0], connections['kr_2'][0]
         assert cursor.execute("SELECT COUNT(*) FROM user_credentials WHERE name != 'rotkehlchen'").fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'user_credentials_mappings')
+        assert not table_exists(cursor, 'amm_swaps')
         assert cursor.execute('SELECT connection_identifier, setting_name, setting_value FROM integration_connection_settings WHERE connection_identifier IN (?, ?)', (kr_id, kr2_id)).fetchall() == [(kr_id, 'kraken_account_type', 'pro')]  # noqa: E501
         assert dict(cursor.execute('SELECT name, end_ts FROM used_query_ranges WHERE name LIKE ? OR name LIKE ?', (f'{kr_id}%', f'{kr2_id}%'))) == {  # noqa: E501
             f'{kr_id}_history_events': 10,

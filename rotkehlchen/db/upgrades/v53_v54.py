@@ -502,6 +502,10 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
 
     @progress_step(description='Remove the old location table and verify the location tree.')
     def _finish_location_tree(write_cursor: DBCursor) -> None:
+        # v34->v35 dropped the unused amm_swaps table, but some databases still have one, and its
+        # foreign key to the old location table would block dropping that table
+        write_cursor.execute('DROP VIEW IF EXISTS combined_trades_view')
+        write_cursor.execute('DROP TABLE IF EXISTS amm_swaps')
         write_cursor.execute('DROP TABLE location')
         write_cursor.execute('DROP TABLE location_char_mapping')
         for table, _, _, _ in _V54_LOCATION_TABLES:

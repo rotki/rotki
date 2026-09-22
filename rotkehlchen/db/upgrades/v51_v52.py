@@ -6,6 +6,7 @@ from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_addre
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.utils import update_table_schema
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN,
@@ -103,7 +104,7 @@ def upgrade_v51_to_v52(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         for identifier, location, notes in rows:
             try:
                 deserialized_location = location_from_v53_char(location)
-            except KeyError:
+            except DeserializationError:
                 continue
 
             mappings.extend([

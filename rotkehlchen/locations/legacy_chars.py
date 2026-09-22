@@ -6,6 +6,7 @@ the current code, so they go through this module instead of the current serializ
 """
 from typing import Final
 
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.types import LocationIdentifier
 
 # Reviewed mapping of every location character a v53 database can hold to the identifier of
@@ -92,9 +93,13 @@ _V53_NAME_TO_CHAR: Final = {name: char for char, name in V53_CHAR_TO_NAME.items(
 def location_from_v53_char(char: str) -> LocationIdentifier:
     """Read a location stored in the pre-v54 one-character encoding, as the name it had then.
 
-    May raise KeyError for a character that no v53 database can hold.
+    May raise DeserializationError for a value that no v53 database can hold as a location,
+    as reading the old enum from the DB did, so the upgrades keep skipping such rows.
     """
-    return LocationIdentifier(V53_CHAR_TO_NAME[char])
+    try:
+        return LocationIdentifier(V53_CHAR_TO_NAME[char])
+    except KeyError as e:
+        raise DeserializationError(f'Failed to deserialize location from {char!r}') from e
 
 
 def location_to_v53_char(location: str) -> str:
