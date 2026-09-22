@@ -132,6 +132,8 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     }
 
     switch (subtype) {
+      case SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION:
+        return null;
       case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
         setUndecodedTransactionsStatus(data);
         reportDecodeProgress(data);
