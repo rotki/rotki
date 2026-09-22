@@ -46,7 +46,7 @@ export function useRememberTableFilter(
   const userId = useLoggedUserIdentifier();
 
   const router = useRouter();
-  const persistedFiltersRaw = useLocalStorage<Record<string, LocationQuery>>(`${get(userId)}.rotki.table_filters`, {});
+  const persistedFiltersRaw = useLocalStorage<Record<string, LocationQuery>>(() => `${get(userId)}.rotki.table_filters`, {});
 
   /**
    * Restores persisted filter from localStorage on mount
