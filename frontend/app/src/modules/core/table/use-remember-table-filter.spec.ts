@@ -79,6 +79,17 @@ describe('useRememberTableFilter', () => {
     expect(stored[TableId.HISTORY]).toEqual({ page: '3', type: 'deposit' });
   });
 
+  it('should restore the filters of the user logged in now, not of the one it was created under', async () => {
+    localStorage.setItem('user2.rotki.table_filters', JSON.stringify({ [TableId.HISTORY]: { type: 'withdrawal' } }));
+    const { restorePersistedFilter } = create();
+
+    set(mockUserId, 'user2');
+    await nextTick();
+    await restorePersistedFilter();
+
+    expect(mockReplace).toHaveBeenCalledWith({ query: { type: 'withdrawal' } });
+  });
+
   it('should merge persisted filters across table ids', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ OTHER: { foo: 'bar' } }));
     const { savePersistedFilter } = create();
