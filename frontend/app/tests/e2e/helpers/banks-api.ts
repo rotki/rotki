@@ -71,9 +71,21 @@ async function fulfillJson(route: Route, result: unknown, status = 200): Promise
   });
 }
 
+/** Whether a request body addresses the connection, as the backend does: by connection identifier. */
+function isAddressed(connection: FakeBankConnection, body: Record<string, unknown>): boolean {
+  return body.identifier === fakeBankIdentifier(connection.name);
+}
+
+/** The connection identifier the fake backend gives a connection, derived from its name. */
+export function fakeBankIdentifier(name: string): string {
+  return `fake-${name.toLowerCase().replaceAll(' ', '-')}`;
+}
+
 function toWireConnection(connection: FakeBankConnection): Record<string, unknown> {
   return {
+    connector: 'qonto',
     display_name: 'Qonto',
+    identifier: fakeBankIdentifier(connection.name),
     location: 'qonto',
     name: connection.name,
     sync_status: {
@@ -168,16 +180,19 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
         });
         return;
       }
-      connections = [...connections, { name: String(body.name) }];
+      const name = String(body.name);
+      connections = [...connections, { name }];
+      await fulfillJson(route, { history_start_ts: null, identifier: fakeBankIdentifier(name), success: true });
+      return;
     }
     else if (method === 'PATCH') {
       requests.edited.push(body);
       if (body.new_name)
-        connections = connections.map(connection => connection.name === body.name ? { ...connection, name: String(body.new_name) } : connection);
+        connections = connections.map(connection => isAddressed(connection, body) ? { ...connection, name: String(body.new_name) } : connection);
     }
     else if (method === 'DELETE') {
       requests.removed.push(body);
-      connections = connections.filter(connection => connection.name !== body.name);
+      connections = connections.filter(connection => !isAddressed(connection, body));
     }
     await fulfillJson(route, true);
   });
@@ -185,7 +200,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/sync', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.synced.push(body);
-    const name = String(body.name);
+    const name = connections.find(connection => isAddressed(connection, body))?.name ?? '';
     const pausedTan = setup.pausedSyncs?.[name];
     if (pausedTan) {
       connections = connections.map(connection => connection.name === name ? { ...connection, pendingTan: pausedTan } : connection);
@@ -199,7 +214,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/auth', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.authenticated.push(body);
-    if (Object.keys(body).some(key => !['location', 'name', 'response'].includes(key))) {
+    if (Object.keys(body).some(key => !['identifier', 'response'].includes(key))) {
       await route.fulfill({
         body: JSON.stringify({ message: JSON.stringify({ unknown: ['Unknown field.'] }), result: null }),
         contentType: 'application/json',
@@ -207,7 +222,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
       });
       return;
     }
-    connections = connections.map(connection => connection.name === body.name ? { ...connection, pendingTan: undefined } : connection);
+    connections = connections.map(connection => isAddressed(connection, body) ? { ...connection, pendingTan: undefined } : connection);
     await fulfillJson(route, true);
   });
 

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
-import { type BankRequests, fakeBankEndpoints, type FakeBankSetup } from '../../helpers/banks-api';
+import { type BankRequests, fakeBankEndpoints, fakeBankIdentifier, type FakeBankSetup } from '../../helpers/banks-api';
 import { TIMEOUT_MEDIUM } from '../../helpers/constants';
 import { BanksPage } from '../../pages/banks-page';
 import { DashboardPage } from '../../pages/dashboard-page';
@@ -67,12 +67,13 @@ test.describe.serial('bank connections', () => {
     await banksPage.saveAndClose();
 
     expect(requests.added.slice(addedBefore)).toEqual([{
+      connector: 'qonto',
       credentials: { api_key: 'organization-login', api_secret: 'organization-secret' },
       location: 'qonto',
       name: ADDED,
     }]);
     await expect(banksPage.connectionRow(ADDED)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
-    await expect.poll(() => requests.synced.some(sync => sync.name === ADDED), { timeout: TIMEOUT_MEDIUM }).toBe(true);
+    await expect.poll(() => requests.synced.some(sync => sync.identifier === fakeBankIdentifier(ADDED)), { timeout: TIMEOUT_MEDIUM }).toBe(true);
   });
 
   test('should sync only the connection picked from its row', async () => {
@@ -80,7 +81,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.syncConnection(REVOKED);
 
     await expect.poll(() => requests.synced.slice(syncedBefore), { timeout: TIMEOUT_MEDIUM })
-      .toEqual([expect.objectContaining({ location: 'qonto', name: REVOKED })]);
+      .toEqual([expect.objectContaining({ identifier: fakeBankIdentifier(REVOKED) })]);
   });
 
   test('should show the bank balance on Balances > Banks', async () => {
@@ -103,7 +104,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.refreshPickedBank(HEALTHY);
     await banksPage.waitForRefreshSettled();
 
-    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ location: 'qonto', name: HEALTHY })]);
+    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ identifier: fakeBankIdentifier(HEALTHY) })]);
   });
 
   test('should lead from a sync paused for a TAN to answering it with only the connection identity', async () => {
@@ -116,7 +117,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.answerTan('123456');
 
     await banksPage.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-    expect(requests.authenticated).toEqual([{ location: 'qonto', name: NEEDS_TAN, response: '123456' }]);
+    expect(requests.authenticated).toEqual([{ identifier: fakeBankIdentifier(NEEDS_TAN), response: '123456' }]);
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   });
 });

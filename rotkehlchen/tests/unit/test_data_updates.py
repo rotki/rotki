@@ -395,7 +395,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.CONTRACTS.serialize(), 999),
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
-                (UpdateType.LOCATION_ASSET_MAPPINGS, 999),
+                (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
                 (UpdateType.COUNTERPARTY_ASSET_MAPPINGS.serialize(), 999),
             ],
         )

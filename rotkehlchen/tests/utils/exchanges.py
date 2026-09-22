@@ -1382,12 +1382,12 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
 
 def get_exchange_asset_symbols(
         exchange: LocationIdentifier,
-        query_suffix: Literal[' OR location IS NULL;', ';'] = ' OR location IS NULL;',
+        query_suffix: Literal[' OR connector IS NULL;', ';'] = ' OR connector IS NULL;',
 ) -> set[str]:
     """Get all asset symbols for an exchange from the global database.
 
     Using ';' returns only symbols specific to the exchange, while the default
-    ' OR location IS NULL;' includes exchange-specific and generic symbols.
+    ' OR connector IS NULL;' includes exchange-specific and generic symbols.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
         querystr = 'SELECT exchange_symbol FROM connector_asset_mappings WHERE connector IS ?' + query_suffix  # noqa: E501
