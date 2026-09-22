@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` When deleting ETH staking validators fails, they now stay in the validators table instead of disappearing from it while rotki still tracks them.
 * :bug:`-` Detecting tokens no longer causes native asset balances, such as ETH, to disappear from cached balances.
 * :bug:`-` Turning syncing back on for one exchange under API Keys -> Exchanges no longer turns it back on for every exchange listed after it that you had paused.
 * :bug:`-` Updates to the default RPC node lists now take effect immediately, so newly added nodes can be used without logging out and back in.
