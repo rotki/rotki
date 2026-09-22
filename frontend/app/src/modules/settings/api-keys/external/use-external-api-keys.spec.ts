@@ -46,6 +46,41 @@ describe('useExternalApiKeys', () => {
     expect(getApiKey('blockscout')).toBe('new-key');
   });
 
+  describe('the chain rows that asked for a paid Etherscan key', () => {
+    let conditions: Awaited<typeof import('@/modules/shell/action-center/use-raised-conditions-store')>;
+
+    beforeEach(async () => {
+      conditions = await import('@/modules/shell/action-center/use-raised-conditions-store');
+      const { raise } = conditions.useRaisedConditionsStore();
+      raise({ chain: 'base', kind: conditions.RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: true });
+      raise({ chain: 'optimism', kind: conditions.RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
+    });
+
+    function raisedChains(): string[] {
+      return get(conditions.useRaisedConditionsStore().conditions).flatMap(condition => 'chain' in condition ? [condition.chain] : []);
+    }
+
+    it('should come down when an Etherscan key is saved, leaving the chains that asked for no key', async () => {
+      await api.useExternalApiKeys().save({ apiKey: 'paid-key', name: 'etherscan' });
+
+      expect(raisedChains()).toEqual(['optimism']);
+    });
+
+    it('should stay when another service\'s key is saved', async () => {
+      await api.useExternalApiKeys().save({ apiKey: 'new-key', name: 'blockscout' });
+
+      expect(raisedChains()).toEqual(['base', 'optimism']);
+    });
+
+    it('should stay when saving the Etherscan key fails', async () => {
+      mockSet.mockRejectedValue(new Error('rejected'));
+
+      await api.useExternalApiKeys().save({ apiKey: 'paid-key', name: 'etherscan' });
+
+      expect(raisedChains()).toEqual(['base', 'optimism']);
+    });
+  });
+
   it('should keep the key unchanged and report the error when saving fails', async () => {
     mockSet.mockRejectedValue(new Error('rejected'));
     const { actionStatus, getApiKey, save } = api.useExternalApiKeys();

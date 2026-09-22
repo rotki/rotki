@@ -3,7 +3,6 @@ import { none, some } from 'plainfp/option';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { INDEXER_SETTINGS, useSuppressOption } from '@/modules/shell/action-center/row-options';
@@ -23,9 +22,10 @@ const isNoIndexersCondition = isConditionOf(RaisedConditionKind.NO_AVAILABLE_IND
  * The chain rows: chains no indexer could serve.
  *
  * @remarks
- * Nothing can ask whether a chain has an indexer again, so a row leaves on the evidence the frontend
- * does see: the chain is suppressed, an Etherscan key is saved when a paid key was what it lacked,
- * or the indexer order changes, which clears the condition itself.
+ * Nothing can ask whether a chain has an indexer again, and the backend reports each chain only once
+ * per session, so a row stays until the user suppresses the chain or does what it asks: saving an
+ * Etherscan key clears the rows that asked for a paid one. A key that is already saved is no reason
+ * to hide a row, since the key Etherscan refused is usually that one.
  */
 export function useChainRows(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -33,15 +33,11 @@ export function useChainRows(): ComputedRef<ActionItem[]> {
   const { conditions } = storeToRefs(useRaisedConditionsStore());
   const suppressedChains = useSetting('suppressNoIndexerChains');
   const { getChainName } = useSupportedChains();
-  const { useApiKey } = useExternalApiKeys();
-  const etherscanKey = useApiKey('etherscan');
   const { updateFrontendSetting } = useSettingsOperations();
   const { suppressOption } = useSuppressOption();
 
-  function isOpen({ chain, paidKeyRequired }: NoIndexersCondition): boolean {
-    if (get(suppressedChains).includes(chain))
-      return false;
-    return !(paidKeyRequired && get(etherscanKey));
+  function isOpen({ chain }: NoIndexersCondition): boolean {
+    return !get(suppressedChains).includes(chain);
   }
 
   async function suppress(chain: string): Promise<void> {

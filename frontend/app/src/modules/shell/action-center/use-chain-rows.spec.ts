@@ -7,14 +7,9 @@ import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const etherscanKey = ref<string>('');
 const suppressedChains = ref<string[]>([]);
 const updateFrontendSetting = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
 const show = vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>();
-
-vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
-  useExternalApiKeys: (): object => ({ useApiKey: (): Ref<string> => etherscanKey }),
-}));
 
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: (): Ref<string[]> => suppressedChains,
@@ -55,7 +50,6 @@ describe('modules/shell/action-center/use-chain-rows', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     updateFrontendSetting.mockResolvedValue({ success: true });
-    set(etherscanKey, '');
     set(suppressedChains, []);
   });
 
@@ -120,16 +114,6 @@ describe('modules/shell/action-center/use-chain-rows', () => {
     set(suppressedChains, ['optimism']);
 
     expect(get(result)).toEqual([]);
-  });
-
-  it('should take a paid-key row down once an Etherscan key is saved, and keep a plain one', () => {
-    raiseNoIndexers('base', true);
-    raiseNoIndexers('optimism');
-    const result = rows();
-
-    set(etherscanKey, 'a-key');
-
-    expect(get(result).map(row => row.id)).toEqual(['no-available-indexers-optimism']);
   });
 
   it('should leave conditions of other modules to their own rows', () => {
