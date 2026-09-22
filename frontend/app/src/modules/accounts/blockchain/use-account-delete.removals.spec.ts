@@ -2,6 +2,8 @@ import type {
   AddressData,
   BlockchainAccount,
   BlockchainAccountGroupWithBalance,
+  EthereumValidator,
+  ValidatorData,
   XpubData,
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
@@ -143,9 +145,23 @@ function accountOn(chain: string): BlockchainAccount<AddressData> {
   return { chain, data: { address: ADDRESS, type: 'address' }, nativeAsset: chain.toUpperCase() };
 }
 
+function validatorData(index: number): ValidatorData {
+  return { index, publicKey: `0xpubkey${index}`, status: 'active', type: 'validator' };
+}
+
+function validatorAccount(index: number): BlockchainAccount<ValidatorData> {
+  return { chain: 'eth2', data: validatorData(index), nativeAsset: 'ETH' };
+}
+
+/** A row of the validators table, which is what the table hands to the delete. */
+function validatorRow(index: number): EthereumValidator {
+  return { ...validatorData(index), amount: bigNumberify(32), value: bigNumberify(0) };
+}
+
 interface Harness {
   accounts: ReturnType<typeof import('@/modules/accounts/use-blockchain-accounts-store')['useBlockchainAccountsStore']>;
   confirmRemoval: (row: BlockchainAccountGroupWithBalance<AddressData> | BlockchainAccountGroupWithBalance<XpubData>) => Promise<void>;
+  confirmValidatorRemoval: (rows: EthereumValidator[]) => Promise<void>;
   /** The chain read the periodic balance tick performs, `use-balance-fetching.ts` one level up. */
   fetchChain: (chain: string) => Promise<void>;
 }
@@ -174,6 +190,10 @@ async function setup(): Promise<Harness> {
     fetchChain: useAccountFetching().fetch,
     confirmRemoval: async (row): Promise<void> => {
       showConfirmation({ data: row, type: 'account' });
+      await useConfirmStore().confirm();
+    },
+    confirmValidatorRemoval: async (rows): Promise<void> => {
+      showConfirmation({ data: rows, type: 'validator' });
       await useConfirmStore().confirm();
     },
   };
@@ -305,5 +325,27 @@ describe('useAccountDelete against the real removal wiring', () => {
     await periodicRead;
 
     expect(accounts.accounts.eth).toHaveLength(0);
+  });
+
+  it('should drop exactly the deleted page of validators and keep the rest', async () => {
+    const { accounts, confirmValidatorRemoval } = await setup();
+    accounts.updateAccounts('eth2', [1, 2, 3, 4].map(validatorAccount));
+    mocks.deleteEth2Validators.mockResolvedValue(true);
+
+    await confirmValidatorRemoval([validatorRow(3), validatorRow(4)]);
+
+    expect(mocks.deleteEth2Validators).toHaveBeenCalledWith(['0xpubkey3', '0xpubkey4']);
+    expect(accounts.accounts.eth2).toStrictEqual([validatorAccount(1), validatorAccount(2)]);
+  });
+
+  it('should keep the validators the backend still tracks after a failed delete', async () => {
+    const { accounts, confirmValidatorRemoval } = await setup();
+    accounts.updateAccounts('eth2', [1, 2].map(validatorAccount));
+    mocks.deleteEth2Validators.mockResolvedValue(false);
+
+    await confirmValidatorRemoval([validatorRow(1), validatorRow(2)]);
+
+    expect(mocks.deleteEth2Validators).toHaveBeenCalledOnce();
+    expect(accounts.accounts.eth2).toStrictEqual([validatorAccount(1), validatorAccount(2)]);
   });
 });

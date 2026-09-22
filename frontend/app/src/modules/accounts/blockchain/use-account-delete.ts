@@ -176,8 +176,11 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     chains.forEach(chain => invalidateChain(chain));
   };
 
+  /** Drops the rows only once the backend confirms: a failed delete leaves the validators tracked. */
   async function removeValidator(publicKeys: string[]): Promise<void> {
-    await deleteEth2Validators(publicKeys);
+    if (!(await deleteEth2Validators(publicKeys)))
+      return;
+
     removeAccounts({ addresses: publicKeys, chains: [Blockchain.ETH2] });
   }
 
