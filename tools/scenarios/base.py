@@ -84,7 +84,7 @@ class ProfileBuilder:
                 'amount': str(balance.amount),
                 'asset': balance.asset.identifier,
                 'label': balance.label,
-                'location': balance.location.serialize(),
+                'location': balance.location,
             }
             for balance in balances
         )

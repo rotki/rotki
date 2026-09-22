@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_TOTAL
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -132,7 +133,7 @@ def make_snapshots(
                 location,
                 str(total * FVal(f'{weight}')),
             ))
-        location_rows.append((timestamp, 'H', str(total)))  # 'H' = total; netvalue reads it
+        location_rows.append((timestamp, LOCATION_TOTAL, str(total)))  # netvalue reads the total
     return balance_rows, location_rows, weeks
 
 

@@ -32,7 +32,7 @@ describe('locationRows', () => {
   });
 
   it('should keep the matches of a search with the ancestors leading to them', () => {
-    expect(rows(false, 'sav').map(([identifier]) => identifier)).toEqual(['banks', 'custom:ing', 'custom:savings']);
+    expect(rows(false, 'saving').map(([identifier]) => identifier)).toEqual(['banks', 'custom:ing', 'custom:savings']);
     expect(rows(false, 'nothing')).toEqual([]);
   });
 });
