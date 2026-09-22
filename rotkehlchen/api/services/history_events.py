@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
+from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.locations import DBLocations
@@ -207,6 +208,6 @@ class HistoryEventsService:
 
         return {
             'result': None,
-            'message': f'The provided transaction hash does not exist for {event.location}.',
+            'message': f'The provided transaction hash does not exist for {get_formatted_location_name(event.location)}.',  # noqa: E501
             'status_code': HTTPStatus.BAD_REQUEST,
         }

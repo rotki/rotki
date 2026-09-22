@@ -215,7 +215,7 @@ def test_add_edit_delete_entries(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(grouped_entries[0], include_identifier=False),
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -297,7 +297,7 @@ def test_add_edit_delete_entries(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(entries=[entry], include_identifier=True),
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # test that setting a real tx_hash that's only missing from the DB pulls the tx from onchain.
@@ -1326,7 +1326,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entry,
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     entry['tx_ref'] = tx_hash_str

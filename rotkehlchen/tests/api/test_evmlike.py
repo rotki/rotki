@@ -573,7 +573,7 @@ def test_add_edit_evmlike_event(
     )
     assert_error_response(
         response=response,
-        contained_in_msg='The provided transaction hash does not exist for zksync_lite.',
+        contained_in_msg='The provided transaction hash does not exist for ZKSync Lite.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
