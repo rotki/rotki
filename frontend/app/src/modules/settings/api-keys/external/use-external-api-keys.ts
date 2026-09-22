@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 function getName(name: ExternalServiceName, _chain?: string): string {
   return name;
@@ -40,6 +41,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
   const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
 
   const { logged } = storeToRefs(useSessionAuthStore());
+  const { clear: clearRaisedConditions } = useRaisedConditionsStore();
 
   function getApiKey(name: ExternalServiceName, _chain?: string): string {
     const items = get(keys);
@@ -97,12 +99,27 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     });
   }
 
+  /**
+   * Takes down the rows of chains Etherscan refused for the key it had.
+   *
+   * @remarks
+   * Saving an Etherscan key is the fix those rows ask for, and the backend puts Etherscan back in each
+   * chain's indexers when a key is saved. Whether the new key is a paid one cannot be told from here,
+   * and the backend reports a chain without an indexer only once per session, so a chain the new key
+   * still cannot serve stays silent until the next login.
+   */
+  function resolvePaidKeyRows(name: string): void {
+    if (name === 'etherscan')
+      clearRaisedConditions(condition => condition.kind === RaisedConditionKind.NO_AVAILABLE_INDEXERS && condition.paidKeyRequired);
+  }
+
   async function save(payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> {
     const { name } = payload;
     resetStatus(name);
     try {
       set(loading, true);
       set(keys, await setExternalServices([payload]));
+      resolvePaidKeyRows(name);
 
       const serviceName = toCapitalCase(name.split('_').join(' '));
 
