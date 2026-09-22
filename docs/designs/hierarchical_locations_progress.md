@@ -369,3 +369,19 @@ needs no change.
   development sandbox (Chromium lacks system libraries there); run the manual balances, history
   events, snapshot edit, exchange purge and CSV import specs before merging.
 
+## Section 9 notes
+
+- Performance validation (design section 17) is done. A v53 DB with 400,000 and 2,000,000
+  history events was measured, upgraded with the real v53->v54 upgrade and measured again. At
+  2M every exact and subtree history query and every historical balance query is within about
+  +-3% of the character encoding, the plans are identical and all location filters search
+  `idx_history_events_location`, and the subtree CTE is as fast as a literal IN list. The DB
+  grows 2.5% (`idx_history_events_location` +69%). Text identifiers stay; no integer surrogate
+  keys.
+- Upgrade cost at 2M: 190 s, peak disk 7.4 GiB (DB, backup copy and WAL), peak memory 2.7 GiB
+  (the final VACUUM doubles it). Kept as is: committing per table would not lower the WAL peak,
+  which the history_events rebuild alone produces, and without VACUUM the file would stay about
+  2 GiB larger. The migration notes must state the needs: free disk about 2.3x and memory about
+  1.2x the database size.
+- Decision (user, 2026-09-22): the comparison script and results are not committed, departing
+  from the design; they go into the PR description.
