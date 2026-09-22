@@ -1023,13 +1023,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         """
         Get a transaction's events if existing in the DB or decode them.
-        If write_buffer is given the decoded events' DB write is deferred into it.
+        If write_buffer is given, initial decoding defers event writes into it.
+        Forced redecoding replaces events atomically per transaction after decoding succeeds.
         Returns:
         - the list of decoded events
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
-        if (events := self._maybe_load_or_purge_events_from_db(
+        if ignore_cache is False and (events := self._maybe_load_or_purge_events_from_db(
             transaction=transaction,
             tx_ref=transaction.tx_hash,
             location=location_from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
@@ -1038,12 +1039,23 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         )) is not None:
             return events, False, None
 
-        # else we should decode now
+        if ignore_cache:
+            write_buffer = []
+
         events, refresh_balances, reload_decoders = self._decode_transaction(
             transaction=transaction,
             tx_receipt=tx_receipt,
             write_buffer=write_buffer,
         )
+        if ignore_cache:
+            assert write_buffer is not None
+            self._replace_transaction_events(
+                transaction=transaction,
+                tx_ref=transaction.tx_hash,
+                location=location_from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
+                delete_customized=delete_customized,
+                write_buffer=write_buffer,
+            )
         self._post_decode_transaction(
             transaction=transaction,
             decoded_events=events,

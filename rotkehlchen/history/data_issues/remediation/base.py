@@ -98,6 +98,8 @@ class RemediationPipeline:
         if task.dead is False:
             task.request_cancellation(f'Strategy exceeded {strategy.timeout}s time budget')
             task.join()
+            if not isinstance(task.exception, TaskCancelledError):
+                return result_of(task)
             return RemediationOutcome(
                 resolved=False,
                 attribution='timeout',
