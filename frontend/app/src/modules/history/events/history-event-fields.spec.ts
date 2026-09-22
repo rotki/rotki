@@ -234,6 +234,16 @@ describe('toHistoryEventFields', () => {
     expect(fieldOf('addresses')?.resolveLabel?.('0xabc')).toBe('hex:0xabc');
   });
 
+  it('should validate and checksum an EVM address before filtering', () => {
+    const address = fieldOf('addresses');
+    const lowercase = '0xbf3f63d8ac133b16d7d50c015036b33219dd8d23';
+
+    expect(address?.validate?.(lowercase)).toBe(true);
+    expect(address?.serializer?.(lowercase)).toBe('0xbF3F63D8AC133B16d7D50C015036b33219Dd8D23');
+    expect(address?.validate?.('0x123')).toBe(false);
+    expect(resolveOptionalText(address?.invalidHint)).toBe('transactions.filter.invalid_address');
+  });
+
   // A full hash is both too long for a pill and, in privacy mode, as revealing as an address.
   it('should shorten and scramble tx hash values like addresses', () => {
     expect(fieldOf('txRefs')?.resolveLabel?.('0xdeadbeef')).toBe('hex:0xdeadbeef');
