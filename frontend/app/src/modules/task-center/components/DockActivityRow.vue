@@ -312,6 +312,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
             color="primary"
             size="sm"
             icon
+            :aria-label="t('collapsed_pending_tasks.cancel_task')"
             data-testid="cancel-activity"
             @click="emit('cancel', activity)"
           >

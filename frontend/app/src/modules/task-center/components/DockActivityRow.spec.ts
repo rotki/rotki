@@ -359,6 +359,10 @@ describe('dockActivityRow', () => {
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 
+    it('should name the cancel icon button for assistive technology', () => {
+      expect(createWrapper().find('[data-testid=cancel-activity]').attributes('aria-label')).toBe('collapsed_pending_tasks.cancel_task');
+    });
+
     it('should render no cancel control for work that cannot be cancelled', () => {
       expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=cancel-activity]').exists()).toBe(false);
     });
