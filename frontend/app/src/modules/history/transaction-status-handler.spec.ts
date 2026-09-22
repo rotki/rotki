@@ -75,18 +75,18 @@ describe('createTransactionStatusHandler', () => {
     // Taken raw, the overloaded `period[1]` would read 100% before anything was queried.
     expect(mockReportProgress).toHaveBeenCalledWith(
       accountSyncActivity.id({ address: '0xabc', chain: 'eth' }),
-      { current: 0, total: 100 },
+      { current: 0, total: 300 },
     );
   });
 
-  it('should report the cursor against the window established by the started frame', async () => {
+  it('should report the cursor against the window established by the started frame, over the query\'s three passes', async () => {
     const handler = createTransactionStatusHandler();
     await handler.handle(evmFrame(TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED, [100, 200]));
     await handler.handle(evmFrame(TransactionsQueryStatus.QUERYING_TRANSACTIONS, [100, 150]));
 
     expect(mockReportProgress).toHaveBeenLastCalledWith(
       accountSyncActivity.id({ address: '0xabc', chain: 'eth' }),
-      { current: 50, total: 100 },
+      { current: 50, total: 300 },
     );
   });
 
@@ -154,7 +154,7 @@ describe('createTransactionStatusHandler', () => {
     // The last run's first cursor, 150, would otherwise stay the start of the window.
     expect(mockReportProgress).toHaveBeenLastCalledWith(
       accountSyncActivity.id({ address: '0xabc', chain: 'eth' }),
-      { current: 0, total: 100 },
+      { current: 0, total: 300 },
     );
   });
 

@@ -130,3 +130,49 @@ describe('periodSteps', () => {
       .toStrictEqual({ current: 0, total: 100 });
   });
 });
+
+describe('periodSteps across an EVM query\'s passes', () => {
+  /** The progress after each frame of a run, as the handler reports it. */
+  function progressOf(...frames: UnifiedTransactionStatusData[]): ({ current: number; total: number } | undefined)[] {
+    const out: ({ current: number; total: number } | undefined)[] = [];
+    frames.reduce<TxAccountTracking | undefined>((tracking, frame) => {
+      const next = mergeTxFrame(frame, tracking, NOW);
+      out.push(periodSteps(next));
+      return next;
+    }, undefined);
+    return out;
+  }
+
+  it('should give each pass its own share, so a pass restarting at the window start does not move progress back', () => {
+    expect(progressOf(
+      evm(TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED, [100, 1000]),
+      evm(TransactionsQueryStatus.QUERYING_TRANSACTIONS, [100, 600]),
+      evm(TransactionsQueryStatus.QUERYING_TRANSACTIONS, [100, 1000]),
+      evm(TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS, [100, 300]),
+      evm(TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS, [100, 200]),
+      evm(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, [100, 1000]),
+    )).toStrictEqual([
+      { current: 0, total: 2700 },
+      { current: 500, total: 2700 },
+      { current: 900, total: 2700 },
+      { current: 1100, total: 2700 },
+      { current: 1900, total: 2700 },
+      { current: 2700, total: 2700 },
+    ]);
+  });
+
+  it('should keep the pass a frame naming none of them had reached', () => {
+    expect(progressOf(
+      evm(TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED, [100, 1000]),
+      evm(TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS, [100, 400]),
+      evm(TransactionsQueryStatus.CANCELLED, [100, 400]),
+    ).at(-1)).toStrictEqual({ current: 1200, total: 2700 });
+  });
+
+  it('should measure a subtype that walks its window once against that window alone', () => {
+    expect(progressOf(
+      { address: 'So1abc', chain: 'solana', period: [100, 1000], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED, subtype: 'solana' },
+      { address: 'So1abc', chain: 'solana', period: [100, 550], status: TransactionsQueryStatus.QUERYING_TRANSACTIONS, subtype: 'solana' },
+    ).at(-1)).toStrictEqual({ current: 450, total: 900 });
+  });
+});
