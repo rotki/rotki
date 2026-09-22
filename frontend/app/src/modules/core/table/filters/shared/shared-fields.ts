@@ -1,6 +1,12 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
-import { isValidAddress } from '@rotki/common';
+import { isValidAddress, isValidEthAddress } from '@rotki/common';
+import { getAddress } from 'viem';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
+
+function normalizeAddress(value: string): string {
+  const trimmed = value.trim();
+  return isValidEthAddress(trimmed) ? getAddress(trimmed) : trimmed;
+}
 
 /**
  * The filter fields more than one table has. A table declares which of its own wire keys are which
@@ -62,6 +68,10 @@ function sharedFieldDecoration(kind: SharedFieldKind, resolvers: SharedFieldReso
         display: DisplayKinds.ADDRESS,
         freeText: true,
         resolveLabel: resolvers.resolveHex,
+        // The history API distinguishes EVM addresses from the other supported address families
+        // by their checksum. Accept the lowercase form users commonly copy, but never send it in
+        // that form; BTC, BCH, Solana and Substrate addresses pass through unchanged.
+        serializer: normalizeAddress,
         validate: (value: string): boolean => isValidAddress(value.trim()),
       };
     case SharedFieldKinds.TX_HASH:

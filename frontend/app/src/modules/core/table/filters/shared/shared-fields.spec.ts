@@ -76,6 +76,17 @@ describe('decorateSharedField', () => {
     expect(decorated.validate?.('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')).toBe(true);
   });
 
+  it('should checksum EVM addresses and leave other address families unchanged', () => {
+    const decorated = decorateSharedField(field(), SharedFieldKinds.ADDRESS, resolvers);
+
+    expect(decorated.serializer?.('0xbf3f63d8ac133b16d7d50c015036b33219dd8d23'))
+      .toBe('0xbF3F63D8AC133B16d7D50C015036b33219Dd8D23');
+    expect(decorated.serializer?.('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'))
+      .toBe('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
+    expect(decorated.serializer?.('7EqQdEULxWcraVx3mXKFjc84LhCkMGZCkRuDpvcMwJeK'))
+      .toBe('7EqQdEULxWcraVx3mXKFjc84LhCkMGZCkRuDpvcMwJeK');
+  });
+
   it('should keep the key, operators and binding the table declared', () => {
     const original = field({ key: 'counterparties', multiple: true, operators: ['is', 'is_not'] });
 
