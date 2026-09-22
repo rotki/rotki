@@ -41,6 +41,15 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.chains import (
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.bridges import (
     get_bridge_match_window,
@@ -51,7 +60,6 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     ChainID,
     EventMetricKey,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -157,7 +165,7 @@ class Bucket(NamedTuple):
         return {
             'asset': self.asset,
             'protocol': self.protocol,
-            'location': Location.deserialize_from_db(self.location).serialize(),
+            'location': LocationIdentifier(self.location),
             'location_label': self.location_label,
         }
 
@@ -177,7 +185,7 @@ class Bucket(NamedTuple):
         - Debt positions: tracked in protocol bucket
         - Everything else: tracked in wallet bucket
         """
-        location = event.location.serialize_for_db()
+        location = event.location
         asset = (
             A_ETH.identifier if treat_eth2_as_eth is True and event.asset == A_ETH2 else
             event.asset.resolve_swapped_for().identifier
@@ -190,7 +198,7 @@ class Bucket(NamedTuple):
             # would only debit the sender bucket and never credit the receiver.
             address is None and
             event_key in DUAL_BUCKET_TRANSFER_EVENTS and
-            event.location in (Location.BITCOIN, Location.BITCOIN_CASH) and
+            event.location in (LOCATION_BITCOIN, LOCATION_BITCOIN_CASH) and
             len(addresses := get_bitcoin_counterparty_addresses(
                 location=event.location,
                 notes=event.notes,
@@ -205,7 +213,7 @@ class Bucket(NamedTuple):
             return []
 
         if (
-            location == Location.KRAKEN.serialize_for_db() and
+            location == LOCATION_KRAKEN and
             event_key in KRAKEN_INTERNAL_STAKING_EVENTS
         ):
             return []
@@ -357,7 +365,7 @@ def _get_rebasing_reconciliation_points(
         event_buckets.append((event, buckets))
         transaction_keys.add((
             bytes(event.tx_ref),
-            event.location.to_chain_id(),
+            location_to_chain_id(event.location),
         ))
 
     transaction_blocks: dict[tuple[bytes, int], int] = {}
@@ -381,7 +389,7 @@ def _get_rebasing_reconciliation_points(
     missing_points: dict[tuple[bytes, int, Bucket], int] = {}
     for event, buckets in event_buckets:
         assert event.identifier is not None
-        chain_id = event.location.to_chain_id()
+        chain_id = location_to_chain_id(event.location)
         tx_key = (bytes(event.tx_ref), chain_id)
         if (block_number := transaction_blocks.get(tx_key)) is None:
             for bucket in buckets:
@@ -425,7 +433,7 @@ def _query_rebasing_balance(
 
     try:
         token = Asset(bucket.asset).resolve_to_evm_token()
-        chain_id = ChainID(event.location.to_chain_id())
+        chain_id = ChainID(location_to_chain_id(event.location))
     except (UnknownAsset, ValueError, WrongAssetType):
         return None, 'unsupported_bucket'
 
@@ -748,7 +756,7 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
                 payload['bridge'] = bridge_data
             issues_manager.write_issue(
                 kind=IssueKind.UNMATCHED_BRIDGE,
-                location=event.location.serialize_for_db(),
+                location=event.location,
                 location_label=event.location_label,
                 protocol=counterparty,
                 asset=event.asset.identifier,
@@ -958,7 +966,7 @@ def _apply_to_buckets(
                 event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
                 event.counterparty is not None and
                 any(str(loc) == event.counterparty for loc in ALL_SUPPORTED_EXCHANGES) and
-                Location.deserialize(event.counterparty) not in database.get_associated_locations()
+                event.counterparty not in database.get_associated_locations()
             ):
                 payload['reason'] = 'untracked_exchange'
 

@@ -39,6 +39,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -55,7 +58,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     EvmTransactionAuthorization,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -175,7 +177,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         if len(decoded_tx_ids) == 0:
             return
 
-        location = Location.from_chain_id(chain_id)
+        location = location_from_chain_id(chain_id)
         dbevents = DBHistoryEvents(self.db)
         decoded_tx_hashes = [transactions[tx_id] for tx_id in decoded_tx_ids]
         customized_group_ids: set[str] = set()
@@ -627,7 +629,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         dbevents.delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=tx_hashes,
-            location=Location.from_chain_id(chain_id),
+            location=location_from_chain_id(chain_id),
         )
         # Delete genesis tx events related to the provided address
         dbevents.delete_events_and_track(

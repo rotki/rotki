@@ -2,7 +2,6 @@ import dataclasses
 import json
 from dataclasses import fields
 from http import HTTPStatus
-from operator import itemgetter
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -37,10 +36,8 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
-    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
-    Location,
     ModuleName,
     SupportedBlockchain,
 )
@@ -226,7 +223,7 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
         elif setting == 'default_evm_indexer_order':
             value = ['etherscan', 'blockscout', 'routescan']
         elif setting == 'non_syncing_exchanges':
-            value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
+            value = ['a-connection-identifier']
         elif setting == 'evmchains_to_skip_detection':
             value = [x.serialize() for x in (SupportedBlockchain.POLYGON_POS, SupportedBlockchain.BASE, SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE)]  # noqa: E501
         elif setting == 'disabled_chain_queries':
@@ -836,23 +833,14 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: APIServer) -> No
 def test_excluded_exchanges_settings(rotkehlchen_api_server: APIServer) -> None:
     exchanges_input = {
         'settings': {
-            'non_syncing_exchanges': [
-                ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
-            ],
+            'non_syncing_exchanges': ['connection-2', 'connection-1'],
         },
     }
-    exchanges_expected = [
-        ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
-        ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
-    ]
+    exchanges_expected = ['connection-1', 'connection-2']
 
     exchanges_bad_input = {
         'settings': {
-            'non_syncing_exchanges': [
-                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
-            ],
+            'non_syncing_exchanges': ['connection-1', 'connection-1'],
         },
     }
 
@@ -861,7 +849,7 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: APIServer) -> None:
         json=exchanges_input,
     )
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource')).json()
-    assert sorted(response['result']['non_syncing_exchanges'], key=itemgetter('name')) == sorted(exchanges_expected, key=itemgetter('name'))  # noqa: E501
+    assert response['result']['non_syncing_exchanges'] == exchanges_expected
 
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),

@@ -23,12 +23,14 @@ from rotkehlchen.db.constants import (
     HistoryEventLinkType,
     HistoryMappingState,
 )
+from rotkehlchen.db.locations import subtree_query
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.history.events.structures.auto_notes import AUTO_NOTES_SQL
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.locations.types import ROOT_LOCATION_IDENTIFIER, LocationScope
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
@@ -39,7 +41,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
-    Location,
     OptionalBlockchainAddress,
     OptionalChainAddress,
     SolanaAddress,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.types import EvmAccount
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 class InvalidFilter(InputError):
@@ -386,18 +388,29 @@ class DBReportDataEventTypeFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBLocationFilter(DBFilter):
-    location: Location
+    """Match (or with exclude, reject) rows by location. The subtree scope also covers every
+    descendant of the location."""
+    location: LocationIdentifier
+    scope: LocationScope = LocationScope.EXACT
+    exclude: bool = False
+    column: str = 'location'
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        return ['location=?'], [self.location.serialize_for_db()]
+        if self.scope == LocationScope.EXACT:
+            return [f'{self.column}{"!=" if self.exclude else "="}?'], [self.location]
+        if self.location == ROOT_LOCATION_IDENTIFIER and not self.exclude:
+            return [], []  # every location is below the root, so there is nothing to filter
+
+        operator = 'NOT IN' if self.exclude else 'IN'
+        return [f'{self.column} {operator} ({subtree_query("?")})'], [self.location]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBNullableLocationFilter(DBFilter):
-    location: Location | None
+class DBNullableConnectorFilter(DBFilter):
+    connector: LocationIdentifier | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        return (['location IS ?'], [None if self.location is None else self.location.serialize_for_db()])  # noqa: E501
+        return ['connector IS ?'], [self.connector]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -561,11 +574,18 @@ class FilterWithLocation:
     location_filter: DBLocationFilter | None = None
 
     @property
-    def location(self) -> Location | None:
+    def location(self) -> LocationIdentifier | None:
         if self.location_filter is None:
             return None
 
         return self.location_filter.location
+
+    @property
+    def location_scope(self) -> LocationScope:
+        if self.location_filter is None:
+            return LocationScope.EXACT
+
+        return self.location_filter.scope
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -956,9 +976,10 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1051,15 +1072,19 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 operator='NOT IN',
             ))
         if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
-        if excluded_locations is not None:
-            filters.append(DBMultiStringFilter(
+            filter_query.location_filter = DBLocationFilter(
                 and_op=True,
-                column='location',
-                values=[x.serialize_for_db() for x in excluded_locations],
-                operator='NOT IN',
-            ))
+                location=location,
+                scope=location_scope,
+            )
+            filters.append(filter_query.location_filter)
+        if excluded_locations is not None:  # exclusions expand the same way as the inclusion
+            filters.extend(DBLocationFilter(
+                and_op=True,
+                location=excluded_location,
+                scope=location_scope,
+                exclude=True,
+            ) for excluded_location in excluded_locations)
         if location_labels is not None:
             cls.match_location_label(filters=filters, labels=location_labels)
 
@@ -1181,9 +1206,10 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1216,6 +1242,7 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1257,9 +1284,10 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1297,6 +1325,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1369,9 +1398,10 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1411,6 +1441,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1466,9 +1497,10 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1503,6 +1535,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1581,9 +1614,10 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1616,6 +1650,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1704,9 +1739,10 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1737,6 +1773,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1792,9 +1829,10 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1826,6 +1864,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -1870,9 +1909,10 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             event_subtypes: list[HistoryEventSubType] | None = None,
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_labels: list[str] | None = None,
-            excluded_locations: list[Location] | None = None,
+            excluded_locations: list[LocationIdentifier] | None = None,
             ignored_ids: list[int] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
@@ -1901,6 +1941,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
+            location_scope=location_scope,
             location_labels=location_labels,
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
@@ -2179,44 +2220,42 @@ class AssetsFilterQuery(DBFilterQuery):
         return filter_query
 
 
-class LocationAssetMappingsFilterQuery(DBFilterQuery):
-    """DBFilterQuery with a nullable DB Location filter. Here the if location_filter is None then
-    no filter is applied. If location_filter exists, but with the `location` value as None then the
-    filter will be applied with `location IS NULL` clause. Other normal values of location in
-    location filter will work similar to DBLocationFilter."""
-    location_filter: DBNullableLocationFilter | None = None
+class ConnectorAssetMappingsFilterQuery(DBFilterQuery):
+    """DBFilterQuery with a nullable connector filter. Without a connector_filter no filter is
+    applied. A connector_filter whose connector is None matches the mappings shared by every
+    connector (`connector IS NULL`)."""
+    connector_filter: DBNullableConnectorFilter | None = None
 
     @classmethod
     def make(
-            cls: type[LocationAssetMappingsFilterQuery],
+            cls: type[ConnectorAssetMappingsFilterQuery],
             limit: int,
             offset: int,
-            location: Location | Literal['common'] | None = None,
-            location_symbol: str | None = None,
+            connector: LocationIdentifier | Literal['common'] | None = None,
+            connector_symbol: str | None = None,
             and_op: bool = True,
-    ) -> LocationAssetMappingsFilterQuery:
-        """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
+    ) -> ConnectorAssetMappingsFilterQuery:
+        """Make and return the ConnectorAssetMappingsFilterQuery instance according to the passed
         arguments. `limit` and `offset` are for pagination and works with DBFilterPagination.
-        `location` can be a valid Location value, None, or "common". If `location` is None, filter
-        will not be applied. If valid Location value is given, that location will be filtered. If
-        `location` is "common" then filter will be applied for columns where location is NULL."""
+        `connector` None applies no filter, "common" selects the mappings shared by every
+        connector and any other value the mappings of that connector."""
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
         )
-        if location_symbol is not None:
+        if connector_symbol is not None:
             filter_query.filters.append(DBSubStringFilter(
                 and_op=True,
                 field='exchange_symbol',
-                search_string=location_symbol,
+                search_string=connector_symbol,
             ))
-        if location is not None:
-            filter_query.location_filter = DBNullableLocationFilter(
+        if connector is not None:
+            filter_query.connector_filter = DBNullableConnectorFilter(
                 and_op=True,
-                location=None if location == 'common' else location,
+                connector=None if connector == 'common' else connector,
             )
-            filter_query.filters.append(filter_query.location_filter)
+            filter_query.filters.append(filter_query.connector_filter)
         return filter_query
 
 
@@ -2673,7 +2712,8 @@ class DataIssuesFilterQuery(DBFilterQuery):
             to_ts: Timestamp | None = None,
             states: Sequence[str] | None = None,
             kinds: Sequence[str] | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_label: str | None = None,
             asset: Asset | None = None,
     ) -> Self:
@@ -2689,11 +2729,7 @@ class DataIssuesFilterQuery(DBFilterQuery):
         if kinds is not None and len(kinds) != 0:
             filters.append(DBMultiStringFilter(and_op=True, column='kind', values=kinds))
         if location is not None:
-            filters.append(DBEqualsFilter(
-                and_op=True,
-                column='location',
-                value=location.serialize_for_db(),
-            ))
+            filters.append(DBLocationFilter(and_op=True, location=location, scope=location_scope))
         if location_label is not None:
             filters.append(DBEqualsFilter(
                 and_op=True,
@@ -2810,7 +2846,8 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             timestamp: Timestamp | None = None,
             from_timestamp: Timestamp | None = None,
             asset: Asset | None = None,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
+            location_scope: LocationScope = LocationScope.EXACT,
             location_label: str | None = None,
             protocol: str | None = None,
     ) -> Self:
@@ -2850,14 +2887,14 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             unprocessed_bindings.append(asset.identifier)
 
         if location is not None:
-            location_filter = DBEqualsFilter(
+            filters.append(location_filter := DBLocationFilter(
                 and_op=True,
-                column='location',
-                value=(location_value := location.serialize_for_db()),
-            )
-            filters.append(location_filter)
-            unprocessed_clauses.append('location = ?')
-            unprocessed_bindings.append(location_value)
+                location=location,
+                scope=location_scope,
+            ))
+            location_clauses, location_bindings = location_filter.prepare()
+            unprocessed_clauses.extend(location_clauses)
+            unprocessed_bindings.extend(location_bindings)
 
         if location_label is not None:
             label_filter = DBEqualsFilter(

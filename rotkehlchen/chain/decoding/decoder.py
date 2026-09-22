@@ -40,8 +40,12 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.premium.premium import Premium
-    from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE, EvmTransaction, EVMTxHash
+    from rotkehlchen.types import (
+        EvmTransaction,
+        EVMTxHash,
+    )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -333,7 +337,7 @@ class TransactionDecoder[
             self,
             transaction: T_Transaction,
             tx_ref: T_TxHash,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             ignore_cache: bool,
             delete_customized: bool,
     ) -> list[T_Event] | None:

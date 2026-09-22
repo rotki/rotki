@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.solana.rpc import Signature
@@ -15,17 +15,20 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_SOLANA,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.types import (
     FVal,
-    Location,
     SolanaAddress,
     TimestampMS,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -43,7 +46,7 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
             asset: Asset,
             amount: FVal,
             # Keep location param to reuse parent's deserialize methods
-            location: Literal[Location.SOLANA] = Location.SOLANA,
+            location: LocationIdentifier = LOCATION_SOLANA,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -71,7 +74,7 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
         )
 
     @staticmethod
-    def _calculate_group_identifier(tx_ref: Signature, location: Location) -> str:
+    def _calculate_group_identifier(tx_ref: Signature, location: LocationIdentifier) -> str:
         return str(tx_ref)
 
     @staticmethod

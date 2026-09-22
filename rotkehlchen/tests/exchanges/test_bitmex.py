@@ -9,10 +9,13 @@ from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.bitmex import Bitmex
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITMEX,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -31,7 +34,7 @@ TEST_BITMEX_WITHDRAWAL = """[{
 
 def test_name():
     exchange = Bitmex('bitmex1', 'a', b'a', object(), object())
-    assert exchange.location == Location.BITMEX
+    assert exchange.location == LOCATION_BITMEX
     assert exchange.name == 'bitmex1'
 
 
@@ -72,13 +75,13 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     with database.conn.read_ctx() as cursor:
         result = DBHistoryEvents(database).get_history_events_internal(
             cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITMEX),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITMEX),
         )
 
     expected_result = [AssetMovement(
         identifier=5,
         group_identifier='ccc9482b81ec668e8846054933f14426bb99fae1d31a1d753187962454544a1c',
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         location_label=sandbox_bitmex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1536486278000),
@@ -87,7 +90,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     ), AssetMovement(
         identifier=3,
         group_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         location_label=sandbox_bitmex.name,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1536536707000),
@@ -97,7 +100,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     ), AssetMovement(
         identifier=4,
         group_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         location_label=sandbox_bitmex.name,
         event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1536536707000),
@@ -106,7 +109,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     ), AssetMovement(
         identifier=2,
         group_identifier='290836ed7b44d7921bc7ab2f8d189f456e266769fa6517e6361e407f4ef4fbc9',
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         location_label=sandbox_bitmex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1536563759000),
@@ -115,7 +118,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     ), AssetMovement(
         identifier=1,
         group_identifier='d4307315ea24915446578e8f8015a5ea95e30194769a62ce8f92f43c2b876bac',
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         location_label=sandbox_bitmex.name,
         event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1537014656000),
@@ -223,7 +226,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         end_ts=Timestamp(1536615593),  # timestamp that returns 5 results
     )
     expected_result = [MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000683'),
@@ -233,7 +236,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         link='9ab9f275-9132-64aa-4aa6-8c6503418ac6',
         notes='ETHUSD',
     ), MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000183'),
@@ -243,7 +246,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         link='9c50e247-9bea-b10b-93c8-26845f202e9a',
         notes='XBTJPY',
     ), MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.0000004'),
@@ -253,7 +256,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         link='c74e6967-1411-0ad1-e3e3-6f97a04d7202',
         notes='XBTUSD',
     ), MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000003'),
@@ -263,7 +266,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         link='97402f76-828e-a8ea-5d26-920134924149',
         notes='XBTZ18',
     ), MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=Timestamp(1536494400),
         profit_loss=FVal('-0.00007992'),

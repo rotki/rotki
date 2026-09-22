@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
@@ -66,9 +65,10 @@ const manifest: BankManifest = {
   accessTier: 'official api',
   authFlow: [{ primitive: 'static secret' }],
   capabilities: ['balances'],
+  connectorIdentifier: 'qonto',
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  fixedLocation: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: '', label: 'Login', secret: true, slot: 'api_key' }],
   setupNotes: [],
@@ -76,7 +76,9 @@ const manifest: BankManifest = {
 };
 
 const connection: BankConnection = {
+  connector: 'qonto',
   displayName: 'Qonto',
+  identifier: 'c1',
   location: 'qonto',
   name: 'Qonto main',
   syncStatus: { authChallenge: null, lastError: null, lastSyncTs: null, running: false },
@@ -95,7 +97,6 @@ describe('useBanks', () => {
     // the task runner hands the api result straight to the `run` callback
     submitTask.mockImplementation(async spec => spec.run({ runTask: async (fn: () => Promise<unknown>) => ok(await fn()) }));
     queryBankBalances.mockResolvedValue({ qonto: eurOnTheWire });
-    useLocationStore().$patch({ allLocations: { kraken: { image: 'kraken.svg' }, qonto: { image: 'qonto.svg', isBank: true } } });
   });
 
   it('should store the supported banks and connections it fetches', async () => {
@@ -109,22 +110,22 @@ describe('useBanks', () => {
   });
 
   it('should add through PUT and edit through PATCH, dropping an unchanged new name and refreshing after each setup, balance query and sync', async () => {
-    addBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    addBank.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
     const credentials = { api_key: 'login' };
 
-    await banks.setupBank({ credentials, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
+    await banks.setupBank({ connector: 'qonto', credentials, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
     await flushPromises();
-    expect(addBank).toHaveBeenCalledWith({ credentials, location: 'qonto', name: 'Qonto main' });
+    expect(addBank).toHaveBeenCalledWith({ connector: 'qonto', credentials, location: 'qonto', name: 'Qonto main' });
 
-    await banks.setupBank({ credentials, location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Qonto main' });
+    await banks.setupBank({ connector: 'qonto', credentials, identifier: 'c1', location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Qonto main' });
     await flushPromises();
-    expect(editBank).toHaveBeenCalledWith({ credentials, location: 'qonto', name: 'Qonto main', newName: undefined });
+    expect(editBank).toHaveBeenCalledWith({ credentials, identifier: 'c1', newName: undefined });
 
-    await banks.setupBank({ credentials, location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Renamed' });
+    await banks.setupBank({ connector: 'qonto', credentials, identifier: 'c1', location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Renamed' });
     await flushPromises();
-    expect(editBank).toHaveBeenLastCalledWith({ credentials, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials, identifier: 'c1', newName: 'Renamed' });
     expect(getBanks).toHaveBeenCalledTimes(7);
     expect(queryAllBankEvents).toHaveBeenCalledOnce();
   });
@@ -132,21 +133,21 @@ describe('useBanks', () => {
   describe('answering an authentication request', () => {
     const challenge = { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter TAN' };
 
-    it('should send only the connection identity, whatever else the caller holds', async () => {
+    it('should send only the connection identifier, whatever else the caller holds', async () => {
       useBankConnectionsStore().setConnections([connection]);
       answerAuthentication.mockResolvedValue(ok(true));
 
-      const request: BankAuthenticationRequest = { challenge, location: 'qonto', name: 'Qonto main' };
+      const request: BankAuthenticationRequest = { challenge, identifier: 'c1', location: 'qonto', name: 'Qonto main' };
       await useBanks().answerBankAuthentication(request, '123456');
 
-      expect(answerAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main', response: '123456' });
+      expect(answerAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1', response: '123456' });
     });
 
     it('should refresh the connection and balances of an existing connection without starting another sync', async () => {
       useBankConnectionsStore().setConnections([connection]);
       answerAuthentication.mockResolvedValue(ok(true));
 
-      await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' }, '123456');
+      await useBanks().answerBankAuthentication({ identifier: 'c1' }, '123456');
       await flushPromises();
 
       expect(getBanks).toHaveBeenCalledTimes(2);
@@ -157,18 +158,18 @@ describe('useBanks', () => {
 
     it('should sync a connection whose setup the answer completed', async () => {
       useBankConnectionsStore().setConnections([connection]);
-      answerAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+      answerAuthentication.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
 
-      await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' }, '123456');
+      await useBanks().answerBankAuthentication({ identifier: 'c1' }, '123456');
       await flushPromises();
 
-      expect(queryAllBankEvents).toHaveBeenCalledExactlyOnceWith([{ location: 'qonto', name: 'Qonto main' }]);
+      expect(queryAllBankEvents).toHaveBeenCalledExactlyOnceWith([connection]);
     });
 
     it('should hand back a further challenge without refreshing', async () => {
       answerAuthentication.mockResolvedValue(ok(challenge));
 
-      expect(await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' })).toEqual(ok(challenge));
+      expect(await useBanks().answerBankAuthentication({ identifier: 'c1' })).toEqual(ok(challenge));
       await flushPromises();
 
       expect(getBanks).not.toHaveBeenCalled();
@@ -180,34 +181,39 @@ describe('useBanks', () => {
     const banks = useBanks();
 
     await banks.setupBank({
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: '  ' },
+      identifier: 'c1',
       location: 'qonto',
       mode: 'edit',
       name: 'Qonto main',
       newName: 'Renamed',
     });
-    expect(editBank).toHaveBeenLastCalledWith({ credentials: {}, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: {}, identifier: 'c1', newName: 'Renamed' });
 
     await banks.setupBank({
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: 'new-secret' },
+      identifier: 'c1',
       location: 'qonto',
       mode: 'edit',
       name: 'Qonto main',
       newName: 'Qonto main',
     });
-    expect(editBank).toHaveBeenLastCalledWith({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'Qonto main', newName: undefined });
+    expect(editBank).toHaveBeenLastCalledWith({ credentials: { api_secret: 'new-secret' }, identifier: 'c1', newName: undefined });
   });
 
   it('should return the accepted setup and refresh the connections and balances', async () => {
     useBankConnectionsStore().setConnections([connection]);
-    const success = { historyStartTs: 1_700_000_000, success: true };
+    const success = { historyStartTs: 1_700_000_000, identifier: 'c1', success: true };
     addBank.mockResolvedValue(ok(success));
-    const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
+    const outcome = await useBanks().setupBank({ connector: 'qonto', credentials: {}, location: '', mode: 'add', name: 'Qonto main', newName: '' });
     await flushPromises();
     expect(outcome).toEqual(ok(success));
     expect(getBanks).toHaveBeenCalledTimes(3);
     expect(queryBankBalances).toHaveBeenCalledOnce();
-    expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
+    expect(addBank).toHaveBeenCalledWith({ connector: 'qonto', credentials: {}, location: undefined, name: 'Qonto main' });
+    expect(queryAllBankEvents).toHaveBeenCalledWith([connection]);
     expect(notifyInfo).toHaveBeenCalledOnce();
   });
 
@@ -217,7 +223,7 @@ describe('useBanks', () => {
   ])('should hand back %s untouched, without notifying or refreshing', async (_case, answer) => {
     useBankConnectionsStore().setConnections([connection]);
     addBank.mockResolvedValue(answer);
-    const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'x', newName: '' });
+    const outcome = await useBanks().setupBank({ connector: 'qonto', credentials: {}, location: '', mode: 'add', name: 'x', newName: '' });
     await flushPromises();
     expect(outcome).toEqual(answer);
     expect(notifyError).not.toHaveBeenCalled();
@@ -242,19 +248,20 @@ describe('useBanks', () => {
   });
 
   it('should sync the picked connection through the bank events activity and refresh the status', async () => {
-    const both = [connection, { ...connection, name: 'Qonto side' }];
-    getBanks.mockResolvedValue(both);
-    useBankConnectionsStore().setConnections(both);
+    const side = { ...connection, identifier: 'c2', name: 'Qonto side' };
+    const fints = { ...connection, connector: 'fints', displayName: 'FinTS', identifier: 'c3', location: 'custom:ing', name: 'ING' };
+    getBanks.mockResolvedValue([connection, side, fints]);
+    useBankConnectionsStore().setConnections([connection, side, fints]);
     const banks = useBanks();
-    expect(await banks.syncBanks({ location: 'qonto', name: 'Qonto main' })).toBe(true);
-    expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
+    expect(await banks.syncBanks({ identifier: 'c1' })).toBe(true);
+    expect(queryAllBankEvents).toHaveBeenCalledWith([connection]);
     expect(getBanks).toHaveBeenCalledOnce();
 
+    await banks.syncBanks({ connector: 'qonto' });
+    expect(queryAllBankEvents).toHaveBeenLastCalledWith([connection, side]);
+
     await banks.syncBanks();
-    expect(queryAllBankEvents).toHaveBeenLastCalledWith([
-      { location: 'qonto', name: 'Qonto main' },
-      { location: 'qonto', name: 'Qonto side' },
-    ]);
+    expect(queryAllBankEvents).toHaveBeenLastCalledWith([connection, side, fints]);
   });
 
   it('should report a failed sync as false', async () => {

@@ -1,20 +1,22 @@
 import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
 
 const manifest: BankManifest = {
   accessTier: 'official api',
   authFlow: [{ primitive: 'static secret' }],
   capabilities: ['balances', 'transactions'],
+  connectorIdentifier: 'qonto',
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  fixedLocation: 'qonto',
   maintainer: 'rotki',
   secrets: [
     { description: 'The organization login', label: 'Login', secret: false, slot: 'api_key' },
@@ -24,8 +26,18 @@ const manifest: BankManifest = {
   version: '1.0.0',
 };
 
+const fints: BankManifest = {
+  ...manifest,
+  connectorIdentifier: 'fints',
+  displayName: 'FinTS',
+  fixedLocation: null,
+  secrets: [{ description: 'The online banking login', label: 'Login', secret: false, slot: 'api_key' }],
+  setupNotes: [],
+};
+
 function createForm(mode: BankFormData['mode']): BankFormData {
   return {
+    connector: 'qonto',
     credentials: { api_key: '', api_secret: '' },
     location: 'qonto',
     mode,
@@ -62,7 +74,44 @@ describe('bankConnectionForm', () => {
   beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
-    useBankConnectionsStore().setManifests([manifest]);
+    useBankConnectionsStore().setManifests([manifest, fints]);
+    useLocationTreeStore().setNodes([
+      { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
+      { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
+      { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
+      { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
+    ]);
+  });
+
+  function menuSelect(testId: string): VueWrapper | undefined {
+    return wrapper.findAllComponents({ name: 'RuiMenuSelect' }).find(select => select.attributes('data-testid') === testId);
+  }
+
+  function selectConnector(connector: string): void {
+    menuSelect('bank-connection-connector')?.vm.$emit('update:modelValue', connector);
+  }
+
+  it('should ask for the bank only for a connector that does not fix it, offering the Banks subtree', async () => {
+    const model = ref({ ...createForm('add'), connector: '', location: '' });
+    wrapper = createWrapper(model);
+    await flushPromises();
+    expect(wrapper.find('[data-testid=bank-connection-location]').exists()).toBe(false);
+
+    selectConnector('fints');
+    await nextTick();
+    await wrapper.setProps({ modelValue: model.value });
+    expect(model.value).toMatchObject({ connector: 'fints', credentials: { api_key: '' }, location: '' });
+    expect(Reflect.get(menuSelect('bank-connection-location')?.props() ?? {}, 'options')).toEqual([
+      { identifier: 'banks', label: 'Banks' },
+      { identifier: 'custom:ing', label: 'Banks › ING' },
+    ]);
+    expect(wrapper.vm.validate()).toBe(false);
+
+    selectConnector('qonto');
+    await nextTick();
+    await wrapper.setProps({ modelValue: model.value });
+    expect(model.value).toMatchObject({ connector: 'qonto', credentials: { api_key: '', api_secret: '' }, location: 'qonto' });
+    expect(wrapper.find('[data-testid=bank-connection-location]').exists()).toBe(false);
   });
 
   it('should render one revealable field per manifest secret with its label and description', () => {
@@ -95,8 +144,9 @@ describe('bankConnectionForm', () => {
     expect(wrapper.find('[data-testid=bank-connection-name]').text()).toContain('bank_settings.form.validation.required');
   });
 
-  it('should pass validation with empty credentials when editing, hiding the bank picker', () => {
-    wrapper = createWrapper(ref(createForm('edit')));
+  it('should pass validation with empty credentials when editing, hiding the connector and bank pickers', () => {
+    wrapper = createWrapper(ref({ ...createForm('edit'), connector: 'fints', location: 'custom:ing' }));
+    expect(wrapper.find('[data-testid=bank-connection-connector]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=bank-connection-location]').exists()).toBe(false);
     expect(wrapper.vm.validate()).toBe(true);
     expect(wrapper.find('[data-testid=bank-connection-secret-api_key]').text()).toContain('bank_settings.form.credential_keep_hint');

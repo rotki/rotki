@@ -46,6 +46,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -58,7 +61,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Price,
     Timestamp,
 )
@@ -167,7 +169,7 @@ class Coinbase(ExchangeInterface):
         """
         super().__init__(
             name=name,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -571,9 +573,8 @@ class Coinbase(ExchangeInterface):
                 with self.db.conn.read_ctx() as cursor:
                     if (last_query := self.db.get_dynamic_cache(
                         cursor=cursor,
-                        name=DBCacheDynamic.LAST_QUERY_TS,
-                        location=self.location.serialize(),
-                        location_name=self.name,
+                        name=DBCacheDynamic.CONNECTION_LAST_QUERY_TS,
+                        connection=self.connection_identifier,
                         account_id=account_id,
                     )) is not None and now - last_query < HOUR_IN_SECONDS:
                         continue  # the last query is recent, skip this account
@@ -582,8 +583,7 @@ class Coinbase(ExchangeInterface):
                     if (result_id := self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.LAST_QUERY_ID,
-                        location=self.location.serialize(),
-                        location_name=self.name,
+                        connection=self.connection_identifier,
                         account_id=account_id,
                     )) is not None:
                         last_id = str(result_id)
@@ -596,7 +596,10 @@ class Coinbase(ExchangeInterface):
             all_events.extend(history_events)
             if last_queried_tx_id is not None:
                 cursor_updates.append((
-                    f'{self.location}_{self.name}_{account_id}_last_query_id',
+                    DBCacheDynamic.LAST_QUERY_ID.get_db_key(
+                        connection=self.connection_identifier,
+                        account_id=account_id,
+                    ),
                     last_queried_tx_id,
                 ))
             queried_account_ids.append(account_id)
@@ -640,10 +643,9 @@ class Coinbase(ExchangeInterface):
         for account_id in queried_account_ids:
             self.db.set_dynamic_cache(
                 write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_QUERY_TS,
+                name=DBCacheDynamic.CONNECTION_LAST_QUERY_TS,
                 value=ts_now(),
-                location=self.location.serialize(),
-                location_name=self.name,
+                connection=self.connection_identifier,
                 account_id=account_id,
             )
 
@@ -1236,7 +1238,7 @@ class Coinbase(ExchangeInterface):
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,

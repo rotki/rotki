@@ -10,8 +10,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -28,7 +31,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1710486191000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -39,7 +42,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
@@ -52,7 +55,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_STETH,
@@ -78,7 +81,7 @@ def test_lido_wsteth_wrapping(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1733619851000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -89,7 +92,7 @@ def test_lido_wsteth_wrapping(
         tx_ref=tx_hash,
         sequence_index=322,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_STETH,
@@ -100,7 +103,7 @@ def test_lido_wsteth_wrapping(
         tx_ref=tx_hash,
         sequence_index=323,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_STETH,
@@ -113,7 +116,7 @@ def test_lido_wsteth_wrapping(
         tx_ref=tx_hash,
         sequence_index=324,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=A_WSTETH,
@@ -137,7 +140,7 @@ def test_lido_wsteth_unwrapping(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1759185275000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -148,7 +151,7 @@ def test_lido_wsteth_unwrapping(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=A_WSTETH,
@@ -161,7 +164,7 @@ def test_lido_wsteth_unwrapping(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=A_STETH,

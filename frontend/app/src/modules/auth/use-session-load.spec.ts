@@ -13,6 +13,7 @@ const mockRefreshPrices = vi.fn();
 const mockSeedFromHistoric = vi.fn();
 const mockFetchTags = vi.fn();
 const mockFetchAllLocations = vi.fn();
+const mockRefreshLocationTree = vi.fn();
 const mockArmAccountLoad = vi.fn();
 const mockReleaseAccountLoad = vi.fn();
 const mockShouldFetchData = ref<boolean>(true);
@@ -79,6 +80,12 @@ vi.mock('@/modules/history/api/use-history-api', () => ({
   })),
 }));
 
+vi.mock('@/modules/locations/use-location-tree', () => ({
+  useLocationTree: vi.fn(() => ({
+    refreshLocationTree: mockRefreshLocationTree,
+  })),
+}));
+
 vi.mock('@/modules/core/common/use-location-store', () => ({
   useLocationStore: vi.fn(() => ({
     allLocations: ref({}),
@@ -113,6 +120,7 @@ describe('composables::session::load', () => {
     mockSeedFromHistoric.mockResolvedValue(undefined);
     mockFetchTags.mockResolvedValue(undefined);
     mockFetchAllLocations.mockResolvedValue({ locations: {} });
+    mockRefreshLocationTree.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -121,6 +129,14 @@ describe('composables::session::load', () => {
   });
 
   describe('load', () => {
+    it('should load the location tree with the flat location details', async () => {
+      useDataLoader().load();
+      await flushPromises();
+
+      expect(mockRefreshLocationTree).toHaveBeenCalledOnce();
+      expect(mockFetchAllLocations).toHaveBeenCalledOnce();
+    });
+
     it('should call onBalancesLoaded after refreshData completes', async () => {
       const { load } = useDataLoader();
 

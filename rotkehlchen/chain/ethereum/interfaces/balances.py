@@ -15,8 +15,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -139,7 +142,7 @@ class ProtocolWithBalance(abc.ABC):
             assets=assets,
             counterparties=[self.counterparty],
             type_and_subtype_combinations=event_types,
-            location=Location.from_chain_id(self.evm_inquirer.chain_id),
+            location=location_from_chain_id(self.evm_inquirer.chain_id),
             entry_types=IncludeExcludeFilterData(values=list(ACTIVITY_ENTRY_TYPES)),
             excluded_addresses=self.excluded_addresses,
             addresses=addresses,

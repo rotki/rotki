@@ -76,17 +76,28 @@ from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import query_price_or_use_default
+from rotkehlchen.locations.chains import (
+    BITCOIN_LOCATIONS,
+    is_bitcoin_location,
+    is_evm_location,
+    location_from_chain,
+    location_to_chain,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_EXTERNAL,
+    LOCATION_SOLANA,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    BITCOIN_LOCATIONS,
-    BLOCKCHAIN_LOCATIONS_TYPE,
     CHAINS_WITH_TRANSACTIONS,
     BTCTxId,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -107,7 +118,7 @@ NOTES_ADDRESS_MARKER_RE = re.compile(r'\b(?:to|from)\b\s+(.+)$')
 
 
 def get_bitcoin_counterparty_addresses(
-        location: Location,
+        location: LocationIdentifier,
         notes: str | None,
 ) -> list[str]:
     """Extract counterparty addresses from normalized bitcoin/bch notes."""
@@ -117,7 +128,7 @@ def get_bitcoin_counterparty_addresses(
     if (match := NOTES_ADDRESS_MARKER_RE.search(notes)) is None:
         return []
 
-    validator = is_valid_btc_address if location == Location.BITCOIN else (
+    validator = is_valid_btc_address if location == LOCATION_BITCOIN else (
         lambda value: is_valid_bitcoin_cash_address(value) or is_valid_btc_address(value)
     )
     return [
@@ -194,7 +205,7 @@ class DBHistoryEvents:
     def transaction_events_reference_address(
             cursor: DBCursor,
             tx_ref: bytes,
-            location: Location,
+            location: LocationIdentifier,
             address: str,
     ) -> bool:
         """Return whether a transaction already has an event attributed to address."""
@@ -202,7 +213,7 @@ class DBHistoryEvents:
             'SELECT 1 FROM history_events h '
             'INNER JOIN chain_events_info c ON h.identifier=c.identifier '
             'WHERE c.tx_ref=? AND h.location=? AND h.location_label=? LIMIT 1',
-            (tx_ref, location.serialize_for_db(), address),
+            (tx_ref, location, address),
         ).fetchone() is not None
 
     def __init__(self, database: DBHandler) -> None:
@@ -362,7 +373,7 @@ class DBHistoryEvents:
     def _store_bitcoin_event_counterparty_addresses(
             write_cursor: DBCursor,
             identifier: int,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             notes: str | None,
             decoded_addresses: Sequence[str] | None,
@@ -377,7 +388,7 @@ class DBHistoryEvents:
                 (identifier,),
             )
         if (
-            location not in (Location.BITCOIN, Location.BITCOIN_CASH) or
+            location not in (LOCATION_BITCOIN, LOCATION_BITCOIN_CASH) or
             event_type not in (
                 HistoryEventType.SPEND,
                 HistoryEventType.RECEIVE,
@@ -611,12 +622,12 @@ class DBHistoryEvents:
             for identifier, raw_location, raw_type, notes in write_cursor.execute(
                 f'SELECT identifier, location, type, notes FROM history_events '
                 f'WHERE identifier IN ({placeholders}) AND location IN (?, ?)',
-                [*chunk, *(x.serialize_for_db() for x in BITCOIN_LOCATIONS)],
+                [*chunk, *(x for x in BITCOIN_LOCATIONS)],
             ).fetchall():  # materialized since the writes below reuse the cursor
                 DBHistoryEvents._store_bitcoin_event_counterparty_addresses(
                     write_cursor=write_cursor,
                     identifier=identifier,
-                    location=Location.deserialize_from_db(raw_location),
+                    location=LocationIdentifier(raw_location),
                     event_type=HistoryEventType.deserialize(raw_type),
                     notes=notes,
                     decoded_addresses=None,  # re-derived from the restored notes
@@ -625,7 +636,7 @@ class DBHistoryEvents:
     def restore_matched_events_before_purge(
             self,
             write_cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
     ) -> None:
         """Undo asset movement matching for events linked to the purged location.
 
@@ -634,7 +645,7 @@ class DBHistoryEvents:
         """
         link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
         matched_db = HistoryMappingState.MATCHED.serialize_for_db()
-        location_db = location.serialize_for_db()
+        location_db = location
         events_to_restore: set[int] = set()
 
         # grab all matched pairs that touch this location, along with each side's location
@@ -939,7 +950,7 @@ class DBHistoryEvents:
     def delete_location_events(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             address: str | None,
             customized_handling: Literal['preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
     ) -> None:
@@ -961,12 +972,12 @@ class DBHistoryEvents:
                 HistoryMappingState.MATCHED.serialize_for_db(),
             )),
         ).fetchone()[0]
-        if location.is_bitcoin():
+        if is_bitcoin_location(location):
             join_or_where = 'WHERE'
         else:
             sub_query = (
                 'SELECT signature FROM solana_transactions'
-                if location == Location.SOLANA else
+                if location == LOCATION_SOLANA else
                 'SELECT tx_hash FROM evm_transactions'
             )
             join_or_where = (
@@ -975,7 +986,7 @@ class DBHistoryEvents:
             )
 
         base_query = f'SELECT H.identifier from history_events H {join_or_where} H.location = ?'
-        bindings: tuple = (location.serialize_for_db(),)
+        bindings: tuple = (location,)
         filter_conditions = ''
         if events_to_keep_num != 0:
             if customized_handling == 'preserve_transactions':
@@ -1001,7 +1012,7 @@ class DBHistoryEvents:
     def reset_events_for_redecode(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
     ) -> None:
         """Reset the given location's events, etc. for re-decoding.
         Handles different cases depending on the location:
@@ -1023,13 +1034,13 @@ class DBHistoryEvents:
         tx_where = ''
         tx_where_bindings: tuple = ()
         join_bindings: tuple = ()
-        if location.is_evm():
+        if is_evm_location(location):
             mappings_table, tx_table = 'evm_tx_mappings', 'evm_transactions'
             join_on = 'T.tx_hash = C.tx_ref'
-        elif location == Location.SOLANA:
+        elif location == LOCATION_SOLANA:
             mappings_table, tx_table = 'solana_tx_mappings', 'solana_transactions'
             join_on = 'T.signature = C.tx_ref'
-        elif location.is_bitcoin():
+        elif is_bitcoin_location(location):
             mappings_table, tx_table = 'bitcoin_tx_mappings', 'bitcoin_transactions'
             # The transaction keeps its id as hex text while the event keeps it as bytes.
             # Both bitcoin chains also share the tables and every transaction id made before
@@ -1037,7 +1048,7 @@ class DBHistoryEvents:
             # resetting one chain would reset the other's transactions too.
             join_on = 'T.tx_id = lower(hex(C.tx_ref)) AND T.location = ?'
             tx_where = ' WHERE location=?'
-            tx_where_bindings = join_bindings = (location.serialize_for_db(),)
+            tx_where_bindings = join_bindings = (location,)
         else:
             return
 
@@ -1069,7 +1080,7 @@ class DBHistoryEvents:
     def _get_customized_exclusions_for_tx_refs(
             cursor: DBCursor,
             tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             customized_handling: Literal['preserve_events', 'preserve_transactions'],
     ) -> list[int] | list[str]:
         """Return customized event identifiers or group identifiers to preserve for tx deletions.
@@ -1079,7 +1090,7 @@ class DBHistoryEvents:
         """
         placeholders = ', '.join(['?'] * len(tx_refs))
         customized_bindings = (
-            location.serialize_for_db(),
+            location,
             HISTORY_MAPPING_KEY_STATE,
             HistoryMappingState.CUSTOMIZED.serialize_for_db(),
         )
@@ -1089,9 +1100,9 @@ class DBHistoryEvents:
             else 'identifier'
         )
         tx_ref_bindings: list[Any]
-        if location == Location.SOLANA:
+        if location == LOCATION_SOLANA:
             tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # solana signatures
-        elif location.is_bitcoin():
+        elif is_bitcoin_location(location):
             tx_ref_bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # bitcoin tx ids
         else:
             tx_ref_bindings = list(tx_refs)  # evm tx hashes
@@ -1111,7 +1122,7 @@ class DBHistoryEvents:
             self,
             write_cursor: DBCursor,
             tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
     ) -> None:
         """Delete all relevant (by transaction hash) history events.
@@ -1145,14 +1156,14 @@ class DBHistoryEvents:
             write_cursor: DBCursor,
             tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
             placeholders: str,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'],
     ) -> None:
         """Delete the events of a single chunk of tx refs. See delete_events_by_tx_ref."""
         tx_ref_bindings: list[str | bytes]
-        if location == Location.SOLANA:
+        if location == LOCATION_SOLANA:
             tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
-        elif location.is_bitcoin():
+        elif is_bitcoin_location(location):
             tx_ref_bindings = [bytes.fromhex(x) for x in tx_refs]  # type: ignore[arg-type]  # hashes will be bitcoin tx ids
         else:
             tx_ref_bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
@@ -1166,7 +1177,7 @@ class DBHistoryEvents:
             f'WHERE location=? AND identifier IN (SELECT identifier FROM chain_events_info '
             f'WHERE tx_ref IN ({placeholders}))'
         )
-        bindings: list[str | bytes] = [location.serialize_for_db(), *tx_ref_bindings]
+        bindings: list[str | bytes] = [location, *tx_ref_bindings]
 
         if customized_handling != 'delete' and (
             length := len(exclusions := self._get_customized_exclusions_for_tx_refs(
@@ -1193,7 +1204,7 @@ class DBHistoryEvents:
     @overload
     def get_event_mapping_states(
             cursor: DBCursor,
-            location: Location | None,
+            location: LocationIdentifier | None,
             mapping_state: HistoryMappingState,
             entry_identifiers: Sequence[int] | None = None,
     ) -> list[int]:
@@ -1203,7 +1214,7 @@ class DBHistoryEvents:
     @overload
     def get_event_mapping_states(
             cursor: DBCursor,
-            location: Location | None,
+            location: LocationIdentifier | None,
             mapping_state: None = None,
             entry_identifiers: Sequence[int] | None = None,
     ) -> dict[int, list[HistoryMappingState]]:
@@ -1212,7 +1223,7 @@ class DBHistoryEvents:
     @staticmethod
     def get_event_mapping_states(
             cursor: DBCursor,
-            location: Location | None,
+            location: LocationIdentifier | None,
             mapping_state: HistoryMappingState | None = None,
             entry_identifiers: Sequence[int] | None = None,
     ) -> dict[int, list[HistoryMappingState]] | list[int]:
@@ -1253,7 +1264,7 @@ class DBHistoryEvents:
                 'SELECT A.parent_identifier, A.value FROM history_events_mappings A JOIN '
                 f'history_events_mappings B ON A.parent_identifier=B.parent_identifier AND {where_str}'  # noqa: E501
                 'JOIN history_events C ON C.identifier=A.parent_identifier AND C.location=?',
-                (*bindings, location.serialize_for_db()),
+                (*bindings, location),
             )
 
         if mapping_state is not None:
@@ -2094,7 +2105,7 @@ class DBHistoryEvents:
     @staticmethod
     def get_counterparties_at_location(
             cursor: DBCursor,
-            location: Location,
+            location: LocationIdentifier,
             entry_types: Sequence[HistoryBaseEntryType],
     ) -> set[str]:
         """Return the distinct counterparties the user has events of `entry_types` for at
@@ -2109,7 +2120,7 @@ class DBHistoryEvents:
             'SELECT DISTINCT counterparty FROM history_events INNER JOIN chain_events_info ON '
             'history_events.identifier=chain_events_info.identifier '
             f'WHERE location=? AND entry_type IN ({placeholders}) AND counterparty IS NOT NULL',
-            (location.serialize_for_db(), *(x.serialize_for_db() for x in entry_types)),
+            (location, *(x.serialize_for_db() for x in entry_types)),
         )}
 
     def get_history_event_group_position(
@@ -2406,7 +2417,7 @@ class DBHistoryEvents:
                 'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
                 'WHERE history_events.location = ? AND history_events.timestamp >= ? AND history_events.timestamp <= ? '  # noqa: E501
                 f'AND {skip_spam_assets}',
-                (Location.SOLANA.serialize_for_db(), from_ts_ms, to_ts_ms),
+                (LOCATION_SOLANA, from_ts_ms, to_ts_ms),
             )
             if solana_count := cursor.fetchone()[0]:
                 transactions_per_chain[SupportedBlockchain.SOLANA.name] = solana_count
@@ -2416,22 +2427,22 @@ class DBHistoryEvents:
                 'WHERE location IN (?, ?) AND timestamp >= ? AND timestamp <= ? '
                 f'AND {skip_spam_assets} GROUP BY location',
                 (
-                    Location.BITCOIN.serialize_for_db(),
-                    Location.BITCOIN_CASH.serialize_for_db(),
+                    LOCATION_BITCOIN,
+                    LOCATION_BITCOIN_CASH,
                     from_ts_ms,
                     to_ts_ms,
                 ),
             )
             for row in cursor:
-                chain = SupportedBlockchain.from_location(Location.deserialize_from_db(row[0]))  # type: ignore  # Location here is only blockchain locations
+                chain = location_to_chain(row[0])  # only blockchain locations are queried here
                 transactions_per_chain[chain.name] = row[1]
 
             cursor.execute(
                 f'SELECT location, COUNT(DISTINCT group_identifier) AS unique_events FROM history_events '  # noqa: E501
-                f'WHERE location IN ({",".join("?" * len(possible_trades_locations := ALL_SUPPORTED_EXCHANGES + (Location.EXTERNAL,)))}) AND timestamp BETWEEN ? AND ? GROUP BY location',  # noqa: E501
-                (*[i.serialize_for_db() for i in possible_trades_locations], from_ts_ms, to_ts_ms),
+                f'WHERE location IN ({",".join("?" * len(possible_trades_locations := ALL_SUPPORTED_EXCHANGES + (LOCATION_EXTERNAL,)))}) AND timestamp BETWEEN ? AND ? GROUP BY location',  # noqa: E501
+                (*list(possible_trades_locations), from_ts_ms, to_ts_ms),
             )
-            trades_by_exchange = {str(Location.deserialize_from_db(row[0])): row[1] for row in cursor}  # noqa: E501
+            trades_by_exchange = {str(LocationIdentifier(row[0])): row[1] for row in cursor}
             cursor.execute(
                 """
                 SELECT transaction_symbol, transaction_amount FROM gnosispay_data
@@ -2452,7 +2463,7 @@ class DBHistoryEvents:
             ]
 
             placeholders = ','.join('?' * len(CHAINS_WITH_TRANSACTIONS))
-            bindings = tuple(Location.from_chain(blockchain).serialize_for_db() for blockchain in CHAINS_WITH_TRANSACTIONS)  # noqa: E501
+            bindings = tuple(location_from_chain(blockchain) for blockchain in CHAINS_WITH_TRANSACTIONS)  # noqa: E501
             cursor.execute(
                 "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT group_identifier) as tx_count "  # noqa: E501
                 f'FROM history_events WHERE location IN ({placeholders}) '

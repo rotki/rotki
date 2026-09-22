@@ -4,8 +4,12 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -31,8 +35,8 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
         location_to_name = {}
         multiple_locations = set()
         for result in credentials_result:
-            try:
-                location = Location.deserialize_from_db(result[1])
+            try:  # this migration only runs against the pre-v54 schema
+                location = location_from_v53_char(result[1])
             except DeserializationError as e:
                 log.error(
                     f'During data migration 1 found location {result[1]} '
@@ -54,7 +58,7 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
         location_str = match.group(1)
         entry_type = match.group(2)
         try:
-            location = Location.deserialize(location_str)
+            location = deserialize_location_identifier(location_str)
         except DeserializationError as e:
             log.error(
                 f'During data migration 1 could not deserialize location '
@@ -71,20 +75,23 @@ def data_migration_1(rotki: Rotkehlchen, progress_handler: MigrationProgressHand
             continue
 
         with db.user_write() as write_cursor:
-            if location in multiple_locations or location == Location.KRAKEN:
+            if location in multiple_locations or location == LOCATION_KRAKEN:
                 write_cursor.execute(
                     'DELETE FROM trades WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
                 write_cursor.execute(
                     'DELETE FROM asset_movements WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
                 write_cursor.execute(
                     'DELETE FROM asset_movements WHERE location = ?;',
-                    (location.serialize_for_db(),),
+                    (location_to_v53_char(location),),
                 )
-                db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
+                write_cursor.execute(
+                    'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+                    (f'{location!s}\\_%', '\\'),
+                )
             else:
                 write_cursor.execute(
                     'UPDATE OR IGNORE used_query_ranges SET name=? WHERE name=?',

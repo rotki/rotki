@@ -2,9 +2,9 @@ import type { ComputedRef } from 'vue';
 import type { ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 
 interface UseBankDataReturn {
   /** The connected banks with balances, richest first. */
@@ -19,7 +19,7 @@ interface UseBankDataReturn {
  */
 export function useBankData(): UseBankDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
+  const { bankLocations } = storeToRefs(useBankConnectionsStore());
   const { isAssetIgnored } = useAssetsStore();
 
   const isBankLocation = (location: string): boolean => get(bankLocations).includes(location);

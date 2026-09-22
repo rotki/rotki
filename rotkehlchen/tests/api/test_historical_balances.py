@@ -28,6 +28,13 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tasks.manager import HISTORICAL_BALANCE_PROCESSING_TASK_NAME
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
@@ -44,7 +51,6 @@ from rotkehlchen.types import (
     AssetAmount,
     ChainID,
     EvmTransaction,
-    Location,
     Price,
     Timestamp,
 )
@@ -79,7 +85,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: APIServer) -> None:
             timestamp=ts_sec_to_ms(START_TS),
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('2'),
             notes='Receive BTC',
@@ -88,7 +94,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: APIServer) -> None:
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + 3000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -102,21 +108,21 @@ def fixture_setup_historical_data(rotkehlchen_api_server: APIServer) -> None:
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('0.5'),
             notes='BTC partial spend',
         ),
         AssetMovement(
             timestamp=ts_sec_to_ms(day_3_ts := Timestamp(START_TS + DAY_IN_SECONDS * 2)),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE,
         ),
         AssetMovement(
             timestamp=ts_sec_to_ms(Timestamp(day_3_ts + 1)),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=ONE,
@@ -125,7 +131,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: APIServer) -> None:
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=ts_sec_to_ms(day_3_ts),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
@@ -201,7 +207,7 @@ def test_get_historical_asset_balance(
             write_cursor=write_cursor,
             history=create_swap_events(
                 timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
                 group_identifier='tradeid',
@@ -234,12 +240,12 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
     identifiers = []
     with db.user_write() as cursor:
         for location, label, offset, sequence, event_type, subtype, amount, counterparty in (
-            (Location.BASE, account, 0, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '2', None),  # noqa: E501
-            (Location.ETHEREUM, account, 0, 1, HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, '3', 'aave'),  # noqa: E501
-            (Location.ETHEREUM, other_account, 0, 2, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '99', None),  # noqa: E501
-            (Location.ETHEREUM, account, 10, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '5', None),  # noqa: E501
-            (Location.ETHEREUM, account, 10, 1, HistoryEventType.SPEND, HistoryEventSubType.NONE, '5', None),  # noqa: E501
-            (Location.ETHEREUM, account, 20, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '7', None),  # noqa: E501
+            (LOCATION_BASE, account, 0, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '2', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 0, 1, HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, '3', 'aave'),  # noqa: E501
+            (LOCATION_ETHEREUM, other_account, 0, 2, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '99', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 10, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '5', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 10, 1, HistoryEventType.SPEND, HistoryEventSubType.NONE, '5', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 20, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '7', None),  # noqa: E501
         ):
             identifier = DBHistoryEvents(db).add_history_event(
                 write_cursor=cursor,
@@ -301,7 +307,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -312,7 +318,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -323,7 +329,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
-                location=Location.BASE,
+                location=LOCATION_BASE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -334,7 +340,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
@@ -346,7 +352,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(day2_ts),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -357,7 +363,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(day2_ts),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
@@ -369,7 +375,7 @@ def test_get_historical_balance_with_filters(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(day3_ts),
-                location=Location.BASE,
+                location=LOCATION_BASE,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -385,6 +391,10 @@ def test_get_historical_balance_with_filters(
         # Location filters
         ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (aave)
         ({'timestamp': START_TS, 'location': 'base'}, '3'),
+        ({'timestamp': START_TS, 'location': 'evm chains', 'location_scope': 'subtree'}, '22'),
+        ({'timestamp': START_TS, 'location': 'total', 'location_scope': 'subtree'}, '22'),
+        ({'timestamp': START_TS, 'location': 'ethereum', 'location_scope': 'subtree'}, '19'),
+        ({'timestamp': START_TS, 'location': 'evm chains', 'location_scope': 'exact'}, None),
         # Location label filters
         ({'timestamp': START_TS, 'location_label': addr1}, '18'),  # 5 + 3 + 10 (aave)
         ({'timestamp': START_TS, 'location_label': addr2}, '4'),
@@ -406,7 +416,10 @@ def test_get_historical_balance_with_filters(
             json=filters,
         ))
         assert result['processing_required'] is False, f'Failed for filters: {filters}'
-        assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
+        if expected_eth is None:  # no balances at all
+            assert 'entries' not in result, f'Failed for filters: {filters}'
+        else:
+            assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
 
     result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
@@ -581,7 +594,7 @@ def test_find_onchain_historical_balance_divergence(
                     tx_ref=tx_hash,
                     sequence_index=0,
                     timestamp=ts_sec_to_ms(Timestamp(START_TS + idx)),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -647,13 +660,13 @@ def test_get_historical_asset_amounts_over_time(
             write_cursor=write_cursor,
             history=[*create_swap_events(
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('24000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('1.5')),
                 group_identifier='trade1',
             ), *create_swap_events(  # Second swap with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('8000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
                 group_identifier='trade2',
@@ -687,13 +700,13 @@ def test_get_historical_asset_amounts_over_time_event_metrics(
             write_cursor=write_cursor,
             history=[*create_swap_events(
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('24000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('1.5')),
                 group_identifier='trade1',
             ), *create_swap_events(  # Second swap with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('8000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
                 group_identifier='trade2',
@@ -731,7 +744,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
@@ -742,7 +755,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('0.7'),
             notes='BTC second overspend attempt',
@@ -798,7 +811,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
@@ -809,7 +822,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
             timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('0.7'),
             notes='BTC second overspend attempt',
@@ -855,7 +868,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),  # WBTC
             amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
@@ -866,7 +879,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=Asset('eip155:100/erc20:0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252'),  # WBTC
             amount=FVal('0.7'),
             notes='BTC second overspend attempt',
@@ -993,19 +1006,19 @@ def test_get_historical_netvalue(
                 timestamp=ts_sec_to_ms(START_TS),
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 asset=A_EUR,
                 amount=FVal('20000'),
                 notes='Receive EUR',
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 group_identifier='1xyz',
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 group_identifier='2xyz',
                 spend=AssetAmount(asset=A_ETH, amount=FVal('0.2')),
                 receive=AssetAmount(asset=A_EUR, amount=FVal('240.0')),
@@ -1103,7 +1116,7 @@ def test_get_historical_netvalue_with_negative_balance_events(
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('1.6'),  # spending more than remaining balance (1.5)
             notes='BTC overspend',
@@ -1486,7 +1499,7 @@ def test_get_historical_asset_amounts_processing_required(
             timestamp=ts_sec_to_ms(START_TS),
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             asset=A_BTC,
             amount=FVal('2'),
             notes='Receive BTC',

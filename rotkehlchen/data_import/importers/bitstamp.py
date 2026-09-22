@@ -17,12 +17,15 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITSTAMP,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Price, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Price, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -76,7 +79,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             events.extend(create_swap_events(
                 timestamp=timestamp,
                 spend=spend,
-                location=Location.BITSTAMP,
+                location=LOCATION_BITSTAMP,
                 receive=receive,
                 group_identifier=group_identifier,
                 fee=AssetAmount(
@@ -93,7 +96,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                     HistoryEventSubType.SPEND
                 ),
                 timestamp=timestamp,
-                location=Location.BITSTAMP,
+                location=LOCATION_BITSTAMP,
                 asset=asset_from_bitstamp(amount_symbol),
                 amount=deserialize_fval(amount),
             ))

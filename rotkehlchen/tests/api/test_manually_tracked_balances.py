@@ -579,7 +579,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize Location value from non string value',
+        contained_in_msg='Failed to deserialize location from',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # invalid location
@@ -594,7 +594,8 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize Location value foo',
+        # locations are checked against the DB after the schema, which PATCH already fails
+        contained_in_msg='Location foo does not exist' if verb == 'PUT' else 'Missing data for required field',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

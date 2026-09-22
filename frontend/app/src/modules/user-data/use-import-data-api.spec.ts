@@ -190,4 +190,44 @@ describe('composables/api/import/index', () => {
         .toThrow('File upload failed');
     });
   });
+
+  describe('preflightImport', () => {
+    it('should send the file and hand back how each location value resolves', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.put(`${backendUrl}/api/1/import/preflight`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: { locations: [{ candidates: ['custom:a', 'custom:b'], location: null, status: 'ambiguous', value: 'ING' }] },
+          });
+        }),
+      );
+
+      const result = await useImportDataApi().preflightImport({ file: '/path/events.csv', source: 'rotki_events' });
+
+      expect(capturedBody).toEqual({ file: '/path/events.csv', source: 'rotki_events' });
+      expect(result).toEqual([{ candidates: ['custom:a', 'custom:b'], location: null, status: 'ambiguous', value: 'ING' }]);
+    });
+  });
+
+  it('should send the location mappings as a JSON string so their keys keep their spelling', async () => {
+    let capturedBody: DefaultBodyType = null;
+    server.use(
+      http.put(`${backendUrl}/api/1/import`, async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json({ message: '', result: { task_id: 1 } });
+      }),
+    );
+
+    await useImportDataApi().importDataFrom({
+      file: '/path/events.csv',
+      locationMappings: JSON.stringify({ 'My old exchange': 'custom:old' }),
+      source: 'rotki_events',
+      timestampFormat: null,
+      timezone: null,
+    });
+
+    expect(capturedBody).toMatchObject({ location_mappings: '{"My old exchange":"custom:old"}' });
+  });
 });

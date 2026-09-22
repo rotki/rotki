@@ -2,8 +2,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.exchanges.coinbase import ECDSA_KEY_RE
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
 if TYPE_CHECKING:
@@ -25,8 +27,8 @@ def data_migration_22(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
         with rotki.data.db.conn.read_ctx() as cursor:
             creds = rotki.data.db.get_exchange_credentials(
                 cursor=cursor,
-                location=Location.COINBASE,
-            )[Location.COINBASE]
+                connectors=[LOCATION_COINBASE],
+            )
 
         success = True
         for cred in creds:
@@ -37,10 +39,7 @@ def data_migration_22(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 continue
 
             # Use delete_exchange to remove both from the DB and the list of connected exchanges.
-            success, msg = rotki.exchange_manager.delete_exchange(
-                name=cred.name,
-                location=cred.location,
-            )
+            success, msg = rotki.exchange_manager.delete_exchange(cred.identifier)
             if not success:
                 log.error(f'Failed to remove legacy coinbase credentials for {cred.name}: {msg}')
 

@@ -1,11 +1,11 @@
-import type { Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
+import type { Exchange } from '@/modules/balances/types/exchanges';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface NonSyncingExchangesToggle {
-  /** The list to persist as the `nonSyncingExchanges` setting. */
-  readonly nonSyncingExchanges: QueryExchangeEventsPayload[];
+  /** The connection identifiers to persist as the `nonSyncingExchanges` setting. */
+  readonly nonSyncingExchanges: string[];
   /** Whether the toggle turns syncing on for the exchange. */
   readonly enable: boolean;
 }
@@ -16,31 +16,22 @@ interface UseNonSyncingExchangesReturn {
   toggleSync: (exchange: Exchange) => Promise<void>;
 }
 
-function isSameExchange(item: QueryExchangeEventsPayload, exchange: Exchange): boolean {
-  return item.name === exchange.name && item.location === exchange.location;
-}
-
 /**
  * Flips syncing for one exchange: an exchange on the non-syncing list leaves it, any other joins it.
  * The given list is not modified.
  */
 export function toggleNonSyncingExchange(
-  current: readonly QueryExchangeEventsPayload[],
+  current: readonly string[],
   exchange: Exchange,
 ): NonSyncingExchangesToggle {
-  const index = current.findIndex(item => isSameExchange(item, exchange));
+  if (current.includes(exchange.identifier))
+    return { enable: true, nonSyncingExchanges: current.filter(identifier => identifier !== exchange.identifier) };
 
-  if (index > -1)
-    return { enable: true, nonSyncingExchanges: current.filter((_, i) => i !== index) };
-
-  return {
-    enable: false,
-    nonSyncingExchanges: [...current, { location: exchange.location, name: exchange.name }],
-  };
+  return { enable: false, nonSyncingExchanges: [...current, exchange.identifier] };
 }
 
 export function useNonSyncingExchanges(): UseNonSyncingExchangesReturn {
-  const nonSyncingExchanges = ref<QueryExchangeEventsPayload[]>([]);
+  const nonSyncingExchanges = ref<string[]>([]);
 
   const { t } = useI18n({ useScope: 'global' });
   const current = useSetting('nonSyncingExchanges');
@@ -48,7 +39,7 @@ export function useNonSyncingExchanges(): UseNonSyncingExchangesReturn {
   const { notifyInfo } = useNotifications();
 
   function isNonSyncExchange(exchange: Exchange): boolean {
-    return get(nonSyncingExchanges).some(item => isSameExchange(item, exchange));
+    return get(nonSyncingExchanges).includes(exchange.identifier);
   }
 
   function resetNonSyncingExchanges(): void {

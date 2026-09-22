@@ -8,6 +8,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
+from rotkehlchen.connections.types import ConnectorIdentifier
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
@@ -17,6 +18,14 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_COINBASEPRIME,
+    LOCATION_GEMINI,
+    LOCATION_KRAKEN,
+    LOCATION_OKX,
+)
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
@@ -56,7 +65,6 @@ from rotkehlchen.tests.utils.solana import patch_solana_inquirer_nodes
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
-    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -67,6 +75,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.exchanges.exchange import ExchangeInterface
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def maybe_clear_priority_tasks(rotki: Rotkehlchen) -> None:
@@ -885,7 +894,7 @@ def rotkehlchen_instance(
 @pytest.fixture
 def rotkehlchen_api_server_with_exchanges(
         rotkehlchen_api_server: APIServer,
-        added_exchanges: list[Location],
+        added_exchanges: list[LocationIdentifier],
         gemini_test_base_uri: str,
         gemini_sandbox_api_secret: bytes,
         gemini_sandbox_api_key: str,
@@ -898,7 +907,7 @@ def rotkehlchen_api_server_with_exchanges(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for exchange_location in added_exchanges:
         name = str(exchange_location)
-        if exchange_location == Location.BINANCEUS:
+        if exchange_location == LOCATION_BINANCEUS:
             name = 'binance'
         create_fn = getattr(exchange_tests, f'create_test_{name}')
         passphrase = None
@@ -906,17 +915,17 @@ def rotkehlchen_api_server_with_exchanges(
         if exchange_location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = '123'
             kwargs['passphrase'] = passphrase
-        if exchange_location == Location.GEMINI:
+        if exchange_location == LOCATION_GEMINI:
             kwargs['base_uri'] = gemini_test_base_uri
             kwargs['api_key'] = gemini_sandbox_api_key
             kwargs['api_secret'] = gemini_sandbox_api_secret
-        if exchange_location == Location.OKX:
+        if exchange_location == LOCATION_OKX:
             kwargs['api_key'] = okx_api_key
             kwargs['secret'] = okx_api_secret
             kwargs['passphrase'] = okx_passphrase
-        if exchange_location == Location.BINANCEUS:
-            kwargs['location'] = Location.BINANCEUS
-        if exchange_location == Location.COINBASEPRIME:
+        if exchange_location == LOCATION_BINANCEUS:
+            kwargs['location'] = LOCATION_BINANCEUS
+        if exchange_location == LOCATION_COINBASEPRIME:
             kwargs['name'] = 'CoinbasePrime account'
 
         exchangeobj: ExchangeInterface = create_fn(
@@ -924,16 +933,16 @@ def rotkehlchen_api_server_with_exchanges(
             msg_aggregator=rotki.msg_aggregator,
             **kwargs,
         )
-        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # type: ignore  # noqa: E501
+        kraken_account_type = exchangeobj.account_type if exchange_location == LOCATION_KRAKEN else None  # type: ignore  # noqa: E501
         exchanges[exchange_location] = [exchangeobj]
-        rotki.data.db.add_exchange(  # also add credentials in the DB
+        exchangeobj.connection_identifier = rotki.data.db.add_exchange(  # also save it in the DB
             name=exchangeobj.name,
-            location=exchange_location,
+            connector=ConnectorIdentifier(exchange_location),
             api_key=exchangeobj.api_key,
             api_secret=exchangeobj.secret if exchange_location not in EXCHANGES_WITHOUT_API_SECRET else None,  # noqa: E501
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
-            binance_history_start_ts=Timestamp(0) if exchange_location == Location.BINANCE else None,  # noqa: E501
+            binance_history_start_ts=Timestamp(0) if exchange_location == LOCATION_BINANCE else None,  # noqa: E501
         )
 
     yield rotkehlchen_api_server

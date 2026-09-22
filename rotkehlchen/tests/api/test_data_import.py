@@ -12,6 +12,9 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_CRYPTOCOM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -44,7 +47,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
 )
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -217,7 +220,7 @@ def test_data_import_cryptocom_dpos_interest(rotkehlchen_api_server: APIServer) 
             strict=True,
     ):
         assert event.timestamp == timestamp
-        assert event.location == Location.CRYPTOCOM
+        assert event.location == LOCATION_CRYPTOCOM
         assert event.location_label == 'Crypto.com App'
         assert event.event_type == HistoryEventType.RECEIVE
         assert event.event_subtype == HistoryEventSubType.NONE
@@ -521,12 +524,25 @@ def test_data_import_rotki_generic_trades(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
 ) -> None:
-    """Test that data import works for rotki generic trades import csv file."""
+    """Test that data import works for rotki generic trades import csv file. The file names
+    luno, which is no location, so it is only imported once mapped to one."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_trades.csv'
 
-    json_data = {'source': 'rotki_trades', 'file': str(filepath)}
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+            json={'source': 'rotki_trades', 'file': str(filepath)},
+        ),
+        contained_in_msg='Map them first',
+        status_code=HTTPStatus.CONFLICT,
+        result_exists=True,
+    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
+
+    json_data = {'source': 'rotki_trades', 'file': str(filepath), 'location_mappings': {'luno': 'external'}}  # noqa: E501
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -546,6 +562,7 @@ def test_data_import_rotki_generic_trades(
         'source': 'rotki_trades',
         'file': str(filepath),
         'timestamp_format': '%Y-%m-%d %H:%M:%S',
+        'location_mappings': {'luno': 'external'},
     }
     response = requests.put(
         api_url_for(
@@ -568,7 +585,7 @@ def test_data_import_rotki_generic_events(
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_events.csv'
 
-    json_data = {'source': 'rotki_events', 'file': str(filepath)}
+    json_data = {'source': 'rotki_events', 'file': str(filepath), 'location_mappings': {'luno': 'external', 'cex': 'external'}}  # noqa: E501
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

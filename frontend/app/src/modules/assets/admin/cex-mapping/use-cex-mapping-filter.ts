@@ -1,6 +1,9 @@
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 
-/** The wire keys the cex mapping table filters on, which the URL carries too. */
+/**
+ * The keys the cex mapping table filters on, which the URL carries too. The API client sends them
+ * as the backend's `connector` and `connector_symbol`.
+ */
 export const CexMappingFilterKeys = {
   LOCATION: 'location',
   LOCATION_SYMBOL: 'locationSymbol',

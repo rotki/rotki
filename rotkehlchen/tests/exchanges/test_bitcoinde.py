@@ -13,8 +13,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOINDE,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 BITCOINDE_BALANCES_RESPONSE = """{"data":{"balances":{"btc":{"total_amount":"0.5","available_amount":"0.5","reserved_amount":"0"},"bch":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"btg":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"eth":{"total_amount":"32.0","available_amount":"32.0","reserved_amount":"0"},"bsv":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"ltc":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"}},"encrypted_information":{"uid":"X","bic_short":"Y","bic_full":"Z"}},"errors":[],"credits":23}"""  # noqa: E501
 
@@ -44,7 +47,7 @@ BITCOINDE_TRADING_PAIRS = (
 
 def test_location():
     exchange = Bitcoinde('bitcoinde1', 'a', b'a', object(), object())
-    assert exchange.location == Location.BITCOINDE
+    assert exchange.location == LOCATION_BITCOINDE
     assert exchange.name == 'bitcoinde1'
 
 
@@ -82,68 +85,68 @@ def test_query_trade_history(function_scope_bitcoinde):
 
     assert events == [SwapEvent(
         timestamp=TimestampMS(1512531092000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('2341.21'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X1',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1512531092000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('10'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X1',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1512531092000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('1.5214'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X1',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('4124.124'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('241.214'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X2',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
-        location=Location.BITCOINDE,
+        location=LOCATION_BITCOINDE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.93452135'),
         location_label='bitcoinde',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.BITCOINDE,
+            location=LOCATION_BITCOINDE,
             unique_id='X2',
         ),
     )]

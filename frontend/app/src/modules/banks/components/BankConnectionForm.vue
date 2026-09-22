@@ -6,11 +6,14 @@ import {
   bankConnectionSchema,
   emptyCredentials,
   isEditing,
+  needsBankLocation,
   toBankConnectionFormState,
 } from '@/modules/banks/bank-connection-form';
+import { type BankLocationOption, bankLocationOptions } from '@/modules/banks/bank-locations';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<BankFormData>({ required: true });
@@ -21,8 +24,14 @@ const { manifests } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
 
+const connector = ref<string>(get(modelValue).connector);
+
+const { nodes: locationTree } = storeToRefs(useLocationTreeStore());
+
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
-const manifest = computed<BankManifest | undefined>(() => manifestFor(get(modelValue).location));
+const manifest = computed<BankManifest | undefined>(() => manifestFor(get(connector)));
+const bankLocations = computed<BankLocationOption[]>(() => bankLocationOptions(get(locationTree)));
+const choosesLocation = computed<boolean>(() => !get(editMode) && needsBankLocation(get(manifest)));
 
 const form = useMappedModelForm<BankFormData, BankConnectionFormState>({
   model: modelValue,
@@ -45,10 +54,16 @@ const name = computed<string>({
 
 const nameErrors = computed<string[]>(() => form.errors(get(editMode) ? 'newName' : 'name'));
 
-/** Switching the bank starts the credentials over: another bank has other slots. */
-function selectLocation(location: string | undefined): void {
-  form.state.location = location ?? '';
-  form.state.credentials = emptyCredentials(location === undefined ? undefined : manifestFor(location));
+/**
+ * Switching the connector starts the credentials and the bank over: another connector has other
+ * slots, and may fix the bank its data belongs to.
+ */
+function selectConnector(selection: string | undefined): void {
+  const selected = selection === undefined ? undefined : manifestFor(selection);
+  set(connector, selection ?? '');
+  form.state.connector = selection ?? '';
+  form.state.location = selected?.fixedLocation ?? '';
+  form.state.credentials = emptyCredentials(selected);
 }
 
 defineExpose({
@@ -61,36 +76,36 @@ defineExpose({
     class="flex flex-col gap-4"
     data-testid="bank-connection-form"
   >
-    <RuiMenuSelect
-      v-if="!editMode"
-      :model-value="form.state.location"
-      :options="manifests"
-      :label="t('bank_settings.form.bank')"
-      :error-messages="form.errors('location')"
-      key-attr="location"
-      text-attr="displayName"
-      variant="outlined"
-      data-testid="bank-connection-location"
-      @update:model-value="selectLocation($event)"
-    >
-      <template #selection="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :open-details="false"
-        />
-      </template>
-      <template #item="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :open-details="false"
-        />
-      </template>
-    </RuiMenuSelect>
     <LocationDisplay
-      v-else
+      v-if="editMode"
       :identifier="form.state.location"
       :open-details="false"
     />
+    <template v-else>
+      <RuiMenuSelect
+        :model-value="form.state.connector"
+        :options="manifests"
+        :label="t('bank_settings.form.connector')"
+        :error-messages="form.errors('connector')"
+        key-attr="connectorIdentifier"
+        text-attr="displayName"
+        variant="outlined"
+        data-testid="bank-connection-connector"
+        @update:model-value="selectConnector($event)"
+      />
+      <RuiMenuSelect
+        v-if="choosesLocation"
+        v-model="form.state.location"
+        :options="bankLocations"
+        :label="t('bank_settings.form.bank')"
+        :hint="t('bank_settings.form.bank_hint')"
+        :error-messages="form.errors('location')"
+        key-attr="identifier"
+        text-attr="label"
+        variant="outlined"
+        data-testid="bank-connection-location"
+      />
+    </template>
 
     <RuiTextField
       v-model="name"

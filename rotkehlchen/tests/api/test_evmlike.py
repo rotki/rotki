@@ -18,6 +18,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -28,7 +31,6 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -330,7 +332,7 @@ def test_decode_pending_evmlike(
     result = assert_proper_sync_response_with_result(response)
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={'location': Location.ZKSYNC_LITE.serialize()},
+        json={'location': LOCATION_ZKSYNC_LITE},
     )
     assert assert_proper_sync_response_with_result(response) == result, 'filtering by location should be same'  # noqa: E501
     assert len(result['entries']) == 17
@@ -339,7 +341,7 @@ def test_decode_pending_evmlike(
         tx_ref=tx_hash1,
         sequence_index=0,
         timestamp=TimestampMS(1708431030000),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_ETH,
@@ -360,7 +362,7 @@ def test_decode_pending_evmlike(
         tx_ref=tx_hash1,
         sequence_index=1,
         timestamp=TimestampMS(1708431030000),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -375,7 +377,7 @@ def test_decode_pending_evmlike(
         tx_ref=tx_hash2,
         sequence_index=0,
         timestamp=TimestampMS(1659010582000),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -395,7 +397,7 @@ def test_decode_pending_evmlike(
                 tx_ref=deserialize_evm_tx_hash('0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -415,7 +417,7 @@ def test_decode_pending_evmlike(
                 tx_ref=deserialize_evm_tx_hash('0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -435,7 +437,7 @@ def test_decode_pending_evmlike(
                 tx_ref=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -456,7 +458,7 @@ def test_decode_pending_evmlike(
                 tx_ref=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=1,
                 timestamp=TimestampMS(1656022105000),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -532,7 +534,7 @@ def test_add_edit_evmlike_event(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1600000000000),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -571,7 +573,7 @@ def test_add_edit_evmlike_event(
     )
     assert_error_response(
         response=response,
-        contained_in_msg='The provided transaction hash does not exist for zksync_lite.',
+        contained_in_msg='The provided transaction hash does not exist for ZKSync Lite.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

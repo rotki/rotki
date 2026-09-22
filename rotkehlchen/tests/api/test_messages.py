@@ -3,13 +3,15 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.locations.constants import (
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-@pytest.mark.parametrize('added_exchanges', [(Location.POLONIEX,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_POLONIEX,)])
 def test_query_messages(
         rotkehlchen_api_server_with_exchanges: APIServer,
         websocket_connection: WebsocketReader,
@@ -31,7 +33,7 @@ def test_query_messages(
     with setup.polo_patch:
         response = requests.post(
             api_url_for(rotkehlchen_api_server_with_exchanges, 'exchangeeventsqueryresource'),
-            json={'location': Location.POLONIEX.serialize()},
+            json={'location': LOCATION_POLONIEX},
         )
     assert_proper_response(response)
 

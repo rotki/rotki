@@ -8,19 +8,20 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.crypto import sha3
 from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp,
 )
-from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Timestamp
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ MarginPositionDBTuple = tuple[
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class MarginPosition(AccountingEventMixin):
     """We only support margin positions on poloniex and bitmex at the moment"""
-    location: Location
+    location: LocationIdentifier
     open_time: Timestamp | None
     close_time: Timestamp
     # Profit loss in pl_currency (does not include fees)
@@ -92,7 +93,7 @@ class MarginPosition(AccountingEventMixin):
     def serialize(self) -> dict[str, Any]:
         """Serialize the margin position into a dict."""
         return {
-            'location': self.location.serialize(),
+            'location': self.location,
             'open_time': self.open_time,
             'close_time': self.close_time,
             'profit_loss': str(self.profit_loss),
@@ -111,7 +112,7 @@ class MarginPosition(AccountingEventMixin):
             - UnknownAsset
         """
         return cls(
-            location=Location.deserialize(data['location']),
+            location=deserialize_location_identifier(data['location']),
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
             profit_loss=deserialize_fval(data['profit_loss']),
@@ -133,7 +134,7 @@ class MarginPosition(AccountingEventMixin):
         else:
             open_time = deserialize_timestamp(entry[2])
         return MarginPosition(
-            location=Location.deserialize_from_db(entry[1]),
+            location=LocationIdentifier(entry[1]),
             open_time=open_time,
             close_time=deserialize_timestamp(entry[3]),
             profit_loss=deserialize_fval(entry[4]),
@@ -202,7 +203,7 @@ class MarginPosition(AccountingEventMixin):
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Loan(AccountingEventMixin):
     """We only support loans in poloniex at the moment"""
-    location: Location
+    location: LocationIdentifier
     open_time: Timestamp
     close_time: Timestamp
     currency: Asset
@@ -218,7 +219,7 @@ class Loan(AccountingEventMixin):
     def serialize(self) -> dict[str, Any]:
         """Serialize the loan into a dict."""
         return {
-            'location': self.location.serialize(),
+            'location': self.location,
             'open_time': self.open_time,
             'close_time': self.close_time,
             'currency': self.currency.identifier,
@@ -236,7 +237,7 @@ class Loan(AccountingEventMixin):
             - UnknownAsset
         """
         return cls(
-            location=Location.deserialize(data['location']),
+            location=deserialize_location_identifier(data['location']),
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
             currency=Asset(data['currency']).check_existence(),
@@ -285,7 +286,7 @@ class BinancePair(NamedTuple):
     symbol: str
     base_asset: AssetWithOracles
     quote_asset: AssetWithOracles
-    location: Location  # Should only be binance or binanceus
+    location: LocationIdentifier  # Should only be binance or binanceus
 
     def serialize_for_db(self) -> BINANCE_PAIR_DB_TUPLE:
         """Create tuple to be inserted in the database containing:
@@ -298,7 +299,7 @@ class BinancePair(NamedTuple):
             self.symbol,
             self.base_asset.identifier,
             self.quote_asset.identifier,
-            self.location.serialize_for_db(),
+            self.location,
         )
 
     @classmethod
@@ -311,5 +312,5 @@ class BinancePair(NamedTuple):
             symbol=entry[0],
             base_asset=asset_from_binance(entry[1]),
             quote_asset=asset_from_binance(entry[2]),
-            location=Location.deserialize_from_db(entry[3]),
+            location=LocationIdentifier(entry[3]),
         )

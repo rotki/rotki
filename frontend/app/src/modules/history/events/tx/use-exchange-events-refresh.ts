@@ -21,7 +21,7 @@ interface UseExchangeEventsRefreshReturn {
  * Queries exchange history events.
  *
  * @remarks
- * Each `{ location, name }` account runs as its own native EXCHANGE_EVENTS activity, so the
+ * Each exchange connection runs as its own native EXCHANGE_EVENTS activity, so the
  * orchestrator owns liveness (read off `useWorkStatus(ActivityKind.EXCHANGE_EVENTS)`), cancellation
  * and re-run. The cap-2, sequential-within-location fan-out lives in `queryAllExchangeEvents`.
  */

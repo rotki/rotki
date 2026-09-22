@@ -14,8 +14,12 @@ from rotkehlchen.constants.assets import A_ETH, A_GNO, A_USDT, A_XDAI, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -28,7 +32,7 @@ def test_omnibridge_ethereum_token_deposit(ethereum_inquirer, ethereum_accounts)
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -39,7 +43,7 @@ def test_omnibridge_ethereum_token_deposit(ethereum_inquirer, ethereum_accounts)
         ), EvmEvent(
             sequence_index=2998,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_GNO,
@@ -69,7 +73,7 @@ def test_omnibridge_ethereum_eth_deposit(ethereum_inquirer, ethereum_accounts):
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -80,7 +84,7 @@ def test_omnibridge_ethereum_eth_deposit(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
@@ -110,7 +114,7 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts, allow
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
@@ -121,7 +125,7 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts, allow
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
@@ -160,7 +164,7 @@ def test_omnibridge_gnosis_token_deposit_with_fee(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
@@ -171,7 +175,7 @@ def test_omnibridge_gnosis_token_deposit_with_fee(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=(a_giv := Asset('eip155:100/erc20:0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75')),
@@ -190,7 +194,7 @@ def test_omnibridge_gnosis_token_deposit_with_fee(
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=a_giv,
@@ -214,7 +218,7 @@ def test_omnibridge_ethereum_token_withdrawal(ethereum_inquirer, ethereum_accoun
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -225,7 +229,7 @@ def test_omnibridge_ethereum_token_withdrawal(ethereum_inquirer, ethereum_accoun
         ), EvmEvent(
             sequence_index=415,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDT,
@@ -255,7 +259,7 @@ def test_omnibridge_ethereum_eth_withdrawal(ethereum_inquirer, ethereum_accounts
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -266,7 +270,7 @@ def test_omnibridge_ethereum_eth_withdrawal(ethereum_inquirer, ethereum_accounts
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
@@ -300,7 +304,7 @@ def test_omnibridge_gnosis_token_withdrawal(
         EvmEvent(
             sequence_index=4,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),

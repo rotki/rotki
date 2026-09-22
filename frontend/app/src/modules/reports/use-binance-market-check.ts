@@ -37,7 +37,7 @@ export function useBinanceMarketCheck(
 
   async function hasMarkets(exchange: Exchange): Promise<boolean> {
     try {
-      const markets = await queryBinanceUserMarkets(exchange.name, exchange.location);
+      const markets = await queryBinanceUserMarkets(exchange.identifier);
       return !!markets && markets.length > 0;
     }
     catch {

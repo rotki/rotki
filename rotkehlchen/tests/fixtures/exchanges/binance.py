@@ -1,12 +1,19 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+)
 from rotkehlchen.tests.utils.exchanges import create_test_binance
-from rotkehlchen.types import Location
+
+if TYPE_CHECKING:
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 @pytest.fixture(name='binance_location')
-def fixture_binance_location() -> Location:
-    return Location.BINANCE
+def fixture_binance_location() -> LocationIdentifier:
+    return LOCATION_BINANCE
 
 
 @pytest.fixture

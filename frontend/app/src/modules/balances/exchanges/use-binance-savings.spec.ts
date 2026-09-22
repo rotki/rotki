@@ -4,6 +4,7 @@ import type * as Vue from 'vue';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
+import { createTestExchange } from '@test/utils/create-data';
 import flushPromises from 'flush-promises';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
@@ -211,9 +212,9 @@ describe('useBinanceSavings', () => {
       mocks.workStatus.active = false;
       mocks.workStatus.everCompleted = false;
       useConnectedExchangesStore().setConnectedExchanges([
-        { location: 'binance', name: 'binance' },
-        { location: 'binanceus', name: 'binanceus' },
-        { location: 'kraken', name: 'kraken' },
+        createTestExchange('binance', 'binance'),
+        createTestExchange('binanceus', 'binanceus'),
+        createTestExchange('kraken', 'kraken'),
       ]);
     });
 

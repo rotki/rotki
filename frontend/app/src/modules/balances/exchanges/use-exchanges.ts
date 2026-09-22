@@ -101,10 +101,10 @@ export function useExchanges(): UseExchangesReturn {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
 
-  const editExchange = ({ exchange: { gateLocation, krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
+  const editExchange = ({ exchange: { gateLocation, identifier, krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
     const name = newName ?? oldName;
-    const index = exchanges.findIndex(value => value.name === oldName && value.location === location);
+    const index = exchanges.findIndex(value => value.identifier === identifier);
     exchanges[index] = {
       ...exchanges[index],
       gateLocation,
@@ -182,10 +182,10 @@ export function useExchanges(): UseExchangesReturn {
       okxLocation: location === 'okx' ? okxLocation : undefined,
     };
 
-    const success = await callSetupExchange(filteredPayload);
+    const identifier = await callSetupExchange(filteredPayload);
 
     // Only get the essential exchange data to store in memory, excluding the api key and secret
-    const essentialExchangeData = Exchange.parse(filteredPayload);
+    const essentialExchangeData = Exchange.parse({ ...filteredPayload, connector: location, identifier });
 
     if (mode !== 'edit') {
       addExchange(essentialExchangeData);
@@ -203,7 +203,7 @@ export function useExchanges(): UseExchangesReturn {
       }),
     );
 
-    return success;
+    return true;
   };
 
   return {

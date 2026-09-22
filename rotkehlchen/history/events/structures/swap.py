@@ -16,8 +16,9 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import AssetAmount, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -44,7 +45,7 @@ class SwapEventEntryData(TypedDict):
      Used during deserialization.
      """
     timestamp: TimestampMS
-    location: Location
+    location: LocationIdentifier
     event_subtype: Literal[
         HistoryEventSubType.SPEND,
         HistoryEventSubType.RECEIVE,
@@ -65,7 +66,7 @@ class SwapEvent(HistoryBaseEntry):
     def __init__(
             self,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_subtype: Literal[
                 HistoryEventSubType.SPEND,
                 HistoryEventSubType.RECEIVE,
@@ -132,7 +133,7 @@ class SwapEvent(HistoryBaseEntry):
             group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
+            location=LocationIdentifier(entry[4]),
             location_label=entry[5],
             event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore  # should always be correct from the DB
             asset=Asset(entry[6]).check_existence(),
@@ -208,7 +209,7 @@ class SwapEvent(HistoryBaseEntry):
 
 def create_swap_events(
         timestamp: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         spend: AssetAmount,
         receive: AssetAmount,
         group_identifier: str,
@@ -241,7 +242,7 @@ def create_swap_events(
 
 def create_swap_events_multi_fee(
         timestamp: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         spend: AssetAmount,
         receive: AssetAmount,
         group_identifier: str,

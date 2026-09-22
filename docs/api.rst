@@ -1081,7 +1081,7 @@ Getting or modifying settings
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :reqjson object[optional] evm_indexers_order: Mapping of EVM chain names to the ordered list of indexers to query per chain. Each list must contain the available indexers without duplicates.
    :resjson list[optional] default_evm_indexer_order: Default order to use for chains where no specific indexer order has been given.
-   :reqjson list non_syncing_exchanges: A list of objects with the keys ``name`` and ``location`` of the exchange. These exchanges will be ignored when querying the trades. Example: ``[{"name": "my_exchange", "location": "binance"}]``.
+   :reqjson list non_syncing_exchanges: A list of exchange connection identifiers. These connections will be ignored when querying the history. Example: ``["0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"]``.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
@@ -2369,7 +2369,7 @@ Get the supported banks
 
 .. http:get:: /api/(version)/banks/supported
 
-   Doing a GET on this endpoint returns the manifest of every bank connector rotki ships. The manifest is what a setup UI needs to render the connection form generically: the credential fields (``secrets``, each with the ``slot`` it is stored in, a ``label`` and a ``description``), the ``auth_flow`` as a list of auth primitives, the access tier, capabilities and user-facing ``setup_notes``. The same object is available per location under ``bank_details`` of the `Get all valid locations`_ endpoint.
+   Doing a GET on this endpoint returns the manifest of every bank connector rotki ships. The manifest is what a setup UI needs to render the connection form generically: the credential fields (``secrets``, each with the ``slot`` it is stored in, a ``label`` and a ``description``), the ``auth_flow`` as a list of auth primitives, the access tier, capabilities and user-facing ``setup_notes``. ``connector_identifier`` names the connector when adding a connection. ``fixed_location`` is the location every connection of the connector puts its data in, or ``null`` for a connector such as FinTS that serves many banks, where each connection names its bank location.
 
    **Example Response**:
 
@@ -2380,7 +2380,8 @@ Get the supported banks
 
       {
           "result": [{
-              "location": "qonto",
+              "connector_identifier": "qonto",
+              "fixed_location": "qonto",
               "display_name": "Qonto",
               "access_tier": "official api",
               "capabilities": ["balances", "transactions"],
@@ -2416,22 +2417,24 @@ Get, add, edit or remove bank connections
 
       {
           "result": [{
+              "identifier": "4c1f6e0a-8a55-4d4b-9c1e-2b1f0c7d9e10",
               "name": "Qonto main",
+              "connector": "qonto",
               "location": "qonto",
               "display_name": "Qonto",
-              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null}
+              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null, "auth_challenge": null}
           }],
           "message": ""
       }
 
-   :resjson list result: One entry per connection. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
+   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which every other bank endpoint takes and which survives renames. ``location`` is the location its balances and history belong to. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
    :statuscode 200: Connections returned
    :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/banks
 
-   Doing a PUT on this endpoint with a bank location, a name for the connection and the credentials the bank's manifest declares validates the credentials against the bank and saves the connection.
+   Doing a PUT on this endpoint with a bank connector, a name for the connection and the credentials the connector's manifest declares validates the credentials against the bank and saves the connection.
 
    **Example Request**:
 
@@ -2441,12 +2444,28 @@ Get, add, edit or remove bank connections
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"location": "qonto", "name": "Qonto main", "credentials": {"api_key": "the-login", "api_secret": "the-secret-key"}}
+      {"connector": "qonto", "name": "Qonto main", "credentials": {"api_key": "the-login", "api_secret": "the-secret-key"}}
 
-   :reqjson string location: The bank. One of the locations returned by ``/banks/supported``.
-   :reqjson string name: A name for this connection. Unique per bank.
-   :reqjson object credentials: One string per credential ``slot`` of the bank's manifest. Every declared slot is required. For Qonto ``api_key`` is the login and ``api_secret`` the secret key of the organization's API key.
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"success": true, "identifier": "4c1f6e0a-8a55-4d4b-9c1e-2b1f0c7d9e10", "history_start_ts": null},
+          "message": ""
+      }
+
+   :reqjson string connector: The bank connector. One of the ``connector_identifier`` values returned by ``/banks/supported``.
+   :reqjson string name: A name for this connection. Unique per connector.
+   :reqjson string location: The location the connection's data belongs to. Required for a connector without a ``fixed_location``, where it must be the Banks location or a location below it, and ignored otherwise.
+   :reqjson object credentials: One string per credential ``slot`` of the connector's manifest. Every declared slot is required. For Qonto ``api_key`` is the login and ``api_secret`` the secret key of the organization's API key.
+   :resjson string identifier: The identifier of the new connection.
+   :resjson int history_start_ts: The oldest time the bank serves history for, or ``null`` if it serves all of it.
    :statuscode 200: The connection was added
+   :statuscode 202: The bank asks for an authentication, such as a TAN. The result is the challenge together with the ``identifier`` to answer it under at ``/banks/auth``.
    :statuscode 400: Malformed JSON, or the credentials do not fit the bank's manifest
    :statuscode 401: No user is logged in
    :statuscode 409: The bank rejected the credentials, or a connection with this name exists
@@ -2456,8 +2475,7 @@ Get, add, edit or remove bank connections
 
    Doing a PATCH on this endpoint renames a connection and/or replaces some of its credentials. New credentials are validated against the bank before they are saved.
 
-   :reqjson string location: The bank of the connection
-   :reqjson string name: The current name of the connection
+   :reqjson string identifier: The identifier of the connection
    :reqjson string new_name: Optional. The new name
    :reqjson object credentials: Optional. The credential slots to replace, any subset of the manifest's slots
    :statuscode 200: The connection was edited
@@ -2470,8 +2488,7 @@ Get, add, edit or remove bank connections
 
    Doing a DELETE on this endpoint removes a connection: its credentials, sync cursors and query ranges. History events already pulled stay.
 
-   :reqjson string location: The bank of the connection
-   :reqjson string name: The name of the connection
+   :reqjson string identifier: The identifier of the connection
    :statuscode 200: The connection was removed
    :statuscode 400: Malformed JSON
    :statuscode 401: No user is logged in
@@ -2483,10 +2500,10 @@ Sync bank transactions
 
 .. http:post:: /api/(version)/banks/sync
 
-   Doing a POST on this endpoint pulls new transactions of one connection (``location`` and ``name``), of every connection of a bank (``location`` only) or of every bank (no arguments) into the history events. Syncs are incremental from each account's cursor and re-running one never duplicates a transaction. Banks are also synced by the periodic history query, like exchanges.
+   Doing a POST on this endpoint pulls new transactions of one connection (``identifier``), of every connection of a connector (``connector``) or of every bank connection (no arguments) into the history events. Syncs are incremental from each account's cursor and re-running one never duplicates a transaction. Banks are also synced by the periodic history query, like exchanges.
 
-   :reqjson string location: Optional. The bank to sync
-   :reqjson string name: Optional. The connection to sync. Needs ``location``.
+   :reqjson string connector: Optional. The bank connector whose connections to sync
+   :reqjson string identifier: Optional. The connection to sync
    :reqjson bool async_query: Optional. If true the query is made asynchronously.
    :statuscode 200: Synced
    :statuscode 400: Malformed JSON
@@ -2500,7 +2517,7 @@ Query bank balances
 
 .. http:get:: /api/(version)/banks/balances/(location)
 
-   Doing a GET on this endpoint returns the balances of every connection of a bank, combined. Omitting the location (``/banks/balances``) returns a mapping of bank location to balances for every bank.
+   Doing a GET on this endpoint returns the balances of every bank connection whose data belongs to the location, combined. Omitting the location (``/banks/balances``) returns a mapping of location to balances for every bank connection.
 
    :reqjson bool async_query: Optional. If true the query is made asynchronously.
    :reqjson bool ignore_cache: Optional. If true the bank is queried even if a recent result is cached.
@@ -2528,7 +2545,7 @@ Get a list of setup exchanges
 
 .. http:get:: /api/(version)/exchanges
 
-   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user and with which names.
+   Doing a GET on this endpoint will return the exchange connections of the logged in user.
 
    **Example Request**:
 
@@ -2546,17 +2563,54 @@ Get a list of setup exchanges
 
       {
           "result": [
-               {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
-               {"location": "okx", "name": "okx1", "okx_location": "global"},
-               {"location": "poloniex", "name": "poloniex1"},
-               {"location": "binance", "name": "binance1"}
+               {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f", "name": "kraken1", "connector": "kraken", "location": "kraken", "kraken_account_type": "starter"},
+               {"identifier": "7d2e9a4b-1c3f-4e5a-9b8c-0f1e2d3c4b5a", "name": "okx1", "connector": "okx", "location": "okx", "okx_location": "global"},
+               {"identifier": "c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "name": "binance1", "connector": "binance", "location": "binance"}
            ],
           "message": ""
       }
 
-   :resjson list result: A list of exchange location/name pairs that have been setup for the logged in user.
+   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which the other exchange endpoints take and which survives renames. ``connector`` is the exchange integration that queries it and ``location`` the location its data belongs to.
    :statuscode 200: The exchanges list has been successfully setup
    :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
+Get the supported exchange connectors
+======================================
+
+.. http:get:: /api/(version)/exchanges/supported
+
+   Doing a GET on this endpoint returns every exchange connector a connection can be set up with, and what its setup needs.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/supported HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {"connector": "kraken", "location": "kraken", "is_exchange_with_passphrase": false, "is_exchange_without_api_secret": false, "experimental": false},
+              {"connector": "kucoin", "location": "kucoin", "is_exchange_with_passphrase": true, "is_exchange_without_api_secret": false, "experimental": false},
+              {"connector": "bitpanda", "location": "bitpanda", "is_exchange_with_passphrase": false, "is_exchange_without_api_secret": true, "experimental": false}
+          ],
+          "message": ""
+      }
+
+   :resjson string connector: The value to pass as ``connector`` when setting up a connection
+   :resjson string location: The location the data of its connections belongs to
+   :resjson bool is_exchange_with_passphrase: Whether the setup needs a passphrase
+   :resjson bool is_exchange_without_api_secret: Whether the setup needs no API secret
+   :resjson bool experimental: Whether the connector is experimental
+   :statuscode 200: Connectors returned
    :statuscode 500: Internal rotki error
 
 Setup or remove an exchange
@@ -2564,7 +2618,7 @@ Setup or remove an exchange
 
 .. http:put:: /api/(version)/exchanges
 
-   Doing a PUT on this endpoint with an exchange's name, location, api key and secret will setup the exchange for the current user. Also for some exchanges additional optional info can be provided.
+   Doing a PUT on this endpoint with an exchange connector, a name, api key and secret will set up a connection to the exchange for the current user. Also for some exchanges additional optional info can be provided.
 
    **Example Request**:
 
@@ -2574,10 +2628,10 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
+      {"name": "my kraken key", "connector": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
 
-   :reqjson string name: A name to give to this exchange's key
-   :reqjson string location: The location of the exchange to setup
+   :reqjson string name: A name to give to this exchange's key. Unique per connector.
+   :reqjson string connector: The exchange connector to set up. One of the connectors returned by ``/exchanges/supported``.
    :reqjson string api_key: The api key with which to setup the exchange
    :reqjson string api_secret: The API secret for the exchange. Required for all exchanges except Bitpanda, which only uses API key.
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
@@ -2592,11 +2646,11 @@ Setup or remove an exchange
       Content-Type: application/json
 
       {
-          "result": true
+          "result": {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"},
           "message": ""
       }
 
-   :resjson bool result: A boolean indicating success or failure
+   :resjson string identifier: The identifier of the new connection
    :statuscode 200: The exchange has been successfully setup
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: No user is logged in
@@ -2605,7 +2659,7 @@ Setup or remove an exchange
 
 .. http:delete:: /api/(version)/exchanges
 
-   Doing a DELETE on this endpoint for a particular exchange name will delete the exchange from the database for the current user.
+   Doing a DELETE on this endpoint for a connection identifier will delete the exchange connection from the database for the current user.
 
    **Example Request**:
 
@@ -2615,10 +2669,9 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken"}
+      {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"}
 
-   :reqjson string name: The name of the exchange whose key to delete
-   :reqjson string location: The location of the exchange to delete
+   :reqjson string identifier: The identifier of the connection to delete
 
    **Example Response**:
 
@@ -2644,7 +2697,7 @@ Edit an exchange entry
 
 .. http:patch:: /api/(version)/exchanges
 
-   Doing a PATCH on this endpoint with an exchange's name and location and the various attributes will result in editing it.
+   Doing a PATCH on this endpoint with a connection identifier and the various attributes will result in editing it.
 
    **Example Request**:
 
@@ -2654,10 +2707,9 @@ Edit an exchange entry
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
+      {"identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
 
-   :reqjson string name: The name of the exchange key to edit
-   :reqjson string location: The location of the exchange to edit
+   :reqjson string identifier: The identifier of the connection to edit
    :reqjson string new_name: Optional. If given this will be the new name for the exchange credentials.
    :reqjson string api_key: Optional. If given this will be the new api key for the exchange credentials.
    :reqjson string api_secret: Optional. If given this will be the new api secret for the exchange credentials.
@@ -5309,18 +5361,18 @@ Refreshing asset icons
    :statuscode 500: Internal rotki error
 
 
-Get asset location mappings for a location
-==========================================
+Get connector asset mappings
+============================
 
-.. http:post:: /api/(version)/assets/locationmappings
+.. http:post:: /api/(version)/assets/connectormappings
 
-    Doing a POST on the asset location mappings endpoint will return all the paginated location assets mappings for the given filter.
+    Doing a POST on the connector asset mappings endpoint will return all the paginated asset mappings for the given filter. A mapping maps the symbol an exchange connector uses for an asset to the asset's identifier.
 
     **Example Request**
 
     .. http:example:: curl wget httpie python-requests
 
-        POST /api/1/assets/locationmappings/ HTTP/1.1
+        POST /api/1/assets/connectormappings/ HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
@@ -5329,8 +5381,8 @@ Get asset location mappings for a location
           "limit": 2
         }
 
-    :reqjson str location[optional]: If given, filter the returned mappings only for the location. Possible values can be any supported exchange, ``null`` to get the mappings that are common for all exchanges, or omitting it to get all the mappings.
-    :reqjson str location_symbol[optional]: Filter the exchange symbols using the provided string.
+    :reqjson str connector[optional]: If given, filter the returned mappings only for the connector. Possible values can be any supported exchange connector, ``null`` to get the mappings that are common for all connectors, or omitting it to get all the mappings.
+    :reqjson str connector_symbol[optional]: Filter the exchange symbols using the provided string.
     :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
     :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
 
@@ -5344,8 +5396,8 @@ Get asset location mappings for a location
         {
             "result": {
               "entries": [
-                { "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96", "location_symbol": "GNO", "location": "binance"},
-                { "asset": "eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", "location_symbol": "SHIB", "location": "kraken"}
+                { "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96", "connector_symbol": "GNO", "connector": "binance"},
+                { "asset": "eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", "connector_symbol": "SHIB", "connector": "kraken"}
               ],
               "entries_found": 1500,
               "entries_total": 1500
@@ -5353,7 +5405,7 @@ Get asset location mappings for a location
             "message": ""
         }
 
-    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used in the location under the ``"location_symbol"`` key, and its location under the ``"location"`` key.
+    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used by the connector under the ``"connector_symbol"`` key, and the connector under the ``"connector"`` key (``null`` for a mapping common to all connectors).
     :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
     :resjson int entries_total: The number of total entries ignoring all filters.
     :resjson str message: Error message if any errors occurred.
@@ -5362,29 +5414,29 @@ Get asset location mappings for a location
     :statuscode 500: Internal rotki error.
 
 
-Insert asset location mappings for a location
-=============================================
+Insert connector asset mappings
+===============================
 
-.. http:put:: /api/(version)/assets/locationmappings
+.. http:put:: /api/(version)/assets/connectormappings
 
-    Doing a PUT on the asset location mappings endpoint with a list of entries, and each entry containing an asset's identifier, its location, and its location symbol will save these mappings in the DB.
+    Doing a PUT on the connector asset mappings endpoint with a list of entries, each containing an asset's identifier, a connector and the connector's symbol for the asset, will save these mappings in the DB.
 
     **Example Request**
 
     .. http:example:: curl wget httpie python-requests
 
-        PUT /api/1/assets/locationmappings HTTP/1.1
+        PUT /api/1/assets/connectormappings HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
         {
           "entries": [
-            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "location_symbol": "UNI", "location": "kucoin"},
-            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "location_symbol": "IMX", "location": "kraken"}
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "connector_symbol": "UNI", "connector": "kucoin"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "connector_symbol": "IMX", "connector": "kraken"}
           ]
         }
 
-    :reqjson object entries: A list of mappings containing ``"asset"``, ``"location_symbol"``, and ``"location"`` to be saved in the database
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"connector_symbol"``, and ``"connector"`` to be saved in the database
 
     **Example Response**
 
@@ -5406,30 +5458,29 @@ Insert asset location mappings for a location
     :statuscode 500: Internal rotki error.
 
 
-Update asset location mappings for a location
-=============================================
+Update connector asset mappings
+===============================
 
-.. http:patch:: /api/(version)/assets/locationmappings
+.. http:patch:: /api/(version)/assets/connectormappings
 
-    Doing a PATCH on the asset location mappings endpoint with a list of entries, and each entry containing an asset's identifier, its location, and its location symbol will updates these mappings in the DB.
+    Doing a PATCH on the connector asset mappings endpoint with a list of entries, each containing an asset's identifier, a connector and the connector's symbol for the asset, will update these mappings in the DB.
 
     **Example Request**
 
     .. http:example:: curl wget httpie python-requests
 
-        PATCH /api/1/assets/locationmappings HTTP/1.1
+        PATCH /api/1/assets/connectormappings HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
         {
-          "location": "kucoin",
           "entries": [
-            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "location_symbol": "UNI", "location": "kraken"},
-            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "location_symbol": "IMX", "location": "kucoin"}
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "connector_symbol": "UNI", "connector": "kraken"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "connector_symbol": "IMX", "connector": "kucoin"}
           ]
         }
 
-    :reqjson object entries: A list of mappings containing ``"asset"``, ``"location_symbol"``, and ``"location"`` to be updated in the database.
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"connector_symbol"``, and ``"connector"`` to be updated in the database.
 
     **Example Response**
 
@@ -5451,29 +5502,29 @@ Update asset location mappings for a location
     :statuscode 500: Internal rotki error.
 
 
-Delete asset location mappings for a location
-=============================================
+Delete connector asset mappings
+===============================
 
-.. http:delete:: /api/(version)/assets/locationmappings
+.. http:delete:: /api/(version)/assets/connectormappings
 
-    Doing a DELETE on the asset location mappings endpoint with a list of entries, and each entry containing an asset's location, and its location symbol will delete these mappings from the DB.
+    Doing a DELETE on the connector asset mappings endpoint with a list of entries, each containing a connector and the connector's symbol for an asset, will delete these mappings from the DB.
 
     **Example Request**
 
     .. http:example:: curl wget httpie python-requests
 
-        DELETE /api/1/assets/locationmappings HTTP/1.1
+        DELETE /api/1/assets/connectormappings HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
         {
           "entries": [
-            {"location_symbol": "UNI", "location": "kraken"},
-            {"location_symbol": "IMX", "location": "kucoin"}
+            {"connector_symbol": "UNI", "connector": "kraken"},
+            {"connector_symbol": "IMX", "connector": "kucoin"}
           ]
         }
 
-    :reqjson object entries: A list of objects containing ``"location_symbol"`` and ``"location"`` whose mappings should be deleted from the database.
+    :reqjson object entries: A list of objects containing ``"connector_symbol"`` and ``"connector"`` whose mappings should be deleted from the database.
 
     **Example Response**
 
@@ -6894,7 +6945,8 @@ Exporting History Events
    :reqjson list[string] group_identifiers: An optional list of group identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
-   :reqjson list location: An optional location name to filter events only for that location.
+   :reqjson string location: An optional location identifier to filter events only for that location.
+   :reqjson string location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
    :reqjson string notes_substring: An optional string to filter events by searching for a substring in the notes field. This searches both user notes and auto-generated notes. Auto-generated notes are matched without the asset symbol, so search for an asset with the asset filter rather than by its symbol in the notes.
    :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
@@ -7022,14 +7074,13 @@ Querying exchange history events
 
       {
           "async_query": true,
-          "name": "Kraken 1",
-          "location": "kraken"
+          "identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f"
       }
 
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson string location: The location of the exchange to query
-   :reqjson string name: Optional. The name of the exchange to query. Queries all connected exchanges for the given location when omitted.
+   :reqjson string identifier: The connection to query. Exactly one of ``identifier`` and ``location`` is required.
+   :reqjson string location: The exchange location to query every connection of.
 
    **Example Response**:
 
@@ -7068,15 +7119,13 @@ Re-querying exchange history events in a range
 
       {
           "async_query": false,
-          "location": "kraken",
-          "name": "Kraken 1",
+          "identifier": "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f",
           "from_timestamp": 0,
           "to_timestamp": 1700000000
       }
 
    :reqjson bool async_query: Optional. Boolean denoting whether this is an asynchronous query or not (defaults to ``false``)
-   :reqjson string location: Exchange location identifier
-   :reqjson string name: Name of the exchange entry to query
+   :reqjson string identifier: The identifier of the exchange connection to query
    :reqjson int start_ts: Start timestamp for the re-query (seconds since epoch)
    :reqjson int end_ts: End timestamp for the re-query (seconds since epoch)
 
@@ -11736,6 +11785,7 @@ Data imports
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
    :reqjson str timezone: Optional. IANA timezone name to use for dates in the CSV file that do not include timezone information. Defaults to ``"UTC"``. Example: ``"Europe/Madrid"``.
+   :reqjson object location_mappings: Optional. Only for ``"rotki_events"`` and ``"rotki_trades"``, whose rows name their location. Maps values of the ``Location`` column to location identifiers, for values that do not resolve by themselves. A multipart POST sends it as a JSON string. See `Check the locations of an import`_ for how values resolve.
 
    **Example Response**:
 
@@ -11751,8 +11801,54 @@ Data imports
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
-   :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 400: Provided JSON or data is in some way malformed, or a mapping points at a location data can not be assigned to.
+   :statuscode 409: User is not logged in, or a location value of the file is unknown or ambiguous and not mapped. Nothing is imported then, and the result holds ``locations`` exactly like `Check the locations of an import`_.
+   :statuscode 500: Internal rotki error
+
+Check the locations of an import
+================================
+
+.. http:put:: /api/(version)/import/preflight
+
+   Doing a PUT on this endpoint with the same ``source`` and ``file`` as an import reports what every distinct value of the file's ``Location`` column resolves to, before importing it. Only ``"rotki_events"`` and ``"rotki_trades"`` files have such a column; for other sources the list is empty. A POST takes the file as a multipart upload instead.
+
+   A value resolves in this order: a location identifier, a saved location alias, then the case-insensitive name of exactly one location. Only locations data can be assigned to count, so ``total`` and archived locations never match. A value matching the names of several locations is ambiguous and never resolves on its own. A value no rule resolves used to be imported at ``external``; it now has to be mapped.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/import/preflight HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"source": "rotki_events", "file": "/path/to/events.csv", "location_mappings": {"luno": "external"}}
+
+   :reqjson str source: The source of the data, as for the import
+   :reqjson str file: The file to check
+   :reqjson object location_mappings: Optional. Mappings to check together with the file, as for the import
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"locations": [
+              {"value": "ING", "status": "ambiguous", "location": null, "candidates": ["custom:1b0c...", "custom:9f3e..."]},
+              {"value": "kraken", "status": "resolved", "location": "kraken", "candidates": []},
+              {"value": "luno", "status": "resolved", "location": "external", "candidates": []},
+              {"value": "My old exchange", "status": "unresolved", "location": null, "candidates": []}
+          ]},
+          "message": ""
+      }
+
+   :resjson list locations: One entry per distinct value, sorted by value. ``status`` is ``resolved`` (``location`` is where its rows go), ``ambiguous`` (``candidates`` are the locations with that name) or ``unresolved``.
+   :statuscode 200: Locations checked
+   :statuscode 400: Provided JSON or file is malformed, or a mapping points at a location data can not be assigned to
+   :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -11844,15 +11940,15 @@ All Binance markets
 User selected Binance markets
 ================================
 
-.. http:get:: /api/(version)/exchanges/binance/pairs/(exchange account name)
+.. http:get:: /api/(version)/exchanges/binance/pairs/(connection identifier)
 
-   Doing a GET to this endpoint will return the market pairs that the user has selected to be queried at binance.
+   Doing a GET to this endpoint will return the market pairs that the user has selected to be queried by a binance or binance US connection.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/binance/pairs/testExchange HTTP/1.1
+      GET /api/1/exchanges/binance/pairs/c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -12191,12 +12287,232 @@ Downloading a database backup
    :statuscode 409: Failure to download the backup or the requested file to download is not in the user's data directory.
    :statuscode 500: Internal rotki error.
 
+Location tree
+=============
+
+Locations form a tree rooted at ``total``. rotki ships the built-in locations, which can not be modified. Users can add custom locations below any active location, including below a built-in leaf. A custom location identifier looks like ``custom:<uuid>``, is generated by the backend and never changes, while its name can. Identifiers in the URLs below must be URL encoded (for example ``evm%20chains``).
+
+.. http:get:: /api/(version)/locations
+
+   Returns every location of the tree, archived ones included.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/locations HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "identifier": "ethereum",
+              "name": "Ethereum Mainnet",
+              "parent_identifier": "evm chains",
+              "is_builtin": true,
+              "is_active": true,
+              "icon": null,
+              "image": "ethereum.svg"
+          }, {
+              "identifier": "custom:550e8400-e29b-41d4-a716-446655440000",
+              "name": "ING",
+              "parent_identifier": "banks",
+              "is_builtin": false,
+              "is_active": true,
+              "icon": "lu-landmark",
+              "image": null
+          }],
+          "message": ""
+      }
+
+   :resjsonarr string identifier: The immutable identifier of the location.
+   :resjsonarr string name: The display name. Unique among the location's siblings, ignoring case.
+   :resjsonarr string parent_identifier: The parent location. ``null`` only for ``total``.
+   :resjsonarr bool is_builtin: Whether rotki ships the location. Built-in locations can not be modified.
+   :resjsonarr bool is_active: False for an archived location. Archived locations keep their data but should not be offered for new data.
+   :resjsonarr string icon: Optional name of an icon of the frontend icon library.
+   :resjsonarr string image: Optional image. For a built-in location the name of an image packaged with the frontend. For a custom location the name of its uploaded image, served by ``/locations/<identifier>/image``. The name changes whenever the image is replaced. An image takes precedence over an icon.
+   :statuscode 200: Locations successfully queried.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:post:: /api/(version)/locations
+
+   Creates a custom location.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/locations HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"name": "ING", "parent_identifier": "banks", "icon": "lu-landmark"}
+
+   :reqjson string name: The display name.
+   :reqjson string parent_identifier: The active location to create it below.
+   :reqjson string icon: Optional. The name of an icon of the frontend icon library, such as ``lu-landmark``.
+   :resjson object result: The created location, in the format of ``GET /locations``.
+   :statuscode 200: Location created.
+   :statuscode 400: Invalid input, the parent does not exist or is archived, or a sibling already has the name.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:patch:: /api/(version)/locations/(identifier)
+
+   Renames, moves, changes the icon of, archives or unarchives a custom location. Only the given fields change. Moving a location changes where its history is aggregated, so a client can first send the edit with ``dry_run`` to show the old and new paths before committing it.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/locations/custom:550e8400-e29b-41d4-a716-446655440000 HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"parent_identifier": "other", "dry_run": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "location": {"identifier": "custom:550e8400-e29b-41d4-a716-446655440000", "name": "ING", "parent_identifier": "other", "is_builtin": false, "is_active": true, "icon": "lu-landmark", "image": null},
+              "old_path": ["Total", "Banks", "ING"],
+              "new_path": ["Total", "Other", "ING"]
+          },
+          "message": ""
+      }
+
+   :reqjson string name: Optional. The new display name.
+   :reqjson string parent_identifier: Optional. The new parent. It can not be the location itself or one of its descendants.
+   :reqjson string icon: Optional. The new icon name, or ``null`` to remove the icon.
+   :reqjson bool is_active: Optional. False archives the location, which requires its children to be archived first. An active location can not be below an archived one.
+   :reqjson bool dry_run: Optional, default false. If true the edit is only checked and nothing is saved.
+   :resjson object location: The location after the edit.
+   :resjson list[string] old_path: The display names from the root to the location before the edit.
+   :resjson list[string] new_path: The display names from the root to the location after the edit.
+   :statuscode 200: Location edited, or the dry run found the edit valid.
+   :statuscode 400: The location is built-in or the edit breaks a tree rule.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/locations/(identifier)
+
+   Deletes a custom location that has no children and no data, together with its uploaded image. Archive a location that is still used instead.
+
+   :statuscode 200: Location deleted.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 409: The location is built-in, has children or is used by data.
+   :statuscode 500: Internal rotki error.
+
+.. http:get:: /api/(version)/locations/(identifier)/usage
+
+   Returns what prevents deleting a location.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": {"usage": {"history_events": 12, "children": 1}, "deletable": false}, "message": ""}
+
+   :resjson object usage: Number of rows directly using the location per table, and its number of children under ``children``. Only non zero counts are listed.
+   :resjson bool deletable: Whether the location can be deleted. Built-in locations never can.
+   :statuscode 200: Usage successfully queried.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+.. http:post:: /api/(version)/locations/(identifier)/image
+
+   Uploads or replaces the image of a custom location as a multipart ``file`` field. Accepted file types are the ones of custom asset icons: ``.png``, ``.svg``, ``.jpeg``, ``.jpg`` and ``.webp``. Paths on the backend's filesystem and remote URLs are not accepted.
+
+   :resjson string image: The name of the stored image, also returned as ``image`` by ``GET /locations``.
+   :statuscode 200: Image stored.
+   :statuscode 400: Unsupported file type, or the location is built-in.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 409: The image could not be stored.
+   :statuscode 500: Internal rotki error.
+
+.. http:get:: /api/(version)/locations/(identifier)/image
+
+   Returns the uploaded image of a custom location, with an ``ETag`` so that a request with a matching ``If-None-Match`` header gets ``304``.
+
+   :statuscode 200: The image.
+   :statuscode 304: The image did not change.
+   :statuscode 404: The location has no uploaded image.
+
+.. http:delete:: /api/(version)/locations/(identifier)/image
+
+   Removes the uploaded image of a custom location, which then shows its icon or the generic location icon.
+
+   :statuscode 200: Image removed.
+   :statuscode 400: The location is built-in.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+Location aliases
+================
+
+.. http:get:: /api/(version)/locations/aliases
+
+   Doing a GET on this endpoint returns every location alias. An alias is another name a location is known by in imported files, such as a bank's name in its CSV export. It resolves imported values to its location after exact identifiers and before names, see `Check the locations of an import`_.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": [{"alias": "ING Diba", "location_identifier": "custom:1b0c..."}], "message": ""}
+
+   :statuscode 200: Aliases returned
+   :statuscode 401: No user is logged in
+
+.. http:put:: /api/(version)/locations/aliases
+
+   Doing a PUT on this endpoint makes an alias resolve to a location, replacing the location it resolved to before. Aliases compare case-insensitively and are deleted with their location.
+
+   :reqjson str alias: The alias
+   :reqjson str location_identifier: The location, one data can be assigned to
+   :statuscode 200: Alias saved
+   :statuscode 400: The alias is empty or the location is the total, archived or does not exist
+   :statuscode 401: No user is logged in
+
+.. http:delete:: /api/(version)/locations/aliases
+
+   Doing a DELETE on this endpoint removes an alias.
+
+   :reqjson str alias: The alias
+   :statuscode 200: Alias removed
+   :statuscode 404: The alias does not exist
+   :statuscode 401: No user is logged in
+
 Get associated locations
 ========================
 
 .. http:get:: /api/(version)/locations/associated
 
-   Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
+   Doing a GET on this endpoint will return the locations where the user has information: locations of history events and margin positions, and locations of connected exchanges and banks. ``locations`` lists only the locations the data is directly assigned to. ``ancestors`` lists the further locations needed to display their paths in the location tree. A parent is not directly used merely because one of its descendants is.
 
    **Example Request**:
 
@@ -12213,10 +12529,15 @@ Get associated locations
       Content-Type: application/json
 
       {
-          "result": ["nexo", "kraken", "uniswap"],
+          "result": {
+              "locations": ["ethereum", "kraken", "nexo"],
+              "ancestors": ["blockchain", "evm chains", "exchanges", "total"]
+          },
           "message": ""
       }
 
+   :resjson list[string] locations: Identifiers of the locations data is directly assigned to.
+   :resjson list[string] ancestors: Identifiers of every further ancestor of those locations.
    :statuscode 200: Locations successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
@@ -14165,56 +14486,15 @@ Get all valid locations
             "ethereum": {"image": "ethereum.svg"},
             "optimism": {"image": "optimism.svg"},
             "ftx": {"image": "ftx.svg", "is_exchange": true},
-            "kraken": {
-              "image": "kraken.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true
-              }
-            },
-            "kucoin": {
-              "image": "kucoin.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "is_exchange_with_passphrase": true
-              }
-            },
-            "bitpanda": {
-              "image": "bitpanda.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "is_exchange_without_api_secret": true
-              }
-            },
-            "qonto": {
-              "image": "qonto.svg",
-              "is_bank": true,
-              "bank_details": {
-                "location": "qonto",
-                "display_name": "Qonto",
-                "access_tier": "official api",
-                "capabilities": ["balances", "transactions"],
-                "auth_flow": [{"primitive": "static secret"}],
-                "secrets": [
-                  {"slot": "api_key", "label": "Login", "description": "The organization login shown next to the API key in the Qonto app"},
-                  {"slot": "api_secret", "label": "Secret key", "description": "The secret key generated together with the login"}
-                ],
-                "maintainer": "rotki",
-                "version": "1.0.0",
-                "docs_url": "https://docs.qonto.com",
-                "setup_notes": ["In the Qonto web app go to Settings > Integrations & Partners > API key and generate a key. ..."]
-              }
-            "cryptocom": {
-              "image": "crypto_com.svg",
-              "exchange_detail": {
-                "is_exchange_with_key": true,
-                "experimental": true
-              }
-            },
+            "kraken": {"image": "kraken.svg", "is_exchange": true},
+            "kucoin": {"image": "kucoin.svg", "is_exchange": true},
+            "qonto": {"image": "qonto.svg"},
+            "cryptocom": {"image": "crypto_com.svg", "is_exchange": true},
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true. A bank connector location has `is_bank` set to true and carries a `bank_details` object: its manifest with `display_name`, `access_tier`, `capabilities`, the `auth_flow` as a list of auth primitives, the `secrets` the setup form should ask for (each with the credential `slot` it is stored in, a `label` and a `description`), `maintainer`, `version`, `docs_url` and user-facing `setup_notes`.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. An exchange location has `is_exchange` set to true. What setting up a connection needs is served by the connector endpoints: `/exchanges/supported` for exchanges and `/banks/supported` for banks.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
@@ -15364,6 +15644,7 @@ Data Issues
     :query state: Optional comma separated or repeated list of states.
     :query kind: Optional comma separated or repeated list of issue kinds.
     :query location: Optional location filter.
+    :query location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
     :query location_label: Optional account/location label filter.
     :query asset: Optional asset identifier filter.
     :query from_timestamp: Optional lower bound for issue time range overlap.
@@ -15676,6 +15957,7 @@ Historical Balance Queries
       :reqjsonarr integer timestamp: The timestamp to query the balance for
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
       :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
       :reqjsonarr boolean group_by_account: (Optional, default false) If true, returns one record per location, location label, protocol and asset bucket instead of aggregating by asset.
@@ -15806,6 +16088,7 @@ Historical Balance Queries
 
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
@@ -15949,6 +16232,7 @@ Historical Balance Queries
       :reqjsonarr integer from_timestamp: (Optional, default 0) Inclusive start timestamp.
       :reqjsonarr integer to_timestamp: (Optional, default now) Inclusive end timestamp.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
     **Example Response:**

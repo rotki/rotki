@@ -17,13 +17,16 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITTREX,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -106,7 +109,7 @@ class BittrexImporter(BaseExchangeImporter):
                 location='Bittrex order history import',
                 timezone_name=timezone,
             )),
-            location=Location.BITTREX,
+            location=LOCATION_BITTREX,
             spend=spend,
             receive=receive,
             fee=AssetAmount(
@@ -114,7 +117,7 @@ class BittrexImporter(BaseExchangeImporter):
                 amount=deserialize_fval_or_zero(fee),
             ),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITTREX,
+                location=LOCATION_BITTREX,
                 unique_id=order_id,
             ),
             spend_notes=notes,
@@ -175,7 +178,7 @@ class BittrexImporter(BaseExchangeImporter):
             amount = csv_row['AMOUNT']
         asset = asset_from_bittrex(asset)
         return [AssetMovement(
-            location=Location.BITTREX,
+            location=LOCATION_BITTREX,
             event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
                 date=date,

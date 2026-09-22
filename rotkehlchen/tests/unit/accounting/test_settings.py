@@ -18,6 +18,12 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
     assert_pnl_totals_close,
@@ -33,7 +39,6 @@ from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
     Eth2PubKey,
-    Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -44,7 +49,7 @@ if TYPE_CHECKING:
 
 history5 = history1 + create_swap_events(
     timestamp=TimestampMS(1512693374000),  # cryptocompare hourly BTC/EUR price: 537.805
-    location=Location.KRAKEN,
+    location=LOCATION_KRAKEN,
     group_identifier='atradeidentifier',
     spend=AssetAmount(asset=A_BTC, amount=FVal('20')),
     receive=AssetAmount(asset=A_EUR, amount=FVal('13503.35') * FVal('20')),
@@ -107,7 +112,7 @@ def test_include_gas_costs(accountant, google_service):
     tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [*create_swap_events(
         timestamp=TimestampMS(1539388574000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('1687')),
         receive=AssetAmount(asset=A_ETH, amount=FVal(10)),
@@ -115,7 +120,7 @@ def test_include_gas_costs(accountant, google_service):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1569924574000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         location_label=addr1,
         asset=A_ETH,
         amount=FVal('0.000030921'),
@@ -140,14 +145,14 @@ def test_ignored_assets(accountant, google_service):
     history = history1 + [
         *create_swap_events(
             timestamp=TimestampMS(1476979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='10xyz',
             spend=AssetAmount(asset=A_EUR, amount=FVal('9.76775956284') * FVal(10)),
             receive=AssetAmount(asset=A_DASH, amount=FVal(10)),
             fee=AssetAmount(asset=A_DASH, amount=FVal('0.0011')),
         ), *create_swap_events(
         timestamp=TimestampMS(1496979735000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='11xyz',
         spend=AssetAmount(asset=A_DASH, amount=FVal(5)),
         receive=AssetAmount(asset=A_EUR, amount=FVal('128.09') * FVal(5)),
@@ -167,21 +172,21 @@ def test_ignored_assets(accountant, google_service):
 def test_margin_events_affect_gained_lost_amount(accountant, google_service):
     history = create_swap_events(
         timestamp=TimestampMS(1476979735000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('578.505') * FVal(5)),
         receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
         fee=AssetAmount(asset=A_BTC, amount=FVal('0.0012')),
     ) + create_swap_events(  # 2519.62 - 0.02 - ((0.0012*578.505)/5 + 578.505)
         timestamp=TimestampMS(1476979735000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_BTC, amount=ONE),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2519.62')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.02')),
     )
     history += [MarginPosition(
-        location=Location.POLONIEX,  # BTC/EUR: 810.49
+        location=LOCATION_POLONIEX,  # BTC/EUR: 810.49
         open_time=1484438400,  # 15/01/2017
         close_time=1484629704,  # 17/01/2017
         profit_loss=FVal('-0.5'),
@@ -191,7 +196,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
         link='1',
         notes='margin1',
     ), MarginPosition(
-        location=Location.POLONIEX,  # BTC/EUR: 979.39
+        location=LOCATION_POLONIEX,  # BTC/EUR: 979.39
         open_time=1487116800,  # 15/02/2017
         close_time=1487289600,  # 17/02/2017
         profit_loss=FVal('0.25'),
@@ -249,13 +254,13 @@ def test_not_calculate_past_cost_basis(accountant, expected, google_service):
 
     history = create_swap_events(
         timestamp=TimestampMS(1446979735000),  # 08/11/2015
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('268.678317859') * FVal(5)),
         receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
     ) + create_swap_events(
         timestamp=TimestampMS(1488373504000),  # 29/02/2017
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
         receive=AssetAmount(asset=A_EUR, amount=FVal('1146.22') * FVal(2)),

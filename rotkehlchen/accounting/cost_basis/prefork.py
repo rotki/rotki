@@ -9,14 +9,15 @@ from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import Location, Price, Timestamp
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import Price, Timestamp
 
     from .base import CostBasisCalculator
 
 
 def handle_prefork_asset_acquisitions(
         cost_basis: CostBasisCalculator,
-        location: Location,
+        location: LocationIdentifier,
         timestamp: Timestamp,
         asset: Asset,
         amount: FVal,

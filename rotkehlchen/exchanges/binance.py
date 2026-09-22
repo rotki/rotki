@@ -16,6 +16,7 @@ from rsqlite import IntegrityError
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -52,6 +53,10 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -66,7 +71,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -81,6 +85,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.data_structures import BinancePair, MarginPosition
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -135,7 +140,7 @@ class BinancePermissionError(RemoteError):
 def trade_from_binance(
         binance_trade: dict,
         binance_symbols_to_pair: dict[str, BinancePair],
-        location: Location,
+        location: LocationIdentifier,
         exchange_name: str,
 ) -> tuple[str, list[SwapEvent]]:
     """Convert a trade returned from the Binance API into SwapEvents.
@@ -214,9 +219,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             binance_selected_trade_pairs: list[str] | None = None,
             binance_history_start_ts: Timestamp | None = None,
     ) -> None:
-        exchange_location = Location.BINANCE
+        exchange_location = LOCATION_BINANCE
         if uri == BINANCEUS_BASE_URL:
-            exchange_location = Location.BINANCEUS
+            exchange_location = LOCATION_BINANCEUS
 
         super().__init__(
             name=name,
@@ -286,7 +291,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             asset_identifier: str,
             details: str,
-            location: Location | None = None,
+            location: LocationIdentifier | None = None,
     ) -> None:
         """Override setting the WS message location to Binance for both Binance and BinanceUS
         since they share mappings.
@@ -294,7 +299,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         self._send_unknown_asset_message(
             asset_identifier=asset_identifier,
             details=details,
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
         )
 
     def validate_api_key(self) -> tuple[bool, str]:
@@ -693,7 +698,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         Returns True if there is an error, otherwise returns False.
         """
-        if self.location == Location.BINANCEUS:
+        if self.location == LOCATION_BINANCEUS:
             log.debug('Skipping query of simple earn history as Binance US does not support it.')
             return False
 
@@ -701,7 +706,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         history_events_db = DBHistoryEvents(self.db)
 
         # Query and save flexible simple earn history
-        range_query_name = f'{self.location}_lending_history_{self.name}'
+        range_query_name = connection_range_name(self.connection_identifier, 'lending_history')
         ranges_to_query = ranges.get_location_query_ranges(
             cursor=cursor,
             location_string=range_query_name,
@@ -1025,7 +1030,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
             amounts = self._query_spot_balances(amounts)
             amounts = self._query_funding_balances(amounts)
-            if self.location != Location.BINANCEUS:
+            if self.location != LOCATION_BINANCEUS:
                 for method in (
                         self._query_lending_balances,
                         self._query_cross_collateral_futures_balances,
@@ -1061,23 +1066,20 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             last_query_ts: Timestamp,
     ) -> None:
         """Persist all progress for a successfully queried Binance pair."""
-        cache_args = {
-            'location': self.location.serialize(),
-            'location_name': self.name,
-            'queried_pair': queried_pair,
-        }
         self.db.set_dynamic_cache(
             write_cursor=write_cursor,
             name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
             value=last_query_ts,
-            **cache_args,
+            connection=self.connection_identifier,
+            queried_pair=queried_pair,
         )
         if last_trade_id is not None:
             self.db.set_dynamic_cache(
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
                 value=last_trade_id,
-                **cache_args,
+                connection=self.connection_identifier,
+                queried_pair=queried_pair,
             )
 
     def _set_pairs_query_progress(
@@ -1140,15 +1142,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
                         cursor=cursor,
                         name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                        location=self.location.serialize(),
-                        location_name=self.name,
+                        connection=self.connection_identifier,
                         queried_pair=symbol,
                     )
                     last_query_ts = self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.BINANCE_PAIR_LAST_QUERY_TS,
-                        location=self.location.serialize(),
-                        location_name=self.name,
+                        connection=self.connection_identifier,
                         queried_pair=symbol,
                     )
 
@@ -1306,7 +1306,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[SwapEvent]:
-        if self.location == Location.BINANCEUS:
+        if self.location == LOCATION_BINANCEUS:
             return []  # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
 
         fiat_buys = self._api_query_list_within_time_delta(
@@ -1349,7 +1349,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """Query Binance Convert trades using the convert/tradeFlow endpoint.
         Docs: https://developers.binance.com/docs/convert/trade/Get-Convert-Trade-History
         """
-        if self.location == Location.BINANCEUS:
+        if self.location == LOCATION_BINANCEUS:
             return []  # Binance US does not support the convert API endpoint as of 2025-12-17
 
         convert_trades = self._api_query_list_within_time_delta(
@@ -1727,7 +1727,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         )
         log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
 
-        if self.location != Location.BINANCEUS:
+        if self.location != LOCATION_BINANCEUS:
             # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
             fiat_deposits = self._api_query_list_within_time_delta(
                 start_ts=start_ts,

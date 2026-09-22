@@ -47,14 +47,21 @@ class DBCacheStatic(Enum):
     ETHERSCAN_API_KEY_TIER: Final = 'etherscan_api_key_tier'
 
 
-class LabeledLocationArgsType(TypedDict):
-    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_CRYPTOTX_OFFSET` and `DBCacheDynamic.BANK_SESSION`"""  # noqa: E501
+class LabeledLocationIdArgsType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_QUERY_TS` and `DBCacheDynamic.LAST_BLOCK_ID`"""  # noqa: E501
     location: str
     location_name: str
+    account_id: str
 
 
-class LabeledLocationIdArgsType(LabeledLocationArgsType):
-    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_QUERY_TS` and `DBCacheDynamic.LAST_QUERY_ID`"""  # noqa: E501
+class ConnectionArgsType(TypedDict):
+    """Type of kwargs of the caches of one connection, such as `DBCacheDynamic.BANK_SESSION`"""
+    connection: str
+
+
+class ConnectionAccountArgsType(ConnectionArgsType):
+    """Type of kwargs of the per account caches of one connection, such as
+    `DBCacheDynamic.CONNECTION_LAST_QUERY_TS`"""
     account_id: str
 
 
@@ -82,10 +89,8 @@ class ExtraTxArgType(TypedDict):
     tx_hash: str  # using str instead of EVMTxHash because DB schema is in TEXT
 
 
-class BinancePairLastTradeArgsType(TypedDict):
+class BinancePairLastTradeArgsType(ConnectionArgsType):
     """Type of kwargs used for Binance pair-specific progress caches."""
-    location: str
-    location_name: str
     queried_pair: str
 
 
@@ -114,18 +119,23 @@ def _deserialize_solana_token_account_from_str(value: str) -> tuple[SolanaAddres
 
 class DBCacheDynamic(Enum):
     """It contains all the formattable keys that depend on a variable
-    that can be stored in the `key_value_cache` table"""
-    LAST_CRYPTOTX_OFFSET: Final = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
-    BANK_SESSION: Final = '{location}_{location_name}_bank_session', lambda x: x  # opaque connector session blob  # noqa: E501
+    that can be stored in the `key_value_cache` table.
+
+    The keys of a connection start with its identifier followed by an underscore, see
+    `connection_cache_prefix`, so that removing a connection can drop all of them.
+    """
+    LAST_CRYPTOTX_OFFSET: Final = '{connection}_last_cryptotx_offset', _deserialize_int_from_str
+    BANK_SESSION: Final = '{connection}_bank_session', lambda x: x  # opaque connector session blob
+    CONNECTION_LAST_QUERY_TS: Final = '{connection}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
+    LAST_QUERY_ID: Final = '{connection}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
     LAST_QUERY_TS: Final = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
-    LAST_QUERY_ID: Final = '{location}_{location_name}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
     LAST_BLOCK_ID: Final = '{location}_{location_name}_{account_id}_last_block_id', _deserialize_int_from_str  # noqa: E501
     WITHDRAWALS_TS: Final = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
     LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
-    BINANCE_PAIR_LAST_ID: Final = '{location}_{location_name}_{queried_pair}', _deserialize_int_from_str  # noqa: E501  # notice that location is added because it can be either binance or binance_us
-    BINANCE_PAIR_LAST_QUERY_TS: Final = '{location}_{location_name}_{queried_pair}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
+    BINANCE_PAIR_LAST_ID: Final = '{connection}_{queried_pair}', _deserialize_int_from_str
+    BINANCE_PAIR_LAST_QUERY_TS: Final = '{connection}_{queried_pair}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_BTC_TX_BLOCK: Final = 'last_btc_tx_block_{address}', _deserialize_int_from_str
     LAST_BCH_TX_BLOCK: Final = 'last_bch_tx_block_{address}', _deserialize_int_from_str
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
@@ -139,7 +149,11 @@ class DBCacheDynamic(Enum):
     )
 
     @overload
-    def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
+    def get_db_key(self, **kwargs: Unpack[ConnectionArgsType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[ConnectionAccountArgsType]) -> str:
         ...
 
     @overload

@@ -1,142 +1,30 @@
-# Custom enum table for locations
-DB_CREATE_LOCATION = """
-CREATE TABLE IF NOT EXISTS location (
-  location    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
+# The location tree. Built-in rows come from the version-controlled catalog and are inserted
+# by DBLocations.seed_builtin_locations.
+DB_CREATE_LOCATIONS = """
+CREATE TABLE IF NOT EXISTS locations (
+    identifier TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    parent_identifier TEXT REFERENCES locations(identifier),
+    is_builtin INTEGER NOT NULL CHECK(is_builtin IN (0, 1)),
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
+    icon TEXT,
+    image TEXT,
+    CHECK(identifier != ''),
+    CHECK(name != ''),
+    CHECK(parent_identifier IS NULL OR parent_identifier != identifier)
 );
-/* External */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('A', 1);
-/* Kraken */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('B', 2);
-/* Poloniex */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('C', 3);
-/* Bittrex */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('D', 4);
-/* Binance */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('E', 5);
-/* Bitmex */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('F', 6);
-/* Coinbase */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('G', 7);
-/* Total */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('H', 8);
-/* Banks */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('I', 9);
-/* Blockchain */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('J', 10);
-/* Coinbase Pro */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('K', 11);
-/* Gemini */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('L', 12);
-/* Equities */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('M', 13);
-/* Real estate */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('N', 14);
-/* Commodities */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
-/* Crypto.com */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('P', 16);
-/* Uniswap */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('Q', 17);
-/* Bitstamp */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('R', 18);
-/* Binance US */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('S', 19);
-/* Bitfinex */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('T', 20);
-/* Bitcoin.de */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('U', 21);
-/* ICONOMI */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('V', 22);
-/* KUCOIN */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('W', 23);
-/* BALANCER */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
-/* LOOPRING */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('Y', 25);
-/* FTX */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
-/* NEXO */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
-/* BlockFI */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
-/* IndependentReserve */
-INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
-/* Gitcoin */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
-/* Sushiswap */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
-/* ShapeShift */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('`', 32);
-/* Uphold */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('a', 33);
-/* Bitpanda */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('b', 34);
-/* Bisq */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('c', 35);
-/* FTX US */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('d', 36);
-/* OKX */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('e', 37);
-/* ETHEREUM */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('f', 38);
-/* OPTIMISM */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('g', 39);
-/* POLYGON_POS */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);
-/* ARBITRUM_ONE */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('i', 41);
-/* BASE */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('j', 42);
-/* GNOSIS */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('k', 43);
-/* WOO */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('l', 44);
-/* Bybit */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
-/* Scroll */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('n', 46);
-/* ZKSync Lite */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('o', 47);
-/* HTX */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('p', 48);
-/* Bitcoin */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('q', 49);
-/* Bitcoin Cash */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('r', 50);
-/* Polkadot */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
-/* Kusama */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
-/* Coinbase Prime */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
-/* Binance Smart Chain */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
-/* Solana */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);
-/* Avalanche */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
-/* Hyperliquid */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
-/* Monad */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
-/* Sonic */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
-/* Robinhood */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x7f', 63);
-/* Ink */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x80', 64);
-/* Qonto */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x81', 65);
-/* FinTS */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x82', 66);
-/* Gate */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
-/* Bit2me */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);
-/* CoinEx */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);
 """
+
+# Other names a location is known by in imported files, such as an exchange's old spelling or a
+# bank's name in a CSV export. Each alias resolves to exactly one location.
+DB_CREATE_LOCATION_ALIASES = """
+CREATE TABLE IF NOT EXISTS location_aliases (
+    alias TEXT NOT NULL COLLATE NOCASE PRIMARY KEY,
+    location_identifier TEXT NOT NULL REFERENCES locations(identifier) ON DELETE CASCADE,
+    CHECK(alias != '')
+);
+"""
+
 
 # Custom enum table for Balance categories (asset/liability)
 DB_CREATE_BALANCE_CATEGORY = """
@@ -177,7 +65,7 @@ CREATE TABLE IF NOT EXISTS timed_balances (
 DB_CREATE_TIMED_LOCATION_DATA = """
 CREATE TABLE IF NOT EXISTS timed_location_data (
     timestamp INTEGER,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     usd_value TEXT,
     PRIMARY KEY (timestamp, location)
 );
@@ -186,7 +74,7 @@ CREATE TABLE IF NOT EXISTS timed_location_data (
 DB_CREATE_USER_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS user_credentials (
     name TEXT NOT NULL,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL,
     api_key TEXT,
     api_secret TEXT,
     passphrase TEXT,
@@ -194,14 +82,25 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 );
 """
 
-DB_CREATE_USER_CREDENTIALS_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS user_credentials_mappings (
-    credential_name TEXT NOT NULL,
-    credential_location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+DB_CREATE_INTEGRATION_CONNECTIONS = """
+CREATE TABLE IF NOT EXISTS integration_connections (
+    identifier TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    connector_identifier TEXT NOT NULL,
+    location_identifier TEXT NOT NULL REFERENCES locations(identifier),
+    api_key TEXT,
+    api_secret TEXT,
+    passphrase TEXT,
+    UNIQUE(connector_identifier, name)
+);
+"""
+
+DB_CREATE_INTEGRATION_CONNECTION_SETTINGS = """
+CREATE TABLE IF NOT EXISTS integration_connection_settings (
+    connection_identifier TEXT NOT NULL REFERENCES integration_connections(identifier) ON DELETE CASCADE,
     setting_name TEXT NOT NULL,
     setting_value TEXT NOT NULL,
-    FOREIGN KEY(credential_name, credential_location) REFERENCES user_credentials(name, location) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY (credential_name, credential_location, setting_name)
+    PRIMARY KEY (connection_identifier, setting_name)
 );
 """  # noqa: E501
 
@@ -292,7 +191,7 @@ CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     asset TEXT NOT NULL,
     label TEXT NOT NULL UNIQUE,
     amount TEXT,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
@@ -321,7 +220,7 @@ CREATE TABLE IF NOT EXISTS multisettings (
 DB_CREATE_MARGIN = """
 CREATE TABLE IF NOT EXISTS margin_positions (
     id TEXT PRIMARY KEY,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     open_time INTEGER,
     close_time INTEGER,
     profit_loss TEXT,
@@ -570,7 +469,7 @@ DB_CREATE_SKIPPED_EXTERNAL_EVENTS = """
 CREATE TABLE IF NOT EXISTS skipped_external_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
     data TEXT NOT NULL,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     extra_data TEXT,
     UNIQUE(data, location)
 );
@@ -583,7 +482,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     group_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     location_label TEXT,
     asset TEXT NOT NULL,
     amount TEXT NOT NULL,
@@ -931,7 +830,7 @@ CREATE TABLE IF NOT EXISTS solana_ata_address_mappings (
 DB_CREATE_BITCOIN_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS bitcoin_transactions (
     identifier INTEGER NOT NULL PRIMARY KEY,
-    location CHAR(1) NOT NULL REFERENCES location(location),
+    location TEXT NOT NULL REFERENCES locations(identifier),
     tx_id TEXT NOT NULL,
     timestamp INTEGER NOT NULL,
     block_height INTEGER NOT NULL,
@@ -1052,7 +951,7 @@ DB_CREATE_DATA_ISSUES = """
 CREATE TABLE IF NOT EXISTS data_issues (
     id INTEGER NOT NULL PRIMARY KEY,
     kind TEXT NOT NULL,
-    location TEXT NOT NULL,
+    location TEXT NOT NULL REFERENCES locations(identifier),
     location_label TEXT NOT NULL DEFAULT '',
     protocol TEXT NOT NULL DEFAULT '',
     asset TEXT NOT NULL DEFAULT '',
@@ -1072,7 +971,7 @@ DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
     event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
-    location CHAR(1) NOT NULL,
+    location TEXT NOT NULL REFERENCES locations(identifier),
     location_label TEXT,
     protocol TEXT,
     metric_key TEXT NOT NULL,
@@ -1096,6 +995,8 @@ CREATE TABLE IF NOT EXISTS event_metrics (
 # idx_history_events_subtype: Before: 12937ms, After: 2ms
 # idx_history_events_ignored: Before: 14723ms, After: 5184ms
 DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parent_identifier);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_locations_sibling_name ON locations(parent_identifier, name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);
 CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);
@@ -1142,13 +1043,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{DB_CREATE_LOCATION}
+{DB_CREATE_LOCATIONS}
+{DB_CREATE_LOCATION_ALIASES}
 {DB_CREATE_BALANCE_CATEGORY}
 {DB_CREATE_ASSETS}
 {DB_CREATE_TIMED_BALANCES}
 {DB_CREATE_TIMED_LOCATION_DATA}
 {DB_CREATE_USER_CREDENTIALS}
-{DB_CREATE_USER_CREDENTIALS_MAPPINGS}
+{DB_CREATE_INTEGRATION_CONNECTIONS}
+{DB_CREATE_INTEGRATION_CONNECTION_SETTINGS}
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
 {DB_CREATE_EVM_ACCOUNTS_DETAILS}

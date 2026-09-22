@@ -33,6 +33,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_CRYPTOCOM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -43,7 +46,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    Location,
     Price,
     Timestamp,
     TimestampMS,
@@ -131,7 +133,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.CRYPTOCOM,
+            location=LOCATION_CRYPTOCOM,
             api_key=api_key,
             secret=secret,
             database=database,

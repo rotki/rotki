@@ -21,7 +21,8 @@ from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import Location, Timestamp, TimestampMS
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import Timestamp, TimestampMS
 
 
 class BankTransactionSide(SerializableEnumNameMixin):
@@ -81,14 +82,16 @@ def content_hash_id(*parts: Any) -> str:
 
 def bank_transaction_to_event(
         transaction: BankTransaction,
-        location: Location,
+        location: LocationIdentifier,
         location_label: str,
+        connection_identifier: str,
 ) -> BankTransactionEvent:
     """Map a normalized bank transaction onto rotki history events.
 
-    The group identifier is derived from the location and the source id so that
-    re-ingesting the same transaction (a re-sync, a file import overlapping a sync) is a
-    no-op at the DB's UNIQUE(group_identifier, sequence_index) constraint.
+    The group identifier is derived from the bank location, the account and the source id,
+    which never change, so that re-ingesting the same transaction (a re-sync, a connection
+    renamed or set up again, a file import overlapping a sync) is a no-op at the DB's
+    UNIQUE(group_identifier, sequence_index) constraint.
     """
     transaction.validate()
     symbol = transaction.asset.symbol_or_name()
@@ -106,6 +109,8 @@ def bank_transaction_to_event(
 
     extra_data: BankTransactionExtraData = {
         'bank_account_id': transaction.account_id,
+        'source_id': transaction.source_id,
+        'connection_identifier': connection_identifier,
         'kind': transaction.kind.serialize(),
     }
     if transaction.counterparty_account is not None:
@@ -116,7 +121,7 @@ def bank_transaction_to_event(
     return BankTransactionEvent(
         group_identifier=create_group_identifier_from_unique_id(
             location=location,
-            unique_id=transaction.source_id,
+            unique_id=f'{transaction.account_id}:{transaction.source_id}',
         ),
         sequence_index=0,
         timestamp=transaction.timestamp,

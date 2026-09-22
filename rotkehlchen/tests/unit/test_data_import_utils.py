@@ -8,7 +8,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+)
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,7 +29,7 @@ def test_detect_duplicate_event_escapes_like(database) -> None:
         group_identifier='ABCXYZ',
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
-        location=Location.BINANCE,
+        location=LOCATION_BINANCE,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         asset=A_ETH,

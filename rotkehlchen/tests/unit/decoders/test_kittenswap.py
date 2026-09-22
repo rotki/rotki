@@ -11,11 +11,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_HYPERLIQUID,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.hyperliquid import HYPERLIQUID_PUBLIC_RPC_NODES
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -40,7 +42,7 @@ def test_kittenswap_hype_for_khype(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1761149165000)),
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
@@ -51,7 +53,7 @@ def test_kittenswap_hype_for_khype(
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_HYPE,
             amount=FVal(hype_amount := '5'),
@@ -63,7 +65,7 @@ def test_kittenswap_hype_for_khype(
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D'),
             amount=FVal(khype_amount := '4.980253651738044784'),
@@ -91,7 +93,7 @@ def test_kittenswap_receive_before_spend(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1759404831000)),
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
@@ -102,7 +104,7 @@ def test_kittenswap_receive_before_spend(
             tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=(usdt0 := Asset('eip155:999/erc20:0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb')),
@@ -113,7 +115,7 @@ def test_kittenswap_receive_before_spend(
             tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_subtype=HistoryEventSubType.SPEND,
             asset=usdt0,
             amount=FVal(usdt0_amount := '44.42406'),
@@ -125,7 +127,7 @@ def test_kittenswap_receive_before_spend(
             tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_HYPE,
             amount=FVal(hype_amount := '0.893418842588613752'),

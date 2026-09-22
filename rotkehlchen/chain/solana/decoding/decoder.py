@@ -31,9 +31,12 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_SOLANA,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey
-from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .constants import (
@@ -190,7 +193,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         if (events := self._maybe_load_or_purge_events_from_db(
             transaction=context,
             tx_ref=context.signature,
-            location=Location.SOLANA,
+            location=LOCATION_SOLANA,
             ignore_cache=ignore_cache,
             delete_customized=delete_customized,
         )) is not None:

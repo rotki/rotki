@@ -24,13 +24,15 @@ from rotkehlchen.history.events.structures.auto_notes import (
     ETH_WITHDRAWAL_TEMPLATE,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     FVal,
-    Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -105,7 +107,7 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
             group_identifier=group_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=A_ETH,
@@ -512,7 +514,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,

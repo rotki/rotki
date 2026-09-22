@@ -24,6 +24,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tasks.calendar import (
     AERO_VELO_CALENDAR_COLOR,
     AIRDROP_CALENDAR_COLOR,
@@ -40,7 +46,6 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -197,7 +202,7 @@ def test_ens_expiry_calendar_reminders(
             description=f'{ens_name} expires on {reminder_creator.timestamp_to_date(ens_expires)}',
             counterparty=counterparty,
             address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
-            blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
+            blockchain=ChainID.deserialize(location_to_chain_id(ens_events[idx].location)).to_blockchain(),
             color=ENS_CALENDAR_COLOR,
             auto_delete=True,
         )
@@ -307,7 +312,7 @@ def test_locked_crv_calendar_reminders(
             description=f'Lock period for {crv_events[idx].amount} CRV in vote escrow ends on {reminder_creator.timestamp_to_date(locktime)}',  # noqa: E501
             counterparty=CPT_CURVE,
             address=crv_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
-            blockchain=ChainID.deserialize(crv_events[idx].location.to_chain_id()).to_blockchain(),
+            blockchain=ChainID.deserialize(location_to_chain_id(crv_events[idx].location)).to_blockchain(),
             color=CRV_CALENDAR_COLOR,
             auto_delete=True,
         )
@@ -541,7 +546,7 @@ def test_locked_velo_calendar_reminders(
         timestamp=Timestamp(1741219200),
         description=f'Lock period for VELO veNFT-30123 in vote escrow ends on {reminder_creator.timestamp_to_date(events[2].extra_data["lock_time"])}',  # noqa: E501
         counterparty=CPT_VELODROME,
-        blockchain=ChainID.deserialize(events[2].location.to_chain_id()).to_blockchain(),
+        blockchain=ChainID.deserialize(location_to_chain_id(events[2].location)).to_blockchain(),
         address=optimism_accounts[0],
         color=AERO_VELO_CALENDAR_COLOR,
         auto_delete=True,
@@ -616,7 +621,7 @@ def test_yearn_vesting_calendar_reminders(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(0),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_DAI,  # the asset is not used by the reminder creation

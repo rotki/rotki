@@ -15,14 +15,14 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.post(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.post(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
                 {
-                  location: 'binance',
-                  location_symbol: 'BTC',
+                  connector: 'binance',
+                  connector_symbol: 'BTC',
                   asset: 'BTC',
                 },
               ],
@@ -47,7 +47,7 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         limit: 10,
         offset: 0,
-        location: 'binance',
+        connector: 'binance',
       });
       expect(capturedBody).not.toHaveProperty('order_by_attributes');
       expect(capturedBody).not.toHaveProperty('ascending');
@@ -58,11 +58,29 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(result.data[0].asset).toBe('BTC');
     });
 
+    it('should send the location and symbol filters as the connector and its symbol', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: { entries: [], entries_found: 0, entries_limit: 10, entries_total: 0 },
+            message: '',
+          });
+        }),
+      );
+
+      await useAssetCexMappingApi().fetchAllCexMapping({ limit: 10, location: 'kraken', locationSymbol: 'ET', offset: 0 });
+
+      expect(capturedBody).toEqual({ connector: 'kraken', connector_symbol: 'ET', limit: 10, offset: 0 });
+    });
+
     it('should handle ref payload', async () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.post(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.post(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: {
@@ -92,12 +110,12 @@ describe('composables/api/assets/cex-mapping', () => {
 
     it('should return collection with pagination info', async () => {
       server.use(
-        http.post(`${backendUrl}/api/1/assets/locationmappings`, () =>
+        http.post(`${backendUrl}/api/1/assets/connectormappings`, () =>
           HttpResponse.json({
             result: {
               entries: [
-                { location: 'kraken', location_symbol: 'ETH', asset: 'ETH' },
-                { location: 'kraken', location_symbol: 'XBT', asset: 'BTC' },
+                { connector: 'kraken', connector_symbol: 'ETH', asset: 'ETH' },
+                { connector: 'kraken', connector_symbol: 'XBT', asset: 'BTC' },
               ],
               entries_found: 2,
               entries_limit: 50,
@@ -122,7 +140,7 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.put(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.put(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
@@ -142,8 +160,8 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         entries: [
           {
-            location: 'coinbase',
-            location_symbol: 'USDT',
+            connector: 'coinbase',
+            connector_symbol: 'USDT',
             asset: 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7',
           },
         ],
@@ -154,7 +172,7 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.put(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.put(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
@@ -173,8 +191,8 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         entries: [
           {
-            location: null,
-            location_symbol: 'GLOBAL_SYMBOL',
+            connector: null,
+            connector_symbol: 'GLOBAL_SYMBOL',
             asset: 'ETH',
           },
         ],
@@ -183,7 +201,7 @@ describe('composables/api/assets/cex-mapping', () => {
 
     it('should throw error on failure', async () => {
       server.use(
-        http.put(`${backendUrl}/api/1/assets/locationmappings`, () =>
+        http.put(`${backendUrl}/api/1/assets/connectormappings`, () =>
           HttpResponse.json({
             result: null,
             message: 'Mapping already exists',
@@ -207,7 +225,7 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.patch(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.patch(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
@@ -227,8 +245,8 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         entries: [
           {
-            location: 'kraken',
-            location_symbol: 'XBT',
+            connector: 'kraken',
+            connector_symbol: 'XBT',
             asset: 'BTC',
           },
         ],
@@ -237,7 +255,7 @@ describe('composables/api/assets/cex-mapping', () => {
 
     it('should throw error on failure', async () => {
       server.use(
-        http.patch(`${backendUrl}/api/1/assets/locationmappings`, () =>
+        http.patch(`${backendUrl}/api/1/assets/connectormappings`, () =>
           HttpResponse.json({
             result: null,
             message: 'Mapping not found',
@@ -261,7 +279,7 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.delete(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.delete(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
@@ -280,8 +298,8 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         entries: [
           {
-            location: 'binance',
-            location_symbol: 'ETH',
+            connector: 'binance',
+            connector_symbol: 'ETH',
           },
         ],
       });
@@ -291,7 +309,7 @@ describe('composables/api/assets/cex-mapping', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.delete(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
+        http.delete(`${backendUrl}/api/1/assets/connectormappings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
@@ -309,8 +327,8 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(capturedBody).toEqual({
         entries: [
           {
-            location: null,
-            location_symbol: 'GLOBAL_SYMBOL',
+            connector: null,
+            connector_symbol: 'GLOBAL_SYMBOL',
           },
         ],
       });
@@ -318,7 +336,7 @@ describe('composables/api/assets/cex-mapping', () => {
 
     it('should throw error on failure', async () => {
       server.use(
-        http.delete(`${backendUrl}/api/1/assets/locationmappings`, () =>
+        http.delete(`${backendUrl}/api/1/assets/connectormappings`, () =>
           HttpResponse.json({
             result: null,
             message: 'Mapping does not exist',

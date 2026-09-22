@@ -56,6 +56,9 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKFI,
+)
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -68,7 +71,6 @@ from rotkehlchen.types import (
     AssetAmount,
     CacheType,
     ChainID,
-    Location,
     Timestamp,
     TimestampMS,
     TokenKind,
@@ -516,7 +518,7 @@ def test_global_db_restore(globaldb, database):
             write_cursor=write_cursor,
             history=create_swap_events(
                 timestamp=TimestampMS(12312312000),
-                location=Location.BLOCKFI,
+                location=LOCATION_BLOCKFI,
                 group_identifier='this-is-so-unique',
                 spend=AssetAmount(
                     asset=symbol_to_asset_or_token('LOLZ'),
@@ -533,7 +535,7 @@ def test_global_db_restore(globaldb, database):
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'DELETE FROM history_events WHERE location=?',
-            (Location.BLOCKFI.serialize_for_db(),),
+            (LOCATION_BLOCKFI,),
         )
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg

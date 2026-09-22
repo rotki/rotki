@@ -12,17 +12,22 @@ from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 pytestmark = pytest.mark.accounting_update
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 @pytest.mark.parametrize('can_schedule', [False, True])
@@ -57,7 +62,7 @@ def _write_issue(
         event_identifier: int = 1,
         kind: IssueKind = IssueKind.NEGATIVE_BALANCE,
         state: IssueState = IssueState.OPEN,
-        location: Location = Location.ETHEREUM,
+        location: LocationIdentifier = LOCATION_ETHEREUM,
         location_label: str = '0x0000000000000000000000000000000000000001',
         asset: str = 'ETH',
         ts_start: int = 1000,
@@ -66,7 +71,7 @@ def _write_issue(
     manager = DataIssuesManager(server.rest_api.rotkehlchen.data.db)
     issue_id = manager.write_issue(
         kind,
-        location=location.serialize_for_db(),
+        location=location,
         location_label=location_label,
         protocol=None,
         asset=asset,
@@ -105,7 +110,7 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: APIServe
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=TimestampMS(1_000_000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -130,7 +135,7 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: APIServe
         rotkehlchen_api_server,
         event_identifier=3,
         state=IssueState.UNRESOLVED,
-        location=Location.OPTIMISM,
+        location=LOCATION_OPTIMISM,
         location_label='0x0000000000000000000000000000000000000002',
         ts_start=3000,
     )

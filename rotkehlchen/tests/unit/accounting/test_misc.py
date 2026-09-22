@@ -16,6 +16,13 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.accounting import (
     accounting_create_and_process_history,
     accounting_history_process,
@@ -25,7 +32,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import AssetAmount, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -48,7 +55,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -57,14 +64,14 @@ def test_kfee_price_in_accounting(accountant, google_service):
             group_identifier='2',
             sequence_index=0,
             timestamp=TimestampMS(1539713238000),  # 0.863329 USD/EUR. 1 KFEE = $0.01 so 8.633 EUR
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_KFEE,
             amount=FVal(1000),
         ), *create_swap_events(
             timestamp=TimestampMS(1609537953000),  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_ETH, amount=FVal('0.02')),
             receive=AssetAmount(asset=A_USDT, amount=FVal('0.02') * FVal(1000)),
@@ -90,7 +97,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     """Make sure that asset amounts used in fees are reduced."""
     history = [*create_swap_events(
         timestamp=TimestampMS(1609537953000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=ONE * FVal('598.26')),
         receive=AssetAmount(asset=A_ETH, amount=ONE),
@@ -100,7 +107,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     # PNL: 0.5 * 1862.06 - 0.5 * 599.26 - fee -> -299.63
     *create_swap_events(
         timestamp=TimestampMS(1624395186000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal('0.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('0.5') * FVal('1862.06')),
@@ -110,7 +117,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     # PNL: 0.5 * 1837.31 -> 918.655
     *create_swap_events(
         timestamp=TimestampMS(1625001464000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='3xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal('0.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('0.5') * FVal('1837.31')),
@@ -143,7 +150,7 @@ def test_fees_in_received_asset(accountant, google_service):
             group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -155,7 +162,7 @@ def test_fees_in_received_asset(accountant, google_service):
         # So paid 12.0542/20 -> 0.60271 EUR/USDT
         *create_swap_events(
             timestamp=TimestampMS(1609537953000),  # 0.89 EUR/USDT
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_ETH, amount=FVal('0.02')),  # 598.26 EUR/ETH
             receive=AssetAmount(asset=A_USDT, amount=FVal('0.02') * FVal(1000)),  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
@@ -197,7 +204,7 @@ def test_main_currency_is_respected(
     trade_rate = Price(FVal('2403.20'))
     history = create_swap_events(
         timestamp=TimestampMS(1609537953000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_ETH2, amount=FVal('0.04')),
         receive=AssetAmount(asset=A_USD, amount=FVal('0.04') * trade_rate),
@@ -229,21 +236,21 @@ def test_process_events_with_duplicate_timestamps(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     history: list[HistoryBaseEntry] = [AssetMovement(
         timestamp=TimestampMS(1500000000000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('100'),
     )]
     history.extend(create_swap_events(
         timestamp=TimestampMS(1624791600000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('50')),
         receive=AssetAmount(asset=A_ETH, amount=FVal('0.04')),
     ))
     history.extend(create_swap_events(
         timestamp=TimestampMS(1624791600000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('50')),
         receive=AssetAmount(asset=A_ETH, amount=FVal('0.04')),
@@ -257,7 +264,7 @@ def test_process_events_with_duplicate_timestamps(
         rotki.data.db.add_margin_positions(
             write_cursor=write_cursor,
             margin_positions=[MarginPosition(
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 open_time=Timestamp(1607900400),
                 close_time=Timestamp(1624791600),
                 profit_loss=FVal('0.5'),
@@ -296,7 +303,7 @@ def test_fiat_income_taxable_pnl(
                 group_identifier='event1',
                 sequence_index=0,
                 timestamp=(event_ts_ms := TimestampMS(1500000000000)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_EUR,
@@ -307,7 +314,7 @@ def test_fiat_income_taxable_pnl(
     expected_event = ProcessedAccountingEvent(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='',
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         timestamp=(event_ts := ts_ms_to_sec(event_ts_ms)),
         asset=A_EUR,
         free_amount=ZERO,
@@ -344,14 +351,14 @@ def test_deposit_asset_is_neutral(rotkehlchen_api_server: APIServer) -> None:
                 group_identifier='event1',
                 sequence_index=0,
                 timestamp=(acquisition_ts := TimestampMS(1539713238000)),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
                 amount=(eth_amount := FVal('0.123')),
             ), AssetMovement(
                 timestamp=TimestampMS(1539713238000),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=eth_amount,
@@ -359,7 +366,7 @@ def test_deposit_asset_is_neutral(rotkehlchen_api_server: APIServer) -> None:
                 group_identifier='event2',
                 sequence_index=0,
                 timestamp=(event_ts_ms := TimestampMS(1569924574000)),
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -367,14 +374,14 @@ def test_deposit_asset_is_neutral(rotkehlchen_api_server: APIServer) -> None:
             ), SwapEvent(
                 group_identifier='event3',
                 timestamp=(event_ts_ms := TimestampMS(1609537953000)),
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=eth_amount,
             ), SwapEvent(
                 group_identifier='event3',
                 timestamp=(event_ts_ms := TimestampMS(1609537953000)),
-                location=Location.BLOCKCHAIN,
+                location=LOCATION_BLOCKCHAIN,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDT,
                 amount=FVal('300'),

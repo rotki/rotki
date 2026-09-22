@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
     query_deposit_for_transactions,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier, connection_range_name
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -79,7 +80,6 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     CacheType,
     ChecksumEvmAddress,
-    ExchangeLocationID,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -170,7 +170,7 @@ class TaskManager:
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
-        self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
+        self.last_exchange_query_ts: defaultdict[ConnectionIdentifier, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
         self.running_tasks: dict[SchedulerTask, list[Task]] = {}
         # Per-tick snapshot of periodic-task last-run timestamps, set for the duration of a
@@ -464,9 +464,9 @@ class TaskManager:
         queriable_exchanges = []
         with self.database.conn.read_ctx() as cursor:
             for exchange in (*self.exchange_manager.iterate_exchanges(), *self.bank_manager.iterate_banks()):  # noqa: E501
-                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_history_events_{exchange.name}')  # noqa: E501
+                queried_range = self.database.get_used_query_range(cursor, connection_range_name(exchange.connection_identifier, 'history_events'))  # noqa: E501
                 end_ts = queried_range[1] if queried_range else 0
-                if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
+                if now - max(self.last_exchange_query_ts[exchange.connection_identifier], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
                     queriable_exchanges.append(exchange)
 
         if len(queriable_exchanges) == 0:
@@ -475,7 +475,7 @@ class TaskManager:
         exchange = random.choice(queriable_exchanges)
         task_name = f'Query history of {exchange.name} exchange'
         log.debug(f'Scheduling task to {task_name}')
-        self.last_exchange_query_ts[exchange.location_id()] = now
+        self.last_exchange_query_ts[exchange.connection_identifier] = now
         return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,

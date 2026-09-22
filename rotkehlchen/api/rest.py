@@ -41,6 +41,7 @@ from rotkehlchen.api.services.external_services import ExternalServicesService
 from rotkehlchen.api.services.history import HistoryService
 from rotkehlchen.api.services.history_events import HistoryEventsService
 from rotkehlchen.api.services.integrations import IntegrationsService
+from rotkehlchen.api.services.locations import LocationsService
 from rotkehlchen.api.services.settings import SettingsService, serialize_settings
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.api.services.user_data import UserDataService
@@ -86,6 +87,7 @@ from rotkehlchen.concurrency import (
     TaskCancelledError,
     wait,
 )
+from rotkehlchen.connections.types import ConnectionIdentifier
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     DEFAULT_LOGLEVEL,
@@ -108,6 +110,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    ConnectorAssetMappingsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DataIssuesFilterQuery,
@@ -117,7 +120,6 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TimestampProximityOrder,
@@ -125,6 +127,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -147,7 +150,11 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import (
+    ALL_SUPPORTED_EXCHANGES,
+    SUPPORTED_EXCHANGES,
+    serialize_exchange_connectors,
+)
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.feature_flags import is_accounting_update_enabled
@@ -170,6 +177,7 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
+from rotkehlchen.locations.types import LocationIdentifier, LocationResolutionStatus
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -223,6 +231,8 @@ from rotkehlchen.types import (
     BTCTxId,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -233,9 +243,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    Location,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -253,6 +260,7 @@ from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
+    from types import EllipsisType
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -465,6 +473,7 @@ class RestAPI:
         self.history_events_service = HistoryEventsService(rotkehlchen)
         self.history_service = HistoryService(rotkehlchen)
         self.integrations_service = IntegrationsService(rotkehlchen)
+        self.locations_service = LocationsService(rotkehlchen)
         self.settings_service = SettingsService(rotkehlchen)
         self.transactions_service = TransactionsService(rotkehlchen)
         self.user_data_service = UserDataService(rotkehlchen)
@@ -828,9 +837,16 @@ class RestAPI:
     def get_banks(self) -> Response:
         return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
 
-    def setup_bank(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
+    def setup_bank(
+            self,
+            name: str,
+            connector: str,
+            location: LocationIdentifier | None,
+            credentials: dict[str, str],
+    ) -> Response:
         result, msg, status_code = self.banks_service.setup_bank(
             name=name,
+            connector=connector,
             location=location,
             credentials=credentials,
         )
@@ -838,44 +854,36 @@ class RestAPI:
 
     def edit_bank(
             self,
-            name: str,
-            location: Location,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         result, msg, status_code = self.banks_service.edit_bank(
-            name=name,
-            location=location,
+            identifier=ConnectionIdentifier(identifier),
             new_name=new_name,
             credentials=credentials,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_bank(self, name: str, location: Location) -> Response:
-        result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
+    def remove_bank(self, identifier: str) -> Response:
+        result, msg, status_code = self.banks_service.remove_bank(ConnectionIdentifier(identifier))
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def answer_bank_authentication(
-            self,
-            name: str,
-            location: Location,
-            response: str | None,
-    ) -> Response:
+    def answer_bank_authentication(self, identifier: str, response: str | None) -> Response:
         result, msg, status_code = self.banks_service.answer_authentication(
-            name=name,
-            location=location,
+            identifier=ConnectionIdentifier(identifier),
             response=response,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @async_api_call()
-    def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
-        return self.banks_service.sync_banks(location=location, name=name)
+    def sync_banks(self, connector: str | None, identifier: str | None) -> dict[str, Any]:
+        return self.banks_service.sync_banks(connector=connector, identifier=identifier)
 
     @async_api_call()
     def query_bank_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
@@ -883,6 +891,13 @@ class RestAPI:
             location=location,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,
+        )
+
+    @staticmethod
+    def get_supported_exchanges() -> Response:
+        return api_response(
+            _wrap_in_ok_result(serialize_exchange_connectors()),
+            status_code=HTTPStatus.OK,
         )
 
     def get_exchanges(self) -> Response:
@@ -895,7 +910,7 @@ class RestAPI:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -909,7 +924,7 @@ class RestAPI:
     ) -> Response:
         result, msg, status_code = self.exchanges_service.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -931,8 +946,7 @@ class RestAPI:
 
     def edit_exchange(
             self,
-            name: str,
-            location: Location,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -945,8 +959,7 @@ class RestAPI:
             gate_location: GateLocation | None,
     ) -> Response:
         result, msg, status_code = self.exchanges_service.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -960,36 +973,32 @@ class RestAPI:
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_exchange(self, name: str, location: Location) -> Response:
-        result, message, status_code = self.exchanges_service.remove_exchange(
-            name=name,
-            location=location,
-        )
+    def remove_exchange(self, identifier: str) -> Response:
+        result, message, status_code = self.exchanges_service.remove_exchange(identifier)
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
     @async_api_call()
     def query_exchange_history_events(
             self,
-            location: Location,
-            name: str | None,
+            location: LocationIdentifier | None,
+            identifier: str | None,
     ) -> dict[str, Any]:
-        """Queries new history events for the specified exchange and saves them in the database."""
+        """Queries new history events of one exchange connection, or of every connection of
+        an exchange, and saves them in the database."""
         return self.exchanges_service.query_exchange_history_events(
             location=location,
-            name=name,
+            identifier=identifier,
         )
 
     @async_api_call()
     def query_exchange_history_events_in_range(
             self,
-            location: Location,
-            name: str,
+            identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> dict[str, Any]:
         response = self.exchanges_service.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -1000,7 +1009,7 @@ class RestAPI:
     @async_api_call()
     def query_exchange_balances(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
@@ -2218,6 +2227,53 @@ class RestAPI:
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    def _unresolved_import_locations(
+            self,
+            source: DataImportSource,
+            filepath: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> dict[str, Any] | None:
+        """The failure response of an import whose location values are not all resolved"""
+        try:
+            resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                source=source,
+                filepath=filepath,
+                location_mappings=location_mappings,
+            )
+        except InputError as e:
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.BAD_REQUEST)
+        if all(x.status == LocationResolutionStatus.RESOLVED for x in resolutions):
+            return None
+        return {
+            'result': {'locations': [x.serialize() for x in resolutions]},
+            'message': 'Some locations of the file are unknown or ambiguous. Map them first',
+            'status_code': HTTPStatus.CONFLICT,
+        }
+
+    def import_preflight(
+            self,
+            source: DataImportSource,
+            filepath: FileStorage | Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        """How the location values of a file resolve before importing it"""
+        with tempfile.TemporaryDirectory() as temp_directory:
+            if isinstance(filepath, FileStorage):
+                filepath.save(temp_path := Path(temp_directory) / 'import.csv')
+                filepath = temp_path
+            try:
+                resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                    source=source,
+                    filepath=filepath,
+                    location_mappings=location_mappings,
+                )
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+
+        return api_response(_wrap_in_ok_result({
+            'locations': [x.serialize() for x in resolutions],
+        }), status_code=HTTPStatus.OK)
+
     @async_api_call()
     def _import_data(
             self,
@@ -2225,6 +2281,13 @@ class RestAPI:
             filepath: Path,
             **kwargs: Any,
     ) -> dict[str, Any]:
+        if (unresolved := self._unresolved_import_locations(
+            source=source,
+            filepath=filepath,
+            location_mappings=kwargs.get('location_mappings'),
+        )) is not None:
+            return unresolved
+
         success, msg = self.rotkehlchen.data_importer.import_csv(
             source=source,
             filepath=filepath,
@@ -2556,7 +2619,7 @@ class RestAPI:
 
     def purge_exchange_data(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             data_type: ExchangePurgeType,
     ) -> Response:
         with self.rotkehlchen.data.db.user_write() as cursor:
@@ -2738,15 +2801,15 @@ class RestAPI:
     def query_asset_mappings_by_type(
             self,
             dict_keys: tuple[str, str, str],
-            mapping_type: Literal['location', 'counterparty'],
-            location_or_counterparty_reader_callback: Callable,
-            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
-            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+            mapping_type: Literal['connector', 'counterparty'],
+            connector_or_counterparty_reader_callback: Callable,
+            filter_query: ConnectorAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            query_columns: Literal['local_id, connector, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.query_asset_mappings_by_type(
             dict_keys=dict_keys,
             mapping_type=mapping_type,
-            location_or_counterparty_reader_callback=location_or_counterparty_reader_callback,
+            connector_or_counterparty_reader_callback=connector_or_counterparty_reader_callback,
             filter_query=filter_query,
             query_columns=query_columns,
         )
@@ -2755,7 +2818,7 @@ class RestAPI:
     def perform_asset_mapping_operation(
             self,
             mapping_fn: Callable,
-            entries: Sequence[LocationAssetMappingUpdateEntry | LocationAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
+            entries: Sequence[ConnectorAssetMappingUpdateEntry | ConnectorAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
     ) -> Response:
         response_data = self.assets_service.perform_asset_mapping_operation(
             mapping_fn=mapping_fn,
@@ -2849,7 +2912,7 @@ class RestAPI:
             conflicts=conflicts,
         )
 
-    def get_all_binance_pairs(self, location: Location) -> Response:
+    def get_all_binance_pairs(self, location: LocationIdentifier) -> Response:
         try:
             pairs = list(query_binance_exchange_pairs(location=location).keys())
         except InputError as e:
@@ -2868,10 +2931,10 @@ class RestAPI:
             )
         return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
 
-    def get_user_binance_pairs(self, name: str, location: Location) -> Response:
+    def get_user_binance_pairs(self, identifier: str) -> Response:
         return api_response(
             _wrap_in_ok_result(
-                self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
+                self.rotkehlchen.exchange_manager.get_user_binance_pairs(identifier),
             ),
             status_code=HTTPStatus.OK,
         )
@@ -3104,10 +3167,74 @@ class RestAPI:
 
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            ancestors = DBLocations.ancestor_identifiers(cursor, locations)
         return api_response(
-            result=_wrap_in_ok_result([str(location) for location in locations]),
+            result=_wrap_in_ok_result({
+                'locations': sorted(locations),
+                'ancestors': sorted(ancestors - locations),
+            }),
             status_code=HTTPStatus.OK,
         )
+
+    def get_locations(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_locations())
+
+    def get_location_aliases(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_aliases())
+
+    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.set_location_alias(alias, identifier))  # noqa: E501
+
+    def delete_location_alias(self, alias: str) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_alias(alias))
+
+    def add_location(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        ))
+
+    def edit_location(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        ))
+
+    def delete_location(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location(identifier))
+
+    def get_location_usage(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_usage(identifier))
+
+    def get_location_image(self, identifier: LocationIdentifier, match_header: str | None) -> Response:  # noqa: E501
+        return self.locations_service.get_location_image(identifier, match_header)
+
+    def upload_location_image(self, identifier: LocationIdentifier, filepath: Path) -> Response:
+        return make_response_from_dict(
+            self.locations_service.upload_location_image(identifier, filepath),
+        )
+
+    def delete_location_image(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_image(identifier))
 
     def get_location_labels(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -3116,11 +3243,11 @@ class RestAPI:
             # When multiple locations exist for a label, we take the first one
             # Only include labels that correspond to tracked blockchain accounts
             # For exchanges, include all labels since users' credentials can be removed.
-            exchange_locations = tuple(loc.serialize_for_db() for loc in SUPPORTED_EXCHANGES)
+            exchange_locations = tuple(loc for loc in SUPPORTED_EXCHANGES)
             placeholders = ','.join(['?' for _ in exchange_locations])
             labels = [{
                 'location_label': row[0],
-                'location': Location.deserialize_from_db(row[1]).serialize(),
+                'location': LocationIdentifier(row[1]),
             } for row in cursor.execute(
                 f'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
                 f'FROM history_events '
@@ -3443,7 +3570,7 @@ class RestAPI:
     def get_binance_savings_history(
             self,
             only_cache: bool,
-            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> dict[str, Any]:
@@ -3724,7 +3851,7 @@ class RestAPI:
         return {
             'id': issue.id,
             'kind': issue.kind,
-            'location': Location.deserialize_from_db(issue.location).serialize(),
+            'location': LocationIdentifier(issue.location),
             'location_label': issue.location_label or None,
             'protocol': issue.protocol or None,
             'asset': issue.asset or None,
@@ -3846,7 +3973,7 @@ class RestAPI:
         elif group_by_account is True:
             result['entries'] = [
                 {
-                    'location': entry.location.serialize(),
+                    'location': entry.location,
                     'location_label': entry.location_label,
                     'protocol': entry.protocol,
                     'asset': entry.asset.identifier,
@@ -3883,7 +4010,7 @@ class RestAPI:
         else:
             result['entries'] = [
                 {
-                    'location': entry.location.serialize(),
+                    'location': entry.location,
                     'location_label': entry.location_label,
                     'protocol': entry.protocol,
                     'asset': entry.asset.identifier,
@@ -3910,7 +4037,7 @@ class RestAPI:
                 str(identifier): {
                     'processing_required': identifier in processing,
                     'buckets': [{
-                        'location': bucket.location.serialize(),
+                        'location': bucket.location,
                         'protocol': bucket.protocol,
                         'balance': str(bucket.amount),
                     } for bucket in buckets],
@@ -4137,7 +4264,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         return {
             'status': result.status,
-            'location': result.location.serialize(),
+            'location': result.location,
             'address': result.address,
             'asset': result.asset.identifier,
             'total_events': result.total_events,

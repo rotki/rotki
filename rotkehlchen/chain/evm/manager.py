@@ -23,8 +23,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, Location, Price, Timestamp
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, Price, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -229,7 +232,7 @@ class EvmManager(
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             chain_counterparties = DBHistoryEvents.get_counterparties_at_location(
                 cursor=cursor,
-                location=Location.from_chain_id(self.node_inquirer.chain_id),
+                location=location_from_chain_id(self.node_inquirer.chain_id),
                 entry_types=ACTIVITY_ENTRY_TYPES,
             )
 

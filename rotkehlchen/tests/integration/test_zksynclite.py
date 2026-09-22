@@ -21,8 +21,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
-from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -202,7 +205,7 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -249,7 +252,7 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_USDT,
@@ -302,7 +305,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
@@ -316,7 +319,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=ts_sec_to_ms(timestamp),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
@@ -330,7 +333,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=ts_sec_to_ms(timestamp),
-        location=Location.ZKSYNC_LITE,
+        location=LOCATION_ZKSYNC_LITE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_DAI,

@@ -41,6 +41,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITFINEX,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -53,7 +56,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -133,7 +135,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -593,7 +595,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
     def _query_currency_map(self) -> None:
         """Query the list that maps standard currency symbols with the version
         of the Bitfinex API. If the request is successful and the list format
-        as well, insert or ignore the mapping in location_asset_mappings.
+        as well, insert or ignore the mapping in connector_asset_mappings.
 
         API result format is: [[[<bitfinex_symbol>, <symbol>], ...]]
 
@@ -617,14 +619,14 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 )
             else:  # add the mappings fetched from the API in globalDB, if they are not already there  # noqa: E501
                 test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
-                bfx_db_serialized = Location.BITFINEX.serialize_for_db()
+                bfx_db_serialized = LOCATION_BITFINEX
                 bindings = []
                 for bfx_symbol, symbol in response_list[0]:
                     if bfx_symbol in test_assets:
                         continue  # skip test assets
 
                     for get_asset_func, param, should_add_mapping in [
-                        (asset_from_bitfinex, bfx_symbol, False),  # normal location asset mapping
+                        (asset_from_bitfinex, bfx_symbol, False),  # normal connector asset mapping
                         (symbol_to_asset_or_token, symbol, True),  # check for an asset with this symbol  # noqa: E501
                         (asset_from_bitfinex, symbol, True),  # also check if we have a mapping
                         # for the symbol instead of the bfx_symbol. This is used in some cases like
@@ -651,7 +653,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 # insert the fetched mappings
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     write_cursor.executemany(
-                        'INSERT OR IGNORE INTO location_asset_mappings (location, '
+                        'INSERT OR IGNORE INTO connector_asset_mappings (connector, '
                         'exchange_symbol, local_id) VALUES(?, ?, ?)',
                         bindings,
                     )

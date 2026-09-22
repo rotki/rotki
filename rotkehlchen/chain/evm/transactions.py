@@ -37,6 +37,9 @@ from rotkehlchen.errors.misc import (
     RequestTooLargeError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tasks.assets import MULTISEND_SPAM_THRESHOLD
@@ -48,7 +51,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
-    Location,
     Timestamp,
     TokenKind,
     deserialize_evm_tx_hash,
@@ -216,7 +218,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
             if relevant_address is not None:
                 transactions_to_redecode: dict[int, EVMTxHash] = {}
-                location = Location.from_chain_id(self.evm_inquirer.chain_id)
+                location = location_from_chain_id(self.evm_inquirer.chain_id)
                 dbevents = DBHistoryEvents(self.database)
                 for tx_hash, (tx_id, has_mapping) in unmapped_tx_data.items():
                     write_cursor.execute(

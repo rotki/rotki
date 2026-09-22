@@ -25,7 +25,7 @@ def _get_all_counterparty_mappings(globaldb: GlobalDBHandler) -> dict[str, Any]:
         filter_query=CounterpartyAssetMappingsFilterQuery.make(offset=0, limit=5000),
         dict_keys=('asset', 'counterparty', 'counterparty_symbol'),
         query_columns='local_id, counterparty, symbol',
-        location_or_counterparty_reader_callback=lambda x: x,
+        connector_or_counterparty_reader_callback=lambda x: x,
     )
     return {
         'entries': mappings,

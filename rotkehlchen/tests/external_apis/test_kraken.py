@@ -143,8 +143,8 @@ def test_kraken_only_prices_mapped_assets_and_their_collections(globaldb):
     )
     with globaldb.conn.write_ctx() as write_cursor:
         write_cursor.execute(
-            'UPDATE location_asset_mappings SET local_id=? '
-            'WHERE location IS NULL AND exchange_symbol=?',
+            'UPDATE connector_asset_mappings SET local_id=? '
+            'WHERE connector IS NULL AND exchange_symbol=?',
             (optimism_dai.identifier, 'DAI'),
         )
 

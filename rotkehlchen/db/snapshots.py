@@ -6,6 +6,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset
@@ -183,11 +184,13 @@ class DBSnapshot:
             serialized_timed_balances.append(serialized_timed_balance)
 
         serialized_timed_balances_for_import = [balance.serialize() for balance in timed_balances]
+        with self.db.conn.read_ctx() as cursor:
+            location_paths = DBLocations().display_paths(cursor)
         serialized_timed_location_data = [
             loc_data.serialize(
                 currency_and_price=(main_currency, main_currency_price),
                 display_date_in_localtime=settings.display_date_in_localtime,
-            )
+            ) | {'location_path': location_paths.get(loc_data.location, loc_data.location)}
             for loc_data in timed_location_data
         ]
         serialized_timed_location_data_for_import = [loc_data.serialize() for loc_data in timed_location_data]  # noqa: E501

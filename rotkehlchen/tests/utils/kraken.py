@@ -6,18 +6,22 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kraken import Kraken, KrakenApiMethod
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.factories import (
     make_random_positive_fval,
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
 KRAKEN_DELISTED = (
@@ -336,8 +340,8 @@ KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE = """{"result":"success","logs":[{"asset":"e
 def get_kraken_assets_from_globaldb() -> list[str]:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         return cursor.execute(
-            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
-            (Location.KRAKEN.serialize_for_db(),),
+            'SELECT exchange_symbol FROM connector_asset_mappings WHERE connector IS ? OR connector IS NULL;',  # noqa: E501
+            (LOCATION_KRAKEN,),
         ).fetchall()
 
 
@@ -366,13 +370,13 @@ def generate_random_kraken_id() -> str:
     )
 
 
-def get_exchange_name_from_assetid(exchange: Location, asset_identifier: str) -> str | None:
+def get_exchange_name_from_assetid(exchange: LocationIdentifier, asset_identifier: str) -> str | None:  # noqa: E501
     """Returns the ticker symbol used in the given exchange from asset's identifier according
-        to location_asset_mappings table. If the mapping is not present returns None."""
+        to connector_asset_mappings table. If the mapping is not present returns None."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         identifier = cursor.execute(
-            'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
-            (exchange.serialize_for_db(), asset_identifier),
+            'SELECT exchange_symbol FROM connector_asset_mappings WHERE (connector IS ? OR connector IS NULL) AND local_id=?',  # noqa: E501
+            (exchange, asset_identifier),
         ).fetchone()
 
         return None if identifier is None else identifier[0]
@@ -396,11 +400,11 @@ def create_kraken_trade(
         pair = random.choice(tradeable_pairs)
     else:
         base_symbol = get_exchange_name_from_assetid(
-            exchange=Location.KRAKEN,
+            exchange=LOCATION_KRAKEN,
             asset_identifier=base_asset,
         )
         quote_symbol = get_exchange_name_from_assetid(
-            exchange=Location.KRAKEN,
+            exchange=LOCATION_KRAKEN,
             asset_identifier=quote_asset,
         )
         assert base_symbol is not None

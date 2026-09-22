@@ -5,14 +5,19 @@ from unittest import mock
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_random_bytes
-from rotkehlchen.types import Location
+from rotkehlchen.types import ApiSecret
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):
@@ -26,38 +31,34 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     db_password = '123'
     rotki.data.unlock(username, db_password, create_new=True, resume_from_backup=False)
     database = rotki.data.db
-    # Mock having user_credentials for all exchanges and for premium
-    cmd = (
-        'INSERT OR REPLACE INTO user_credentials '
-        '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)'
-    )
+    # Mock having connections for all exchanges and premium credentials
 
     credentials = []
     for location in SUPPORTED_EXCHANGES:
         passphrase = None
         if location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = 'supersecretpassphrase'
-        if location == Location.COINBASE:
+        if location == LOCATION_COINBASE:
             credentials.append(
-                (str(location), location.serialize_for_db(), str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)).decode(), passphrase),  # noqa: E501
+                (str(location), location, str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)).decode(), passphrase),  # noqa: E501
             )
         else:
             credentials.append(
-                (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member
+                (str(location), location, make_api_key(), make_api_secret().decode(), passphrase),  # pylint: disable=no-member
             )
-    credentials.append(
-        ('rotkehlchen', Location.EXTERNAL.serialize_for_db(), make_api_key(), make_api_secret().decode(), None),  # noqa: E501  # pylint: disable=no-member
-    )
-    cursor = rotki.data.db.conn.cursor()
-    for entry in credentials:
-        cursor.execute(cmd, entry)
-        rotki.data.db.conn.commit()
+    with rotki.data.db.user_write() as write_cursor:
+        for name, connector, api_key, api_secret, passphrase in credentials:
+            DBConnections.add(write_cursor, name=name, connector=connector, location=connector, api_key=api_key, api_secret=ApiSecret(api_secret.encode()), passphrase=passphrase)  # noqa: E501
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
+            ('rotkehlchen', LOCATION_EXTERNAL, make_api_key(), make_api_secret().decode()),  # pylint: disable=no-member
+        )
 
-    exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
-    rotki.exchange_manager.initialize_exchanges(
-        exchange_credentials=exchange_credentials,
-        database=database,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        rotki.exchange_manager.initialize_exchanges(
+            connections=rotki.data.db.get_exchange_credentials(cursor),
+            database=database,
+        )
 
     assert all(location in rotki.exchange_manager.connected_exchanges for location in SUPPORTED_EXCHANGES)  # noqa: E501
 

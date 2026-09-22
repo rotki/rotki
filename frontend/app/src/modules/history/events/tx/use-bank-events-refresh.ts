@@ -1,4 +1,4 @@
-import type { BankAuthChallenge, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankAuthChallenge, BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
@@ -22,7 +22,7 @@ interface UseBankEventsRefreshReturn {
  * Pulls new transactions of bank connections into the history.
  *
  * @remarks
- * Each `{ location, name }` connection runs as its own native BANK_EVENTS activity, the way exchange
+ * Each connection runs as its own native BANK_EVENTS activity, the way exchange
  * accounts do, so the orchestrator owns liveness, cancellation and re-run, and the same status
  * frames the backend streams for exchanges drive its detail.
  */
@@ -41,11 +41,11 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
    * layer cannot tell apart from a backend cancellation. The connection's sync status is the only
    * place the challenge is reported.
    */
-  const pendingChallenge = async ({ location, name }: BankConnectionIdentity): Promise<BankAuthChallenge | undefined> => {
+  const pendingChallenge = async ({ identifier }: BankConnectionIdentity): Promise<BankAuthChallenge | undefined> => {
     try {
       const connections = await getBanks();
       store.setConnections(connections);
-      return connections.find(connection => connection.location === location && connection.name === name)?.syncStatus.authChallenge ?? undefined;
+      return connections.find(connection => connection.identifier === identifier)?.syncStatus.authChallenge ?? undefined;
     }
     catch (error: unknown) {
       logger.error(error);
@@ -53,18 +53,18 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
     }
   };
 
-  const notifyAuthenticationRequired = ({ location, name }: BankConnectionIdentity): void => {
+  const notifyAuthenticationRequired = ({ connector, identifier, name }: BankConnection): void => {
     notify({
       action: {
         action: async () => {
           const { router } = await import('@/router');
-          await router.push({ name: '/api-keys/banks/', query: { authenticate: name, location } });
+          await router.push({ name: '/api-keys/banks/', query: { authenticate: identifier } });
         },
         icon: 'lu-shield-check',
         label: t('actions.bank_events.authentication.action'),
       },
       category: NotificationCategory.DEFAULT,
-      message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(location), name }),
+      message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(connector), name }),
       priority: Priority.ACTION,
       severity: Severity.WARNING,
       title: t('actions.bank_events.authentication.title'),
@@ -73,7 +73,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
-    const bankName = store.bankNameFor(location);
+    const bankName = store.bankNameFor(store.connectorOf(bank.identifier));
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),
@@ -82,7 +82,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<boolean>(async () => syncBanks({ location, name })),
+        await runTask<boolean>(async () => syncBanks({ identifier: bank.identifier })),
         () => {},
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: name, bank: bankName }),
@@ -90,8 +90,11 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
     });
 
     if (isErr(outcome)) {
-      if (hasTag(outcome.error, 'BackendCancelled') && await pendingChallenge(bank)) {
-        notifyAuthenticationRequired(bank);
+      const connection = hasTag(outcome.error, 'BackendCancelled') && await pendingChallenge(bank)
+        ? get(store.connections).find(item => item.identifier === bank.identifier)
+        : undefined;
+      if (connection) {
+        notifyAuthenticationRequired(connection);
       }
       else if (isActionable(outcome.error)) {
         logger.error(outcome.error);

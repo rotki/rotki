@@ -1863,6 +1863,8 @@
     },
     "form": {
       "bank": "Bank",
+      "bank_hint": "The bank the balances and history of this connection belong to",
+      "connector": "Connector",
       "credential_keep_hint": "Leave empty to keep the stored value",
       "docs": "Bank API documentation",
       "name": "Connection name",
@@ -1872,6 +1874,7 @@
       }
     },
     "header": {
+      "connector": "Connector",
       "last_sync": "Last sync"
     },
     "history_limit": {
@@ -4467,6 +4470,15 @@
       "line_one": "We support the import of trades csv file type.",
       "name": "Kucoin"
     },
+    "location_mapping": {
+      "alias_error": "The import succeeded, but the location aliases could not be saved: {error}",
+      "ambiguous": "Ambiguous",
+      "create": "Create location",
+      "save_aliases": "Remember these choices as location aliases for later imports",
+      "subtitle": "Choose where the rows of these location values go. Nothing is imported until every value has a location.",
+      "title": "Unknown locations in the file",
+      "unknown": "Unknown"
+    },
     "nexo": {
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",
@@ -4652,6 +4664,68 @@
     "no_lqty_staked": "No LQTY staked",
     "title": "Stake",
     "unclaimed_rewards": "Unclaimed rewards"
+  },
+  "location_manager": {
+    "actions": {
+      "add": "Add location",
+      "add_child": "Add a location below",
+      "archive": "Archive",
+      "unarchive": "Restore from archive"
+    },
+    "aliases": {
+      "alias": "Alias",
+      "error": "Could not change the location alias",
+      "subtitle": "Other names a location goes by in imported files. An import matches aliases after exact location identifiers and before location names.",
+      "title": "Location aliases"
+    },
+    "archived": "Archived",
+    "custom": "Custom",
+    "delete": {
+      "message": "Are you sure you want to delete the location {name}?",
+      "title": "Delete location"
+    },
+    "error": "Could not change the location",
+    "form": {
+      "add_title": "Add location",
+      "edit_title": "Edit location",
+      "error": "Could not save the location",
+      "icon": "Icon",
+      "name_hint": "Must be unique among the locations with the same parent",
+      "parent": "Parent location",
+      "validation": {
+        "required": "This field is required"
+      }
+    },
+    "image": {
+      "error": "Could not change the location image",
+      "hint": "An uploaded image is shown instead of the icon. It is not part of database backups.",
+      "remove": "Remove image",
+      "replace": "Replace image",
+      "upload": "Upload image"
+    },
+    "move": {
+      "message": "The location moves from {old} to {new}. Its history and balances then count towards the totals of its new parent locations.",
+      "title": "Move location"
+    },
+    "show_archived": "Show archived",
+    "title": "Location manager",
+    "usage": {
+      "kinds": {
+        "bitcoin_transactions": "Bitcoin transactions",
+        "children": "Locations below it",
+        "data_issues": "Data issues",
+        "event_metrics": "Balance history entries",
+        "history_events": "History events",
+        "history_events_backup": "Backed up history events",
+        "integration_connections": "Exchange and bank connections",
+        "manually_tracked_balances": "Manual balances",
+        "margin_positions": "Margin positions",
+        "skipped_external_events": "Skipped external events",
+        "timed_location_data": "Snapshot entries"
+      },
+      "message": "This location can not be deleted while data uses it. Archive it to hide it from new entries while keeping its data.",
+      "title": "{name} is in use"
+    }
   },
   "locations": {
     "total_asset_price": "Total Asset Price"
@@ -4903,6 +4977,7 @@
       "events": "Events"
     },
     "import_data": "Import Data",
+    "location_manager": "Location manager",
     "locations": "Locations",
     "manage_address_book": "Manage Address Book",
     "manage_assets": "Manage Assets",

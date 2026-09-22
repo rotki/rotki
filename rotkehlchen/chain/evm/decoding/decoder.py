@@ -97,6 +97,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.auto_notes import SELF_TX_TEMPLATE
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
@@ -106,7 +109,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
-    Location,
     TokenKind,
 )
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
@@ -903,7 +905,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if (events := self._maybe_load_or_purge_events_from_db(
             transaction=transaction,
             tx_ref=transaction.tx_hash,
-            location=Location.from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
+            location=location_from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
             ignore_cache=ignore_cache,
             delete_customized=delete_customized,
         )) is not None:

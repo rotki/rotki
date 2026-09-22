@@ -4,10 +4,21 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.types import Location
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BITFINEX,
+    LOCATION_BITMEX,
+    LOCATION_BITSTAMP,
+    LOCATION_COINBASE,
+    LOCATION_GEMINI,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 @pytest.fixture(scope='session', name='port_generator')
@@ -38,17 +49,17 @@ def rest_api_port(port_generator):
 
 
 @pytest.fixture
-def added_exchanges() -> Sequence[Location]:
+def added_exchanges() -> Sequence[LocationIdentifier]:
     """A fixture determining which exchanges to add to a test rotkehlchen api server"""
     return (
-        Location.KRAKEN,
-        Location.POLONIEX,
-        Location.BINANCE,
-        Location.BITMEX,
-        Location.COINBASE,
-        Location.GEMINI,
-        Location.BITSTAMP,
-        Location.BITFINEX,
+        LOCATION_KRAKEN,
+        LOCATION_POLONIEX,
+        LOCATION_BINANCE,
+        LOCATION_BITMEX,
+        LOCATION_COINBASE,
+        LOCATION_GEMINI,
+        LOCATION_BITSTAMP,
+        LOCATION_BITFINEX,
     )
 
 

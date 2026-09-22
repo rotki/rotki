@@ -10,9 +10,10 @@ const manifest: BankManifest = {
   accessTier: 'official api',
   authFlow: [{ primitive: 'static secret' }],
   capabilities: ['balances', 'transactions'],
+  connectorIdentifier: 'qonto',
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  fixedLocation: 'qonto',
   maintainer: 'rotki',
   secrets: [
     { description: 'login', label: 'Login', secret: false, slot: 'api_key' },
@@ -22,14 +23,17 @@ const manifest: BankManifest = {
   version: '1.0.0',
 };
 
-function issuesOf(mode: BankFormData['mode'], state: Record<string, unknown>): string[] {
-  const result = bankConnectionSchema(mode, manifest).safeParse(state);
+const fints: BankManifest = { ...manifest, connectorIdentifier: 'fints', displayName: 'FinTS', fixedLocation: null };
+
+function issuesOf(mode: BankFormData['mode'], state: Record<string, unknown>, of: BankManifest = manifest): string[] {
+  const result = bankConnectionSchema(mode, of).safeParse(state);
   return result.success ? [] : result.error.issues.map(issue => issue.path.join('.'));
 }
 
 describe('bankConnectionSchema', () => {
   it('should demand a name and every manifest credential when adding', () => {
     expect(issuesOf('add', {
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: ' ' },
       location: 'qonto',
       name: '',
@@ -39,6 +43,7 @@ describe('bankConnectionSchema', () => {
 
   it('should accept a complete add form', () => {
     expect(issuesOf('add', {
+      connector: 'qonto',
       credentials: { api_key: 'login', api_secret: 'secret' },
       location: 'qonto',
       name: 'Qonto main',
@@ -48,12 +53,14 @@ describe('bankConnectionSchema', () => {
 
   it('should only demand the new name when editing, credentials stay optional', () => {
     expect(issuesOf('edit', {
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: '' },
       location: 'qonto',
       name: 'Qonto main',
       newName: '',
     })).toEqual(['newName']);
     expect(issuesOf('edit', {
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: '' },
       location: 'qonto',
       name: 'Qonto main',
@@ -61,13 +68,21 @@ describe('bankConnectionSchema', () => {
     })).toEqual([]);
   });
 
-  it('should demand a bank when adding without one', () => {
+  it('should demand a connector when adding without one', () => {
     expect(issuesOf('add', {
-      credentials: {},
+      connector: '',
+      credentials: { api_key: 'login', api_secret: 'secret' },
       location: '',
       name: 'x',
       newName: '',
-    })).toContain('location');
+    })).toEqual(['connector']);
+  });
+
+  it('should demand a bank location only from a connector that does not fix it', () => {
+    const state = { connector: 'fints', credentials: { api_key: 'login', api_secret: 'secret' }, location: '', name: 'x', newName: '' };
+    expect(issuesOf('add', state, fints)).toEqual(['location']);
+    expect(issuesOf('add', { ...state, location: 'custom:ing' }, fints)).toEqual([]);
+    expect(issuesOf('add', state)).toEqual([]);
   });
 });
 
@@ -81,6 +96,7 @@ describe('emptyCredentials', () => {
 describe('toBankConnectionFormState', () => {
   it('should copy the credentials so edits do not leak into the model before save', () => {
     const data: BankFormData = {
+      connector: 'qonto',
       credentials: { api_key: 'a', api_secret: 'b' },
       location: 'qonto',
       mode: 'add',

@@ -109,20 +109,20 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.filtering import (
         AssetsFilterQuery,
+        ConnectorAssetMappingsFilterQuery,
         CounterpartyAssetMappingsFilterQuery,
         CustomAssetsFilterQuery,
         LevenshteinFilterQuery,
-        LocationAssetMappingsFilterQuery,
         NFTFilterQuery,
     )
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import (
         SUPPORTED_CHAIN_IDS,
         ChecksumEvmAddress,
+        ConnectorAssetMappingDeleteEntry,
+        ConnectorAssetMappingUpdateEntry,
         CounterpartyAssetMappingDeleteEntry,
         CounterpartyAssetMappingUpdateEntry,
-        LocationAssetMappingDeleteEntry,
-        LocationAssetMappingUpdateEntry,
         ModuleName,
     )
 
@@ -597,11 +597,11 @@ class AssetsService:
     def query_asset_mappings_by_type(
             self,
             dict_keys: tuple[str, str, str],
-            mapping_type: Literal['location', 'counterparty'],
-            location_or_counterparty_reader_callback: Callable,
-            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            mapping_type: Literal['connector', 'counterparty'],
+            connector_or_counterparty_reader_callback: Callable,
+            filter_query: ConnectorAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
             query_columns: Literal[
-                'local_id, location, exchange_symbol',
+                'local_id, connector, exchange_symbol',
                 'local_id, counterparty, symbol',
             ],
     ) -> dict[str, Any]:
@@ -610,7 +610,7 @@ class AssetsService:
             filter_query=filter_query,
             dict_keys=dict_keys,
             query_columns=query_columns,
-            location_or_counterparty_reader_callback=location_or_counterparty_reader_callback,
+            connector_or_counterparty_reader_callback=connector_or_counterparty_reader_callback,
         )
 
         result = {
@@ -624,8 +624,8 @@ class AssetsService:
             self,
             mapping_fn: Callable,
             entries: Sequence[
-                LocationAssetMappingUpdateEntry
-                | LocationAssetMappingDeleteEntry
+                ConnectorAssetMappingUpdateEntry
+                | ConnectorAssetMappingDeleteEntry
                 | CounterpartyAssetMappingUpdateEntry
                 | CounterpartyAssetMappingDeleteEntry
             ],
@@ -1051,9 +1051,9 @@ class AssetsService:
         return {'result': process_result(result), 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_counterparties_details(self) -> dict[str, Any]:
-        counterparties = {(exchange_id := x.name.lower()): CounterpartyDetails(
-            identifier=exchange_id,
-            label=LOCATION_DETAILS[x].get('label', x.name.capitalize()),
+        counterparties: dict[str, CounterpartyDetails] = {x: CounterpartyDetails(
+            identifier=x,
+            label=LOCATION_DETAILS[x]['label'],
             image=LOCATION_DETAILS[x].get('image'),
         ) for x in ALL_SUPPORTED_EXCHANGES}
         for counterparty in self.rotkehlchen.chains_aggregator.get_all_counterparties():

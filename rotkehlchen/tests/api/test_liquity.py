@@ -13,6 +13,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
@@ -20,7 +23,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -355,7 +358,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
@@ -366,7 +369,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
@@ -377,7 +380,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
@@ -388,7 +391,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
@@ -399,7 +402,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
@@ -410,7 +413,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=reward_lusd_event,
             sequence_index=1,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LQTY,
@@ -421,7 +424,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=reward_lusd_event,
             sequence_index=2,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LUSD,
@@ -432,7 +435,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             tx_ref=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=default_ts,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,

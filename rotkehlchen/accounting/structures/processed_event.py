@@ -15,14 +15,16 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.locations.chains import (
+    EVM_EVMLIKE_LOCATIONS,
+    location_to_chain,
+)
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    EVM_EVMLIKE_LOCATIONS,
     AddressbookType,
     ChainAddress,
-    Location,
     Price,
-    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -53,7 +55,7 @@ class ProcessedAccountingEvent:
     """
     event_type: AccountingEventType
     notes: str
-    location: Location
+    location: LocationIdentifier
     timestamp: Timestamp
     asset: Asset
     free_amount: FVal
@@ -86,7 +88,7 @@ class ProcessedAccountingEvent:
         """Aux method to enrich addresses in the event notes using the addressbook"""
         chain_address = ChainAddress(
             address=string_to_evm_address(matched_address.group()),
-            blockchain=SupportedBlockchain.from_location(self.location),  # type: ignore  # where this is called from we check self.location in EVM_EVMLIKE_LOCATIONS
+            blockchain=location_to_chain(self.location),
         )
         name = DBAddressbook(database).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)  # noqa: E501
         return f'{chain_address.address} [{name}]' if name else chain_address.address
@@ -265,7 +267,7 @@ class ProcessedAccountingEvent:
             event = cls(
                 event_type=AccountingEventType.deserialize(data['type']),
                 notes=data['notes'] or '',  # historic reports may have stored null notes
-                location=Location.deserialize(data['location']),
+                location=deserialize_location_identifier(data['location']),
                 timestamp=timestamp,
                 asset=Asset(data['asset_identifier']).check_existence(),
                 free_amount=deserialize_fval(data['free_amount'], name='free_amount', location='processed event decoding'),  # noqa: E501

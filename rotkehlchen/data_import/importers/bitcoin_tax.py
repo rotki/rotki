@@ -16,12 +16,17 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.constants import (
+    LOCATION_COINBASEPRO,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, TimestampMS, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, TimestampMS, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 from .constants import ROTKI_EVENT_PREFIX
@@ -31,6 +36,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -71,7 +77,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             group_identifier: str,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             action: str,
             base_asset_amount: AssetAmount,
             quote_asset_amount: AssetAmount,
@@ -118,7 +124,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             group_identifier: str,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             action: str,
             asset_amount: AssetAmount,
             fee_asset_amount: AssetAmount | None,
@@ -193,11 +199,11 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         ))
 
         try:
-            location = Location.deserialize(csv_row['Account'])
+            location = deserialize_builtin_location(csv_row['Account'])
         except DeserializationError:
-            location = Location.EXTERNAL
+            location = LOCATION_EXTERNAL
             if csv_row['Account'] in {'Coinbase Pro', 'GDAX'}:
-                location = Location.COINBASEPRO
+                location = LOCATION_COINBASEPRO
 
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
         base_asset = asset_resolver(csv_row['Symbol'])

@@ -14,8 +14,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.monerium import SUPPORTED_MONERIUM_CHAINS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -61,7 +64,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """Reload the monerium api from the DB with the credentials"""
         # always remember to update SUPPORTED_MONERIUM_CHAINS
         # when we add a new chain for monerium decoder
-        assert Location.from_chain_id(self.node_inquirer.chain_id) in SUPPORTED_MONERIUM_CHAINS.values()  # noqa: E501
+        assert location_from_chain_id(self.node_inquirer.chain_id) in SUPPORTED_MONERIUM_CHAINS.values()  # noqa: E501
         return self.addresses_to_decoders()
 
     def _v1_to_v2_migration_hashes(self) -> set[str]:

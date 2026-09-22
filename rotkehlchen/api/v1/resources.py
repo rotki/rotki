@@ -48,13 +48,11 @@ from rotkehlchen.api.v1.schemas import (
     AsyncTaskSchema,
     BankAuthenticationSchema,
     BankBalanceQuerySchema,
-    BankLocationWithNameSchema,
     BanksResourceAddSchema,
     BanksResourceEditSchema,
     BankSyncSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
-    BinanceMarketsUserSchema,
     BinanceSavingsSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -69,6 +67,10 @@ from rotkehlchen.api.v1.schemas import (
     ClearCacheSchema,
     ClearIconsCacheSchema,
     ConfigurationUpdateSchema,
+    ConnectionIdentifierSchema,
+    ConnectorAssetMappingsDeleteSchema,
+    ConnectorAssetMappingsPostSchema,
+    ConnectorAssetMappingsUpdateSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -80,6 +82,7 @@ from rotkehlchen.api.v1.schemas import (
     CustomAssetsQuerySchema,
     CustomizedEventDuplicatesFixSchema,
     CustomizedEventDuplicatesIgnoreSchema,
+    DataImportPreflightSchema,
     DataImportSchema,
     DataIssueManualResolveSchema,
     DataIssuesFilterSchema,
@@ -106,7 +109,6 @@ from rotkehlchen.api.v1.schemas import (
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
-    ExchangeLocationWithNameSchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
@@ -135,9 +137,12 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
-    LocationAssetMappingsDeleteSchema,
-    LocationAssetMappingsPostSchema,
-    LocationAssetMappingsUpdateSchema,
+    LocationAliasDeleteSchema,
+    LocationAliasSchema,
+    LocationCreateSchema,
+    LocationEditSchema,
+    LocationIdentifierSchema,
+    LocationImageUploadSchema,
     ManualBalanceQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
@@ -254,6 +259,8 @@ from rotkehlchen.types import (
     ChainID,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
@@ -264,9 +271,6 @@ from rotkehlchen.types import (
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
-    Location,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -281,6 +285,7 @@ from .types import ModuleWithBalances, ModuleWithStats, TaskName
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from types import EllipsisType
 
     from werkzeug.datastructures import FileStorage
 
@@ -310,6 +315,7 @@ if TYPE_CHECKING:
         AccountingRulesFilterQuery,
         AddressbookFilterQuery,
         AssetsFilterQuery,
+        ConnectorAssetMappingsFilterQuery,
         CounterpartyAssetMappingsFilterQuery,
         CustomAssetsFilterQuery,
         DataIssuesFilterQuery,
@@ -319,7 +325,6 @@ if TYPE_CHECKING:
         HistoryEventFilterQuery,
         InternalTxConflictsFilterQuery,
         LevenshteinFilterQuery,
-        LocationAssetMappingsFilterQuery,
         NFTFilterQuery,
         ReportDataFilterQuery,
         UserNotesFilterQuery,
@@ -333,6 +338,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def _combine_parser_data(
@@ -626,7 +632,7 @@ class ExchangesResource(BaseMethodView):
 
     put_schema = ExchangesResourceAddSchema()
     patch_schema = ExchangesResourceEditSchema()
-    delete_schema = ExchangeLocationWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -637,7 +643,7 @@ class ExchangesResource(BaseMethodView):
     def put(
             self,
             name: str,
-            location: Location,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
@@ -651,7 +657,7 @@ class ExchangesResource(BaseMethodView):
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
@@ -668,8 +674,7 @@ class ExchangesResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            location: Location,
+            identifier: str,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -682,8 +687,7 @@ class ExchangesResource(BaseMethodView):
             gate_location: GateLocation | None,
     ) -> Response:
         return self.rest_api.edit_exchange(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             api_key=api_key,
             api_secret=api_secret,
@@ -698,8 +702,8 @@ class ExchangesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: Location) -> Response:
-        return self.rest_api.remove_exchange(name=name, location=location)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_exchange(identifier=identifier)
 
 
 class ExchangesDataResource(BaseMethodView):
@@ -708,7 +712,7 @@ class ExchangesDataResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
-    def delete(self, location: Location | None, data_type: ExchangePurgeType) -> Response:
+    def delete(self, location: LocationIdentifier | None, data_type: ExchangePurgeType) -> Response:  # noqa: E501
         return self.rest_api.purge_exchange_data(location=location, data_type=data_type)
 
 
@@ -716,6 +720,113 @@ class AssociatedLocations(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_associated_locations()
+
+
+class LocationsTreeResource(BaseMethodView):
+    post_schema = LocationCreateSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_locations()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return self.rest_api.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        )
+
+
+class LocationAliasesResource(BaseMethodView):
+    put_schema = LocationAliasSchema()
+    delete_schema = LocationAliasDeleteSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_location_aliases()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, alias: str, location_identifier: LocationIdentifier) -> Response:
+        return self.rest_api.set_location_alias(alias=alias, identifier=location_identifier)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, alias: str) -> Response:
+        return self.rest_api.delete_location_alias(alias=alias)
+
+
+class CustomLocationResource(BaseMethodView):
+    patch_schema = LocationEditSchema()
+    delete_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_view_args')
+    def patch(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return self.rest_api.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location(identifier=identifier)
+
+
+class LocationUsageResource(BaseMethodView):
+    get_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_usage(identifier=identifier)
+
+
+class LocationImageResource(BaseMethodView):
+    identifier_schema = LocationIdentifierSchema()
+    upload_schema = LocationImageUploadSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_image(
+            identifier=identifier,
+            match_header=get_match_header(),
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='view_args_and_file')
+    def post(self, identifier: LocationIdentifier, file: FileStorage) -> Response:
+        """Only multipart uploads are accepted, never a path on the backend's filesystem"""
+        with TemporaryDirectory() as temp_directory:
+            filepath = Path(temp_directory) / (file.filename or 'image.png')
+            file.save(str(filepath))
+            return self.rest_api.upload_location_image(identifier=identifier, filepath=filepath)
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location_image(identifier=identifier)
 
 
 class LocationLabelsResource(BaseMethodView):
@@ -1016,7 +1127,7 @@ class BanksResource(BaseMethodView):
 
     put_schema = BanksResourceAddSchema()
     patch_schema = BanksResourceEditSchema()
-    delete_schema = BankLocationWithNameSchema()
+    delete_schema = ConnectionIdentifierSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1024,35 +1135,50 @@ class BanksResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
-        return self.rest_api.setup_bank(name=name, location=location, credentials=credentials)
+    def put(
+            self,
+            name: str,
+            connector: str,
+            location: LocationIdentifier | None,
+            credentials: dict[str, str],
+    ) -> Response:
+        return self.rest_api.setup_bank(
+            name=name,
+            connector=connector,
+            location=location,
+            credentials=credentials,
+        )
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
-            name: str,
-            location: Location,
+            identifier: str,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         return self.rest_api.edit_bank(
-            name=name,
-            location=location,
+            identifier=identifier,
             new_name=new_name,
             credentials=credentials,
         )
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: Location) -> Response:
-        return self.rest_api.remove_bank(name=name, location=location)
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.remove_bank(identifier=identifier)
 
 
 class SupportedBanksResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_supported_banks()
+
+
+class SupportedExchangesResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_exchanges()
 
 
 class BankAuthenticationResource(BaseMethodView):
@@ -1062,8 +1188,8 @@ class BankAuthenticationResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: str, location: Location, response: str | None) -> Response:
-        return self.rest_api.answer_bank_authentication(name, location, response)
+    def post(self, identifier: str, response: str | None) -> Response:
+        return self.rest_api.answer_bank_authentication(identifier, response)
 
 
 class BankSyncResource(BaseMethodView):
@@ -1073,8 +1199,12 @@ class BankSyncResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, location: Location | None, name: str | None, async_query: bool) -> Response:
-        return self.rest_api.sync_banks(location=location, name=name, async_query=async_query)
+    def post(self, connector: str | None, identifier: str | None, async_query: bool) -> Response:
+        return self.rest_api.sync_banks(
+            connector=connector,
+            identifier=identifier,
+            async_query=async_query,
+        )
 
 
 class BankBalancesResource(BaseMethodView):
@@ -1085,7 +1215,7 @@ class BankBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
@@ -1106,7 +1236,7 @@ class ExchangeBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            location: Location | None,
+            location: LocationIdentifier | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
@@ -1445,13 +1575,13 @@ class ExchangeEventsQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: Location,
+            location: LocationIdentifier | None,
+            identifier: str | None,
             async_query: bool,
-            name: str | None = None,
     ) -> Response:
         return self.rest_api.query_exchange_history_events(
-            name=name,
             location=location,
+            identifier=identifier,
             async_query=async_query,
         )
 
@@ -1464,15 +1594,13 @@ class ExchangeEventsRangeQueryResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            location: Location,
-            name: str,
+            identifier: str,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
         return self.rest_api.query_exchange_history_events_in_range(
-            location=location,
-            name=name,
+            identifier=identifier,
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             async_query=async_query,
@@ -2278,6 +2406,39 @@ class PingResource(BaseMethodView):
         return self.rest_api.ping()
 
 
+class DataImportPreflightResource(BaseMethodView):
+    """How the location values of a file resolve, so unknown ones can be mapped first"""
+    upload_schema = DataImportPreflightSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='json')
+    def put(
+            self,
+            source: DataImportSource,
+            file: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='form_and_file')
+    def post(
+            self,
+            source: DataImportSource,
+            file: FileStorage,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
+
+
 class DataImportResource(BaseMethodView):
 
     upload_schema = DataImportSchema()
@@ -2635,55 +2796,48 @@ class AssetIconsResource(BaseMethodView):
         return self.rest_api.refresh_asset_icon(asset=asset)
 
 
-class LocationAssetMappingsResource(BaseMethodView):
-    post_schema = LocationAssetMappingsPostSchema()
-    put_and_patch_schema = LocationAssetMappingsUpdateSchema()
-    delete_schema = LocationAssetMappingsDeleteSchema()
+class ConnectorAssetMappingsResource(BaseMethodView):
+    post_schema = ConnectorAssetMappingsPostSchema()
+    put_and_patch_schema = ConnectorAssetMappingsUpdateSchema()
+    delete_schema = ConnectorAssetMappingsDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
+    def post(self, filter_query: ConnectorAssetMappingsFilterQuery) -> Response:
         return self.rest_api.query_asset_mappings_by_type(
-            mapping_type='location',
+            mapping_type='connector',
             filter_query=filter_query,
-            dict_keys=('asset', 'location', 'location_symbol'),
-            query_columns='local_id, location, exchange_symbol',
-            location_or_counterparty_reader_callback=self._location_mapping_reader,
+            dict_keys=('asset', 'connector', 'connector_symbol'),
+            query_columns='local_id, connector, exchange_symbol',
+            connector_or_counterparty_reader_callback=lambda entry: entry,
         )
-
-    @staticmethod
-    def _location_mapping_reader(entry: dict[str, Any]) -> dict[str, Any]:
-        if (loc := entry['location']) is not None:
-            entry['location'] = str(Location.deserialize_from_db(loc))
-
-        return entry
 
     @use_kwargs(put_and_patch_schema, location='json')
     def put(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.add_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.add_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(put_and_patch_schema, location='json')
     def patch(
             self,
-            entries: list[LocationAssetMappingUpdateEntry],
+            entries: list[ConnectorAssetMappingUpdateEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.update_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.update_connector_asset_mappings,
             entries=entries,
         )
 
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            entries: list[LocationAssetMappingDeleteEntry],
+            entries: list[ConnectorAssetMappingDeleteEntry],
     ) -> Response:
         return self.rest_api.perform_asset_mapping_operation(
-            mapping_fn=GlobalDBHandler.delete_location_asset_mappings,
+            mapping_fn=GlobalDBHandler.delete_connector_asset_mappings,
             entries=entries,
         )
 
@@ -2712,7 +2866,7 @@ class CounterpartyAssetMappingsResource(BaseMethodView):
             filter_query=filter_query,
             mapping_type='counterparty',
             query_columns='local_id, counterparty, symbol',
-            location_or_counterparty_reader_callback=lambda x: x,
+            connector_or_counterparty_reader_callback=lambda x: x,
             dict_keys=('asset', 'counterparty', 'counterparty_symbol'),
         )
 
@@ -2946,7 +3100,7 @@ class BinanceAvailableMarkets(BaseMethodView):
     get_schema = BinanceMarketsSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, location: Location) -> Response:
+    def get(self, location: LocationIdentifier) -> Response:
         return self.rest_api.get_all_binance_pairs(location=location)
 
 
@@ -2959,11 +3113,11 @@ class BinanceHistoryStartTimestampResource(BaseMethodView):
 
 class BinanceUserMarkets(BaseMethodView):
 
-    get_schema = BinanceMarketsUserSchema()
+    get_schema = ConnectionIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, name: str, location: Location) -> Response:
-        return self.rest_api.get_user_binance_pairs(name=name, location=location)
+    def get(self, identifier: str) -> Response:
+        return self.rest_api.get_user_binance_pairs(identifier=identifier)
 
 
 class BinanceSavingsResource(BaseMethodView):
@@ -2975,7 +3129,7 @@ class BinanceSavingsResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> Response:

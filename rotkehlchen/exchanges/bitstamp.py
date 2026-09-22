@@ -38,6 +38,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITSTAMP,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -50,7 +53,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
@@ -142,7 +144,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -233,7 +235,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         with self.db.conn.read_ctx() as cursor:
             query_result = cursor.execute(
                 'SELECT extra_data FROM history_events WHERE location=? AND timestamp <= ? AND entry_type=? ORDER BY timestamp DESC LIMIT 1',  # noqa: E501
-                (Location.BITSTAMP.serialize_for_db(), ts_sec_to_ms(start_ts), entry_type.serialize_for_db()),  # noqa: E501
+                (LOCATION_BITSTAMP, ts_sec_to_ms(start_ts), entry_type.serialize_for_db()),
             ).fetchone()
             if (
                 query_result is not None and
@@ -286,8 +288,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             if not force_refresh and (result := self.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
-                location=self.location.serialize(),
-                location_name=self.name,
+                connection=self.connection_identifier,
             )) is not None:
                 offset = result
 
@@ -324,7 +325,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         # even more fun. If somehow the endpoint is not called in order then we
         # may end up with some crypto asset movements here that would need to
         # check for corresponding asset movement in the DB.
-        serialized_location = Location.BITSTAMP.serialize_for_db()
+        serialized_location = LOCATION_BITSTAMP
         history_db = DBHistoryEvents(self.db)
         indices_to_delete = []
         with self.db.user_write() as write_cursor:
@@ -358,8 +359,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 self.db.set_dynamic_cache,
                 name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
                 value=new_offset,
-                location=self.location.serialize(),
-                location_name=self.name,
+                connection=self.connection_identifier,
             )
             if event_queue is None:
                 with self.db.user_write() as write_cursor:
@@ -834,7 +834,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
 
         return AssetMovement(
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.BITSTAMP,
+            location=LOCATION_BITSTAMP,
             event_subtype=event_subtype,
             asset=asset,
             amount=abs(amount),

@@ -46,18 +46,29 @@ from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithd
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    BITCOIN_LOCATIONS,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_event,
     make_evm_address,
     make_evm_tx_hash,
 )
 from rotkehlchen.types import (
-    BITCOIN_LOCATIONS,
     BTCTxId,
     ChainID,
     EvmTransaction,
     EVMTxHash,
-    Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -125,7 +136,7 @@ def test_get_event_mapping_states(database):
                 group_identifier=deserialize_evm_tx_hash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                 sequence_index=1,
                 timestamp=TimestampMS(1),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_ETH,
@@ -140,7 +151,7 @@ def test_get_event_mapping_states(database):
                     group_identifier=deserialize_evm_tx_hash('0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                     sequence_index=1,
                     timestamp=TimestampMS(1),
-                    location=Location.OPTIMISM,
+                    location=LOCATION_OPTIMISM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -149,7 +160,7 @@ def test_get_event_mapping_states(database):
                     group_identifier=deserialize_evm_tx_hash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                     sequence_index=1,
                     timestamp=TimestampMS(2),
-                    location=Location.OPTIMISM,
+                    location=LOCATION_OPTIMISM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -163,7 +174,7 @@ def test_get_event_mapping_states(database):
                 group_identifier=deserialize_evm_tx_hash('0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                 sequence_index=1,
                 timestamp=TimestampMS(3),
-                location=Location.OPTIMISM,
+                location=LOCATION_OPTIMISM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
@@ -179,11 +190,11 @@ def test_get_event_mapping_states(database):
         ) == {1: [HistoryMappingState.CUSTOMIZED], 4: [HistoryMappingState.CUSTOMIZED]}
         assert db.get_event_mapping_states(
             cursor=cursor,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
         ) == {1: [HistoryMappingState.CUSTOMIZED]}
         assert db.get_event_mapping_states(
             cursor=cursor,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             mapping_state=HistoryMappingState.CUSTOMIZED,
         ) == [4]
 
@@ -198,7 +209,7 @@ def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, Tim
                     group_identifier=entry[0],
                     sequence_index=1,
                     timestamp=entry[1],
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -218,7 +229,7 @@ def add_evm_events_to_db(db: DBHistoryEvents, data: Mapping[int, tuple[EVMTxHash
                     tx_ref=entry[0],
                     sequence_index=1,
                     timestamp=entry[1],
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -323,7 +334,7 @@ def test_read_write_events_from_db(database):
                         group_identifier=data_entry[0],
                         sequence_index=1,
                         timestamp=data_entry[1],
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         event_type=HistoryEventType.TRADE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
@@ -336,7 +347,7 @@ def test_read_write_events_from_db(database):
                         tx_ref=data_entry[0],
                         sequence_index=1,
                         timestamp=data_entry[1],
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         event_type=HistoryEventType.TRADE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
@@ -361,7 +372,7 @@ def test_edit_history_event_extra_data_preservation(database: DBHandler) -> None
         group_identifier='TEST1',
         sequence_index=1,
         timestamp=TimestampMS(1),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.EXCHANGE_TRANSFER,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BTC,
@@ -370,7 +381,7 @@ def test_edit_history_event_extra_data_preservation(database: DBHandler) -> None
     )
     movement_event = AssetMovement(
         timestamp=TimestampMS(2),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BTC,
         amount=ONE,
@@ -380,7 +391,7 @@ def test_edit_history_event_extra_data_preservation(database: DBHandler) -> None
         tx_ref=make_evm_tx_hash(),
         sequence_index=1,
         timestamp=TimestampMS(3),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -631,7 +642,7 @@ def test_delete_last_event(database):
                 tx_ref=BTCTxId('a' * 64),
                 sequence_index=0,
                 timestamp=TimestampMS(1683115229000),
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -665,7 +676,7 @@ def test_get_history_events_free_filter(database: DBHandler):
         AssetMovement(
             group_identifier=group_identifiers[5],
             timestamp=TimestampMS(1000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE,
@@ -673,7 +684,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[0],
             sequence_index=0,
             timestamp=TimestampMS(1000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -682,7 +693,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[1],
             sequence_index=0,
             timestamp=TimestampMS(2000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -691,7 +702,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[1],
             sequence_index=1,
             timestamp=TimestampMS(2000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDC,
@@ -700,7 +711,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[2],
             sequence_index=0,
             timestamp=TimestampMS(3000),
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
@@ -709,7 +720,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[2],
             sequence_index=1,
             timestamp=TimestampMS(3000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
@@ -718,7 +729,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[2],
             sequence_index=2,
             timestamp=TimestampMS(3000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
@@ -727,7 +738,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[3],
             sequence_index=0,
             timestamp=TimestampMS(4000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
@@ -736,7 +747,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[3],
             sequence_index=1,
             timestamp=TimestampMS(4000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -745,7 +756,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[3],
             sequence_index=2,
             timestamp=TimestampMS(4000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -754,7 +765,7 @@ def test_get_history_events_free_filter(database: DBHandler):
             group_identifier=group_identifiers[4],
             sequence_index=0,
             timestamp=TimestampMS(5000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
@@ -774,12 +785,12 @@ def test_get_history_events_free_filter(database: DBHandler):
     with database.conn.read_ctx() as cursor:
         # free and premium results should be same with len(events) < FREE_LIMIT
         for filters in (  # trying different filters with some combinations
-            HistoryEventFilterQuery.make(location=Location.OPTIMISM),
+            HistoryEventFilterQuery.make(location=LOCATION_OPTIMISM),
             HistoryEventFilterQuery.make(assets=(A_ETH,)),
-            HistoryEventFilterQuery.make(assets=(A_ETH,), location=Location.COINBASE),
+            HistoryEventFilterQuery.make(assets=(A_ETH,), location=LOCATION_COINBASE),
             HistoryEventFilterQuery.make(from_ts=Timestamp(2)),
             HistoryEventFilterQuery.make(assets=(A_USDT,), to_ts=Timestamp(3)),
-            HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            HistoryEventFilterQuery.make(location=LOCATION_KRAKEN),
             HistoryEventFilterQuery.make(exclude_ignored_assets=True),
         ):
             assert history_events.get_history_events(  # when grouping
@@ -869,7 +880,7 @@ def test_pagination_with_entries_limit(database: DBHandler) -> None:
                 group_identifier=f'group_{group}',
                 sequence_index=sequence_index,
                 timestamp=TimestampMS(group * 1000),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -925,7 +936,7 @@ def test_history_events_with_ignored_groups_excluding_assets(database: DBHandler
                     group_identifier=group_identifier,
                     sequence_index=1,
                     timestamp=timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
@@ -935,7 +946,7 @@ def test_history_events_with_ignored_groups_excluding_assets(database: DBHandler
                     group_identifier=group_identifier,
                     sequence_index=2,
                     timestamp=timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_WBTC,
@@ -985,7 +996,7 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     tx_ref=(tx_hash := make_evm_tx_hash()),
                     sequence_index=0,
                     timestamp=timestamp,
-                    location=Location.BASE,
+                    location=LOCATION_BASE,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
@@ -996,7 +1007,7 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     tx_ref=tx_hash,
                     sequence_index=2,
                     timestamp=timestamp,
-                    location=Location.BASE,
+                    location=LOCATION_BASE,
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.APPROVE,
                     asset=A_DAI,
@@ -1006,7 +1017,7 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     tx_ref=tx_hash,
                     sequence_index=3,
                     timestamp=timestamp,
-                    location=Location.BASE,
+                    location=LOCATION_BASE,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_DAI,
                     amount=FVal(swap_amount := FVal(3)),
@@ -1017,7 +1028,7 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     tx_ref=tx_hash,
                     sequence_index=4,
                     timestamp=timestamp,
-                    location=Location.BASE,
+                    location=LOCATION_BASE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_ETH,
                     amount=FVal(receive_amount := 5),
@@ -1086,7 +1097,7 @@ def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> No
                 group_identifier='TEST1',
                 sequence_index=1,
                 timestamp=TimestampMS(3000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1095,7 +1106,7 @@ def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> No
                 group_identifier='TEST2',
                 sequence_index=1,
                 timestamp=(ts_2000 := TimestampMS(2000)),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -1118,7 +1129,7 @@ def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> No
                 group_identifier='TEST3',
                 sequence_index=1,
                 timestamp=(ts_1000 := TimestampMS(1000)),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1139,7 +1150,7 @@ def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> No
                 group_identifier='TEST4',
                 sequence_index=1,
                 timestamp=TimestampMS(5000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1188,14 +1199,14 @@ def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> No
                 group_identifier='KRAKEN1',
                 sequence_index=1,
                 timestamp=(ts_500 := TimestampMS(500)),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
                 amount=ONE,
             ),
         )
-        database.purge_exchange_data(write_cursor=write_cursor, location=Location.KRAKEN)
+        database.purge_exchange_data(write_cursor=write_cursor, location=LOCATION_KRAKEN)
 
     with database.conn.read_ctx() as cursor:
         assert int(cursor.execute(
@@ -1216,7 +1227,7 @@ def test_modification_ts_updated_on_each_modification(database: DBHandler) -> No
                 group_identifier='TEST1',
                 sequence_index=1,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1238,7 +1249,7 @@ def test_modification_ts_updated_on_each_modification(database: DBHandler) -> No
                 group_identifier='TEST2',
                 sequence_index=1,
                 timestamp=TimestampMS(2000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1271,7 +1282,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
                 group_identifier='GROUP1',
                 sequence_index=0,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
@@ -1280,7 +1291,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
                 group_identifier='GROUP2',
                 sequence_index=0,
                 timestamp=TimestampMS(2000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_BTC,
@@ -1289,7 +1300,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
                 group_identifier='GROUP3',
                 sequence_index=0,
                 timestamp=TimestampMS(3000),
-                location=Location.OPTIMISM,
+                location=LOCATION_OPTIMISM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -1298,7 +1309,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
                 group_identifier='GROUP4',
                 sequence_index=0,
                 timestamp=TimestampMS(4000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=A_USDC,
@@ -1307,7 +1318,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
                 group_identifier='GROUP5',
                 sequence_index=0,
                 timestamp=TimestampMS(5000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
@@ -1335,7 +1346,7 @@ def test_get_history_event_group_position(database: DBHandler) -> None:
     # Test with location filter - only Ethereum events
     # Groups: GROUP5, GROUP4, GROUP2, GROUP1 (GROUP3 is on Optimism)
     # Positions: 0, 1, 2, 3
-    eth_filter = HistoryEventFilterQuery.make(location=Location.ETHEREUM)
+    eth_filter = HistoryEventFilterQuery.make(location=LOCATION_ETHEREUM)
     assert db.get_history_event_group_position('GROUP5', eth_filter) == 0
     assert db.get_history_event_group_position('GROUP4', eth_filter) == 1
     assert db.get_history_event_group_position('GROUP2', eth_filter) == 2
@@ -1370,7 +1381,7 @@ def test_get_history_event_group_position_with_same_timestamp(database: DBHandle
                 group_identifier='GROUP_B',
                 sequence_index=0,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1379,7 +1390,7 @@ def test_get_history_event_group_position_with_same_timestamp(database: DBHandle
                 group_identifier='GROUP_A',
                 sequence_index=0,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1388,7 +1399,7 @@ def test_get_history_event_group_position_with_same_timestamp(database: DBHandle
                 group_identifier='GROUP_C',
                 sequence_index=0,
                 timestamp=TimestampMS(1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1434,7 +1445,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     identifier=(movement_a_id := 1),
                     group_identifier='GROUP_A',
                     timestamp=TimestampMS(1000),
-                    location=Location.COINBASE,
+                    location=LOCATION_COINBASE,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
                     amount=ONE,
@@ -1443,7 +1454,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     group_identifier='GROUP_A_ONCHAIN',
                     sequence_index=0,
                     timestamp=TimestampMS(1000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1452,7 +1463,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     identifier=(movement_b_id := 3),
                     group_identifier='GROUP_B',
                     timestamp=TimestampMS(2000),
-                    location=Location.KRAKEN,
+                    location=LOCATION_KRAKEN,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_ETH,
                     amount=FVal(2),
@@ -1461,7 +1472,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     group_identifier='GROUP_B_ONCHAIN',
                     sequence_index=0,
                     timestamp=TimestampMS(2000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1471,7 +1482,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     group_identifier='GROUP_C',
                     sequence_index=0,
                     timestamp=TimestampMS(3000),
-                    location=Location.COINBASE,
+                    location=LOCATION_COINBASE,
                     event_type=HistoryEventType.EXCHANGE_ADJUSTMENT,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
@@ -1480,7 +1491,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
                     group_identifier='GROUP_D',
                     sequence_index=0,
                     timestamp=TimestampMS(4000),
-                    location=Location.COINBASE,
+                    location=LOCATION_COINBASE,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1522,7 +1533,7 @@ def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 state_markers=[HistoryMappingState.MATCHED],
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
             ),
             entries_limit=None,
             aggregate_by_group_ids=False,
@@ -1620,7 +1631,7 @@ def test_delete_location_events_customized_handling(database: DBHandler) -> None
                     tx_ref=tx_hash_a,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(1000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1636,7 +1647,7 @@ def test_delete_location_events_customized_handling(database: DBHandler) -> None
                     tx_ref=tx_hash_b,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(2000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1649,7 +1660,7 @@ def test_delete_location_events_customized_handling(database: DBHandler) -> None
         # preserve_transactions: all events in tx_a are kept, tx_b's are deleted
         db.delete_location_events(
             write_cursor=write_cursor,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             address=None,
             customized_handling='preserve_transactions',
         )
@@ -1661,7 +1672,7 @@ def test_delete_location_events_customized_handling(database: DBHandler) -> None
         # default (preserve_events): only the customized event is kept
         db.delete_location_events(
             write_cursor=write_cursor,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             address=None,
         )
         assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 1
@@ -1690,7 +1701,7 @@ def test_delete_events_by_tx_ref_preserves_customized_transaction(database: DBHa
                     tx_ref=tx_hash_a,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(1000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1705,7 +1716,7 @@ def test_delete_events_by_tx_ref_preserves_customized_transaction(database: DBHa
                     tx_ref=tx_hash_b,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(2000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1718,7 +1729,7 @@ def test_delete_events_by_tx_ref_preserves_customized_transaction(database: DBHa
         db.delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[tx_hash_a, tx_hash_b],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             customized_handling='preserve_transactions',
         )
 
@@ -1768,7 +1779,7 @@ def test_delete_events_by_tx_ref_scopes_customized_lookup(database: DBHandler) -
                         tx_ref=tx_hash,
                         sequence_index=seq_idx,
                         timestamp=TimestampMS(timestamp),
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
@@ -1785,7 +1796,7 @@ def test_delete_events_by_tx_ref_scopes_customized_lookup(database: DBHandler) -
         db.delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[tx_hash_b],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             customized_handling='preserve_transactions',
         )
         assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 4
@@ -1798,7 +1809,7 @@ def test_delete_events_by_tx_ref_scopes_customized_lookup(database: DBHandler) -
         db.delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[tx_hash_a],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             customized_handling='preserve_events',
         )
         assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 3
@@ -1841,7 +1852,7 @@ def test_reset_events_for_redecode_preserves_customized_transaction(database: DB
                     tx_ref=tx_hash_a,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(1000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1856,7 +1867,7 @@ def test_reset_events_for_redecode_preserves_customized_transaction(database: DB
                     tx_ref=tx_hash_b,
                     sequence_index=seq_idx,
                     timestamp=TimestampMS(2000000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
@@ -1867,7 +1878,7 @@ def test_reset_events_for_redecode_preserves_customized_transaction(database: DB
         assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 4
         assert write_cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == 2
 
-        db.reset_events_for_redecode(write_cursor=write_cursor, location=Location.ETHEREUM)
+        db.reset_events_for_redecode(write_cursor=write_cursor, location=LOCATION_ETHEREUM)
 
         # all events in tx_a are preserved, tx_b's events are deleted
         assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 2
@@ -1938,36 +1949,36 @@ def test_reset_events_for_redecode_resets_bitcoin_transactions(database: DBHandl
                         location=location,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.NONE,
-                        asset=A_BTC if location == Location.BITCOIN else A_BCH,
+                        asset=A_BTC if location == LOCATION_BITCOIN else A_BCH,
                         amount=ONE,
                     ),
                     # only the first bitcoin transaction is customized
-                    mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED} if location == Location.BITCOIN and tx_id == tx_id_a else None,  # noqa: E501
+                    mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED} if location == LOCATION_BITCOIN and tx_id == tx_id_a else None,  # noqa: E501
                 )
 
         assert write_cursor.execute('SELECT COUNT(*) FROM bitcoin_tx_mappings').fetchone()[0] == 3
-        db.reset_events_for_redecode(write_cursor=write_cursor, location=Location.BITCOIN)
+        db.reset_events_for_redecode(write_cursor=write_cursor, location=LOCATION_BITCOIN)
 
     with database.conn.read_ctx() as cursor:
         # the customized transaction keeps both its event and its decoded state
         assert dbtx.get_transaction_ids(
             cursor=cursor,
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
             undecoded_only=True,
         ) == [tx_id_b]
         assert {x.tx_ref for x in db.get_history_events_internal(  # type: ignore[attr-defined]  # bitcoin events
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITCOIN),
         )} == {tx_id_a}
         # and bitcoin cash was not touched, despite sharing the id of the reset transaction
         assert dbtx.get_transaction_ids(
             cursor=cursor,
-            location=Location.BITCOIN_CASH,
+            location=LOCATION_BITCOIN_CASH,
             undecoded_only=True,
         ) == []
         assert len(db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN_CASH),
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITCOIN_CASH),
         )) == 1
 
 
@@ -2054,7 +2065,7 @@ def test_delete_events_and_track_removes_backups(database: DBHandler) -> None:
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -2104,7 +2115,7 @@ def test_restoring_a_bitcoin_event_keeps_its_counterparty_addresses(
                 tx_ref=BTCTxId('cc' * 32),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -2153,7 +2164,7 @@ def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
                 tx_ref=tx_id,
                 sequence_index=0,
                 timestamp=TimestampMS(1631333672000),
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -2177,13 +2188,13 @@ def test_delete_events_by_tx_ref_chunks_bindings(database: DBHandler) -> None:
             db_events.delete_events_by_tx_ref(
                 write_cursor=write_cursor,
                 tx_refs=tx_ids,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 customized_handling='preserve_transactions',
             )
 
         assert write_cursor.execute(
             'SELECT group_identifier FROM history_events WHERE location=?',
-            (Location.BITCOIN.serialize_for_db(),),
+            (LOCATION_BITCOIN,),
         ).fetchall() == [(f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ids[4]}',)]
 
 
@@ -2217,10 +2228,10 @@ def test_delete_events_by_tx_ref_is_scoped_to_the_location(database: DBHandler) 
         db_events.delete_events_by_tx_ref(
             write_cursor=write_cursor,
             tx_refs=[tx_id],
-            location=Location.BITCOIN,
+            location=LOCATION_BITCOIN,
         )
         assert write_cursor.execute('SELECT location FROM history_events').fetchall() == [
-            (Location.BITCOIN_CASH.serialize_for_db(),),
+            (LOCATION_BITCOIN_CASH,),
         ]
 
 
@@ -2246,7 +2257,7 @@ def test_get_counterparties_at_location_scopes_by_location_and_entry_type(
                     tx_ref=make_evm_tx_hash(),
                     sequence_index=0,
                     timestamp=TimestampMS(1),
-                    location=Location.OPTIMISM,
+                    location=LOCATION_OPTIMISM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
@@ -2257,7 +2268,7 @@ def test_get_counterparties_at_location_scopes_by_location_and_entry_type(
                     tx_ref=make_evm_tx_hash(),
                     sequence_index=0,
                     timestamp=TimestampMS(1),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
@@ -2270,21 +2281,21 @@ def test_get_counterparties_at_location_scopes_by_location_and_entry_type(
     with database.conn.read_ctx() as cursor:
         assert DBHistoryEvents.get_counterparties_at_location(
             cursor=cursor,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             entry_types=(HistoryBaseEntryType.EVM_EVENT,),
         ) == {CPT_ONEINCH_V6, CPT_GAS}
         assert DBHistoryEvents.get_counterparties_at_location(
             cursor=cursor,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             entry_types=(HistoryBaseEntryType.EVM_EVENT,),
         ) == {CPT_ONEINCH_V6}
         assert DBHistoryEvents.get_counterparties_at_location(
             cursor=cursor,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             entry_types=(HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT),
         ) == {CPT_ONEINCH_V6, CPT_GAS, CPT_AAVE_V3}
         assert DBHistoryEvents.get_counterparties_at_location(
             cursor=cursor,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             entry_types=(HistoryBaseEntryType.EVM_EVENT,),
         ) == set()

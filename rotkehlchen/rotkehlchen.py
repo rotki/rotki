@@ -112,6 +112,8 @@ from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.chains import EVM_CHAIN_ID_TO_LOCATION, location_of_chain_balances
+from rotkehlchen.locations.constants import LOCATION_COINBASE, LOCATION_EVM_CHAINS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import (
@@ -138,7 +140,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     ExternalService,
     ListOfBlockchainAddresses,
-    Location,
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
@@ -153,6 +154,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -436,13 +438,13 @@ class Rotkehlchen:
             )
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
 
-            exchange_credentials = self.data.db.get_exchange_credentials(cursor)
+            connections = self.data.db.get_exchange_credentials(cursor)
             self.exchange_manager.initialize_exchanges(
-                exchange_credentials=exchange_credentials,
+                connections=connections,
                 database=self.data.db,
             )
             self.bank_manager.initialize_banks(
-                credentials=exchange_credentials,  # same table; the manager keeps bank locations
+                connections=connections,  # each manager keeps its own connectors
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
@@ -1289,7 +1291,7 @@ class Rotkehlchen:
                     data={'location': exchange.name, 'error': error_msg},
                 )
             else:
-                location_str = str(exchange.location)
+                location_str = str(exchange.data_location)
                 if location_str not in balances:  # need to widen type at assignment here
                     balances[location_str] = cast('dict[Asset, Balance]', exchange_balances)
                 else:  # multiple exchange of same type. Combine balances
@@ -1299,6 +1301,7 @@ class Rotkehlchen:
                     )
 
         liabilities: dict[Asset, Balance]
+        liabilities_value_per_location: defaultdict[str, FVal] = defaultdict(FVal)
         try:
             # copies below since if cache is used we end up modifying the balance sheet object
             blockchain_result = result_of(blockchain_task)
@@ -1310,16 +1313,18 @@ class Rotkehlchen:
                     data={'location': f'{chain!s} balances query', 'error': error},
                 )
 
-            blockchain_assets: dict[Asset, Balance] = {}
-            for asset, asset_balances in blockchain_result.totals.assets.items():
-                total_balance = Balance()
-                for balance in asset_balances.values():
-                    total_balance += balance
-                if total_balance.amount != ZERO:
-                    blockchain_assets[asset] = total_balance
+            # every chain is its own location bucket, so a snapshot keeps the chain breakdown
+            for chain, chain_totals in blockchain_result.per_account.totals_per_chain().items():
+                chain_location = str(location_of_chain_balances(chain))
+                for asset, asset_balances in chain_totals.assets.items():
+                    if (total_balance := sum(asset_balances.values(), start=Balance())).amount != ZERO:  # noqa: E501
+                        chain_balances = balances.setdefault(chain_location, {})
+                        chain_balances[asset] = chain_balances.get(asset, Balance()) + total_balance  # noqa: E501
 
-            if len(blockchain_assets) != 0:
-                balances[str(Location.BLOCKCHAIN)] = blockchain_assets
+                for asset_balances in chain_totals.liabilities.values():
+                    liabilities_value_per_location[chain_location] += sum(
+                        (balance.value for balance in asset_balances.values()), start=ZERO,
+                    )
 
             liabilities = {}
             for asset, asset_balances in blockchain_result.totals.liabilities.items():
@@ -1345,6 +1350,7 @@ class Rotkehlchen:
         manual_liabilities_as_dict: defaultdict[Asset, Balance] = defaultdict(Balance)
         for manual_liability in manually_tracked_liabilities:
             manual_liabilities_as_dict[manual_liability.asset] += manual_liability.value
+            liabilities_value_per_location[str(manual_liability.location)] += manual_liability.value.value  # noqa: E501
 
         liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
         # retrieve nft balances if module is activated
@@ -1359,9 +1365,6 @@ class Rotkehlchen:
                 )
             else:
                 if len(nft_balances) != 0:
-                    if (blockchain_location := str(Location.BLOCKCHAIN)) not in balances:
-                        balances[str(Location.BLOCKCHAIN)] = {}
-
                     for balance_entry in nft_balances:
                         if balance_entry['price'] == ZERO:
                             continue
@@ -1370,8 +1373,11 @@ class Rotkehlchen:
                         # as a token and we don't want to ignore NFTs from the token query since
                         # they might not be tracked by Opensea. In case of them being already
                         # in the chain balances we update the price and continue
-                        blockchain_balances = balances[blockchain_location]
                         nft = Nft(balance_entry['id'])
+                        blockchain_balances = balances.setdefault(
+                            str(EVM_CHAIN_ID_TO_LOCATION.get(nft.chain_id, LOCATION_EVM_CHAINS)),
+                            {},
+                        )
                         if (nft_as_token := GlobalDBHandler.get_evm_token(
                             address=nft.evm_address,
                             chain_id=nft.chain_id,
@@ -1387,12 +1393,16 @@ class Rotkehlchen:
 
         # Calculate value totals (in main currency)
         assets_total_balance: defaultdict[Asset, Balance] = defaultdict(Balance)
-        total_value_per_location: dict[str, FVal] = {}
+        # each location's value is net of the liabilities held there, so the values add up
+        # to the net value
+        total_value_per_location: defaultdict[str, FVal] = defaultdict(FVal)
         for location, asset_balance in balances.items():
             total_value_per_location[location] = ZERO
             for asset, balance in asset_balance.items():
                 assets_total_balance[asset] += balance
                 total_value_per_location[location] += balance.value
+        for location, liabilities_value in liabilities_value_per_location.items():
+            total_value_per_location[location] -= liabilities_value
 
         net_value = sum((balance.value for balance in assets_total_balance.values()), ZERO)
         liabilities_total_value = sum((liability.value for liability in liabilities.values()), ZERO)  # noqa: E501
@@ -1401,9 +1411,6 @@ class Rotkehlchen:
         # Calculate location stats
         location_stats: dict[str, Any] = {}
         for location, total_value in total_value_per_location.items():
-            if location == str(Location.BLOCKCHAIN):
-                total_value -= liabilities_total_value  # noqa: PLW2901
-
             percentage = (total_value / net_value).to_percentage() if net_value != ZERO else '0%'
             location_stats[location] = {
                 'value': total_value,
@@ -1571,7 +1578,7 @@ class Rotkehlchen:
         if (
                 oracle_type is HistoricalPriceOracle and
                 HistoricalPriceOracle.COINBASE in oracles and
-                not self.exchange_manager.connected_exchanges.get(Location.COINBASE)
+                not self.exchange_manager.connected_exchanges.get(LOCATION_COINBASE)
         ):
             return False, (
                 'You have enabled the Coinbase price oracle but you do not have a Coinbase '
@@ -1588,7 +1595,7 @@ class Rotkehlchen:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            connector: str,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None = None,
@@ -1599,14 +1606,15 @@ class Rotkehlchen:
             binance_history_start_ts: Timestamp | None = None,
             okx_location: OkxLocation | None = None,
             gate_location: GateLocation | None = None,
-    ) -> tuple[bool, str]:
+    ) -> tuple[ConnectionIdentifier | None, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase.
         The manager registers it and saves it in the DB atomically w.r.t. concurrent deletes.
+        Returns the new connection's identifier or None and the reason it failed.
         """
         return self.exchange_manager.setup_exchange(
             name=name,
-            location=location,
+            connector=connector,
             api_key=api_key,
             api_secret=api_secret,
             kraken_account_type=kraken_account_type,

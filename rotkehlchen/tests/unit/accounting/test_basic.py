@@ -18,6 +18,13 @@ from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+    LOCATION_UPHOLD,
+)
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
     check_pnls_and_csv,
@@ -31,7 +38,6 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     AssetAmount,
     CostBasisMethod,
-    Location,
     Price,
     Timestamp,
     TimestampMS,
@@ -88,14 +94,14 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('268.678317859')) * FVal(82)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1449809536000),  # cryptocompare hourly BTC/EUR price: 386.175
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_BTC, amount=Price(FVal('0.0010275')) * FVal(375)),
             receive=AssetAmount(asset=A_XMR, amount=FVal(375)),
@@ -103,7 +109,7 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
         ),
         *create_swap_events(
             timestamp=TimestampMS(1458070370000),  # cryptocompare hourly XMR/EUR price: 1.0443027675  # noqa: E501
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='3xyz',
             spend=AssetAmount(asset=A_XMR, amount=FVal(45)),
             receive=AssetAmount(asset=A_EUR, amount=Price(FVal('1.0443027675')) * FVal(45)),
@@ -128,14 +134,14 @@ def test_buy_event_creation(accountant):
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1476979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
             fee=AssetAmount(asset=A_BTC, amount=FVal('0.0012')),
         ), *create_swap_events(
             timestamp=TimestampMS(1476979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
@@ -162,7 +168,7 @@ def test_no_corresponding_buy_for_sell(accountant, google_service):
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
     history = create_swap_events(
         timestamp=TimestampMS(1476979735000),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_BTC, amount=ONE),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2519.62')),
@@ -210,7 +216,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=FVal(2000)),
             receive=AssetAmount(asset=A_BTC, amount=FVal('0.002') * FVal(2000)),
@@ -220,14 +226,14 @@ def test_sell_fiat_for_crypto(accountant, google_service):
         # (500*1.001 + 0.02)/2 -> 250.26 EUR per ETH
         *create_swap_events(
             timestamp=TimestampMS(1496979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_CHF, amount=FVal(500)),
             receive=AssetAmount(asset=A_ETH, amount=FVal('0.004') * FVal(500)),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1506979735000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='3xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=FVal(25000)),
@@ -259,14 +265,14 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=buy_price),
             receive=AssetAmount(asset=A_ETH, amount=ONE),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=sell_price),
@@ -298,14 +304,14 @@ def test_other_currency_fiat_trades(accountant, google_service):
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='1xyz',
             spend=AssetAmount(asset=A_USD, amount=buy_price),
             receive=AssetAmount(asset=A_ETH, amount=ONE),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_USD, amount=sell_price),
@@ -347,7 +353,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     time = Timestamp(1492685761)
     events = create_swap_events(
         timestamp=ts_sec_to_ms(time),
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.11000') * FVal('2.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2.5')),
@@ -383,14 +389,14 @@ def test_acquisition_price_not_found(accountant, google_service):
             group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1446979735000),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_COMP,
             amount=ONE,
         ), *create_swap_events(
             timestamp=TimestampMS(1635314397000),  # cryptocompare hourly COMP/EUR price: 261.39
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             group_identifier='2xyz',
             spend=AssetAmount(asset=A_COMP, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=FVal('261.39')),
@@ -412,14 +418,14 @@ def test_no_fiat_missing_acquisitions(accountant):
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1459024920000),
-            location=Location.UPHOLD,
+            location=LOCATION_UPHOLD,
             spend=AssetAmount(asset=A_USD, amount=FVal('0.8982')),
             receive=AssetAmount(asset=A_EUR, amount=ONE),
             group_identifier='trade1',
         ),
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
-            location=Location.POLONIEX,
+            location=LOCATION_POLONIEX,
             spend=AssetAmount(asset=A_EUR, amount=FVal(355.9)),
             receive=AssetAmount(asset=A_BTC, amount=ONE),
             group_identifier='trade2',
@@ -454,7 +460,7 @@ def test_non_history_event_in_history_iterator(accountant):
         group_identifier='1',
         sequence_index=0,
         timestamp=event_timestamp_ms,
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_WBTC,
@@ -463,7 +469,7 @@ def test_non_history_event_in_history_iterator(accountant):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=event_timestamp_ms,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WBTC,
@@ -476,7 +482,7 @@ def test_non_history_event_in_history_iterator(accountant):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=event_timestamp_ms,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,

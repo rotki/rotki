@@ -25,17 +25,17 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINS_WITH_NODES,
     AddressbookEntry,
     AddressbookType,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    Location,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     OptionalChainAddress,
     SupportedBlockchain,
 )
@@ -472,14 +472,20 @@ class RotkiDataUpdater:
             )
 
     def update_location_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
-        """Applies location asset mappings updates in the global DB"""
+        """Applies connector asset mappings updates in the global DB. The update type and the
+        data repo keep the old names: the connector is `location` and its symbol
+        `location_symbol`."""
+        remote_names = {'location': 'connector', 'location_symbol': 'connector_symbol'}
         self._process_mapping_updates(
-            data=data,
-            mapping_type='location',
+            data={
+                kind: [{remote_names.get(key, key): value for key, value in entry.items()} for entry in entries]  # noqa: E501
+                for kind, entries in data.items()
+            },
+            mapping_type='connector',
             update_functions=(
-                (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
-                (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
-                (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
+                (GlobalDBHandler.delete_connector_asset_mappings, ConnectorAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+                (GlobalDBHandler.update_connector_asset_mappings, ConnectorAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+                (GlobalDBHandler.add_connector_asset_mappings, ConnectorAssetMappingUpdateEntry, 'additions'),  # noqa: E501
             ),
             version=version,
         )
@@ -500,11 +506,11 @@ class RotkiDataUpdater:
     def _process_mapping_updates(
             self,
             data: dict[str, list[dict[str, Any]]],
-            mapping_type: Literal['location', 'counterparty'],
+            mapping_type: Literal['connector', 'counterparty'],
             update_functions: tuple[tuple[Callable, type, str], ...],
             version: int,
     ) -> None:
-        """Common implementation for processing both location and counterparty asset mapping updates"""  # noqa: E501
+        """Common implementation for processing both connector and counterparty asset mapping updates"""  # noqa: E501
         log.info(f'Applying update for {mapping_type} asset mappings to v{version}')
         for update_function, entry_type, raw_data_key in update_functions:
             entries, raw_data = [], data.get(raw_data_key)
@@ -515,8 +521,8 @@ class RotkiDataUpdater:
                 try:
                     if (asset_id := raw_entry.get('asset')) is not None:
                         raw_entry['asset'] = Asset(asset_id)
-                    if (raw_location := raw_entry.get('location')) is not None:
-                        raw_entry['location'] = Location.deserialize(raw_location)
+                    if (raw_connector := raw_entry.get('connector')) is not None:
+                        raw_entry['connector'] = deserialize_builtin_location(raw_connector)
                     entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # they all implement deserialize()
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')

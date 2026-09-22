@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
 from rotkehlchen.concurrency import result_of, spawn, wait
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -48,6 +49,9 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_GATE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -55,7 +59,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -100,7 +103,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.GATE,
+            location=LOCATION_GATE,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -537,7 +540,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         chunk avoids re-querying already processed chunks if a later chunk fails.
         """
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        location_string = f'{self.location!s}_history_events_{self.name}'
+        location_string = connection_range_name(self.connection_identifier, 'history_events')
         with self.db.conn.read_ctx() as cursor:
             ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
                 cursor=cursor,

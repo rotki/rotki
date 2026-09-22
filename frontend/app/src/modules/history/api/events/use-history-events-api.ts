@@ -25,6 +25,7 @@ import {
   type TransactionRequestPayload,
 } from '@/modules/history/events/event-payloads';
 import { HistoryEventTypeData } from '@/modules/history/events/event-type';
+import { withLocationScope } from '@/modules/history/events/location-scope';
 import { type HistoryEventCollectionRow, HistoryEventsCollectionResponse, type OnlineHistoryEventsRequestPayload } from '@/modules/history/events/schemas';
 
 const TransactionStatusSchema = z.object({
@@ -167,7 +168,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     filter: Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'>,
     forceDelete = false,
   ): Promise<boolean> => api.delete<boolean>('/history/events', {
-    body: { forceDelete, ...filter },
+    body: { forceDelete, ...withLocationScope(filter) },
   });
 
   const getEventDetails = async (identifier: number): Promise<HistoryEventDetail> => {
@@ -180,7 +181,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const getHistoryEventGroupPosition = async (groupIdentifier: string, payload?: Partial<HistoryEventRequestPayload>): Promise<number> => {
     const response = await api.post<{ position: number }>('/history/events/position', {
       groupIdentifier,
-      ...omit(payload ?? {}, ['aggregateByGroupIds', 'limit', 'offset', 'orderByAttributes', 'ascending']),
+      ...withLocationScope(omit(payload ?? {}, ['aggregateByGroupIds', 'limit', 'offset', 'orderByAttributes', 'ascending'])),
     }, {
       filterEmptyProperties: true,
     });
@@ -254,7 +255,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   ): Promise<CollectionResponse<HistoryEventCollectionRow>> => {
     const response = await api.post<CollectionResponse<HistoryEventCollectionRow>>(
       '/history/events',
-      payload,
+      withLocationScope(payload),
       {
         dedupe: true,
         maxQueueTime: 120_000,
@@ -293,7 +294,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     const requestBody = {
       asyncQuery: true,
       directoryPath,
-      ...omit(filters, ['accounts']),
+      ...withLocationScope(omit(filters, ['accounts'])),
     };
     const url = '/history/events/export';
 

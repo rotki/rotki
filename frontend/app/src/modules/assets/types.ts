@@ -226,6 +226,17 @@ export interface CexMappingRequestPayload extends PaginationRequestPayload<CexMa
   locationSymbol?: string;
 }
 
+/** A mapping as the backend sends it, where the exchange is the mapping's `connector`. */
+const CexMappingWire = z.object({
+  asset: z.string(),
+  connector: z.string().nullable(),
+  connectorSymbol: z.string(),
+}).transform(({ asset, connector, connectorSymbol }): CexMapping => ({
+  asset,
+  location: connector,
+  locationSymbol: connectorSymbol,
+}));
+
 export const CexMappingCollectionResponse = CollectionCommonFields.extend({
-  entries: z.array(CexMapping),
+  entries: z.array(CexMappingWire),
 });

@@ -37,6 +37,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BYBIT,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -44,7 +47,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -130,7 +132,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         """
         super().__init__(
             name=name,
-            location=Location.BYBIT,
+            location=LOCATION_BYBIT,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -615,7 +617,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 movements.extend(create_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(timestamp),
-                    location=Location.BYBIT,
+                    location=LOCATION_BYBIT,
                     location_label=self.name,
                     event_subtype=movement_subtype,
                     asset=coin,

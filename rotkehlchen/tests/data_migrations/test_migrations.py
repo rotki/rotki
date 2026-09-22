@@ -46,6 +46,13 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+)
+from rotkehlchen.locations.legacy_chars import location_to_v53_char
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
@@ -62,7 +69,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
-    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -99,13 +105,10 @@ class MockRotkiForMigrationsWithExchangeManager(MockRotkiForMigrations):
     def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
-        with db.conn.write_ctx() as cursor:
-            exchange_credentials = db.get_exchange_credentials(cursor)
+        with db.conn.read_ctx() as cursor:
+            connections = db.get_exchange_credentials(cursor)
 
-        self.exchange_manager.initialize_exchanges(
-            exchange_credentials=exchange_credentials,
-            database=db,
-        )
+        self.exchange_manager.initialize_exchanges(connections=connections, database=db)
 
 
 def assert_progress_message(msg: dict[str, Any], step_num: int, description: str | None, migration_version: int, migration_steps: int) -> None:  # noqa: E501
@@ -228,7 +231,7 @@ def test_migration_1(database: DBHandler) -> None:
     (POLONIEX) that shouldn't be affected.
     """
     rotki = MockRotkiForMigrations(database)
-    for exchange_location in [Location.BINANCE, Location.KRAKEN, Location.POLONIEX]:
+    for exchange_location in [LOCATION_BINANCE, LOCATION_KRAKEN, LOCATION_POLONIEX]:
         check_saved_events_for_exchange(
             exchange_location=exchange_location,
             db=database,
@@ -243,10 +246,10 @@ def test_migration_1(database: DBHandler) -> None:
 
     # Migration shouldn't execute and information should stay in database
     with database.user_write() as write_cursor:
-        for exchange_location in [Location.BINANCE, Location.KRAKEN]:
+        for exchange_location in [LOCATION_BINANCE, LOCATION_KRAKEN]:
             margin_tuples = ((
                  f'custom-margin-id-{exchange_location}',  # id
-                 exchange_location.serialize_for_db(),  # location
+                 location_to_v53_char(exchange_location),  # location, as in the pre-v54 schema
                  1,  # open_time
                  2,  # close_time
                  str(ONE),  # profit_loss
@@ -284,9 +287,8 @@ def test_migration_1(database: DBHandler) -> None:
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
-    check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
-    check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=False)
+    for location, should_exist in ((LOCATION_BINANCE, False), (LOCATION_POLONIEX, True), (LOCATION_KRAKEN, False)):  # noqa: E501
+        check_saved_events_for_exchange(location, rotki.data.db, should_exist=should_exist, queryrange_formatstr='{exchange}_{type}_{exchange}')  # noqa: E501
     with database.conn.read_ctx() as cursor:
         assert rotki.data.db.get_settings(cursor).last_data_migration == LAST_USERDB_DATA_MIGRATION
 
@@ -1008,7 +1010,7 @@ def test_migration_24(database: DBHandler) -> None:
                 f'10{tx_hash_3!s}',
                 0,
                 1700000002,
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
                 tx_3_sender,
                 A_ETH.identifier,
                 '1',
@@ -1030,7 +1032,7 @@ def test_migration_24(database: DBHandler) -> None:
                 f'10{tx_hash_1!s}',
                 0,
                 1700000003,
-                Location.ETHEREUM.serialize_for_db(),
+                LOCATION_ETHEREUM,
                 tx_1_sender,
                 A_ETH.identifier,
                 '2',

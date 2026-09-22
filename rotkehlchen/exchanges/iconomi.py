@@ -16,7 +16,6 @@ from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -27,6 +26,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_ICONOMI,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
@@ -37,6 +39,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -55,7 +58,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.ICONOMI,
+            location=LOCATION_ICONOMI,
             api_key=api_key,
             secret=secret,
             database=database,

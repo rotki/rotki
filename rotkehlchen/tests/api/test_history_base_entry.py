@@ -46,6 +46,15 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_BITFINEX,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -76,7 +85,6 @@ from rotkehlchen.types import (
     BTCTxId,
     ChainID,
     EvmTransaction,
-    Location,
     SolanaAddress,
     Timestamp,
     TimestampMS,
@@ -207,7 +215,7 @@ def test_add_edit_delete_entries(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(grouped_entries[0], include_identifier=False),
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -289,7 +297,7 @@ def test_add_edit_delete_entries(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(entries=[entry], include_identifier=True),
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # test that setting a real tx_hash that's only missing from the DB pulls the tx from onchain.
@@ -312,10 +320,10 @@ def test_add_edit_delete_entries(
     json_data = entries_to_input_dict(entries=[history_event_entry], include_identifier=True)
     json_data['asset'] = A_ETH.identifier
     for location, error_msg in (
-        (Location.BITCOIN, 'bitcoin events must use BTC as the asset'),
-        (Location.BITCOIN_CASH, 'bitcoin_cash events must use BCH as the asset'),
+        (LOCATION_BITCOIN, 'bitcoin events must use BTC as the asset'),
+        (LOCATION_BITCOIN_CASH, 'bitcoin cash events must use BCH as the asset'),
     ):
-        json_data['location'] = location.serialize()
+        json_data['location'] = location
         assert_error_response(
             response=requests.patch(
                 api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -441,7 +449,7 @@ def test_event_with_details(rotkehlchen_api_server: APIServer) -> None:
         tx_ref=transaction.tx_hash,
         sequence_index=221,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_SUSHI,
@@ -451,7 +459,7 @@ def test_event_with_details(rotkehlchen_api_server: APIServer) -> None:
         tx_ref=transaction.tx_hash,
         sequence_index=222,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
@@ -635,7 +643,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'location': Location.KRAKEN.serialize()},
+        json={'location': LOCATION_KRAKEN},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
@@ -648,7 +656,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'location': Location.ETHEREUM.serialize()},
+        json={'location': LOCATION_ETHEREUM},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 8
@@ -748,7 +756,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c71'),
                 sequence_index=1,
                 timestamp=TimestampMS(1639924590000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -760,7 +768,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c72'),
                 sequence_index=100,
                 timestamp=TimestampMS(1639924590000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -794,7 +802,7 @@ def test_get_events_with_location_labels_filter(rotkehlchen_api_server: APIServe
                 group_identifier=(group_identifier := 'btc_xxxxxx'),
                 sequence_index=0,
                 timestamp=TimestampMS(1722153222000),
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -812,12 +820,12 @@ def test_get_events_with_location_labels_filter(rotkehlchen_api_server: APIServe
     assert result['entries'][0]['entry']['group_identifier'] == group_identifier
 
 
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_KRAKEN,)])
 def test_query_new_events(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that querying new exchange events works correctly both sync and async"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    query_filter = HistoryEventFilterQuery.make(location=Location.KRAKEN)
+    query_filter = HistoryEventFilterQuery.make(location=LOCATION_KRAKEN)
     async_query = random.choice([True, False])
 
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -834,8 +842,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: APIServer) -> N
         ),
         json={
             'async_query': async_query,
-            'location': Location.KRAKEN.serialize(),
-            'name': 'mockkraken',
+            'identifier': rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.exchange_manager.connected_exchanges[LOCATION_KRAKEN][0].connection_identifier,  # noqa: E501
         },
     )
 
@@ -1080,7 +1087,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         )) == [SwapEvent(
             identifier=1,
             timestamp=TimestampMS(1569924575000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('50'),
@@ -1090,7 +1097,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=2,
             timestamp=TimestampMS(1569924575000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.026'),
@@ -1099,7 +1106,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=10,  # higher id since it was added during edit
             timestamp=TimestampMS(1569924575000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('0.1'),
@@ -1108,7 +1115,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=11,  # higher id since it was added during edit
             timestamp=TimestampMS(1569924575000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.01'),
@@ -1118,55 +1125,55 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=3,
             timestamp=TimestampMS(1569924576000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.01'),
             notes='Example note',
             extra_data={'reference': 'TRADE2'},
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='TRADE2',
             ),
         ), SwapEvent(
             identifier=4,
             timestamp=TimestampMS(1569924576000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('20'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='TRADE2',
             ),
         ), SwapEvent(
             identifier=5,
             timestamp=TimestampMS(1569924576000),
-            location=Location.BITFINEX,
+            location=LOCATION_BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.000004'),
             group_identifier=create_group_identifier_from_unique_id(
-                location=Location.BITFINEX,
+                location=LOCATION_BITFINEX,
                 unique_id='TRADE2',
             ),
         ), SwapEvent(
             identifier=6,
             timestamp=(trade3_timestamp := TimestampMS(1569954576000)),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.02'),
             notes='Example note',
             extra_data={'reference': 'TRADE3'},
             group_identifier=(trade3_identifier := create_group_identifier_from_unique_id(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 unique_id='TRADE3',
             )),
         ), SwapEvent(
             identifier=7,
             timestamp=trade3_timestamp,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('200'),
@@ -1175,7 +1182,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=8,
             timestamp=trade3_timestamp,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.000044'),
@@ -1184,7 +1191,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: APIServer) -> None:
         ), SwapEvent(
             identifier=9,
             timestamp=trade3_timestamp,
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('0.5'),
@@ -1319,7 +1326,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entry,
         ),
-        contained_in_msg='The provided transaction hash does not exist for ethereum.',
+        contained_in_msg='The provided transaction hash does not exist for Ethereum Mainnet.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     entry['tx_ref'] = tx_hash_str
@@ -1342,7 +1349,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=0,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
@@ -1357,7 +1364,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=1,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBNB,
@@ -1371,7 +1378,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=2,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
@@ -1385,7 +1392,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=3,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WETH,
@@ -1398,7 +1405,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=4,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_WETH,
@@ -1410,7 +1417,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             identifier=6,
             sequence_index=123,
             timestamp=TimestampMS(1569924576000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('50'),
@@ -1422,7 +1429,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             identifier=7,
             sequence_index=124,
             timestamp=TimestampMS(1569924576000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.026'),
@@ -1456,7 +1463,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=0,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
@@ -1472,7 +1479,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=1,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBNB,
@@ -1487,7 +1494,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=2,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
@@ -1502,7 +1509,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='test_id',
             sequence_index=3,
             timestamp=TimestampMS(1569924575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.MULTI_TRADE,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_WETH,
@@ -1529,7 +1536,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
         'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'counterparty': 'some counterparty',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
-        'auto_notes': 'Swap 50 USDT in Ethereum',
+        'auto_notes': 'Swap 50 USDT in Ethereum Mainnet',
     }
 
 
@@ -1560,7 +1567,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=(tx_hash := deserialize_evm_tx_hash('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f')),  # noqa: E501
                 sequence_index=0,
                 timestamp=(timestamp := TimestampMS(1569924575000)),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_WBTC,
@@ -1569,7 +1576,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
             ), EvmSwapEvent(
                 sequence_index=1,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=FVal('0.16'),
@@ -1577,7 +1584,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
             ), EvmSwapEvent(
                 sequence_index=2,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_WBTC,
                 amount=FVal('0.003'),
@@ -1585,7 +1592,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
             ), EvmSwapEvent(
                 sequence_index=3,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
                 amount=FVal('0.0002'),
@@ -1594,7 +1601,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=4,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1603,7 +1610,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=5,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.MULTI_TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
@@ -1612,7 +1619,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=6,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.MULTI_TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_WBTC,
@@ -1621,7 +1628,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=7,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.MULTI_TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
@@ -1630,7 +1637,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=8,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.MULTI_TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDT,
@@ -1639,7 +1646,7 @@ def test_event_grouping(rotkehlchen_api_server: APIServer) -> None:
                 tx_ref=tx_hash,
                 sequence_index=9,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.MULTI_TRADE,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -1683,7 +1690,7 @@ def test_group_has_ignored_assets_flag(rotkehlchen_api_server: APIServer) -> Non
                 EvmSwapEvent(
                     sequence_index=1,
                     timestamp=timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_subtype=HistoryEventSubType.SPEND,
                     asset=A_ETH,
                     amount=FVal('0.16'),
@@ -1692,7 +1699,7 @@ def test_group_has_ignored_assets_flag(rotkehlchen_api_server: APIServer) -> Non
                 EvmSwapEvent(
                     sequence_index=2,
                     timestamp=timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_WBTC,
                     amount=FVal('0.003'),
@@ -1842,7 +1849,7 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         tx_ref=make_evm_tx_hash(),
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -1865,7 +1872,7 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         tx_ref=BTCTxId(btc_tx_id),
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -1876,7 +1883,7 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: APIServer) -> None
         tx_ref=BTCTxId(bch_tx_id),
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,
@@ -2131,7 +2138,7 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='group1',
             sequence_index=0,
             timestamp=TimestampMS(1600000000000),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
@@ -2142,7 +2149,7 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='group2',
             sequence_index=0,
             timestamp=(ts2 := TimestampMS(1600100000000)),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_DAI,
@@ -2153,7 +2160,7 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='group3',
             sequence_index=0,
             timestamp=ts2,
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
@@ -2164,7 +2171,7 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
             group_identifier='group4',
             sequence_index=0,
             timestamp=TimestampMS(1600200000000),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_USDC,
@@ -2196,6 +2203,17 @@ def test_delete_events_by_filter(rotkehlchen_api_server: APIServer) -> None:
         response=requests.delete(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json={'force_delete': True},
+        ),
+        contained_in_msg='Either identifiers or filter parameters must be provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert get_event_identifiers() == {1, 2, 3, 4}
+
+    # Test: deletion with only a location scope (no location) should fail
+    assert_error_response(
+        response=requests.delete(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'location_scope': 'subtree'},
         ),
         contained_in_msg='Either identifiers or filter parameters must be provided',
         status_code=HTTPStatus.BAD_REQUEST,

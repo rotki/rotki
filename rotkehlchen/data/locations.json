@@ -1,0 +1,386 @@
+[
+  {
+    "identifier": "total",
+    "name": "Total",
+    "parent_identifier": null,
+    "icon": "lu-wallet"
+  },
+  {
+    "identifier": "blockchain",
+    "name": "Blockchains",
+    "parent_identifier": "total",
+    "icon": "lu-link"
+  },
+  {
+    "identifier": "evm chains",
+    "name": "EVM Chains",
+    "parent_identifier": "blockchain",
+    "icon": "lu-layers"
+  },
+  {
+    "identifier": "ethereum",
+    "name": "Ethereum Mainnet",
+    "parent_identifier": "evm chains",
+    "image": "ethereum.svg"
+  },
+  {
+    "identifier": "optimism",
+    "name": "Optimism",
+    "parent_identifier": "evm chains",
+    "image": "optimism.svg"
+  },
+  {
+    "identifier": "arbitrum one",
+    "name": "Arbitrum One",
+    "parent_identifier": "evm chains",
+    "image": "arbitrum_one.svg"
+  },
+  {
+    "identifier": "base",
+    "name": "Base",
+    "parent_identifier": "evm chains",
+    "image": "base.svg"
+  },
+  {
+    "identifier": "polygon pos",
+    "name": "Polygon PoS",
+    "parent_identifier": "evm chains",
+    "image": "polygon_pos.svg"
+  },
+  {
+    "identifier": "gnosis",
+    "name": "Gnosis",
+    "parent_identifier": "evm chains",
+    "image": "gnosis.svg"
+  },
+  {
+    "identifier": "scroll",
+    "name": "Scroll",
+    "parent_identifier": "evm chains",
+    "image": "scroll.svg"
+  },
+  {
+    "identifier": "binance sc",
+    "name": "Binance Smart Chain",
+    "parent_identifier": "evm chains",
+    "image": "binance_sc.svg"
+  },
+  {
+    "identifier": "hyperliquid",
+    "name": "Hyperliquid",
+    "parent_identifier": "evm chains",
+    "image": "hyperliquid.svg"
+  },
+  {
+    "identifier": "monad",
+    "name": "Monad",
+    "parent_identifier": "evm chains",
+    "image": "monad.svg"
+  },
+  {
+    "identifier": "sonic",
+    "name": "Sonic",
+    "parent_identifier": "evm chains",
+    "image": "sonic.svg"
+  },
+  {
+    "identifier": "robinhood",
+    "name": "Robinhood Chain",
+    "parent_identifier": "evm chains",
+    "image": "robinhood.svg"
+  },
+  {
+    "identifier": "ink",
+    "name": "Ink",
+    "parent_identifier": "evm chains",
+    "image": "ink.svg"
+  },
+  {
+    "identifier": "avalanche",
+    "name": "Avalanche",
+    "parent_identifier": "evm chains",
+    "image": "avalanche.svg"
+  },
+  {
+    "identifier": "bitcoin",
+    "name": "Bitcoin",
+    "parent_identifier": "blockchain",
+    "image": "bitcoin.svg"
+  },
+  {
+    "identifier": "bitcoin cash",
+    "name": "Bitcoin Cash",
+    "parent_identifier": "blockchain",
+    "image": "bitcoin-cash.svg"
+  },
+  {
+    "identifier": "solana",
+    "name": "Solana",
+    "parent_identifier": "blockchain",
+    "image": "solana.svg"
+  },
+  {
+    "identifier": "polkadot",
+    "name": "Polkadot",
+    "parent_identifier": "blockchain",
+    "image": "polkadot.svg"
+  },
+  {
+    "identifier": "kusama",
+    "name": "Kusama",
+    "parent_identifier": "blockchain",
+    "image": "kusama.svg"
+  },
+  {
+    "identifier": "zksync lite",
+    "name": "ZKSync Lite",
+    "parent_identifier": "blockchain",
+    "image": "zksync_lite.svg"
+  },
+  {
+    "identifier": "loopring",
+    "name": "Loopring",
+    "parent_identifier": "blockchain",
+    "image": "loopring.svg"
+  },
+  {
+    "identifier": "exchanges",
+    "name": "Exchanges",
+    "parent_identifier": "total",
+    "icon": "lu-arrow-left-right"
+  },
+  {
+    "identifier": "kraken",
+    "name": "Kraken",
+    "parent_identifier": "exchanges",
+    "image": "kraken.svg"
+  },
+  {
+    "identifier": "poloniex",
+    "name": "Poloniex",
+    "parent_identifier": "exchanges",
+    "image": "poloniex.svg"
+  },
+  {
+    "identifier": "bittrex",
+    "name": "Bittrex",
+    "parent_identifier": "exchanges",
+    "image": "bittrex.svg"
+  },
+  {
+    "identifier": "binance",
+    "name": "Binance",
+    "parent_identifier": "exchanges",
+    "image": "binance.svg"
+  },
+  {
+    "identifier": "binanceus",
+    "name": "Binance US",
+    "parent_identifier": "exchanges",
+    "image": "binance.svg"
+  },
+  {
+    "identifier": "bitmex",
+    "name": "Bitmex",
+    "parent_identifier": "exchanges",
+    "image": "bitmex.svg"
+  },
+  {
+    "identifier": "coinbase",
+    "name": "Coinbase",
+    "parent_identifier": "exchanges",
+    "image": "coinbase.svg"
+  },
+  {
+    "identifier": "coinbasepro",
+    "name": "Coinbase Pro",
+    "parent_identifier": "exchanges",
+    "image": "coinbasepro.svg"
+  },
+  {
+    "identifier": "coinbaseprime",
+    "name": "Coinbase Prime",
+    "parent_identifier": "exchanges",
+    "image": "coinbaseprime.svg"
+  },
+  {
+    "identifier": "gemini",
+    "name": "Gemini",
+    "parent_identifier": "exchanges",
+    "image": "gemini.svg"
+  },
+  {
+    "identifier": "cryptocom",
+    "name": "Crypto.com",
+    "parent_identifier": "exchanges",
+    "image": "crypto_com.svg"
+  },
+  {
+    "identifier": "bitstamp",
+    "name": "Bitstamp",
+    "parent_identifier": "exchanges",
+    "image": "bitstamp.svg"
+  },
+  {
+    "identifier": "bitfinex",
+    "name": "Bitfinex",
+    "parent_identifier": "exchanges",
+    "image": "bitfinex.svg"
+  },
+  {
+    "identifier": "bitcoinde",
+    "name": "Bitcoin.de",
+    "parent_identifier": "exchanges",
+    "image": "btcde.svg"
+  },
+  {
+    "identifier": "iconomi",
+    "name": "Iconomi",
+    "parent_identifier": "exchanges",
+    "image": "iconomi.svg"
+  },
+  {
+    "identifier": "kucoin",
+    "name": "Kucoin",
+    "parent_identifier": "exchanges",
+    "image": "kucoin.svg"
+  },
+  {
+    "identifier": "ftx",
+    "name": "FTX",
+    "parent_identifier": "exchanges",
+    "image": "ftx.svg"
+  },
+  {
+    "identifier": "ftxus",
+    "name": "FTX US",
+    "parent_identifier": "exchanges",
+    "image": "ftxus.svg"
+  },
+  {
+    "identifier": "nexo",
+    "name": "Nexo",
+    "parent_identifier": "exchanges",
+    "image": "nexo.svg"
+  },
+  {
+    "identifier": "blockfi",
+    "name": "Blockfi",
+    "parent_identifier": "exchanges",
+    "image": "blockfi.svg"
+  },
+  {
+    "identifier": "independentreserve",
+    "name": "Independent Reserve",
+    "parent_identifier": "exchanges",
+    "image": "independentreserve.svg"
+  },
+  {
+    "identifier": "shapeshift",
+    "name": "Shapeshift",
+    "parent_identifier": "exchanges",
+    "image": "shapeshift.svg"
+  },
+  {
+    "identifier": "uphold",
+    "name": "Uphold",
+    "parent_identifier": "exchanges",
+    "image": "uphold.svg"
+  },
+  {
+    "identifier": "bitpanda",
+    "name": "Bitpanda",
+    "parent_identifier": "exchanges",
+    "image": "bitpanda.svg"
+  },
+  {
+    "identifier": "bisq",
+    "name": "Bisq",
+    "parent_identifier": "exchanges",
+    "image": "bisq.svg"
+  },
+  {
+    "identifier": "okx",
+    "name": "OKX",
+    "parent_identifier": "exchanges",
+    "image": "okx.svg"
+  },
+  {
+    "identifier": "woo",
+    "name": "Woo",
+    "parent_identifier": "exchanges",
+    "image": "woo.svg"
+  },
+  {
+    "identifier": "bybit",
+    "name": "Bybit",
+    "parent_identifier": "exchanges",
+    "image": "bybit.svg"
+  },
+  {
+    "identifier": "htx",
+    "name": "HTX",
+    "parent_identifier": "exchanges",
+    "image": "htx.svg"
+  },
+  {
+    "identifier": "gate",
+    "name": "Gate",
+    "parent_identifier": "exchanges",
+    "image": "gate.svg"
+  },
+  {
+    "identifier": "bit2me",
+    "name": "Bit2Me",
+    "parent_identifier": "exchanges",
+    "image": "bit2me.png"
+  },
+  {
+    "identifier": "coinex",
+    "name": "CoinEx",
+    "parent_identifier": "exchanges",
+    "image": "coinex.svg"
+  },
+  {
+    "identifier": "banks",
+    "name": "Banks",
+    "parent_identifier": "total",
+    "icon": "lu-landmark"
+  },
+  {
+    "identifier": "qonto",
+    "name": "Qonto",
+    "parent_identifier": "banks",
+    "image": "qonto.svg"
+  },
+  {
+    "identifier": "other",
+    "name": "Other",
+    "parent_identifier": "total",
+    "icon": "lu-ellipsis"
+  },
+  {
+    "identifier": "external",
+    "name": "External",
+    "parent_identifier": "other",
+    "icon": "lu-book-text"
+  },
+  {
+    "identifier": "equities",
+    "name": "Equities",
+    "parent_identifier": "other",
+    "icon": "lu-luggage"
+  },
+  {
+    "identifier": "realestate",
+    "name": "Real estate",
+    "parent_identifier": "other",
+    "icon": "lu-house"
+  },
+  {
+    "identifier": "commodities",
+    "name": "Commodities",
+    "parent_identifier": "other",
+    "icon": "lu-leaf"
+  }
+]

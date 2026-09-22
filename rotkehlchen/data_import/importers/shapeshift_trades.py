@@ -10,12 +10,15 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.locations.constants import (
+    LOCATION_SHAPESHIFT,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -86,7 +89,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         self.add_history_events(
             write_cursor=write_cursor,
             history_events=create_swap_events(
-                location=Location.SHAPESHIFT,
+                location=LOCATION_SHAPESHIFT,
                 timestamp=ts_sec_to_ms(timestamp),
                 spend=AssetAmount(asset=sold_asset, amount=sold_amount),
                 receive=AssetAmount(asset=buy_asset, amount=buy_amount),

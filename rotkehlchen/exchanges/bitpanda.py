@@ -33,6 +33,9 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BITPANDA,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -40,7 +43,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_int_from_str,
 )
-from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Timestamp
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -72,7 +75,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
     ):
         super().__init__(
             name=name,
-            location=Location.BITPANDA,
+            location=LOCATION_BITPANDA,
             api_key=api_key,
             database=database,
             msg_aggregator=msg_aggregator,

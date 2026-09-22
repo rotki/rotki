@@ -18,9 +18,12 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_HTX,
+)
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -115,7 +118,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         )
     expected_movements = [
         AssetMovement(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             location_label=htx_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1612820394000),
@@ -127,7 +130,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
                 'transaction_id': '0xda9752c57c3c5e7b847b69f4e7bc2b7bc40beca0f47b4c4d73e9e166eb46d1a6',  # noqa: E501
             },
         ), AssetMovement(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             location_label=htx_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1710153143000),
@@ -139,7 +142,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
                 'transaction_id': '0xefc9ea1f3cf1ed581d75a43eecb1dc17b6f4fd96440f1c0d880f1e9c86e6c179',  # noqa: E501
             },
         ), AssetMovement(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             location_label=htx_exchange.name,
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1631140110000),
@@ -151,7 +154,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
                 'transaction_id': '0xd41ab5afa0e19c84ffa388bbfc60623e4936af2232861e1cf365b2f8725cbd2c',  # noqa: E501
             },
         ), AssetMovement(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             location_label=htx_exchange.name,
             event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1631140110000),
@@ -201,167 +204,167 @@ def test_trades(htx_exchange: Htx) -> None:
 
     assert events == [SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('0.40570207780497658421490'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='8208887641319065',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DOGE,
         amount=FVal('0.587616346289181345'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='8208887641319065',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_DOGE,
         amount=FVal('0.62254395'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='8208887641319065',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('5.638107804'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1836658935934866',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DOGE,
         amount=FVal('8.1662'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1836658935934866',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_DOGE,
         amount=FVal('0.006007'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1836658935934866',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('59.7459566'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='2186266790953303',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DOGE,
         amount=FVal('1.537'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='2186266790953303',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_DOGE,
         amount=FVal('0.003074'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='2186266790953303',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_DAI,
         amount=FVal('1038.18'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1552611026239689',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('1037.660910'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1552611026239689',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('2.07532182'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='1552611026239689',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_DAI,
         amount=FVal('26.3'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='3409716930791340',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('26.28948'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='3409716930791340',
         ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
-        location=Location.HTX,
+        location=LOCATION_HTX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.05257896'),
         location_label='htx',
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HTX,
+            location=LOCATION_HTX,
             unique_id='3409716930791340',
         ),
     )]

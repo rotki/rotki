@@ -37,9 +37,10 @@ const manifest: BankManifest = {
   accessTier: 'official api',
   authFlow: [{ primitive: 'static secret' }],
   capabilities: ['balances'],
+  connectorIdentifier: 'qonto',
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  fixedLocation: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: '', label: 'Login', secret: false, slot: 'api_key' }, { description: '', label: 'Secret', secret: true, slot: 'api_secret' }],
   setupNotes: [],
@@ -47,7 +48,9 @@ const manifest: BankManifest = {
 };
 
 const connection: BankConnection = {
+  connector: 'qonto',
   displayName: 'Qonto',
+  identifier: 'c1',
   location: 'qonto',
   name: 'Qonto main',
   syncStatus: { authChallenge: null, lastError: 'boom', lastSyncTs: 1757595000, running: false },
@@ -69,7 +72,7 @@ describe('banks page', () => {
           RouterLink: true,
           RuiDataTable: {
             props: ['rows'],
-            template: `<div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
+            template: `<div><div v-for="row in rows" :key="row.identifier" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
           },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
           Teleport: { template: '<span><slot /></span>' },
@@ -103,6 +106,7 @@ describe('banks page', () => {
     await wrapper.find('[data-testid=add-bank]').trigger('click');
     await nextTick();
     expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toEqual({
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: '' },
       location: 'qonto',
       mode: 'add',
@@ -124,7 +128,7 @@ describe('banks page', () => {
     expect(wrapper.find('[data-testid=bank-sync-error]').exists()).toBe(true);
     wrapper.findComponent(BankConnectionActions).vm.$emit('sync');
     await flushPromises();
-    expect(syncBanks).toHaveBeenCalledWith({ location: 'qonto', name: 'Qonto main' });
+    expect(syncBanks).toHaveBeenCalledWith({ identifier: 'c1' });
   });
 
   describe('a connection with a pending challenge', () => {
@@ -147,11 +151,11 @@ describe('banks page', () => {
       expect(wrapper.findComponent(BankConnectionActions).props('authenticationRequired')).toBe(true);
       wrapper.findComponent(BankConnectionActions).vm.$emit('authenticate');
       await nextTick();
-      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, identifier: 'c1', location: 'qonto', name: 'Qonto main' });
     });
 
     it('should open the authentication a link asks for once the connection is listed', async () => {
-      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      routeQuery.value = { authenticate: 'c1' };
       useBankConnectionsStore().setConnections([]);
       wrapper = createWrapper();
       await flushPromises();
@@ -159,11 +163,11 @@ describe('banks page', () => {
 
       useBankConnectionsStore().setConnections([waiting]);
       await flushPromises();
-      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, identifier: 'c1', location: 'qonto', name: 'Qonto main' });
     });
 
     it('should open nothing when the linked connection has no challenge left', async () => {
-      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      routeQuery.value = { authenticate: 'c1' };
       wrapper = createWrapper();
       await flushPromises();
 
@@ -179,7 +183,9 @@ describe('banks page', () => {
     actions.vm.$emit('edit');
     await nextTick();
     expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toEqual({
+      connector: 'qonto',
       credentials: { api_key: '', api_secret: '' },
+      identifier: 'c1',
       location: 'qonto',
       mode: 'edit',
       name: 'Qonto main',

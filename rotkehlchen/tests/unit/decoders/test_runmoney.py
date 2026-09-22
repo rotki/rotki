@@ -13,9 +13,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -28,7 +31,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1750361627000)),
         sequence_index=0,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -39,7 +42,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=1,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
@@ -52,7 +55,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=2,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:8453/erc721:0x1089Db83561d4c9B68350E1c292279817AC6c8DA/21'),
@@ -74,7 +77,7 @@ def test_stake(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1750361935000)),
         sequence_index=0,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -85,7 +88,7 @@ def test_stake(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=245,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -107,7 +110,7 @@ def test_unstake(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1745189763000)),
         sequence_index=0,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -118,7 +121,7 @@ def test_unstake(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=640,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -140,7 +143,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1749456433000)),
         sequence_index=0,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -151,7 +154,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=83,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
@@ -164,7 +167,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=88,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:8453/erc20:0x4200000000000000000000000000000000000006'),

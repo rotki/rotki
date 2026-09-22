@@ -10,9 +10,9 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { name, edit, location, errorMessages } = defineProps<{
-  name: string;
-  edit: boolean;
+const { identifier, location, errorMessages } = defineProps<{
+  /** The connection being edited, absent while adding one. */
+  identifier?: string;
   location: string;
   errorMessages?: string[];
 }>();
@@ -115,9 +115,9 @@ async function queryAllMarkets() {
 }
 
 async function loadUserMarkets() {
-  if (edit) {
+  if (identifier) {
     try {
-      const markets = await api.queryBinanceUserMarkets(name, location);
+      const markets = await api.queryBinanceUserMarkets(identifier);
       set(queriedMarkets, markets);
       set(selection, markets);
     }

@@ -229,7 +229,7 @@ watch(route, async (route) => {
       <RuiDataTable
         v-model:sort="sort"
         outlined
-        row-attr="name"
+        row-attr="identifier"
         data-testid="exchange-table"
         :rows="rows"
         :cols="cols"

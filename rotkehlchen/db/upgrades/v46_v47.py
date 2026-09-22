@@ -8,7 +8,6 @@ from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -217,10 +216,10 @@ def upgrade_v46_to_v47(db: DBHandler, progress_handler: DBUpgradeProgressHandler
 
     @progress_step(description='Reset exchanges events and cache')
     def _reset_exchanges_events_and_cache(write_cursor: DBCursor) -> None:
-        for location in (Location.GEMINI, Location.BYBIT, Location.COINBASE):
+        for db_loc, loc in (('L', 'gemini'), ('m', 'bybit'), ('G', 'coinbase')):
             write_cursor.execute(
                 'DELETE FROM history_events WHERE location=? AND event_identifier NOT LIKE ?',
-                ((db_loc := location.serialize_for_db()), f'{ROTKI_EVENT_PREFIX}_%'),
+                (db_loc, f'{ROTKI_EVENT_PREFIX}_%'),
             )
             write_cursor.execute(
                 "DELETE FROM trades WHERE location=? AND link != ''",
@@ -229,7 +228,7 @@ def upgrade_v46_to_v47(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             write_cursor.execute(
                 'DELETE FROM used_query_ranges WHERE name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?',  # noqa: E501
                 (
-                    f'{(loc := location.serialize())}_history_events_%',
+                    f'{loc}_history_events_%',
                     f'{loc}_trades_%',
                     f'{loc}_margins_%',
                     f'{loc}_asset_movements_%',
@@ -238,7 +237,7 @@ def upgrade_v46_to_v47(db: DBHandler, progress_handler: DBUpgradeProgressHandler
 
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
-            (f'{(coinbase_loc := Location.COINBASE.serialize())}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
+            ('coinbase_%_last_query_ts', 'coinbase_%_last_query_id'),
         )
 
     @progress_step(description='Remove old accounting rules')

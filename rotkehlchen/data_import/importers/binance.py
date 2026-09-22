@@ -20,6 +20,9 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -28,7 +31,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     DEFAULT_TIMEZONE,
     AssetAmount,
-    Location,
     Price,
     Timestamp,
     Timezone,
@@ -152,7 +154,7 @@ class BinanceTransferEntry(BinanceMultipleEntry):
                 group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=row['Coin'],
@@ -373,7 +375,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             combined_hash = hashlib.sha256('_'.join(hash_binance_csv_row(row) for row in sorted(trade_rows, key=operator.itemgetter(INDEX))).encode()).hexdigest()  # noqa: E501
             swap_events.extend(create_swap_events(
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 spend=AssetAmount(asset=from_asset, amount=from_amount),
                 receive=AssetAmount(asset=to_asset, amount=to_amount),
                 fee=fee,
@@ -415,7 +417,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     ) -> None:
         asset = data['Coin']
         importer.add_history_events(write_cursor, [AssetMovement(
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_subtype=(
                 HistoryEventSubType.SPEND
                 if data['Operation'] == 'Withdraw' else
@@ -472,7 +474,7 @@ class BinanceDistributionEntry(BinanceSingleEntry):
                 group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=(
                     HistoryEventSubType.AIRDROP
@@ -521,7 +523,7 @@ class BinanceBalanceAdjustmentEntry(BinanceSingleEntry):
             group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=data['Coin'],
@@ -554,7 +556,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             amount=data['Change'],
@@ -606,7 +608,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.REWARD,
                 asset=asset,
@@ -623,7 +625,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=asset,
@@ -640,7 +642,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
-                location=Location.BINANCE,
+                location=LOCATION_BINANCE,
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=asset,
@@ -694,7 +696,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
             group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=data['Coin'],
@@ -747,7 +749,7 @@ class BinancePOSEntry(BinanceSingleEntry):
             group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             event_type=event_type,
             event_subtype=event_subtype,
             amount=abs(data['Change']),

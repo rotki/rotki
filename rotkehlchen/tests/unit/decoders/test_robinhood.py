@@ -7,9 +7,12 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH_ROBINHOOD
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ROBINHOOD,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.robinhood import ROBINHOOD_MAINNET_NODE
-from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, TimestampMS, deserialize_evm_tx_hash
 
 WETH_ROBINHOOD_ADDRESS = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73'
 
@@ -32,7 +35,7 @@ def test_eth_transfer(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1788598347000)),
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -43,7 +46,7 @@ def test_eth_transfer(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -72,7 +75,7 @@ def test_weth_wrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1788598306000)),
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -83,7 +86,7 @@ def test_weth_wrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_ETH,
@@ -96,7 +99,7 @@ def test_weth_wrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=A_WETH_ROBINHOOD,
@@ -126,7 +129,7 @@ def test_weth_unwrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1788598146000)),
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -137,7 +140,7 @@ def test_weth_unwrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=A_WETH_ROBINHOOD,
@@ -150,7 +153,7 @@ def test_weth_unwrap(robinhood_inquirer, robinhood_accounts):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ROBINHOOD,
+        location=LOCATION_ROBINHOOD,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=A_ETH,

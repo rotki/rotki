@@ -10,12 +10,15 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKFI,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -59,7 +62,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                     location='BlockFi',
                     timezone_name=timezone,
                 )),
-                location=Location.BLOCKFI,
+                location=LOCATION_BLOCKFI,
                 spend=AssetAmount(
                     asset=asset_from_blockfi(csv_row['Sold Currency']),
                     amount=sold_amount,
@@ -70,7 +73,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                 ),
                 spend_notes=csv_row['Type'],
                 group_identifier=create_group_identifier_from_unique_id(
-                    location=Location.BLOCKFI,
+                    location=LOCATION_BLOCKFI,
                     unique_id=csv_row['Trade ID'],
                 ),
             ),

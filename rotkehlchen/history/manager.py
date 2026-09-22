@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -7,9 +7,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
-from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
+from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -22,6 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.history.processing import HistoryProcessingCoordinator
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -89,7 +93,7 @@ class HistoryQueryingManager:
     def query_history_events(
             self,
             cursor: DBCursor,
-            location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             filter_query: HistoryEventFilterQuery,
             only_cache: bool,
     ) -> tuple[list[HistoryEvent], int]:
@@ -101,7 +105,7 @@ class HistoryQueryingManager:
             exchanges_list = self.exchange_manager.connected_exchanges.get(location, [])
             exchange_names = []
             for exchange_instance in exchanges_list:
-                if location == Location.KRAKEN:
+                if location == LOCATION_KRAKEN:
                     exchange_instance.query_history_events()
                 elif exchange_instance.query_lending_interests_history(  # type: ignore
                     cursor=cursor,
@@ -112,7 +116,7 @@ class HistoryQueryingManager:
 
             if len(exchange_names) != 0:
                 self.msg_aggregator.add_error(
-                    f'Failed to query some events from {location.name} exchanges '
+                    f'Failed to query some events from {location} exchanges '
                     f'{",".join(exchange_names)}',
                 )
 

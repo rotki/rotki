@@ -188,6 +188,24 @@ class BlockchainBalances:
 
         return new_totals
 
+    def totals_per_chain(self) -> dict[SupportedBlockchain, BalanceSheet]:
+        """Balance totals of each chain that has accounts"""
+        totals: dict[SupportedBlockchain, BalanceSheet] = {}
+        for chain, chain_attribute in self.chains_with_tokens():
+            if len(chain_attribute) != 0:
+                totals[chain] = chain_totals = BalanceSheet()
+                for account_balances in chain_attribute.values():
+                    chain_totals += account_balances
+
+        for chain, chain_attribute in self.bitcoin_chains():
+            if len(chain_attribute) != 0:
+                totals[chain] = chain_totals = BalanceSheet()
+                asset = A_BTC if chain == SupportedBlockchain.BITCOIN else A_BCH
+                for balance in chain_attribute.values():
+                    chain_totals.assets[asset][DEFAULT_BALANCE_LABEL] += balance
+
+        return totals
+
     def serialize(self, given_chain: SupportedBlockchain | None) -> dict[str, dict]:
         """Serializes the blockchain balances to a dict for api consumption.
 

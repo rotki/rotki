@@ -4,9 +4,9 @@ import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges'
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseExchangeDataReturn {
@@ -14,7 +14,7 @@ interface UseExchangeDataReturn {
   useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetProtocolBalances>;
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
-  isSameExchange: (a: Exchange, b: Exchange) => boolean;
+  isSameExchange: (a: { identifier: string }, b: { identifier: string }) => boolean;
 }
 
 export function useExchangeData(): UseExchangeDataReturn {
@@ -22,13 +22,13 @@ export function useExchangeData(): UseExchangeDataReturn {
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const nonSyncingExchanges = useSetting('nonSyncingExchanges');
   const { isAssetIgnored } = useAssetsStore();
-  const { banks } = storeToRefs(useLocationStore());
+  const { bankLocations } = storeToRefs(useBankConnectionsStore());
 
   /** Bank balances share the map but are not exchanges; they get their own card and page. */
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
     return Object.keys(balances)
-      .filter(location => !get(banks).includes(location))
+      .filter(location => !get(bankLocations).includes(location))
       .map(value => ({
         balances: balances[value],
         location: value,
@@ -68,14 +68,13 @@ export function useExchangeData(): UseExchangeDataReturn {
     getBaseExchangeBalances(exchange ? toValue(exchange) : undefined),
   );
 
-  function isSameExchange(a: Exchange, b: Exchange): boolean {
-    return a.location === b.location && a.name === b.name;
+  /** Connections are the same when their identifiers are, whatever they are named now. */
+  function isSameExchange(a: { identifier: string }, b: { identifier: string }): boolean {
+    return a.identifier === b.identifier;
   }
 
   const syncingExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
-    exchange => !get(nonSyncingExchanges).some(
-      excluded => isSameExchange(excluded, exchange),
-    ),
+    exchange => !get(nonSyncingExchanges).includes(exchange.identifier),
   ));
 
   return {

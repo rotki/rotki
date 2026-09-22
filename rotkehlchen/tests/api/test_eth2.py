@@ -34,6 +34,9 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -57,7 +60,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmTransaction,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1481,7 +1483,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: APIServer) -> 
                 tx_ref=(tx_hash := deserialize_evm_tx_hash(tx_hash_str := '0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')),  # noqa: E501
                 sequence_index=0,
                 timestamp=timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1545,11 +1547,11 @@ def test_redecode_block_production_events(rotkehlchen_api_server: APIServer) -> 
         # Check raw data from the db since deserializing EthBlockEvents performs the same check
         # for if the address is tracked that we are trying to test here.
         assert cursor.execute('SELECT * FROM history_events').fetchall() == [
-            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, None, 'informational', 'block production', None, 0),  # noqa: E501
-            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, None, 'informational', 'mev reward', None, 0),  # noqa: E501
-            (3, 2, f'BP1_{block_number}', 2, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}', 0),  # noqa: E501
-            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, None, 'staking', 'block production', None, 0),  # noqa: E501
-            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, None, 'informational', 'block production', None, 0),  # noqa: E501
+            (1, 4, f'BP1_{block_number}', 0, timestamp, 'ethereum', mev_builder_address, 'ETH', reward1, None, 'informational', 'block production', None, 0),  # noqa: E501
+            (2, 4, f'BP1_{block_number}', 1, timestamp, 'ethereum', fee_recipient_address, 'ETH', reward2, None, 'informational', 'mev reward', None, 0),  # noqa: E501
+            (3, 2, f'BP1_{block_number}', 2, timestamp, 'ethereum', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}', 0),  # noqa: E501
+            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'ethereum', fee_recipient_address, 'ETH', reward3, None, 'staking', 'block production', None, 0),  # noqa: E501
+            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'ethereum', fee_recipient_address, 'ETH', reward4, None, 'informational', 'block production', None, 0),  # noqa: E501
         ]
         # Confirm combine_block_with_tx_events marked the EthBlockEvent as hidden
         assert dbevents.get_hidden_event_ids(cursor) == {2}
@@ -1603,7 +1605,7 @@ def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: APISer
         tx_ref=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
         sequence_index=0,
         timestamp=TimestampMS(1739574323000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,

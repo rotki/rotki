@@ -18,7 +18,7 @@ export class ApiKeysPage {
    * the assertion on the captured payload then reads an empty object.
    */
   async addExchange(apiKey: string, apiSecret: string, exchange: string, name: string): Promise<void> {
-    let capturedRequest: { api_key?: string; api_secret?: string; name?: string; location?: string } = {};
+    let capturedRequest: { api_key?: string; api_secret?: string; name?: string; connector?: string } = {};
 
     await this.page.route('**/api/1/exchanges', async (route) => {
       if (route.request().method() === 'PUT') {
@@ -27,7 +27,7 @@ export class ApiKeysPage {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ result: true, message: '' }),
+          body: JSON.stringify({ result: { identifier: 'e2e-connection' }, message: '' }),
         });
       }
       else {
@@ -67,7 +67,7 @@ export class ApiKeysPage {
     expect(capturedRequest.api_key).toBe(apiKey);
     expect(capturedRequest.api_secret).toBe(apiSecret);
     expect(capturedRequest.name).toBe(name);
-    expect(capturedRequest.location).toBe(exchange);
+    expect(capturedRequest.connector).toBe(exchange);
   }
 
   async exchangeIsAdded(exchange: string, name: string): Promise<void> {

@@ -10,8 +10,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -30,7 +33,7 @@ def test_delegate_vested_tokens_with_vault_creation(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1738025567000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -41,7 +44,7 @@ def test_delegate_vested_tokens_with_vault_creation(
         ), EvmEvent(
             sequence_index=479,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
@@ -68,7 +71,7 @@ def test_delegate_plans(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1738067495000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -79,7 +82,7 @@ def test_delegate_plans(
         ), EvmEvent(
             sequence_index=502,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
@@ -107,7 +110,7 @@ def test_redeem_plans(
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1737473963000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -118,7 +121,7 @@ def test_redeem_plans(
         ), EvmEvent(
             sequence_index=386,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ENS,

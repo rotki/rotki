@@ -11,9 +11,9 @@ from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.constants import KDF_ITER, SQL_VARIABLE_CHUNK_SIZE
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.types import (
     HexColorCode,
-    Location,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -111,7 +111,7 @@ class SingleDBAssetBalance:
 
 class LocationData(NamedTuple):
     time: Timestamp
-    location: str  # Location serialized in a DB enum
+    location: LocationIdentifier
     usd_value: str
 
     def serialize(
@@ -126,12 +126,12 @@ class LocationData(NamedTuple):
                     formatstr='%Y-%m-%d %H:%M:%S',
                     treat_as_local=display_date_in_localtime,
                 ),
-                'location': Location.deserialize_from_db(self.location).serialize(),
+                'location': self.location,
                 f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: E501
             }
         return {
             'timestamp': int(self.time),
-            'location': Location.deserialize_from_db(self.location).serialize(),
+            'location': self.location,
             'usd_value': self.usd_value,
         }
 
@@ -354,7 +354,7 @@ def db_tuple_to_str(
     """
     if tuple_type == 'margin_position':
         return (
-            f'Margin position with id {data[0]} in {Location.deserialize_from_db(data[1])} '
+            f'Margin position with id {data[0]} in {LocationIdentifier(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
     if tuple_type == 'zksynclite_transaction':

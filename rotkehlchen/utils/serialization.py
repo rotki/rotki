@@ -17,14 +17,12 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, Location, Timestamp, TokenKind
+from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 
 class RKLEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         if isinstance(obj, FVal):
-            return str(obj)
-        if isinstance(obj, Location):
             return str(obj)
         if isinstance(obj, float):
             raise ValueError('Trying to json encode a float.')

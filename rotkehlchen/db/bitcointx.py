@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
-    from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,7 +34,7 @@ class DBBitcoinTx:
             self,
             write_cursor: DBCursor,
             transactions: Sequence[BitcoinTx],
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             relevant_addresses: Sequence[BTCAddress],
     ) -> set[BTCTxId]:
         """Save the given transactions along with the addresses they were queried for.
@@ -55,7 +55,7 @@ class DBBitcoinTx:
                 'location, tx_id, timestamp, block_height, fee, vin_count, vout_count'
                 ') VALUES(?, ?, ?, ?, ?, ?, ?)',
                 (
-                    location.serialize_for_db(),
+                    location,
                     tx.tx_id,
                     tx.timestamp,
                     tx.block_height,
@@ -69,7 +69,7 @@ class DBBitcoinTx:
             else:
                 db_id = write_cursor.execute(
                     'SELECT identifier FROM bitcoin_transactions WHERE location=? AND tx_id=?',
-                    (location.serialize_for_db(), tx.tx_id),
+                    (location, tx.tx_id),
                 ).fetchone()[0]
                 # A saved copy that was missing TxIOs may now know their real number.
                 write_cursor.execute(
@@ -116,7 +116,7 @@ class DBBitcoinTx:
     def get_transactions(
             self,
             cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId] | None = None,
             undecoded_only: bool = False,
     ) -> list[BitcoinTx]:
@@ -171,7 +171,7 @@ class DBBitcoinTx:
     def get_transaction_ids(
             self,
             cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId] | None = None,
             undecoded_only: bool = False,
     ) -> list[BTCTxId]:
@@ -197,7 +197,7 @@ class DBBitcoinTx:
     def get_transaction_ids_for_address(
             self,
             cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             address: BTCAddress,
     ) -> list[BTCTxId]:
         """Get the ids of the saved transactions that have a TxIO belonging to the address.
@@ -210,13 +210,13 @@ class DBBitcoinTx:
         return [BTCTxId(x[0]) for x in cursor.execute(
             'SELECT DISTINCT T.tx_id FROM bitcoin_transactions AS T INNER JOIN bitcoin_tx_io '
             'AS IO ON IO.tx_id=T.identifier WHERE T.location=? AND IO.address=?',
-            (location.serialize_for_db(), address),
+            (location, address),
         )]
 
     def count_undecoded_transactions(
             self,
             cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
     ) -> int:
         query, bindings = next(iter(self._transaction_queries(
             location=location,
@@ -229,7 +229,7 @@ class DBBitcoinTx:
     def set_decoded(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId],
     ) -> None:
         """Mark the given transactions as decoded."""
@@ -238,13 +238,13 @@ class DBBitcoinTx:
                 f'INSERT OR IGNORE INTO bitcoin_tx_mappings(tx_id, value) '
                 f'SELECT identifier, ? FROM bitcoin_transactions '
                 f'WHERE location=? AND tx_id IN ({placeholders})',
-                [TX_DECODED, location.serialize_for_db(), *chunk],
+                [TX_DECODED, location, *chunk],
             )
 
     def reset_decoded_state(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId] | None = None,
     ) -> None:
         """Mark the given transactions as needing to be decoded again.
@@ -260,7 +260,7 @@ class DBBitcoinTx:
     def delete_transactions(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId] | None = None,
     ) -> None:
         """Delete the saved transactions of the given location, all of them if no ids are
@@ -272,7 +272,7 @@ class DBBitcoinTx:
     def delete_data_for_address(
             self,
             write_cursor: DBCursor,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             address: BTCAddress,
     ) -> None:
         """Delete the transactions that were queried only for the given address, along with
@@ -287,7 +287,7 @@ class DBBitcoinTx:
             'SELECT T.tx_id, EXISTS(SELECT 1 FROM bitcointx_address_mappings WHERE tx_id=M.tx_id '
             'AND address!=?) FROM bitcointx_address_mappings AS M INNER JOIN bitcoin_transactions '
             'AS T ON T.identifier=M.tx_id WHERE M.address=? AND T.location=?',
-            (address, address, location.serialize_for_db()),
+            (address, address, location),
         ).fetchall():  # materialized since the writes below reuse the cursor
             (shared_tx_ids if is_shared == 1 else own_tx_ids).append(BTCTxId(tx_id))
 
@@ -316,12 +316,12 @@ class DBBitcoinTx:
         write_cursor.execute(
             'DELETE FROM bitcointx_address_mappings WHERE address=? AND tx_id IN '
             '(SELECT identifier FROM bitcoin_transactions WHERE location=?)',
-            (address, location.serialize_for_db()),
+            (address, location),
         )
 
     @staticmethod
     def _transaction_queries(
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             tx_ids: Sequence[BTCTxId] | None = None,
             undecoded_only: bool = False,
     ) -> list[tuple[str, list[str | int]]]:
@@ -334,9 +334,9 @@ class DBBitcoinTx:
             where_str += f' AND identifier NOT IN (SELECT tx_id FROM bitcoin_tx_mappings WHERE value={TX_DECODED})'  # noqa: E501
 
         if tx_ids is None:
-            return [(where_str, [location.serialize_for_db()])]
+            return [(where_str, [location])]
 
         return [
-            (f'{where_str} AND tx_id IN ({placeholders})', [location.serialize_for_db(), *chunk])
+            (f'{where_str} AND tx_id IN ({placeholders})', [location, *chunk])
             for chunk, placeholders in get_query_chunks(data=tx_ids)
         ]

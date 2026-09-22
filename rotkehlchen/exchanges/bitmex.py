@@ -15,7 +15,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -30,6 +30,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITMEX,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
@@ -71,7 +74,7 @@ def bitmex_to_world(symbol: str) -> AssetWithOracles:
     # This shouldn't happen since all the trades in bitmex are against BTC
     # as for what @lefterisjp remembers in discord.
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITMEX,
+        exchange=LOCATION_BITMEX,
         symbol=(symbol_upper := symbol.upper()),
         default=symbol_upper,
     ))
@@ -109,7 +112,7 @@ def margin_trade_from_bitmex(bitmex_trade: dict, decimals: dict[str, int]) -> Ma
     )
 
     return MarginPosition(
-        location=Location.BITMEX,
+        location=LOCATION_BITMEX,
         open_time=None,
         close_time=close_time,
         profit_loss=profit_loss,
@@ -132,7 +135,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.BITMEX,
+            location=LOCATION_BITMEX,
             api_key=api_key,
             secret=secret,
             database=database,

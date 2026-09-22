@@ -16,7 +16,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -33,6 +32,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_INDEPENDENTRESERVE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -53,6 +55,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -67,7 +70,7 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
     - UnknownAsset
     """
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.INDEPENDENTRESERVE,
+        exchange=LOCATION_INDEPENDENTRESERVE,
         symbol=symbol,
         default=symbol,
     ))
@@ -110,7 +113,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
         timestamp_field = raw_tx['CreatedTimestampUtc']
 
     return AssetMovement(
-        location=Location.INDEPENDENTRESERVE,
+        location=LOCATION_INDEPENDENTRESERVE,
         event_subtype=movement_subtype,
         timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
             date=timestamp_field,
@@ -138,7 +141,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.INDEPENDENTRESERVE,
+            location=LOCATION_INDEPENDENTRESERVE,
             api_key=api_key,
             secret=secret,
             database=database,

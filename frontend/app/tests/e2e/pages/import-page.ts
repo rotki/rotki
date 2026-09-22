@@ -66,9 +66,37 @@ export class ImportPage {
     }
   }
 
-  async importCsv(sourceKey: string, csvFileName: string): Promise<void> {
+  /**
+   * Maps every location value the import could not resolve to the given location, then imports.
+   *
+   * @remarks
+   * Only rotki's own formats ask: their rows name a location, and a value the app does not know
+   * has to be mapped before anything is imported.
+   */
+  async mapUnknownLocations(locationName: string): Promise<void> {
+    const dialog = this.page.locator('[data-testid=bottom-dialog]').filter({ has: this.page.getByTestId('import-location-mapping') });
+    await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_LONG });
+    const choices = dialog.getByTestId('import-location-choice');
+    for (let index = 0; index < await choices.count(); index++) {
+      const choice = choices.nth(index);
+      await choice.locator('[data-id=activator]').click();
+      const menu = this.page.locator('[role=menu]').last();
+      await menu.waitFor({ state: 'visible' });
+      await choice.locator('input').fill(locationName);
+      const option = menu.getByText(locationName, { exact: false }).first();
+      await option.waitFor({ state: 'visible' });
+      await option.click();
+      await menu.waitFor({ state: 'hidden' });
+    }
+    await dialog.getByTestId('import-location-save-aliases').locator('input').uncheck();
+    await dialog.getByTestId('confirm').click();
+  }
+
+  async importCsv(sourceKey: string, csvFileName: string, unknownLocationsTo?: string): Promise<void> {
     await this.uploadFile(sourceKey, csvFileName);
     await this.submitImport(sourceKey);
+    if (unknownLocationsTo)
+      await this.mapUnknownLocations(unknownLocationsTo);
     await this.waitForImportComplete(sourceKey);
     await this.dismissNotifications();
   }

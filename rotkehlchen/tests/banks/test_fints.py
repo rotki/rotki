@@ -16,6 +16,7 @@ from fints.parser import FinTS3Parser
 from fints.utils import mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
+from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
 from rotkehlchen.banks.fints import (
     Fints,
@@ -25,8 +26,9 @@ from rotkehlchen.banks.fints import (
 from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
+from rotkehlchen.connections.types import ConnectionIdentifier, IntegrationConnection
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
-from rotkehlchen.types import ExchangeApiCredentials, Location
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {
@@ -183,19 +185,23 @@ class FailedInitializationTransport(FinTSFixtureTransport):
         raise self.error
 
 
-def create_fints(database, messages, transport: FinTSFixtureTransport) -> Fints:
-    credentials = Fints.api_credentials_from_values(
-        name='FinTS 1',
-        location=Location.FINTS,
-        values=FINTS_VALUES,
-    )
-    assert credentials.api_secret is not None
+def create_fints(
+        database,
+        messages,
+        transport: FinTSFixtureTransport,
+        connection_identifier: ConnectionIdentifier | None = None,
+) -> Fints:
+    """A FinTS connection. Passing the identifier of an earlier one restores its session."""
+    credentials = Fints.api_credentials_from_values(values=FINTS_VALUES)
+    assert credentials.api_key is not None and credentials.api_secret is not None
     return Fints(
-        name=credentials.name,
+        name='FinTS 1',
         api_key=credentials.api_key,
         secret=credentials.api_secret,
         database=database,
         msg_aggregator=messages,
+        location=LOCATION_BANKS,
+        connection_identifier=connection_identifier,
         product_id=PRODUCT_ID,
         client_factory=transport,
     )
@@ -216,7 +222,12 @@ def test_product_id_and_client_state_are_used_on_every_dialog(
     )
 
     restored_transport = FinTSFixtureTransport()
-    restored = create_fints(database, function_scope_messages_aggregator, restored_transport)
+    restored = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        restored_transport,
+        connection_identifier=connector.connection_identifier,
+    )
     restored.query_accounts()
     assert restored_transport.restored_client_data[0] == b'fixture-client-state-private'
 
@@ -269,17 +280,16 @@ def test_ing_initial_transaction_sync_requests_full_available_history(
 ) -> None:
     transport = FinTSFixtureTransport()
     credentials = Fints.api_credentials_from_values(
-        name='ING',
-        location=Location.FINTS,
         values={**FINTS_VALUES, 'bank_code': '50010517'},
     )
-    assert credentials.api_secret is not None
+    assert credentials.api_key is not None and credentials.api_secret is not None
     connector = Fints(
-        name=credentials.name,
+        name='ING',
         api_key=credentials.api_key,
         secret=credentials.api_secret,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
+        location=LOCATION_BANKS,
         product_id=PRODUCT_ID,
         client_factory=transport,
     )
@@ -370,11 +380,10 @@ def test_initialization_errors_preserve_safe_response_code(
 
 def test_fints_endpoint_whitespace_is_removed() -> None:
     credentials = Fints.api_credentials_from_values(
-        name='FinTS 1',
-        location=Location.FINTS,
         values={**FINTS_VALUES, 'endpoint': ' https://bank.example/fints '},
     )
 
+    assert credentials.api_key is not None
     assert 'https://bank.example/fints' in credentials.api_key
     assert ' https://bank.example/fints ' not in credentials.api_key
 
@@ -461,35 +470,40 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
         AuthenticationTransport(challenge),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     with pytest.raises(BankMFARequired):
-        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
-    assert manager.sync_status[connector.location_id()].auth_challenge is not None
+        manager.query_bank_history_events(connector=None, identifier=connector.connection_identifier)  # noqa: E501
+    assert manager.sync_status[connector.connection_identifier].auth_challenge is not None
 
     restored_transport = AuthenticationTransport(challenge)
-    restored = create_fints(database, function_scope_messages_aggregator, restored_transport)
-    restored_manager = BankManager(function_scope_messages_aggregator)
-    credentials = ExchangeApiCredentials(
-        name=restored.name,
-        location=restored.location,
-        api_key=restored.api_key,
-        api_secret=restored.secret,
+    restored = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        restored_transport,
+        connection_identifier=(identifier := connector.connection_identifier),
     )
+    restored_manager = BankManager(function_scope_messages_aggregator)
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
         with patch.object(restored_manager, '_instantiate', return_value=restored):
             restored_manager.initialize_banks(
-                credentials={Location.FINTS: [credentials]},
+                connections=[IntegrationConnection(
+                    identifier=identifier,
+                    name=restored.name,
+                    connector=FINTS_CONNECTOR,
+                    location=restored.location,
+                    api_key=restored.api_key,
+                    api_secret=restored.secret,
+                )],
                 database=database,
             )
-        assert restored_manager.sync_status[restored.location_id()].auth_challenge is not None
+        assert restored_manager.sync_status[identifier].auth_challenge is not None
         assert restored_manager.answer_bank_authentication(
-            name=restored.name,
-            location=restored.location,
+            identifier=identifier,
             response='123456',
         ) == (True, '')
     assert restored_transport.answers == ['123456']
-    status = restored_manager.sync_status[restored.location_id()]
+    status = restored_manager.sync_status[identifier]
     assert status.auth_challenge is None
     assert status.last_sync_ts is not None
     assert any(request == 'transactions' for request, _params in restored_transport.requests)
@@ -505,13 +519,13 @@ def test_sync_requiring_authentication_has_no_success_result(
         AuthenticationTransport(FixtureTANResponse()),
     )
     manager = BankManager(function_scope_messages_aggregator)
-    manager.connected_banks[Location.FINTS].append(connector)
+    manager.connected_banks[FINTS_CONNECTOR].append(connector)
 
     rotki = MagicMock()
     rotki.bank_manager = manager
     result = BanksService(rotki).sync_banks(
-        location=Location.FINTS,
-        name=connector.name,
+        connector=FINTS_CONNECTOR,
+        identifier=connector.connection_identifier,
     )
 
     assert result['result'] is None

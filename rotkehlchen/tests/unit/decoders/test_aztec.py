@@ -16,8 +16,9 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -36,7 +37,7 @@ def test_stake_with_provider(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1777475507000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -47,7 +48,7 @@ def test_stake_with_provider(
             tx_ref=tx_hash,
             sequence_index=681,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_AZTEC,
@@ -80,7 +81,7 @@ def test_stake_via_provider_helper(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1776684707000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -91,7 +92,7 @@ def test_stake_via_provider_helper(
             tx_ref=tx_hash,
             sequence_index=384,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_AZTEC,
@@ -127,7 +128,7 @@ def test_governance_registration(
         tx_ref=tx_hash,
         sequence_index=584,
         timestamp=TimestampMS(1777476623000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.GOVERNANCE,
         asset=A_AZTEC,
@@ -156,7 +157,7 @@ def test_governance_redelegation(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1786986959000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -167,7 +168,7 @@ def test_governance_redelegation(
             tx_ref=tx_hash,
             sequence_index=137,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_AZTEC,
@@ -200,7 +201,7 @@ def test_staking_rewards(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1779805811000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -211,7 +212,7 @@ def test_staking_rewards(
             tx_ref=tx_hash,
             sequence_index=662,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_AZTEC,

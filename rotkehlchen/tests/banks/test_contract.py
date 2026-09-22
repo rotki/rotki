@@ -13,7 +13,9 @@ from rotkehlchen.banks.constants import SUPPORTED_BANKS
 from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchemaDrift
 from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
@@ -27,7 +29,7 @@ from rotkehlchen.tests.utils.banks import (
     QontoFixtureTransport,
     patch_bank_transport,
 )
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 ALLOWED_EVENT_TYPES = {
@@ -36,7 +38,7 @@ ALLOWED_EVENT_TYPES = {
     (HistoryEventType.SPEND, HistoryEventSubType.FEE),
 }
 FRONTEND_IMAGES_DIR = Path(__file__).resolve().parents[3] / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols'  # noqa: E501
-KITS = pytest.mark.parametrize('kit', BANK_KITS, ids=[str(kit.location) for kit in BANK_KITS])
+KITS = pytest.mark.parametrize('kit', BANK_KITS, ids=[str(kit.connector) for kit in BANK_KITS])
 
 
 def _db_events(database) -> list[HistoryBaseEntry]:
@@ -49,7 +51,7 @@ def _db_events(database) -> list[HistoryBaseEntry]:
 
 
 def test_every_supported_bank_has_a_kit_and_a_manifest():
-    assert {kit.location for kit in BANK_KITS} == set(SUPPORTED_BANKS)
+    assert {kit.connector for kit in BANK_KITS} == set(SUPPORTED_BANKS)
     assert set(BANK_MANIFESTS) == set(SUPPORTED_BANKS)
 
 
@@ -57,27 +59,29 @@ def test_every_supported_bank_has_a_kit_and_a_manifest():
 def test_manifest_is_valid_and_registered(kit: BankConnectorKit):
     manifest = kit.connector_class.manifest
     manifest.validate()
-    assert manifest is BANK_MANIFESTS[kit.location]
-    assert manifest.location == kit.location
-    assert kit.location not in SUPPORTED_EXCHANGES, 'a bank is its own integration'
+    assert manifest is BANK_MANIFESTS[kit.connector]
+    assert manifest.connector_identifier == kit.connector
+    assert kit.connector not in SUPPORTED_EXCHANGES, 'a bank is its own integration'
     # the manager stores credentials by slot, so the manifest must declare the key slot
     # and whatever the connector constructor needs
     slots = {secret.slot for secret in manifest.secrets}
     assert len(slots) >= 2
-    # the UI derives the setup form and the icon from the location details
-    details = LOCATION_DETAILS[kit.location]
-    assert details['is_bank'] is True
-    assert 'exchange_details' not in details
-    assert details['bank_details'] == manifest.serialize()
-    assert 'icon' in details or (FRONTEND_IMAGES_DIR / details['image']).is_file()
-    # the module/class naming the bank manager relies on to instantiate it
-    assert BankManager._connector_class(kit.location) is kit.connector_class
+    # connector metadata is not location metadata. A connector without a fixed location
+    # is never a location at all, and a fixed location has the icon of its bank.
+    if manifest.fixed_location is None:
+        assert kit.connector not in LOCATION_DETAILS
+    else:
+        details = LOCATION_DETAILS[manifest.fixed_location]
+        assert 'bank_details' not in details
+        assert 'icon' in details or (FRONTEND_IMAGES_DIR / details['image']).is_file()
+    # the registry the bank manager instantiates connections from
+    assert BankManager._connector_class(kit.connector) is kit.connector_class
 
 
 @KITS
 def test_manifest_serializes_to_plain_json_types(kit: BankConnectorKit):
     serialized = kit.connector_class.manifest.serialize()
-    assert serialized['location'] == kit.location.serialize()
+    assert serialized['connector_identifier'] == kit.connector
     assert isinstance(serialized['access_tier'], str)
     assert all(isinstance(step['primitive'], str) for step in serialized['auth_flow'])
     assert all({'slot', 'label', 'description'} <= set(s) for s in serialized['secrets'])
@@ -118,7 +122,7 @@ def test_normalization_output(kit: BankConnectorKit, database, function_scope_me
     for event in events:
         assert isinstance(event, BankTransactionEvent)
         assert event.entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT
-        assert event.location == kit.location
+        assert event.location == connector.data_location == kit.location
         assert event.location_label == connector.name
         assert event.sequence_index == 0
         assert (event.event_type, event.event_subtype) in ALLOWED_EVENT_TYPES
@@ -163,7 +167,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
         transport.requests.clear()
         queue = HistoryEventQueue(
             database=database,
-            location_string=f'{kit.location!s}_history_events_{connector.name}',
+            location_string=connection_range_name(connector.connection_identifier, 'history_events'),  # noqa: E501
             query_start_ts=Timestamp(0),
         )
         connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -177,7 +181,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
             transaction['label'] = 'Updated counterparty'
             queue = HistoryEventQueue(
                 database=database,
-                location_string=f'{kit.location!s}_history_events_{connector.name}',
+                location_string=connection_range_name(connector.connection_identifier, 'history_events'),  # noqa: E501
                 query_start_ts=Timestamp(0),
             )
             connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -257,13 +261,14 @@ def test_purge_local_state_on_removal(kit: BankConnectorKit, database, function_
     with database.user_write() as write_cursor:
         connector.save_session(write_cursor, 'opaque-session-blob')
     assert connector.load_session() == 'opaque-session-blob'
-    with database.user_write() as write_cursor:
-        connector.purge_local_state(write_cursor)
+    with database.user_write() as write_cursor:  # what removing the connection does
+        DBConnections.delete_progress(write_cursor, [connector.connection_identifier])
     assert connector.load_session() is None
     with database.conn.read_ctx() as cursor:
         assert all(connector.get_cursor(cursor, a.identifier) is None for a in accounts)
+        assert database.get_used_query_range(cursor, connection_range_name(connector.connection_identifier, 'history_events')) is None  # noqa: E501
 
 
 def test_location_is_a_bank_only_once():
     assert len(set(SUPPORTED_BANKS)) == len(SUPPORTED_BANKS)
-    assert all(isinstance(location, Location) for location in SUPPORTED_BANKS)
+    assert all(isinstance(location, str) for location in SUPPORTED_BANKS)
