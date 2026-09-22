@@ -551,12 +551,14 @@ def run_data_issue_remediation(
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Retry timed-out strategies and failed comparisons on the next scheduled run."""
+    """Retry operational failures, timeouts, and failed comparisons on the next scheduled run."""
     return (
         issue.state == IssueState.UNRESOLVED and
         len(issue.auto_remediation_attempts) != 0 and
         (
-            (attempt := issue.auto_remediation_attempts[-1]).get('attribution') == 'timeout' or
+            (attempt := issue.auto_remediation_attempts[-1]).get('attribution') in {
+                'timeout', 'strategy_failed',
+            } or
             (
                 attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
                 attempt.get('result') == 'redecoding_failed'

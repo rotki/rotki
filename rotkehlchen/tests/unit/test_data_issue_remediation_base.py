@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 from functools import partial
-from time import monotonic
+from time import monotonic, sleep
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
 
-from rotkehlchen.concurrency import Task, TaskCancelledError, cancellable_sleep
+from rotkehlchen.concurrency import Task, TaskCancelledError, cancellable_sleep, current_token
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -64,6 +64,33 @@ class FailingStrategy(StubStrategy):
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
         self.calls.append(self.name)
         raise RuntimeError('strategy failed unexpectedly')
+
+
+class CompletingOnCancellationStrategy(StubStrategy):
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        assert (token := current_token()) is not None
+        deadline = monotonic() + 5
+        while token.cancelled is False:
+            assert monotonic() < deadline, 'Pipeline did not request cancellation'
+            sleep(0.001)
+        return self.outcome
+
+
+def test_pipeline_records_completion_when_work_finishes_after_timeout(database: DBHandler) -> None:
+    """A worker finishing its commit after cancellation must retain its actual outcome."""
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    RemediationPipeline(manager, (
+        CompletingOnCancellationStrategy(
+            'committing', RemediationOutcome(True, 'system', 'Committed'), [], timeout=0.01,
+        ),
+    )).run(issue)
+
+    issue = manager.get_issue(issue.id)
+    assert issue.state == IssueState.RESOLVED
+    assert len(issue.auto_remediation_attempts) == 1
+    assert issue.auto_remediation_attempts[0]['success'] is True
+    assert issue.auto_remediation_attempts[0]['attribution'] == 'system'
 
 
 def _make_issue(database: DBHandler) -> DataIssue:

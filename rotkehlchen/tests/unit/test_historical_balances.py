@@ -2563,10 +2563,11 @@ def test_negative_balance_writes_data_issue(
         ).fetchone()[0] == 'dismissed'
 
 
-def test_negative_balance_reopens_resolved_data_issue(
+def test_negative_balance_manual_resolution_survives_unchanged_rescan(
         database: DBHandler,
         messages_aggregator: MessagesAggregator,
 ) -> None:
+    """A rescan keeps a manual resolution unless the negative balance candidate changed."""
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_event(
             write_cursor=write_cursor,
@@ -2598,11 +2599,37 @@ def test_negative_balance_reopens_resolved_data_issue(
         )
 
     process_historical_balances(database, messages_aggregator)
+    issues_manager = DataIssuesManager(database)
+    issue_id = issues_manager.list_issues()[0].id
+    issues_manager.resolve_manually(issue_id, note='accepted')
 
-    issue_id = DataIssuesManager(database).list_issues()[0].id
-    DataIssuesManager(database).resolve_manually(issue_id)
     process_historical_balances(database, messages_aggregator)
-    assert DataIssuesManager(database).get_issue(issue_id).state == 'open'
+    issue = issues_manager.get_issue(issue_id)
+    assert issue.state == IssueState.RESOLVED
+    assert issue.payload['resolution'] == {'manual': True, 'note': 'accepted'}
+
+    # A new transfer changes the derived balance before the negative event, so the
+    # candidate differs and the resolved issue reopens.
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1500),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('0.5'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    process_historical_balances(database, messages_aggregator)
+    issue = issues_manager.get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert 'resolution' not in issue.payload
 
 
 def test_unmatched_bridge_data_issues(
@@ -2674,6 +2701,15 @@ def test_unmatched_bridge_data_issues(
         filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
     )
     assert {issue.state for issue in issues} == {IssueState.RESOLVED.value}
+
+    # unlinking the pair reopens both automatically resolved issues on the next run
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM history_event_links')
+    process_historical_balances(database, messages_aggregator)
+    issues = issues_manager.list_issues(
+        filters=DataIssueFilters(kind=IssueKind.UNMATCHED_BRIDGE.value),
+    )
+    assert {issue.state for issue in issues} == {IssueState.OPEN.value}
 
 
 def test_bitcoin_transfer_updates_sender_and_receiver_buckets(

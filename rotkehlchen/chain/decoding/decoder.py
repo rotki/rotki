@@ -383,6 +383,34 @@ class TransactionDecoder[
 
         return None
 
+    def _replace_transaction_events(
+            self,
+            transaction: T_Transaction,
+            tx_ref: T_TxHash,
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            delete_customized: bool,
+            write_buffer: list[tuple[list[T_Event], str, int]],
+    ) -> None:
+        """Replace saved events and decoding flags atomically after decoding finishes.
+
+        Cancellation before the write leaves the previous history intact. Errors during
+        replacement roll back both deletion and insertion through the outer transaction.
+        """
+        # Raise TaskCancelledError if this task's cancellation was requested; otherwise continue.
+        # Check before deleting saved events. The write transaction below provides rollback safety.
+        checkpoint()
+        with self.database.user_write() as write_cursor:
+            self._maybe_load_or_purge_events_from_db(
+                transaction=transaction,
+                tx_ref=tx_ref,
+                location=location,
+                ignore_cache=True,
+                delete_customized=delete_customized,
+            )
+            for events, action_id, db_id in write_buffer:
+                self._write_tx_events(write_cursor, events, action_id, db_id)
+        write_buffer.clear()
+
     def _decode_transaction_hashes(
             self,
             ignore_cache: bool,
