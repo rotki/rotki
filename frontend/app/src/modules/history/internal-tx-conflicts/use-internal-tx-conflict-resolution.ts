@@ -1,14 +1,30 @@
 import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
-import { NotificationGroup, Priority, Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
+import { err, getOr, ok, type Result } from 'plainfp/result';
+import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/core/common/use-persistent-shared-composable';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useTargetedRedecode } from '@/modules/history/events/tx/use-targeted-redecode';
+import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityContext, useNativeTask } from '@/modules/task-center/use-native-task';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
+
+/**
+ * The dock row for a bulk resolution, which carries its progress and parents each conflict's decode.
+ *
+ * @remarks
+ * A re-pull, since that is what resolving does. The `RUN` part keeps it apart from the other re-pull
+ * ids, and one id is enough because the panel runs a single bulk resolution at a time.
+ */
+const RESOLUTION_ACTIVITY_ID = makeActivityId(ActivityKind.REPULLING, ActivityPart.RUN, 'internal-tx-conflicts');
 
 export interface ResolutionProgress {
   completed: number;
@@ -46,7 +62,8 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
   const { cancelDecoding } = useHistoryTransactionDecoding();
   const { pullAndDecodeTransactionsRaw } = useTargetedRedecode();
   const { removeKeys } = useInternalTxConflictSelection();
-  const { notify, removeMatching } = useNotifications();
+  const { notify } = useNotifications();
+  const { submitTask } = useNativeTask();
 
   const progress = ref<ResolutionProgress>(defaultProgress());
   const cancelRequested = ref<boolean>(false);
@@ -64,13 +81,13 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
    * categorisation of the problem for the user, not a different strategy. Uses the `Raw` variant,
    * which throws on failure, so the resolution progress tracks errors.
    */
-  async function executeResolution(conflict: InternalTxConflict): Promise<void> {
+  async function executeResolution(conflict: InternalTxConflict, parent?: ActivityId): Promise<void> {
     const chain = getChain(conflict.chain);
 
     await pullAndDecodeTransactionsRaw({
       chain,
       txRefs: [conflict.txHash],
-    });
+    }, parent);
   }
 
   async function resolveOne(conflict: InternalTxConflict, callbacks: ResolutionCallbacks): Promise<void> {
@@ -98,6 +115,44 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
     }
   }
 
+  /**
+   * Works through the conflicts one at a time, stopping between two when either the panel or the
+   * task dock cancels.
+   *
+   * @returns whether the run was cancelled before it reached the last conflict
+   */
+  async function resolveInTurn(
+    conflicts: InternalTxConflict[],
+    callbacks: ResolutionCallbacks,
+    { cancelled, report }: ActivityContext,
+  ): Promise<boolean> {
+    const total = conflicts.length;
+    const stopped = (): boolean => get(cancelRequested) || cancelled();
+
+    for (const [index, conflict] of conflicts.entries()) {
+      if (stopped())
+        return true;
+
+      report({ current: index, total });
+      set(progress, { ...get(progress), current: conflict });
+
+      try {
+        await executeResolution(conflict, RESOLUTION_ACTIVITY_ID);
+        removeKeys([getConflictKey(conflict)]);
+        set(progress, { ...get(progress), completed: get(progress).completed + 1 });
+      }
+      catch (error: any) {
+        logger.error('Failed to resolve conflict:', error);
+        set(progress, { ...get(progress), failed: get(progress).failed + 1 });
+      }
+
+      await callbacks.onComplete();
+    }
+
+    report({ current: total, total });
+    return false;
+  }
+
   async function resolveMany(conflicts: InternalTxConflict[], callbacks: ResolutionCallbacks): Promise<void> {
     set(cancelRequested, false);
     acquireBusy();
@@ -112,55 +167,26 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
         total,
       });
 
-      notify({
-        group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
-        priority: Priority.NORMAL,
-        message: t('internal_tx_conflicts.notifications.started', { total }),
-        severity: Severity.INFO,
+      const outcome = await submitTask<boolean>({
+        id: RESOLUTION_ACTIVITY_ID,
+        kind: ActivityKind.REPULLING,
+        lane: UMBRELLA_LANE,
+        rerunnable: false,
+        run: async (context): Promise<Result<boolean, TaskError>> => {
+          const stopped = await resolveInTurn(conflicts, callbacks, context);
+          const { completed, failed } = get(progress);
+          if (!stopped && failed > 0)
+            return err(TaskFailed({ message: t('internal_tx_conflicts.notifications.completed_with_errors', { completed, failed, total }) }));
+          return ok(stopped);
+        },
+        subtitle: activityLabelFor(msg.$t('task_center.count.transactions'), { count: total }, total),
         title: t('internal_tx_conflicts.notifications.title'),
+        userStarted: true,
       });
 
-      const resolvedKeys: string[] = [];
-
-      for (const conflict of conflicts) {
-        if (get(cancelRequested))
-          break;
-
-        set(progress, { ...get(progress), current: conflict });
-
-        try {
-          await executeResolution(conflict);
-          resolvedKeys.push(getConflictKey(conflict));
-          const completed = get(progress).completed + 1;
-          set(progress, { ...get(progress), completed });
-          notify({
-            group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
-            priority: Priority.NORMAL,
-            message: t('internal_tx_conflicts.notifications.progress', { completed, total }),
-            severity: Severity.INFO,
-            title: t('internal_tx_conflicts.notifications.title'),
-          });
-        }
-        catch (error: any) {
-          logger.error('Failed to resolve conflict:', error);
-          set(progress, { ...get(progress), failed: get(progress).failed + 1 });
-        }
-
-        if (resolvedKeys.length > 0) {
-          removeKeys([...resolvedKeys]);
-          resolvedKeys.length = 0;
-        }
-
-        await callbacks.onComplete();
-      }
-
+      const cancelled = getOr(outcome, false);
       const { completed, failed } = get(progress);
-      const cancelled = get(cancelRequested);
-
-      set(progress, { ...get(progress), current: undefined, isRunning: false });
       set(progress, defaultProgress());
-
-      removeMatching(({ group }) => group === NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION);
 
       if (cancelled) {
         notify({
