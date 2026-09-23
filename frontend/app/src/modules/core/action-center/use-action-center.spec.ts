@@ -59,7 +59,7 @@ describe('modules/core/action-center/useActionCenter', () => {
       createItem({ count: 3, id: 'locked', locked: true }),
       createItem({ count: 4, id: 'review', informational: true }),
       createItem({ count: 0, id: 'cleared' }),
-      createItem({ count: 9, id: 'counting', loading: true }),
+      createItem({ count: 0, id: 'first-count', loading: true }),
     ]);
 
     const { activeItems, categoryCount, clearedItems, hasItems, lockedItems, reviewItems } = useActionCenter({
@@ -71,10 +71,55 @@ describe('modules/core/action-center/useActionCenter', () => {
     expect(get(activeItems).map(item => item.id)).toEqual(['active']);
     expect(get(lockedItems).map(item => item.id)).toEqual(['locked']);
     expect(get(reviewItems).map(item => item.id)).toEqual(['review']);
-    // A loading item counts as cleared until its count lands, rather than raising an untrustworthy row.
-    expect(get(clearedItems).map(item => item.id)).toEqual(['cleared', 'counting']);
+    expect(get(clearedItems).map(item => item.id)).toEqual(['cleared', 'first-count']);
     expect(get(categoryCount)).toBe(1);
     expect(get(hasItems)).toBe(true);
+  });
+
+  it('should keep a raised item raised, with its last finished count, while it re-reads', () => {
+    const items = ref<ActionItem[]>([createItem({ count: 9, id: 'recounting' })]);
+    const { activeItems, clearedItems } = useActionCenter({ id: 'test', items, sources: [] });
+
+    set(items, [createItem({ count: 0, id: 'recounting', loading: true })]);
+
+    expect(get(activeItems).map(item => [item.id, item.count])).toEqual([['recounting', 9]]);
+    expect(get(clearedItems)).toEqual([]);
+  });
+
+  it('should not raise an item whose first read is still running, whatever it counts', () => {
+    const items = ref<ActionItem[]>([createItem({ count: 1, id: 'first-read', loading: true })]);
+    const { activeItems, clearedItems } = useActionCenter({ id: 'test', items, sources: [] });
+
+    expect(get(activeItems)).toEqual([]);
+    expect(get(clearedItems).map(item => item.id)).toEqual(['first-read']);
+  });
+
+  it('should await the first scan only until a scan lands with the domain idle', async () => {
+    const busy = ref<boolean>(true);
+    const refresh = vi.fn<() => Promise<void>>().mockResolvedValue();
+
+    const { awaitingFirstScan, refreshAll } = useActionCenter({ busy, id: 'test', items: ref([]), sources: [{ refresh }] });
+
+    await refreshAll();
+    expect(get(awaitingFirstScan)).toBe(true);
+
+    set(busy, false);
+    await refreshAll();
+    expect(get(awaitingFirstScan)).toBe(false);
+
+    set(busy, true);
+    await refreshAll();
+    expect(get(awaitingFirstScan)).toBe(false);
+  });
+
+  it('should report a re-scan as refreshing while the domain is busy', async () => {
+    const busy = ref<boolean>(false);
+    const { refreshAll, refreshing } = useActionCenter({ busy, id: 'test', items: ref([]), sources: [] });
+    await refreshAll();
+
+    expect(get(refreshing)).toBe(false);
+    set(busy, true);
+    expect(get(refreshing)).toBe(true);
   });
 
   it('should stay pending until a scan lands, and while a source is reading', async () => {

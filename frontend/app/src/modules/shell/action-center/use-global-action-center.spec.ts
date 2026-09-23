@@ -3,6 +3,7 @@ import type { LocationQuery } from 'vue-router';
 import type { HistoryEventIssue } from '@/modules/history/events/actions-center/use-history-event-issues';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
@@ -291,11 +292,40 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(get(newIds)).toEqual(['snoozed']);
   });
 
-  it('should keep checking while the history counts are still pending', async () => {
-    set(state.historyChecking, true);
-    const { checking } = center();
+  it('should await the first scan while the history counts are still pending', async () => {
+    const { awaitingFirstScan, refreshAll, refreshing } = center();
     await flushPromises();
 
-    expect(get(checking)).toBe(true);
+    const auth = useSessionAuthStore();
+    auth.logged = true;
+    await nextTick();
+    auth.logged = false;
+    await nextTick();
+
+    set(state.historyChecking, true);
+    await refreshAll();
+
+    expect(get(awaitingFirstScan)).toBe(true);
+    expect(get(refreshing)).toBe(true);
+
+    set(state.historyChecking, false);
+    await refreshAll();
+
+    expect(get(awaitingFirstScan)).toBe(false);
+  });
+
+  it('should keep a row that is re-reading listed through a re-scan', async () => {
+    set(state.historySyncRows, [row('history-sync', { urgency: ActionUrgency.TODO })]);
+    const { awaitingFirstScan, count, refreshing, sections } = center();
+    await flushPromises();
+
+    set(state.historySyncRows, [row('history-sync', { loading: true, urgency: ActionUrgency.TODO })]);
+    set(state.historyChecking, true);
+    await nextTick();
+
+    expect(get(awaitingFirstScan)).toBe(false);
+    expect(get(refreshing)).toBe(true);
+    expect(get(count)).toBe(1);
+    expect(get(sections).flatMap(section => section.items.map(item => item.id))).toEqual(['history-sync']);
   });
 });

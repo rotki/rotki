@@ -35,8 +35,20 @@ export interface UseActionCenterReturn<TTarget extends { kind: string }, TId ext
   hasItems: ComputedRef<boolean>;
   /** counts are still incomplete (a source is reading, or the domain is still working) */
   checking: ComputedRef<boolean>;
+  /**
+   * No scan has finished yet this session, so an empty center means "not looked yet" rather than
+   * "nothing to do". Unlike {@link UseActionCenterReturn.checking} it stays false through every later
+   * re-scan, which is what lets a center keep its rows on screen while it re-reads them.
+   */
+  awaitingFirstScan: ComputedRef<boolean>;
+  /** a source is reading, or the domain is working: a re-scan is under way */
   refreshing: ComputedRef<boolean>;
   refreshAll: () => Promise<void>;
+  /**
+   * The item as the center counts it: while it re-reads, with the count its last finished read gave,
+   * or none if it has never finished one.
+   */
+  present: (item: ActionItem<TTarget, TId>) => ActionItem<TTarget, TId>;
 }
 
 /**
@@ -62,9 +74,14 @@ function scannedFlag(id: string): Ref<boolean> {
  * The state around a list of {@link ActionItem}s: which of them are asking for something
  * right now, whether the counts can be trusted yet, and how to re-read them.
  *
+ * @remarks
  * Domain agnostic on purpose. A center is a list of items plus the sources they were
  * counted from - what the items mean, and where their targets lead, stays with the
  * domain that builds them.
+ *
+ * A row that is re-reading keeps the count of its last finished read, so the list does not empty and
+ * refill around every re-scan; the row itself shows that it is busy. A row that has never finished a
+ * read counts as nothing, because its count is not an answer yet.
  */
 export function useActionCenter<TTarget extends { kind: string }, TId extends string>(
   options: ActionCenterOptions<TTarget, TId>,
@@ -75,8 +92,28 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
 
   const scanned = scannedFlag(id);
 
+  const settledCounts = shallowRef<ReadonlyMap<string, number>>(new Map());
+
+  function recordSettledCounts(current: ActionItem<TTarget, TId>[]): void {
+    const known = get(settledCounts);
+    const settled = current.filter(item => !item.loading && known.get(item.id) !== item.count);
+    if (settled.length === 0)
+      return;
+
+    const next = new Map(known);
+    for (const item of settled)
+      next.set(item.id, item.count);
+    set(settledCounts, next);
+  }
+
+  function present(item: ActionItem<TTarget, TId>): ActionItem<TTarget, TId> {
+    return item.loading ? { ...item, count: get(settledCounts).get(item.id) ?? 0 } : item;
+  }
+
+  const presented = computed<ActionItem<TTarget, TId>[]>(() => toValue(items).map(present));
+
   const raised = computed<ActionItem<TTarget, TId>[]>(() =>
-    toValue(items).filter(item => !item.loading && item.count > 0),
+    get(presented).filter(item => item.count > 0),
   );
 
   const activeItems = computed<ActionItem<TTarget, TId>[]>(() =>
@@ -90,15 +127,17 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
   );
 
   const clearedItems = computed<ActionItem<TTarget, TId>[]>(() =>
-    toValue(items).filter(item => item.loading || item.count === 0),
+    get(presented).filter(item => item.count === 0),
   );
 
   const categoryCount = computed<number>(() => get(activeItems).length);
 
   const hasItems = computed<boolean>(() => get(categoryCount) > 0);
 
+  const domainBusy = computed<boolean>(() => busy !== undefined && toValue(busy));
+
   const refreshing = computed<boolean>(() =>
-    sources.some(source => source.loading !== undefined && toValue(source.loading)),
+    get(domainBusy) || sources.some(source => source.loading !== undefined && toValue(source.loading)),
   );
 
   /**
@@ -109,36 +148,45 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
    * zero, which reads exactly like "nothing to do", so a consumer must gate on this rather than
    * on the counts alone.
    */
-  const checking = computed<boolean>(() =>
-    !get(scanned) || (busy !== undefined && toValue(busy)) || get(refreshing),
-  );
+  const checking = computed<boolean>(() => !get(scanned) || get(refreshing));
+
+  const awaitingFirstScan = computed<boolean>(() => !get(scanned));
 
   /**
-   * Re-reads every source, then marks this center scanned whatever the outcome.
+   * Re-reads every source, then marks this center scanned whatever the outcome, unless the domain is
+   * still busy.
    *
    * @remarks
    * Rejections are absorbed rather than propagated: each source already reports its own failure,
    * and letting one escape would leave `scanned` false and pin the center to `checking` for the
-   * rest of the session.
+   * rest of the session. A scan that lands while the domain works read counts that are about to
+   * change, so it does not count as the first; the next one after the work settles does.
    */
   const refreshAll = async (): Promise<void> => {
     await Promise.allSettled(sources.map(async source => source.refresh()));
-    set(scanned, true);
+    if (!get(domainBusy))
+      set(scanned, true);
   };
+
+  watch(() => toValue(items), recordSettledCounts, { flush: 'sync', immediate: true });
 
   // The counts belong to the logged in user, so the next one starts pending again.
   watch(logged, (isLogged) => {
-    if (!isLogged)
-      set(scanned, false);
+    if (isLogged)
+      return;
+    set(scanned, false);
+    set(settledCounts, new Map());
   });
 
   return {
     activeItems,
+    awaitingFirstScan,
     categoryCount,
     checking,
     clearedItems,
     hasItems,
     lockedItems,
+    present,
     refreshAll,
     refreshing,
     reviewItems,

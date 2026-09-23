@@ -31,6 +31,7 @@ const leadsAway = computed<boolean>(() => leavesCenter(item.target));
         :variant="variant"
         :color="color"
         class="shrink-0"
+        :loading="item.loading"
         data-testid="actions-center-row-action"
         v-bind="attrs"
       >
@@ -66,6 +67,7 @@ const leadsAway = computed<boolean>(() => leavesCenter(item.target));
     :variant="variant"
     :color="color"
     class="shrink-0"
+    :loading="item.loading"
     data-testid="actions-center-row-action"
     @click="emit('action', item)"
   >
