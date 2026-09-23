@@ -3,16 +3,20 @@ import type { RuiIcons } from '@rotki/ui-library';
 
 const open = defineModel<boolean>({ default: false });
 
-const { badge = false, checking = false, count } = defineProps<{
+const { badge = false, checking = false, count, newCount = 0 } = defineProps<{
   /** how many categories are asking for something */
   count: number;
+  /** how many of them are new since the user last looked, which is the number the badge shows */
+  newCount?: number;
   checking?: boolean;
   /**
-   * Shows the count on the trigger.
+   * Shows the badge on the trigger.
    *
    * @remarks
    * Only the global trigger carries it: two badges counting the same rows are how the numbers
-   * start to disagree, so a scoped view shows the state without the number.
+   * start to disagree, so a scoped view shows the state without the number. With nothing new the
+   * badge is an empty dot, so rows the user already knows about stay visible without a number
+   * that never changes.
    */
   badge?: boolean;
 }>();
@@ -31,6 +35,8 @@ const { t } = useI18n({ useScope: 'global' });
  * A badge reaches a screen reader as a bare number, so the count is spelled out here.
  */
 const tooltip = computed<string>(() => {
+  if (count > 0 && newCount > 0)
+    return `${t('action_center.subtitle', { count }, count)}, ${t('action_center.new_count', { count: newCount }, newCount)}`;
   if (count > 0)
     return t('action_center.subtitle', { count }, count);
   return checking ? t('action_center.button_checking') : t('action_center.button_clear');
@@ -73,7 +79,8 @@ const icon = computed<RuiIcons>(() => {
           >
             <RuiBadge
               :model-value="badge && count > 0"
-              :text="count.toString()"
+              :dot="newCount === 0"
+              :text="newCount > 0 ? newCount.toString() : undefined"
               color="warning"
               placement="top"
               size="sm"

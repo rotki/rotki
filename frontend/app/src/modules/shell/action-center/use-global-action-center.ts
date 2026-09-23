@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { LocationQuery } from 'vue-router';
-import type { ActionCenterSection, ActionItem, ActionTarget } from '@/modules/core/action-center/types';
 import { startPromise } from '@shared/utils';
+import { type ActionCenterSection, type ActionItem, type ActionTarget, ActionUrgency } from '@/modules/core/action-center/types';
 import { useActionCenter } from '@/modules/core/action-center/use-action-center';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { toGlobalTarget } from '@/modules/history/events/actions-center/history-issue-routes';
@@ -9,6 +9,7 @@ import { useHistoryEventIssues } from '@/modules/history/events/actions-center/u
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
 import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-sync-row';
@@ -19,18 +20,38 @@ interface UseGlobalActionCenterReturn {
   sections: ComputedRef<ActionCenterSection[]>;
   /** Categories that were checked and came back with nothing pending. */
   cleared: ComputedRef<ActionItem[]>;
-  /** How many categories are asking for something, which is what the badge shows. */
+  /** How many categories are asking for something. */
   count: ComputedRef<number>;
+  /** Ids of the categories that are new, or grew, since the user last closed the center. */
+  newIds: ComputedRef<string[]>;
+  /** How many categories are new, which is what the badge shows. */
+  newCount: ComputedRef<number>;
+  /** Records the current counts as seen, called when the center closes. */
+  markSeen: () => void;
   checking: ComputedRef<boolean>;
   refreshing: ComputedRef<boolean>;
   refreshAll: () => Promise<void>;
 }
 
-/** Where a raised row sits inside its section: what needs doing first, what was set aside, then what is locked. */
+const URGENCY_RANK: Record<ActionUrgency, number> = {
+  [ActionUrgency.DECISION]: 0,
+  [ActionUrgency.TODO]: 1,
+  [ActionUrgency.AUTOMATIC]: 2,
+};
+
+/** The history sync row heads its section: it says how current everything under it is. */
+const LEADING_ROW_ID = 'history-sync';
+
+/**
+ * Where a raised row sits inside its section: the leading row, then what needs doing, most urgent
+ * first, then what was set aside, then what is locked.
+ */
 function rowRank(item: ActionItem): number {
   if (item.locked)
-    return 2;
-  return item.informational ? 1 : 0;
+    return 5;
+  if (item.informational)
+    return 4;
+  return item.id === LEADING_ROW_ID ? -1 : URGENCY_RANK[item.urgency];
 }
 
 function isRaised(item: ActionItem): boolean {
@@ -93,6 +114,12 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     .map(group => ({ ...group, items: group.items.filter(isRaised).sort((a, b) => rowRank(a) - rowRank(b)) }))
     .filter(section => section.items.length > 0));
 
+  const { markSeen, newIds } = useActionCenterSeen({
+    active: center.activeItems,
+    checking: center.checking,
+    items: () => get(groups).flatMap(group => group.items),
+  });
+
   const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 
   watchImmediate(settled, (busy) => {
@@ -104,6 +131,9 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     checking: center.checking,
     cleared: center.clearedItems,
     count: center.categoryCount,
+    markSeen,
+    newCount: computed<number>(() => get(newIds).length),
+    newIds,
     refreshAll: center.refreshAll,
     refreshing: center.refreshing,
     sections,

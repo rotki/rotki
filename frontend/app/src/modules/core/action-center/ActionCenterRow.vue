@@ -4,8 +4,10 @@ import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowA
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
-const { item } = defineProps<{
+const { isNew = false, item } = defineProps<{
   item: ActionItem<TTarget>;
+  /** appeared, or grew, since the user last looked */
+  isNew?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -73,6 +75,13 @@ const lockedHint = computed<string>(() => item.minimumTier
         >
           {{ item.count }}
         </RuiChip>
+        <span
+          v-if="isNew"
+          class="text-caption font-medium text-rui-primary"
+          data-testid="actions-center-row-new"
+        >
+          {{ t('action_center.new') }}
+        </span>
       </div>
       <p class="text-caption text-rui-text-secondary">
         {{ item.locked ? lockedHint : item.description }}

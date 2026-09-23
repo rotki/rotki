@@ -10,7 +10,7 @@ import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-
 
 const open = ref<boolean>(false);
 
-const { checking, cleared, count, refreshAll, refreshing, sections } = useGlobalActionCenter();
+const { checking, cleared, count, markSeen, newCount, newIds, refreshAll, refreshing, sections } = useGlobalActionCenter();
 const { openTarget } = useOpenActionTarget();
 const { missingPriceIdentifiers } = useMissingPrices();
 const { modelOpen: missingPricesOpen } = useMissingPricesDialog();
@@ -18,12 +18,19 @@ const { modelOpen: missingPricesOpen } = useMissingPricesDialog();
 function close(): void {
   set(open, false);
 }
+
+// Marking on close rather than on open keeps the new markers up while the user reads them.
+watch(open, (isOpen, wasOpen) => {
+  if (wasOpen && !isOpen)
+    markSeen();
+});
 </script>
 
 <template>
   <ActionCenterMenu
     v-model="open"
     :count="count"
+    :new-count="newCount"
     :checking="checking"
     badge
   >
@@ -31,6 +38,7 @@ function close(): void {
       :sections="sections"
       :cleared="cleared"
       :count="count"
+      :new-ids="newIds"
       :checking="checking"
       :refreshing="refreshing"
       @open="openTarget($event, close)"
