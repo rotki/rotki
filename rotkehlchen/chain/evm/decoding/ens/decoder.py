@@ -30,7 +30,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, TokenKind
+from rotkehlchen.types import ChecksumEvmAddress, Location, TokenKind
 from rotkehlchen.user_messages import Internal
 from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -199,6 +199,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
                 f'This should never happen. Please, '
                 f"open an issue in rotki's github repository.",
                 classification=Internal(operation=UserMessageOperation.TRANSACTION_DECODING),
+                subject=Location.from_chain_id(self.node_inquirer.chain_id),
             )
             return None
 

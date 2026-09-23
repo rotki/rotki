@@ -33,6 +33,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
+    Location,
     Timestamp,
     TimestampMS,
 )
@@ -1076,6 +1077,7 @@ class Eth2(EthereumModule):
                 f'Did not manage to query beaconcha.in api for address {address} due to {e!s}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
                 classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error=str(e)),
+                subject=Location.ETHEREUM,
             )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)

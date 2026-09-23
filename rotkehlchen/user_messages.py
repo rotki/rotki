@@ -22,7 +22,17 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-ERROR_MESSAGE_TYPES = {WSMessageType.USER_MESSAGE, WSMessageType.BALANCE_SNAPSHOT_ERROR}
+# Types that only mean something to a client connected when they are sent: the progress of
+# work in flight. Every other type is state the user still needs after reconnecting, so it
+# falls back to the polling queues whichever way delivery failed.
+LIVE_ONLY_MESSAGE_TYPES: Final = frozenset({
+    WSMessageType.TRANSACTION_STATUS,
+    WSMessageType.DB_UPGRADE_STATUS,
+    WSMessageType.DATA_MIGRATION_STATUS,
+    WSMessageType.HISTORY_EVENTS_STATUS,
+    WSMessageType.PROGRESS_UPDATES,
+    WSMessageType.DATABASE_UPLOAD_PROGRESS,
+})
 # How many messages each polling queue holds. Nothing drains a queue unless a client polls,
 # so a backend nobody polls would otherwise keep every undelivered message for the session.
 # Messages are queued with appendleft and drained from the right, so a full queue drops the
@@ -96,9 +106,14 @@ class AuthFailure(MessageClassification):
     Only the user can resolve this, so it is the one family that must not collapse into a
     count. Prefer WSMessageType.MISSING_API_KEY where it fits: it is already structured
     and already has a frontend handler.
+
+    `service` is a fixed id (an exchange's location, ROTKI_PREMIUM_SERVICE, an
+    ExternalService), never a name the user chose, so two services cannot collide.
+    `account` is the user's name for the rejected account, when there can be several.
     """
     key: ClassVar = UserMessageKey.AUTH
     service: str
+    account: str | None
 
 
 # The AuthFailure service for rotki's own premium credentials, shared so its emitters group
@@ -109,8 +124,10 @@ ROTKI_PREMIUM_SERVICE: Final = 'rotki_premium'
 class UnknownAssetSeen(MessageClassification):
     """An asset rotki does not know about.
 
-    Prefer WSMessageType.EXCHANGE_UNKNOWN_ASSET on an exchange; ExchangeInterface.
-    send_unknown_asset_message already fills in the location and name.
+    Prefer WSMessageType.EXCHANGE_UNKNOWN_ASSET for an exchange symbol the user can map;
+    ExchangeInterface.send_unknown_asset_message already fills in the location and name.
+    An exchange's internal id that no symbol stands for (bitpanda's numeric ids) cannot be
+    mapped, so it stays here with the id as `identifier`.
     """
     key: ClassVar = UserMessageKey.UNKNOWN_ASSET
     identifier: str
@@ -125,9 +142,13 @@ class LocalDbProblem(MessageClassification):
 
 @dataclass(frozen=True)
 class MissingPrice(MessageClassification):
-    """No price could be found for an asset at a point in time."""
+    """No price could be found for an asset at a point in time.
+
+    `asset` is null when a lookup for a batch of assets failed as a whole, and `timestamp`
+    is null for a current price.
+    """
     key: ClassVar = UserMessageKey.PRICE
-    asset: str
+    asset: str | None
     timestamp: int | None
 
 
@@ -245,8 +266,15 @@ class MessagesAggregator:
     def _append_error(self, msg: str, data: dict[str, Any]) -> None:
         self.errors.appendleft(self._user_message_polled(msg=msg, data=data))
 
-    def _append_structured_error(self, envelope: dict[str, Any]) -> None:
+    def _append_structured(self, envelope: dict[str, Any]) -> None:
         self.errors.appendleft(PolledMessage(text=json.dumps(envelope), payload=envelope))
+
+    def _append_message(
+            self,
+            message_type: WSMessageType,
+            data: dict[str, Any] | list[Any],
+    ) -> None:
+        self._append_structured(self._envelope(message_type, data))
 
     def add_error(
             self,
@@ -284,28 +312,24 @@ class MessagesAggregator:
         `wait_on_send` is used to determine if the message should be sent asynchronously
         by spawning a greenlet or if it should just do it synchronously.
         """
-        envelope = self._envelope(message_type, data)
-        # Only error-class messages fall back to polling, whichever way delivery failed
-        is_error = message_type in ERROR_MESSAGE_TYPES
-
+        is_queued = message_type not in LIVE_ONLY_MESSAGE_TYPES
         if self.rotki_notifier is not None:
             self.rotki_notifier.broadcast(
                 message_type=message_type,
                 to_send_data=data,
-                failure_callback=self._append_structured_error if is_error else None,
-                failure_callback_args={'envelope': envelope},
+                failure_callback=self._append_message if is_queued else None,
+                failure_callback_args={'message_type': message_type, 'data': data},
             )
 
-        elif is_error:
-            self._append_structured_error(envelope)
+        elif is_queued:
+            self._append_message(message_type, data)
 
     def requeue_undelivered(self, raw_message: str) -> None:
         """Callback for a message that was queued to a websocket client which
-        disconnected before receiving it. Re-queues error-class messages into
-        the polling fallback deques, mirroring what the failure callbacks of
-        add_warning/add_error/add_message do when a send fails outright.
-        Everything else (progress updates etc.) is dropped, as it is only
-        meaningful to a connected client."""
+        disconnected before receiving it. Re-queues it into the polling fallback
+        deques, mirroring what the failure callbacks of add_warning/add_error/
+        add_message do when a send fails outright. LIVE_ONLY_MESSAGE_TYPES are
+        dropped, as they are only meaningful to a connected client."""
         try:
             message = json.loads(raw_message)
         except json.JSONDecodeError:
@@ -321,8 +345,8 @@ class MessagesAggregator:
                 self.warnings.appendleft(polled)
             else:
                 self.errors.appendleft(polled)
-        elif msg_type in ERROR_MESSAGE_TYPES:
-            self._append_structured_error(message)
+        elif msg_type in WSMessageType and msg_type not in LIVE_ONLY_MESSAGE_TYPES:
+            self._append_structured(message)
 
     def add_missing_key_message(
             self,

@@ -417,7 +417,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 log.error(msg)
                 self.add_classified_error(
                     f'Got remote error while querying Bitstamp crypto transactions: {msg}',
-                    NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
+                    BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                 )
                 raise RemoteError(msg) from e
 
@@ -679,7 +679,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 log.error(msg)
                 self.add_classified_error(
                     f'Got remote error while querying Bitstamp trades: {msg}',
-                    NetworkFailure(record=record, error=str(e)),
+                    BadData(record=record, error=str(e)),
                 )
                 raise RemoteError(msg) from e
 

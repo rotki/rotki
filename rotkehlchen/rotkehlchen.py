@@ -424,7 +424,7 @@ class Rotkehlchen:
             self.msg_aggregator.add_warning(
                 'Could not authenticate the rotki premium API keys found in the DB. '
                 f'Error: {e}. Check logs for more details',
-                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE),
+                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE, account=None),
             )
             # else let's just continue. User signed in successfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB

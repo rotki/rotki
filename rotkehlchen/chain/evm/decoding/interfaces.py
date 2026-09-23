@@ -161,6 +161,7 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.tx_ref!s}.',
             classification=UnknownAssetSeen(identifier=event.asset.identifier),
+            subject=event.location,
         )
 
 

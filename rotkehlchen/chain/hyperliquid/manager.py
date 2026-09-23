@@ -14,6 +14,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 from rotkehlchen.user_messages import NetworkFailure
 
 from .accountant import HyperliquidAccountingAggregator
@@ -181,6 +182,7 @@ class HyperliquidManager(EvmManager):
                             record=UserMessageRecord.TRANSACTION,
                             error=str(e),
                         ),
+                        subject=Location.HYPERLIQUID,
                     )
                     continue
 

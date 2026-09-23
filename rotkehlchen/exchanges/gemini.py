@@ -432,7 +432,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
         except GeminiPermissionError as e:
             self.add_classified_error(
                 f'Got permission error while querying Gemini for trades: {e!s}',
-                AuthFailure(service=self.name),
+                AuthFailure(service=self.location.serialize(), account=self.name),
             )
             raise
         except RemoteError as e:

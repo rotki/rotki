@@ -7693,7 +7693,7 @@ Querying messages to show to the user
           "message": ""
       }
 
-   :resjson list[object] errors: The errors that need to be shown to the user. Each entry is a message in the same ``{"type": ..., "data": ...}`` shape the websocket sends, queued here because it could not be delivered over a websocket.
+   :resjson list[object] errors: The errors that need to be shown to the user. Each entry is a message in the same ``{"type": ..., "data": ...}`` shape the websocket sends, queued here because it could not be delivered over a websocket. Progress and status messages are not queued.
    :resjson list[object] warnings: The warnings that need to be shown to the user, in the same shape.
 
    A ``user_message`` message carries ``verbosity`` (``"error"`` or ``"warning"``) and ``value``, the rendered text. It also carries ``key`` (why it happened, e.g. ``"bad_data"``, ``"network"``) and ``fields`` (the data specific to that key), which every message has, and ``subject`` (the location it happened to, e.g. ``"kucoin"``), which is ``null`` for a message about no single location.

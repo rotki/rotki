@@ -738,7 +738,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         f'{timestamp_to_date(query_end_ts)}. {e!s}'
                     )
                     if isinstance(e, BinancePermissionError):
-                        self.add_classified_error(msg, AuthFailure(service=self.name))
+                        self.add_classified_error(msg, AuthFailure(
+                            service=self.location.serialize(),
+                            account=self.name,
+                        ))
                     else:
                         self.add_classified_error(msg, NetworkFailure(
                             record=UserMessageRecord.HISTORY_EVENT,
@@ -815,7 +818,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'{timestamp_to_date(query_end_ts)}. {e!s}'
                 )
                 if isinstance(e, BinancePermissionError):
-                    self.add_classified_error(msg, AuthFailure(service=self.name))
+                    self.add_classified_error(msg, AuthFailure(
+                        service=self.location.serialize(),
+                        account=self.name,
+                    ))
                 else:
                     self.add_classified_error(msg, NetworkFailure(
                         record=UserMessageRecord.HISTORY_EVENT,

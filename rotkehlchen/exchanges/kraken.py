@@ -1524,18 +1524,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     current_fee_index += 1
             except (DeserializationError, KeyError, UnknownAsset) as e:
                 skipped = True
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Keyrror {msg}'
                 if isinstance(e, UnknownAsset):
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
                         details='ledger event',
                     )
                 else:
+                    msg = f'Missing key: {e!s}' if isinstance(e, KeyError) else str(e)
                     self.add_classified_error(
                         f'Failed to read ledger event from kraken {raw_event} due to {msg}',
-                        BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
+                        BadData(record=UserMessageRecord.HISTORY_EVENT, error=msg),
                     )
                 if save_skipped_events:
                     with self.db.user_write() as write_cursor:

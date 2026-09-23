@@ -27,7 +27,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
-from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, Location, SupportedBlockchain
 from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -241,6 +241,10 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 classification=NetworkFailure(
                     record=UserMessageRecord.NODE,
                     error='Node is not synced with the chain',
+                ),
+                subject=(
+                    Location.POLKADOT if self.chain == SupportedBlockchain.POLKADOT
+                    else Location.KUSAMA
                 ),
             )
 

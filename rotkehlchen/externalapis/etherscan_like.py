@@ -686,6 +686,7 @@ class EtherscanLikeApi(ABC):
                     self.msg_aggregator.add_warning(
                         f'{e!s}. Skipping transaction {tx_hash} on {chain_id.to_name()} for {account}',  # noqa: E501
                         classification=BadData(record=UserMessageRecord.TRANSACTION, error=str(e)),
+                        subject=Location.from_chain_id(chain_id),
                     )
                     continue
 

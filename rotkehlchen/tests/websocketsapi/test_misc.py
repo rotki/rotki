@@ -69,8 +69,8 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
 
 def test_requeue_undelivered_messages():
     """Test that messages queued to a websocket client that disconnected before
-    receiving them land in the polling fallback deques if they are error-class,
-    and are dropped otherwise"""
+    receiving them land in the polling fallback deques, unless they are live-only
+    progress, which is dropped"""
     msg_aggregator = MessagesAggregator()
     msg_aggregator.requeue_undelivered(json.dumps({
         'type': 'user_message',
@@ -84,13 +84,18 @@ def test_requeue_undelivered_messages():
         'type': 'balance_snapshot_error',
         'data': {'location': 'kraken', 'error': 'oops'},
     }))
+    msg_aggregator.requeue_undelivered(unknown_asset_msg := json.dumps({
+        'type': 'exchange_unknown_asset',
+        'data': {'location': 'kraken', 'name': 'kraken', 'identifier': 'XYZ'},
+    }))
     msg_aggregator.requeue_undelivered(json.dumps({
         'type': 'progress_updates',
         'data': {'total': 10, 'processed': 5},
     }))  # progress is meaningless to a dead client and gets dropped
+    msg_aggregator.requeue_undelivered(json.dumps({'type': 'not_a_type', 'data': {}}))
     msg_aggregator.requeue_undelivered('{not json')  # malformed input is just logged
 
-    assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg]
+    assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg, unknown_asset_msg]
     assert msg_aggregator.consume_warnings() == ['a warning']
 
 
@@ -133,8 +138,8 @@ def test_polling_queues_drop_the_oldest_message_when_full() -> None:
 
 
 def test_failed_broadcast_falls_back_by_message_class() -> None:
-    """A broadcast that fails queues a user message with its envelope and an error-class
-    message as it was sent, and drops anything else, the same policy requeue_undelivered
+    """A broadcast that fails queues a user message with its envelope and any other message
+    as it was sent, and drops only live-only progress, the same policy requeue_undelivered
     applies to a client that disconnected."""
     def fail_delivery(
             failure_callback: Callable | None = None,
@@ -152,6 +157,10 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
         WSMessageType.BALANCE_SNAPSHOT_ERROR,
         snapshot_error := {'location': 'kraken', 'error': 'oops'},
     )
+    msg_aggregator.add_message(
+        WSMessageType.MISSING_API_KEY,
+        missing_key := {'service': 'etherscan'},
+    )
 
     assert msg_aggregator.consume_error_payloads() == [
         {'type': 'user_message', 'data': {
@@ -162,6 +171,7 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
             'fields': {'entry': 'tag'},
         }},
         {'type': 'balance_snapshot_error', 'data': snapshot_error},
+        {'type': 'missing_api_key', 'data': missing_key},
     ]
 
 

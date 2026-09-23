@@ -399,6 +399,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to asset mismatch: {e!s}',
                 classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
+                subject=Location.from_chain_id(self.evm_inquirer.chain_id),
             )
             return
         except (NotERC721Conformant, NotERC20Conformant):
@@ -406,6 +407,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to non conformant token',
                 classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
+                subject=Location.from_chain_id(self.evm_inquirer.chain_id),
             )
             return
 
@@ -470,6 +472,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                         record=UserMessageRecord.PROTOCOL_CACHE,
                         error=str(e),
                     ),
+                    subject=Location.from_chain_id(self.evm_inquirer.chain_id),
                 )
                 return
 

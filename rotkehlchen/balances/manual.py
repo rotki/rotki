@@ -2,12 +2,11 @@ from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.user_messages import NetworkFailure
+from rotkehlchen.user_messages import MissingPrice
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -66,7 +65,7 @@ def get_manually_tracked_balances(
     except RemoteError as e:
         db.msg_aggregator.add_warning(
             f'Could not find prices during manually tracked balance querying due to {e!s}',
-            classification=NetworkFailure(record=UserMessageRecord.BALANCE, error=str(e)),
+            classification=MissingPrice(asset=None, timestamp=None),
         )
         prices = {}
 

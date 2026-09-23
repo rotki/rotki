@@ -20,6 +20,7 @@ Classified User Messages
 * **Changed Endpoint**: ``GET /api/(version)/messages``
 
   - Each entry of ``errors`` and ``warnings`` is now the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string. This applies to every queued type, ``balance_snapshot_error`` included.
+  - Every message type that could not be delivered over a websocket is now queued here, whether the send failed, no client was connected, or the client disconnected before receiving it. Only progress and status types (``progress_updates``, ``transaction_status``, ``history_events_status``, ``db_upgrade_status``, ``data_migration_status``, ``database_upload_progress``) are dropped, as they only mean something to a connected client. Previously each of those three paths applied a different policy.
 
 * **Changed Message**: ``exchange_unknown_asset``
 

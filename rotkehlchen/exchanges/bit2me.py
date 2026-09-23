@@ -622,7 +622,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError as e:
                 self.add_classified_error(
                     f'{self.name} returned invalid JSON for trades. {e!s}',
-                    NetworkFailure(record=UserMessageRecord.TRADE, error=str(e)),
+                    BadData(record=UserMessageRecord.TRADE, error=str(e)),
                 )
                 raise RemoteError(f'{self.name} returned invalid JSON for trades') from e
 

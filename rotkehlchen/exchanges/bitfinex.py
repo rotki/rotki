@@ -330,7 +330,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 log.error(msg)
                 self.add_classified_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
-                    NetworkFailure(record=CASE_TO_RECORD[case], error=msg),
+                    BadData(record=CASE_TO_RECORD[case], error=msg),
                 )
                 return results, True
 

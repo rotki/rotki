@@ -388,7 +388,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                 log.error(msg)
                 self.add_classified_error(
                     f'Got remote error while querying kucoin {case}: {msg}',
-                    NetworkFailure(record=PAGINATED_CASE_RECORDS[case], error=msg),
+                    BadData(record=PAGINATED_CASE_RECORDS[case], error=msg),
                 )
                 raise RemoteError(msg) from e
 

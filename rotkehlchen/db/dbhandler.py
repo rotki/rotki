@@ -3557,7 +3557,7 @@ class DBHandler:
         except IncorrectApiKeyFormat:
             self.msg_aggregator.add_error(
                 'Incorrect rotki API Key/Secret format found in the DB. Skipping ...',
-                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE),
+                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE, account=None),
             )
             return None
 

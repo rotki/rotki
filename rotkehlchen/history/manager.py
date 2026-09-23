@@ -232,6 +232,7 @@ class HistoryQueryingManager:
                     f'There was an error when querying {str_blockchain} etherscan for transactions: {msg}'  # noqa: E501
                     f'The final history result will not include {str_blockchain} transactions',
                     classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error=msg),
+                    subject=Location.from_chain(blockchain),
                 )
                 empty_or_error += '\n' + msg
 

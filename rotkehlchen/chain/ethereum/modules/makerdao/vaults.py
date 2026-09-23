@@ -18,6 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import Location
 from rotkehlchen.user_messages import Unsupported
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import (
@@ -181,6 +182,7 @@ class MakerdaoVaults(EthereumModule):
                 f'Detected vault with collateral_type {collateral_type}. That '
                 f'is not yet supported by rotki. Skipping...',
                 classification=Unsupported(feature=UserMessageFeature.VAULT_COLLATERAL_TYPE),
+                subject=Location.ETHEREUM,
             )
             return None
 
