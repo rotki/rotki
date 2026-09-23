@@ -1,7 +1,9 @@
 import type { ComputedRef } from 'vue';
+import { startPromise } from '@shared/utils';
 import { none, some } from 'plainfp/option';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
+import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -18,8 +20,11 @@ function withoutTimezone(format: string): string {
  * The history sync row: history was never downloaded, or not refreshed within the out-of-sync period.
  *
  * @remarks
- * Dismissing it keeps the row listed but stops it counting, until the dismissal threshold passes or
- * a major or minor update resets it. A user with no history sources gets no row at all.
+ * Its action starts the same user-started sync as the history page's refresh, and the center stays
+ * open while it runs. Listed among the passed checks, it links to history events instead, so a
+ * label never starts a sync. Dismissing it keeps the row listed but stops it counting, until the dismissal
+ * threshold passes or a major or minor update resets it. A user with no history sources gets no row
+ * at all.
  */
 export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -36,6 +41,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
     processing,
     recordAppVersion,
   } = useHistorySyncStatus();
+  const { refreshTransactions } = useHistoryTransactions();
   const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { scrambleTimestamp } = useScramble();
 
@@ -68,6 +74,11 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
 
   recordAppVersion();
 
+  const sync: ActionTarget = {
+    kind: 'run',
+    run: () => startPromise(refreshTransactions({ userInitiated: true })),
+  };
+
   return computed<ActionItem[]>(() => {
     if (!get(hasTxAccounts))
       return [];
@@ -76,6 +87,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
 
     return [createActionItem<ActionTarget, string>({
       actionLabel: t('action_center.rows.history.sync.action'),
+      checkTarget: HISTORY_EVENTS,
       count: get(outOfSync) ? 1 : 0,
       description: get(description),
       icon: 'lu-history',
@@ -83,10 +95,11 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
       informational: setAside,
       loading: get(processing),
       options: applicable<ActionItemOption>([
+        some({ icon: 'lu-history', id: 'history-events', label: t('action_center.rows.history.sync.go_to_events'), target: HISTORY_EVENTS }),
         setAside ? none : some({ icon: 'lu-x', id: 'dismiss', label: t('action_center.dismiss'), target: { kind: 'run', run: dismiss } }),
       ]),
       urgency: ActionUrgency.TODO,
-      target: HISTORY_EVENTS,
+      target: sync,
       title: get(title),
     })];
   });

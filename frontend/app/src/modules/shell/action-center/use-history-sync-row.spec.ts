@@ -15,6 +15,11 @@ const dismissedRecently = ref<boolean>(false);
 const lastQueriedTimestamp = ref<number>(SYNCED_AT);
 const dismiss = vi.fn<() => void>();
 const recordAppVersion = vi.fn<() => void>();
+const refreshTransactions = vi.fn<(params?: { userInitiated?: boolean }) => Promise<void>>(async () => {});
+
+vi.mock('@/modules/history/events/tx/use-history-transactions', () => ({
+  useHistoryTransactions: (): object => ({ refreshTransactions }),
+}));
 
 vi.mock('@/modules/history/sync-status/use-history-sync-status', () => ({
   useHistorySyncStatus: (): object => ({
@@ -82,21 +87,41 @@ describe('modules/shell/action-center/use-history-sync-row', () => {
     expect(get(rows())).toEqual([]);
   });
 
-  it('should raise a dismissible row pointing at history events when out of sync', () => {
+  it('should raise a counted row when out of sync', () => {
     const row = onlyRow();
 
     expect(row.id).toBe('history-sync');
     expect(row.count).toBe(1);
     expect(row.informational).toBe(false);
-    expect(row.target).toEqual({ kind: 'route', to: { name: '/history/events/' } });
     expect(row.description).toBe('action_center.rows.history.sync.description::2026-09-15 10:30');
+  });
 
-    const [option, ...others] = row.options;
+  it('should start a user-started history sync from its action', () => {
+    const { target } = onlyRow();
+
+    assert(target.kind === 'run');
+    target.run();
+    expect(refreshTransactions).toHaveBeenCalledExactlyOnceWith({ userInitiated: true });
+  });
+
+  it('should link to history events, not sync, when listed among the passed checks', () => {
+    set(outOfSync, false);
+    expect(onlyRow().checkTarget).toEqual({ kind: 'route', to: { name: '/history/events/' } });
+  });
+
+  it('should offer history events and dismiss as options', () => {
+    const [events, dismissOption, ...others] = onlyRow().options;
+
     expect(others).toHaveLength(0);
-    expect(option.id).toBe('dismiss');
-    assert(option.target.kind === 'run');
-    option.target.run();
+    assert(events && dismissOption);
+    expect(events.id).toBe('history-events');
+    expect(events.target).toEqual({ kind: 'route', to: { name: '/history/events/' } });
+
+    expect(dismissOption.id).toBe('dismiss');
+    assert(dismissOption.target.kind === 'run');
+    dismissOption.target.run();
     expect(dismiss).toHaveBeenCalledOnce();
+    expect(refreshTransactions).not.toHaveBeenCalled();
   });
 
   it('should clear the row, titled as synced, when history is in sync', () => {
@@ -113,7 +138,7 @@ describe('modules/shell/action-center/use-history-sync-row', () => {
 
     expect(row.count).toBe(1);
     expect(row.informational).toBe(true);
-    expect(row.options).toEqual([]);
+    expect(row.options.map(option => option.id)).toEqual(['history-events']);
   });
 
   it('should hold the row as loading while history is processing', () => {

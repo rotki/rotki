@@ -360,11 +360,12 @@
       },
       "history": {
         "sync": {
-          "action": "Go to history events",
+          "action": "Sync now",
           "description": "Completed on {date}. Protocol balances may be stale or missing until history is refreshed.",
           "description_long": "Completed on {date}. Some balances may not show until history is fully processed.",
           "description_never": "rotki fetches and decodes your full history on this device, which can take a while for active multi-chain addresses.",
           "description_updated": "Some balances may not show until history is processed again.",
+          "go_to_events": "Go to history events",
           "title": "History last synced {time}",
           "title_never": "History not downloaded yet",
           "title_synced": "History synced",
