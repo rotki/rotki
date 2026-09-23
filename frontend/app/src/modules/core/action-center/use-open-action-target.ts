@@ -1,5 +1,5 @@
-import type { ActionTarget } from '@/modules/core/action-center/types';
 import { startPromise } from '@shared/utils';
+import { type ActionTarget, leavesCenter } from '@/modules/core/action-center/types';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -12,11 +12,6 @@ interface UseOpenActionTargetReturn {
    * @param close - closes the center hosting the row
    */
   openTarget: (target: ActionTarget, close: () => void) => void;
-}
-
-/** Whether following a target takes the user somewhere else, so the center should close behind it. */
-function leavesCenter(target: ActionTarget): boolean {
-  return target.kind !== 'run' || target.closesCenter === true;
 }
 
 /**

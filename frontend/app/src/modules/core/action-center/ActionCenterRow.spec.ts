@@ -42,6 +42,15 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toEqual([[item]]);
   });
 
+  it('should show the chevron only on an action that leaves the center', () => {
+    const chevron = (target: ActionTarget): boolean =>
+      mountRow(createItem({ target })).find('[data-testid=actions-center-row-action-chevron]').exists();
+
+    expect(chevron({ kind: 'route', to: { name: '/balances/blockchain/' } })).toBe(true);
+    expect(chevron({ closesCenter: true, kind: 'run', run: vi.fn() })).toBe(true);
+    expect(chevron({ kind: 'run', run: vi.fn() })).toBe(false);
+  });
+
   it('should drop the urgency colour from a row the user set aside, keeping its action', async () => {
     const wrapper = mountRow(createItem());
     expect(wrapper.findComponent({ name: 'RuiChip' }).props('color')).toBe('warning');

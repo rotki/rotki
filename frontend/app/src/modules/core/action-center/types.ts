@@ -44,6 +44,16 @@ export type ActionTarget =
    */
   | { kind: 'run'; run: () => void; closesCenter?: boolean };
 
+/**
+ * Whether following a target takes the user somewhere else, so the center closes behind it.
+ *
+ * @remarks
+ * Takes any target shape, since a center may define targets of its own; only a `run` acts in place.
+ */
+export function leavesCenter(target: { kind: string }): boolean {
+  return target.kind !== 'run' || ('closesCenter' in target && target.closesCenter === true);
+}
+
 /** Something a row offers besides its main action, listed in the row's menu. */
 export interface ActionItemOption<TTarget extends { kind: string } = ActionTarget> {
   /** Rendered into `data-testid`, so the values are kebab-case like every other test id. */
