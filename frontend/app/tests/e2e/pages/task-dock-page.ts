@@ -66,14 +66,9 @@ export class TaskDockPage {
     await expect(this.dialog).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 
-  async expectDialog(title: string, message: string): Promise<void> {
+  async expectDialog(title: string, message: string | RegExp): Promise<void> {
     await expect(this.dialog.getByTestId('dialog-title')).toHaveText(title);
     await expect(this.dialog).toContainText(message);
-  }
-
-  async expectDialogNotToMention(text: string): Promise<void> {
-    await expect(this.dialog).toBeVisible();
-    await expect(this.dialog).not.toContainText(text);
   }
 
   async dismissDialog(): Promise<void> {
