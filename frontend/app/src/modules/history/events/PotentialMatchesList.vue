@@ -52,15 +52,6 @@ const movementEntry = computed<HistoryEventEntry>(() => {
 const usedTypeLabel = computed<string>(() => entryLabels?.type ?? getAssetMovementsType(get(movementEntry).eventSubtype));
 const usedLocationHeader = computed<string>(() => entryLabels?.locationHeader ?? t('common.exchange'));
 
-const searchControlsEl = useTemplateRef<HTMLElement>('searchControls');
-const { height: searchControlsHeight } = useElementSize(searchControlsEl);
-
-const tableMaxHeight = computed<string>(() =>
-  isPinned
-    ? `calc(100vh - 28.4rem - ${get(searchControlsHeight)}px)`
-    : 'calc(100vh - 33rem)',
-);
-
 /** The time field's own max. */
 const MAX_SEARCH_HOURS = 168;
 
@@ -90,8 +81,10 @@ watchDebounced(onlyExpectedAssets, () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div>
+  <!-- Only the matches region grows: everything above it keeps its height, so the list fills
+       whatever the dialog or the pinned sheet leaves over instead of a viewport guess. -->
+  <div class="flex flex-col gap-4 flex-1 min-h-0">
+    <div class="shrink-0">
       <p class="text-body-2 font-medium mb-2">
         {{ entryLabels?.matchingFor ?? t('asset_movement_matching.dialog.matching_for') }}
       </p>
@@ -111,7 +104,7 @@ watchDebounced(onlyExpectedAssets, () => {
         @show-in-events="emit('show-unmatched-in-events')"
       />
     </div>
-    <div ref="searchControls">
+    <div class="shrink-0">
       <div class="text-body-2 font-medium mb-4">
         {{ t('asset_movement_matching.dialog.search_description') }}
       </div>
@@ -181,25 +174,26 @@ watchDebounced(onlyExpectedAssets, () => {
       </div>
     </div>
 
-    <div>
+    <div class="flex-1 min-h-0 flex flex-col">
       <RuiAlert
         v-if="searchError"
         type="error"
         size="sm"
-        class="mb-4"
+        class="mb-4 shrink-0"
       >
         {{ searchError }}
       </RuiAlert>
 
       <p
         v-if="matches.length > 0"
-        class="text-body-2 font-medium mb-2"
+        class="text-body-2 font-medium mb-2 shrink-0"
       >
         {{ t('asset_movement_matching.dialog.matching_hint') }}
       </p>
 
       <PotentialMatchesEmpty
         v-else-if="!loading"
+        class="shrink-0"
         :hours="searchTimeRange"
         :tolerance="tolerancePercentage"
         :can-widen="canWiden"
@@ -214,7 +208,6 @@ watchDebounced(onlyExpectedAssets, () => {
         :matches="matches"
         :highlighted-identifier="highlightedIdentifier"
         :loading="loading"
-        :max-height="tableMaxHeight"
         :empty-label="t('asset_movement_matching.dialog.no_matches_found')"
         @show-in-events="emit('show-in-events', $event)"
       />

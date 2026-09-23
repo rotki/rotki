@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { useProtocolMetadata } from '@/modules/balances/protocols/use-protocol-metadata';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import DefiIcon from '@/modules/settings/modules/DefiIcon.vue';
@@ -87,7 +88,10 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard
+    class="max-h-[90vh] flex flex-col overflow-hidden"
+    content-class="flex flex-col flex-1 min-h-0 overflow-hidden"
+  >
     <template #custom-header>
       <div class="flex justify-between gap-4 p-4 pb-0">
         <h6 class="text-h6 text-rui-text">
@@ -107,9 +111,9 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
       />
       {{ t('transactions.protocol_cache_updates.no_ongoing') }}
     </div>
-    <div
+    <ScrollableDialogContent
       v-else-if="protocolCacheStatus.length > 0"
-      class="overflow-y-auto -mx-4 px-4 -mt-2 pb-px max-h-[calc(90vh-11.875rem)] min-h-[50vh]"
+      fill
     >
       <DefineProgress #default="{ data }">
         <div
@@ -175,7 +179,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
           </tr>
         </template>
       </RuiDataTable>
-    </div>
+    </ScrollableDialogContent>
     <div
       v-else
       class="mb-4 flex items-center gap-4"

@@ -50,7 +50,10 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
     v-model="modelValue"
     max-width="1000"
   >
-    <RuiCard content-class="!pb-0">
+    <RuiCard
+      class="max-h-[90vh] flex flex-col overflow-hidden"
+      content-class="!pb-0 flex flex-col flex-1 min-h-0 overflow-hidden"
+    >
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">
           <CardTitle>

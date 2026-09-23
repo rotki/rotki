@@ -3,6 +3,7 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { toSentenceCase } from '@rotki/common';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
@@ -114,7 +115,10 @@ onMounted(() => refresh());
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard
+    class="max-h-[90vh] flex flex-col overflow-hidden"
+    content-class="flex flex-col flex-1 min-h-0 overflow-hidden"
+  >
     <template #custom-header>
       <div class="flex items-center justify-between gap-4 pt-3 p-4 pb-0">
         <h6 class="text-h6 text-rui-text">
@@ -124,7 +128,7 @@ onMounted(() => refresh());
       </div>
     </template>
 
-    <div class="mb-4">
+    <div class="mb-4 shrink-0">
       <div
         v-if="fetching || usedIsDecoding || isTransactionsLoading"
         class="flex items-center gap-4"
@@ -212,33 +216,37 @@ onMounted(() => refresh());
       </div>
     </DefineProgress>
 
-    <RuiDataTable
+    <ScrollableDialogContent
       v-if="combinedDecodingStatus.length > 0"
-      :cols="headers"
-      :rows="combinedDecodingStatus"
-      dense
-      row-attr="chain"
-      striped
-      outlined
+      fill
     >
-      <template #item.chain="{ row }">
-        <LocationDisplay :identifier="row.chain" />
-      </template>
-      <template #item.number="{ row }">
-        {{ row.total - row.processed }}
-      </template>
-      <template #item.progress="{ row }">
-        <ReuseProgress :data="row" />
-      </template>
-      <template #tfoot>
-        <tr>
-          <th>{{ t('common.total') }}</th>
-          <td class="text-end pr-12 py-2">
-            {{ total }}
-          </td>
-        </tr>
-      </template>
-    </RuiDataTable>
+      <RuiDataTable
+        :cols="headers"
+        :rows="combinedDecodingStatus"
+        dense
+        row-attr="chain"
+        striped
+        outlined
+      >
+        <template #item.chain="{ row }">
+          <LocationDisplay :identifier="row.chain" />
+        </template>
+        <template #item.number="{ row }">
+          {{ row.total - row.processed }}
+        </template>
+        <template #item.progress="{ row }">
+          <ReuseProgress :data="row" />
+        </template>
+        <template #tfoot>
+          <tr>
+            <th>{{ t('common.total') }}</th>
+            <td class="text-end pr-12 py-2">
+              {{ total }}
+            </td>
+          </tr>
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
 
     <template #footer>
       <div class="grow" />

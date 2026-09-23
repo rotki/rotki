@@ -13,11 +13,10 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selectedIds = defineModel<number[]>('selectedIds', { required: true });
 
-const { matches, highlightedIdentifier, loading, maxHeight } = defineProps<{
+const { matches, highlightedIdentifier, loading } = defineProps<{
   matches: PotentialMatchRow[];
   highlightedIdentifier?: number;
   loading?: boolean;
-  maxHeight: string;
   emptyLabel: string;
 }>();
 
@@ -53,7 +52,7 @@ function getRowClass(row: PotentialMatchRow): string {
 </script>
 
 <template>
-  <ScrollableDialogContent :max-height="maxHeight">
+  <ScrollableDialogContent fill>
     <RuiDataTable
       :cols="columns"
       :rows="matches"

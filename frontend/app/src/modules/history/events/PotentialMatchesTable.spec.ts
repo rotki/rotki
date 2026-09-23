@@ -48,7 +48,6 @@ function mountLayout(layout: Layout, matches: PotentialMatchRow[]): VueWrapper {
     props: {
       'emptyLabel': 'Nothing found',
       matches,
-      'maxHeight': '20rem',
       'onUpdate:selectedIds': (value: number[]): void => set(selected, value),
       'selectedIds': get(selected),
     },
