@@ -18,7 +18,9 @@ const {
   cleared: ActionItem<TTarget>[];
   /** how many categories are actually asking for something (drives the subtitle) */
   count: number;
+  /** no scan has finished yet, so an empty list reads as "checking", not as "all clear" */
   checking?: boolean;
+  /** a re-scan is under way: shown as a thin bar over rows that stay in place */
   refreshing?: boolean;
 }>();
 

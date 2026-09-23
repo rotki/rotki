@@ -30,7 +30,8 @@ interface UseGlobalActionCenterReturn {
   newCount: ComputedRef<number>;
   /** Records the current counts as seen, called when the center closes. */
   markSeen: () => void;
-  checking: ComputedRef<boolean>;
+  /** No scan has finished yet this session; later re-scans only show as {@link UseGlobalActionCenterReturn.refreshing}. */
+  awaitingFirstScan: ComputedRef<boolean>;
   refreshing: ComputedRef<boolean>;
   refreshAll: () => Promise<void>;
 }
@@ -54,7 +55,7 @@ function rowRank(item: ActionItem): number {
 }
 
 function isRaised(item: ActionItem): boolean {
-  return !item.loading && item.count > 0;
+  return item.count > 0;
 }
 
 /**
@@ -112,7 +113,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   });
 
   const sections = computed<ActionCenterSection[]>(() => get(groups)
-    .map(group => ({ ...group, items: group.items.filter(isRaised).sort((a, b) => rowRank(a) - rowRank(b)) }))
+    .map(group => ({ ...group, items: group.items.map(center.present).filter(isRaised).sort((a, b) => rowRank(a) - rowRank(b)) }))
     .filter(section => section.items.length > 0));
 
   const { forget, markSeen, newIds } = useActionCenterSeen({
@@ -131,7 +132,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   });
 
   return {
-    checking: center.checking,
+    awaitingFirstScan: center.awaitingFirstScan,
     cleared: center.clearedItems,
     count: center.categoryCount,
     markSeen,

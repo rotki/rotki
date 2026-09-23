@@ -29,7 +29,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 
 vi.mock('@/modules/shell/action-center/use-global-action-center', () => ({
   useGlobalActionCenter: (): object => ({
-    checking: computed(() => false),
+    awaitingFirstScan: computed(() => false),
     cleared: computed(() => []),
     count: computed(() => 2),
     markSeen: state.markSeen,

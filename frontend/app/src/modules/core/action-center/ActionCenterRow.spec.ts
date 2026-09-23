@@ -42,6 +42,15 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toEqual([[item]]);
   });
 
+  it('should disable the action while the row re-reads', async () => {
+    const wrapper = mountRow(createItem({ loading: true }));
+    const action = wrapper.find('[data-testid=actions-center-row-action]');
+
+    expect(action.attributes('disabled')).toBeDefined();
+    await action.trigger('click');
+    expect(wrapper.emitted('action')).toBeUndefined();
+  });
+
   it('should show the chevron only on an action that leaves the center', () => {
     const chevron = (target: ActionTarget): boolean =>
       mountRow(createItem({ target })).find('[data-testid=actions-center-row-action-chevron]').exists();
