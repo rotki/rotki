@@ -79,6 +79,8 @@ const visibleEntries = computed<DockChildEntry[]>(() => (get(limited) ? get(entr
 
 const isParent = computed<boolean>(() => get(descendants).length > 0);
 
+const toggleLabel = computed<string>(() => (get(expanded) ? t('pending_task.collapse') : t('pending_task.expand')));
+
 /** Sections are a job's summary; a nested parent is itself one section's row. */
 const breakdown = computed<JobBreakdownEntry[]>(() => (depth === 0 ? get(jobBreakdown) : []));
 
@@ -151,20 +153,28 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
         v-if="isParent"
         #toggle
       >
-        <RuiButton
-          variant="text"
-          size="sm"
-          icon
-          :aria-expanded="expanded"
-          :aria-label="expanded ? t('pending_task.collapse') : t('pending_task.expand')"
-          data-testid="dock-job-toggle"
-          @click="expanded = !expanded"
+        <RuiTooltip
+          :options="{ placement: 'top' }"
+          :open-delay="400"
         >
-          <RuiIcon
-            :name="expanded ? 'lu-chevron-down' : 'lu-chevron-right'"
-            size="16"
-          />
-        </RuiButton>
+          <template #activator>
+            <RuiButton
+              variant="text"
+              size="sm"
+              icon
+              :aria-expanded="expanded"
+              :aria-label="toggleLabel"
+              data-testid="dock-job-toggle"
+              @click="expanded = !expanded"
+            >
+              <RuiIcon
+                :name="expanded ? 'lu-chevron-down' : 'lu-chevron-right'"
+                size="16"
+              />
+            </RuiButton>
+          </template>
+          {{ toggleLabel }}
+        </RuiTooltip>
       </template>
       <template
         v-if="leafTally"

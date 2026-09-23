@@ -96,6 +96,31 @@ describe('dockJobNode', () => {
       expect(wrapper.text()).toContain('0xbb');
     });
 
+    it('should explain the disclosure in a tooltip that follows its label', async () => {
+      const { children, roots } = buildTree(running(), (a, b) => a.id.localeCompare(b.id));
+      const wrapper = mount(DockJobNode, {
+        global: {
+          stubs: {
+            RuiTooltip: { template: '<div data-testid="tooltip"><slot name="activator" /><span data-testid="tooltip-text"><slot /></span></div>' },
+          },
+        },
+        props: { activity: roots[0], children, now: NOW },
+      });
+
+      const toggleTooltip = (): string => {
+        const tooltip = wrapper.findAll('[data-testid=tooltip]').find(each => each.find('[data-testid=dock-job-toggle]').exists());
+        assert(tooltip, 'the disclosure has no tooltip');
+        return tooltip.find('[data-testid=tooltip-text]').text();
+      };
+
+      expect(toggleTooltip()).toBe('pending_task.expand');
+
+      await wrapper.find('[data-testid=dock-job-toggle]').trigger('click');
+
+      expect(toggleTooltip()).toBe('pending_task.collapse');
+      expect(wrapper.find('[data-testid=dock-job-toggle]').attributes('aria-label')).toBe('pending_task.collapse');
+    });
+
     it('should tally a parent over its leaves, not over every activity in the subtree', () => {
       expect(mountTree(running()).text()).toContain('pending_task.steps::1, 2');
     });

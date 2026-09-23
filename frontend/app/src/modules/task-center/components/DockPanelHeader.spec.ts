@@ -75,4 +75,21 @@ describe('dockPanelHeader', () => {
 
     expect(wrapper.emitted('collapse')).toHaveLength(1);
   });
+
+  it('should explain the icon-only collapse button in a tooltip matching its label', () => {
+    const wrapper = mount(DockPanelHeader, {
+      global: {
+        stubs: {
+          RuiTooltip: { template: '<div data-testid="tooltip"><slot name="activator" /><span data-testid="tooltip-text"><slot /></span></div>' },
+        },
+      },
+      props: { summary: false, tally: tallyStatuses([]), title: 'Working', total: 0 },
+    });
+
+    const tooltip = wrapper.find('[data-testid=tooltip]');
+    const button = tooltip.find('[data-testid=dock-panel-collapse]');
+
+    expect(button.attributes('aria-label')).toBe('pending_task.collapse');
+    expect(tooltip.find('[data-testid=tooltip-text]').text()).toBe('pending_task.collapse');
+  });
 });
