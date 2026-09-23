@@ -11,7 +11,10 @@ defineSlots<{
 </script>
 
 <template>
-  <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+  <div
+    class="flex-1 min-h-0 flex flex-col overflow-hidden"
+    data-testid="pinned-panel-body"
+  >
     <slot />
   </div>
 </template>

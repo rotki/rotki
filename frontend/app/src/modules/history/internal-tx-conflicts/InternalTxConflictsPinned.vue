@@ -67,7 +67,7 @@ watch([() => highlightedGroupIdentifier, () => highlightedTxHash], ([newGroupId,
       <InternalTxConflictRepullSettings compact />
     </div>
 
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 flex flex-col">
       <InternalTxConflictsContent
         compact
         :highlighted-tx-hash="activeTxHash"
