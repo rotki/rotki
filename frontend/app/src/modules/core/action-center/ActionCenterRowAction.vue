@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
-import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
+import { type ActionItem, ActionUrgency, leavesCenter } from '@/modules/core/action-center/types';
 
 const { color, item } = defineProps<{
   item: ActionItem<TTarget>;
@@ -15,6 +15,9 @@ const emit = defineEmits<{
 /** Outlined while the row asks for something; plain text for what rotki retries or the user set aside. */
 const variant = computed<'text' | 'outlined'>(() =>
   item.urgency === ActionUrgency.AUTOMATIC || item.informational ? 'text' : 'outlined');
+
+/** The chevron promises a trip elsewhere, so an action that works in place goes without it. */
+const leadsAway = computed<boolean>(() => leavesCenter(item.target));
 </script>
 
 <template>
@@ -67,10 +70,14 @@ const variant = computed<'text' | 'outlined'>(() =>
     @click="emit('action', item)"
   >
     {{ item.actionLabel }}
-    <template #append>
+    <template
+      v-if="leadsAway"
+      #append
+    >
       <RuiIcon
         name="lu-chevron-right"
         size="14"
+        data-testid="actions-center-row-action-chevron"
       />
     </template>
   </RuiButton>
