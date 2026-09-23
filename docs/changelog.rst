@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` All cases of Hedgey vesting claims should now be decoded properly.
 * :bug:`-` Using lowercase EVM address in the history event address filter should now work properly.
 * :bug:`-` When deleting ETH staking validators fails, they now stay in the validators table instead of disappearing from it while rotki still tracks them.
 * :bug:`-` Detecting tokens no longer causes native asset balances, such as ETH, to disappear from cached balances.
