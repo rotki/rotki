@@ -5,6 +5,7 @@ import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';
+import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 
 const HISTORY_EVENTS: ActionTarget = { kind: 'route', to: { name: '/history/events/' } };
 
@@ -78,7 +79,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
       count: get(outOfSync) ? 1 : 0,
       description: get(description),
       icon: 'lu-history',
-      id: 'history-sync',
+      id: HISTORY_SYNC_ROW_ID,
       informational: setAside,
       loading: get(processing),
       options: applicable<ActionItemOption>([

@@ -9,7 +9,9 @@ import { useHistoryEventIssues } from '@/modules/history/events/actions-center/u
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
+import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
 import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-sync-row';
@@ -39,19 +41,16 @@ const URGENCY_RANK: Record<ActionUrgency, number> = {
   [ActionUrgency.AUTOMATIC]: 2,
 };
 
-/** The history sync row heads its section: it says how current everything under it is. */
-const LEADING_ROW_ID = 'history-sync';
-
 /**
- * Where a raised row sits inside its section: the leading row, then what needs doing, most urgent
- * first, then what was set aside, then what is locked.
+ * Where a raised row sits inside its section: the history sync row, which says how current everything
+ * under it is, then what needs doing, most urgent first, then what was set aside, then what is locked.
  */
 function rowRank(item: ActionItem): number {
   if (item.locked)
     return 5;
   if (item.informational)
     return 4;
-  return item.id === LEADING_ROW_ID ? -1 : URGENCY_RANK[item.urgency];
+  return item.id === HISTORY_SYNC_ROW_ID ? -1 : URGENCY_RANK[item.urgency];
 }
 
 function isRaised(item: ActionItem): boolean {
@@ -93,12 +92,14 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     }));
   });
 
+  const { onSnoozeChange, withSnooze } = useActionCenterSnooze();
+
   const groups = computed<ActionCenterSection[]>(() => [
     { id: 'history', items: [...get(historySyncRow), ...get(historyRows)], title: t('action_center.sections.history') },
     { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
     { id: 'integrations', items: get(integrationRows), title: t('action_center.sections.integrations') },
     { id: 'assets', items: get(assetRows), title: t('action_center.sections.assets') },
-  ]);
+  ].map(group => ({ ...group, items: group.items.map(withSnooze) })));
 
   const center = useActionCenter<ActionTarget, string>({
     busy: history.checking,
@@ -114,11 +115,13 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     .map(group => ({ ...group, items: group.items.filter(isRaised).sort((a, b) => rowRank(a) - rowRank(b)) }))
     .filter(section => section.items.length > 0));
 
-  const { markSeen, newIds } = useActionCenterSeen({
+  const { forget, markSeen, newIds } = useActionCenterSeen({
     active: center.activeItems,
     checking: center.checking,
     items: () => get(groups).flatMap(group => group.items),
   });
+
+  onSnoozeChange(forget);
 
   const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 

@@ -325,6 +325,8 @@
     "locked_hint_generic": "This requires a premium subscription.",
     "new": "New",
     "new_count": "{count} new | {count} new",
+    "remind_later": "Remind me later",
+    "remind_now": "Remind me now",
     "rescan": "Re-scan",
     "rows": {
       "assets": {
