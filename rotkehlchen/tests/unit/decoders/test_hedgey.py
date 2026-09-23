@@ -2,9 +2,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
-from rotkehlchen.chain.ethereum.modules.hedgey.constants import CPT_HEDGEY, VOTING_TOKEN_LOCKUPS
+from rotkehlchen.chain.ethereum.modules.hedgey.constants import (
+    CPT_HEDGEY,
+    TOKEN_VESTING_PLANS,
+    VOTING_TOKEN_LOCKUPS,
+)
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ENS, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -131,5 +138,57 @@ def test_redeem_plans(
             tx_ref=tx_hash,
             counterparty=CPT_HEDGEY,
             address=VOTING_TOKEN_LOCKUPS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFcbf806792f06d9c78E50B3737E1a22cfC36a942']])
+def test_redeem_full_vesting_plan(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test a full redemption where Hedgey deletes the plan and burns its NFT."""
+    tx_hash = deserialize_evm_tx_hash('0xe9ea1b63a181e484e23177db34910b4740f414c89c02dc55627c2116a5a5a89b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1790077835000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.000087200182619022'),
+            location_label=ethereum_accounts[0],
+            notes=f'Burn {gas} ETH for gas',
+            tx_ref=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=319,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.BURN,
+            event_subtype=HistoryEventSubType.NFT,
+            asset=Asset('eip155:1/erc721:0x2CDE9919e81b20B4B33DD562a48a84b54C48F00C/714'),
+            amount=ONE,
+            location_label=ethereum_accounts[0],
+            notes='Burn Hedgey vesting plan NFT 714 after full redemption',
+            tx_ref=tx_hash,
+            counterparty=CPT_HEDGEY,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            sequence_index=320,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xABD4C63d2616A5201454168269031355f4764337'),
+            amount=FVal(amount := '2977.210172501319060994'),
+            location_label=ethereum_accounts[0],
+            notes=f'Redeem {amount} ORDER from Hedgey vesting plan 714',
+            tx_ref=tx_hash,
+            counterparty=CPT_HEDGEY,
+            address=TOKEN_VESTING_PLANS,
         ),
     ]
