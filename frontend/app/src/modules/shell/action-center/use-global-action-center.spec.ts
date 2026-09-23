@@ -143,6 +143,18 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(get(sections)[0].items.map(item => item.id)).toEqual(['to-do', 'set-aside', 'locked']);
   });
 
+  it('should put decisions before work that resolves itself, and that before what rotki retries', async () => {
+    set(state.integrationRows, [
+      row('automatic', { urgency: ActionUrgency.AUTOMATIC }),
+      row('todo', { urgency: ActionUrgency.TODO }),
+      row('decision', { urgency: ActionUrgency.DECISION }),
+    ]);
+    const { sections } = center();
+    await flushPromises();
+
+    expect(get(sections)[0].items.map(item => item.id)).toEqual(['decision', 'todo', 'automatic']);
+  });
+
   it('should count only the categories that ask for something now', async () => {
     set(state.integrationRows, [row('to-do'), row('set-aside', { informational: true }), row('locked', { locked: true })]);
     set(state.chainRows, [row('no-available-indexers-base')]);
@@ -212,9 +224,9 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     });
   });
 
-  it('should lead the history section with the history sync row', async () => {
+  it('should lead the history section with the history sync row, ahead of more urgent rows', async () => {
     set(state.historyIssues, [{ ...row('undecoded'), id: 'undecoded' }]);
-    set(state.historySyncRows, [row('history-sync')]);
+    set(state.historySyncRows, [row('history-sync', { urgency: ActionUrgency.TODO })]);
     const { sections } = center();
     await flushPromises();
 

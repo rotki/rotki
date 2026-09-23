@@ -6,9 +6,12 @@ const {
   checking = false,
   cleared,
   count,
+  newIds = [],
   refreshing = false,
   sections,
 } = defineProps<{
+  /** ids of the rows that appeared or grew since the user last looked, marked as new */
+  newIds?: string[];
   /** the rows worth showing, grouped under headings in the order they should appear */
   sections: ActionCenterSection<TTarget>[];
   /** categories with nothing pending, rendered as the checked strip */
@@ -111,6 +114,7 @@ function toggleCleared(): void {
           v-for="item in section.items"
           :key="item.id"
           :item="item"
+          :is-new="newIds.includes(item.id)"
           @action="emit('open', $event.target)"
           @option="emit('open', $event)"
         />

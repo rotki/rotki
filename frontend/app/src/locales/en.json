@@ -323,6 +323,8 @@
     "locked": "Premium",
     "locked_hint": "This requires the {tier} tier.",
     "locked_hint_generic": "This requires a premium subscription.",
+    "new": "New",
+    "new_count": "{count} new | {count} new",
     "rescan": "Re-scan",
     "rows": {
       "assets": {

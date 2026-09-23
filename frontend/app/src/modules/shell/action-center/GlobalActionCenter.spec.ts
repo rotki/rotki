@@ -14,6 +14,7 @@ import GlobalActionCenter from '@/modules/shell/action-center/GlobalActionCenter
 const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn<(url: string) => Promise<void>>() }));
 
 const state = {
+  markSeen: vi.fn<() => void>(),
   push: vi.fn<(to: unknown) => Promise<void>>(),
   refreshAll: vi.fn<() => Promise<void>>(),
 };
@@ -31,6 +32,9 @@ vi.mock('@/modules/shell/action-center/use-global-action-center', () => ({
     checking: computed(() => false),
     cleared: computed(() => []),
     count: computed(() => 2),
+    markSeen: state.markSeen,
+    newCount: computed(() => 1),
+    newIds: computed(() => ['missing-prices']),
     refreshAll: state.refreshAll,
     refreshing: computed(() => false),
     sections: computed(() => []),
@@ -65,12 +69,30 @@ describe('modules/shell/action-center/GlobalActionCenter', () => {
     state.refreshAll.mockResolvedValue();
   });
 
-  it('should be the trigger that carries the count', () => {
+  it('should be the trigger that carries the badge, numbering only what is new', () => {
     const wrapper = mountCenter();
     const badge = wrapper.findComponent({ name: 'RuiBadge' });
 
     expect(badge.props('modelValue')).toBe(true);
-    expect(badge.props('text')).toBe('2');
+    expect(badge.props('text')).toBe('1');
+  });
+
+  it('should hand the new rows to the panel so it can mark them', async () => {
+    const wrapper = mountCenter();
+    const list = await openMenu(wrapper);
+
+    expect(list.props()).toMatchObject({ newIds: ['missing-prices'] });
+  });
+
+  it('should record what was seen when the menu closes, not when it opens', async () => {
+    const wrapper = mountCenter();
+    await openMenu(wrapper);
+    expect(state.markSeen).not.toHaveBeenCalled();
+
+    wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', false);
+    await nextTick();
+
+    expect(state.markSeen).toHaveBeenCalledOnce();
   });
 
   it('should navigate on a route target and close the menu', async () => {

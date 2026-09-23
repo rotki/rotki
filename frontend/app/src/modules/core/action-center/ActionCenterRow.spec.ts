@@ -42,6 +42,15 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toEqual([[item]]);
   });
 
+  it('should mark a row as new only when told it is', async () => {
+    const wrapper = mountRow(createItem());
+    expect(wrapper.find('[data-testid=actions-center-row-new]').exists()).toBe(false);
+
+    await wrapper.setProps({ isNew: true });
+
+    expect(wrapper.find('[data-testid=actions-center-row-new]').text()).toBe('action_center.new');
+  });
+
   it('should turn the action into a menu of choices, handing the chosen one\'s target up instead of the action', async () => {
     const exchange: ActionTarget = { kind: 'route', to: { name: '/api-keys/exchanges/' } };
     const bank: ActionTarget = { kind: 'route', to: { name: '/api-keys/banks/' } };
