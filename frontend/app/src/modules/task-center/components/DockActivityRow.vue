@@ -166,6 +166,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
   <div
     class="flex items-start gap-2.5 px-1 rounded"
     :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps && !hideReason }]"
+    :data-status="status"
     data-testid="dock-activity-row"
   >
     <RuiProgress
