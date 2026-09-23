@@ -168,7 +168,9 @@ function applyDistribute(): void {
       </div>
     </div>
 
-    <div class="overflow-y-auto grow p-4 flex flex-col gap-4">
+    <!-- The body scrolls as a whole, so nothing in it may shrink: the table root hides its
+         overflow, and as a shrinking flex item it would clip its own rows instead. -->
+    <div class="overflow-y-auto grow min-h-0 p-4 flex flex-col gap-4 [&>*]:shrink-0">
       <RuiDataTable
         v-model:sort="sort"
         :cols="tableHeaders"

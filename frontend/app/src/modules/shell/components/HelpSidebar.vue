@@ -89,8 +89,10 @@ async function downloadBrowserLog(): Promise<void> {
     width="400px"
     temporary
     position="right"
+    class="flex flex-col"
+    content-class="flex flex-col"
   >
-    <div class="flex justify-between items-center p-2 pl-4">
+    <div class="flex justify-between items-center p-2 pl-4 shrink-0">
       <div class="text-h6">
         {{ t('help_sidebar.title') }}
       </div>
@@ -102,7 +104,7 @@ async function downloadBrowserLog(): Promise<void> {
         <RuiIcon name="lu-x" />
       </RuiButton>
     </div>
-    <div class="py-0">
+    <div class="py-0 grow min-h-0 overflow-y-auto">
       <div
         class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-y border-default cursor-pointer"
         @click="showReportIssue()"

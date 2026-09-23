@@ -10,6 +10,7 @@ import type {
 } from '@/modules/settings/types/accounting';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
@@ -179,74 +180,75 @@ async function save() {
   <BigDialog
     :action="{ disabled: !valid, primary: t('common.actions.save') }"
     display
-    :layout="{ maxWidth: '75rem' }"
+    :layout="{ maxWidth: '75rem', fill: true }"
     :loading="loading"
     :persistent="resolutionLength > 0"
     :title="t('accounting_settings.rule.conflicts.title')"
     @cancel="close()"
     @confirm="save()"
   >
-    <template #default>
-      <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
-        <RuiCheckbox
-          :model-value="!!solveAllUsing"
-          color="primary"
-          hide-details
-          @update:model-value="solveAllUsing = $event ? 'local' : undefined"
-        >
-          {{ t('conflict_dialog.all_buttons_description') }}
-        </RuiCheckbox>
-        <RuiButtonGroup
-          v-model="solveAllUsing"
-          :disabled="!solveAllUsing"
-          color="primary"
-          required
-          variant="outlined"
-        >
-          <RuiButton
-            model-value="local"
-            @click="solveAllUsing = 'local'"
+    <ScrollableDialogContent fill>
+      <template #header>
+        <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
+          <RuiCheckbox
+            :model-value="!!solveAllUsing"
+            color="primary"
+            hide-details
+            @update:model-value="solveAllUsing = $event ? 'local' : undefined"
           >
-            {{ t('conflict_dialog.keep_local') }}
-          </RuiButton>
-          <RuiButton
-            model-value="remote"
-            @click="solveAllUsing = 'remote'"
+            {{ t('conflict_dialog.all_buttons_description') }}
+          </RuiCheckbox>
+          <RuiButtonGroup
+            v-model="solveAllUsing"
+            :disabled="!solveAllUsing"
+            color="primary"
+            required
+            variant="outlined"
           >
-            {{ t('conflict_dialog.keep_remote') }}
-          </RuiButton>
-        </RuiButtonGroup>
-      </div>
+            <RuiButton
+              model-value="local"
+              @click="solveAllUsing = 'local'"
+            >
+              {{ t('conflict_dialog.keep_local') }}
+            </RuiButton>
+            <RuiButton
+              model-value="remote"
+              @click="solveAllUsing = 'remote'"
+            >
+              {{ t('conflict_dialog.keep_remote') }}
+            </RuiButton>
+          </RuiButtonGroup>
+        </div>
 
-      <div class="text-caption pt-4 pb-1">
-        <i18n-t
-          v-if="!solveAllUsing"
-          scope="global"
-          keypath="conflict_dialog.hint"
-          tag="span"
-        >
-          <template #conflicts>
-            <span class="font-medium"> {{ total }} </span>
-          </template>
-          <template #remaining>
-            <span class="font-medium"> {{ remaining }} </span>
-          </template>
-        </i18n-t>
-        <i18n-t
-          v-else
-          scope="global"
-          keypath="conflict_dialog.resolve_all_hint"
-          tag="span"
-        >
-          <template #source>
-            <span class="font-medium">{{ solveAllUsing }}</span>
-          </template>
-        </i18n-t>
-      </div>
+        <div class="text-caption pt-4 pb-1">
+          <i18n-t
+            v-if="!solveAllUsing"
+            scope="global"
+            keypath="conflict_dialog.hint"
+            tag="span"
+          >
+            <template #conflicts>
+              <span class="font-medium"> {{ total }} </span>
+            </template>
+            <template #remaining>
+              <span class="font-medium"> {{ remaining }} </span>
+            </template>
+          </i18n-t>
+          <i18n-t
+            v-else
+            scope="global"
+            keypath="conflict_dialog.resolve_all_hint"
+            tag="span"
+          >
+            <template #source>
+              <span class="font-medium">{{ solveAllUsing }}</span>
+            </template>
+          </i18n-t>
+        </div>
+      </template>
 
       <RuiDataTable
         v-model:pagination.external="pagination"
-        class="pb-4"
         :cols="tableHeaders"
         :loading="isLoading"
         :rows="collection.data"
@@ -425,6 +427,6 @@ async function save() {
           </RuiButtonGroup>
         </template>
       </RuiDataTable>
-    </template>
+    </ScrollableDialogContent>
   </BigDialog>
 </template>

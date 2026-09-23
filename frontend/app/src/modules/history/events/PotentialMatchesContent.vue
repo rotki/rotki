@@ -176,9 +176,9 @@ watchImmediate(() => movement, async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full flex-1 min-h-0">
     <div
-      class="flex-1 overflow-auto"
+      class="flex-1 min-h-0 flex flex-col overflow-auto"
       :class="isPinned ? 'px-4 py-2' : ''"
     >
       <PotentialMatchesList
