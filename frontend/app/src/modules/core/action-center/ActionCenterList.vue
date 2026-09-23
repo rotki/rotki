@@ -105,10 +105,11 @@ function toggleCleared(): void {
     <section
       v-for="section in sections"
       :key="section.id"
+      class="border-t border-default first-of-type:border-t-0"
       data-testid="actions-center-section"
       :data-key="section.id"
     >
-      <h6 class="px-4 pt-3 text-caption font-medium uppercase text-rui-text-secondary">
+      <h6 class="px-4 pt-3 text-caption font-medium uppercase tracking-wide text-rui-text-secondary">
         {{ section.title }}
       </h6>
       <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">

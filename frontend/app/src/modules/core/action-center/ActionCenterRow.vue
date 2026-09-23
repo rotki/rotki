@@ -48,65 +48,71 @@ const iconClass = computed<string>(() => {
 const lockedHint = computed<string>(() => item.minimumTier
   ? t('action_center.locked_hint', { tier: item.minimumTier })
   : t('action_center.locked_hint_generic'));
+
+/** A row that can only mean one thing already says it in its title, so its count is not shown until it is more than one. */
+const showCount = computed<boolean>(() => item.count > 1);
 </script>
 
 <template>
   <div
-    class="flex items-center gap-3 py-3"
+    class="flex items-start gap-3 py-3"
     :class="{ 'opacity-60': item.locked }"
     data-testid="actions-center-row"
     :data-key="item.id"
   >
     <div
-      class="shrink-0 rounded-full p-2"
+      class="shrink-0 rounded-full p-1.5"
       :class="iconClass"
     >
       <RuiIcon
         :name="item.icon"
-        size="18"
+        size="16"
       />
     </div>
 
-    <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 flex-wrap">
+    <div class="flex-1 min-w-0 pt-1">
+      <p
+        class="text-sm font-medium leading-5"
+        :class="toned ? 'text-rui-text-secondary' : 'text-rui-text'"
+      >
+        {{ item.title }}
         <span
-          class="font-medium"
-          :class="toned ? 'text-rui-text-secondary' : 'text-rui-text'"
+          v-if="showCount || isNew"
+          class="ml-1 inline-flex items-baseline gap-1.5 whitespace-nowrap"
         >
-          {{ item.title }}
+          <RuiChip
+            v-if="showCount"
+            size="sm"
+            :color="color"
+            variant="outlined"
+            class="!h-5 !px-1.5 tabular-nums"
+            data-testid="actions-center-row-count"
+          >
+            {{ item.count }}
+          </RuiChip>
+          <span
+            v-if="isNew"
+            class="text-caption font-medium text-rui-primary"
+            data-testid="actions-center-row-new"
+          >
+            {{ t('action_center.new') }}
+          </span>
         </span>
-        <RuiChip
-          size="sm"
-          :color="color"
-          variant="outlined"
-          class="!h-5 !px-1.5 tabular-nums"
-          data-testid="actions-center-row-count"
-        >
-          {{ item.count }}
-        </RuiChip>
-        <span
-          v-if="isNew"
-          class="text-caption font-medium text-rui-primary"
-          data-testid="actions-center-row-new"
-        >
-          {{ t('action_center.new') }}
-        </span>
-      </div>
-      <p class="text-caption text-rui-text-secondary">
+      </p>
+      <p class="mt-0.5 text-caption text-rui-text-secondary">
         {{ item.locked ? lockedHint : item.description }}
       </p>
       <div
         v-if="!item.locked && item.options.length > 0"
-        class="flex flex-wrap gap-x-3 -ml-1.5"
+        class="mt-1 flex flex-wrap gap-x-1 -ml-1.5"
       >
         <RuiButton
           v-for="option in item.options"
           :key="option.id"
           size="sm"
           variant="text"
-          :color="option.danger ? 'error' : undefined"
-          class="!px-1.5 !py-0.5 !text-caption"
-          :class="{ '!text-rui-text-secondary': !option.danger }"
+          class="!px-1.5 !py-0.5 !text-caption !text-rui-text-secondary"
+          :class="{ 'hover:!text-rui-error': option.danger }"
           data-testid="actions-center-row-option"
           :data-key="option.id"
           @click="emit('option', option.target)"
