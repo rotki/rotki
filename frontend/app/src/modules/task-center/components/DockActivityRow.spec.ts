@@ -51,6 +51,15 @@ describe('dockActivityRow', () => {
     setActivePinia(createPinia());
   });
 
+  it('should expose the status it shows, the outcome a parent passes down included', () => {
+    const row = (wrapper: VueWrapper): string | undefined =>
+      wrapper.find('[data-testid=dock-activity-row]').attributes('data-status');
+
+    expect(row(createWrapper())).toBe(ActivityStatus.RUNNING);
+    expect(row(createWrapper({ activity: activity({ status: ActivityStatus.CANCELLED }) }))).toBe(ActivityStatus.CANCELLED);
+    expect(row(createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }), outcomeStatus: ActivityStatus.FAILED }))).toBe(ActivityStatus.FAILED);
+  });
+
   describe('why it waits', () => {
     it('should say why a queued row has not started', () => {
       const wrapper = createWrapper({
