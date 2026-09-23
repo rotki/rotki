@@ -1,5 +1,6 @@
 import base64
 import uuid
+from argparse import Namespace
 from unittest import mock
 
 import pytest
@@ -12,6 +13,49 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_random_bytes
 from rotkehlchen.types import Location
+
+
+def test_main_loop_keeps_scheduling_after_indexer_analytics_error() -> None:
+    rotki = object.__new__(Rotkehlchen)
+    rotki.shutdown_event = mock.MagicMock()
+    rotki.shutdown_event.wait.side_effect = [False, False, True]
+    rotki.indexer_stats = mock.MagicMock()
+    rotki.indexer_stats.maybe_flush.side_effect = [RuntimeError("can't start new thread"), None]
+    rotki.task_manager = mock.MagicMock()
+    rotki.args = Namespace(disable_task_manager=False)
+
+    with mock.patch('rotkehlchen.rotkehlchen.log') as log:
+        rotki.main_loop()
+
+    assert rotki.task_manager.schedule.call_count == 2
+    log.exception.assert_called_once_with('Failed to flush indexer usage analytics')
+
+
+def test_logout_does_not_wait_for_indexer_analytics() -> None:
+    rotki = object.__new__(Rotkehlchen)
+    rotki.user_is_logged_in = True
+    for attribute in (
+        'data', 'exchange_manager', 'task_manager', 'task_supervisor',
+        'cryptocompare', 'defillama', 'coingecko', 'alchemy', 'moralis', 'msg_aggregator',
+        'chains_aggregator', 'accountant', 'history_querying_manager', 'data_importer',
+    ):
+        setattr(rotki, attribute, mock.MagicMock())
+    stats = mock.MagicMock()
+    rotki.indexer_stats = stats
+    stats.wait_for_close.side_effect = AssertionError('logout waited for upload')
+
+    with (
+        mock.patch.object(Rotkehlchen, 'deactivate_premium_status'),
+        mock.patch('rotkehlchen.rotkehlchen.Inquirer') as inquirer,
+        mock.patch('rotkehlchen.rotkehlchen.CachedSettings'),
+    ):
+        rotki._logout()
+
+    stats.start_close.assert_called_once_with()
+    stats.wait_for_close.assert_not_called()
+    assert vars(rotki)['indexer_stats'] is None
+    assert vars(rotki)['user_is_logged_in'] is False
+    inquirer.assert_called_once()
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):

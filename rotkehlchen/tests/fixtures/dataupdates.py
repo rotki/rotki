@@ -15,12 +15,12 @@ def fixture_our_version():
 
 
 @pytest.fixture(name='data_updater')
-def fixture_data_updater(messages_aggregator, database, our_version):
+def fixture_data_updater(function_scope_messages_aggregator, database, our_version):
     """Initialize the DataUpdater object, optionally mocking our rotki version"""
     with ExitStack() as stack:
         if our_version is not None:
             stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=Version(our_version))))  # noqa: E501
         return RotkiDataUpdater(
-            msg_aggregator=messages_aggregator,
+            msg_aggregator=function_scope_messages_aggregator,
             user_db=database,
         )
