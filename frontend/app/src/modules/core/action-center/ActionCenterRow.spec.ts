@@ -42,6 +42,14 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toEqual([[item]]);
   });
 
+  it('should show the count only once there is more than one', () => {
+    const count = (value: number): boolean =>
+      mountRow(createItem({ count: value })).find('[data-testid=actions-center-row-count]').exists();
+
+    expect(count(1)).toBe(false);
+    expect(count(2)).toBe(true);
+  });
+
   it('should disable the action while the row re-reads', async () => {
     const wrapper = mountRow(createItem({ loading: true }));
     const action = wrapper.find('[data-testid=actions-center-row-action]');

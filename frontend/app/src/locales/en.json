@@ -349,7 +349,7 @@
           "title": "No indexer for {chain}"
         },
         "paid_key_required": {
-          "action": "Enter Etherscan key",
+          "action": "Enter key",
           "description": "The free Etherscan tier does not cover {chain}, so its transactions need a paid key.",
           "title": "{chain} needs a paid Etherscan key"
         },
