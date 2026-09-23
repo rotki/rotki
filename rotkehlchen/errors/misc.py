@@ -51,6 +51,10 @@ class NoAvailableIndexers(RemoteError):
     """Raised when there are no available indexers for a given chain."""
 
 
+class IndexerRangeNotCovered(RemoteError):
+    """Raised when an indexer cannot serve the requested chain history range."""
+
+
 class RequestTooLargeError(RemoteError):
     """Raised when a request fails due to size limits (gas limit, URL too long)."""
 

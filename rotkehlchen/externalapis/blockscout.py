@@ -11,7 +11,7 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeNotCovered, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
@@ -671,14 +671,14 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             if isinstance(period_or_hash, TimestampOrBlockRange):
                 threshold = OP_BEDROCK_BLOCK if period_or_hash.range_type == 'blocks' else OP_BEDROCK_UPGRADE  # noqa: E501
                 if period_or_hash.from_value < threshold:
-                    raise RemoteError(
+                    raise IndexerRangeNotCovered(
                         f'Skipping Optimism internal transactions range query '
                         f'({period_or_hash.from_value} - {period_or_hash.to_value}): '
                         f'range starts before Bedrock {period_or_hash.range_type[:-1]} '
                         f'{threshold}. Other indexers may have this data.',
                     )
             elif tx_timestamp is not None and tx_timestamp < OP_BEDROCK_UPGRADE:
-                raise RemoteError(
+                raise IndexerRangeNotCovered(
                     f'Skipping Optimism internal transactions query for '
                     f'{period_or_hash!s}: tx timestamp {tx_timestamp} < {OP_BEDROCK_UPGRADE}. '
                     f'Other indexers may have this data.',
@@ -707,6 +707,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         """
         if ts < get_earliest_ts(chain_id):
             return 0  # behave like etherscan for timestamps close to the genesis
+        if chain_id == ChainID.OPTIMISM and ts < OP_BEDROCK_UPGRADE:
+            raise IndexerRangeNotCovered(
+                f'Blockscout cannot reliably resolve Optimism blocks before Bedrock ({ts}).',
+            )
 
         response = self._query(
             chain_id=chain_id,

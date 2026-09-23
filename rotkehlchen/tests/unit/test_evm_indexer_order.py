@@ -10,7 +10,12 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import ChainNotSupported, NoAvailableIndexers, RemoteError
+from rotkehlchen.errors.misc import (
+    ChainNotSupported,
+    IndexerRangeNotCovered,
+    NoAvailableIndexers,
+    RemoteError,
+)
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain
 
 if TYPE_CHECKING:
@@ -158,8 +163,7 @@ def test_try_indexers_sends_ws_notification_when_no_indexers() -> None:
 
 
 def test_try_indexers_notifies_paid_key_needed_when_etherscan_refuses_chain() -> None:
-    """When etherscan refuses the chain for the configured key and the remaining indexers
-    fail too, the user is told once that a paid etherscan key is needed."""
+    """A failed Blockscout request still prompts for a paid key on Base."""
     inquirer = DummyEvmNodeInquirer()
     inquirer.chain_id = ChainID.BASE
     inquirer.blockchain = SupportedBlockchain.BASE
@@ -176,6 +180,43 @@ def test_try_indexers_notifies_paid_key_needed_when_etherscan_refuses_chain() ->
             inquirer._try_indexers(func=query)
 
     assert set(inquirer.available_indexers) == {EvmIndexer.BLOCKSCOUT}
+    inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
+        message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+        data={'chain': SupportedBlockchain.BASE.value, 'reason': 'etherscan_paid_key_required'},
+    )
+
+
+def test_try_indexers_skips_paid_key_notice_for_uncovered_range() -> None:
+    """A Blockscout pre-Bedrock skip does not imply that Optimism needs a paid key."""
+    inquirer = DummyEvmNodeInquirer()
+    inquirer.chain_id = ChainID.OPTIMISM
+    inquirer.blockchain = SupportedBlockchain.OPTIMISM
+
+    def query(indexer: DummyIndexer) -> str:
+        if indexer.name == 'Etherscan':
+            raise ChainNotSupported('Free API access is not supported for this chain')
+        if indexer.name == 'Blockscout':
+            raise IndexerRangeNotCovered('pre-Bedrock internal transactions unavailable')
+        raise RemoteError('Routescan rate limited')
+
+    with pytest.raises(RemoteError, match='Failed to query any indexer'):
+        inquirer._try_indexers(func=cast('Callable[[Any], str]', query))
+
+    inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
+
+
+def test_try_indexers_notifies_paid_key_needed_when_none_remain() -> None:
+    """A paid-key notice is sent when Etherscan was the last configured indexer."""
+    inquirer = DummyEvmNodeInquirer()
+    inquirer.chain_id = ChainID.BASE
+    inquirer.blockchain = SupportedBlockchain.BASE
+    inquirer.available_indexers = {EvmIndexer.ETHERSCAN: inquirer.etherscan}
+
+    with pytest.raises(RemoteError, match='Failed to query any indexer'):
+        inquirer._try_indexers(func=MagicMock(side_effect=ChainNotSupported(
+            'Free API access is not supported for this chain',
+        )))
+
     inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
         message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
         data={'chain': SupportedBlockchain.BASE.value, 'reason': 'etherscan_paid_key_required'},

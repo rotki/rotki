@@ -9,6 +9,7 @@ Changelog
 * :bug:`-` The internal transaction conflicts table scrolls again when pinned to the sidebar, where rows below the bottom of the panel could not be reached. In its dialog only the table scrolls now, so the tabs, filter and Close button stay in view.
 * :bug:`-` All cases of Hedgey vesting claims should now be decoded properly.
 * :bug:`-` Using lowercase EVM address in the history event address filter should now work properly.
+* :bug:`-` Optimism internal transaction queries spanning the Bedrock upgrade now fetch post-Bedrock transactions even when pre-Bedrock data is unavailable.
 * :bug:`-` When deleting ETH staking validators fails, they now stay in the validators table instead of disappearing from it while rotki still tracks them.
 * :bug:`-` Detecting tokens no longer causes native asset balances, such as ETH, to disappear from cached balances.
 * :bug:`-` Turning syncing back on for one exchange under API Keys -> Exchanges no longer turns it back on for every exchange listed after it that you had paused.
