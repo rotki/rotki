@@ -956,11 +956,9 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> None:
-        """Queries etherscan for all internal transactions of address in the given ranges.
-
-        If any internal transactions are found, they are added in the DB
-        """
+            record_range: bool = True,
+    ) -> bool:
+        """Query internal transactions and optionally record the queried range."""
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
             ranges_to_query = self.dbranges.get_location_query_ranges(
@@ -969,7 +967,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-        for query_start_ts, query_end_ts in ranges_to_query:
+        for range_start_ts, range_end_ts in ranges_to_query:
+            # DBQueryRanges may extend a gap past the requested half of the split.
+            query_start_ts = max(range_start_ts, start_ts) if not record_range else range_start_ts
+            query_end_ts = min(range_end_ts, end_ts) if not record_range else range_end_ts
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
                 self._query_range_in_splittable_chunks(
@@ -981,6 +982,7 @@ class EvmTransactions(ABC):  # noqa: B024
                             to_value=chunk_end,
                         ),
                         location_string=location_string,
+                        update_ranges=record_range,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -990,7 +992,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'Skipping {self.evm_inquirer.chain_name} internal transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return
+                return False
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying internal {self.evm_inquirer.chain_name} '
@@ -999,14 +1001,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return
+                return False
 
         log.debug('Internal %s transactions for address %s done', self.evm_inquirer.chain_name, address)  # noqa: E501
-        self._mark_range_as_queried(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
+        if record_range:
+            self._mark_range_as_queried(
+                location_string=location_string,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+        return True
 
     def _get_erc20_transfers_for_ranges(
             self,

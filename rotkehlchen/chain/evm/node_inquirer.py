@@ -55,6 +55,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     ChainNotSupported,
     EventNotInABI,
+    IndexerRangeNotCovered,
     InputError,
     NoAvailableIndexers,
     NotERC20Conformant,
@@ -2073,7 +2074,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             else:
                 return result, indexer_name, frozenset(failed)
 
-        if self._etherscan_refused_chain:  # what is left cannot serve the chain either
+        if len(self._get_indexers_in_order()) == 0 or (
+                self._etherscan_refused_chain and
+                not any(isinstance(error, IndexerRangeNotCovered) for _, error in errors)
+        ):
             self._maybe_notify_no_indexers()
 
         raise RemoteError(

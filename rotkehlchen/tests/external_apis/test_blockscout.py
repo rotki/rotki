@@ -11,7 +11,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IndexerRangeNotCovered, RemoteError
 from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
@@ -97,13 +97,13 @@ def test_hash_activity(blockscout):
 
 def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> None:
     """Blockscout does not properly index internal transactions on Optimism for blocks
-    predating the Bedrock upgrade. Queries touching that range must raise RemoteError so
-    that _try_indexers falls back to other indexers (Etherscan, Routescan) that may have
-    the data, rather than silently returning empty results.
+    predating the Bedrock upgrade. Queries touching that range must raise
+    IndexerRangeNotCovered so _try_indexers falls back to another indexer that may
+    have the data, rather than silently returning empty results.
     """
     with patch.object(blockscout.session, 'request') as mock_request:
-        # Block range entirely before Bedrock: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Block range entirely before Bedrock: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -116,9 +116,9 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Block range crossing the Bedrock boundary: also RemoteError so the full range
+        # Block range crossing the Bedrock boundary: also skip so the full range
         # is retried by another indexer rather than returning only post-Bedrock results
-        with pytest.raises(RemoteError):
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -131,8 +131,8 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Timestamp range entirely before Bedrock: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Timestamp range entirely before Bedrock: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -145,8 +145,8 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Hash-based query with a pre-Bedrock timestamp: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Hash-based query with a pre-Bedrock timestamp: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=None,
@@ -173,6 +173,16 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
         ))
         assert mock_post.call_count == 1
 
+        # The first Bedrock block timestamp is eligible for hash-based queries too.
+        list(blockscout.get_transactions(
+            chain_id=ChainID.OPTIMISM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=make_evm_tx_hash(),
+            tx_timestamp=OP_BEDROCK_UPGRADE,
+        ))
+        assert mock_post.call_count == 2
+
     # Same pre-Bedrock block range on Ethereum should reach the network (no Bedrock concept)
     with patch.object(blockscout.session, 'request', return_value=MockResponse(
         status_code=HTTPStatus.OK,
@@ -189,6 +199,26 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ),
         ))
         assert mock_eth.call_count == 1
+
+
+def test_pre_bedrock_optimism_timestamp_is_not_resolved_by_blockscout(
+        blockscout: Blockscout,
+) -> None:
+    with patch.object(
+        blockscout, '_query', return_value={'blockNumber': OP_BEDROCK_BLOCK + 1},
+    ) as query:
+        with pytest.raises(IndexerRangeNotCovered):
+            blockscout.get_blocknumber_by_time(
+                chain_id=ChainID.OPTIMISM,
+                ts=Timestamp(OP_BEDROCK_UPGRADE - 1),
+            )
+        query.assert_not_called()
+
+        assert blockscout.get_blocknumber_by_time(
+            chain_id=ChainID.OPTIMISM,
+            ts=OP_BEDROCK_UPGRADE,
+        ) == OP_BEDROCK_BLOCK + 1
+        query.assert_called_once()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
