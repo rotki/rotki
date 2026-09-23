@@ -15,8 +15,11 @@ interface EventIdsUpdate {
 export interface UseHistoryEventsViewActionsOptions {
   /** The group collection the table is paging through. */
   groups: Ref<Collection<HistoryEventRow>>;
-  /** Whether anything is loading in the background: a decode, or either auto-match. */
-  backgroundLoading: Ref<boolean>;
+  /**
+   * Whether either auto-match is running. The end of a decode is not included: the auto-fetch's
+   * settle already reads the table then, and a second reader would repeat it.
+   */
+  autoMatching: Ref<boolean>;
   /** Tell selection mode which events are on the page. */
   setAvailableIds: (ids: number[]) => void;
   /** Tell selection mode how many events the current filter matches in total. */
@@ -61,8 +64,8 @@ export function useHistoryEventsViewActions(
   options: UseHistoryEventsViewActionsOptions,
 ): UseHistoryEventsViewActionsReturn {
   const {
+    autoMatching,
     autoMatchMovement,
-    backgroundLoading,
     fetchDataAndLocations,
     fetchDataAndRedecode,
     groups,
@@ -111,9 +114,9 @@ export function useHistoryEventsViewActions(
     setTotalMatchingCount(newGroups.found);
   });
 
-  // Something that ran in the background has finished, so what the table is showing is stale.
-  watch(backgroundLoading, async (isLoading, wasLoading) => {
-    if (!isLoading && wasLoading)
+  // An auto-match finished, so what the table is showing is stale.
+  watch(autoMatching, async (isMatching, wasMatching) => {
+    if (!isMatching && wasMatching)
       await fetchDataAndLocations();
   });
 

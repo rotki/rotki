@@ -78,8 +78,15 @@ export function useHistoryEventsAutoFetch(
     get(active).filter(activity => EVENT_PRODUCING_KINDS.has(activity.kind)).length,
   );
 
+  /**
+   * Bumped by the settle. A read scheduled before it belongs to a run the settle already covered,
+   * so when its debounce fires it finds a newer settle and does nothing.
+   */
+  let settles = 0;
+  let scheduledAt = 0;
+
   function read(): void {
-    if (get(isFetching))
+    if (get(isFetching) || scheduledAt !== settles)
       return;
 
     set(isFetching, true);
@@ -88,22 +95,28 @@ export function useHistoryEventsAutoFetch(
     }));
   }
 
-  const scheduleRead = useDebounceFn(read, SETTLE_QUIET, { maxWait: SUSTAINED_MAX_WAIT });
+  const debouncedRead = useDebounceFn(read, SETTLE_QUIET, { maxWait: SUSTAINED_MAX_WAIT });
+
+  function scheduleRead(): void {
+    scheduledAt = settles;
+    startPromise(debouncedRead());
+  }
 
   watch(runningProducers, (current, previous) => {
     const aProducerFinished = current < (previous ?? 0);
     if (aProducerFinished && toValue(shouldFetch))
-      startPromise(scheduleRead());
+      scheduleRead();
   });
 
   watch(() => toValue(shouldFetch), (fetching, wasFetching) => {
-    if (wasFetching && !fetching)
-      startPromise(handlers.onSettle());
+    if (!wasFetching || fetching)
+      return;
+
+    settles++;
+    startPromise(handlers.onSettle());
   });
 
   return {
-    markStale: (): void => {
-      startPromise(scheduleRead());
-    },
+    markStale: scheduleRead,
   };
 }

@@ -82,32 +82,50 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   const route = useRoute();
   const { fetchCustomizedEventDuplicates } = useCustomizedEventDuplicates();
 
+  async function readTable(): Promise<void> {
+    await fetchEventsData();
+    if (get(route).query.groupIdentifiers)
+      await fetchCustomizedEventDuplicates();
+  }
+
   /**
-   * Serialises every read of the events table onto one chain.
+   * Reads the events table, one read at a time, and folds callers that arrive together into one.
    *
+   * @remarks
    * `useTableData.refetch` opens with `api.cancelByTag`, so overlapping reads cancel each other
    * onto one shared `useAsyncState` and the table can end up holding the loser's result — which,
-   * if empty, empties the table.
+   * if empty, empties the table. So reads never overlap.
    *
-   * Queueing rather than cancelling: every caller wants the table current, and none benefits from
-   * aborting a read that is nearly done. A rejected read does not poison the chain.
-   *
-   * The chaining assignment runs synchronously on call, before the first suspension point, so
-   * ordering follows call order even though the function is `async`.
+   * A caller arriving while a read runs gets a follow-up read, since the running one may predate
+   * what it wants to see. Callers arriving while that follow-up waits join it: it starts after they
+   * called, so it shows what each of them wants. At most one read runs and one waits, however many
+   * watchers fire at the end of a run. A rejected read does not block the next.
    */
-  let reads: Promise<void> = Promise.resolve();
+  let running: Promise<void> | undefined;
+  let waiting: Promise<void> | undefined;
 
-  async function serialiseRead(read: () => Promise<void>): Promise<void> {
-    reads = reads.catch(() => {}).then(read);
-    return reads;
+  async function startRead(): Promise<void> {
+    const read = readTable().finally(() => {
+      if (running === read)
+        running = undefined;
+    });
+    running = read;
+    return read;
   }
 
   async function fetchData(): Promise<void> {
-    return serialiseRead(async () => {
-      await fetchEventsData();
-      if (get(route).query.groupIdentifiers)
-        await fetchCustomizedEventDuplicates();
+    if (waiting)
+      return waiting;
+
+    if (!running)
+      return startRead();
+
+    const next = running.catch(() => {}).then(async () => {
+      waiting = undefined;
+      return startRead();
     });
+    waiting = next;
+    return next;
   }
 
   const { show } = useConfirmStore();

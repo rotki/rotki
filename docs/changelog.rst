@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The history events page now reloads its table once when a history refresh finishes. Before, it reloaded it up to three times in a row, along with the list of locations.
 * :feature:`-` Dismissing the history sync reminder now lasts until your history changes, instead of for a fixed number of hours. It comes back once history is synced again or a newly added account still needs its history, and at your next login if history is still out of sync. The "Dismissal threshold" setting under Settings -> Interface is removed.
 * :feature:`10308` History can now be synced straight from the action center: the history sync item's button reads "Sync now" and starts the sync without leaving the page, with its progress shown in the task centre. "Go to history events" moves into the item's options.
 * :feature:`-` Resolving several internal transaction conflicts at once now shows its progress in the task centre, with each transaction listed under it, instead of updating a notification after every conflict. Closing the conflicts dialog no longer hides how far it got, and a run where some conflicts failed is marked as such in the task centre.

@@ -35,7 +35,7 @@ function collection(overrides: Partial<Collection<HistoryEventRow>> = {}): Colle
 }
 
 const groups = ref<Collection<HistoryEventRow>>(collection());
-const backgroundLoading = ref<boolean>(false);
+const autoMatching = ref<boolean>(false);
 
 interface Harness {
   wrapper: VueWrapper;
@@ -47,8 +47,8 @@ function mountActions(): Harness {
   const Comp = defineComponent({
     setup(): () => null {
       view = useHistoryEventsViewActions({
+        autoMatching,
         autoMatchMovement,
-        backgroundLoading,
         fetchDataAndLocations,
         fetchDataAndRedecode,
         groups,
@@ -73,7 +73,7 @@ describe('useHistoryEventsViewActions', () => {
     vi.useFakeTimers();
     set(routeQuery, {});
     set(groups, collection());
-    set(backgroundLoading, false);
+    set(autoMatching, false);
     autoMatchMovement.mockResolvedValue(false);
     useRouteMock.mockReturnValue(computed(() => ({ query: get(routeQuery) })));
   });
@@ -204,17 +204,17 @@ describe('useHistoryEventsViewActions', () => {
     });
   });
 
-  describe('background work finishing', () => {
+  describe('an auto-match finishing', () => {
     it('should reload once it settles', async () => {
       mountActions();
       await vi.advanceTimersByTimeAsync(600);
       fetchDataAndLocations.mockClear();
 
-      set(backgroundLoading, true);
+      set(autoMatching, true);
       await nextTick();
       expect(fetchDataAndLocations).not.toHaveBeenCalled();
 
-      set(backgroundLoading, false);
+      set(autoMatching, false);
       await nextTick();
 
       expect(fetchDataAndLocations).toHaveBeenCalledTimes(1);
@@ -225,7 +225,7 @@ describe('useHistoryEventsViewActions', () => {
       await vi.advanceTimersByTimeAsync(600);
       fetchDataAndLocations.mockClear();
 
-      set(backgroundLoading, true);
+      set(autoMatching, true);
       await nextTick();
 
       expect(fetchDataAndLocations).not.toHaveBeenCalled();
