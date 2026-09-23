@@ -129,11 +129,6 @@ const EvmQueryIndicatorMinOutOfSyncPeriod = z
   .min(1)
   .max(Constraints.MAX_HOURS_DELAY)
   .int();
-const EvmQueryIndicatorDismissalThreshold = z
-  .number()
-  .min(1)
-  .max(Constraints.MAX_HOURS_DELAY)
-  .int();
 
 const AutoDetectTokensCooldownHours = z
   .number()
@@ -223,9 +218,6 @@ export const FrontendSettings = z.object({
   dockShowSummary: z.boolean().default(true),
   enableAliasNames: z.boolean().default(true),
   enablePasswordConfirmation: EnablePasswordConfirmation.default(true),
-  evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(
-    Defaults.DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD,
-  ),
   evmQueryIndicatorMinOutOfSyncPeriod: EvmQueryIndicatorMinOutOfSyncPeriod.default(
     Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD,
   ),

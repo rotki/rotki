@@ -3,14 +3,11 @@ import { get, isDefined, set } from '@vueuse/shared';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { isMajorOrMinorUpdate } from '@/modules/history/sync-status/is-major-or-minor-update';
-import { useHistoryQueryIndicatorSettings } from '@/modules/history/sync-status/use-history-query-indicator-settings';
+import { useHistorySyncDismissalStore } from '@/modules/history/sync-status/use-history-sync-dismissal-store';
 import { useTransactionStatusCheck } from '@/modules/history/sync-status/use-transaction-status-check';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
-
-/** How often a dismissal is re-checked against its threshold. */
-const DISMISSAL_TICK_MS = 60_000;
 
 interface UseHistorySyncStatusReturn {
   /** The user has EVM accounts or exchanges, the sources this status is about. */
@@ -25,10 +22,17 @@ interface UseHistorySyncStatusReturn {
   /** A major or minor app update was recorded by {@link UseHistorySyncStatusReturn.recordAppVersion}. */
   justUpdated: Readonly<Ref<boolean>>;
   processing: Ref<boolean>;
-  /** Dismissed within the dismissal threshold, so it is not asking for attention right now. */
-  dismissedRecently: ComputedRef<boolean>;
+  /**
+   * The user set this state of history aside, so it is not asking for attention right now.
+   *
+   * @remarks
+   * Bound to the last-queried timestamp the user dismissed at, never to a timer: it holds until a
+   * sync moves that timestamp or a new source brings an older one, and ends with the session.
+   */
+  dismissed: ComputedRef<boolean>;
   dismiss: () => void;
-  resetQueryStatus: () => void;
+  /** Brings a dismissed reminder back. */
+  resetDismissal: () => void;
   /**
    * Compares the running app version with the one recorded last session.
    *
@@ -39,14 +43,13 @@ interface UseHistorySyncStatusReturn {
   recordAppVersion: () => void;
 }
 
-interface QueryStatusDismissal {
-  lastDismissedTs: number;
+interface RecordedVersion {
   lastUsedVersion: string | null;
 }
 
 /**
  * Whether the user's history is out of sync, when it was last queried, and whether the user set that
- * aside recently.
+ * aside.
  *
  * @remarks
  * Progress for work in flight is the task dock's; this only says what state history was left in.
@@ -54,8 +57,7 @@ interface QueryStatusDismissal {
 export function useHistorySyncStatus(): UseHistorySyncStatusReturn {
   const userId = useLoggedUserIdentifier();
 
-  const queryStatus: Ref<QueryStatusDismissal> = useLocalStorage<QueryStatusDismissal>(() => `${get(userId)}.rotki_query_status`, {
-    lastDismissedTs: 0,
+  const recordedVersion: Ref<RecordedVersion> = useLocalStorage<RecordedVersion>(() => `${get(userId)}.rotki_query_status`, {
     lastUsedVersion: null,
   });
 
@@ -63,6 +65,9 @@ export function useHistorySyncStatus(): UseHistorySyncStatusReturn {
 
   const { appVersion } = storeToRefs(useMainStore());
   const { transactionStatusSummary } = storeToRefs(useHistoryStore());
+  const dismissalStore = useHistorySyncDismissalStore();
+  const { dismissedAt } = storeToRefs(dismissalStore);
+  const { setDismissedAt } = dismissalStore;
 
   const {
     earliestQueriedTimestamp: lastQueriedTimestamp,
@@ -71,10 +76,6 @@ export function useHistorySyncStatus(): UseHistorySyncStatusReturn {
     isOutOfSync,
     processing,
   } = useTransactionStatusCheck();
-
-  const { dismissalThresholdMs } = useHistoryQueryIndicatorSettings();
-
-  const now = useNow({ interval: DISMISSAL_TICK_MS });
 
   const outOfSync = computed<boolean>(() => get(hasTxAccounts) && get(isOutOfSync));
 
@@ -86,43 +87,37 @@ export function useHistorySyncStatus(): UseHistorySyncStatusReturn {
     return isDefined(status) && status.undecodedTxCount === 0 && Date.now() - get(lastQueriedTimestamp) > HUNDRED_EIGHTY_DAYS;
   });
 
-  const dismissedRecently = computed<boolean>(() =>
-    get(now).getTime() - get(queryStatus).lastDismissedTs < get(dismissalThresholdMs),
-  );
+  const dismissed = computed<boolean>(() => {
+    const at = get(dismissedAt);
+    return at !== undefined && at === get(lastQueriedTimestamp);
+  });
 
   function dismiss(): void {
-    set(queryStatus, {
-      lastDismissedTs: Date.now(),
-      lastUsedVersion: get(appVersion),
-    });
+    setDismissedAt(get(lastQueriedTimestamp));
   }
 
-  function resetQueryStatus(): void {
-    set(queryStatus, {
-      lastDismissedTs: 0,
-      lastUsedVersion: null,
-    });
+  function resetDismissal(): void {
+    setDismissedAt(undefined);
   }
 
   function recordAppVersion(): void {
     const currentVersion = get(appVersion);
-    const { lastDismissedTs, lastUsedVersion } = get(queryStatus);
+    const { lastUsedVersion } = get(recordedVersion);
 
     if (!currentVersion || currentVersion === lastUsedVersion)
       return;
 
-    if (isMajorOrMinorUpdate(currentVersion, lastUsedVersion)) {
-      set(queryStatus, { lastDismissedTs: 0, lastUsedVersion: currentVersion });
-      set(justUpdated, true);
-      return;
-    }
+    set(recordedVersion, { lastUsedVersion: currentVersion });
 
-    set(queryStatus, { lastDismissedTs, lastUsedVersion: currentVersion });
+    if (isMajorOrMinorUpdate(currentVersion, lastUsedVersion)) {
+      resetDismissal();
+      set(justUpdated, true);
+    }
   }
 
   return {
     dismiss,
-    dismissedRecently,
+    dismissed,
     hasTxAccounts,
     isNeverQueried,
     justUpdated: readonly(justUpdated),
@@ -131,6 +126,6 @@ export function useHistorySyncStatus(): UseHistorySyncStatusReturn {
     outOfSync,
     processing,
     recordAppVersion,
-    resetQueryStatus,
+    resetDismissal,
   };
 }

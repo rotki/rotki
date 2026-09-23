@@ -11,7 +11,7 @@ const isNeverQueried = ref<boolean>(false);
 const justUpdated = ref<boolean>(false);
 const longQuery = ref<boolean>(false);
 const processing = ref<boolean>(false);
-const dismissedRecently = ref<boolean>(false);
+const dismissed = ref<boolean>(false);
 const lastQueriedTimestamp = ref<number>(SYNCED_AT);
 const dismiss = vi.fn<() => void>();
 const recordAppVersion = vi.fn<() => void>();
@@ -24,7 +24,7 @@ vi.mock('@/modules/history/events/tx/use-history-transactions', () => ({
 vi.mock('@/modules/history/sync-status/use-history-sync-status', () => ({
   useHistorySyncStatus: (): object => ({
     dismiss,
-    dismissedRecently,
+    dismissed,
     hasTxAccounts,
     isNeverQueried,
     justUpdated,
@@ -69,7 +69,7 @@ describe('modules/shell/action-center/use-history-sync-row', () => {
     set(justUpdated, false);
     set(longQuery, false);
     set(processing, false);
-    set(dismissedRecently, false);
+    set(dismissed, false);
     set(lastQueriedTimestamp, SYNCED_AT);
   });
 
@@ -133,7 +133,7 @@ describe('modules/shell/action-center/use-history-sync-row', () => {
   });
 
   it('should keep a dismissed row listed as informational, with no dismiss of its own', () => {
-    set(dismissedRecently, true);
+    set(dismissed, true);
     const row = onlyRow();
 
     expect(row.count).toBe(1);
