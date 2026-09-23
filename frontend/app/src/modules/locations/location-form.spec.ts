@@ -31,6 +31,14 @@ describe('location form', () => {
       .toEqual({ icon: 'lu-vault', name: 'ING DiBa', parentIdentifier: 'other' });
   });
 
+  it('should keep a stored icon the picker cannot show when another field changes', () => {
+    const dkb = node('custom:dkb', 'banks', 'DKB', { icon: null, isBuiltin: false });
+    const opened = toLocationFormState({ location: dkb, mode: 'edit' });
+    expect(opened.icon).toBe('lu-map-pin');
+    expect(locationEditPayload(dkb, { ...opened, name: 'DKB Bank' })).toEqual({ name: 'DKB Bank' });
+    expect(locationEditPayload(dkb, { ...opened, icon: 'lu-vault' })).toEqual({ icon: 'lu-vault' });
+  });
+
   it('should not offer an archived location or the own subtree as parent', () => {
     const nodes = [node('total', null, 'Total'), node('banks', 'total', 'Banks'), ing, node('custom:old', 'banks', 'Old', { isActive: false })];
     expect(parentCandidates(nodes, new Set(['custom:ing']))).toEqual(['total', 'banks']);

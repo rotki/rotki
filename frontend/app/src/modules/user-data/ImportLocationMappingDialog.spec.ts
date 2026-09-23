@@ -87,4 +87,15 @@ describe('importLocationMappingDialog', () => {
     wrapper.findComponent(BigDialogStub).vm.$emit('confirm');
     expect(wrapper.emitted('confirm')).toEqual([[{ mappings: { luno: 'custom:luno' }, saveAsAliases: true }]]);
   });
+
+  it('should offer a location created for an ambiguous value next to its candidates', async () => {
+    wrapper = createWrapper([ing]);
+    await wrapper.find('[data-testid=import-location-create]').trigger('click');
+    wrapper.findComponent(LocationFormDialogStub).vm.$emit('created', node('custom:c', 'total', 'ING', { isBuiltin: false }));
+    await nextTick();
+
+    const selector = wrapper.findComponent(LocationSelectorStub);
+    expect(selector.attributes('data-items')).toBe('custom:a,custom:b,custom:c');
+    expect(selector.props('modelValue')).toBe('custom:c');
+  });
 });

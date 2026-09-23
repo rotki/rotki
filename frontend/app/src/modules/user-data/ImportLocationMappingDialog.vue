@@ -22,6 +22,8 @@ const saveAsAliases = ref<boolean>(true);
 const newLocation = ref<LocationFormData>();
 /** The value a location is being created for, which the created location is then chosen for. */
 const creatingFor = shallowRef<string>();
+/** The locations created from this dialog, keyed by the value each was created for. */
+const createdFor = ref<Record<string, string>>({});
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -29,8 +31,21 @@ const complete = computed<boolean>(() => (resolutions ?? []).every(resolution =>
 
 watch(() => resolutions, () => {
   set(mappings, {});
+  set(createdFor, {});
   set(saveAsAliases, true);
 });
+
+/**
+ * The locations a value can be mapped to: its candidates when it is ambiguous, plus a location
+ * created for it, which the selector would otherwise drop as not being one of its options.
+ * An unresolved value is offered every assignable location.
+ */
+function optionsFor(resolution: DeepReadonly<ImportLocationResolution>): readonly string[] {
+  if (resolution.status !== 'ambiguous')
+    return [];
+  const created = get(createdFor)[resolution.value];
+  return created ? [...resolution.candidates, created] : resolution.candidates;
+}
 
 function create(value: string): void {
   set(creatingFor, value);
@@ -39,8 +54,10 @@ function create(value: string): void {
 
 function onCreated(location: LocationNode): void {
   const value = get(creatingFor);
-  if (value !== undefined)
+  if (value !== undefined) {
+    set(createdFor, { ...get(createdFor), [value]: location.identifier });
     set(mappings, { ...get(mappings), [value]: location.identifier });
+  }
   set(creatingFor, undefined);
 }
 
@@ -84,7 +101,7 @@ function confirm(): void {
             :model-value="mappings[resolution.value] ?? ''"
             class="grow"
             dense
-            :items="resolution.status === 'ambiguous' ? resolution.candidates : []"
+            :items="optionsFor(resolution)"
             :label="t('common.location')"
             hide-details
             data-testid="import-location-choice"

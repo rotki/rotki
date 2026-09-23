@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import {
   type BankConnectionFormState,
   bankConnectionSchema,
@@ -9,7 +10,8 @@ import {
   needsBankLocation,
   toBankConnectionFormState,
 } from '@/modules/banks/bank-connection-form';
-import { type BankLocationOption, bankLocationOptions } from '@/modules/banks/bank-locations';
+import { bankLocations } from '@/modules/banks/bank-locations';
+import BankConnectorDisplay from '@/modules/banks/components/BankConnectorDisplay.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -30,7 +32,7 @@ const { nodes: locationTree } = storeToRefs(useLocationTreeStore());
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
 const manifest = computed<BankManifest | undefined>(() => manifestFor(get(connector)));
-const bankLocations = computed<BankLocationOption[]>(() => bankLocationOptions(get(locationTree)));
+const banks = computed<string[]>(() => bankLocations(get(locationTree)));
 const choosesLocation = computed<boolean>(() => !get(editMode) && needsBankLocation(get(manifest)));
 
 const form = useMappedModelForm<BankFormData, BankConnectionFormState>({
@@ -92,17 +94,21 @@ defineExpose({
         variant="outlined"
         data-testid="bank-connection-connector"
         @update:model-value="selectConnector($event)"
-      />
-      <RuiMenuSelect
+      >
+        <template #selection="{ item }">
+          <BankConnectorDisplay :manifest="item" />
+        </template>
+        <template #item="{ item }">
+          <BankConnectorDisplay :manifest="item" />
+        </template>
+      </RuiMenuSelect>
+      <LocationSelector
         v-if="choosesLocation"
         v-model="form.state.location"
-        :options="bankLocations"
+        :items="banks"
         :label="t('bank_settings.form.bank')"
         :hint="t('bank_settings.form.bank_hint')"
         :error-messages="form.errors('location')"
-        key-attr="identifier"
-        text-attr="label"
-        variant="outlined"
         data-testid="bank-connection-location"
       />
     </template>

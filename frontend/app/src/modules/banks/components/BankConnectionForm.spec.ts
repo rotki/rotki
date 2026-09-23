@@ -57,6 +57,7 @@ describe('bankConnectionForm', () => {
         stubs: {
           ExternalLink: true,
           LocationDisplay: true,
+          LocationSelector: true,
           RuiMenuSelect: true,
         },
       },
@@ -78,6 +79,7 @@ describe('bankConnectionForm', () => {
     useLocationTreeStore().setNodes([
       { icon: null, identifier: 'total', image: null, isActive: true, isBuiltin: true, name: 'Total', parentIdentifier: null },
       { icon: null, identifier: 'banks', image: null, isActive: true, isBuiltin: true, name: 'Banks', parentIdentifier: 'total' },
+      { icon: null, identifier: 'qonto', image: null, isActive: true, isBuiltin: true, name: 'Qonto', parentIdentifier: 'banks' },
       { icon: null, identifier: 'custom:ing', image: null, isActive: true, isBuiltin: false, name: 'ING', parentIdentifier: 'banks' },
       { icon: null, identifier: 'kraken', image: null, isActive: true, isBuiltin: true, name: 'Kraken', parentIdentifier: 'exchanges' },
     ]);
@@ -91,7 +93,7 @@ describe('bankConnectionForm', () => {
     menuSelect('bank-connection-connector')?.vm.$emit('update:modelValue', connector);
   }
 
-  it('should ask for the bank only for a connector that does not fix it, offering the Banks subtree', async () => {
+  it('should ask for the bank only for a connector that does not fix it, offering the banks by name', async () => {
     const model = ref({ ...createForm('add'), connector: '', location: '' });
     wrapper = createWrapper(model);
     await flushPromises();
@@ -101,10 +103,7 @@ describe('bankConnectionForm', () => {
     await nextTick();
     await wrapper.setProps({ modelValue: model.value });
     expect(model.value).toMatchObject({ connector: 'fints', credentials: { api_key: '' }, location: '' });
-    expect(Reflect.get(menuSelect('bank-connection-location')?.props() ?? {}, 'options')).toEqual([
-      { identifier: 'banks', label: 'Banks' },
-      { identifier: 'custom:ing', label: 'Banks › ING' },
-    ]);
+    expect(wrapper.findComponent({ name: 'LocationSelector' }).props('items')).toEqual(['custom:ing', 'qonto']);
     expect(wrapper.vm.validate()).toBe(false);
 
     selectConnector('qonto');

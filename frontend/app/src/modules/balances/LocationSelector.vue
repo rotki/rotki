@@ -17,6 +17,17 @@ const { dense, excludes = [], items = [] } = defineProps<{
   dense?: boolean;
 }>();
 
+/**
+ * The height of an option: its fixed 40px content plus the vertical padding of the menu's list
+ * button, 12px a side or 4px when dense.
+ *
+ * @remarks
+ * The menu is a virtual list that places every option at a multiple of this height, so each
+ * option has to render exactly this tall, with or without a path line.
+ */
+const ITEM_HEIGHT = 64;
+const DENSE_ITEM_HEIGHT = 48;
+
 const { tradeLocations } = useLocations();
 const treeStore = useLocationTreeStore();
 const { assignableNodes, nodes } = storeToRefs(treeStore);
@@ -47,37 +58,46 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     :options="locations"
     key-attr="identifier"
     text-attr="label"
-    :item-height="dense ? 44 : 60"
+    :item-height="dense ? DENSE_ITEM_HEIGHT : ITEM_HEIGHT"
     :dense="dense"
     auto-select-first
     v-bind="$attrs"
   >
     <template #item="{ disabled, item }">
       <div
-        class="flex flex-col"
+        :id="`balance-location__${item.identifier}`"
+        class="flex items-center gap-2 h-10 min-w-0"
         :class="{ 'opacity-40': disabled }"
       >
         <LocationIcon
-          :id="`balance-location__${item.identifier}`"
-          class="!justify-start"
-          horizontal
+          class="shrink-0"
+          icon
           :item="item.identifier"
         />
-        <span
-          v-if="item.parentPath"
-          class="text-caption text-rui-text-secondary pl-8"
-          data-testid="location-option-path"
-        >
-          {{ item.parentPath }}
-        </span>
+        <div class="flex flex-col min-w-0 leading-5">
+          <span class="truncate text-rui-text-secondary">{{ item.name }}</span>
+          <span
+            v-if="item.parentPath"
+            class="truncate text-caption text-rui-text-secondary"
+            data-testid="location-option-path"
+          >
+            {{ item.parentPath }}
+          </span>
+        </div>
       </div>
     </template>
     <template #selection="{ item }">
-      <LocationIcon
-        class="!justify-start pr-2"
-        horizontal
-        :item="item.identifier"
-      />
+      <div
+        class="flex items-center gap-2 pr-2 min-w-0"
+        data-testid="location-selection"
+      >
+        <LocationIcon
+          class="shrink-0"
+          icon
+          :item="item.identifier"
+        />
+        <span class="truncate text-rui-text-secondary">{{ treeStore.distinctNameOf(item.identifier) ?? item.name }}</span>
+      </div>
     </template>
   </RuiAutoComplete>
 </template>

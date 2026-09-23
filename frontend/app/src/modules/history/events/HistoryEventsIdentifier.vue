@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { Blockchain, toSentenceCase } from '@rotki/common';
+import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventsIdentifier } from '@/modules/history/events/use-history-events-identifier';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
@@ -25,6 +26,12 @@ const {
   truncateLength,
   withdrawEvent,
 } = useHistoryEventsIdentifier(() => event, () => groupEvents);
+
+const { useLocationData } = useLocations();
+const locationData = useLocationData(() => event.location);
+
+/** The location's display name, falling back to its identifier until location data has loaded. */
+const locationName = computed<string>(() => get(locationData)?.name ?? toSentenceCase(event.location));
 </script>
 
 <template>
@@ -36,7 +43,7 @@ const {
     class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm"
   >
     <template #location>
-      {{ toSentenceCase(event.location) }}
+      {{ locationName }}
     </template>
 
     <template

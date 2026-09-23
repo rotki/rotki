@@ -25,24 +25,29 @@ export interface LocationOptionsInput {
 
 const PATH_SEPARATOR = ' › ';
 
+function isLocationData(location: TradeLocationData | undefined): location is TradeLocationData {
+  return location !== undefined;
+}
+
 /**
  * The options of a location selector.
  *
  * @remarks
- * Without explicit items it offers the locations new data can be assigned to, so the total and
+ * Without explicit items it offers the locations new data can be assigned to, so categories and
  * archived locations are left out, but the current value stays so that an old record still shows
- * where it is. Explicit items are offered as given, since a caller listing them knows they apply.
+ * where it is. Explicit items are offered as given and in their order, since a caller listing them
+ * knows they apply.
  */
 export function locationOptions({ assignable, current, excludes, items, locations, pathOf }: LocationOptionsInput): LocationOption[] {
-  const wanted = (identifier: string): boolean => {
-    if (excludes.includes(identifier))
-      return false;
-    if (items.length > 0)
-      return items.includes(identifier);
-    return assignable === undefined || assignable.has(identifier) || identifier === current;
-  };
+  const isAssignable = (identifier: string): boolean =>
+    assignable === undefined || assignable.has(identifier) || identifier === current;
 
-  return locations.filter(location => wanted(location.identifier)).map((location) => {
+  const byIdentifier = new Map(locations.map(location => [location.identifier, location]));
+  const offered = items.length > 0
+    ? items.map(identifier => byIdentifier.get(identifier)).filter(isLocationData)
+    : locations.filter(location => isAssignable(location.identifier));
+
+  return offered.filter(location => !excludes.includes(location.identifier)).map((location) => {
     const path = pathOf(location.identifier);
     const parentPath = path.slice(0, -1).map(node => node.name).join(PATH_SEPARATOR);
     return {

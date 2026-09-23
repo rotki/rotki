@@ -7,6 +7,7 @@ import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
+import { useLocations } from '@/modules/core/common/use-locations';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { bankEventsActivity } from '@/modules/history/events/tx/sync-activity';
@@ -31,7 +32,15 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { notify, notifyError } = useNotifications();
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
+  const { getLocationData } = useLocations();
   const store = useBankConnectionsStore();
+
+  /**
+   * The name of the bank a connection's data belongs to, such as ING for a FinTS connection, or
+   * the connector's name while the location has no display data yet.
+   */
+  const bankNameOf = (location: string, connector: string): string =>
+    getLocationData(location)?.name ?? store.bankNameFor(connector);
 
   /**
    * The challenge a sync paused on, read from a fresh connection list.
@@ -53,7 +62,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
     }
   };
 
-  const notifyAuthenticationRequired = ({ connector, identifier, name }: BankConnection): void => {
+  const notifyAuthenticationRequired = ({ connector, identifier, location, name }: BankConnection): void => {
     notify({
       action: {
         action: async () => {
@@ -64,7 +73,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
         label: t('actions.bank_events.authentication.action'),
       },
       category: NotificationCategory.DEFAULT,
-      message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(connector), name }),
+      message: t('actions.bank_events.authentication.description', { location: bankNameOf(location, connector), name }),
       priority: Priority.ACTION,
       severity: Severity.WARNING,
       title: t('actions.bank_events.authentication.title'),
@@ -73,7 +82,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
-    const bankName = store.bankNameFor(store.connectorOf(bank.identifier));
+    const bankName = bankNameOf(location, store.connectorOf(bank.identifier));
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),

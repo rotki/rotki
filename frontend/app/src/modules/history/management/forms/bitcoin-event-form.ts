@@ -21,7 +21,7 @@ import {
   validCounterparty,
 } from '@/modules/history/management/forms/event-field-schemas';
 
-export const BITCOIN_LOCATIONS = ['bitcoin', 'bitcoin_cash'] as const;
+export const BITCOIN_LOCATIONS = ['bitcoin', 'bitcoin cash'] as const;
 
 export interface BitcoinEventFormState {
   amount: string;

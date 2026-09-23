@@ -34,13 +34,20 @@ export function locationFormSchema(): ZodType<LocationFormState> {
   });
 }
 
-/** The fields of an edit that differ from the stored location, with a trimmed name. */
+/**
+ * The fields of an edit that differ from the stored location, with a trimmed name.
+ *
+ * @remarks
+ * The icon is compared with the one the form opened with, not the stored one: a stored icon the
+ * picker cannot show opens as the default, and saving another field must not write that default.
+ */
 export function locationEditPayload(location: LocationNode, state: LocationFormState): LocationEditPayload {
   const name = state.name.trim();
+  const openedIcon = toLocationFormState({ location, mode: 'edit' }).icon;
   return {
     ...(name === location.name ? {} : { name }),
     ...(state.parentIdentifier === location.parentIdentifier ? {} : { parentIdentifier: state.parentIdentifier }),
-    ...(state.icon === location.icon ? {} : { icon: state.icon }),
+    ...(state.icon === openedIcon ? {} : { icon: state.icon }),
   };
 }
 

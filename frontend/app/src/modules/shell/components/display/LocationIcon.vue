@@ -58,7 +58,7 @@ const location = useLocationData(() => item);
 
       <span
         v-if="!icon"
-        class="capitalize text-rui-text-secondary"
+        class="text-rui-text-secondary"
         :class="{
           '-mb-1 text-center': !horizontal,
         }"

@@ -79,10 +79,9 @@ const {
         :disabled="pending"
         data-testid="purge-cex-data-type"
       />
-      <LocationSelector
+      <DefiModuleSelector
         v-else-if="modelSource === Purgeable.DECENTRALIZED_EXCHANGES"
         v-model="modelDecentralizedExchange"
-        clearable
         persistent-hint
         :items="DECENTRALIZED_EXCHANGES"
         :label="t('purge_selector.decentralized_exchange_to_clear.label')"

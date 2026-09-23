@@ -4670,10 +4670,17 @@
       "add": "Add location",
       "add_child": "Add a location below",
       "archive": "Archive",
+      "collapse": "Hide the locations below",
+      "expand": "Show the locations below",
       "unarchive": "Restore from archive"
     },
     "aliases": {
+      "add": "Add alias",
       "alias": "Alias",
+      "delete_message": "Delete the alias {alias} for {location}? Imports will no longer match it.",
+      "delete_title": "Delete alias",
+      "empty_description": "Aliases are saved when you map an unknown location during a CSV import, or you can add one here.",
+      "empty_label": "No aliases yet",
       "error": "Could not change the location alias",
       "subtitle": "Other names a location goes by in imported files. An import matches aliases after exact location identifiers and before location names.",
       "title": "Location aliases"
@@ -4681,8 +4688,14 @@
     "archived": "Archived",
     "custom": "Custom",
     "delete": {
-      "message": "Are you sure you want to delete the location {name}?",
+      "message": "Delete {name}? This can not be undone.",
       "title": "Delete location"
+    },
+    "empty": {
+      "create": "Add a location named {name}",
+      "label": "No locations to show",
+      "search_description": "Check the spelling, turn on Show archived, or add the location.",
+      "search_label": "No location matches \"{search}\""
     },
     "error": "Could not change the location",
     "form": {
@@ -4690,6 +4703,7 @@
       "edit_title": "Edit location",
       "error": "Could not save the location",
       "icon": "Icon",
+      "icon_option": "Use the {icon} icon",
       "name_hint": "Must be unique among the locations with the same parent",
       "parent": "Parent location",
       "validation": {
@@ -4698,16 +4712,21 @@
     },
     "image": {
       "error": "Could not change the location image",
-      "hint": "An uploaded image is shown instead of the icon. It is not part of database backups.",
+      "hint": "An image replaces the icon. It is stored on this device only, so upload it again after restoring a backup or on another device.",
       "remove": "Remove image",
       "replace": "Replace image",
       "upload": "Upload image"
     },
     "move": {
-      "message": "The location moves from {old} to {new}. Its history and balances then count towards the totals of its new parent locations.",
+      "confirm": "Move",
+      "message": "From: {old}\nTo: {new}\n\nIts history and balances then count towards the totals of its new parent locations. You can move it back at any time.",
       "title": "Move location"
     },
     "show_archived": "Show archived",
+    "tabs": {
+      "aliases": "Aliases",
+      "locations": "Locations"
+    },
     "title": "Location manager",
     "usage": {
       "kinds": {
@@ -4723,7 +4742,7 @@
         "skipped_external_events": "Skipped external events",
         "timed_location_data": "Snapshot entries"
       },
-      "message": "This location can not be deleted while data uses it. Archive it to hide it from new entries while keeping its data.",
+      "message": "This location can not be deleted while data uses it. Move or remove that data first, or archive the location to hide it from new entries while keeping its data.",
       "title": "{name} is in use"
     }
   },

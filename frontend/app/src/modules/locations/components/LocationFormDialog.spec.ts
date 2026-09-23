@@ -13,16 +13,18 @@ import '@test/i18n';
 
 type Management = ReturnType<typeof useLocationManagement>;
 
-const { createLocation, editLocation, previewEdit, setMessage, show } = vi.hoisted(() => ({
+const { createLocation, editLocation, previewEdit, removeImage, setMessage, show, uploadImage } = vi.hoisted(() => ({
   createLocation: vi.fn<Management['createLocation']>(),
   editLocation: vi.fn<Management['editLocation']>(),
   previewEdit: vi.fn<Management['previewEdit']>(),
+  removeImage: vi.fn<Management['removeImage']>(),
   setMessage: vi.fn(),
   show: vi.fn(),
+  uploadImage: vi.fn<Management['uploadImage']>(),
 }));
 
 vi.mock('@/modules/locations/use-location-management', () => ({
-  useLocationManagement: (): Partial<Management> => ({ createLocation, editLocation, previewEdit }),
+  useLocationManagement: (): Partial<Management> => ({ createLocation, editLocation, previewEdit, removeImage, uploadImage }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -44,7 +46,12 @@ const LocationSelectorStub = defineComponent({
   setup: props => (): VNode => h('div', { 'data-items': props.items.join(',') }),
 });
 
-const ing = node('custom:ing', 'banks', 'ING', { icon: 'lu-landmark', isBuiltin: false });
+const LocationImageFieldStub = defineComponent({
+  emits: ['update:modelValue'],
+  setup: () => (): VNode => h('div'),
+});
+
+const ing = node('custom:ing', 'banks', 'ING', { icon: 'lu-landmark', image: 'ing.png', isBuiltin: false });
 
 describe('locationFormDialog', () => {
   let pinia: Pinia;
@@ -56,7 +63,7 @@ describe('locationFormDialog', () => {
         plugins: [pinia],
         stubs: {
           BigDialog: BigDialogStub,
-          LocationImageField: true,
+          LocationImageField: LocationImageFieldStub,
           LocationSelector: LocationSelectorStub,
         },
       },
@@ -66,6 +73,11 @@ describe('locationFormDialog', () => {
 
   async function confirm(): Promise<void> {
     wrapper.findComponent(BigDialogStub).vm.$emit('confirm');
+    await flushPromises();
+  }
+
+  async function chooseImage(image: File | null): Promise<void> {
+    wrapper.findComponent(LocationImageFieldStub).vm.$emit('update:modelValue', image);
     await flushPromises();
   }
 
@@ -128,10 +140,43 @@ describe('locationFormDialog', () => {
     await confirm();
 
     expect(previewEdit).toHaveBeenCalledExactlyOnceWith('custom:ing', { parentIdentifier: 'other' });
-    expect(show).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('Banks › ING') }), expect.any(Function));
+    expect(show).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Banks › ING'), type: 'info' }),
+      expect.any(Function),
+    );
     expect(editLocation).not.toHaveBeenCalled();
     await show.mock.calls[0][1]();
     expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:ing', { parentIdentifier: 'other' });
+  });
+
+  it('should upload a chosen image only once the new location exists', async () => {
+    const created = node('custom:dkb', 'banks', 'DKB', { isBuiltin: false });
+    const file = new File(['png'], 'dkb.png');
+    createLocation.mockResolvedValue(ok(created));
+    uploadImage.mockResolvedValue(ok('dkb.png'));
+    wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' });
+    await wrapper.find('[data-testid=location-form-name] input').setValue('DKB');
+    await chooseImage(file);
+    expect(uploadImage).not.toHaveBeenCalled();
+
+    await confirm();
+
+    expect(uploadImage).toHaveBeenCalledExactlyOnceWith('custom:dkb', file);
+    expect(createLocation.mock.invocationCallOrder[0]).toBeLessThan(uploadImage.mock.invocationCallOrder[0]);
+    expect(wrapper.emitted('saved')).toEqual([['custom:dkb']]);
+  });
+
+  it('should remove the stored image on save without editing anything else', async () => {
+    removeImage.mockResolvedValue(ok(true));
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await chooseImage(null);
+    expect(removeImage).not.toHaveBeenCalled();
+
+    await confirm();
+
+    expect(editLocation).not.toHaveBeenCalled();
+    expect(removeImage).toHaveBeenCalledExactlyOnceWith('custom:ing');
+    expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
   it('should keep the dialog open and show why a save was refused', async () => {

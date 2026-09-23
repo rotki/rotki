@@ -45,6 +45,10 @@ describe('locationOptions', () => {
     expect(options({ excludes: ['kraken'], items: ['kraken', 'custom:closed'] })).toEqual(['custom:closed']);
   });
 
+  it('should offer explicit items in the order given, skipping unknown ones', () => {
+    expect(options({ items: ['custom:ing', 'custom:missing', 'kraken'] })).toEqual(['custom:ing', 'kraken']);
+  });
+
   it('should offer everything while the tree has not loaded', () => {
     expect(options({ assignable: undefined })).toEqual(['total', 'kraken', 'custom:ing', 'custom:closed']);
   });
