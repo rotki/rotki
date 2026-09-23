@@ -6,7 +6,6 @@ import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const { setting } = defineProps<{
   setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';
@@ -79,7 +78,10 @@ defineExpose({
 </script>
 
 <template>
-  <SimpleTable class="bg-white dark:bg-transparent">
+  <RuiTable
+    class="bg-white dark:bg-transparent"
+    :empty="!value"
+  >
     <thead>
       <tr>
         <th>{{ t('evm_rpc_node_manager.node') }}</th>
@@ -88,7 +90,7 @@ defineExpose({
     </thead>
     <tbody>
       <tr v-if="value">
-        <td class="!py-4">
+        <td class="py-4">
           <div class="flex gap-3 items-center">
             <RuiTooltip
               v-if="!value.includes('localhost')"
@@ -130,33 +132,33 @@ defineExpose({
           />
         </td>
       </tr>
-      <tr v-else>
-        <td
-          colspan="2"
-          class="!py-4 text-rui-text-secondary text-center w-full"
-        >
-          <div class="flex flex-col gap-3 items-center">
-            {{ t('data_table.no_data') }}
-            <!-- The header "Add node" button is hidden for single-value
-                 endpoints, so this is the only way to set an empty one. -->
-            <RuiButton
-              color="primary"
-              data-testid="add-simple-node"
-              @click="addNewRpcNode()"
-            >
-              <template #prepend>
-                <RuiIcon
-                  name="lu-plus"
-                  size="16"
-                />
-              </template>
-              {{ t('evm_rpc_node_manager.add_button') }}
-            </RuiButton>
-          </div>
-        </td>
-      </tr>
     </tbody>
-  </SimpleTable>
+    <template #empty>
+      <RuiTableEmptyState
+        compact
+        :label="t('data_table.no_data')"
+      >
+        <template #description>
+          <!-- The header "Add node" button is hidden for single-value
+               endpoints, so this is the only way to set an empty one. -->
+          <RuiButton
+            color="primary"
+            class="mt-2"
+            data-testid="add-simple-node"
+            @click="addNewRpcNode()"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-plus"
+                size="16"
+              />
+            </template>
+            {{ t('evm_rpc_node_manager.add_button') }}
+          </RuiButton>
+        </template>
+      </RuiTableEmptyState>
+    </template>
+  </RuiTable>
   <BigDialog
     :display="openDialog"
     :title="t('evm_rpc_node_manager.add_dialog.title')"

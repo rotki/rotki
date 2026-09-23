@@ -6,7 +6,6 @@ import { EmptyListId, type PrioritizedListId } from '@/modules/settings/types/pr
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 import PrioritizedListEntry from '@/modules/shell/components/PrioritizedListEntry.vue';
 import PrioritizedListRow from '@/modules/shell/components/PrioritizedListRow.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const modelValue = defineModel<PrioritizedListId[]>({ required: true });
 
@@ -154,30 +153,23 @@ const autoCompleteHint = computed<string>(() => {
           </div>
         </RuiButton>
       </div>
-      <SimpleTable variant="default">
+      <RuiTable
+        variant="default"
+        :empty="noResults ? { label: t('prioritized_list.item.empty', itemNameTr) } : false"
+      >
         <thead>
           <tr>
-            <th class="!px-0 w-8" />
-            <th class="w-8 !px-0 text-center">
+            <th class="px-0 w-8" />
+            <th class="w-8 px-0 text-center">
               {{ t('common.priority') }}
             </th>
-            <th class="ps-6">
+            <th>
               {{ t('common.name') }}
             </th>
-            <th class="!pl-0" />
+            <th class="pl-0" />
           </tr>
         </thead>
-        <tbody v-if="noResults">
-          <tr>
-            <td colspan="4">
-              <div class="flex justify-center p-3 text-h6">
-                {{ t('prioritized_list.item.empty', itemNameTr) }}
-              </div>
-            </td>
-          </tr>
-        </tbody>
         <TransitionGroup
-          v-else
           move-class="transition-all"
           tag="tbody"
         >
@@ -198,7 +190,7 @@ const autoCompleteHint = computed<string>(() => {
             @remove="remove(identifier)"
           />
         </TransitionGroup>
-      </SimpleTable>
+      </RuiTable>
     </RuiCard>
     <ActionStatusIndicator
       v-if="status && (status.success || status.error)"
