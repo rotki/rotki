@@ -939,6 +939,28 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 else:  # Unable to decode TxIO if it has no address and isn't op_return
                     log.error(f'Failed to decode {tx_io} in transaction {tx.tx_id}. Skipping.')
 
+        if tx.is_coinbase:
+            # A coinbase transaction pays newly minted coins. Its single input creates value
+            # instead of spending it, so the outputs a tracked address receives are mining
+            # rewards. No api deserializes that input: mempool omits it and the others
+            # report a zero-value TxIO without an address.
+            reward_events: list[BitcoinEvent] = []
+            for output_address, amount in io_totals_per_address[BtcTxIODirection.OUTPUT].items():
+                if amount == ZERO or output_address not in self.tracked_accounts_set:
+                    continue  # op_return outputs carry no value
+                reward_events.append(self.create_event(
+                    tx=tx,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.REWARD,
+                    amount=amount,
+                    notes=f'Receive {amount} {self.asset.identifier} as a mining reward',
+                    location_label=self.get_display_address(output_address),
+                ))
+            # Sequence indexes are assigned per event below and the output order is stable.
+            for idx, event in enumerate(reward_events):
+                event.sequence_index = idx
+            return reward_events
+
         # Handle self transfers before fees to avoid including self transfer amounts
         # when calculating the proportional fee shares.
         adjusted_inputs, adjusted_outputs = self._handle_self_transfers(

@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
@@ -97,6 +98,19 @@ class BitcoinTx(NamedTuple):
     # default to the length of the lists for APIs that always return everything.
     vin_count: int | None = None
     vout_count: int | None = None
+
+    @property
+    def is_coinbase(self) -> bool:
+        """Whether the transaction pays newly minted coins. Its single input creates value
+        instead of spending it, so no api deserializes it as a regular TxIO: mempool omits
+        it (it has no prevout), leaving the input side empty, and blockchain.info /
+        blockcypher report a zero-value TxIO without an address. A regular transaction
+        always carries value on its input side, which is what tells the two apart.
+        """
+        return (
+            len(self.inputs) == 0 or
+            (len(self.inputs) == 1 and self.inputs[0].value == ZERO)
+        )
 
     @property
     def is_complete(self) -> bool:
