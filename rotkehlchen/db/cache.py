@@ -17,6 +17,7 @@ class DBCacheStatic(Enum):
     LAST_BALANCE_SAVE: Final = 'last_balance_save'
     LAST_DATA_UPLOAD_TS: Final = 'last_data_upload_ts'
     LAST_DATA_UPDATES_TS: Final = 'last_data_updates_ts'
+    LAST_DATA_UPDATES_FAILED_TS: Final = 'last_data_updates_failed_ts'
     LAST_OWNED_ASSETS_UPDATE: Final = 'last_owned_assets_update'
     LAST_EVM_ACCOUNTS_DETECT_TS: Final = 'last_evm_accounts_detect_ts'
     LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'

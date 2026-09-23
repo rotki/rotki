@@ -1,11 +1,13 @@
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
+import rsqlite
 from packaging import version as pversion
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
+from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -18,8 +20,9 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -52,6 +55,25 @@ from .constants import NO_ACCOUNTING_COUNTERPARTY, UpdateType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Errors a single category of remote updates can fail with. They all originate either from
+# bad/incomplete remote data, from the data repo not being reachable, or from a problem writing
+# to either of the two DB drivers. Each category is isolated with them so that a broken update
+# for one of them is reported, leaves its version pending for a later retry and does not stop
+# the other, independent categories.
+REMOTE_UPDATE_ERRORS: Final = (
+    RemoteError,
+    DeserializationError,
+    ConversionError,
+    InputError,
+    UnknownAsset,
+    InvalidVersion,
+    KeyError,
+    TypeError,
+    sqlcipher.Error,  # pylint: disable=no-member
+    rsqlite.Error,  # pylint: disable=no-member
+)
+PENDING_RPC_NODES_UPDATE: Final = 'pending_rpc_nodes_update'
 
 
 def _deserialize_accounting_rule(
@@ -120,16 +142,28 @@ class RotkiDataUpdater:
             from_version: int,
             to_version: int,
             limits: dict[str, dict],
-    ) -> None:
+    ) -> bool:
         """Common code to update a single type of data
 
         Check the updates in the inclusive range [from_version + 1, to_version] and apply
         the needed updates if any. Also save latest applied update type in the DB.
+
+        A version is remembered only once its update function completed successfully. If
+        downloading it, its payload or applying it fails the error is logged and this type of
+        data stops being updated, so the failed version is left pending and retried by the next
+        update check. Later versions of the same type are not applied on top of a missing one
+        since they can depend on it.
         """
         for update_version in range(from_version + 1, to_version + 1):
             version_info = limits.get(str(update_version), {})  # json treats keys as string
+            if not isinstance(version_info, dict):
+                raise DeserializationError(
+                    f'Invalid {update_type.value} limits for v{update_version}',
+                )
             min_version = version_info.get('min_version', None)
             if min_version is not None:
+                if not isinstance(min_version, str):
+                    raise DeserializationError(f'Invalid min_version for {update_type.value} v{update_version}')  # noqa: E501
                 p_min_version = pversion.parse(min_version)
                 if p_min_version > self.version:
                     log.warning(f'Not updating {update_type.value} to {update_version=} due to {min_version=} and {self.version=}')  # noqa: E501
@@ -137,6 +171,8 @@ class RotkiDataUpdater:
 
             max_version = version_info.get('max_version', None)
             if max_version is not None:
+                if not isinstance(max_version, str):
+                    raise DeserializationError(f'Invalid max_version for {update_type.value} v{update_version}')  # noqa: E501
                 p_max_version = pversion.parse(max_version)
                 if p_max_version < self.version:
                     log.warning(f'Not updating {update_type.value} to {update_version=} due to {max_version=} and {self.version=}')  # noqa: E501
@@ -146,21 +182,48 @@ class RotkiDataUpdater:
             try:
                 updates = query_file(file_url, True)
             except RemoteError as e:
-                log.warning(f'Failed to update {update_type.value} due to {e!s}')
-                continue  # perhaps broken link? Skipping
+                log.error(
+                    'Failed to download %s update v%s due to %s. Leaving it unapplied so it is '
+                    'retried by the next update check',
+                    update_type.value,
+                    update_version,
+                    e,
+                )
+                return False
 
-            updated_data = updates.get(update_type.value)
+            updated_data = updates.get(update_type.value) if isinstance(updates, dict) else None
             if updated_data is None:
-                log.error(f'Remote update {file_url} does not contain {update_type.value} key')
-                continue  # perhaps broken file? Skipping
+                log.error(
+                    'Remote update %s does not contain %s key. Leaving it unapplied so it is '
+                    'retried by the next update check',
+                    file_url,
+                    update_type.value,
+                )
+                return False
 
             # At this point we can apply the update. Type ignore is due to different sigs of data
-            self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
+            try:
+                self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
+            except REMOTE_UPDATE_ERRORS:
+                log.exception(
+                    'Failed to apply %s update v%s. Leaving it unapplied so it is '
+                    'retried by the next update check',
+                    update_type.value,
+                    update_version,
+                )
+                return False
+
             with self.user_db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(  # this was the last update to be applied for this data type, so remember it  # noqa: E501
                     'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
                     (update_type.serialize(), update_version),
                 )
+                if update_type == UpdateType.RPC_NODES:
+                    write_cursor.execute(
+                        'DELETE FROM key_value_cache WHERE name=?',
+                        (PENDING_RPC_NODES_UPDATE,),
+                    )
+        return True
 
     def _get_remote_info_json(self) -> dict[str, Any]:
         """Retrieve remote file with information for different updates
@@ -193,30 +256,54 @@ class RotkiDataUpdater:
     def update_rpc_nodes(self, data: list[dict[str, Any]], version: int) -> None:
         """RPC nodes update code. It also updates the user db with these default nodes."""
         log.info(f'Applying update for rpc nodes to v{version}')
-        new_default_nodes: list[tuple[Any, ...]] = [
-            (
-                node['name'],
-                node['endpoint'],
-                node['owned'],
-                node['active'],
-                str(FVal(node['weight'])),
-                node['blockchain'],
-            )
-            for node in data
-        ]
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # Update the default nodes, stored in the global DB
-            existing_default_nodes = write_cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()  # noqa: E501
-            write_cursor.execute('DELETE FROM default_rpc_nodes')
-            write_cursor.executemany(
-                'INSERT OR IGNORE INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
-                'VALUES (?, ?, ?, ?, ?, ?)',
-                new_default_nodes,
-            )
+        try:
+            new_default_nodes: list[tuple[Any, ...]] = [
+                (
+                    node['name'],
+                    node['endpoint'],
+                    node['owned'],
+                    node['active'],
+                    str(FVal(node['weight'])),
+                    node['blockchain'],
+                )
+                for node in data
+            ]
+        except (KeyError, TypeError, ValueError) as e:
+            raise DeserializationError(f'Invalid RPC nodes update: {e}') from e
+
+        with self.user_db.conn.read_ctx() as cursor:
+            pending = cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name=?',
+                (PENDING_RPC_NODES_UPDATE,),
+            ).fetchone()
+        if pending is not None and (saved := json.loads(pending[0]))['version'] == version:
+            existing_default_nodes = saved['nodes']
+            initial_user_nodes = saved['user_nodes']
+        else:
+            with GlobalDBHandler().conn.read_ctx() as cursor:
+                existing_default_nodes = cursor.execute(
+                    'SELECT * FROM default_rpc_nodes',
+                ).fetchall()
+            with self.user_db.conn.read_ctx() as cursor:
+                initial_user_nodes = cursor.execute(
+                    'SELECT name, endpoint, owned, blockchain FROM rpc_nodes',
+                ).fetchall()
+            # Save both snapshots before changing the user DB. A retry needs to distinguish
+            # nodes inserted by this update from nodes the user had already added.
+            with self.user_db.conn.write_ctx() as cursor:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                    (PENDING_RPC_NODES_UPDATE, json.dumps({
+                        'version': version,
+                        'nodes': existing_default_nodes,
+                        'user_nodes': initial_user_nodes,
+                    })),
+                )
 
         added, removed = self._update_user_nodes(
             existing_default_nodes=existing_default_nodes,
             new_default_nodes=new_default_nodes,
+            initial_user_nodes=initial_user_nodes,
         )
         if self.chains_aggregator is not None:
             for manager in self.chains_aggregator.iterate_chain_managers_with_nodes():
@@ -232,6 +319,14 @@ class RotkiDataUpdater:
                             blockchain=inquirer.blockchain, only_active=True,
                         ) if node.node_info in chain_added
                     ])
+
+        with GlobalDBHandler().conn.write_ctx() as cursor:
+            cursor.execute('DELETE FROM default_rpc_nodes')
+            cursor.executemany(
+                'INSERT OR IGNORE INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                new_default_nodes,
+            )
 
     def update_accounting_rules(
             self,
@@ -522,45 +617,92 @@ class RotkiDataUpdater:
             update_function(entries=entries, skip_errors=True)
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
-        """Retrieve the information about the latest available update"""
+        """Retrieve the information about the latest available update
+
+        Each type of data is updated independently of the others. A failure to update one of them
+        is reported and leaves its versions pending for the next update check while the rest are
+        still applied.
+        """
         log.debug('Checking for remote updates')
+        failed = False
+        with self.user_db.conn.read_ctx() as cursor:
+            warn_on_failure = cursor.execute(
+                'SELECT 1 FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value,),
+            ).fetchone() is None
         try:
             remote_information = self._get_remote_info_json()
         except RemoteError as e:
             log.error(f'Could not retrieve json update information due to {e!s}')
-            # skip updates, but write last data update to not spam periodic tasks
+            failed = True
         else:
             for update_type in updates:
                 try:
+                    if not isinstance(remote_information, dict):
+                        raise DeserializationError('Remote update info is not an object')
                     info = remote_information[update_type.value]
+                    if not isinstance(info, dict):
+                        raise DeserializationError(f'Invalid {update_type.value} update info')
                     latest_version = info['latest']
-                except KeyError as e:
-                    log.error(f'Could not find key {e} in remote update info file for {update_type.value}')  # noqa: E501
-                    continue
-                limits = info.get('limits', {})
+                    if type(latest_version) is not int or latest_version < 0:
+                        raise DeserializationError(
+                            f'Invalid latest version for {update_type.value}',
+                        )
+                    limits = info.get('limits', {})
+                    if not isinstance(limits, dict):
+                        raise DeserializationError(f'Invalid limits for {update_type.value}')
 
-                # Get latest applied version
-                with self.user_db.conn.read_ctx() as cursor:
-                    local_version = self._check_for_last_version(
-                        cursor=cursor,
-                        update_type=update_type,
+                    with self.user_db.conn.read_ctx() as cursor:
+                        local_version = self._check_for_last_version(
+                            cursor=cursor,
+                            update_type=update_type,
+                        )
+                    log.debug(
+                        'For update_type=%s we have local_version=%s and latest_version=%s',
+                        update_type,
+                        local_version,
+                        latest_version,
                     )
+                    if local_version < latest_version and not self.update_single(
+                            update_type=update_type,
+                            from_version=local_version,
+                            to_version=latest_version,
+                            limits=limits,
+                    ):
+                        failed = True
+                        if warn_on_failure:
+                            self.msg_aggregator.add_warning(
+                                f'Failed to update {update_type.value.replace("_", " ")}. It will be retried later.',  # noqa: E501
+                            )
+                except REMOTE_UPDATE_ERRORS:
+                    failed = True
+                    log.exception(
+                        'Failed to update %s. Continuing with the rest of the updates',
+                        update_type.value,
+                    )
+                    if warn_on_failure:
+                        self.msg_aggregator.add_warning(
+                            f'Failed to update {update_type.value.replace("_", " ")}. It will be retried later.',  # noqa: E501
+                        )
 
-                # Update all remote data
-                log.debug(f'For {update_type=} we have {local_version=} and {latest_version=}')
-                if local_version < latest_version:
-                    self.update_single(
-                        update_type=update_type,
-                        from_version=local_version,
-                        to_version=latest_version,
-                        limits=limits,
-                    )
+        if set(updates) != set(UpdateType):
+            return  # partial migration checks must not change the full check's retry schedule
 
         with self.user_db.user_write() as cursor:
-            cursor.execute(  # remember last time data updates were detected
+            cursor.execute(
                 'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                (DBCacheStatic.LAST_DATA_UPDATES_TS.value, str(ts_now())),
+                (DBCacheStatic.LAST_DATA_UPDATES_TS.value, str(now := ts_now())),
             )
+            if failed:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                    (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value, str(now)),
+                )
+            else:
+                cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name=?',
+                    (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value,),
+                )
 
     @staticmethod
     def _check_for_last_version(cursor: DBCursor, update_type: UpdateType) -> int:
@@ -569,12 +711,18 @@ class RotkiDataUpdater:
             'SELECT value FROM settings WHERE name=?',
             (update_type.serialize(),),
         ).fetchone()
-        return int(found_version[0]) if found_version is not None else 0
+        if found_version is None:
+            return 0
+        try:
+            return int(found_version[0])
+        except ValueError as e:
+            raise DeserializationError(f'Invalid local version for {update_type.value}') from e
 
     def _update_user_nodes(
             self,
             existing_default_nodes: list[tuple[Any, ...]],
             new_default_nodes: list[tuple[Any, ...]],
+            initial_user_nodes: list[tuple[Any, ...]],
     ) -> tuple[set[NodeName], set[NodeName]]:
         """Updates the user nodes using the default nodes from the global db.
 
@@ -583,52 +731,61 @@ class RotkiDataUpdater:
         and the difference is deleted from the user db.
         2. Adds the new default rpc nodes to the user db.
 
-        Returns the added and removed user node identities, respectively.
+        Returns added and removed identities for supported chains only. Unsupported nodes in
+        the new defaults are stored, and absent unsupported defaults are deleted as usual.
 
         indexes 1 & 2 -> endpoint of node
         indexes 5 & 6 -> blockchain of node
         """
         with self.user_db.conn.read_ctx() as cursor:
-            user_nodes = cursor.execute(
-                'SELECT name, endpoint, owned, blockchain FROM rpc_nodes',
-            ).fetchall()
-            user_rpc_nodes = {(node[1], node[3]) for node in user_nodes}
+            current_user_nodes = {
+                (node[1], node[3]): node for node in cursor.execute(
+                    'SELECT name, endpoint, owned, blockchain FROM rpc_nodes',
+                )
+            }
+        user_rpc_nodes = set(current_user_nodes)
 
         # check for nodes to delete for the user
         nodes_to_delete = (
             {(node[2], node[6]) for node in existing_default_nodes} -
             {(node[1], node[5]) for node in new_default_nodes}
         ) & user_rpc_nodes
-        if len(nodes_to_delete) != 0:
-            log.debug(f'Deleting {nodes_to_delete} nodes from user database...')
-            with self.user_db.user_write() as write_cursor:
-                write_cursor.executemany(
-                    'DELETE FROM rpc_nodes WHERE endpoint=? AND blockchain=?',
-                    list(nodes_to_delete),
-                )
-
-        # determine the nodes to add to the user db by
-        # checking if it's not already present in the user db.
+        # determine the nodes to add to the user db by checking if they are already present.
         nodes_to_add = [
             node_to_add
             for node_to_add in new_default_nodes
             if (node_to_add[1], node_to_add[5]) not in user_rpc_nodes
         ]
         with self.user_db.user_write() as write_cursor:
-            log.debug(f'Adding {nodes_to_add} nodes to the user database...')
+            if nodes_to_delete:
+                log.debug('Deleting %s nodes from user database...', nodes_to_delete)
+                write_cursor.executemany(
+                    'DELETE FROM rpc_nodes WHERE endpoint=? AND blockchain=?',
+                    list(nodes_to_delete),
+                )
+            log.debug('Adding %s nodes to the user database...', nodes_to_add)
             write_cursor.executemany(
                 'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
                 'VALUES(?, ?, ?, ?, ?, ?)',
                 nodes_to_add,
             )
         node_chains = {chain.value: chain for chain in CHAINS_WITH_NODES}
+        old_keys = {(node[2], node[6]) for node in existing_default_nodes}
+        new_keys = {(node[1], node[5]) for node in new_default_nodes}
+        initial_user_keys = {(node[1], node[3]) for node in initial_user_nodes}
+        available_keys = user_rpc_nodes | {(node[1], node[5]) for node in nodes_to_add}
         return (
             {NodeName(
                 name=node[0], endpoint=node[1], owned=bool(node[2]),
                 blockchain=node_chains[node[5]],
-            ) for node in nodes_to_add},
+            ) for node in new_default_nodes
+                if node[5] in node_chains and (node[1], node[5]) not in initial_user_keys and
+                (node[1], node[5]) not in old_keys and
+                (node[1], node[5]) in available_keys},
             {NodeName(
-                name=node[0], endpoint=node[1], owned=bool(node[2]),
-                blockchain=node_chains[node[3]],
-            ) for node in user_nodes if (node[1], node[3]) in nodes_to_delete},
+                name=current[0], endpoint=current[1], owned=bool(current[2]),
+                blockchain=node_chains[current[3]],
+            ) for node in initial_user_nodes
+                if node[3] in node_chains and (node[1], node[3]) in old_keys - new_keys
+                for current in (current_user_nodes.get((node[1], node[3]), node),)},
         )
