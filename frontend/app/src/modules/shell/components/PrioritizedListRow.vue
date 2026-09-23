@@ -26,7 +26,7 @@ const emit = defineEmits<{
 
 <template>
   <tr class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900 group">
-    <td class="!pr-0 !pl-2">
+    <td class="pr-0 pl-2">
       <div class="flex flex-col gap-1 transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible">
         <RuiButton
           :id="`move-up-${item.identifier}`"
@@ -65,7 +65,7 @@ const emit = defineEmits<{
         size="28px"
       />
     </td>
-    <td class="text-end !pl-0">
+    <td class="text-end pl-0">
       <RuiTooltip
         v-if="!disableDelete"
         :options="{ placement: 'top' }"

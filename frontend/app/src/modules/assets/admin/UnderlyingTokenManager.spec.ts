@@ -25,7 +25,7 @@ const stubs = {
   },
   RuiMenuSelect: inputStub('RuiMenuSelect'),
   RuiTextField: inputStub('RuiTextField'),
-  SimpleTable: { name: 'SimpleTable', template: '<table><slot /></table>' },
+  RuiTable: { name: 'RuiTable', template: '<table><slot /></table>' },
   UnderlyingTokenWeightHint: true,
 };
 

@@ -5,7 +5,6 @@ import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 defineProps<{
   entry: HistoryEventEntry;
@@ -22,12 +21,12 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <!-- the row being matched, as a summary table; `PotentialMatchSubjectCard` is the pinned-width half -->
-  <SimpleTable data-testid="potential-match-subject">
+  <RuiTable data-testid="potential-match-subject">
     <thead>
       <tr>
         <th>{{ t('common.datetime') }}</th>
         <th>{{ t('common.type') }}</th>
-        <th class="!text-center">
+        <th class="text-center">
           {{ locationHeader }}
         </th>
         <th>{{ t('common.asset') }}</th>
@@ -64,5 +63,5 @@ const { t } = useI18n({ useScope: 'global' });
         </td>
       </tr>
     </tbody>
-  </SimpleTable>
+  </RuiTable>
 </template>

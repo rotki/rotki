@@ -5,7 +5,6 @@ import RpcNodeStatusCell from '@/modules/settings/general/rpc/RpcNodeStatusCell.
 import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';
 import { useBlockchainRpcNodeManager } from '@/modules/settings/general/rpc/use-blockchain-rpc-node-manager';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const { chain, chains } = defineProps<{
   chain: Blockchain;
@@ -53,7 +52,15 @@ defineExpose({
 </script>
 
 <template>
-  <SimpleTable class="bg-white dark:bg-transparent">
+  <RuiTable
+    class="bg-white dark:bg-transparent"
+    :loading="loading"
+    :error="loadError"
+    :error-title="t('evm_rpc_node_manager.loading_error.title', { chain })"
+    :retry-text="t('common.actions.retry')"
+    :empty="nodes.length === 0 ? { label: t('evm_rpc_node_manager.no_nodes') } : false"
+    @retry="loadNodes()"
+  >
     <thead>
       <tr>
         <th>{{ t('evm_rpc_node_manager.node') }}</th>
@@ -76,51 +83,6 @@ defineExpose({
       </tr>
     </thead>
     <tbody>
-      <tr v-if="loading">
-        <td
-          colspan="4"
-          class="py-6"
-          data-testid="rpc-nodes-loading"
-        >
-          <RuiProgress
-            color="primary"
-            variant="indeterminate"
-            circular
-            size="24"
-          />
-        </td>
-      </tr>
-      <tr v-else-if="loadError">
-        <td colspan="4">
-          <RuiAlert
-            type="error"
-            :title="t('evm_rpc_node_manager.loading_error.title', { chain })"
-            data-testid="rpc-nodes-error"
-          >
-            <div class="flex flex-col items-start gap-2">
-              <span>{{ loadError }}</span>
-              <RuiButton
-                size="sm"
-                color="error"
-                variant="outlined"
-                data-testid="rpc-nodes-retry"
-                @click="loadNodes()"
-              >
-                {{ t('common.actions.retry') }}
-              </RuiButton>
-            </div>
-          </RuiAlert>
-        </td>
-      </tr>
-      <tr v-else-if="nodes.length === 0">
-        <td
-          colspan="4"
-          class="py-6 text-center text-rui-text-secondary"
-          data-testid="rpc-nodes-empty"
-        >
-          {{ t('evm_rpc_node_manager.no_nodes') }}
-        </td>
-      </tr>
       <tr
         v-for="(item, index) in nodes"
         :key="index + item.name"
@@ -220,7 +182,7 @@ defineExpose({
         </td>
       </tr>
     </tbody>
-  </SimpleTable>
+  </RuiTable>
   <BlockchainRpcNodeFormDialog
     v-model="modelState"
     :chains="chains"

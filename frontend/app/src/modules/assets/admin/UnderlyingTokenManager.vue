@@ -5,7 +5,6 @@ import UnderlyingTokenWeightHint from '@/modules/assets/admin/UnderlyingTokenWei
 import { evmTokenKindsData } from '@/modules/core/common/chains';
 import { useForm } from '@/modules/core/form/use-form';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
 const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 
@@ -161,7 +160,7 @@ function editToken(token: UnderlyingToken): void {
       </RuiButton>
     </form>
 
-    <SimpleTable class="underlying-tokens min-h-24">
+    <RuiTable class="underlying-tokens min-h-24">
       <thead>
         <tr>
           <th scope="col">
@@ -204,6 +203,6 @@ function editToken(token: UnderlyingToken): void {
           </td>
         </tr>
       </tbody>
-    </SimpleTable>
+    </RuiTable>
   </div>
 </template>
