@@ -29,12 +29,21 @@ const URGENCY_ICON_CLASSES: Record<ActionUrgency, string> = {
 
 const LOCKED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-disabled';
 
+const SET_ASIDE_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary';
+
 const { t } = useI18n({ useScope: 'global' });
 const { href, linkTarget, onLinkClick } = useLinks();
 
-const color = computed<ContextColorsType | undefined>(() => item.locked ? undefined : URGENCY_COLORS[item.urgency]);
+/** A row the user set aside (snoozed or dismissed) keeps its actions but drops its urgency colour. */
+const toned = computed<boolean>(() => item.locked || item.informational);
 
-const iconClass = computed<string>(() => item.locked ? LOCKED_ICON_CLASS : URGENCY_ICON_CLASSES[item.urgency]);
+const color = computed<ContextColorsType | undefined>(() => get(toned) ? undefined : URGENCY_COLORS[item.urgency]);
+
+const iconClass = computed<string>(() => {
+  if (item.locked)
+    return LOCKED_ICON_CLASS;
+  return item.informational ? SET_ASIDE_ICON_CLASS : URGENCY_ICON_CLASSES[item.urgency];
+});
 
 const lockedHint = computed<string>(() => item.minimumTier
   ? t('action_center.locked_hint', { tier: item.minimumTier })
@@ -62,7 +71,7 @@ const lockedHint = computed<string>(() => item.minimumTier
       <div class="flex items-center gap-2 flex-wrap">
         <span
           class="font-medium"
-          :class="item.locked ? 'text-rui-text-secondary' : 'text-rui-text'"
+          :class="toned ? 'text-rui-text-secondary' : 'text-rui-text'"
         >
           {{ item.title }}
         </span>

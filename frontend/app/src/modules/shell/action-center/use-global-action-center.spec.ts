@@ -82,6 +82,12 @@ function row(id: string, overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
+function runOption(item: ActionItem | undefined, id: string): void {
+  const option = item?.options.find(candidate => candidate.id === id);
+  assert(option?.target.kind === 'run');
+  option.target.run();
+}
+
 let scope: EffectScope | undefined;
 
 function center(): ReturnType<typeof useGlobalActionCenter> {
@@ -93,6 +99,7 @@ function center(): ReturnType<typeof useGlobalActionCenter> {
 
 describe('modules/shell/action-center/use-global-action-center', () => {
   beforeEach(() => {
+    localStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
     route.name = '/dashboard/';
@@ -254,6 +261,34 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     await flushPromises();
 
     expect(state.refreshHistory).toHaveBeenCalledOnce();
+  });
+
+  it('should stop counting a snoozed row and set it aside at the end of its section', async () => {
+    set(state.integrationRows, [row('snoozed'), row('other')]);
+    const { count, sections } = center();
+    await flushPromises();
+
+    runOption(get(sections)[0].items[0], 'remind-later');
+    await nextTick();
+
+    expect(get(count)).toBe(1);
+    expect(get(sections)[0].items.map(item => item.id)).toEqual(['other', 'snoozed']);
+  });
+
+  it('should mark a snoozed row as new once it is brought back, though it was seen before', async () => {
+    set(state.integrationRows, [row('snoozed')]);
+    const { markSeen, newIds, sections } = center();
+    await flushPromises();
+    markSeen();
+    await nextTick();
+    expect(get(newIds)).toEqual([]);
+
+    runOption(get(sections)[0].items[0], 'remind-later');
+    await nextTick();
+    runOption(get(sections)[0].items[0], 'remind-now');
+    await nextTick();
+
+    expect(get(newIds)).toEqual(['snoozed']);
   });
 
   it('should keep checking while the history counts are still pending', async () => {

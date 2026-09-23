@@ -18,6 +18,8 @@ interface UseActionCenterSeenReturn {
   /** ids of the active rows that appeared, or whose count grew, since the user last looked */
   newIds: ComputedRef<string[]>;
   markSeen: () => void;
+  /** Drops what was seen of one row, so it reads as new the next time it counts. */
+  forget: (id: string) => void;
 }
 
 /**
@@ -70,5 +72,9 @@ export function useActionCenterSeen(options: UseActionCenterSeenOptions): UseAct
       set(seen, lowered);
   });
 
-  return { markSeen, newIds };
+  function forget(id: string): void {
+    set(seen, Object.fromEntries(Object.entries(get(seen)).filter(([seenId]) => seenId !== id)));
+  }
+
+  return { forget, markSeen, newIds };
 }

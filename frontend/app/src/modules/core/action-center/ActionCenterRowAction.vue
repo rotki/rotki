@@ -11,6 +11,10 @@ const emit = defineEmits<{
   action: [item: ActionItem<TTarget>];
   option: [target: TTarget];
 }>();
+
+/** Outlined while the row asks for something; plain text for what rotki retries or the user set aside. */
+const variant = computed<'text' | 'outlined'>(() =>
+  item.urgency === ActionUrgency.AUTOMATIC || item.informational ? 'text' : 'outlined');
 </script>
 
 <template>
@@ -21,7 +25,7 @@ const emit = defineEmits<{
     <template #activator="{ attrs }">
       <RuiButton
         size="sm"
-        :variant="item.urgency === ActionUrgency.AUTOMATIC ? 'text' : 'outlined'"
+        :variant="variant"
         :color="color"
         class="shrink-0"
         data-testid="actions-center-row-action"
@@ -56,7 +60,7 @@ const emit = defineEmits<{
   <RuiButton
     v-else
     size="sm"
-    :variant="item.urgency === ActionUrgency.AUTOMATIC ? 'text' : 'outlined'"
+    :variant="variant"
     :color="color"
     class="shrink-0"
     data-testid="actions-center-row-action"

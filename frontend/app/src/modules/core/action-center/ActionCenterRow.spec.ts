@@ -42,6 +42,16 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toEqual([[item]]);
   });
 
+  it('should drop the urgency colour from a row the user set aside, keeping its action', async () => {
+    const wrapper = mountRow(createItem());
+    expect(wrapper.findComponent({ name: 'RuiChip' }).props('color')).toBe('warning');
+
+    await wrapper.setProps({ item: createItem({ informational: true }) });
+
+    expect(wrapper.findComponent({ name: 'RuiChip' }).props('color')).not.toBe('warning');
+    expect(wrapper.find('[data-testid=actions-center-row-action]').exists()).toBe(true);
+  });
+
   it('should mark a row as new only when told it is', async () => {
     const wrapper = mountRow(createItem());
     expect(wrapper.find('[data-testid=actions-center-row-new]').exists()).toBe(false);
