@@ -4614,8 +4614,6 @@
       "cancelled": "Resolution cancelled. {completed} of {total} conflicts resolved.",
       "completed": "Successfully resolved all {total} conflicts.",
       "completed_with_errors": "Resolved {completed} of {total} conflicts. {failed} failed.",
-      "progress": "Resolved {completed} of {total} conflicts...",
-      "started": "Resolving {total} internal transaction conflicts...",
       "title": "Internal Tx Conflict Resolution"
     },
     "pinned": {
