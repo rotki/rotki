@@ -2,18 +2,17 @@
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
-import HistoryQueryIndicatorDismissalThresholdSetting from './HistoryQueryIndicatorDismissalThresholdSetting.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { resetQueryStatus } = useHistorySyncStatus();
+const { resetDismissal } = useHistorySyncStatus();
 
 const showSuccess = ref<boolean>(false);
 let successTimeout: ReturnType<typeof setTimeout> | undefined;
 
 function handleReset(): void {
-  resetQueryStatus();
+  resetDismissal();
   set(showSuccess, true);
 
   if (successTimeout) {
@@ -42,12 +41,6 @@ onUnmounted(() => {
         {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.subtitle') }}
       </template>
       <HistoryQueryIndicatorMinOutOfSyncPeriodSetting />
-    </SettingsItem>
-    <SettingsItem setting-key="evmQueryIndicatorDismissalThreshold">
-      <template #subtitle>
-        {{ t('frontend_settings.history_query_indicator.dismissal_threshold.subtitle') }}
-      </template>
-      <HistoryQueryIndicatorDismissalThresholdSetting />
     </SettingsItem>
     <div>
       <SettingsItem action-key="resetDismissalStatus">

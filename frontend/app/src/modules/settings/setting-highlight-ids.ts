@@ -22,7 +22,6 @@ export const SettingsHighlightIds = {
   CURRENCY_LOCATION: 'setting-currency-location',
   DATE_FORMAT: 'setting-date-format',
   DISABLED_CHAIN_QUERIES: 'setting-disabled-chain-queries',
-  DISMISSAL_THRESHOLD: 'setting-dismissal-threshold',
   DISPLAY_DATE_IN_LOCALTIME: 'setting-display-date-in-localtime',
   DOCK_SHOW_SUMMARY: 'setting-dock-show-summary',
   EXPLORERS: 'setting-explorers',

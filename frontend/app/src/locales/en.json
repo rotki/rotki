@@ -3694,14 +3694,6 @@
       }
     },
     "history_query_indicator": {
-      "dismissal_threshold": {
-        "label": "Dismissal threshold (hours)",
-        "subtitle": "The time in hours a dismissed history sync row stays set aside before it counts in the action center again",
-        "title": "Dismissal Threshold",
-        "validation": {
-          "error": "Failed to set the dismissal threshold"
-        }
-      },
       "min_out_of_sync_period": {
         "label": "Minimum out of sync period (hours)",
         "subtitle": "The minimum time in hours that history must be out of sync before the action center reports it",

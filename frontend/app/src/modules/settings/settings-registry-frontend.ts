@@ -74,15 +74,6 @@ export const frontendRegistry = {
       titleKey: msg.$t('password_confirmation_setting.title'),
     },
   }),
-  evmQueryIndicatorDismissalThreshold: frontend('evmQueryIndicatorDismissalThreshold', {
-    anchor: SettingsHighlightIds.DISMISSAL_THRESHOLD,
-    search: {
-      category: SettingsCategoryIds.INTERFACE_ONLY,
-      group: msg.$t('frontend_settings.history_query_indicator.title'),
-      keywords: [msg.$t('frontend_settings.history_query_indicator.dismissal_threshold.subtitle')],
-      titleKey: msg.$t('frontend_settings.history_query_indicator.dismissal_threshold.title'),
-    },
-  }),
   evmQueryIndicatorMinOutOfSyncPeriod: frontend('evmQueryIndicatorMinOutOfSyncPeriod', {
     anchor: SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD,
     search: {

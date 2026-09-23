@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryQueryIndicatorSettings from '@/modules/settings/interface/HistoryQueryIndicatorSettings.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { resetQueryStatus } = vi.hoisted(() => ({ resetQueryStatus: vi.fn<() => void>() }));
+const { resetDismissal } = vi.hoisted(() => ({ resetDismissal: vi.fn<() => void>() }));
 
 vi.mock('@/modules/history/sync-status/use-history-sync-status', () => ({
-  useHistorySyncStatus: (): object => ({ resetQueryStatus }),
+  useHistorySyncStatus: (): object => ({ resetDismissal }),
 }));
 
 const SUCCESS_TEXT = 'frontend_settings.history_query_indicator.reset_dismissal_status.success';
@@ -16,7 +16,6 @@ function createWrapper(): VueWrapper {
     global: {
       plugins: [createRuiPlugin({})],
       stubs: {
-        HistoryQueryIndicatorDismissalThresholdSetting: true,
         HistoryQueryIndicatorMinOutOfSyncPeriodSetting: true,
         SettingCategory: { template: '<div><slot name="title" /><slot /></div>' },
         SettingsItem: { template: '<div><slot name="title" /><slot name="subtitle" /><slot /></div>' },
@@ -28,7 +27,7 @@ function createWrapper(): VueWrapper {
 describe('modules/settings/interface/HistoryQueryIndicatorSettings', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    resetQueryStatus.mockClear();
+    resetDismissal.mockClear();
   });
 
   afterEach(() => {
@@ -41,7 +40,7 @@ describe('modules/settings/interface/HistoryQueryIndicatorSettings', () => {
 
     await button.trigger('click');
 
-    expect(resetQueryStatus).toHaveBeenCalledOnce();
+    expect(resetDismissal).toHaveBeenCalledOnce();
     expect(wrapper.text()).toContain(SUCCESS_TEXT);
     expect(button.attributes('disabled')).toBeDefined();
 

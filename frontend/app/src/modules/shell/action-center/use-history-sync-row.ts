@@ -22,16 +22,16 @@ function withoutTimezone(format: string): string {
  * @remarks
  * Its action starts the same user-started sync as the history page's refresh, and the center stays
  * open while it runs. Listed among the passed checks, it links to history events instead, so a
- * label never starts a sync. Dismissing it keeps the row listed but stops it counting, until the dismissal
- * threshold passes or a major or minor update resets it. A user with no history sources gets no row
- * at all.
+ * label never starts a sync. Dismissing it keeps the row listed but stops it counting, until history
+ * moves on from the state it was dismissed in, the session ends, or a major or minor update resets
+ * it. A user with no history sources gets no row at all.
  */
 export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
 
   const {
     dismiss,
-    dismissedRecently,
+    dismissed,
     hasTxAccounts,
     isNeverQueried,
     justUpdated,
@@ -83,7 +83,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
     if (!get(hasTxAccounts))
       return [];
 
-    const setAside = get(dismissedRecently);
+    const setAside = get(dismissed);
 
     return [createActionItem<ActionTarget, string>({
       actionLabel: t('action_center.rows.history.sync.action'),

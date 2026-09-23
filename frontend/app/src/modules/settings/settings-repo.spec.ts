@@ -135,7 +135,6 @@ describe('useSettingsRepo frontend channel', () => {
       privacyMode: PrivacyMode.NORMAL,
       persistPrivacySettings: false,
       evmQueryIndicatorMinOutOfSyncPeriod: 12,
-      evmQueryIndicatorDismissalThreshold: 6,
       lastPasswordConfirmed: 0,
       passwordConfirmationInterval: 604800,
       newlyDetectedTokensMaxCount: 500,
