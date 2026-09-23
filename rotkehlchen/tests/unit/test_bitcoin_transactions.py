@@ -1615,6 +1615,112 @@ def test_deserialize_mempool_coinbase_tx(bitcoin_manager: BitcoinManager) -> Non
     assert len(tx.outputs) == 1
 
 
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_to_tracked_address_is_a_reward(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A coinbase transaction pays newly minted coins to a miner. Its single input
+    creates value instead of spending it, so the outputs a tracked address receives
+    decode as reward events even though the input cannot be deserialized.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000),
+            _esplora_p2wpkh_txio(value=5_000, address=string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')),  # noqa: E501
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx.tx_id),
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}',
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_BTC,
+        amount=FVal('3.125'),
+        location_label=btc_accounts[0],
+        notes='Receive 3.125 BTC as a mining reward',
+    )]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_to_untracked_addresses_decodes_to_nothing(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Outputs of a coinbase transaction that pay nobody tracked produce no events."""
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000, address=string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')),  # noqa: E501
+            {'scriptpubkey': '6a0b68656c6c6f20776f726c64', 'scriptpubkey_type': 'op_return', 'value': 0},  # noqa: E501
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == []
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS, string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')]])  # noqa: E501
+def test_coinbase_tx_with_two_tracked_outputs_gets_one_event_each(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Like mining pools paying several tracked addresses, every tracked output gets its own
+    reward event with a distinct sequence index.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000, address=btc_accounts[0]),
+            _esplora_p2wpkh_txio(value=5_000, address=btc_accounts[1]),
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [
+        BitcoinEvent(
+            tx_ref=BTCTxId(tx.tx_id),
+            group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}'),
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1700000000000)),
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_BTC,
+            amount=FVal('3.125'),
+            location_label=btc_accounts[0],
+            notes='Receive 3.125 BTC as a mining reward',
+        ),
+        BitcoinEvent(
+            tx_ref=BTCTxId(tx.tx_id),
+            group_identifier=group_identifier,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_BTC,
+            amount=FVal('0.00005'),
+            location_label=btc_accounts[1],
+            notes='Receive 0.00005 BTC as a mining reward',
+        ),
+    ]
+
+
 def test_deserialize_mempool_unconfirmed_tx(bitcoin_manager: BitcoinManager) -> None:
     assert bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(block_height=None)) is None
 
