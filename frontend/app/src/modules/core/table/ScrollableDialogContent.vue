@@ -64,7 +64,10 @@ const boundStyle = computed<Record<string, string> | undefined>(() =>
     >
       <slot name="header" />
     </div>
-    <div class="flex-1 min-h-0 overflow-y-auto scroll-smooth">
+    <div
+      class="flex-1 min-h-0 overflow-y-auto scroll-smooth"
+      data-testid="scrollable-dialog-body"
+    >
       <slot />
     </div>
     <div

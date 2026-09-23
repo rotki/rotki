@@ -38,8 +38,10 @@ function showInEvents(conflict: InternalTxConflict): void {
     max-width="1000"
   >
     <RuiCard
-      content-class="!py-0"
+      class="max-h-[90vh] flex flex-col overflow-hidden"
+      content-class="!py-0 flex flex-col flex-1 min-h-0 overflow-hidden"
       divide
+      data-testid="internal-tx-conflicts-dialog"
     >
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 py-2">
@@ -61,7 +63,7 @@ function showInEvents(conflict: InternalTxConflict): void {
 
       <div
         v-if="showSettings"
-        class="px-4 pt-4 border-b border-default"
+        class="px-4 pt-4 border-b border-default shrink-0"
       >
         <InternalTxConflictRepullSettings compact />
       </div>
@@ -71,9 +73,10 @@ function showInEvents(conflict: InternalTxConflict): void {
         @show-in-events="showInEvents($event)"
       />
 
-      <div class="w-full flex justify-end pb-4">
+      <div class="w-full flex justify-end pb-4 shrink-0">
         <RuiButton
           variant="text"
+          data-testid="internal-tx-conflicts-dialog-close"
           @click="closeDialog()"
         >
           {{ t('common.actions.close') }}

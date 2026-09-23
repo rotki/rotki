@@ -251,7 +251,7 @@ defineExpose({
 
     <ScrollableDialogContent
       fill
-      :class="{ 'px-3': compact }"
+      :class="{ 'px-3 pb-3': compact }"
     >
       <RuiDataTable
         v-model:sort.external="sort"

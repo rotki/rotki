@@ -33,6 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           variant="text"
           icon
+          data-testid="internal-tx-conflicts-pin"
           @click="emit('pin')"
         >
           <RuiIcon name="lu-pin" />
