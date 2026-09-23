@@ -172,6 +172,36 @@ describe('useHistoryEventsAutoFetch', () => {
     expect(onProgress).not.toHaveBeenCalled();
   });
 
+  it('should drop a read still waiting when the run settles, since the settle reads the table', async () => {
+    const onProgress = vi.fn().mockResolvedValue(undefined);
+    const onSettle = vi.fn().mockResolvedValue(undefined);
+    const shouldFetch = ref(true);
+    mountAutoFetch(shouldFetch, onProgress, onSettle);
+
+    startProducers(1);
+    await vi.advanceTimersByTimeAsync(10);
+    finishOne();
+    await vi.advanceTimersByTimeAsync(100);
+    set(shouldFetch, false);
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+
+    expect(onSettle).toHaveBeenCalledOnce();
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
+  it('should still read a modification signalled after the run settled', async () => {
+    const onProgress = vi.fn().mockResolvedValue(undefined);
+    const shouldFetch = ref(true);
+    const { markStale } = mountAutoFetch(shouldFetch, onProgress);
+
+    set(shouldFetch, false);
+    await vi.advanceTimersByTimeAsync(100);
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+
+    expect(onProgress).toHaveBeenCalledOnce();
+  });
+
   it('should read once when a completion and an event modification arrive together', async () => {
     const onProgress = vi.fn().mockResolvedValue(undefined);
     const { markStale } = mountAutoFetch(ref(true), onProgress);

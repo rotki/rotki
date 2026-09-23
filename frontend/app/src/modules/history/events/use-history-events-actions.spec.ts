@@ -3,6 +3,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type Blockchain, HistoryEventEntryType, Priority, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -143,6 +144,65 @@ describe('useHistoryEventsActions', () => {
       expect(mockMarkStale).toHaveBeenCalledOnce();
       expect(options.refetch).not.toHaveBeenCalled();
       scope.stop();
+    });
+  });
+
+  describe('reading the table', () => {
+    function mountWithControlledRead(): { refetch: Mock<() => Promise<void>>; finish: () => void; read: () => Promise<void> } {
+      const resolvers: (() => void)[] = [];
+      const refetch = vi.fn<() => Promise<void>>(async () => new Promise<void>((resolve) => {
+        resolvers.push(resolve);
+      }));
+      const actions = useHistoryEventsActions({ ...createOptions(), refetch, mainPage: ref(false), showDialog: vi.fn() });
+      return {
+        finish: (): void => resolvers.shift()?.(),
+        read: actions.fetch.dataAndLocations,
+        refetch,
+      };
+    }
+
+    it('should never run two reads at once', async () => {
+      const { finish, read, refetch } = mountWithControlledRead();
+
+      startPromise(read());
+      startPromise(read());
+      await flushPromises();
+
+      expect(refetch).toHaveBeenCalledOnce();
+
+      finish();
+      await flushPromises();
+
+      expect(refetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should fold callers arriving during a read into one follow-up read', async () => {
+      const { finish, read, refetch } = mountWithControlledRead();
+
+      const first = read();
+      const followers = [read(), read(), read()];
+      await flushPromises();
+      finish();
+      await flushPromises();
+      finish();
+      await Promise.all([first, ...followers]);
+
+      expect(refetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should read again for a caller arriving after the follow-up started', async () => {
+      const { finish, read, refetch } = mountWithControlledRead();
+
+      startPromise(read());
+      startPromise(read());
+      await flushPromises();
+      finish();
+      await flushPromises();
+      startPromise(read());
+      finish();
+      await flushPromises();
+
+      expect(refetch).toHaveBeenCalledTimes(3);
     });
   });
 

@@ -134,10 +134,9 @@ const tableHighlight = computed<HistoryEventsTableHighlight>(() => ({
   types: get(highlightTypes),
 }));
 
-const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
-const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeAutoMatchLoading);
+const autoMatching = logicOr(autoMatchLoading, bridgeAutoMatchLoading);
 
 const {
   groupedEventsByTxRef,
@@ -147,8 +146,8 @@ const {
   handleUpdateEventIds,
   originalGroups,
 } = useHistoryEventsViewActions({
+  autoMatching,
   autoMatchMovement,
-  backgroundLoading,
   fetchDataAndLocations: async () => actions.fetch.dataAndLocations(),
   fetchDataAndRedecode: async event => actions.fetch.dataAndRedecode(event),
   groups,
