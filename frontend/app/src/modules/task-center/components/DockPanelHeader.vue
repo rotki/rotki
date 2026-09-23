@@ -64,16 +64,26 @@ const segments = computed<{ key: string; className: string; width: string }[]>((
       <div class="font-medium leading-6 truncate">
         {{ title }}
       </div>
-      <RuiButton
-        class="-m-1 shrink-0"
-        variant="text"
-        icon
-        size="sm"
-        :aria-label="t('pending_task.collapse')"
-        @click="emit('collapse')"
+      <RuiTooltip
+        class="shrink-0"
+        :options="{ placement: 'top' }"
+        :open-delay="400"
       >
-        <RuiIcon name="lu-chevron-down" />
-      </RuiButton>
+        <template #activator>
+          <RuiButton
+            class="-m-1"
+            variant="text"
+            icon
+            size="sm"
+            :aria-label="t('pending_task.collapse')"
+            data-testid="dock-panel-collapse"
+            @click="emit('collapse')"
+          >
+            <RuiIcon name="lu-chevron-down" />
+          </RuiButton>
+        </template>
+        {{ t('pending_task.collapse') }}
+      </RuiTooltip>
     </div>
     <template v-if="summary && total > 0">
       <div
