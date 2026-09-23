@@ -846,6 +846,7 @@ class DBHandler:
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
+                DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
                 DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
                 DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,

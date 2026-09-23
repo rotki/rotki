@@ -21,6 +21,7 @@ log = RotkehlchenLogsAdapter(logger)
 # DB read for it, so correctness never depends on this being complete.
 SCHEDULER_PERIODIC_TASK_KEYS: Final = (
     DBCacheStatic.LAST_DATA_UPDATES_TS,
+    DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
     DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
     DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
     DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
@@ -52,6 +53,7 @@ def should_run_periodic_task(
         database: DBHandler,
         key_name: Literal[
             DBCacheStatic.LAST_DATA_UPDATES_TS,
+            DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
             DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
             DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
             DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,

@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import ExitStack
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
@@ -16,14 +17,18 @@ from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilterQuery
 from rotkehlchen.db.unresolved_conflicts import ConflictType
-from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
+from rotkehlchen.db.updates import PENDING_RPC_NODES_UPDATE, RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tasks.utils import prefetch_scheduler_task_timestamps
 from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -35,6 +40,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     TokenKind,
 )
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
@@ -459,6 +465,489 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
         assert {x[0] for x in cursor} == set()
 
 
+def _applied_update_versions(data_updater: RotkiDataUpdater) -> dict[str, str]:
+    """Returns the applied version recorded in the DB for each update category that has one"""
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        return dict(cursor.execute(
+            f'SELECT name, value FROM settings WHERE name IN ({", ".join("?" * len(UpdateType))})',
+            [x.serialize() for x in UpdateType],
+        ))
+
+
+@pytest.mark.parametrize('failure', [DeserializationError('invalid weight'), KeyError('weight')])
+def test_failed_rpc_nodes_update_is_retried(
+        data_updater: RotkiDataUpdater,
+        caplog,
+        failure: Exception,
+) -> None:
+    """A failed RPC nodes update leaves its version pending for a retry.
+
+    Its version is not marked as applied and no later version of it is applied on top of the gap,
+    while accounting rules and the rest of the independent categories are updated as always.
+    """
+    latest = 2
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=latest)))
+        broken = stack.enter_context(patch.object(
+            data_updater,
+            'update_rpc_nodes',
+            side_effect=failure,
+        ))
+        others = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType if update_type != UpdateType.RPC_NODES
+        ]
+        reset_update_type_mappings(data_updater)
+        with caplog.at_level(logging.ERROR):
+            data_updater.check_for_updates()
+
+    assert broken.call_count == 1, 'later versions must not be applied on top of a failed one'
+    assert 'Failed to apply rpc_nodes update v1.' in caplog.text
+    assert all(patch.call_count == latest for patch in others)
+    versions = _applied_update_versions(data_updater)
+    assert versions == {
+        update_type.serialize(): str(latest)
+        for update_type in UpdateType if update_type != UpdateType.RPC_NODES
+    }
+    assert data_updater.msg_aggregator.consume_warnings() == [
+        'Failed to update rpc nodes. It will be retried later.',
+    ]
+
+    # with the category working again the next check applies all the versions left pending
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=latest)))
+        retried = stack.enter_context(patch.object(data_updater, 'update_rpc_nodes'))
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert retried.call_count == latest
+    assert _applied_update_versions(data_updater)[UpdateType.RPC_NODES.serialize()] == str(latest)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        ) is None
+
+
+@pytest.mark.parametrize('failure_mode', ['download', 'missing_payload', 'array_payload'])
+def test_failed_rpc_nodes_download_is_retried(
+        data_updater: RotkiDataUpdater,
+        caplog,
+        failure_mode: str,
+) -> None:
+    """A failed download or a missing payload for a version stops its whole category.
+
+    The failed version is not marked as applied and later versions are not applied on top of the
+    gap, while the independent categories still update. With the download working again the next
+    check applies all the versions left pending.
+    """
+    latest = 2
+    valid_response = make_mock_github_response(latest=latest)
+
+    def mock_github_response(url, timeout):  # pylint: disable=unused-argument
+        if 'rpc_nodes/v1' in url:
+            if failure_mode == 'download':
+                return MockResponse(404, 'Not found')  # query_file turns this into RemoteError
+            return MockResponse(200, json.dumps(
+                [] if failure_mode == 'array_payload' else {},
+            ))  # a file without the rpc_nodes key
+        return valid_response(url, timeout)
+
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=mock_github_response))
+        broken = stack.enter_context(patch.object(data_updater, 'update_rpc_nodes'))
+        others = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType if update_type != UpdateType.RPC_NODES
+        ]
+        reset_update_type_mappings(data_updater)
+        with caplog.at_level(logging.ERROR):
+            data_updater.check_for_updates()
+
+    assert broken.call_count == 0, 'later versions must not be applied on top of a failed one'
+    if failure_mode == 'download':
+        assert 'Failed to download rpc_nodes update v1 due to ' in caplog.text
+    else:
+        assert 'does not contain rpc_nodes key' in caplog.text
+    assert all(patch.call_count == latest for patch in others)
+    assert _applied_update_versions(data_updater) == {
+        update_type.serialize(): str(latest)
+        for update_type in UpdateType if update_type != UpdateType.RPC_NODES
+    }
+    assert data_updater.msg_aggregator.consume_warnings() == [
+        'Failed to update rpc nodes. It will be retried later.',
+    ]
+
+    # with the download working again the next check applies all the versions left pending
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=latest)))
+        retried = stack.enter_context(patch.object(data_updater, 'update_rpc_nodes'))
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert retried.call_count == latest
+    assert _applied_update_versions(data_updater)[UpdateType.RPC_NODES.serialize()] == str(latest)
+
+
+@pytest.mark.parametrize('bad_info', [
+    [],
+    {'latest': '1'},
+    {'latest': 1, 'limits': []},
+    {'latest': 1, 'limits': {'1': []}},
+    {'latest': 1, 'limits': {'1': {'min_version': 'not-a-version'}}},
+])
+def test_broken_update_info_does_not_stop_the_rest(
+        data_updater: RotkiDataUpdater,
+        bad_info: Any,
+) -> None:
+    """A category with unusable update metadata is skipped without aborting the whole batch.
+
+    The failed category stays pending and an hourly retry is scheduled.
+    """
+    valid_response = make_mock_github_response(latest=1)
+
+    def mock_github_response(url, timeout):  # pylint: disable=unused-argument
+        response = valid_response(url, timeout)
+        if 'info' in url:
+            info = json.loads(response.text)
+            info['rpc_nodes'] = bad_info
+            return MockResponse(200, json.dumps(info))
+
+        return response
+
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=mock_github_response))
+        patches = {
+            update_type: stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))  # noqa: E501
+            for update_type in UpdateType
+        }
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert patches[UpdateType.RPC_NODES].call_count == 0
+    assert {
+        update_type for update_type, patch in patches.items() if patch.call_count == 1
+    } == set(UpdateType) - {UpdateType.RPC_NODES}
+    assert _applied_update_versions(data_updater) == {
+        update_type.serialize(): '1'
+        for update_type in UpdateType if update_type != UpdateType.RPC_NODES
+    }
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        ) is not None
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        ) is not None
+
+
+def test_nonmapping_update_info_is_retried(data_updater: RotkiDataUpdater) -> None:
+    with patch.object(data_updater, '_get_remote_info_json', return_value=[]):
+        data_updater.check_for_updates(updates=(UpdateType.RPC_NODES,))
+    assert _applied_update_versions(data_updater) == {}
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        ) is None
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        ) is None
+
+
+def test_partial_update_does_not_clear_full_check_failure(data_updater: RotkiDataUpdater) -> None:
+    with patch.object(data_updater, '_get_remote_info_json', return_value=[]):
+        data_updater.check_for_updates()
+    data_updater.msg_aggregator.consume_warnings()
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        failed_at = data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        )
+        checked_at = data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        )
+
+    with patch.object(data_updater, '_get_remote_info_json', return_value={
+        'spam_assets': {'latest': 0},
+        'rpc_nodes': {'latest': 0},
+    }):
+        data_updater.check_for_updates(updates=(UpdateType.SPAM_ASSETS, UpdateType.RPC_NODES))
+
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        ) == failed_at
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        ) == checked_at
+
+
+@pytest.mark.parametrize('bad_info', [False, True])
+def test_failed_update_warns_once_until_recovered(
+        data_updater: RotkiDataUpdater,
+        bad_info: bool,
+) -> None:
+    info: dict[str, Any] = {update_type.value: {'latest': 0} for update_type in UpdateType}
+    info['rpc_nodes'] = [] if bad_info else {'latest': 1}
+    with patch.object(data_updater, '_get_remote_info_json', return_value=info), patch(
+            'rotkehlchen.db.updates.query_file', return_value={},
+    ):
+        data_updater.check_for_updates()
+        assert data_updater.msg_aggregator.consume_warnings() == [
+            'Failed to update rpc nodes. It will be retried later.',
+        ]
+        data_updater.check_for_updates()
+        assert data_updater.msg_aggregator.consume_warnings() == []
+
+    with patch.object(data_updater, '_get_remote_info_json', return_value={
+        update_type.value: {'latest': 0} for update_type in UpdateType
+    }):
+        data_updater.check_for_updates()
+
+    with patch.object(data_updater, '_get_remote_info_json', return_value=info), patch(
+            'rotkehlchen.db.updates.query_file', return_value={},
+    ):
+        data_updater.check_for_updates()
+    assert data_updater.msg_aggregator.consume_warnings() == [
+        'Failed to update rpc nodes. It will be retried later.',
+    ]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_failed_data_update_uses_hourly_backoff(database: DBHandler) -> None:
+    now = ts_now()
+    with database.user_write() as cursor:
+        cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                (DBCacheStatic.LAST_DATA_UPDATES_TS.value, str(now)),
+                (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value, str(now)),
+            ],
+        )
+    manager = MagicMock()
+    manager.database = database
+    manager._scheduler_task_timestamps = prefetch_scheduler_task_timestamps(database)
+    assert TaskManager._maybe_check_data_updates(manager) is None
+    with patch('rotkehlchen.tasks.utils.ts_now', return_value=now + 3601):
+        assert TaskManager._maybe_check_data_updates(manager) is not None
+    with database.user_write() as cursor:
+        cursor.execute(
+            'DELETE FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value,),
+        )
+    manager._scheduler_task_timestamps = prefetch_scheduler_task_timestamps(database)
+    with patch('rotkehlchen.tasks.utils.ts_now', return_value=now + 3601):
+        assert TaskManager._maybe_check_data_updates(manager) is None
+
+
+def test_invalid_local_version_does_not_stop_other_categories(
+        data_updater: RotkiDataUpdater,
+) -> None:
+    with data_updater.user_db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            (UpdateType.RPC_NODES.serialize(), 'invalid'),
+        )
+    with (
+        patch.object(data_updater, '_get_remote_info_json', return_value={
+            'rpc_nodes': {'latest': 1},
+            'accounting_rules': {'latest': 1},
+        }),
+        patch('rotkehlchen.db.updates.query_file', return_value={'accounting_rules': []}),
+        patch.object(data_updater, 'update_accounting_rules') as accounting_update,
+    ):
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates(
+            updates=(UpdateType.RPC_NODES, UpdateType.ACCOUNTING_RULES),
+        )
+    accounting_update.assert_called_once()
+    assert _applied_update_versions(data_updater) == {
+        UpdateType.RPC_NODES.serialize(): 'invalid',
+        UpdateType.ACCOUNTING_RULES.serialize(): '1',
+    }
+
+
+def test_invalid_rpc_weight_does_not_stop_accounting_rules(data_updater: RotkiDataUpdater) -> None:
+    bad_node = RPC_NODE_MOCK_DATA['rpc_nodes'][0] | {'weight': 'invalid'}
+    with (
+        patch.object(data_updater, '_get_remote_info_json', return_value={
+            'rpc_nodes': {'latest': 1},
+            'accounting_rules': {'latest': 1},
+        }),
+        patch('rotkehlchen.db.updates.query_file', side_effect=[
+            {'rpc_nodes': [bad_node]},
+            {'accounting_rules': []},
+        ]),
+        patch.object(data_updater, 'update_accounting_rules') as accounting_update,
+    ):
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates(
+            updates=(UpdateType.RPC_NODES, UpdateType.ACCOUNTING_RULES),
+        )
+
+    accounting_update.assert_called_once()
+    assert _applied_update_versions(data_updater) == {
+        UpdateType.ACCOUNTING_RULES.serialize(): '1',
+    }
+
+
+def _raise_after_call(wrapped: Callable, *args: Any, **kwargs: Any) -> None:
+    wrapped(*args, **kwargs)
+    raise RemoteError('injected failure after committed stage')
+
+
+@pytest.mark.parametrize('failed_stage', ['before_user', 'user', 'runtime', 'global'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_rpc_update_retries_after_partial_application(
+        database: DBHandler,
+        blockchain: ChainsAggregator,
+        failed_stage: str,
+) -> None:
+    """A retry finishes DB and runtime removals even after an earlier stage committed."""
+    updater = RotkiDataUpdater(
+        msg_aggregator=database.msg_aggregator,
+        user_db=database,
+        chains_aggregator=blockchain,
+    )
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        defaults = cursor.execute(
+            'SELECT name, endpoint, owned, active, weight, blockchain FROM default_rpc_nodes',
+        ).fetchall()
+    with database.user_write() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO rpc_nodes('
+            'name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',
+            defaults,
+        )
+    inquirer = blockchain.ethereum.node_inquirer
+    eth_endpoint = next(node[1] for node in defaults if node[5] == 'ETH')
+    with database.user_write() as cursor:
+        cursor.execute(
+            'UPDATE rpc_nodes SET name=? WHERE endpoint=? AND blockchain=?',
+            ('renamed default', eth_endpoint, 'ETH'),
+        )
+    inquirer.invalidate_nodes_cache()
+    old_node = next(
+        node.node_info for node in inquirer._get_configured_nodes()
+        if node.node_info.endpoint == eth_endpoint
+    )
+    inquirer.rpc_mapping[old_node] = RPCNode(
+        rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+    )
+    new_node = {
+        'name': 'replacement',
+        'endpoint': 'https://replacement.example.com',
+        'owned': False,
+        'active': True,
+        'weight': '1',
+        'blockchain': 'ETH',
+    }
+    with (
+        patch.object(updater, '_get_remote_info_json', return_value={
+            'rpc_nodes': {'latest': 1},
+        }),
+        patch('rotkehlchen.db.updates.query_file', return_value={'rpc_nodes': [new_node]}),
+        patch.object(inquirer, 'connect_to_multiple_nodes') as connect,
+    ):
+        with ExitStack() as stack:
+            if failed_stage == 'before_user':
+                stack.enter_context(patch.object(
+                    updater, '_update_user_nodes',
+                    side_effect=RemoteError('injected user failure'),
+                ))
+            elif failed_stage == 'user':
+                update_user_nodes = updater._update_user_nodes
+                stack.enter_context(patch.object(
+                    updater, '_update_user_nodes',
+                    side_effect=partial(_raise_after_call, update_user_nodes),
+                ))
+            elif failed_stage == 'runtime':
+                stack.enter_context(patch.object(
+                    inquirer, 'refresh_nodes', side_effect=RemoteError('injected runtime failure'),
+                ))
+            else:
+                update_rpc_nodes = updater.update_rpc_nodes
+                stack.enter_context(patch.object(
+                    updater, 'update_rpc_nodes',
+                    side_effect=partial(_raise_after_call, update_rpc_nodes),
+                ))
+                reset_update_type_mappings(updater)
+            updater.check_for_updates(updates=(UpdateType.RPC_NODES,))
+
+        assert UpdateType.RPC_NODES.serialize() not in _applied_update_versions(updater)
+        if failed_stage == 'before_user':
+            with database.user_write() as cursor:
+                cursor.execute(
+                    'UPDATE rpc_nodes SET name=?, owned=? WHERE endpoint=? AND blockchain=?',
+                    ('renamed between retries', 1, eth_endpoint, 'ETH'),
+                )
+            inquirer.rpc_mapping.pop(old_node)
+            old_node = old_node._replace(name='renamed between retries', owned=True)
+            inquirer.rpc_mapping[old_node] = RPCNode(
+                rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+            )
+        # Recreate stale inquirer state after a failed global write to prove the persisted
+        # old-default snapshot can still reconstruct the removal on the next run.
+        if failed_stage == 'global':
+            inquirer.rpc_mapping[old_node] = RPCNode(
+                rpc_client=MagicMock(), is_archive=True, is_pruned=False,
+            )
+        updater.update_type_mappings[UpdateType.RPC_NODES] = updater.update_rpc_nodes
+        updater.check_for_updates(updates=(UpdateType.RPC_NODES,))
+
+    assert _applied_update_versions(updater)[UpdateType.RPC_NODES.serialize()] == '1'
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT endpoint FROM default_rpc_nodes',
+        ).fetchall() == [(new_node['endpoint'],)]
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT endpoint FROM rpc_nodes').fetchall() == [
+            (new_node['endpoint'],),
+        ]
+    assert old_node not in inquirer.rpc_mapping
+    assert {
+        node.node_info.endpoint for node in inquirer._get_configured_nodes()
+    } == {new_node['endpoint']}
+    connect.assert_called()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_rpc_update_keeps_manual_node_runtime_state(
+        database: DBHandler,
+        blockchain: ChainsAggregator,
+) -> None:
+    updater = RotkiDataUpdater(database.msg_aggregator, database, blockchain)
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        defaults = cursor.execute(
+            'SELECT name, endpoint, owned, active, weight, blockchain FROM default_rpc_nodes',
+        ).fetchall()
+    manual = ('manual', 'https://manual.example.com', 1, 1, '1', 'ETH')
+    with database.user_write() as cursor:
+        cursor.execute(
+            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
+            'VALUES (?, ?, ?, ?, ?, ?)', manual,
+        )
+    inquirer = blockchain.ethereum.node_inquirer
+    inquirer.invalidate_nodes_cache()
+    manual_node = next(
+        node.node_info for node in inquirer._get_configured_nodes()
+        if node.node_info.endpoint == manual[1]
+    )
+    inquirer.mark_node_rate_limited(manual_node, 'test')
+    with (
+        patch.object(inquirer, 'refresh_nodes') as refresh,
+        patch.object(inquirer, 'connect_to_multiple_nodes') as connect,
+    ):
+        updater.update_rpc_nodes(
+            data=[dict(zip(
+                ('name', 'endpoint', 'owned', 'active', 'weight', 'blockchain'), row,
+                strict=True,
+            )) for row in [*defaults, manual]],
+            version=1,
+        )
+    refresh.assert_not_called()
+    connect.assert_not_called()
+    assert inquirer.is_node_in_cooldown(manual_node)
+
+
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     """Test that rpc nodes for different blockchains are updated correctly.."""
     default_rpc_nodes_count = 74
@@ -499,6 +988,53 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         (default_rpc_nodes_count + 1, *custom_node_tuple),
         (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
+
+
+@pytest.mark.parametrize('remove_only', [False, True])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_rpc_update_unsupported_chain(data_updater: RotkiDataUpdater, remove_only: bool) -> None:
+    """Store new unsupported defaults and delete absent ones without runtime refresh."""
+    nodes = [
+        ('supported', 'https://supported.example.com', 0, 1, '1', 'ETH'),
+        ('unsupported', 'https://unsupported.example.com', 0, 1, '1', 'SONIC'),
+    ]
+    for conn, table in (
+        (GlobalDBHandler().conn, 'default_rpc_nodes'),
+        (data_updater.user_db.conn, 'rpc_nodes'),
+    ):
+        with conn.write_ctx() as cursor:
+            cursor.execute(f'DELETE FROM {table}')
+            if remove_only:
+                cursor.executemany(
+                    f'INSERT INTO {table}(name, endpoint, owned, active, weight, blockchain) '
+                    'VALUES (?, ?, ?, ?, ?, ?)', nodes,
+                )
+
+    remote_nodes = [] if remove_only else [dict(zip(
+        ('name', 'endpoint', 'owned', 'active', 'weight', 'blockchain'), row, strict=True,
+    )) for row in nodes]
+    data_updater.update_rpc_nodes(data=remote_nodes, version=1)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        pending = json.loads(cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (PENDING_RPC_NODES_UPDATE,),
+        ).fetchone()[0])
+    added, removed = data_updater._update_user_nodes(
+        existing_default_nodes=pending['nodes'],
+        new_default_nodes=[tuple(row.values()) for row in remote_nodes],
+        initial_user_nodes=pending['user_nodes'],
+    )
+    assert all(node.blockchain.value != 'SONIC' for node in added | removed)
+
+    for conn, table in (
+        (GlobalDBHandler().conn, 'default_rpc_nodes'),
+        (data_updater.user_db.conn, 'rpc_nodes'),
+    ):
+        with conn.read_ctx() as cursor:
+            assert cursor.execute(
+                f'SELECT name, endpoint, owned, active, weight, blockchain FROM {table} '
+                'ORDER BY name',
+            ).fetchall() == ([] if remove_only else nodes)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
