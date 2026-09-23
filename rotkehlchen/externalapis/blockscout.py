@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -75,6 +76,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         ExternalServiceWithRecommendedApiKey.__init__(
             self,
@@ -92,6 +94,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 rps=BLOCKSCOUT_RATE_LIMIT_RPS,
                 capacity=BLOCKSCOUT_RATE_LIMIT_BURST,
             ),
+            indexer_stats=indexer_stats,
         )
         self.session = create_session()
         set_user_agent(self.session)
@@ -163,6 +166,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
     def _query_and_process(
             self,
+            chain_id: ChainID,
+            endpoint: str,
             query_str: str,
             params: dict[str, Any] | None = None,
             query_params: dict[str, Any] | None = None,
@@ -188,6 +193,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     request_kwargs['params'] = query_params
 
                 request_kwargs['params' if http_method == 'get' else 'json'] = params
+                self._record_request(chain_id, endpoint)
                 response = self.session.request(
                     method=http_method,
                     url=query_str,
@@ -305,6 +311,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
             query_args['apikey'] = api_key
         response = self._query_and_process(
+            chain_id=chain_id,
+            endpoint=f'{module}.{action}',
             query_str=self._get_url(chain_id=chain_id, endpoint='api'),
             params=query_args,
             timeout=timeout,
@@ -397,6 +405,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             extra_args['apikey'] = api_key
 
         return self._query_and_process(
+            chain_id=chain_id,
+            endpoint=f'v2/{module}/:id' + (f'/{endpoint}' if endpoint is not None else ''),
             query_str=query_str,
             params=extra_args,
         )
@@ -454,6 +464,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             params = list(options.values())
 
         if 'result' not in (response := self._query_and_process(
+            chain_id=chain_id,
+            endpoint=f'rpc.{method}',
             query_str=self._get_url(chain_id=chain_id, endpoint='rpc'),
             params={
                 'id': 0,

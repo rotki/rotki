@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         ExternalServiceWithRecommendedApiKey.__init__(
             self,
@@ -94,6 +96,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
                 minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
             ),
+            indexer_stats=indexer_stats,
         )
         self.api_key_tier: EtherscanTier | None = None
         self.detect_api_key_tier()

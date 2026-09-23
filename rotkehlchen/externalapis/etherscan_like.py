@@ -53,6 +53,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.utils.rate_limiter import TokenBucket
 
@@ -99,6 +100,7 @@ class EtherscanLikeApi(ABC):
             pagination_limit: int,
             default_api_key: ApiKey,
             rate_limiter: TokenBucket,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         self.db = database
         self.msg_aggregator = msg_aggregator
@@ -107,6 +109,7 @@ class EtherscanLikeApi(ABC):
         self.default_api_key = default_api_key
         self.pagination_limit = pagination_limit
         self.name = name
+        self.indexer_stats = indexer_stats
         # Shared across all greenlets that share this instance — required to
         # gate parallel cross-chain calls into upstreams (e.g. etherscan-v2)
         # that enforce a single rate-limit bucket across chains.
@@ -115,6 +118,10 @@ class EtherscanLikeApi(ABC):
         self._default_rps = rate_limiter.rps
         self._default_capacity = int(rate_limiter.capacity)
         self._default_minimum_rps = rate_limiter.minimum_rps
+
+    def _record_request(self, chain_id: ChainID, endpoint: str) -> None:
+        if self.indexer_stats is not None:
+            self.indexer_stats.record(self.name.lower(), chain_id, endpoint)
 
     def on_api_key_changed(self) -> None:
         """Reset the rate limiter to free-tier defaults so a new key starts fresh.
@@ -369,6 +376,7 @@ class EtherscanLikeApi(ABC):
         while backoff < backoff_limit:
             self._rate_limiter.acquire()
             log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
+            self._record_request(chain_id, f'{module}.{action}')
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
