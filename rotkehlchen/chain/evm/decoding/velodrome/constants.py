@@ -44,6 +44,12 @@ SLIPSTREAM_CL_FACTORIES: Final = {
     ChainID.OPTIMISM: string_to_evm_address('0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F'),
     ChainID.BASE: string_to_evm_address('0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'),
 }
+# The v2 Voter keeps an append-only list of every pool a gauge was created for
+VOTER_ADDRESSES: Final = {
+    ChainID.OPTIMISM: string_to_evm_address('0x41C914ee0c7E1A5edCD0295623e6dC557B5aBf3C'),
+    ChainID.BASE: string_to_evm_address('0x16613524e02ad97eDfeF371bC883F2F5d6C480A5'),
+}
+VOTER_ABI: Final[ABI] = [{'inputs': [], 'name': 'length', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': '', 'type': 'uint256'}], 'name': 'pools', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': '', 'type': 'address'}], 'name': 'gauges', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': '', 'type': 'address'}], 'name': 'gaugeToFees', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': '', 'type': 'address'}], 'name': 'gaugeToBribe', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 # Same layout as uniswap v3 positions() except that index 4 is the tick spacing, not the fee
 SLIPSTREAM_NFPM_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'positions', 'outputs': [{'name': 'nonce', 'type': 'uint96'}, {'name': 'operator', 'type': 'address'}, {'name': 'token0', 'type': 'address'}, {'name': 'token1', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'tickLower', 'type': 'int24'}, {'name': 'tickUpper', 'type': 'int24'}, {'name': 'liquidity', 'type': 'uint128'}, {'name': 'feeGrowthInside0LastX128', 'type': 'uint256'}, {'name': 'feeGrowthInside1LastX128', 'type': 'uint256'}, {'name': 'tokensOwed0', 'type': 'uint128'}, {'name': 'tokensOwed1', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 CL_FACTORY_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenA', 'type': 'address'}, {'name': 'tokenB', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

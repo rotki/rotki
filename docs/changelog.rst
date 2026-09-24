@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Adding an account on a chain that queries Etherscan first no longer claims a Blockscout API key is needed when an Etherscan key is already set.
+* :bug:`-` Velo/Aero gauges will now be refreshed properly.
 * :bug:`-` All rows of the snapshot locations drawer and every entry of the help sidebar can be reached again on smaller windows. The transaction decoding status, protocol cache status and select matching event dialogs now scroll only their table, keeping their buttons in view, and the accounting rule and asset update conflict dialogs keep their "Keep All" buttons visible while the list scrolls.
 * :bug:`-` The internal transaction conflicts table scrolls again when pinned to the sidebar, where rows below the bottom of the panel could not be reached. In its dialog only the table scrolls now, so the tabs, filter and Close button stay in view.
 * :bug:`-` All cases of Hedgey vesting claims should now be decoded properly.
