@@ -1,7 +1,7 @@
-import type { ActionResult } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
 import { err, ok, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { HTTPStatus } from '@/modules/core/api/types/http';
 import { logger } from '@/modules/core/common/logging/logging';
 import {
   BackendCancelled,
@@ -9,7 +9,7 @@ import {
   type TaskError,
   TaskFailed,
 } from '@/modules/core/tasks/task-result';
-import { TaskNotFoundError } from '@/modules/core/tasks/types';
+import { type CompletedTaskOutcome, type RunTaskOptions, TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
@@ -17,12 +17,27 @@ export type { TaskError } from '@/modules/core/tasks/task-result';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 
-interface TaskActionResult<T> extends ActionResult<T> {
+interface TaskActionResult<T> extends CompletedTaskOutcome<T> {
   error?: any;
 }
 
+/**
+ * Whether a finished task failed although it carries a result.
+ *
+ * @remarks
+ * A failed task usually carries a null result, but a few backend endpoints answer a failure with
+ * `false` and the reason, and the PnL report with the id of the report it stopped on and a 409.
+ * Read as results, both would reach the caller as successes and the reason would be lost. A 409
+ * only counts where the task opts in, since asset updates answer one with conflicts to resolve.
+ */
+function isFailedWithResult({ message, result, statusCode }: TaskActionResult<unknown>, options: RunTaskOptions): boolean {
+  if (!message)
+    return false;
+  return result === false || (options.conflictFails === true && statusCode === HTTPStatus.CONFLICT);
+}
+
 function useTaskHandlerInternal(): {
-  runTask: <R>(task: () => Promise<{ taskId: number }>, label: string) => Promise<Result<R, TaskError>>;
+  runTask: <R>(task: () => Promise<{ taskId: number }>, label: string, options?: RunTaskOptions) => Promise<Result<R, TaskError>>;
   cancelTaskById: (taskId: number) => Promise<boolean>;
   handleResult: (result: TaskActionResult<any>, taskId: number) => void;
 } {
@@ -60,6 +75,7 @@ function useTaskHandlerInternal(): {
   async function runTask<R>(
     task: () => Promise<{ taskId: number }>,
     label: string,
+    options: RunTaskOptions = {},
   ): Promise<Result<R, TaskError>> {
     let taskId: number;
     try {
@@ -74,11 +90,15 @@ function useTaskHandlerInternal(): {
     store.addTask(taskId, label);
 
     return new Promise<Result<R, TaskError>>((resolve) => {
-      handlers.set(taskId, ({ error, message, result }) => {
+      handlers.set(taskId, (outcome) => {
+        const { error, message, result } = outcome;
         handlers.delete(taskId);
 
         if (error) {
           resolve(err(TaskFailed({ cause: error, message: error.message ?? '' })));
+        }
+        else if (isFailedWithResult(outcome, options)) {
+          resolve(err(TaskFailed({ message })));
         }
         else if (result !== null) {
           resolve(ok(result));

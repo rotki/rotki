@@ -1,3 +1,4 @@
+import type { ActionResult } from '@rotki/common';
 import { z } from 'zod';
 
 /**
@@ -13,6 +14,20 @@ export interface TaskResultResponse<T> {
   outcome: T | null;
   status: 'completed' | 'not-found' | 'pending';
   statusCode?: number;
+}
+
+/** A finished task's result and message, with the status code the backend reported beside them. */
+export interface CompletedTaskOutcome<T> extends ActionResult<T> {
+  statusCode?: number;
+}
+
+/** How one backend task reads its outcome, for the few whose failure still carries a result. */
+export interface RunTaskOptions {
+  /**
+   * A 409 that carries a message is this task's failure, whatever result it holds. Not a default,
+   * because asset updates answer a 409 with the conflicts the user has to resolve.
+   */
+  readonly conflictFails?: boolean;
 }
 
 export interface TaskStatus {

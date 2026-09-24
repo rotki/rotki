@@ -8,7 +8,7 @@ import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
-import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
+import { type CompletedTaskOutcome, type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
 
 type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching' | 'bridge_matching';
 
@@ -18,7 +18,7 @@ interface SchedulerStateResponse {
 
 interface UseTaskApiReturn {
   queryTasks: () => Promise<TaskStatus>;
-  queryTaskResult: <T>(id: number) => Promise<ActionResult<T>>;
+  queryTaskResult: <T>(id: number) => Promise<CompletedTaskOutcome<T>>;
   cancelAsyncTask: (id: number) => Promise<boolean>;
   triggerTask: (task: TriggerTaskType) => Promise<PendingTask>;
   setSchedulerState: (enabled: boolean) => Promise<SchedulerStateResponse>;
@@ -72,8 +72,9 @@ export function useTaskApi(): UseTaskApiReturn {
    * @throws IncompleteUpgradeError on 300 with an empty result
    * @throws SyncConflictError on 300 carrying conflict data
    * @throws ApiValidationError on 400
+   * @returns the outcome with the status code beside it, for the handler's failure checks
    */
-  const queryTaskResult = async <T>(id: number): Promise<ActionResult<T>> => {
+  const queryTaskResult = async <T>(id: number): Promise<CompletedTaskOutcome<T>> => {
     const response = await ofetch.raw<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, {
       baseURL: api.baseURL,
       timeout: TASKS_TIMEOUT,
@@ -96,7 +97,7 @@ export function useTaskApi(): UseTaskApiReturn {
 
     if (outcome) {
       raiseForOutcomeStatus(statusCode, outcome);
-      return outcome;
+      return { ...outcome, statusCode };
     }
 
     throw new Error('No result');

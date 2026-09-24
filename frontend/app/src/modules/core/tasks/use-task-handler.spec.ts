@@ -64,6 +64,53 @@ describe('useTaskHandler', () => {
       expect(outcome.value).toBe(42);
     });
 
+    /** Runs a task and settles it with `outcome`, a null result with no message unless overridden. */
+    async function settle<R>(outcome: object, options?: { conflictFails?: boolean }): ReturnType<typeof handler.runTask<R>> {
+      const promise = handler.runTask<R>(vi.fn().mockResolvedValue({ taskId: 7 }), 'Test task', options);
+      await nextTick();
+      handler.handleResult({ message: '', result: null, ...outcome }, 7);
+      return promise;
+    }
+
+    it('should fail with the backend\'s reason when a false result carries one', async () => {
+      const outcome = await settle<boolean>({ message: 'Upload failed. No premium', result: false });
+
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      expect(outcome.error.message).toBe('Upload failed. No premium');
+    });
+
+    it('should keep a false result with no message as a result', async () => {
+      const outcome = await settle<boolean>({ result: false });
+
+      assert(isOk(outcome));
+      expect(outcome.value).toBe(false);
+    });
+
+    it('should keep empty and zero results as results, whatever message they carry', async () => {
+      const empty = await settle<object>({ message: 'partial', result: {} });
+      const zero = await settle<number>({ message: 'partial', result: 0 });
+
+      assert(isOk(empty));
+      assert(isOk(zero));
+      expect(zero.value).toBe(0);
+    });
+
+    it('should fail on a 409 carrying a message only for a task that opts in', async () => {
+      const report = await settle<number>({ message: 'ACB error', result: 12, statusCode: 409 }, { conflictFails: true });
+
+      assert(isErr(report));
+      assert(hasTag(report.error, 'TaskFailed'));
+      expect(report.error.message).toBe('ACB error');
+    });
+
+    it('should keep a 409 result for a task that does not opt in, as asset updates hand back conflicts', async () => {
+      const update = await settle<string[]>({ message: 'Found conflicts', result: ['conflict'], statusCode: 409 });
+
+      assert(isOk(update));
+      expect(update.value).toEqual(['conflict']);
+    });
+
     it('should return a Cancelled error when the task start is cancelled', async () => {
       const taskFn = vi.fn().mockRejectedValue(cancellationError('All requests cancelled'));
 

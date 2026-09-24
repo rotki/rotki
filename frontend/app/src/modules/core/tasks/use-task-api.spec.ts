@@ -92,6 +92,28 @@ describe('composables/api/task', () => {
       expect(result.message).toBe('');
     });
 
+    it('should hand back the status code the backend reports beside a result it does not raise for', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: { result: 12, message: 'Remaining amount error during ACB calculation' },
+              status: 'completed',
+              status_code: 409,
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+
+      expect(await queryTaskResult<number>(123)).toEqual({
+        message: 'Remaining amount error during ACB calculation',
+        result: 12,
+        statusCode: 409,
+      });
+    });
+
     it('should keep chain-keyed settings keyed by the chain id', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>

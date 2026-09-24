@@ -1,6 +1,7 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { ComputedRef } from 'vue';
 import type { ActivitySpec, ReportProgress } from './core/orchestrator/spec';
+import type { RunTaskOptions } from '@/modules/core/tasks/types';
 import { startPromise } from '@shared/utils';
 import { err, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -40,7 +41,7 @@ export type TaskOutcome<T = void> = Result<T, TaskError>;
  * the task from the activity's own title/subtitle. Producers get it from their
  * {@link ActivityContext} and never reach for the unbound runner.
  */
-export type RunBackendTask = <R>(task: () => Promise<{ taskId: number }>) => Promise<Result<R, TaskError>>;
+export type RunBackendTask = <R>(task: () => Promise<{ taskId: number }>, options?: RunTaskOptions) => Promise<Result<R, TaskError>>;
 
 /**
  * What the orchestrator hands a running activity: its progress sink, its own task runner, and
@@ -276,12 +277,12 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     const subtitle = resolveText(t, spec.subtitle);
     const label = subtitle ? `${spec.title} (${subtitle})` : spec.title;
 
-    async function runTask<R>(task: () => Promise<{ taskId: number }>): Promise<Result<R, TaskError>> {
+    async function runTask<R>(task: () => Promise<{ taskId: number }>, options?: RunTaskOptions): Promise<Result<R, TaskError>> {
       return runBackendTask<R>(async () => {
         const pending = await task();
         backendTaskId = pending.taskId;
         return pending;
-      }, label);
+      }, label, options);
     }
 
     /** Set once this activity is cancelled; read by the body through `ctx.cancelled()`. */
