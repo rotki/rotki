@@ -150,11 +150,10 @@ def edit_token_and_clean_cache(
     May raise:
         - InputError if there is an error while editing the token
     """
-    updated_fields = False
-
+    updated_fields: set[str] = set()
     if name is not None and token.name != name:
         object.__setattr__(token, 'name', name)
-        updated_fields = True
+        updated_fields.add('name')
     elif token.name == token.identifier and chain_inquirer is not None:
         # query the chain for available information
         on_chain_name, on_chain_symbol, on_chain_decimals, _ = _query_or_get_given_token_info(
@@ -168,19 +167,19 @@ def edit_token_and_clean_cache(
         object.__setattr__(token, 'name', on_chain_name)
         object.__setattr__(token, 'symbol', on_chain_symbol)
         object.__setattr__(token, 'decimals', on_chain_decimals)
-        updated_fields = True
+        updated_fields.update(('name', 'symbol', 'decimals'))
 
-    if symbol is not None and token.symbol != symbol:
-        object.__setattr__(token, 'symbol', symbol)
-        updated_fields = True
-
-    if decimals is not None and token.decimals != decimals:
-        object.__setattr__(token, 'decimals', decimals)
-        updated_fields = True
-
-    if started is not None and token.started != started:
-        object.__setattr__(token, 'started', started)
-        updated_fields = True
+    for field_name, value in (
+            ('symbol', symbol),
+            ('decimals', decimals),
+            ('started', started),
+            ('coingecko', coingecko),
+            ('cryptocompare', cryptocompare),
+            ('protocol', protocol),
+    ):
+        if value is not None and getattr(token, field_name) != value:
+            object.__setattr__(token, field_name, value)
+            updated_fields.add(field_name)
 
     if (
         underlying_tokens is not None and
@@ -188,26 +187,10 @@ def edit_token_and_clean_cache(
         token.underlying_tokens != underlying_tokens
     ):
         object.__setattr__(token, 'underlying_tokens', underlying_tokens)
-        updated_fields = True
+        updated_fields.add('underlying_tokens')
 
-    if coingecko is not None and token.coingecko != coingecko:
-        object.__setattr__(token, 'coingecko', coingecko)
-        updated_fields = True
-
-    if cryptocompare is not None and token.cryptocompare != cryptocompare:
-        object.__setattr__(token, 'cryptocompare', cryptocompare)
-        updated_fields = True
-
-    if protocol is not None and token.protocol != protocol:
-        object.__setattr__(token, 'protocol', protocol)
-        updated_fields = True
-
-    # clean the cache if we need to update the token
-    if updated_fields is True:
-        if isinstance(token, EvmToken):
-            GlobalDBHandler.edit_evm_token(token)
-        else:
-            GlobalDBHandler.edit_solana_token(token)
+    if len(updated_fields) != 0:
+        GlobalDBHandler.edit_token_fields(token=token, fields=updated_fields)
 
 
 def check_if_spam_token(symbol: str | None, name: str | None) -> bool:

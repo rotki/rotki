@@ -1200,6 +1200,56 @@ class GlobalDBHandler:
         )
 
     @staticmethod
+    def edit_token_fields(token: EvmToken | SolanaToken, fields: set[str]) -> None:
+        """Persist only the given fields of an already existing token.
+
+        Unlike edit_evm_token/edit_solana_token the rest of the row is left untouched, so the
+        values a loaded token holds in place of missing metadata (e.g. 18 decimals) are
+        never written back to the DB.
+
+        May raise:
+        - InputError if a constraint is hit or the underlying tokens are invalid
+        """
+        table_columns = {
+            'assets': [x for x in ('name',) if x in fields],
+            'common_asset_details': [
+                x for x in ('symbol', 'coingecko', 'cryptocompare', 'started') if x in fields
+            ],
+            token.db_table: [x for x in ('decimals', 'protocol') if x in fields],
+        }
+        try:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                for table, columns in table_columns.items():
+                    if len(columns) == 0:
+                        continue
+
+                    write_cursor.execute(
+                        f'UPDATE {table} SET {", ".join(f"{x}=?" for x in columns)} '
+                        'WHERE identifier=?',
+                        (*(getattr(token, x) for x in columns), token.identifier),
+                    )
+
+                if 'underlying_tokens' in fields and isinstance(token, EvmToken):
+                    write_cursor.execute(
+                        'DELETE FROM underlying_tokens_list WHERE parent_token_entry=?',
+                        (token.identifier,),
+                    )
+                    if token.underlying_tokens is not None:
+                        GlobalDBHandler._add_underlying_tokens(
+                            write_cursor=write_cursor,
+                            parent_token_identifier=token.identifier,
+                            underlying_tokens=token.underlying_tokens,
+                            chain_id=token.chain_id,
+                        )
+        except rsqlite.IntegrityError as e:
+            raise InputError(
+                f'Failed to update DB entry for token {token.identifier} due to a '
+                f'constraint being hit. Make sure the new values are valid',
+            ) from e
+
+        AssetResolver.clean_memory_cache(token.identifier)
+
+    @staticmethod
     def edit_solana_token(entry: SolanaToken) -> str:
         """Edits a Solana token entry in the DB
         May raise:
