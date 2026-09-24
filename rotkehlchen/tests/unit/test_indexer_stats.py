@@ -125,7 +125,7 @@ def test_indexer_usage_drops_failed_batches_without_blocking_later_windows(monke
     assert len(stats._pending) == 0
 
 
-def test_indexer_usage_unexpected_upload_errors_use_bounded_retries(monkeypatch, caplog) -> None:
+def test_indexer_usage_unexpected_upload_errors_surface_and_back_off(monkeypatch, caplog) -> None:
     now = [100.0]
     monkeypatch.setattr(indexer_stats, 'time', SimpleNamespace(monotonic=lambda: now[0]))
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
@@ -135,18 +135,29 @@ def test_indexer_usage_unexpected_upload_errors_use_bounded_retries(monkeypatch,
     stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
     now[0] += indexer_stats.INDEXER_ANALYTICS_INTERVAL
 
+    last_worker: indexer_stats.Task | None = None
     with caplog.at_level(logging.ERROR, logger='rotkehlchen.indexer_stats'):
         for attempt in range(indexer_stats.INDEXER_ANALYTICS_MAX_ATTEMPTS):
             stats.maybe_flush()
-            assert stats._worker is not None
-            stats._worker.join(timeout=2)
+            worker = stats._worker
+            assert worker is not None
+            last_worker = worker
+            worker.join(timeout=2)
+            assert isinstance(worker.exception, ValueError)
             assert submit.call_count == attempt + 1
+            expected_failed_attempts = attempt + 1
+            if expected_failed_attempts == indexer_stats.INDEXER_ANALYTICS_MAX_ATTEMPTS:
+                expected_failed_attempts = 0
+            assert stats._failed_attempts == expected_failed_attempts
             stats.maybe_flush()
             assert submit.call_count == attempt + 1
             now[0] += indexer_stats.INDEXER_ANALYTICS_RETRY_DELAY
 
     assert len(stats._pending) == 0
-    assert 'Failed to submit indexer usage analytics' in caplog.text
+    assert last_worker is not None
+    assert f'{last_worker.task_name} failed' in caplog.text
+    assert 'ValueError: broken upload' in caplog.text
+    assert 'Failed to submit indexer usage analytics' not in caplog.text
 
 
 def test_indexer_usage_retries_after_worker_start_fails(monkeypatch) -> None:
