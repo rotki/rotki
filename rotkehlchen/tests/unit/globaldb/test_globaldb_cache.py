@@ -17,6 +17,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
 )
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     query_balancer_data,
     read_balancer_pools_and_gauges_from_cache,
@@ -51,12 +52,20 @@ from rotkehlchen.chain.evm.decoding.superfluid.utils import (
     _get_token_list as get_superfluid_token_list,
     query_superfluid_tokens,
 )
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CPT_AERODROME,
+    CPT_VELODROME,
+    VOTER_ABI,
+    VOTER_ADDRESSES,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     POOL_DATA_CHUNK_SIZE,
+    VelodromePoolData,
     query_velodrome_data_from_chain,
     query_velodrome_like_data,
+    read_aerodrome_pools_and_gauges_from_cache,
     read_velodrome_pools_and_gauges_from_cache,
+    save_velodrome_pool_to_cache,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.constants import A_VELO
@@ -347,6 +356,104 @@ def test_velodrome_cache_chunk_halving(database, chain_id):
         ).fetchone()[0] == f"{'Velodrome' if chain_id == ChainID.OPTIMISM else 'Aerodrome'} pool CL200"  # noqa: E501
 
 
+def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
+    """A pool cached before its gauge existed must get the gauge on the next refresh, even
+    though the pool itself is skipped as already cached. Otherwise the gauge's reward claims
+    decode as plain receives. Uses the Aerodrome CL pool from the 1.44.1 report, whose claim
+    tx 0x085c26cf4bccee36eaaf4bb550c23c6a825dfe1cd7b537ed99ff9459a1bdc26d stayed a receive."""
+    voter_pools = {  # pool -> gauge, in the order the voter lists them, taken from chain
+        (known_pool := string_to_evm_address('0x723AEf6543aecE026a15662Be4D3fb3424D502A9')): (known_gauge := string_to_evm_address('0x50f0249B824033Cf0AF0C8b9fe1c67c2842A34d5')),  # noqa: E501
+        (pool := string_to_evm_address('0xCCd9cC53b63662088c738B8BC06E9078Fb8D9ad4')): (gauge := string_to_evm_address('0x491300eC768Cf28B13A8d3BbFd87713dD728b0AD')),  # noqa: E501
+    }
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'DELETE FROM general_cache WHERE value=?',
+            [(address,) for address in (*voter_pools, *voter_pools.values())],
+        )
+    for pool_address, gauge_address in ((known_pool, known_gauge), (pool, None)):
+        save_velodrome_pool_to_cache(database=database, pool=VelodromePoolData(
+            pool_address=pool_address,
+            pool_name='CL100',
+            fee_address=None,
+            bribe_address=None,
+            gauge_address=gauge_address,
+            chain_id=ChainID.BASE,
+        ))
+
+    voter = EvmContract(address=VOTER_ADDRESSES[ChainID.BASE], abi=VOTER_ABI)
+    voter_answers = {
+        'pools': list(voter_pools).__getitem__,
+        'gauges': voter_pools.__getitem__,
+        'gaugeToFees': {gauge: (fee := string_to_evm_address('0xa3dd24A326bfC34940AFA330AAa414B126B3d7bf'))}.__getitem__,  # noqa: E501
+        'gaugeToBribe': {gauge: (bribe := string_to_evm_address('0x7bbf352902a5e4913DB87F31dDa66A7A76039Cd1'))}.__getitem__,  # noqa: E501
+    }
+    queried_methods: list[str] = []
+
+    def mock_multicall(calls, calls_chunk_size):  # pylint: disable=unused-argument
+        results = []
+        for address, data in calls:
+            assert address == voter.address
+            function, arguments = voter.decode_input_data(bytes.fromhex(data.removeprefix('0x')))
+            queried_methods.append(function.fn_name)
+            results.append(bytes.fromhex(voter_answers[function.fn_name](*arguments.values())[2:]).rjust(32, b'\0'))  # noqa: E501
+        return results
+
+    def mock_call(contract, node_inquirer, method_name, arguments=None, **kwargs):  # pylint: disable=unused-argument
+        if method_name == 'length':
+            return len(voter_pools)
+        # sugar lists the cached pool with its gauge, which the pool pass skips
+        return [[pool, '', 0, 0, 100, *([ZERO_ADDRESS] * 8), gauge, *([ZERO_ADDRESS] * 4)]] if arguments[1] == 0 else []  # noqa: E501
+
+    inquirer = MagicMock(database=database, chain_id=ChainID.BASE, multicall=mock_multicall)
+    with patch('rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call):
+        for reload_all in (True, False):
+            queried_methods.clear()
+            query_velodrome_like_data(
+                inquirer=inquirer,
+                cache_type=CacheType.AERODROME_POOL_ADDRESS,
+                msg_aggregator=database.msg_aggregator,
+                reload_all=reload_all,
+            )
+            if reload_all:  # only the gauge missing from the cache has its fee/bribe queried
+                assert queried_methods == ['pools', 'pools', 'gauges', 'gauges', 'gaugeToFees', 'gaugeToBribe']  # noqa: E501
+            else:  # nothing is missing any more
+                assert queried_methods == ['pools', 'pools', 'gauges', 'gauges']
+
+    assert read_aerodrome_pools_and_gauges_from_cache()[1] >= {known_gauge, gauge}
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert fee in globaldb_get_general_cache_values(cursor=cursor, key_parts=(CacheType.AERODROME_GAUGE_FEE_ADDRESS,))  # noqa: E501
+        assert bribe in globaldb_get_general_cache_values(cursor=cursor, key_parts=(CacheType.AERODROME_GAUGE_BRIBE_ADDRESS,))  # noqa: E501
+        assert cursor.execute(
+            'SELECT name FROM address_book WHERE address=?', (gauge,),
+        ).fetchone()[0] == 'Gauge for Aerodrome pool CL100'
+
+
+@pytest.mark.parametrize('reload_all', [True, False])
+def test_velodrome_cache_gauge_backfill_failure(database, reload_all):
+    """A failed voter backfill fails a forced refresh, since that is how users recover a
+    missing gauge, while an automatic refresh only logs it and keeps the new pools."""
+    with (
+        patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.query_velodrome_data_from_chain', return_value=[]),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.backfill_velodrome_gauges_from_voter', side_effect=RemoteError('voter unavailable')),  # noqa: E501
+    ):
+        inquirer = MagicMock(database=database, chain_id=ChainID.BASE, chain_name='base')
+        if reload_all:
+            with pytest.raises(RemoteError, match='Failed to backfill base gauges from the voter: voter unavailable'):  # noqa: E501
+                query_velodrome_like_data(
+                    inquirer=inquirer,
+                    cache_type=CacheType.AERODROME_POOL_ADDRESS,
+                    msg_aggregator=database.msg_aggregator,
+                    reload_all=reload_all,
+                )
+        else:
+            assert query_velodrome_like_data(
+                inquirer=inquirer,
+                cache_type=CacheType.AERODROME_POOL_ADDRESS,
+                msg_aggregator=database.msg_aggregator,
+                reload_all=reload_all,
+            ) is None
+
+
 def test_curve_cache_progress():
     """Notify after each attempted pool, including cached and unavailable pools."""
     inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
@@ -603,6 +710,7 @@ def test_velodrome_cache(optimism_inquirer):
             patch(target='rotkehlchen.chain.evm.contracts.EvmContract.call', new=make_mock_call_contract(force_refresh)),  # noqa: E501
             patch.object(optimism_inquirer.database.msg_aggregator, 'add_message'),
             patch('rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache', return_value=True),  # noqa: E501
+            patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.backfill_velodrome_gauges_from_voter'),  # the sugar pool pass is tested here  # noqa: E501
         ):
             optimism_inquirer.ensure_cache_data_is_updated(
                 cache_type=CacheType.VELODROME_POOL_ADDRESS,
