@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Deleting every event of a transaction now offers Cancel, Exclude from Accounting and Delete Transaction as separate choices. Before, the button meant to exclude the transaction read "Cancel", so cancelling, or pressing Escape, led to the exclusion prompt instead of closing. Other confirmations also show the dismiss label they ask for.
 * :bug:`-` Adding an account on a chain that queries Etherscan first no longer claims a Blockscout API key is needed when an Etherscan key is already set.
 * :bug:`-` Velo/Aero gauges will now be refreshed properly.
 * :bug:`-` All rows of the snapshot locations drawer and every entry of the help sidebar can be reached again on smaller windows. The transaction decoding status, protocol cache status and select matching event dialogs now scroll only their table, keeping their buttons in view, and the accounting rule and asset update conflict dialogs keep their "Keep All" buttons visible while the list scrolls.

@@ -2,6 +2,7 @@
 import { DialogType, themes } from '@/modules/core/common/dialogs';
 
 const {
+  alternativeAction = null,
   confirmType = DialogType.INFO,
   disabled = false,
   display,
@@ -18,6 +19,8 @@ const {
   display: boolean;
   primaryAction?: string | null;
   secondaryAction?: string | null;
+  /** A third button for a different outcome than confirming; backing out never takes it. */
+  alternativeAction?: string | null;
   confirmType?: DialogType;
   disabled?: boolean;
   singleAction?: boolean;
@@ -26,6 +29,7 @@ const {
 }>();
 
 const emit = defineEmits<{
+  alternative: [];
   confirm: [];
   cancel: [];
 }>();
@@ -85,6 +89,16 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
           @click="emit('cancel')"
         >
           {{ secondaryText }}
+        </RuiButton>
+        <RuiButton
+          v-if="alternativeAction"
+          variant="outlined"
+          :color="color"
+          :disabled="disabled"
+          data-testid="button-alternative"
+          @click="emit('alternative')"
+        >
+          {{ alternativeAction }}
         </RuiButton>
         <RuiButton
           :color="color"
