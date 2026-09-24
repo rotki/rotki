@@ -69,6 +69,34 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
 
       expect(get(formatter.tooltip)).toBe('1.123456');
     });
+
+    it('should keep a 27 decimal token amount whole', () => {
+      const value = ref(bigNumberify('0.123456789012345678901234567'));
+      const formatter = useAmountFormatter({ value });
+
+      expect(get(formatter.tooltip)).toBe('0.123456789012345678901234567');
+    });
+
+    it('should cut a longer value at 27 decimals and mark it with an ellipsis', () => {
+      const value = ref(bigNumberify('50925.719475698983978012510137167000892776470686255575253434'));
+      const formatter = useAmountFormatter({ value });
+
+      expect(get(formatter.tooltip)).toBe('50,925.719475698983978012510137167…');
+    });
+
+    it('should truncate the cut value instead of rounding it up', () => {
+      const value = ref(bigNumberify('0.1234567890123456789012345679999'));
+      const formatter = useAmountFormatter({ value });
+
+      expect(get(formatter.tooltip)).toBe('0.123456789012345678901234567…');
+    });
+
+    it('should drop the zeros the cut leaves at the end', () => {
+      const value = ref(bigNumberify('1.1000000000000000000000000000001'));
+      const formatter = useAmountFormatter({ value });
+
+      expect(get(formatter.tooltip)).toBe('1.1…');
+    });
   });
 
   describe('comparisonSymbol', () => {
