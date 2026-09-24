@@ -241,6 +241,7 @@ class Rotkehlchen:
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
         self.indexer_stats: IndexerStats | None = None
+        self._closing_indexer_stats: IndexerStats | None = None
         self.monerium: Monerium | None = None
         self.shutdown_event = threading.Event()
         self.migration_manager = DataMigrationManager(self)
@@ -723,6 +724,7 @@ class Rotkehlchen:
         stats = self.indexer_stats
         if stats is not None:
             stats.start_close()
+            self._closing_indexer_stats = stats
             self.indexer_stats = None
 
         self.data.logout()
@@ -1611,6 +1613,12 @@ class Rotkehlchen:
     def shutdown(self) -> None:
         self.logout()
         self.shutdown_event.set()
+
+    def wait_for_indexer_stats_close(self) -> None:
+        """Wait for the final analytics upload after other shutdown cleanup completes."""
+        if self._closing_indexer_stats is not None:
+            self._closing_indexer_stats.wait_for_close()
+            self._closing_indexer_stats = None
 
     def create_oracle_cache(
             self,
