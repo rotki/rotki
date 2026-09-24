@@ -936,6 +936,12 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     (event := self._maybe_decode_op_return(tx=tx, script=tx_io.script)) is not None
                 ):
                     op_return_events.append(event)
+                elif (
+                    (tx.is_coinbase and direction == BtcTxIODirection.INPUT and tx_io.value == ZERO) or
+                    (tx_io.value == ZERO and tx_io.script is not None and len(tx_io.script) >= 1 and tx_io.script[:1] == OpCodes.OP_RETURN)
+                ):
+                    # Expected zero-valued coinbase placeholder input or addressless OP_RETURN output
+                    continue
                 else:  # Unable to decode TxIO if it has no address and isn't op_return
                     log.error(f'Failed to decode {tx_io} in transaction {tx.tx_id}. Skipping.')
 
