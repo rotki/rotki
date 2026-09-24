@@ -145,20 +145,49 @@ describe('useHistoryEventsDeletion', () => {
     expect(refreshCallback).not.toHaveBeenCalled();
   });
 
-  it('should delete complete transactions and expose a secondary ignore option', async () => {
+  it('should delete complete transactions when the user confirms', async () => {
     const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
     spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
     const { deletion, refreshCallback, selectionMode } = setup();
     selectionMode.actions.toggleEvent(1);
 
-    const run = deletion.deleteSelected();
-    // primary + secondary callbacks are both registered
-    expect(spies.showConfirm.mock.calls[0]).toHaveLength(3);
-
-    await drive(run);
+    await drive(deletion.deleteSelected());
     expect(spies.deleteTransactions).toHaveBeenCalledWith('ethereum', '0xabc');
     expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
     expect(refreshCallback).toHaveBeenCalledOnce();
+  });
+
+  it('should close the complete-transaction prompt without offering to exclude when the user backs out', async () => {
+    const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
+    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
+    const { deletion, selectionMode } = setup();
+    selectionMode.actions.toggleEvent(1);
+
+    await drive(deletion.deleteSelected(), 2);
+
+    expect(spies.showConfirm).toHaveBeenCalledOnce();
+    expect(spies.deleteTransactions).not.toHaveBeenCalled();
+    expect(get(deletion.isDeleting)).toBe(false);
+  });
+
+  it('should offer excluding from accounting as its own choice, which asks before excluding', async () => {
+    const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
+    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
+    const { deletion, selectionMode } = setup();
+    selectionMode.actions.toggleEvent(1);
+
+    const run = deletion.deleteSelected();
+    expect(spies.showConfirm.mock.calls[0][0]).toMatchObject({ alternativeAction: 'transactions.events.confirmation.ignore.action_short' });
+
+    const pickExclude = spies.showConfirm.mock.calls[0][3]();
+    await nextTick();
+    expect(spies.showConfirm).toHaveBeenCalledTimes(2);
+    expect(spies.showConfirm.mock.calls[1][0]).toMatchObject({ title: 'transactions.events.confirmation.ignore.title' });
+
+    await spies.showConfirm.mock.calls[1][1]();
+    await pickExclude;
+    await run;
+    expect(spies.deleteTransactions).not.toHaveBeenCalled();
   });
 
   it('should delete partial swap groups plus remaining events', async () => {

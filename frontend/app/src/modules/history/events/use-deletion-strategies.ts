@@ -19,7 +19,8 @@ export interface DeletionStrategy {
 export interface ConfirmationMessage {
   message: string;
   primaryAction: string;
-  secondaryAction?: string;
+  /** A second outcome besides confirming, offered as its own button; backing out never takes it. */
+  alternativeAction?: string;
   title: string;
 }
 
@@ -32,8 +33,8 @@ function buildDeleteTransactionsMessage(strategy: DeletionStrategy, t: Translate
     : t('transactions.events.confirmation.delete.complete_transaction_multiple', { count });
   return {
     message: `${message}\n\n${t('transactions.events.confirmation.delete.complete_transaction_options')}`,
+    alternativeAction: t('transactions.events.confirmation.ignore.action_short'),
     primaryAction: t('transactions.events.confirmation.delete.delete_transaction'),
-    secondaryAction: t('transactions.events.confirmation.ignore.action_short'),
     title: t('transactions.events.confirmation.delete.complete_transaction_title'),
   };
 }

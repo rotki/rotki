@@ -26,7 +26,7 @@ describe('buildDeletionConfirmationMessage', () => {
     expect(result.message).toContain('transactions.events.confirmation.delete.complete_transaction_single');
     expect(result.message).toContain('transactions.events.confirmation.delete.complete_transaction_options');
     expect(result.primaryAction).toBe('transactions.events.confirmation.delete.delete_transaction');
-    expect(result.secondaryAction).toBe('transactions.events.confirmation.ignore.action_short');
+    expect(result.alternativeAction).toBe('transactions.events.confirmation.ignore.action_short');
     expect(result.title).toBe('transactions.events.confirmation.delete.complete_transaction_title');
   });
 
@@ -45,7 +45,7 @@ describe('buildDeletionConfirmationMessage', () => {
     );
     expect(result.message).toBe('transactions.events.confirmation.delete.message_multiple::3');
     expect(result.primaryAction).toBe('common.actions.confirm');
-    expect(result.secondaryAction).toBeUndefined();
+    expect(result.alternativeAction).toBeUndefined();
   });
 
   it('should aggregate totals across partial swap groups', () => {
