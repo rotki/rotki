@@ -171,14 +171,19 @@ describe('useTargetedRedecode', () => {
         .toThrow('boom');
     });
 
-    it('should throw when the backend reports nothing decoded', async () => {
+    it('should end the activity failed, and throw, when the backend could not decode', async () => {
       mocks.runTaskResult.mockResolvedValue(ok(false));
-      mocks.submitTask.mockImplementation(runSpecWith(mocks.runTaskResult));
+      const run = vi.fn(runSpecWith(mocks.runTaskResult));
+      mocks.submitTask.mockImplementation(run);
 
       const { pullAndDecodeTransactionsRaw } = useTargetedRedecode();
       await expect(pullAndDecodeTransactionsRaw({ chain: 'ethereum', txRefs: ['0x1'] }))
         .rejects
-        .toThrow();
+        .toThrow('actions.transactions_redecode.error.not_decoded');
+
+      await expect(run.mock.results[0].value).resolves.toEqual(
+        err(TaskFailed({ message: 'actions.transactions_redecode.error.not_decoded' })),
+      );
     });
 
     it('should resolve when the backend decodes', async () => {

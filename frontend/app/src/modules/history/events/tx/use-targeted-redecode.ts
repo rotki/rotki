@@ -6,13 +6,13 @@ import type {
 } from '@/modules/history/events/event-payloads';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { groupBy } from 'es-toolkit';
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { err, flatMap as flatMapResult, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { blockDecodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { targetedRedecodeFlow, type TargetedRedecodeScope } from '@/modules/history/events/tx/targeted-redecode.flow';
@@ -48,9 +48,9 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
    * Pulls and re-decodes a named set of transactions, throwing on failure instead of notifying.
    *
    * @remarks
-   * For callers that handle their own errors, such as conflict resolution. The task's boolean
-   * result is whether the backend re-decoded anything, and a `false` throws, so a no-change is a
-   * failure here rather than a silent success.
+   * For callers that handle their own errors, such as conflict resolution. The backend answers a
+   * failed pull or decode with a `false` result rather than an error, so the activity turns that
+   * `false` into its own failure: its row ends failed, not done, and the caller gets the throw.
    */
   const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload, parent?: ActivityId): Promise<void> => {
     const count = payload.txRefs.length;
@@ -59,30 +59,24 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       ? activityLabelFor(msg.$t('task_center.activity.tx_decoding.single'), { chain, tx: truncateAddress(payload.txRefs[0]) })
       : activityLabelFor(msg.$t('task_center.activity.tx_decoding.batch'), { chain, count }, count);
 
-    const outcome = await submitTask<boolean>({
+    const outcome = await submitTask({
       id: targetedDecodeActivity.id(payload),
       kind: targetedDecodeActivity.kind,
       lane: targetedDecodeActivity.laneOf?.(payload),
       parent,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => flatMapResult(
         await runTask<boolean>(
           async () => pullAndRecodeTransactionRequest(payload),
         ),
-        result => result,
+        decoded => (decoded ? ok(undefined) : err(TaskFailed({ message: t('actions.transactions_redecode.error.not_decoded') }))),
       ),
       subtitle,
       title: t('task_center.group.tx_decoding'),
     });
 
-    if (isErr(outcome)) {
-      if (isActionable(outcome.error))
-        throw new Error(outcome.error.message);
-      return;
-    }
-
-    if (!outcome.value)
-      throw new Error(t('actions.transactions_redecode.error.title'));
+    if (isErr(outcome) && isActionable(outcome.error))
+      throw new Error(outcome.error.message);
   };
 
   /**
