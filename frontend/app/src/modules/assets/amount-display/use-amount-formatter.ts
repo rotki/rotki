@@ -39,6 +39,30 @@ export interface AmountFormatterReturn {
   abbreviate: ComputedRef<boolean>;
 }
 
+/**
+ * The most decimals the full-value tooltip shows.
+ *
+ * @remarks
+ * 27 is the highest precision of any known token, so a balance always fits whole. Longer values are
+ * derived ones, such as an amount times a price.
+ */
+const TOOLTIP_MAX_DECIMALS = 27;
+
+/**
+ * Formats a value in full for the tooltip, cut at {@link TOOLTIP_MAX_DECIMALS}.
+ *
+ * @remarks
+ * A cut value is truncated rather than rounded and ends in an ellipsis, so the digits shown are the
+ * value's own. Copying still takes the exact value.
+ */
+function formatTooltipValue(value: BigNumber): string {
+  if ((value.decimalPlaces() ?? 0) <= TOOLTIP_MAX_DECIMALS)
+    return value.toFormat(value.decimalPlaces() ?? 0);
+
+  const shown = value.decimalPlaces(TOOLTIP_MAX_DECIMALS, BigNumber.ROUND_DOWN);
+  return `${shown.toFormat(shown.decimalPlaces() ?? 0)}…`;
+}
+
 function fixExponentialSeparators(value: string, thousands: string, decimals: string): string {
   if (!(thousands !== ',' || decimals !== '.')) {
     return value;
@@ -125,8 +149,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
 
   const tooltip = computed<string | null>(() => {
     if (get(decimalPlaces) > get(effectivePrecision) || get(showExponential) || get(abbreviate)) {
-      const val = get(displayValue);
-      return val.toFormat(val.decimalPlaces() ?? 0);
+      return formatTooltipValue(get(displayValue));
     }
     return null;
   });
