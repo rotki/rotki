@@ -166,7 +166,7 @@ class GmxBalances(ProtocolWithBalance):
                 )
                 asset_amount = round(
                     number=position_collateral_usd / (asset_price / usd_price),
-                    ndigits=collateral_asset.decimals or 18,
+                    ndigits=collateral_asset.get_decimals(),
                 )
                 balances[user_address].assets[collateral_asset][self.counterparty] += Balance(
                     amount=asset_amount,
