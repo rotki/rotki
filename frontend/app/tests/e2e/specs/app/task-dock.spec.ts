@@ -84,8 +84,8 @@ test.describe.serial('task dock', () => {
     await dock.confirmDialog();
 
     await held.expectCancelled(['airdrops', 'balances']);
-    await dock.expectNoRow(AIRDROPS);
-    await dock.expectNoRow(ALL_BALANCES);
+    await dock.expectRow(AIRDROPS, 'cancelled');
+    await dock.expectRow(ALL_BALANCES, 'cancelled');
     await dock.expectRow(PNL_REPORT, 'running');
     await dock.expectStopAllOffered(false);
   });
@@ -97,10 +97,10 @@ test.describe.serial('task dock', () => {
     await dock.expectRowMeter(PNL_REPORT, '64 of 100');
 
     await dock.cancelRow(PNL_REPORT);
-    await dock.expectDialog('Cancel task', 'unfinished state');
+    await dock.expectDialog('Stop', 'leaves it unfinished');
     await dock.confirmDialog();
 
     await held.expectCancelled(['airdrops', 'balances', 'pnl']);
-    await dock.expectNoRow(PNL_REPORT);
+    await dock.expectRow(PNL_REPORT, 'cancelled');
   });
 });

@@ -78,10 +78,10 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
       .some(item => item.id === activity.id && !isTerminalStatus(item.status)));
 
     confirmWhileLive({
-      message: t('collapsed_pending_tasks.cancel_task_info', {
+      message: t('task_dock.panel.stop_info', {
         title: resolveText(t, activity.subtitle) ?? activity.title,
       }),
-      title: t('collapsed_pending_tasks.cancel_task'),
+      title: t('task_dock.panel.stop'),
       type: 'warning',
     }, live, async () => cancel(activity));
   }

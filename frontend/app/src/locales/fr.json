@@ -1068,10 +1068,6 @@
       "password_mismatch": "La confirmation de mot de passe ne correspond pas au mot de passe fourni"
     }
   },
-  "collapsed_pending_tasks": {
-    "cancel_task": "Annuler tâche",
-    "cancel_task_info": "Cette action va laisser le processus en cours d'exécution ({title}) dans un état non fini, êtes-vous sûr de vouloir l'annuler?"
-  },
   "common": {
     "account": "Compte",
     "actions": {

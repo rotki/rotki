@@ -402,5 +402,23 @@ describe('taskDock', () => {
       expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('dismissed');
       expect(wrapper.find('[data-testid=task-dock-caption]').classes()).toContain('sr-only');
     });
+
+    it('should name a job the user stopped as cancelled on the pill, and keep its row until dismissed', async () => {
+      vi.useFakeTimers();
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const wrapper = createWrapper();
+
+      set(activities, refresh(ActivityStatus.CANCELLED));
+      await nextTick();
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(60000);
+
+      const pill = wrapper.find('[data-testid=task-dock-pill]');
+      expect(pill.attributes('data-state')).toBe('done');
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.cancelled::history-sync title');
+
+      await pill.trigger('click');
+      expect(wrapper.find('[data-testid=dismiss-activity]').exists()).toBe(true);
+    });
   });
 });
