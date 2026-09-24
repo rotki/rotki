@@ -58,7 +58,7 @@ catalog:
   '@playwright/test': 1.62.1
   '@rotki/eslint-config': 8.3.0
   '@rotki/eslint-plugin': 1.8.0
-  '@rotki/ui-library': 2.26.0
+  '@rotki/ui-library': 2.26.1
   '@tsconfig/node24': 24.0.5
   '@types/node': 24.13.3
   '@types/qrcode': 1.5.6
