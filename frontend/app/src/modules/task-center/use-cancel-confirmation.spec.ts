@@ -72,11 +72,16 @@ describe('useCancelConfirmation', () => {
     onDismiss();
   }
 
-  it('should name the activity in the prompt, preferring its subtitle', () => {
+  it('should name the activity in the prompt, preferring its subtitle, and label backing out as keeping it running', () => {
     useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING, 'Ethereum'));
 
     expect(show).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'task_dock.panel.stop_info::Ethereum', title: 'task_dock.panel.stop' }),
+      expect.objectContaining({
+        message: 'task_dock.panel.stop_info::Ethereum',
+        primaryAction: 'task_dock.panel.stop',
+        secondaryAction: 'task_dock.panel.keep_running',
+        title: 'task_dock.panel.stop',
+      }),
       expect.any(Function),
       expect.any(Function),
     );
@@ -245,7 +250,12 @@ describe('useCancelConfirmation', () => {
       useCancelConfirmation().confirmCancelAll(targets, 0);
 
       expect(show).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'task_dock.panel.stop_all_info::2', title: 'task_dock.panel.stop_all' }),
+        expect.objectContaining({
+          message: 'task_dock.panel.stop_all_info::2',
+          primaryAction: 'task_dock.panel.stop_all',
+          secondaryAction: 'task_dock.panel.keep_running',
+          title: 'task_dock.panel.stop_all',
+        }),
         expect.any(Function),
         expect.any(Function),
       );

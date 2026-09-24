@@ -420,5 +420,24 @@ describe('taskDock', () => {
       await pill.trigger('click');
       expect(wrapper.find('[data-testid=dismiss-activity]').exists()).toBe(true);
     });
+
+    it('should name only the jobs the panel lists, so a quick job that finished unseen does not outnumber the stopped one', async () => {
+      vi.useFakeTimers();
+      const prices = (status: ActivityStatus): Activity => ({ ...activity(ActivityKind.PRICES, 'latest', status), startedAt: Date.now() });
+      set(activities, [...refresh(ActivityStatus.RUNNING), prices(ActivityStatus.RUNNING)]);
+      const wrapper = createWrapper();
+      await nextTick();
+
+      set(activities, [...refresh(ActivityStatus.CANCELLED), prices(ActivityStatus.COMPLETE)]);
+      await nextTick();
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(60000);
+
+      expect(wrapper.find('[data-testid=task-dock-caption]').text()).toBe('task_dock.cancelled::history-sync title');
+      expect(wrapper.find('[data-testid=task-dock-stopped]').exists()).toBe(true);
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      expect(wrapper.findAll('[data-testid=dismiss-activity]')).toHaveLength(1);
+    });
   });
 });

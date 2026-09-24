@@ -11,6 +11,11 @@ function isFailed(activity: Activity): boolean {
   return activity.status === ActivityStatus.FAILED;
 }
 
+/** Whether every one of these settled jobs was stopped by the user, which the pill says instead of "finished". */
+export function allStopped(roots: Activity[]): boolean {
+  return roots.length > 0 && roots.every(root => root.status === ActivityStatus.CANCELLED);
+}
+
 /**
  * The text on the dock's pill: the job in flight while working, the outcome once the run settles.
  *
@@ -19,14 +24,19 @@ function isFailed(activity: Activity): boolean {
  * names that chain, several are counted against the same leaves the running pill counted, and a job
  * whose failure sits on a parent rather than a leaf falls back to its own title.
  *
- * Takes the jobs and tree the dock already holds rather than building its own copy of them.
+ * A clean outcome names the jobs the panel lists, not every finished one: the panel leaves out work
+ * that was over before it could show it, so counting that too would put "7 jobs finished" over a
+ * single row.
+ *
+ * Takes the jobs, tree and listed rows the dock already holds rather than building its own copy.
  */
 export function useTaskDockCaption(
   jobs: MaybeRefOrGetter<PendingJob[]>,
   children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
+  listed: MaybeRefOrGetter<Activity[]>,
 ): ComputedRef<string> {
   const { t } = useI18n({ useScope: 'global' });
-  const { dismissed, failed, finished, flagged, state } = useTaskDock();
+  const { dismissed, failed, flagged, state } = useTaskDock();
   const { isPrimaryRanked, primary } = useDockPrimary(jobs, children);
   const { labelOf } = useActivityLabel();
 
@@ -59,7 +69,7 @@ export function useTaskDockCaption(
 
   /** Jobs that did not fail, told apart as cancelled only when every one of them was. */
   function successes(roots: Activity[]): string {
-    const allCancelled = roots.every(root => root.status === ActivityStatus.CANCELLED);
+    const allCancelled = allStopped(roots);
     if (roots.length === 1)
       return allCancelled ? t('task_dock.cancelled', { title: roots[0].title }) : t('task_dock.done', { title: roots[0].title });
 
@@ -83,7 +93,7 @@ export function useTaskDockCaption(
       case DockState.DISMISSED:
         return dismissedCaption();
       case DockState.DONE:
-        return successes(get(finished));
+        return successes(toValue(listed));
       case DockState.WORKING:
       case undefined: {
         const job = get(primary);
