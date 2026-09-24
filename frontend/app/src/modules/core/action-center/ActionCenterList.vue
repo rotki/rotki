@@ -64,7 +64,7 @@ function toggleCleared(): void {
 
 <template>
   <div
-    class="relative"
+    class="relative flex flex-col max-h-[calc(100vh-6rem)]"
     data-testid="actions-center-panel"
   >
     <RuiProgress
@@ -102,66 +102,71 @@ function toggleCleared(): void {
       </RuiButton>
     </div>
 
-    <section
-      v-for="section in sections"
-      :key="section.id"
-      class="border-t border-default first-of-type:border-t-0"
-      data-testid="actions-center-section"
-      :data-key="section.id"
-    >
-      <h6 class="px-4 pt-3 text-caption font-medium uppercase tracking-wide text-rui-text-secondary">
-        {{ section.title }}
-      </h6>
-      <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
-        <ActionCenterRow
-          v-for="item in section.items"
-          :key="item.id"
-          :item="item"
-          :is-new="newIds.includes(item.id)"
-          @action="emit('open', $event.target)"
-          @option="emit('open', $event)"
-        />
-      </div>
-    </section>
-
     <div
-      v-if="!checking && cleared.length > 0"
-      class="px-4 py-3 bg-rui-grey-50 dark:bg-rui-grey-900"
-      data-testid="actions-center-cleared"
+      class="flex-1 min-h-0 overflow-y-auto"
+      data-testid="actions-center-body"
     >
-      <button
-        type="button"
-        class="flex items-center gap-1.5 text-caption text-rui-text-secondary hover:text-rui-text"
-        :aria-expanded="clearedExpanded"
-        data-testid="actions-center-cleared-toggle"
-        @click="toggleCleared()"
+      <section
+        v-for="section in sections"
+        :key="section.id"
+        class="border-t border-default first-of-type:border-t-0"
+        data-testid="actions-center-section"
+        :data-key="section.id"
       >
-        <RuiIcon
-          name="lu-circle-check"
-          size="14"
-          color="success"
-        />
-        {{ t('action_center.checks_passed', { count: cleared.length }, cleared.length) }}
-        <RuiIcon
-          :name="clearedExpanded ? 'lu-chevron-up' : 'lu-chevron-down'"
-          size="14"
-        />
-      </button>
+        <h6 class="px-4 pt-3 text-caption font-medium uppercase tracking-wide text-rui-text-secondary">
+          {{ section.title }}
+        </h6>
+        <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
+          <ActionCenterRow
+            v-for="item in section.items"
+            :key="item.id"
+            :item="item"
+            :is-new="newIds.includes(item.id)"
+            @action="emit('open', $event.target)"
+            @option="emit('open', $event)"
+          />
+        </div>
+      </section>
+
       <div
-        v-if="clearedExpanded"
-        class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 pl-5"
+        v-if="!checking && cleared.length > 0"
+        class="px-4 py-3 bg-rui-grey-50 dark:bg-rui-grey-900"
+        data-testid="actions-center-cleared"
       >
         <button
-          v-for="item in cleared"
-          :key="item.id"
           type="button"
-          class="text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
-          data-testid="actions-center-cleared-row"
-          :data-key="item.id"
-          @click="emit('open', item.checkTarget)"
+          class="flex items-center gap-1.5 text-caption text-rui-text-secondary hover:text-rui-text"
+          :aria-expanded="clearedExpanded"
+          data-testid="actions-center-cleared-toggle"
+          @click="toggleCleared()"
         >
-          {{ item.title }}
+          <RuiIcon
+            name="lu-circle-check"
+            size="14"
+            color="success"
+          />
+          {{ t('action_center.checks_passed', { count: cleared.length }, cleared.length) }}
+          <RuiIcon
+            :name="clearedExpanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+            size="14"
+          />
         </button>
+        <div
+          v-if="clearedExpanded"
+          class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 pl-5"
+        >
+          <button
+            v-for="item in cleared"
+            :key="item.id"
+            type="button"
+            class="text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
+            data-testid="actions-center-cleared-row"
+            :data-key="item.id"
+            @click="emit('open', item.checkTarget)"
+          >
+            {{ item.title }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
