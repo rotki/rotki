@@ -6427,6 +6427,7 @@
         "failed": "{count} failed",
         "running": "{count} running"
       },
+      "keep_running": "Keep running",
       "outcome": {
         "attention": "{count} needs attention | {count} need attention",
         "cancelled": "{count} cancelled",

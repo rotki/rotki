@@ -37,7 +37,7 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
    * then the ledger write), and the dialog should not blink shut on the first of them.
    */
   function confirmWhileLive(
-    message: { message: string; title: string; type: 'warning' },
+    message: { message: string; primaryAction: string; secondaryAction: string; title: string; type: 'warning' },
     live: ComputedRef<boolean>,
     onConfirm: () => Promise<unknown>,
   ): void {
@@ -81,6 +81,8 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
       message: t('task_dock.panel.stop_info', {
         title: resolveText(t, activity.subtitle) ?? activity.title,
       }),
+      primaryAction: t('task_dock.panel.stop'),
+      secondaryAction: t('task_dock.panel.keep_running'),
       title: t('task_dock.panel.stop'),
       type: 'warning',
     }, live, async () => cancel(activity));
@@ -104,6 +106,8 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
 
     confirmWhileLive({
       message,
+      primaryAction: t('task_dock.panel.stop_all'),
+      secondaryAction: t('task_dock.panel.keep_running'),
       title: t('task_dock.panel.stop_all'),
       type: 'warning',
     }, live, async () => Promise.allSettled(targets.map(async target => cancel(target))));

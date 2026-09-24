@@ -120,6 +120,7 @@ function toggle(): void {
     <DockPill
       :jobs="jobs"
       :children="children"
+      :listed="roots"
       :expanded="showPanel"
       @toggle="toggle()"
     />

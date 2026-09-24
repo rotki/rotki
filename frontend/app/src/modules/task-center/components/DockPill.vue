@@ -4,11 +4,13 @@ import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { DockState } from '@/modules/task-center/dock-state';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
 import { useTaskDock } from '@/modules/task-center/use-task-dock';
-import { useTaskDockCaption } from '@/modules/task-center/use-task-dock-caption';
+import { allStopped, useTaskDockCaption } from '@/modules/task-center/use-task-dock-caption';
 
-const { children, expanded, jobs } = defineProps<{
+const { children, expanded, jobs, listed } = defineProps<{
   jobs: PendingJob[];
   children: ReadonlyMap<ActivityId, Activity[]>;
+  /** The jobs the panel lists, which a settled outcome names. */
+  listed: Activity[];
   /** Whether the panel above the pill is showing. */
   expanded: boolean;
 }>();
@@ -21,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { dismissedFailure, state } = useTaskDock();
 const { isPrimaryRanked, otherJobs, primary, primarySteps } = useDockPrimary(() => jobs, () => children);
-const caption = useTaskDockCaption(() => jobs, () => children);
+const caption = useTaskDockCaption(() => jobs, () => children, () => listed);
 
 const isWorking = computed<boolean>(() => get(state) === DockState.WORKING);
 
@@ -32,6 +34,9 @@ const isIconOnly = computed<boolean>(() => get(state) === DockState.DISMISSED);
 const showsFailure = computed<boolean>(() => get(state) === DockState.FAILED || (get(isIconOnly) && get(dismissedFailure)));
 
 const showsAttention = computed<boolean>(() => get(state) === DockState.ATTENTION);
+
+/** A clean outcome made only of jobs the user stopped shows the stop mark their rows show, not a check. */
+const showsStopped = computed<boolean>(() => get(state) === DockState.DONE && allStopped(listed));
 
 const showsSuccess = computed<boolean>(() => get(state) === DockState.DONE || (get(isIconOnly) && !get(dismissedFailure)));
 
@@ -60,6 +65,13 @@ const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(
       name="lu-triangle-alert"
       size="20"
       class="text-rui-warning shrink-0"
+    />
+    <RuiIcon
+      v-else-if="showsStopped"
+      name="lu-ban"
+      size="20"
+      class="text-rui-text-secondary shrink-0"
+      data-testid="task-dock-stopped"
     />
     <RuiIcon
       v-else-if="showsSuccess"
