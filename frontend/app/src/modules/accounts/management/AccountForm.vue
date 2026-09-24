@@ -102,15 +102,15 @@ function validatorKeyService(): 'beaconchain' | 'consensusRpc' | undefined {
   return get(beaconRpcEndpoint) ? 'beaconchain' : 'consensusRpc';
 }
 
-/** Both indexers are only worth warning about on chains that actually use them. */
-function indexerKeyService(chain: string): 'etherscan' | 'blockscout' | undefined {
-  if (!shouldShowEtherscanWarning(chain))
+/**
+ * Only an Etherscan that leads the indexer order is worth a warning. With its key set it answers
+ * the queries, and a keyless Blockscout is skipped for the next indexer, so it blocks nothing.
+ */
+function indexerKeyService(chain: string): 'etherscan' | undefined {
+  if (!shouldShowEtherscanWarning(chain) || getApiKey('etherscan'))
     return undefined;
 
-  if (!getApiKey('etherscan'))
-    return 'etherscan';
-
-  return getApiKey('blockscout') ? undefined : 'blockscout';
+  return 'etherscan';
 }
 
 const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout' | undefined>(() => {

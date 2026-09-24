@@ -1,11 +1,30 @@
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
+import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComponentPublicInstance, nextTick } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AccountForm from '@/modules/accounts/management/AccountForm.vue';
+import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
+
+const apiKeys = vi.hoisted(() => new Map<string, string>());
+
+vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
+  useExternalApiKeys: vi.fn(() => ({ getApiKey: (name: string): string => apiKeys.get(name) ?? '' })),
+}));
+
+const ethereum: EvmChainInfo = {
+  evmChainName: 'ethereum',
+  id: Blockchain.ETH,
+  image: '',
+  name: 'Ethereum',
+  nativeToken: 'ETH',
+  type: 'evm',
+};
 
 /**
  * `AccountForm.validate()` falls back to `true` when the selected child does not expose a
@@ -211,6 +230,46 @@ describe('modules/accounts/management/AccountForm', () => {
       // Opening on a chain is not choosing one. The rebuild used to run on mount as well, so the
       // form answered a question nobody had asked yet.
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    });
+  });
+
+  /*
+   * The warning names the key the history query is actually missing. On a chain that queries
+   * Etherscan first, an Etherscan key is what the query needs; Blockscout is a fallback there, and
+   * the backend skips it without a key, so its absence must not be reported as a requirement.
+   */
+  describe('indexer api key warning', () => {
+    const ethereumAccount = (): AccountManageState => ({
+      chain: Blockchain.ETH,
+      data: [{ address: '', tags: null }],
+      mode: 'add',
+      type: 'account',
+    });
+
+    function mountOnEthereum(): void {
+      useSupportedChainsStore().supportedChains = [ethereum];
+      wrapper = createWrapper(ethereumAccount());
+      updateGeneralSettings({ defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] });
+    }
+
+    beforeEach(() => {
+      apiKeys.clear();
+    });
+
+    it('should not ask for a blockscout key when etherscan leads and has a key', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      mountOnEthereum();
+      await nextTick();
+
+      expect(wrapper.text()).not.toContain('external_services.blockscout.api_key_message');
+      expect(wrapper.text()).not.toContain('external_services.etherscan.api_key_message');
+    });
+
+    it('should ask for an etherscan key when etherscan leads without one', async () => {
+      mountOnEthereum();
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.etherscan.api_key_message');
     });
   });
 });
