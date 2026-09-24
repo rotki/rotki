@@ -1,7 +1,9 @@
 import { bigNumberify, Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
+import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type EffectScope } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
@@ -294,6 +296,58 @@ describe('usePriceRefresh', () => {
       vi.useRealTimers();
 
       expect(maxConcurrent).toBe(1);
+    });
+  });
+
+  describe('refreshing', () => {
+    /** Holds one PRICES activity open under `parts` until the returned release is called. */
+    async function holdPriceWork(...parts: string[]): Promise<() => void> {
+      const { useNativeTask } = await import('@/modules/task-center/use-native-task');
+      const { ActivityKind, makeActivityId } = await import('@/modules/task-center/core/types');
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      startPromise(useNativeTask().submitTask({
+        id: makeActivityId(ActivityKind.PRICES, ...parts),
+        kind: ActivityKind.PRICES,
+        run: async () => {
+          await held;
+          return ok(undefined);
+        },
+        title: 'prices',
+      }));
+      await flushPromises();
+      return release;
+    }
+
+    it.each([
+      { parts: ['latest', 'digest', 'cached'], work: 'latest prices' },
+      { parts: ['exchange-rates'], work: 'exchange rates' },
+    ])('should report a refresh while $work are being fetched, and stop once they finish', async ({ parts }) => {
+      const { refreshing } = await createPriceRefresh();
+      const release = await holdPriceWork(...parts);
+
+      expect(get(refreshing)).toBe(true);
+
+      release();
+      await flushPromises();
+
+      expect(get(refreshing)).toBe(false);
+    });
+
+    it.each([
+      { parts: ['historic', 'ETH', 'USD', '1700000000'], work: 'a historic lookup' },
+      { parts: ['daily', 'ETH', 'USD'], work: 'daily prices' },
+      { parts: ['oracle-cache'], work: 'the oracle cache' },
+      { parts: ['manual', 'add', 'ETH'], work: 'a manual price edit' },
+    ])('should not report a refresh for $work', async ({ parts }) => {
+      const { refreshing } = await createPriceRefresh();
+      const release = await holdPriceWork(...parts);
+
+      expect(get(refreshing)).toBe(false);
+
+      release();
     });
   });
 });

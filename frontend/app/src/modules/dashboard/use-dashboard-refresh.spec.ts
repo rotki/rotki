@@ -41,6 +41,10 @@ vi.mock('@/modules/settings/use-setting', async (importOriginal) => {
   };
 });
 
+vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
+  usePriceRefresh: (): Record<string, unknown> => ({ refreshing: ref(false) }),
+}));
+
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): Record<string, unknown> => ({ useIsActive: (): unknown => ref(false) }),
 }));

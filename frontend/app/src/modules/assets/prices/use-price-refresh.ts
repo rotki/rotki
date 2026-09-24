@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { startPromise } from '@shared/utils';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
@@ -9,6 +9,8 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface PriceRefreshTask {
   ignoreCache: boolean;
@@ -21,6 +23,15 @@ interface UsePriceRefreshReturn {
   adjustPrices: (prices: MaybeRef<AssetPrices>) => void;
   refreshPrice: (asset: string) => Promise<void>;
   refreshPrices: (ignoreCache?: boolean, selectedAssets?: string[] | null) => Promise<void>;
+  /**
+   * Whether a refresh of current prices is running: the exchange rates or the latest prices.
+   *
+   * @remarks
+   * Not the whole PRICES kind. Historic and daily lookups, the oracle cache and manual price edits
+   * are PRICES work too, and reading the kind let a single historic lookup disable every refresh
+   * button and put every price row in loading.
+   */
+  refreshing: ComputedRef<boolean>;
 }
 
 export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn => {
@@ -35,6 +46,12 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const { assets: regularAssets } = useAggregatedBalances();
   const { hasCachedPrice } = usePriceUtils();
   const { fetchExchangeRates, fetchPrices } = usePriceTaskManager();
+  const { useIsActive, useIsActivePrefix } = useTaskCenter();
+
+  const refreshing = logicOr(
+    useIsActive(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
+    useIsActivePrefix(ActivityKind.PRICES, ActivityPart.LATEST),
+  );
 
   const assets = computed<string[]>(() => [...get(regularAssets), ...get(collectionMainAssets)]);
 
@@ -53,9 +70,9 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
    * Fetches prices for the given assets and writes the result into the balances store.
    *
    * @remarks
-   * Sets no status of its own: the in-flight state belongs to the native PRICES activity, read
-   * with `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`. Custom assets that no longer
-   * resolve are dropped before the request rather than sent and failed.
+   * Sets no status of its own: the in-flight state belongs to its PRICES activities, read through
+   * {@link UsePriceRefreshReturn.refreshing}. Custom assets that no longer resolve are dropped
+   * before the request rather than sent and failed.
    *
    * @param ignoreCache - bypasses the cached prices, and additionally re-fetches exchange rates.
    * @param selectedAssets - the assets to price; an empty list requests none.
@@ -165,6 +182,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
 
   return {
     adjustPrices,
+    refreshing,
     refreshPrice,
     refreshPrices,
   };

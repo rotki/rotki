@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Looking up a historic or daily price no longer disables the price refresh buttons and puts every price on the balances pages and the dashboard in a loading state. Only an actual refresh of current prices does that now.
 * :bug:`-` A failed premium database sync now says why it failed. Before, the error notification had an empty description.
 * :bug:`-` A profit and loss report that stops on an accounting error now shows the error. Before, it opened an empty report as if the generation had succeeded.
 * :feature:`13203` Adding accounts now reports its outcome in the task centre instead of a toast per address. Adding one address or many shows one row per address, with the chains it is now tracked on, and a bulk add or a CSV import groups them under one row. An address with no activity on any EVM chain, which rotki does not track, is marked as needing attention and stays until dismissed, with a button that opens the add dialog to track it on a chain of your choice. Rows of an import that are already tracked are listed as such, and the import's progress bar and completion message are gone.
