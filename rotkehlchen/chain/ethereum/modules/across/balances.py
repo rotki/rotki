@@ -53,11 +53,11 @@ class AcrossBalances(ProtocolWithBalance):
             token: EvmToken,
     ) -> EvmToken:
         """Ensure Across LP tokens have the metadata required by the price inquirer."""
-        if token.protocol is not None and token.underlying_tokens is not None:
+        if token.protocol is not None and len(token.underlying_tokens) != 0:
             return token
 
         underlying_tokens = token.underlying_tokens
-        if underlying_tokens is None:
+        if len(underlying_tokens) == 0:
             if (underlying_address := ACROSS_LP_TOKEN_UNDERLYING.get(token.evm_address)) is None:
                 log.error('Could not find the underlying token for Across LP token %s', token)
                 return token
@@ -81,11 +81,11 @@ class AcrossBalances(ProtocolWithBalance):
                 )
                 return token
 
-            underlying_tokens = [UnderlyingToken(
+            underlying_tokens = (UnderlyingToken(
                 address=underlying_token.evm_address,
                 token_kind=TokenKind.ERC20,
                 weight=ONE,
-            )]
+            ),)
 
         return get_or_create_evm_token(
             userdb=self.evm_inquirer.database,

@@ -415,11 +415,11 @@ def test_across_staked_lp_balances(
     staked_amount = FVal('0.941791733')
     updated_token = EvmToken(token.identifier)
     assert updated_token.protocol == CPT_ACROSS
-    assert updated_token.underlying_tokens == [UnderlyingToken(
+    assert updated_token.underlying_tokens == (UnderlyingToken(
         address=A_USDC.resolve_to_evm_token().evm_address,
         token_kind=TokenKind.ERC20,
         weight=ONE,
-    )]
+    ),)
     assert across_balances[user_address].assets[updated_token][CPT_ACROSS] == Balance(
         amount=staked_amount,
         value=staked_amount * CURRENT_PRICE_MOCK * FVal('1.1'),

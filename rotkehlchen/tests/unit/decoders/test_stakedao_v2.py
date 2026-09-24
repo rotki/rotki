@@ -46,7 +46,6 @@ def test_vault_deposit(
     assert vault_token.symbol == 'sd-crvfrxUSD-vault'
     assert vault_token.name == 'Stake DAO crvUSD/frxUSD Vault'
     assert vault_token.protocol == CPT_STAKEDAO_V2
-    assert vault_token.underlying_tokens is not None
     assert len(vault_token.underlying_tokens) == 1
     assert vault_token.underlying_tokens[0].address == underlying_addr
     assert events == [EvmEvent(

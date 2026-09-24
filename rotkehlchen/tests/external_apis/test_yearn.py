@@ -216,7 +216,6 @@ def test_process_staked_vaults(
 
     token = EvmToken('eip155:1/erc20:0x7Fd8Af959B54A677a1D8F92265Bd0714274C56a3')
     underlying_tokens = token.underlying_tokens
-    assert underlying_tokens is not None
     assert len(underlying_tokens) == 1
     assert underlying_tokens[0].address == string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09')  # noqa: E501
     assert token.protocol == CPT_YEARN_STAKING

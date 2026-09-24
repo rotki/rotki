@@ -2,7 +2,7 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from eth_utils import to_checksum_address
 
@@ -34,6 +34,9 @@ from rotkehlchen.types import (
 )
 
 from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -78,7 +81,7 @@ class UnderlyingToken(NamedTuple):
 
 
 def normalize_underlying_token_weights(
-        underlying_tokens: list[UnderlyingToken],
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> list[UnderlyingToken]:
     """Normalize underlying token weights to sum to exactly 100%"""
     normalized_tokens = []
@@ -96,7 +99,7 @@ def normalize_underlying_token_weights(
 
 
 def _serialize_underlying_tokens(
-        underlying_tokens: list[UnderlyingToken],
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> list[dict[str, Any]]:
     """Serialize underlying tokens while ensuring exported weights sum to exactly 100%."""
     return [x.serialize() for x in normalize_underlying_token_weights(underlying_tokens)]
@@ -617,7 +620,7 @@ class EvmToken(CryptoAsset):
     token_kind: EVM_TOKEN_KINDS_TYPE = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
-    underlying_tokens: list[UnderlyingToken] | None = field(init=False)
+    underlying_tokens: tuple[UnderlyingToken, ...] = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         super(EvmToken, self).__post_init__(direct_field_initialization)
@@ -653,7 +656,7 @@ class EvmToken(CryptoAsset):
             cryptocompare: str | None = '',
             decimals: int | None = None,
             protocol: str | None = None,
-            underlying_tokens: list[UnderlyingToken] | None = None,
+            underlying_tokens: Sequence[UnderlyingToken] = (),
             collectible_id: str | None = None,
     ) -> EvmToken:
         identifier = evm_address_to_identifier(
@@ -677,7 +680,7 @@ class EvmToken(CryptoAsset):
             token_kind=token_kind,
             decimals=decimals,
             protocol=protocol,
-            underlying_tokens=underlying_tokens,
+            underlying_tokens=tuple(underlying_tokens),
         )
         return asset
 
@@ -685,7 +688,7 @@ class EvmToken(CryptoAsset):
     def deserialize_from_db(
             cls: type[EvmToken],
             entry: EthereumTokenDBTuple,
-            underlying_tokens: list[UnderlyingToken] | None = None,
+            underlying_tokens: Sequence[UnderlyingToken] = (),
     ) -> EvmToken:
         """May raise UnknownAsset if the swapped for asset can't be recognized
         That error would be bad because it would mean somehow an unknown id made it into the DB
@@ -709,18 +712,16 @@ class EvmToken(CryptoAsset):
         )
 
     def to_dict(self) -> dict[str, Any]:
-        underlying_tokens = (
-            _serialize_underlying_tokens(self.underlying_tokens)
-            if self.underlying_tokens is not None
-            else None
-        )
         result = super(EvmToken, self).to_dict() | {
             'address': self.evm_address,
             'evm_chain': self.chain_id.to_name(),
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,
-            'underlying_tokens': underlying_tokens,
+            'underlying_tokens': (  # None for none since the API rejects an empty list
+                _serialize_underlying_tokens(self.underlying_tokens)
+                if len(self.underlying_tokens) != 0 else None
+            ),
         }
         if self.token_kind == TokenKind.ERC721:  # only include collectible_id for ERC721 tokens
             result['collectible_id'] = tokenid_to_collectible_id(self.identifier)
@@ -767,7 +768,7 @@ class Nft(EvmToken):
             token_kind=TokenKind.ERC721,
             decimals=0,
             protocol=None,
-            underlying_tokens=None,
+            underlying_tokens=(),
         )
 
     @classmethod
@@ -801,7 +802,7 @@ class Nft(EvmToken):
             token_kind=TokenKind.ERC721,
             decimals=0,
             protocol=None,
-            underlying_tokens=None,
+            underlying_tokens=(),
         )
         return asset
 

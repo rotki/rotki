@@ -910,7 +910,6 @@ class WooFiStakingDecoder(WooFiCommonDecoder):
                 chain_id=self.node_inquirer.chain_id,
             )) is None or
             xwoo.protocol != CPT_WOO_FI or
-            xwoo.underlying_tokens is None or
             len(xwoo.underlying_tokens) != 1
         ):  # Ensure the xWOO token exists with the proper protocol and underlying asset
             get_or_create_evm_token(

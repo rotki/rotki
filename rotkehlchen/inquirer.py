@@ -347,7 +347,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     if price is not None:
         return price, oracle
 
-    if token.underlying_tokens is not None:
+    if len(token.underlying_tokens) != 0:
         usd_price = ZERO
         for underlying_token in token.underlying_tokens:
             underlying_asset = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))  # noqa: E501
@@ -837,8 +837,7 @@ class Inquirer:
             return None
 
         if (  # Prevent recursion if this asset has itself as an underlying token
-            (underlying_tokens := asset.underlying_tokens) is not None and
-            asset.evm_address in (x.address for x in underlying_tokens)
+            asset.evm_address in (x.address for x in asset.underlying_tokens)
         ):
             Inquirer._msg_aggregator.add_error(
                 f'Token {asset} has itself as underlying token. Please edit the '
@@ -857,7 +856,7 @@ class Inquirer:
             )
         elif (
             asset.protocol in EVM_PROTOCOLS_WITH_PRICE_LOGIC or
-            underlying_tokens is not None
+            len(asset.underlying_tokens) != 0
         ):
             price_result, oracle = get_underlying_asset_price(asset)
 
@@ -1301,7 +1300,7 @@ class Inquirer:
         )
         # check if the underlying token is in the DB, otherwise query the chain
         # and store it in the DB and use it
-        if maybe_underlying_tokens is None or len(maybe_underlying_tokens) != 1:
+        if len(maybe_underlying_tokens) != 1:
             if (
                 underlying_token := ensure_gearbox_lp_underlying_tokens(
                     token_identifier=token.identifier,
@@ -1385,7 +1384,7 @@ class Inquirer:
             abi=ethereum.node_inquirer.contracts.abi(vault_abi),
             deployed_block=0,
         )
-        if maybe_underlying_tokens is None or len(maybe_underlying_tokens) != 1:
+        if len(maybe_underlying_tokens) != 1:
             # underlying token not recorded in the DB. Ask the chain
             try:
                 remote_underlying_token = contract.call(ethereum.node_inquirer, 'token')
@@ -1458,7 +1457,7 @@ class Inquirer:
         not reliable.
         """
         if (
-            token.underlying_tokens is None or
+            len(token.underlying_tokens) == 0 or
             token.protocol != CPT_YEARN_STAKING
         ):
             log.error(f'Logic to query staked yearn vault price with a malformed token {token}')

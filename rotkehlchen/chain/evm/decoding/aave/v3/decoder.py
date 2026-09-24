@@ -216,7 +216,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         continue
 
                     received_token = event.asset.resolve_to_evm_token()
-                    if not any(received_addr == x.address for x in received_token.underlying_tokens or []):  # noqa: E501
+                    if not any(received_addr == x.address for x in received_token.underlying_tokens):  # noqa: E501
                         log.error(f'{received_addr} is not in the underlying tokens for {received_token}: {received_token.underlying_tokens=}')  # noqa: E501
                         continue
 
@@ -558,7 +558,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     amount=int.from_bytes(context.tx_log.data[0:32]),  # swapped amount
                     asset=(resolved_token := event.asset.resolve_to_evm_token()),
                 ) and
-                any(token.address == swapped_addr for token in resolved_token.underlying_tokens or [])  # noqa: E501
+                any(token.address == swapped_addr for token in resolved_token.underlying_tokens)
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND

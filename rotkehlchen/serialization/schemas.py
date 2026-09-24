@@ -277,15 +277,6 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> EvmToken:
-        given_underlying_tokens = data.pop('underlying_tokens', None)
-        underlying_tokens = None
-        if given_underlying_tokens:  # truthy check checks for not None and not empty list
-            underlying_tokens = [UnderlyingToken(
-                address=entry['address'],
-                token_kind=entry['token_kind'],
-                weight=entry['weight'],
-            ) for entry in given_underlying_tokens]
-
         return EvmToken.initialize(
             address=data['address'],
             chain_id=data['evm_chain'],
@@ -299,7 +290,11 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
             cryptocompare=data['cryptocompare'],
             decimals=data['decimals'],
             protocol=data['protocol'],
-            underlying_tokens=underlying_tokens,
+            underlying_tokens=tuple(UnderlyingToken(
+                address=entry['address'],
+                token_kind=entry['token_kind'],
+                weight=entry['weight'],
+            ) for entry in data['underlying_tokens'] or ()),
             collectible_id=data['collectible_id'],
         )
 

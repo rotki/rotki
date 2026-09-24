@@ -3430,5 +3430,5 @@ def test_ensure_curve_pool_and_gauge_tokens(globaldb, ethereum_transaction_decod
             chain_id=ChainID.ETHEREUM,
         )) is not None
         if address == gauge_address:
-            assert token.underlying_tokens is not None
+            assert len(token.underlying_tokens) != 0
             assert token.underlying_tokens[0].address == lp_token_address

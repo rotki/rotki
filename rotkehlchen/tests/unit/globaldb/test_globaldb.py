@@ -199,7 +199,6 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         coingecko=resolved_bat.coingecko,
         cryptocompare=resolved_bat.cryptocompare,
         protocol=None,
-        underlying_tokens=None,
     )
     with pytest.raises(InputError):
         globaldb.edit_evm_token(bat_custom)

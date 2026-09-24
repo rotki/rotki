@@ -1,6 +1,6 @@
 import json
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -19,6 +19,9 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, Location, Timestamp, TokenKind
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class RKLEncoder(json.JSONEncoder):
@@ -69,7 +72,7 @@ def rlk_jsondumps(data: dict | list) -> str:
 def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: list[UnderlyingToken] | None,
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> AssetWithOracles:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class
@@ -148,7 +151,7 @@ def deserialize_asset_with_oracles_from_db(
 def deserialize_generic_asset_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: list[UnderlyingToken] | None,
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> AssetWithNameAndType:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class

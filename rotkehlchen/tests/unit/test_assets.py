@@ -1181,6 +1181,31 @@ def test_edit_placeholder_token_keeps_missing_metadata(globaldb, database):
     ).fetchone() == (None, None, None, 'some-protocol')
 
 
+def test_same_underlying_tokens_as_list_do_not_edit_token(database):
+    """Underlying tokens given as a list equal to the stored ones are not a change"""
+    GlobalDBHandler.add_asset(EvmToken.initialize(
+        address=(address := make_evm_address()),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Parent',
+        symbol='PRNT',
+        decimals=18,
+        underlying_tokens=(underlying_tokens := [UnderlyingToken(
+            address=A_DAI.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )]),
+    ))
+    with patch.object(GlobalDBHandler, 'edit_token_fields') as edit_token_fields:
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=address,
+            chain_id=ChainID.ETHEREUM,
+            underlying_tokens=underlying_tokens,
+        )
+    assert edit_token_fields.call_count == 0
+
+
 def test_token_with_missing_metadata_loads_the_same_everywhere(globaldb):
     """A token with NULL name, symbol and decimals must load with the same values
     through the resolver and through the token queries"""

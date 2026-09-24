@@ -60,7 +60,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.assets.types import AssetType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -139,7 +139,7 @@ def edit_token_and_clean_cache(
         decimals: int | None,
         started: Timestamp | None,
         chain_inquirer: EvmNodeInquirer | SolanaInquirer | None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
         protocol: str | None = None,
@@ -184,7 +184,7 @@ def edit_token_and_clean_cache(
     if (
         underlying_tokens is not None and
         isinstance(token, EvmToken) and
-        token.underlying_tokens != underlying_tokens
+        token.underlying_tokens != (underlying_tokens := tuple(underlying_tokens))
     ):
         object.__setattr__(token, 'underlying_tokens', underlying_tokens)
         updated_fields.add('underlying_tokens')
@@ -273,7 +273,6 @@ def get_single_underlying_token(token: EvmToken) -> EvmToken | None:
     Returns the underlying token or None if the token has no/multiple underlying tokens.
     """
     if (
-        token.underlying_tokens is not None and
         len(token.underlying_tokens) == 1 and
         (underlying_token := get_evm_token(
             evm_address=token.underlying_tokens[0].address,
@@ -295,7 +294,7 @@ def get_or_create_evm_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         evm_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -418,7 +417,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -445,7 +444,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -470,7 +469,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: EvmNodeInquirer | SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -592,7 +591,7 @@ def _get_or_create_token(
             token_kwargs.update({
                 'chain_id': chain_id,  # type: ignore[dict-item]
                 'collectible_id': collectible_id,
-                'underlying_tokens': underlying_tokens,  # type: ignore[dict-item]
+                'underlying_tokens': () if underlying_tokens is None else underlying_tokens,  # type: ignore[dict-item]
             })
 
         # Store the information in the database

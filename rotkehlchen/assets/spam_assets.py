@@ -58,7 +58,6 @@ def _save_or_update_spam_assets(
             decimals=info.get('decimals', 18),
             symbol=info.get('symbol', MISSING_SYMBOL_SPAM_TOKEN),
             protocol=SPAM_PROTOCOL,
-            underlying_tokens=None,
         )
 
         try:

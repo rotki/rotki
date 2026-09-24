@@ -293,7 +293,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
         coingecko='ctk',
         cryptocompare=None,
         protocol=None,
-        underlying_tokens=None,
     ))
     globaldb.add_user_owned_assets([Asset('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f')])
     update_patch = mock_asset_updates(
@@ -921,11 +920,11 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E
         chain_id=ChainID.ETHEREUM,
     )
     assert token is not None
-    assert token.underlying_tokens == [UnderlyingToken(
+    assert token.underlying_tokens == (UnderlyingToken(
         address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
         token_kind=TokenKind.ERC20,
         weight=ONE,
-    )]
+    ),)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

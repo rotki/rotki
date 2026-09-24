@@ -833,7 +833,6 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
         chain_id=ChainID.ETHEREUM,
     )) is not None
     underlying_tokens = usdc_pool.underlying_tokens
-    assert underlying_tokens is not None
     assert len(underlying_tokens) == 1
     assert underlying_tokens[0].address == string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')  # noqa: E501
     assert pools[usdc_pool.evm_address] == GearboxPoolData(
@@ -850,7 +849,6 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
         chain_id=ChainID.ETHEREUM,
     )) is not None
     underlying_tokens = dola_pool.underlying_tokens
-    assert underlying_tokens is not None
     assert len(underlying_tokens) == 1
     assert underlying_tokens[0].address == string_to_evm_address('0x865377367054516e17014CcdED1e7d814EDC9ce4')  # noqa: E501
     assert pools[dola_pool.evm_address] == GearboxPoolData(
