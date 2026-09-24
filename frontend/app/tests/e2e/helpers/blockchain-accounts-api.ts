@@ -1,6 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 import { backendUrl } from '../../../playwright.config';
 import { waitForAsyncQuery } from './api';
+import { pendingTaskId } from './pending-task';
 
 /**
  * Tracks a blockchain account via API, waiting for the balance query it starts.
@@ -26,9 +27,9 @@ export async function apiAddBlockchainAccount(
     throw new Error(`Failed to track ${address} on ${blockchain}: ${response.status()} ${await response.text()}`);
   }
 
-  const body = await response.json();
+  const taskId = pendingTaskId(await response.json());
 
-  if (body.result?.task_id) {
-    await waitForAsyncQuery(request, body.result.task_id);
+  if (taskId !== undefined) {
+    await waitForAsyncQuery(request, taskId);
   }
 }

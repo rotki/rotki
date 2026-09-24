@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { backendUrl, colibriUrl } from '../../../playwright.config';
 import { TIMEOUT_LONG } from './constants';
+import { pendingTaskId } from './pending-task';
 
 const WAIT_TIME_MS = 5000;
 const MAX_RETRIES = TIMEOUT_LONG / WAIT_TIME_MS;
@@ -153,10 +154,10 @@ export async function apiCreateAccount(
     },
   });
 
-  const body = await response.json();
+  const taskId = pendingTaskId(await response.json());
 
-  if (body.result?.task_id) {
-    await checkForTaskCompletion(request, body.result.task_id);
+  if (taskId !== undefined) {
+    await checkForTaskCompletion(request, taskId);
   }
 
   await apiDisableDockSummary(request);
@@ -185,10 +186,10 @@ export async function apiLogin(
     },
   });
 
-  const body = await response.json();
+  const taskId = pendingTaskId(await response.json());
 
-  if (body.result?.task_id) {
-    await checkForTaskCompletion(request, body.result.task_id);
+  if (taskId !== undefined) {
+    await checkForTaskCompletion(request, taskId);
     // Login to colibri after backend login succeeds
     await apiColibriLogin(request, username, password);
     return true;
