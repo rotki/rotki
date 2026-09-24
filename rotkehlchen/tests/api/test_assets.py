@@ -1628,7 +1628,8 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: APIServer) -> None:
     token = EvmToken(token.identifier)
     assert token.name == 'A new name'
     assert token.symbol == ''
-    assert token.decimals == 18
+    assert token.decimals is None
+    assert token.get_decimals() == 18
 
 
 def test_add_token_with_missing_metadata(

@@ -1181,6 +1181,20 @@ def test_edit_placeholder_token_keeps_missing_metadata(globaldb, database):
     ).fetchone() == (None, None, None, 'some-protocol')
 
 
+def test_token_with_missing_metadata_loads_the_same_everywhere(globaldb):
+    """A token with NULL name, symbol and decimals must load with the same values
+    through the resolver and through the token queries"""
+    GlobalDBHandler.add_asset(EvmToken.initialize(
+        address=(address := make_evm_address()),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+    ))
+    resolved = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+    queried = globaldb.get_evm_token(address=address, chain_id=ChainID.ETHEREUM)
+    assert resolved.to_dict() == queried.to_dict()
+    assert (resolved.name, resolved.symbol, resolved.decimals) == (resolved.identifier, '', None)
+
+
 def test_resolve_nft():
     """Test that a special case of nft is handled when checking asset type and when resolving"""
     nft_asset = Asset('_nft_foo')

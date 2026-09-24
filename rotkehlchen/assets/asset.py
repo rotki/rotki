@@ -102,6 +102,21 @@ def _serialize_underlying_tokens(
     return [x.serialize() for x in normalize_underlying_token_weights(underlying_tokens)]
 
 
+def token_name_and_symbol_from_db(
+        identifier: str,
+        name: str | None,
+        symbol: str | None,
+) -> tuple[str, str]:
+    """Return the name and symbol a token loaded from the DB is given.
+
+    The DB stores NULL for the name, symbol and decimals of a token whose information could
+    not be queried. A loaded token takes its identifier as name, which is also how a token with
+    missing information is recognized so it can be queried again, and an empty symbol. Decimals
+    are kept as None and are read through get_decimals().
+    """
+    return (identifier if name is None else name), ('' if symbol is None else symbol)
+
+
 @total_ordering
 @dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True, slots=True)
 class Asset:
@@ -676,13 +691,14 @@ class EvmToken(CryptoAsset):
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
+        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[5], symbol=entry[6])
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
             chain_id=ChainID(entry[2]),
             token_kind=TokenKind.deserialize_evm_from_db(entry[3]),
             decimals=entry[4],
-            name=entry[5],
-            symbol=entry[6] if entry[6] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[7]),  # type: ignore
             swapped_for=swapped_for,
             coingecko=entry[9],
@@ -861,12 +877,13 @@ class SolanaToken(CryptoAsset):
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[7]) if entry[7] is not None else None
+        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[4], symbol=entry[5])
         return SolanaToken.initialize(
             address=SolanaAddress(entry[1]),
             token_kind=TokenKind.deserialize_solana_from_db(entry[2]),
             decimals=entry[3],
-            name=entry[4],
-            symbol=entry[5] if entry[5] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[6]),  # type: ignore
             swapped_for=swapped_for,
             coingecko=entry[8],
@@ -944,11 +961,12 @@ class HyperliquidToken(CryptoAsset):
             cls: type[HyperliquidToken],
             entry: HyperliquidTokenDBTuple,
     ) -> HyperliquidToken:
+        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[3], symbol=entry[4])
         return HyperliquidToken.initialize(
             address=HyperliquidTokenAddress(entry[1]),
             decimals=entry[2],
-            name=entry[3],
-            symbol=entry[4] if entry[4] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[5]),  # type: ignore
             swapped_for=CryptoAsset(entry[6]) if entry[6] is not None else None,
             coingecko=entry[7],
