@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 describe('modules/accounts/AccountChains', () => {
@@ -66,6 +67,77 @@ describe('modules/accounts/AccountChains', () => {
       .toContain('account_balances.skip_queries.chain_marker');
     const tooltip = wrapper.find('[data-testid=account-chain-skipped-tooltip]').element.parentElement;
     expect(tooltip?.textContent?.replace('lu-ban', '').trim()).toBe('account_balances.skip_queries.chain_marker::Eth');
+  });
+
+  describe('the detection marker', () => {
+    function detectedChains(): string[] {
+      return Array.from(wrapper.findAll('[data-testid=account-chain][data-detected]'), el => el.attributes('data-chain') ?? '');
+    }
+
+    function chip(): string | undefined {
+      const element = wrapper.find('[data-testid=account-chains-detected-tooltip]');
+      return element.exists() ? element.text() : undefined;
+    }
+
+    it('should ring only the chains detection added the address on', () => {
+      useDetectedAccountsStore().record([{ address: ADDRESS, chain: 'optimism' }, { address: '0xother', chain: 'eth' }]);
+
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth', 'optimism'], id: ADDRESS } });
+
+      expect(detectedChains()).toEqual(['optimism']);
+    });
+
+    it('should mark nothing on a row without an address', () => {
+      useDetectedAccountsStore().record([{ address: 'xpub1', chain: 'eth' }]);
+
+      wrapper = createWrapper({ row: { chains: ['eth'], id: 'xpub1' } });
+
+      expect(detectedChains()).toEqual([]);
+      expect(chip()).toBeUndefined();
+    });
+
+    it('should name the detected chains once, on the row chip', () => {
+      useDetectedAccountsStore().record([{ address: ADDRESS, chain: 'eth' }]);
+
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth', 'optimism'], id: ADDRESS } });
+
+      expect(chip()).toBe('account_balances.detected.tooltip::Eth');
+    });
+
+    it('should name the chains in the order the row draws them, not the order detection found them', () => {
+      useDetectedAccountsStore().record([{ address: ADDRESS, chain: 'optimism' }, { address: ADDRESS, chain: 'eth' }]);
+
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth', 'base', 'optimism'], id: ADDRESS } });
+
+      expect(chip()).toBe('account_balances.detected.tooltip::Eth, Optimism');
+    });
+
+    it('should drop the rings and the chip when the chip is clicked', async () => {
+      useDetectedAccountsStore().record([{ address: ADDRESS, chain: 'eth' }]);
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth', 'optimism'], id: ADDRESS } });
+
+      await wrapper.find('[data-testid=account-chains-detected]').trigger('click');
+
+      expect(detectedChains()).toEqual([]);
+      expect(chip()).toBeUndefined();
+    });
+
+    it('should show no chip on a row detection did not touch', () => {
+      useDetectedAccountsStore().record([{ address: '0xother', chain: 'eth' }]);
+
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth'], id: ADDRESS } });
+
+      expect(chip()).toBeUndefined();
+    });
+
+    it('should leave the chain tooltip naming the chain, with the detection on the chip only', () => {
+      useDetectedAccountsStore().record([{ address: ADDRESS, chain: 'eth' }]);
+
+      wrapper = createWrapper({ address: ADDRESS, row: { chains: ['eth'], id: ADDRESS } });
+
+      const tooltip = wrapper.find('[data-chain=eth][data-testid=account-chain]').element.parentElement?.parentElement;
+      expect(tooltip?.textContent?.trim()).toBe('Eth');
+    });
   });
 
   it('should not mark a chain the row merely filtered out of its totals', async () => {

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Detecting EVM accounts no longer raises a notification for every chain an address was added on. The accounts table instead rings the chains detection added and marks the row "New", with a tooltip naming those chains; clicking the mark dismisses it, and it also clears when you log out. After a run, the Detect EVM accounts button briefly says how many chains it added, or that it found none.
 * :bug:`-` Looking up a historic or daily price no longer disables the price refresh buttons and puts every price on the balances pages and the dashboard in a loading state. Only an actual refresh of current prices does that now.
 * :bug:`-` A failed premium database sync now says why it failed. Before, the error notification had an empty description.
 * :bug:`-` A profit and loss report that stops on an accounting error now shows the error. Before, it opened an empty report as if the generation had succeeded.

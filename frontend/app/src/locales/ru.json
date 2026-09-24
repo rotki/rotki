@@ -3426,10 +3426,6 @@
     "tooltip": "Уведомления"
   },
   "notification_messages": {
-    "address_migration": {
-      "message": "Следующий адрес был добавлен в {chain}: {addresses}|Следующие адреса были добавлены в {chain}: {addresses}",
-      "title": "Адрес был добавлен в {chain}|Адреса были добавлены в {chain}"
-    },
     "backend": {
       "title": "Бэкенд"
     },

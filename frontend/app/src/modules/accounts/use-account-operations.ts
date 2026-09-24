@@ -2,10 +2,9 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { ok } from 'plainfp/result';
 import { allWithConcurrency, type ResultAsync } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
-import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useAccountFetching } from '@/modules/accounts/use-account-fetching';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
@@ -14,10 +13,6 @@ import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** Chains read at a time during the account walk. */
 const ACCOUNT_READ_CONCURRENCY = 2;
@@ -37,7 +32,6 @@ export interface RefreshAccountsParams {
 }
 
 interface UseAccountOperationsReturn {
-  detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (params?: FetchAccountsParams) => Promise<void>;
   refreshAccounts: (params: RefreshAccountsParams) => Promise<void>;
 }
@@ -47,14 +41,10 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { hydrate } = useBalanceHydration();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchEnsNames } = useEnsOperations();
-  const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
 
   const { track } = useAccountLoadState();
-  const { submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
 
   /**
    * Reads each chain's accounts, {@link ACCOUNT_READ_CONCURRENCY} at a time.
@@ -149,34 +139,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     await Promise.allSettled(pending);
   };
 
-  const detectEvmAccounts = async (): Promise<void> => {
-    const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
-      kind: ActivityKind.ACCOUNTS,
-      rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<unknown>(
-          async () => detectEvmAccountsCaller(),
-        ),
-        () => {},
-      ),
-      subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
-      title: t('task_center.group.accounts'),
-    });
-
-    if (isErr(outcome) && isActionable(outcome.error)) {
-      logger.error(outcome.error.message);
-      notifyError(
-        t('actions.detect_evm_accounts.error.title'),
-        t('actions.detect_evm_accounts.error.message', {
-          message: outcome.error.message,
-        }),
-      );
-    }
-  };
-
   return {
-    detectEvmAccounts,
     fetchAccounts,
     refreshAccounts,
   };

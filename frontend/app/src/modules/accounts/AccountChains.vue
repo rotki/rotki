@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
@@ -14,23 +15,26 @@ const { t } = useI18n({ useScope: 'global' });
 
 const chains = computed<string[]>(() => 'chains' in row ? row.chains : [row.chain]);
 
+const { detectedChains, dismiss, isDetected } = useDetectedAccountsStore();
 const { getChainName } = useSupportedChains();
 const { isAddressExcluded } = useDisabledChains();
 
 /**
- * Per chain: `enabled` is this row's local display filter, `skipped` is the saved setting.
+ * Per chain: `enabled` is this row's local display filter, `skipped` is the saved setting, and
+ * `detected` says account detection started tracking the address there since login.
  *
  * @remarks
- * Two unrelated states on one icon, so they are drawn differently: the filter dims the icon, while
- * a skip adds the ban badge that Settings uses for the same thing. `isAddressExcluded` answers for
- * a chain switched off whole as well, which is why a row can be marked on a chain it has no rule of
- * its own for.
+ * Unrelated states on one icon, so they are drawn differently: the filter dims the icon, a skip
+ * adds the ban badge that Settings uses for the same thing, and a detection colors the ring.
+ * `isAddressExcluded` answers for a chain switched off whole as well, which is why a row can be
+ * marked on a chain it has no rule of its own for.
  */
-const chainStatus = computed<{ chain: string; enabled: boolean; skipped: boolean }[]>(() => {
+const chainStatus = computed<{ chain: string; enabled: boolean; skipped: boolean; detected: boolean }[]>(() => {
   const activated = get(chains);
   const filter = get(chainFilter)[row.id] ?? [];
   return activated.map(chain => ({
     chain,
+    detected: address !== undefined && isDetected(chain, address),
     enabled: !filter.includes(chain),
     skipped: address !== undefined && isAddressExcluded(chain, address),
   })).reverse();
@@ -60,6 +64,28 @@ function updateChain(chain: string, enabled: boolean) {
 }
 
 const anyDisabled = computed(() => get(chainStatus).some(item => !item.enabled));
+
+/**
+ * The row's chains that detection added, named for the chip that explains the colored rings. The
+ * chain tooltips stay about the click, so this is the one place the rings are explained.
+ *
+ * @remarks
+ * Follows the row's chain order, which is the order the icons are drawn in.
+ */
+const detectedChainNames = computed<string[]>(() => {
+  if (address === undefined)
+    return [];
+
+  const detectedHere = new Set(detectedChains(address));
+  return get(chains)
+    .filter(chain => detectedHere.has(chain))
+    .map(chain => getChainName(chain));
+});
+
+function dismissDetection(): void {
+  if (address !== undefined)
+    dismiss(address);
+}
 
 function reset() {
   set(chainFilter, {
@@ -93,6 +119,28 @@ function reset() {
       </template>
       {{ t('account_balances.chain_filter.clear') }}
     </RuiTooltip>
+    <RuiTooltip
+      v-if="detectedChainNames.length > 0"
+      :open-delay="200"
+      :close-delay="0"
+      :class-names="{ tooltip: 'max-w-[20rem]' }"
+    >
+      <template #activator>
+        <RuiChip
+          size="sm"
+          color="success"
+          clickable
+          class="ml-2 self-center"
+          data-testid="account-chains-detected"
+          @click="dismissDetection()"
+        >
+          {{ t('account_balances.detected.chip') }}
+        </RuiChip>
+      </template>
+      <span data-testid="account-chains-detected-tooltip">
+        {{ t('account_balances.detected.tooltip', { chains: detectedChainNames.join(', ') }) }}
+      </span>
+    </RuiTooltip>
     <template
       v-for="item in chainStatus"
       :key="item.chain"
@@ -105,8 +153,9 @@ function reset() {
           <div class="relative -ml-2 z-[0] hover:z-[1]">
             <div
               class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 relative cursor-pointer transition-all overflow-hidden"
-              :class="{ '!border-0': !item.enabled }"
+              :class="{ '!border-0': !item.enabled, '!border-rui-success-lighter dark:!border-rui-success dark:ring-1 dark:ring-rui-success': item.enabled && item.detected }"
               :data-chain="item.chain"
+              :data-detected="item.detected || undefined"
               data-testid="account-chain"
               @click="updateChain(item.chain, !item.enabled)"
             >
