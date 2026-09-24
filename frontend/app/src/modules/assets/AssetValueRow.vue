@@ -11,8 +11,6 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { identifier, isCollectionParent = false } = defineProps<{
   identifier: string;
@@ -28,9 +26,7 @@ const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
 const { useAssetPriceInfo } = useAggregatedBalances();
 const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();
 const { getAssetField } = useAssetInfoRetrieval();
-const { refreshPrice } = usePriceRefresh();
-const { useIsActive } = useTaskCenter();
-const refreshingPrices = useIsActive(ActivityKind.PRICES);
+const { refreshing: refreshingPrices, refreshPrice } = usePriceRefresh();
 const { show } = useConfirmStore();
 
 const info = useAssetPriceInfo(() => identifier, () => isCollectionParent);

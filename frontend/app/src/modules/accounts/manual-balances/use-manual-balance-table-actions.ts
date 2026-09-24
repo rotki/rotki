@@ -1,6 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { ManualBalance, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { omit } from 'es-toolkit';
+import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { ActivityKind } from '@/modules/task-center/core/types';
@@ -21,7 +22,7 @@ export function useManualBalanceTableActions(): UseManualBalanceTableActionsRetu
 
   const { useIsActive } = useTaskCenter();
   const refreshing = useIsActive(ActivityKind.MANUAL_BALANCES);
-  const pricesLoading = useIsActive(ActivityKind.PRICES);
+  const { refreshing: pricesLoading } = usePriceRefresh();
 
   async function refresh(): Promise<void> {
     await fetchManualBalances(true);

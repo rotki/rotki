@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { type BalanceSource, RefreshSource } from '@/modules/balances/refresh/core/refresh-types';
@@ -19,7 +20,7 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseDashboardRefreshReturn {
-  /** True while any balance source, token detection, pricing, NFT or pool query is running. */
+  /** True while any balance source, token detection, price refresh, NFT or pool query is running. */
   readonly busy: ComputedRef<boolean>;
   /** The sources the user has connected, in menu order; the others have nothing to refresh. */
   readonly sources: ComputedRef<BalanceSource[]>;
@@ -33,6 +34,7 @@ export function useDashboardRefresh(): UseDashboardRefreshReturn {
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { connections } = storeToRefs(useBankConnectionsStore());
   const { useIsActive } = useTaskCenter();
+  const { refreshing: refreshingPrices } = usePriceRefresh();
   const { redetectAndRefreshAll, refreshAll, refreshAllPrices, refreshSourceAndPrices } = useBalanceRefresh();
   const { banks } = useBankData();
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
@@ -46,7 +48,7 @@ export function useDashboardRefresh(): UseDashboardRefreshReturn {
     useIsActive(ActivityKind.BANK_BALANCES),
     useIsActive(ActivityKind.MANUAL_BALANCES),
     useIsActive(ActivityKind.TOKEN_DETECTION),
-    useIsActive(ActivityKind.PRICES),
+    refreshingPrices,
     useIsActive(ActivityKind.NFT_BALANCES),
     useIsActive(ActivityKind.LIQUIDITY_POOLS),
   );
