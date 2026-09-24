@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 
+from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
@@ -54,8 +55,50 @@ def test_logout_does_not_wait_for_indexer_analytics() -> None:
     stats.start_close.assert_called_once_with()
     stats.wait_for_close.assert_not_called()
     assert vars(rotki)['indexer_stats'] is None
+    assert vars(rotki)['_closing_indexer_stats'] is stats
     assert vars(rotki)['user_is_logged_in'] is False
+    stats.wait_for_close.reset_mock(side_effect=True)
+    rotki.wait_for_indexer_stats_close()
+    stats.wait_for_close.assert_called_once_with()
+    assert vars(rotki)['_closing_indexer_stats'] is None
     inquirer.assert_called_once()
+
+
+def test_shutdown_waits_for_indexer_analytics_after_cleanup() -> None:
+    rest_api = object.__new__(RestAPI)
+    events: list[str] = []
+    rest_api.rotkehlchen = mock.MagicMock()
+    rest_api.main_loop_task = mock.MagicMock()
+    rest_api.stop_event = mock.MagicMock()
+    rest_api.rotkehlchen.shutdown.side_effect = lambda: events.append('logout')
+    rest_api.main_loop_task.join.side_effect = lambda: events.append('main loop')
+    rest_api.rotkehlchen.wait_for_indexer_stats_close.side_effect = lambda: events.append('wait')
+    rest_api.stop_event.set.side_effect = lambda: events.append('stop event')
+
+    with (
+        mock.patch.object(
+            rest_api,
+            '_cancel_api_tasks',
+            side_effect=lambda reason: events.append(f'cancel:{reason}'),
+        ),
+        mock.patch('rotkehlchen.api.rest.GlobalDBHandler') as global_db,
+        mock.patch(
+            'rotkehlchen.api.rest.logging.shutdown',
+            side_effect=lambda: events.append('logging'),
+        ),
+    ):
+        global_db.return_value.cleanup.side_effect = lambda: events.append('global DB')
+        rest_api.stop()
+
+    assert events == [
+        'cancel:Cancelled due to shutdown',
+        'logout',
+        'main loop',
+        'global DB',
+        'wait',
+        'logging',
+        'stop event',
+    ]
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):

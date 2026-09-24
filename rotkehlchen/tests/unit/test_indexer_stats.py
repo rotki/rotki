@@ -324,6 +324,18 @@ def test_indexer_usage_close_overlaps_cleanup_and_is_bounded(monkeypatch) -> Non
     stats._close_worker.join()
 
 
+def test_indexer_usage_wait_for_close_uses_remaining_deadline(monkeypatch) -> None:
+    now = [100.0]
+    monkeypatch.setattr(indexer_stats, 'time', SimpleNamespace(monotonic=lambda: now[0]))
+    stats = object.__new__(indexer_stats.IndexerStats)
+    stats._close_worker = MagicMock()
+    stats._close_deadline = 107.0
+
+    stats.wait_for_close()
+
+    stats._close_worker.join.assert_called_once_with(timeout=7.0)
+
+
 def test_indexer_usage_periodic_upload_finishes_final_window_during_close(monkeypatch) -> None:
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
     started, release = threading.Event(), threading.Event()
