@@ -30,61 +30,83 @@ class OptimismTransactions(L2WithL1FeesTransactions):
             start_ts: Timestamp,
             end_ts: Timestamp,
             record_range: bool = True,
+            update_ranges: bool | None = None,
+            progress_start_ts: Timestamp | None = None,
     ) -> bool:
-        """Query both sides of Bedrock, leaving an uncovered older half for the next sync."""
+        """Query both sides of Bedrock while keeping saved coverage contiguous."""
         if start_ts >= OP_BEDROCK_UPGRADE or end_ts < OP_BEDROCK_UPGRADE:
             return super()._get_internal_transactions_for_ranges(
                 address=address,
                 start_ts=start_ts,
                 end_ts=end_ts,
                 record_range=record_range,
+                update_ranges=update_ranges,
+                progress_start_ts=progress_start_ts,
             )
 
-        # One range key cannot record two halves with an unqueried gap between them.
-        pre_bedrock_ok = super()._get_internal_transactions_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=Timestamp(OP_BEDROCK_UPGRADE - 1),
-            record_range=False,
-        )
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
             saved_range = self.database.get_used_query_range(cursor, location_string)
-        if record_range and pre_bedrock_ok and (
-                saved_range is None or saved_range[0] <= start_ts <= saved_range[1] + 1
+        if record_range and saved_range is not None and (
+                saved_range[0] <= start_ts and saved_range[1] >= end_ts
         ):
-            # Keep the older half even if the newer query fails below.
-            self._mark_range_as_queried(
-                location_string=location_string,
-                start_ts=start_ts,
-                end_ts=Timestamp(OP_BEDROCK_UPGRADE - 1),
-            )
-            with self.database.conn.read_ctx() as cursor:
-                saved_range = self.database.get_used_query_range(cursor, location_string)
-        record_post_range = record_range and (
-            saved_range is None or saved_range[1] >= OP_BEDROCK_UPGRADE - 1
-        )
+            return True
 
-        if not super()._get_internal_transactions_for_ranges(
+        pre_end = Timestamp(OP_BEDROCK_UPGRADE - 1)
+        # Batch updates must join the one contiguous range stored under this key.
+        update_batches = record_range if update_ranges is None else update_ranges
+        update_pre_batches = update_batches and (
+            saved_range is None or saved_range[0] <= start_ts <= saved_range[1] + 1
+        )
+        pre_bedrock_ok = super()._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=pre_end,
+            record_range=False,
+            update_ranges=update_pre_batches,
+        )
+        with self.database.conn.read_ctx() as cursor:
+            saved_range = self.database.get_used_query_range(cursor, location_string)
+
+        # A successful older half can be included in the first newer batch update.
+        post_progress_start_ts = progress_start_ts if progress_start_ts is not None else (
+            start_ts if pre_bedrock_ok else OP_BEDROCK_UPGRADE
+        )
+        update_post_batches = update_batches and (
+            saved_range is None or (
+                saved_range[0] <= OP_BEDROCK_UPGRADE and
+                saved_range[1] >= post_progress_start_ts - 1
+            )
+        )
+        post_bedrock_ok = super()._get_internal_transactions_for_ranges(
             address=address,
             start_ts=OP_BEDROCK_UPGRADE,
             end_ts=end_ts,
-            record_range=record_post_range,
-        ):
-            return False
+            record_range=False,
+            update_ranges=update_post_batches,
+            progress_start_ts=post_progress_start_ts if update_post_batches else None,
+        )
 
         if not record_range:
-            return pre_bedrock_ok
+            return pre_bedrock_ok and post_bedrock_ok
 
-        record_start = start_ts
-        if not pre_bedrock_ok:
-            if saved_range is not None and saved_range[1] < OP_BEDROCK_UPGRADE - 1:
-                return False  # a newer marker would leave a gap after the saved older range
-            record_start = OP_BEDROCK_UPGRADE
+        if pre_bedrock_ok and post_bedrock_ok:
+            mark_start, mark_end = start_ts, end_ts
+        elif pre_bedrock_ok:
+            mark_start, mark_end = start_ts, pre_end
+        elif post_bedrock_ok:
+            mark_start, mark_end = OP_BEDROCK_UPGRADE, end_ts
+        else:
+            return False
 
-        self._mark_range_as_queried(
-            location_string=location_string,
-            start_ts=record_start,
-            end_ts=end_ts,
-        )
-        return pre_bedrock_ok
+        with self.database.conn.read_ctx() as cursor:
+            saved_range = self.database.get_used_query_range(cursor, location_string)
+        if (saved_range is None or (
+                saved_range[0] <= mark_end + 1 and saved_range[1] >= mark_start - 1
+        )) and (saved_range is None or saved_range[0] > mark_start or saved_range[1] < mark_end):
+            self._mark_range_as_queried(
+                location_string=location_string,
+                start_ts=mark_start,
+                end_ts=mark_end,
+            )
+        return pre_bedrock_ok and post_bedrock_ok

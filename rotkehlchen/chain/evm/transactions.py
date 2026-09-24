@@ -566,6 +566,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -577,6 +578,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -588,6 +590,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -598,6 +601,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Query internal txs for a time/block range and persist them incrementally."""
@@ -606,7 +610,8 @@ class EvmTransactions(ABC):  # noqa: B024
         replaced_parent_hashes: set[EVMTxHash] = set()
         if period.range_type == 'timestamps':
             assert location_string, 'should always be given for timestamps'
-            queried_from_ts = Timestamp(period.from_value)
+            # Include a completed earlier split in the first saved batch of this one.
+            queried_from_ts = progress_start_ts if progress_start_ts is not None else Timestamp(period.from_value)  # noqa: E501
         else:
             queried_from_ts = None
 
@@ -957,8 +962,10 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             record_range: bool = True,
+            update_ranges: bool | None = None,
+            progress_start_ts: Timestamp | None = None,
     ) -> bool:
-        """Query internal transactions and optionally record the queried range."""
+        """Query internal transactions, controlling batch progress and the final mark separately."""  # noqa: E501
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
             ranges_to_query = self.dbranges.get_location_query_ranges(
@@ -982,7 +989,8 @@ class EvmTransactions(ABC):  # noqa: B024
                             to_value=chunk_end,
                         ),
                         location_string=location_string,
-                        update_ranges=record_range,
+                        update_ranges=record_range if update_ranges is None else update_ranges,
+                        progress_start_ts=progress_start_ts,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,

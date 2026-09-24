@@ -20,6 +20,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -233,7 +234,7 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
 
     assert result is False
     assert [call.kwargs['update_ranges'] for call in query_range.call_args_list] == [
-        False,
+        True,
         not partial_pre_coverage,
     ]
     assert [call.kwargs for call in resolve_range.call_args_list] == [
@@ -277,10 +278,14 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             ) == (start_ts, end_ts)
 
 
-@pytest.mark.parametrize('partial_pre_coverage', [False, True])
+@pytest.mark.parametrize('saved_range', [
+    None,
+    (Timestamp(OP_BEDROCK_UPGRADE - 100), Timestamp(OP_BEDROCK_UPGRADE - 90)),
+    (OP_BEDROCK_UPGRADE, Timestamp(OP_BEDROCK_UPGRADE + 5)),
+])
 def test_pre_bedrock_success_is_kept_when_post_fails(
         optimism_transactions: OptimismTransactions,
-        partial_pre_coverage: bool,
+        saved_range: tuple[Timestamp, Timestamp] | None,
 ) -> None:
     """Do not download the successful older half again after a newer-half failure."""
     address = make_evm_address()
@@ -288,12 +293,12 @@ def test_pre_bedrock_success_is_kept_when_post_fails(
     end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
     inquirer = optimism_transactions.evm_inquirer
     location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
-    if partial_pre_coverage:
+    if saved_range is not None:
         with optimism_transactions.database.conn.write_ctx() as cursor:
             DBQueryRanges(optimism_transactions.database).update_used_query_range(
                 write_cursor=cursor,
                 location_string=location_string,
-                queried_ranges=[(start_ts, Timestamp(start_ts + 10))],
+                queried_ranges=[saved_range],
             )
 
     with (
@@ -316,7 +321,10 @@ def test_pre_bedrock_success_is_kept_when_post_fails(
         assert optimism_transactions.database.get_used_query_range(
             cursor=cursor,
             name=location_string,
-        ) == (start_ts, Timestamp(OP_BEDROCK_UPGRADE - 1))
+        ) == (start_ts, max(
+            Timestamp(OP_BEDROCK_UPGRADE - 1),
+            saved_range[1] if saved_range is not None else Timestamp(0),
+        ))
 
     with (
         patch.object(inquirer, '_resolve_timestamp_range', return_value=(
@@ -345,7 +353,127 @@ def _interrupted_internal_batches(
         internal_tx: EvmInternalTransaction,
 ) -> Iterator[list[EvmInternalTransaction]]:
     yield [internal_tx]
-    raise RemoteError('interrupted post-Bedrock pagination')
+    raise RemoteError('interrupted internal transaction pagination')
+
+
+def test_pre_bedrock_interruption_keeps_batch_progress(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """Keep a fetched older batch without marking the gap before the newer half."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
+    batch_ts = Timestamp(OP_BEDROCK_UPGRADE - 50)
+    internal_tx = EvmInternalTransaction(
+        parent_tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.OPTIMISM,
+        trace_id=1,
+        from_address=address,
+        to_address=make_evm_address(),
+        value=1,
+        gas=1,
+        gas_used=1,
+    )
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            (_interrupted_internal_batches(internal_tx), EvmIndexer.ROUTESCAN),
+            (iter([[]]), EvmIndexer.BLOCKSCOUT),
+        ]) as query_indexers,
+        patch.object(optimism_transactions, '_process_internal_transactions_batch', side_effect=[
+            [(internal_tx, batch_ts)],
+            [],
+        ]),
+        patch.object(optimism_transactions.dbevmtx, 'add_evm_internal_transactions') as save_batch,
+        patch.object(
+            optimism_transactions,
+            '_query_and_save_internal_transactions_for_range',
+            wraps=optimism_transactions._query_and_save_internal_transactions_for_range,
+        ) as query_range,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is False
+
+    assert query_indexers.call_count == 2
+    save_batch.assert_called_once()
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, batch_ts)
+    assert [call.kwargs['update_ranges'] for call in query_range.call_args_list] == [True, False]
+
+
+@pytest.mark.parametrize('pre_already_covered', [False, True])
+def test_successful_bedrock_split_marks_combined_range_once(
+        optimism_transactions: OptimismTransactions,
+        pre_already_covered: bool,
+) -> None:
+    """A successful split makes one final mark and one recent-end probe."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = ts_now()
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    if pre_already_covered:
+        with optimism_transactions.database.conn.write_ctx() as cursor:
+            DBQueryRanges(optimism_transactions.database).update_used_query_range(
+                write_cursor=cursor,
+                location_string=location_string,
+                queried_ranges=[(start_ts, Timestamp(OP_BEDROCK_UPGRADE + 5))],
+            )
+
+    resolved_ranges: list[tuple[int, int, frozenset[EvmIndexer]]] = [
+        (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+    ]
+    indexer_results: list[tuple[Iterator[list[EvmInternalTransaction]], EvmIndexer]] = [
+        (iter([[]]), EvmIndexer.BLOCKSCOUT),
+    ]
+    if not pre_already_covered:
+        resolved_ranges.insert(0, (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()))
+        indexer_results.insert(0, (iter([[]]), EvmIndexer.ROUTESCAN))
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=resolved_ranges),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=indexer_results),
+        patch.object(
+            inquirer, 'get_blocknumber_by_time', return_value=OP_BEDROCK_BLOCK + 10,
+        ) as end_block_probe,
+        patch.object(inquirer, 'get_block_timestamp', return_value=end_ts) as end_timestamp_probe,
+        patch.object(
+            optimism_transactions,
+            '_mark_range_as_queried',
+            wraps=optimism_transactions._mark_range_as_queried,
+        ) as mark_range,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is True
+
+    assert mark_range.call_count == 1
+    assert mark_range.call_args.kwargs == {
+        'location_string': location_string,
+        'start_ts': start_ts,
+        'end_ts': end_ts,
+    }
+    end_block_probe.assert_called_once_with(ts=end_ts, closest='before')
+    assert end_timestamp_probe.call_count == 1
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, end_ts)
 
 
 @pytest.mark.parametrize('saved_range_start', [
