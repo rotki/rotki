@@ -9,6 +9,9 @@ export const useHistoryStore = defineStore('history', () => {
   const eventsVersion = ref<number>(0);
   const acknowledgedVersion = ref<number>(0);
 
+  /** History processing has ended and the work that follows it (balances, auto-matching) has not finished. */
+  const postProcessing = ref<boolean>(false);
+
   const hasUnprocessedModifications = computed<boolean>(() =>
     get(eventsVersion) > get(acknowledgedVersion),
   );
@@ -33,14 +36,20 @@ export const useHistoryStore = defineStore('history', () => {
     set(transactionStatusSummary, data);
   }
 
+  function setPostProcessing(running: boolean): void {
+    set(postProcessing, running);
+  }
+
   return {
     acknowledgeModifications,
     associatedLocations,
     eventsVersion,
     hasUnprocessedModifications,
     locationLabels,
+    postProcessing,
     setAssociatedLocations,
     setLocationLabels,
+    setPostProcessing,
     setTransactionStatusSummary,
     signalEventsModified,
     transactionStatusSummary,

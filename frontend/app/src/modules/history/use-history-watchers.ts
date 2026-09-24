@@ -50,12 +50,22 @@ export function useHistoryWatchers(): void {
     },
   );
 
+  watch(processing, (isProcessing, wasProcessing) => {
+    if (!isProcessing && wasProcessing)
+      historyStore.setPostProcessing(true);
+  });
+
   watch(processingDebounced, async (processing, wasProcessing) => {
     if (!processing && wasProcessing) {
-      historyStore.acknowledgeModifications();
-      await triggerHistoricalBalancesProcessing();
-      await triggerAssetMovementAutoMatching();
-      await triggerBridgeAutoMatching();
+      try {
+        historyStore.acknowledgeModifications();
+        await triggerHistoricalBalancesProcessing();
+        await triggerAssetMovementAutoMatching();
+        await triggerBridgeAutoMatching();
+      }
+      finally {
+        historyStore.setPostProcessing(false);
+      }
     }
   });
 }

@@ -181,6 +181,43 @@ describe('modules/core/action-center/useActionCenter', () => {
     expect(get(checking)).toBe(false);
   });
 
+  it('should read every source in full on a rescan before the first scan', async () => {
+    const refresh = vi.fn<() => Promise<void>>().mockResolvedValue();
+    const rescan = vi.fn<() => Promise<void>>().mockResolvedValue();
+
+    const { awaitingFirstScan, rescan: rescanCenter } = useActionCenter({
+      id: 'test',
+      items: ref([]),
+      sources: [{ refresh, rescan }],
+    });
+
+    await rescanCenter();
+
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(rescan).not.toHaveBeenCalled();
+    expect(get(awaitingFirstScan)).toBe(false);
+  });
+
+  it('should use each source\'s lighter rescan once a scan has landed, and refresh where it has none', async () => {
+    const refresh = vi.fn<() => Promise<void>>().mockResolvedValue();
+    const rescan = vi.fn<() => Promise<void>>().mockResolvedValue();
+    const plain = vi.fn<() => Promise<void>>().mockResolvedValue();
+
+    const center = useActionCenter({
+      id: 'test',
+      items: ref([]),
+      sources: [{ refresh, rescan }, { refresh: plain }],
+    });
+
+    await center.refreshAll();
+    vi.clearAllMocks();
+    await center.rescan();
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(rescan).toHaveBeenCalledOnce();
+    expect(plain).toHaveBeenCalledOnce();
+  });
+
   it('should share the scanned flag between consumers of the same center', async () => {
     const trigger = useActionCenter({ id: 'shared', items: ref([]), sources: [] });
     const panel = useActionCenter({ id: 'shared', items: ref([]), sources: [] });

@@ -6,6 +6,8 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 interface ActionCenterSource {
   /** the return value is discarded: a center only cares that the read finished */
   refresh: () => Promise<unknown>;
+  /** a lighter re-read for a re-scan, leaving out what only a user action changes; defaults to `refresh` */
+  rescan?: () => Promise<unknown>;
   /** in-flight state of this source's own read, when it exposes one */
   loading?: MaybeRefOrGetter<boolean>;
 }
@@ -44,6 +46,11 @@ export interface UseActionCenterReturn<TTarget extends { kind: string }, TId ext
   /** a source is reading, or the domain is working: a re-scan is under way */
   refreshing: ComputedRef<boolean>;
   refreshAll: () => Promise<void>;
+  /**
+   * Re-reads after the domain settles: every source's `rescan` once a scan has finished, a full
+   * {@link UseActionCenterReturn.refreshAll} before that.
+   */
+  rescan: () => Promise<void>;
   /**
    * The item as the center counts it: while it re-reads, with the count its last finished read gave,
    * or none if it has never finished one.
@@ -162,11 +169,15 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
    * rest of the session. A scan that lands while the domain works read counts that are about to
    * change, so it does not count as the first; the next one after the work settles does.
    */
-  const refreshAll = async (): Promise<void> => {
-    await Promise.allSettled(sources.map(async source => source.refresh()));
+  const read = async (pick: (source: ActionCenterSource) => () => Promise<unknown>): Promise<void> => {
+    await Promise.allSettled(sources.map(async source => pick(source)()));
     if (!get(domainBusy))
       set(scanned, true);
   };
+
+  const refreshAll = async (): Promise<void> => read(source => source.refresh);
+
+  const rescan = async (): Promise<void> => (get(scanned) ? read(source => source.rescan ?? source.refresh) : refreshAll());
 
   watch(() => toValue(items), recordSettledCounts, { flush: 'sync', immediate: true });
 
@@ -189,6 +200,7 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
     present,
     refreshAll,
     refreshing,
+    rescan,
     reviewItems,
   };
 }
