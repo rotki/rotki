@@ -21,10 +21,11 @@ const state = {
   ignoredMovementsCount: ref(0),
   logged: ref(true),
   matchingAllowed: ref(true),
+  postProcessing: ref(false),
   processing: ref(false),
   refreshDataIssuesSummary: vi.fn<() => Promise<void>>(),
-  refreshUnmatchedAssetMovements: vi.fn<() => Promise<void>>(),
-  refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>(),
+  refreshUnmatchedAssetMovements: vi.fn<(skipIgnored?: boolean) => Promise<void>>(),
+  refreshUnmatchedBridgeTransactions: vi.fn<(skipIgnored?: boolean) => Promise<void>>(),
   trackedEntitiesLoading: ref(false),
   tracksNothing: ref(false),
   undecodedCount: ref(0),
@@ -98,6 +99,10 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   useHistoryEventsStatus: (): object => ({ processing: state.processing }),
 }));
 
+vi.mock('@/modules/history/use-history-store', () => ({
+  useHistoryStore: (): object => ({ postProcessing: state.postProcessing }),
+}));
+
 vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
   useDataIssuesSummary: (): object => ({
     actionableCount: state.dataIssuesCount,
@@ -145,6 +150,7 @@ describe('useHistoryEventIssues', () => {
     set(state.ignoredMovementsCount, 0);
     set(state.logged, true);
     set(state.matchingAllowed, true);
+    set(state.postProcessing, false);
     set(state.processing, false);
     set(state.trackedEntitiesLoading, false);
     set(state.tracksNothing, false);
@@ -254,6 +260,16 @@ describe('useHistoryEventIssues', () => {
     expect(get(checking)).toBe(true);
   });
 
+  it('should stay busy after processing ends until the work that follows it finishes', () => {
+    const { busy } = useHistoryEventIssues();
+
+    set(state.postProcessing, true);
+    expect(get(busy)).toBe(true);
+
+    set(state.postProcessing, false);
+    expect(get(busy)).toBe(false);
+  });
+
   it('should lock the matching rows and keep them out of the attention count without premium', () => {
     set(state.matchingAllowed, false);
     set(state.unmatchedMovementsCount, 2);
@@ -316,11 +332,23 @@ describe('useHistoryEventIssues', () => {
 
     await refreshAll();
 
-    expect(state.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
-    expect(state.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
+    expect(state.refreshUnmatchedAssetMovements).toHaveBeenCalledExactlyOnceWith();
+    expect(state.refreshUnmatchedBridgeTransactions).toHaveBeenCalledExactlyOnceWith();
     expect(state.fetchCustomizedEventDuplicates).toHaveBeenCalledOnce();
     expect(state.fetchCounts).toHaveBeenCalledOnce();
     expect(state.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledOnce();
+  });
+
+  it('should leave the ignored lists out of a rescan, since only the user changes them', async () => {
+    const { refreshAll, rescan } = useHistoryEventIssues();
+    await refreshAll();
+    vi.clearAllMocks();
+
+    await rescan();
+
+    expect(state.refreshUnmatchedAssetMovements).toHaveBeenCalledExactlyOnceWith(true);
+    expect(state.refreshUnmatchedBridgeTransactions).toHaveBeenCalledExactlyOnceWith(true);
+    expect(state.fetchCounts).toHaveBeenCalledOnce();
   });
 
   it('should leave the inbox out entirely when the build does not serve it', async () => {

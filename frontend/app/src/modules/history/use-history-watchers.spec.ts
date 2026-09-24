@@ -1,6 +1,6 @@
 import type { EffectScope } from 'vue';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { useHistoryWatchers } from './use-history-watchers';
 
 const mockProcessing = ref<boolean>(false);
@@ -19,6 +19,7 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
 }));
 
 const mockAcknowledgeModifications = vi.fn();
+const mockSetPostProcessing = vi.fn<(running: boolean) => void>();
 const mockEventsVersion = ref<number>(0);
 const mockHasUnprocessedModifications = ref<boolean>(false);
 
@@ -28,6 +29,7 @@ vi.mock('@/modules/history/use-history-store', () => ({
       acknowledgeModifications: mockAcknowledgeModifications,
       get eventsVersion(): number { return get(mockEventsVersion); },
       hasUnprocessedModifications: mockHasUnprocessedModifications,
+      setPostProcessing: mockSetPostProcessing,
     });
     return store;
   }),
@@ -168,6 +170,46 @@ describe('useHistoryWatchers', () => {
       expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
       expect(mockTriggerAssetMovementAutoMatching).not.toHaveBeenCalled();
       expect(mockTriggerBridgeAutoMatching).not.toHaveBeenCalled();
+    });
+
+    it('should report post-processing from the end of processing until auto-matching finishes', async () => {
+      set(mockProcessing, true);
+      setupWatchers();
+      await flushPromises();
+
+      let finishMatching!: () => void;
+      mockTriggerBridgeAutoMatching.mockReturnValueOnce(new Promise<void>((resolve) => {
+        finishMatching = resolve;
+      }));
+
+      set(mockProcessing, false);
+      await flushPromises();
+
+      expect(mockSetPostProcessing.mock.calls).toEqual([[true]]);
+
+      finishMatching();
+      await flushPromises();
+
+      expect(mockSetPostProcessing.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it('should end post-processing when a step of it fails', async () => {
+      set(mockProcessing, true);
+      setupWatchers();
+      await flushPromises();
+      const failure = new Error('balances failed');
+      mockTriggerHistoricalBalancesProcessing.mockRejectedValueOnce(failure);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      onTestFinished(() => warn.mockRestore());
+      const unhandled = vi.fn<(reason: unknown) => void>();
+      process.on('unhandledRejection', unhandled);
+
+      set(mockProcessing, false);
+      await vi.waitFor(() => expect(unhandled).toHaveBeenCalledWith(failure, expect.anything()));
+      process.off('unhandledRejection', unhandled);
+
+      expect(mockTriggerAssetMovementAutoMatching).not.toHaveBeenCalled();
+      expect(mockSetPostProcessing).toHaveBeenLastCalledWith(false);
     });
   });
 

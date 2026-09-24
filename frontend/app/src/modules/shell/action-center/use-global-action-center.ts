@@ -6,9 +6,6 @@ import { useActionCenter } from '@/modules/core/action-center/use-action-center'
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { toGlobalTarget } from '@/modules/history/events/actions-center/history-issue-routes';
 import { useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
@@ -64,7 +61,8 @@ function isRaised(item: ActionItem): boolean {
  * @remarks
  * It owns the scan. The history rows are re-read whenever the history work settles, including
  * immediately on a session that is already synced, and the history events page shows the same rows
- * without scanning them a second time.
+ * without scanning them a second time. Settled means after the auto-matching that follows a sync
+ * as well, since that moves the unmatched counts again.
  */
 export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -74,10 +72,6 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const integrationRows = useIntegrationRows();
   const chainRows = useChainRows();
   const { refresh: refreshAssetRows, rows: assetRows } = useAssetRows();
-
-  const { processing } = useHistoryEventsStatus();
-  const { autoMatchLoading } = useUnmatchedAssetMovements();
-  const { autoMatchLoading: bridgeAutoMatchLoading } = useUnmatchedBridgeTransactions();
 
   const route = useRoute();
   const historyPageQuery = computed<LocationQuery | undefined>(() => (route.name === '/history/events/' ? route.query : undefined));
@@ -107,7 +101,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     id: 'global',
     items: () => get(groups).flatMap(group => group.items),
     sources: [
-      { loading: history.refreshing, refresh: history.refreshAll },
+      { loading: history.refreshing, refresh: history.refreshAll, rescan: history.rescan },
       { refresh: refreshAssetRows },
     ],
   });
@@ -124,11 +118,11 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
 
   onSnoozeChange(forget);
 
-  const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
+  const settled = useRefWithDebounce(history.busy, 200);
 
   watchImmediate(settled, (busy) => {
     if (!busy)
-      startPromise(center.refreshAll());
+      startPromise(center.rescan());
   });
 
   return {

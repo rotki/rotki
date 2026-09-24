@@ -12,6 +12,7 @@ import { useHistoryEventsStatus } from '@/modules/history/events/use-history-eve
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { PinnedNames, toPinned } from '@/modules/session/types';
 
@@ -38,6 +39,11 @@ export type HistoryIssueTarget =
 export type HistoryEventIssue = ActionItem<HistoryIssueTarget, HistoryIssueId>;
 
 interface UseHistoryEventIssuesReturn extends UseActionCenterReturn<HistoryIssueTarget, HistoryIssueId> {
+  /**
+   * The history work that moves these counts is running: processing, the balances and
+   * auto-matching that follow it, or a matching run the user started.
+   */
+  busy: ComputedRef<boolean>;
   issues: ComputedRef<HistoryEventIssue[]>;
 }
 
@@ -62,6 +68,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { processing } = useHistoryEventsStatus();
+  const { postProcessing } = storeToRefs(useHistoryStore());
   const { allowed: matchingAllowed, minimumTier: matchingTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
   const {
@@ -184,13 +191,23 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
     }),
   ]);
 
+  const busy = logicOr(processing, postProcessing, autoMatchLoading, bridgeAutoMatchLoading);
+
   const center = useActionCenter<HistoryIssueTarget, HistoryIssueId>({
-    busy: logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading),
+    busy,
     id: 'history-events',
     items: issues,
     sources: [
-      { loading: movementsLoading, refresh: refreshUnmatchedAssetMovements },
-      { loading: bridgesLoading, refresh: refreshUnmatchedBridgeTransactions },
+      {
+        loading: movementsLoading,
+        refresh: refreshUnmatchedAssetMovements,
+        rescan: async (): Promise<void> => refreshUnmatchedAssetMovements(true),
+      },
+      {
+        loading: bridgesLoading,
+        refresh: refreshUnmatchedBridgeTransactions,
+        rescan: async (): Promise<void> => refreshUnmatchedBridgeTransactions(true),
+      },
       { loading: duplicatesLoading, refresh: fetchCustomizedEventDuplicates },
       { refresh: fetchCounts },
       { refresh: fetchUndecodedTransactionsBreakdown },
@@ -200,6 +217,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
 
   return {
     ...center,
+    busy,
     issues,
   };
 }

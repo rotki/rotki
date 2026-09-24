@@ -1,12 +1,12 @@
 import type { EffectScope } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import type { HistoryEventIssue } from '@/modules/history/events/actions-center/use-history-event-issues';
+import type { useGlobalActionCenter as UseGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
-import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 
 const state = {
   assetRows: ref<ActionItem[]>([]),
@@ -18,14 +18,17 @@ const state = {
   processing: ref<boolean>(false),
   refreshAssets: vi.fn<() => Promise<void>>(),
   refreshHistory: vi.fn<() => Promise<void>>(),
+  rescanHistory: vi.fn<() => Promise<void>>(),
 };
 
 vi.mock('@/modules/history/events/actions-center/use-history-event-issues', () => ({
   useHistoryEventIssues: (): object => ({
+    busy: computed(() => get(state.processing)),
     checking: computed(() => get(state.historyChecking)),
     issues: computed(() => get(state.historyIssues)),
     refreshAll: state.refreshHistory,
     refreshing: computed(() => false),
+    rescan: state.rescanHistory,
   }),
 }));
 
@@ -43,18 +46,6 @@ vi.mock('@/modules/shell/action-center/use-chain-rows', () => ({
 
 vi.mock('@/modules/shell/action-center/use-asset-rows', () => ({
   useAssetRows: (): object => ({ refresh: state.refreshAssets, rows: computed(() => get(state.assetRows)) }),
-}));
-
-vi.mock('@/modules/history/events/use-history-events-status', () => ({
-  useHistoryEventsStatus: (): object => ({ processing: state.processing }),
-}));
-
-vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
-  useUnmatchedAssetMovements: (): object => ({ autoMatchLoading: ref(false) }),
-}));
-
-vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
-  useUnmatchedBridgeTransactions: (): object => ({ autoMatchLoading: ref(false) }),
 }));
 
 const route = reactive<{ name: string; query: LocationQuery }>({ name: '/dashboard/', query: {} });
@@ -91,7 +82,10 @@ function runOption(item: ActionItem | undefined, id: string): void {
 
 let scope: EffectScope | undefined;
 
-function center(): ReturnType<typeof useGlobalActionCenter> {
+/** Reloaded per test: whether a center has scanned is module-level state, so one test's scan would decide the next one's. */
+let useGlobalActionCenter: typeof UseGlobalActionCenter;
+
+function center(): ReturnType<typeof UseGlobalActionCenter> {
   scope = effectScope();
   const result = scope.run(() => useGlobalActionCenter());
   assert(result);
@@ -99,7 +93,9 @@ function center(): ReturnType<typeof useGlobalActionCenter> {
 }
 
 describe('modules/shell/action-center/use-global-action-center', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules();
+    ({ useGlobalActionCenter } = await import('@/modules/shell/action-center/use-global-action-center'));
     localStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -107,6 +103,7 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     route.query = {};
     state.refreshAssets.mockResolvedValue();
     state.refreshHistory.mockResolvedValue();
+    state.rescanHistory.mockResolvedValue();
     set(state.assetRows, []);
     set(state.chainRows, []);
     set(state.historyChecking, false);
@@ -262,6 +259,19 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     await flushPromises();
 
     expect(state.refreshHistory).toHaveBeenCalledOnce();
+  });
+
+  it('should re-read history with the lighter rescan when it settles after the first scan', async () => {
+    center();
+    await flushPromises();
+
+    set(state.processing, true);
+    await flushPromises();
+    set(state.processing, false);
+    await flushPromises();
+
+    expect(state.refreshHistory).toHaveBeenCalledOnce();
+    expect(state.rescanHistory).toHaveBeenCalledOnce();
   });
 
   it('should stop counting a snoozed row and set it aside at the end of its section', async () => {
