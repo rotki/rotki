@@ -8,14 +8,32 @@ import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
+const handler = vi.hoisted(() => ({
+  runTask: vi.fn<(task: () => Promise<{ taskId: number }>, label: string, options?: object) => Promise<unknown>>(),
+}));
+
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: (): Record<string, unknown> => ({
     cancelTaskById: vi.fn(async () => true),
-    runTaskResult: vi.fn(),
+    runTask: handler.runTask,
   }),
 }));
 
 describe('useNativeTask', () => {
+  it('should hand a backend task\'s options to the task handler with the activity\'s label', async () => {
+    handler.runTask.mockResolvedValue(ok(12));
+    const { submitTask } = useNativeTask();
+
+    await submitTask<number>({
+      id: makeActivityId(ActivityKind.PNL_REPORT, 'options'),
+      kind: ActivityKind.PNL_REPORT,
+      run: async ({ runTask }) => runTask<number>(async () => ({ taskId: 3 }), { conflictFails: true }),
+      title: 'report',
+    });
+
+    expect(handler.runTask).toHaveBeenCalledWith(expect.any(Function), 'report', { conflictFails: true });
+  });
+
   it('should run the spec and resolve ok on success', async () => {
     const { submitTask } = useNativeTask();
     const run = vi.fn(async () => ok(undefined));

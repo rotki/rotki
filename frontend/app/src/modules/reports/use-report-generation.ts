@@ -85,6 +85,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       run: async ({ runTask }): Promise<Result<number, TaskError>> => {
         const result = await runTask<number>(
           async () => generateReportCaller(period),
+          { conflictFails: true },
         );
         if (isErr(result))
           return result;
