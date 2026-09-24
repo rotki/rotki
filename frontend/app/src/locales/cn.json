@@ -2204,10 +2204,6 @@
     "tooltip": "通知"
   },
   "notification_messages": {
-    "address_migration": {
-      "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}",
-      "title": "地址已添加到{chain}|地址已添加到{chain}"
-    },
     "backend": {
       "title": "后端"
     },

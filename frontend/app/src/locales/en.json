@@ -60,6 +60,10 @@
         "redetect_all": "Re-detect tokens for all addresses"
       }
     },
+    "detected": {
+      "chip": "New",
+      "tooltip": "Account detection added this address on {chains}. Click to dismiss."
+    },
     "edit_tooltip": "Edit account",
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
@@ -1993,6 +1997,8 @@
     "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to raise your limit.",
     "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. Upgrade your plan via {link} or contact us for a custom plan to get access.",
     "evm_detection": {
+      "found": "Added on {count} chain | Added on {count} chains",
+      "none": "No new chains found",
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
     },
@@ -5069,10 +5075,6 @@
     "tooltip_unread": "Notifications, something new arrived"
   },
   "notification_messages": {
-    "address_migration": {
-      "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}",
-      "title": "Address has been added to {chain}|Addresses have been added to {chain}"
-    },
     "backend": {
       "title": "Backend",
       "warning_title": "Some data was skipped during processing"

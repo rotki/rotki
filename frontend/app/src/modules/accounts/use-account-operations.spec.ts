@@ -1,27 +1,19 @@
-import { runSpecWith } from '@test/utils/mocks/native-task';
 import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises } from '@vue/test-utils';
-import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   // Mutable so a test can add a chain (eth2) without a second module mock.
   chainIds: ['eth', 'btc'],
-  detectEvmAccounts: vi.fn(),
   fetch: vi.fn(),
   hydrate: vi.fn(),
   fetchEnsNames: vi.fn(),
   getAddresses: vi.fn((_chain: string): string[] => []),
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
-  notifyError: vi.fn(),
   refreshBlockchainBalances: vi.fn(),
-  runTaskResult: vi.fn(),
   supportsTransactions: vi.fn((): boolean => true),
 }));
-
-const submitTask = vi.fn(runSpecWith(h.runTaskResult));
 
 vi.mock('@/modules/accounts/use-account-fetching', () => ({
   useAccountFetching: vi.fn(() => ({ fetch: h.fetch })),
@@ -41,10 +33,6 @@ vi.mock('@/modules/accounts/address-book/use-ens-operations', () => ({
   useEnsOperations: vi.fn(() => ({ fetchEnsNames: h.fetchEnsNames })),
 }));
 
-vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
-  useBlockchainAccountsApi: vi.fn(() => ({ detectEvmAccounts: h.detectEvmAccounts })),
-}));
-
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const vue = await import('vue');
   return {
@@ -58,15 +46,6 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
 
 vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({
   useAccountAddresses: vi.fn(() => ({ getAddresses: h.getAddresses })),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({ notifyError: h.notifyError })),
-}));
-
-vi.mock('@/modules/task-center/use-native-task', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useNativeTask: vi.fn(() => ({ cancelByType: vi.fn(() => vi.fn()), runTaskResult: h.runTaskResult, statusOf: vi.fn(), submitTask })),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -230,22 +209,6 @@ describe('useAccountOperations', () => {
       await useAccountOperations().refreshAccounts({ blockchain: 'eth' });
       await flushPromises();
       expect(h.refreshBlockchainBalances).toHaveBeenCalledWith({ addresses: undefined, blockchain: 'eth2', isXpub: false }, 'background');
-    });
-  });
-
-  describe('detectEvmAccounts', () => {
-    it('should notify on an actionable failure', async () => {
-      h.runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'detect failed' })));
-      const { useAccountOperations } = await importModule();
-      await useAccountOperations().detectEvmAccounts();
-      expect(h.notifyError).toHaveBeenCalledOnce();
-    });
-
-    it('should not notify on success', async () => {
-      h.runTaskResult.mockResolvedValue(ok(undefined));
-      const { useAccountOperations } = await importModule();
-      await useAccountOperations().detectEvmAccounts();
-      expect(h.notifyError).not.toHaveBeenCalled();
     });
   });
 });

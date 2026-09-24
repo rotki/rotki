@@ -2397,10 +2397,6 @@
     }
   },
   "notification_messages": {
-    "address_migration": {
-      "message": "L'adresse suivante a été ajoutée à {chain}: {addresses}|Les adresses suivantes ont été ajoutées à {chain}: {addresses}",
-      "title": "Adresse ajoutée à {chain}|Adresses ajoutées à {chain}"
-    },
     "new_detected_token": {
       "action": "Voir plus",
       "message": "Un nouveau token avec l'identifiant {identifier} a été détecté à partir du traitement des événements et des requêtes.|{count} nouveaux tokens ont été détectés à partir du traitement des événements et des requêtes.",

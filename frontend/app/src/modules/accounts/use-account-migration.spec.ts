@@ -1,17 +1,15 @@
-import type { Notification } from '@rotki/common';
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { createNotification } from '@/modules/core/notifications/notification-utils';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   fetchAccounts: vi.fn(),
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
-  notify: vi.fn<(payload: Notification) => void>(),
   refreshBlockchainBalances: vi.fn(),
 }));
 
@@ -39,16 +37,13 @@ vi.mock('@/modules/auth/use-logged-user-identifier', async () => {
   return { useLoggedUserIdentifier: vi.fn(() => vue.ref(null)) };
 });
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({ notify: h.notify })),
-}));
-
 async function importModule(): Promise<typeof import('./use-account-migration')> {
   return import('./use-account-migration');
 }
 
 describe('useAccountMigration', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
     h.fetchAccounts.mockResolvedValue(undefined);
@@ -68,8 +63,6 @@ describe('useAccountMigration', () => {
     useAccountMigration().setUpgradedAddresses(migrated);
 
     expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
-    expect(h.notify).toHaveBeenCalledOnce();
-    expect(createNotification(1, h.notify.mock.calls[0][0])).toMatchObject({ display: true, duration: -1 });
     await flushPromises();
     expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
       { blockchain: 'eth' },
@@ -96,7 +89,19 @@ describe('useAccountMigration', () => {
     const { useAccountMigration } = await importModule();
     useAccountMigration().setUpgradedAddresses([{ address: 'bc1abc', chain: 'btc' }]);
     expect(h.fetchAccounts).not.toHaveBeenCalled();
-    expect(h.notify).not.toHaveBeenCalled();
+    expect(useDetectedAccountsStore().isDetected('btc', 'bc1abc')).toBe(false);
+  });
+
+  it('should mark the detected accounts for the accounts table', async () => {
+    const { canRequestData } = storeToRefs(useSessionAuthStore());
+    set(canRequestData, true);
+    const { useAccountMigration } = await importModule();
+    useAccountMigration().setUpgradedAddresses([{ address: '0xAbC', chain: 'eth' }, { address: '0xdef', chain: 'optimism' }]);
+
+    const store = useDetectedAccountsStore();
+    expect(store.isDetected('eth', '0xabc')).toBe(true);
+    expect(store.isDetected('optimism', '0xdef')).toBe(true);
+    expect(store.isDetected('optimism', '0xabc')).toBe(false);
   });
 
   /**

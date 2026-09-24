@@ -2,6 +2,7 @@ import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { assert, type Blockchain } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { SocketMessageType } from '@/modules/core/messaging/types';
@@ -115,7 +116,7 @@ describe('useMessageHandling', () => {
     vi.clearAllMocks();
   });
 
-  it('should notify the user and run token detection', async () => {
+  it('should mark the detected accounts and run token detection, without notifying', async () => {
     let messageHandling: ReturnType<typeof useMessageHandling> | undefined;
 
     mount({
@@ -149,7 +150,8 @@ describe('useMessageHandling', () => {
       'background',
       { detect: true, detectAddresses: ['0xdead'] },
     );
-    expect(notify).toHaveBeenCalledTimes(1);
+    expect(useDetectedAccountsStore().isDetected('optimism', '0xdead')).toBe(true);
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('should ignore a message with an invalid format', async () => {
@@ -201,7 +203,7 @@ describe('useMessageHandling', () => {
       'background',
       { detect: true, detectAddresses: ['0xdead'] },
     );
-    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('should fall back to the legacy handler for schema-invalid json', async () => {

@@ -1,15 +1,15 @@
 import type { MaybeRef } from 'vue';
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
-import { assert, type Notification, NotificationCategory, Priority, Severity } from '@rotki/common';
+import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSessionStorage } from '@vueuse/core';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
   return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);
@@ -23,13 +23,11 @@ export function useAccountMigration(): UseAccountMigrationReturn {
   let migratedAddresses = ref<MigratedAddresses>([]);
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { evmAndEvmLikeTxChainsInfo, getChainName, isEvm } = useSupportedChains();
+  const { evmAndEvmLikeTxChainsInfo, isEvm } = useSupportedChains();
   const { fetchAccounts } = useBlockchainAccountManagement();
   const { refreshBlockchainBalances } = useBlockchainBalances();
+  const { record } = useDetectedAccountsStore();
   const loggedUserIdentifier = useLoggedUserIdentifier();
-
-  const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotifications();
 
   function handleMigratedAccounts(): void {
     const txEvmChainsVal = get(evmAndEvmLikeTxChainsInfo);
@@ -68,33 +66,12 @@ export function useAccountMigration(): UseAccountMigrationReturn {
     };
 
     const promises: Promise<void>[] = [];
-    const notifications: Notification[] = [];
-    for (const chain in addresses) {
-      const chainAddresses = addresses[chain];
-      const chainName = getChainName(chain);
-      promises.push(detectThenQuery(chain, chainAddresses));
+    for (const chain in addresses)
+      promises.push(detectThenQuery(chain, addresses[chain]));
 
-      notifications.push({
-        category: NotificationCategory.ADDRESS_MIGRATION,
-        duration: -1,
-        message: t(
-          'notification_messages.address_migration.message',
-          {
-            addresses: chainAddresses.join(', '),
-            chain: chainName,
-          },
-          chainAddresses.length,
-        ),
-        priority: Priority.HIGH,
-        severity: Severity.INFO,
-        title: t('notification_messages.address_migration.title', { chain: chainName }, chainAddresses.length),
-      });
-    }
-
+    record(Object.entries(addresses).flatMap(([chain, chainAddresses]) => chainAddresses.map(address => ({ address, chain }))));
     startPromise(Promise.allSettled(promises));
     set(migratedAddresses, []);
-
-    notifications.forEach(notify);
   }
 
   function runMigrationIfPossible(canRequest: MaybeRef<boolean>): void {

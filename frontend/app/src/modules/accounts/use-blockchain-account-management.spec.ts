@@ -1,14 +1,16 @@
 import type { ComputedRef } from 'vue';
+import { startPromise } from '@shared/utils';
 import { flushPromises } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { ActivityKind, ActivityPart, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   addAccounts: vi.fn(),
   completeAccountAddition: vi.fn(),
-  detectEvmAccounts: vi.fn(),
   fetchAccounts: vi.fn(),
   getNewAccountPayload: vi.fn(),
   notifyInfo: vi.fn(),
@@ -31,7 +33,6 @@ vi.mock('@/modules/accounts/use-account-addition-service', () => ({
 
 vi.mock('@/modules/accounts/use-account-operations', () => ({
   useAccountOperations: vi.fn(() => ({
-    detectEvmAccounts: h.detectEvmAccounts,
     fetchAccounts: h.fetchAccounts,
     refreshAccounts: h.refreshAccounts,
   })),
@@ -64,6 +65,7 @@ async function importModule(): Promise<typeof import('./use-blockchain-account-m
 
 describe('useBlockchainAccountManagement', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(mockAddRunning, false);
     h.completeAccountAddition.mockResolvedValue(undefined);
@@ -159,11 +161,71 @@ describe('useBlockchainAccountManagement', () => {
     });
   });
 
+  describe('telling account detection what the user added', () => {
+    const payload = { modules: undefined, payload: [{ address: '0xabc', tags: null }] };
+
+    it('should record the addition before its result arrives, since the backend saves it first', async () => {
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xABC', tags: null }]);
+      h.addAccounts.mockReturnValue(new Promise(() => {}));
+      const { useBlockchainAccountManagement } = await importModule();
+
+      startPromise(useBlockchainAccountManagement().addAccounts('eth', payload, { wait: true }));
+
+      expect(useDetectedAccountsStore().userAdditions).toEqual([{ addresses: ['0xabc'], chain: 'eth', finished: false, id: expect.any(Number) }]);
+    });
+
+    it('should keep the addition in flight until its accounts are read into the store, not just until the service resolves', async () => {
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      let read: () => void = () => {};
+      h.completeAccountAddition.mockReturnValue(new Promise<void>((resolve) => {
+        read = resolve;
+      }));
+      const { useBlockchainAccountManagement } = await importModule();
+      await useBlockchainAccountManagement().addAccounts('eth', payload, { wait: true });
+      const onComplete = h.addAccounts.mock.calls[0]?.[3];
+      assert(typeof onComplete === 'function');
+
+      const completion = onComplete({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], chain: 'eth' });
+      const store = useDetectedAccountsStore();
+      expect(store.userAdditions[0]?.finished).toBe(false);
+
+      read();
+      await completion;
+      expect(store.userAdditions[0]?.finished).toBe(true);
+    });
+
+    it('should mark a failed addition finished too, so it does not hide detections forever', async () => {
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      h.addAccounts.mockRejectedValue(new Error('boom'));
+      const { useBlockchainAccountManagement } = await importModule();
+
+      await expect(useBlockchainAccountManagement().addAccounts('eth', payload, { wait: true })).rejects.toThrow('boom');
+
+      expect(useDetectedAccountsStore().userAdditions[0]?.finished).toBe(true);
+    });
+
+    it('should record an addition to every EVM chain as covering any chain', async () => {
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      const { useBlockchainAccountManagement } = await importModule();
+
+      await useBlockchainAccountManagement().addAccounts(EVM_PSEUDO_CHAIN, payload, { wait: true });
+
+      expect(useDetectedAccountsStore().wasAddedByUser({ address: '0xABC', chain: 'optimism' })).toBe(true);
+    });
+
+    it('should record nothing for an xpub, which detection never touches', async () => {
+      const { useBlockchainAccountManagement } = await importModule();
+
+      await useBlockchainAccountManagement().addAccounts('btc', { tags: null, xpub: { derivationPath: '', xpub: 'xpub123', xpubType: XpubKeyType.XPUB } }, { wait: true });
+
+      expect(useDetectedAccountsStore().userAdditions).toEqual([]);
+    });
+  });
+
   describe('passthrough exports', () => {
     it('should re-expose the account operation helpers', async () => {
       const { useBlockchainAccountManagement } = await importModule();
       const management = useBlockchainAccountManagement();
-      expect(management.detectEvmAccounts).toBe(h.detectEvmAccounts);
       expect(management.fetchAccounts).toBe(h.fetchAccounts);
       expect(management.refreshAccounts).toBe(h.refreshAccounts);
     });

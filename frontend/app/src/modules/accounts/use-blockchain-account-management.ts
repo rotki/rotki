@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import { isEveryEvmChain } from '@/modules/accounts/use-account-addition-batch';
 import { type AccountAdditionParams, type AdditionSummary, useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
 import { type FetchAccountsParams, type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
+import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -22,14 +23,14 @@ const NOTHING_ADDED: AdditionSummary = { added: [], cancelled: false, failed: []
 
 interface UseBlockchainAccountManagementReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<AdditionSummary>;
-  detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (params?: FetchAccountsParams) => Promise<void>;
   refreshAccounts: (params: RefreshAccountsParams) => Promise<void>;
 }
 
 export function useBlockchainAccountManagement(): UseBlockchainAccountManagementReturn {
   const accountAdditionService = useAccountAdditionService();
-  const { detectEvmAccounts, fetchAccounts, refreshAccounts } = useAccountOperations();
+  const { fetchAccounts, refreshAccounts } = useAccountOperations();
+  const { finishUserAddition, startUserAddition } = useDetectedAccountsStore();
 
   const { getChainName } = useSupportedChains();
   const { useWorkStatusPrefix } = useTaskCenter();
@@ -98,8 +99,28 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
     if (isRefused(chain, filteredPayload, isXpub, options?.parent))
       return NOTHING_ADDED;
 
-    const onComplete = async (params: AccountAdditionParams): Promise<void> =>
-      accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
+    const userAddition = isXpub
+      ? undefined
+      : startUserAddition(isEveryEvmChain(chain) ? undefined : chain, filteredPayload.map(item => item.address));
+
+    const finish = (): void => {
+      if (userAddition !== undefined)
+        finishUserAddition(userAddition);
+    };
+
+    /**
+     * Ends the addition for account detection only once its accounts are in the store. The service
+     * resolves before this settles, so ending it there would leave a window in which a detection
+     * snapshot lacks the accounts and its re-read claims them.
+     */
+    const onComplete = async (params: AccountAdditionParams): Promise<void> => {
+      try {
+        await accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
+      }
+      finally {
+        finish();
+      }
+    };
 
     const addition = accountAdditionService.addAccounts(
       chain,
@@ -107,7 +128,10 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
       modules,
       onComplete,
       { parent: options?.parent, userStarted: options?.userStarted },
-    );
+    ).catch((error: unknown) => {
+      finish();
+      throw error;
+    });
 
     if (!options?.wait) {
       startPromise(addition);
@@ -119,7 +143,6 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
 
   return {
     addAccounts,
-    detectEvmAccounts,
     fetchAccounts,
     refreshAccounts,
   };
