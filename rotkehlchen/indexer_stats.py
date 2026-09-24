@@ -34,6 +34,7 @@ class IndexerStats:
 
     def __init__(self) -> None:
         self.session_id = uuid4().hex
+        self._is_production = is_production()
         self._lock = threading.Lock()
         self._upload_lock = threading.Lock()
         self._counts: Counter[IndexerRequestKey] = Counter()
@@ -47,9 +48,8 @@ class IndexerStats:
         self._close_deadline: float | None = None
         self._closed = False
 
-    @staticmethod
-    def _has_consent() -> bool:
-        return is_production() and CachedSettings().get_entry('submit_usage_analytics') is True
+    def _has_consent(self) -> bool:
+        return self._is_production and CachedSettings().get_entry('submit_usage_analytics') is True
 
     @staticmethod
     def _log_upload_failure(task: Task) -> None:

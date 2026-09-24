@@ -200,6 +200,22 @@ def test_indexer_usage_is_disabled_in_source_builds(monkeypatch) -> None:
     get_entry.assert_not_called()
 
 
+def test_indexer_usage_checks_production_status_once_per_instance(monkeypatch) -> None:
+    is_production = MagicMock(return_value=True)
+    get_entry = MagicMock(return_value=True)
+    monkeypatch.setattr(indexer_stats, 'is_production', is_production)
+    monkeypatch.setattr(indexer_stats.CachedSettings, 'get_entry', get_entry)
+    stats = indexer_stats.IndexerStats()
+
+    for _ in range(5):
+        stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
+
+    is_production.assert_called_once_with()
+    # Mutable consent is still rechecked on both sides of the lock.
+    assert get_entry.call_count == 10
+    assert sum(stats._counts.values()) == 5
+
+
 @pytest.mark.parametrize('close', [False, True])
 def test_indexer_usage_worker_error_is_logged(monkeypatch, caplog, close: bool) -> None:
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
