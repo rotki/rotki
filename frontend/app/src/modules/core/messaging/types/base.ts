@@ -46,6 +46,7 @@ export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMe
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',
+  DATA_ISSUE_REMEDIATION: 'data_issue_remediation',
   HISTORICAL_BALANCE_PROCESSING: 'historical_balance_processing',
   HISTORICAL_PRICE_QUERY_STATUS: 'historical_price_query_status',
   LIQUITY_STAKING_QUERY: 'liquity_staking_query',

@@ -401,6 +401,7 @@ def test_query_transactions(rotkehlchen_api_server: APIServer) -> None:
         'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_safe_proxy_or_eoa',
         return_value=False,
     )):
+        task_ids = []
         for tx_hash in hashes:
             response = requests.put(
                 api_url_for(
@@ -413,11 +414,12 @@ def test_query_transactions(rotkehlchen_api_server: APIServer) -> None:
                 },
             )
 
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert outcome['message'] == ''
-        result = outcome['result']
-        assert result is True
+            task_ids.append(assert_ok_async_response(response))
+
+        for task_id in task_ids:
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['message'] == ''
+            assert outcome['result'] is True
 
     dbevmtx = DBEvmTx(rotki.data.db)
     dbevents = DBHistoryEvents(rotki.data.db)
