@@ -1631,6 +1631,32 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: APIServer) -> None:
     assert token.decimals == 18
 
 
+def test_add_token_with_missing_metadata(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """Check that a token can be added with name, symbol and decimals missing, as the DB
+    allows and as an exported token with missing metadata carries them"""
+    result = assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={
+            'asset_type': 'evm token',
+            'address': make_evm_address(),
+            'evm_chain': 'ethereum',
+            'token_kind': 'erc20',
+            'name': None,
+            'symbol': None,
+            'decimals': None,
+        },
+    ))
+    assert globaldb.conn.cursor().execute(
+        'SELECT A.name, C.symbol, B.decimals FROM assets AS A '
+        'JOIN evm_tokens AS B ON A.identifier=B.identifier '
+        'JOIN common_asset_details AS C ON A.identifier=C.identifier WHERE A.identifier=?',
+        (result['identifier'],),
+    ).fetchone() == (None, None, None)
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_solana_token(rotkehlchen_api_server: APIServer) -> None:

@@ -187,7 +187,13 @@ class CryptoAssetSchema(CryptoAssetFieldsSchema):
         return {'crypto_asset': crypto_asset}
 
 
-class TokenWithDecimalAndProtocolSchema(CryptoAssetFieldsSchema):
+class TokenFieldsSchema(CryptoAssetFieldsSchema):
+    """Fields shared by all token types.
+
+    Name, symbol and decimals are nullable since the DB stores NULL for them when the token
+    information could not be queried. Adding, editing and importing a token all accept them.
+    """
+    name = NonEmptyStringField(required=True, allow_none=True)
     decimals = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -195,29 +201,23 @@ class TokenWithDecimalAndProtocolSchema(CryptoAssetFieldsSchema):
             error='Token decimals should be greater than or equal to 0',
         ),
         required=True,
+        allow_none=True,
     )
-    protocol = EmptyAsNoneStringField(load_default=None)
 
     def __init__(
             self,
             coingecko: Coingecko | None = None,
             cryptocompare: Cryptocompare | None = None,
-            is_edit: bool = False,
     ) -> None:
         super().__init__(
-            identifier_required=False,  # for evm tokens is always computed from address, token kind and chain  # noqa: E501
+            identifier_required=False,  # for tokens is always computed from the address and token specific fields  # noqa: E501
             coingecko=coingecko,
             cryptocompare=cryptocompare,
         )
 
-        if is_edit is True:
-            # We allow the name, symbol and decimals to be None since these are valid values
-            # in the DB when there are issues querying the token information. Those values are
-            # sent as None to the frontend, so allow them to stay None when editing.
-            # TODO: Fix as part of https://github.com/rotki/rotki/issues/9953
-            self.fields['name'].allow_none = True
-            self.fields['symbol'].allow_none = True
-            self.fields['decimals'].allow_none = True
+
+class TokenWithDecimalAndProtocolSchema(TokenFieldsSchema):
+    protocol = EmptyAsNoneStringField(load_default=None)
 
 
 class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
@@ -333,32 +333,8 @@ class SolanaTokenSchema(TokenWithDecimalAndProtocolSchema):
         )
 
 
-class HyperliquidTokenSchema(CryptoAssetFieldsSchema):
+class HyperliquidTokenSchema(TokenFieldsSchema):
     address = HyperliquidTokenAddressField(required=True)
-    decimals = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=0,
-            error='Token decimals should be greater than or equal to 0',
-        ),
-        required=True,
-    )
-
-    def __init__(
-            self,
-            coingecko: Coingecko | None = None,
-            cryptocompare: Cryptocompare | None = None,
-            is_edit: bool = False,
-    ) -> None:
-        super().__init__(
-            identifier_required=False,
-            coingecko=coingecko,
-            cryptocompare=cryptocompare,
-        )
-        if is_edit is True:
-            self.fields['name'].allow_none = True
-            self.fields['symbol'].allow_none = True
-            self.fields['decimals'].allow_none = True
 
     @post_load
     def transform_data(
@@ -430,7 +406,6 @@ class AssetSchema(Schema):
             disallowed_asset_types: list[AssetType] | None = None,
             coingecko: Coingecko | None = None,
             cryptocompare: Cryptocompare | None = None,
-            is_edit: bool = False,
             **kwargs: Any,
     ) -> None:
         """
@@ -446,7 +421,6 @@ class AssetSchema(Schema):
         self.disallowed_asset_types = disallowed_asset_types
         self.coingecko_obj = coingecko
         self.cryptocompare_obj = cryptocompare
-        self.is_edit = is_edit
 
     @post_load
     def transform_data(
@@ -475,19 +449,16 @@ class AssetSchema(Schema):
             asset = EvmTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
-                is_edit=self.is_edit,
             ).load(data)
         elif asset_type == AssetType.SOLANA_TOKEN:
             asset = SolanaTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
-                is_edit=self.is_edit,
             ).load(data)
         elif asset_type == AssetType.HYPERLIQUID_TOKEN:
             asset = HyperliquidTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
-                is_edit=self.is_edit,
             ).load(data)
         else:  # only other case is generic crypto asset
             asset = CryptoAssetSchema(
