@@ -68,6 +68,22 @@ class IndexerStats:
         self._next_retry = 0.0
         self._failed_attempts = 0
 
+    def _record_failed_attempt(self, batch: list[SigilBatchEntry]) -> bool:
+        """Record an unsuccessful submission and return whether the batch was dropped."""
+        with self._lock:
+            if len(self._pending) == 0 or self._pending[0] is not batch:
+                return False
+            self._failed_attempts += 1
+            if self._failed_attempts >= INDEXER_ANALYTICS_MAX_ATTEMPTS:
+                self._pending.popleft()
+                self._failed_attempts = 0
+                self._next_retry = 0.0
+                log.debug('Dropping indexer analytics after repeated failures')
+                return True
+
+            self._next_retry = time.monotonic() + INDEXER_ANALYTICS_RETRY_DELAY
+            return False
+
     def discard(self) -> None:
         """Drop unsent data without waiting for an upload already underway."""
         with self._lock:
@@ -135,22 +151,16 @@ class IndexerStats:
                 timeout = INDEXER_ANALYTICS_TIMEOUT if remaining is None else min(
                     INDEXER_ANALYTICS_TIMEOUT, remaining,
                 )
+                completed = False
                 try:
                     submitted = submit_sigil_batch(batch=batch, timeout=timeout)
-                except Exception:  # pylint: disable=broad-except
-                    log.exception('Failed to submit indexer usage analytics')
-                    submitted = False
+                    completed = True
+                finally:
+                    if completed is False:
+                        self._record_failed_attempt(batch)
                 if submitted is False:
-                    with self._lock:
-                        if self._pending and self._pending[0] is batch:
-                            self._failed_attempts += 1
-                            if self._failed_attempts >= INDEXER_ANALYTICS_MAX_ATTEMPTS:
-                                self._pending.popleft()
-                                self._failed_attempts = 0
-                                self._next_retry = 0.0
-                                log.debug('Dropping indexer analytics after repeated failures')
-                                continue
-                            self._next_retry = time.monotonic() + INDEXER_ANALYTICS_RETRY_DELAY
+                    if self._record_failed_attempt(batch):
+                        continue
                     log.debug('Could not submit indexer usage analytics; will retry later')
                     return
 
