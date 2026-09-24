@@ -2260,7 +2260,7 @@
     "title": "Create Account",
     "title_restore": "Restore Account",
     "usage_analytics": {
-      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
+      "description": "Usage analytics are optional and support product improvements. When enabled, rotki sends anonymous analytics about application use. The metrics collected may change as the product evolves while remaining anonymous. You can change this setting at any time in General Settings.",
       "label_confirm": "Submit anonymous usage analytics"
     }
   },
@@ -3812,7 +3812,7 @@
     },
     "title": "General Settings",
     "usage_analytics": {
-      "label": "Submit anonymous usage analytics data to help improve rotki, your privacy remains protected.",
+      "label": "Submit anonymous usage analytics to help improve rotki; your privacy remains protected.",
       "title": "Usage analytics",
       "validation": {
         "error": "Error setting anonymous usage analytics"
