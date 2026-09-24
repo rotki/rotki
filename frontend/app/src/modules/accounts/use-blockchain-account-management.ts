@@ -13,10 +13,12 @@ interface AddAccountsOption {
   wait: boolean;
   /** Set when this addition is one row of a larger operation, such as a CSV import. */
   parent?: ActivityId;
+  /** See `AdditionOptions.userStarted`. */
+  userStarted?: boolean;
 }
 
 /** Nothing was attempted: the add was refused, or it is running detached and has nothing to report. */
-const NOTHING_ADDED: AdditionSummary = { added: [], cancelled: false, failed: [] };
+const NOTHING_ADDED: AdditionSummary = { added: [], cancelled: false, failed: [], skipped: 0 };
 
 interface UseBlockchainAccountManagementReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<AdditionSummary>;
@@ -104,7 +106,7 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
       'xpub' in payload ? payload : filteredPayload,
       modules,
       onComplete,
-      options?.parent ? { parent: options.parent } : undefined,
+      { parent: options?.parent, userStarted: options?.userStarted },
     );
 
     if (!options?.wait) {

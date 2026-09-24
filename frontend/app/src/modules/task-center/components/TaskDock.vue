@@ -23,7 +23,7 @@ const now = useTimestamp({ interval: 1000 });
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
 /** Reported outcomes stay until dismissed, failed or not; once dismissed they are only reopened. */
-const isReporting = computed<boolean>(() => get(state) === DockState.FAILED || get(state) === DockState.DONE);
+const isReporting = computed<boolean>(() => get(state) === DockState.FAILED || get(state) === DockState.ATTENTION || get(state) === DockState.DONE);
 
 /**
  * A bulk action earns the footer only when it acts on more than one thing; with a single job, a

@@ -31,6 +31,8 @@ const isIconOnly = computed<boolean>(() => get(state) === DockState.DISMISSED);
 /** A failure marks the pill whether it is still reported or already dismissed. */
 const showsFailure = computed<boolean>(() => get(state) === DockState.FAILED || (get(isIconOnly) && get(dismissedFailure)));
 
+const showsAttention = computed<boolean>(() => get(state) === DockState.ATTENTION);
+
 const showsSuccess = computed<boolean>(() => get(state) === DockState.DONE || (get(isIconOnly) && !get(dismissedFailure)));
 
 const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(primary)?.percentage ?? -1) >= 0);
@@ -52,6 +54,12 @@ const hasDeterminateRing = computed<boolean>(() => get(isPrimaryRanked) && (get(
       name="lu-circle-x"
       size="20"
       class="text-rui-error shrink-0"
+    />
+    <RuiIcon
+      v-else-if="showsAttention"
+      name="lu-triangle-alert"
+      size="20"
+      class="text-rui-warning shrink-0"
     />
     <RuiIcon
       v-else-if="showsSuccess"

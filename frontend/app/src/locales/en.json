@@ -122,9 +122,6 @@
       "type_hint": "{type} detected"
     }
   },
-  "account_import_progress": {
-    "importing": "rotki is importing your accounts. Currently importing account {current} of {total}. Please wait!"
-  },
   "account_management": {
     "about_tooltip": "Show the application's about modal",
     "creation": {
@@ -514,22 +511,16 @@
       },
       "blockchain_accounts_add": {
         "error": {
-          "failed": "Failed to add address {address} to these chains:\n {list}",
-          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
-          "failed_reason": {
-            "existed": "Has been added before",
-            "is_contract": "Is ETH contract address",
-            "no_activity": "No activity found on this chain yet"
-          },
-          "no_activity_hint": "Chains where the address has no activity yet are skipped. This is normal for a fresh wallet. Once the address has transactions, add it again, or add it now with a specific chain selected to track it anyway.",
-          "non_eth": "All non ETH chains",
+          "failed_chains": "Could not check or track it on {chains}",
           "nothing_added": "No account was added for {address}"
         },
         "no_new": {
           "description": "The selected addresses are already tracked by rotki"
         },
-        "success": {
-          "description": "Address {address} is successfully added for all EVM chains. Token detection and balance queries are now running. Open the History page to also fetch and decode its transactions. | Address {address} is successfully added for these chains: \n {list}\nToken detection and balance queries are now running. Open the History page to also fetch and decode its transactions."
+        "skipped": {
+          "existed": "Already tracked on every chain it is active on",
+          "no_activity": "No activity on any EVM chain, so it is not tracked.",
+          "tracked": "Already tracked"
         },
         "task": {
           "title": "Adding {blockchain} account"
@@ -2020,7 +2011,6 @@
     },
     "group_label": "Blockchain balances",
     "import_blockchain_accounts": "Import blockchain accounts",
-    "import_blockchain_accounts_complete": "The account import was completed successfully. {imported} of {total} accounts were imported. Skipped {skipped} already existing accounts.",
     "import_csv_example": "See the CSV example {here}",
     "import_error": {
       "invalid_format": "Invalid CSV format. Must contain \"chain\" and \"address\" columns.",
@@ -6247,6 +6237,7 @@
       },
       "accounts": {
         "add": "Adding {address}",
+        "add_count": "Adding {count} address | Adding {count} addresses",
         "detect": "Detecting EVM accounts",
         "ens": "Resolving ENS names for {count} address | Resolving ENS names for {count} addresses",
         "import": "Importing {count} account | Importing {count} accounts",
@@ -6401,7 +6392,19 @@
     }
   },
   "task_dock": {
+    "attention": "{title} needs attention",
+    "attention_count": "{count} job needs attention | {count} jobs need attention",
     "detail": {
+      "addition": {
+        "every_chain": "Tracked on every EVM chain",
+        "existed": "already tracked on {count} chain | already tracked on {count} chains",
+        "failed": "Could not check {chains}",
+        "failed_count": "Could not check {count} chain | Could not check {count} chains",
+        "more": "+{count}",
+        "no_activity": "no activity on {count} chain | no activity on {count} chains",
+        "track_on_chain": "Track it on a chain | Track them on a chain",
+        "tracked_on": "Tracked on"
+      },
       "beginning": "Beginning",
       "cache_stopped": "Stopped",
       "caches_filled": "{count} protocol cache filled | {count} protocol caches filled",
@@ -6426,6 +6429,7 @@
         "running": "{count} running"
       },
       "outcome": {
+        "attention": "{count} needs attention | {count} need attention",
         "cancelled": "{count} cancelled",
         "done": "{count} done",
         "failed": "{count} failed",
@@ -6435,11 +6439,13 @@
       "settled": "{settled} of {total} finished",
       "show_all": "Show {count} more | Show {count} more",
       "skipped_count": "{count} skipped | {count} skipped",
+      "skipped_more": "+{count} more",
       "skipped_names_more": "{names}, +{count} more",
       "stop_all": "Stop all",
       "stop_all_info": "This stops {count} refresh or sync. What it already fetched is kept, and running it again finishes the rest. | This stops {count} refreshes and syncs. What they already fetched is kept, and running them again finishes the rest.",
       "stop_all_kept": "{count} task that changes your data keeps running, since stopping it could leave the data half-written. | {count} tasks that change your data keep running, since stopping them could leave the data half-written.",
       "title": {
+        "attention": "Needs attention",
         "finished": "Finished",
         "problems": "Finished with problems",
         "working": "Working"

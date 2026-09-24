@@ -12,8 +12,11 @@ interface DockAutoOpenSources {
   /** Whether work is running right now, with no allowance for a pause. */
   readonly working: Readonly<Ref<boolean>>;
   readonly jobs: Readonly<Ref<PendingJob[]>>;
-  /** Settled jobs with a failure, not yet dismissed; they may belong to an earlier batch. */
-  readonly failed: Readonly<Ref<Activity[]>>;
+  /**
+   * Settled jobs held for the user, a failure or a skip that asked for attention, not yet dismissed;
+   * they may belong to an earlier batch.
+   */
+  readonly held: Readonly<Ref<Activity[]>>;
   /** Settled jobs that finished cleanly, not yet dismissed. */
   readonly finished: Readonly<Ref<Activity[]>>;
   /** Jobs that failed before the dock mounted, reported with the batch running at mount. */
@@ -44,7 +47,7 @@ interface DockAutoOpenSources {
  * Once the work goes idle, a job the user starts is a new request and opens it again, even inside
  * the batch's grace period. The next batch starts fresh.
  */
-export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive, jobs, modelExpanded, working }: DockAutoOpenSources): void {
+export function useDockAutoOpen({ failedBeforeMount, finished, held, interacting, isActive, jobs, modelExpanded, working }: DockAutoOpenSources): void {
   const showSummary = useSetting('dockShowSummary');
   const collapsedDuringBatch = shallowRef<boolean>(false);
   const collapsedWhileWorking = shallowRef<boolean>(false);
@@ -129,7 +132,7 @@ export function useDockAutoOpen({ failed, failedBeforeMount, finished, interacti
 
     const collapsed = get(collapsedDuringBatch);
     const ours = get(openedForJob);
-    const batchFailed = inBatch(get(failed));
+    const batchFailed = inBatch(get(held));
     const batchFinished = inBatch(get(finished));
     set(collapsedDuringBatch, false);
     set(openedForJob, false);

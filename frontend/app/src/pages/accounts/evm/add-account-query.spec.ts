@@ -5,7 +5,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, ref, type Ref } from 'vue';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import EvmAccountsPage from '@/pages/accounts/evm/[[tab]].vue';
@@ -25,12 +25,6 @@ vi.mock('vue-router', () => ({
 vi.mock('@/modules/accounts/use-account-category-helper', () => ({
   useAccountCategoryHelper: (): { chainIds: ComputedRef<string[]> } => ({
     chainIds: computed<string[]>(() => ['eth', 'optimism']),
-  }),
-}));
-
-vi.mock('@/modules/accounts/use-account-import-progress-store', () => ({
-  useAccountImportProgressStore: (): { importingAccounts: Ref<boolean> } => ({
-    importingAccounts: ref(false),
   }),
 }));
 
@@ -57,7 +51,6 @@ function mountPage(tab: string = 'accounts'): VueWrapper<InstanceType<typeof Evm
         AccountBalances: { template: '<div />' },
         EthStakingValidators: { template: '<div />' },
         EvmAccountPageButtons: { template: '<div />' },
-        AccountImportProgress: { template: '<div />' },
         BlockchainBalanceStalenessIndicator: { template: '<div />' },
         TablePageLayout: { template: '<div><slot name="buttons" /><slot name="tabs" /><slot /></div>' },
         AccountDialog: {
@@ -127,6 +120,26 @@ describe('pages/accounts/evm — add query handling', () => {
     expect(model).toBeDefined();
     expect(getFirstAddress(model)).toBe(address);
     expect(replaceMock).toHaveBeenCalledWith({ query: {} });
+  });
+
+  it('should open on the linked chain holding every linked address', async () => {
+    routeQuery.value = { add: 'true', addressToAdd: ['0xa', '0xb'], chainToAdd: 'eth' };
+    wrapper = mountPage();
+    await flushPromises();
+
+    const model = getDialogModel(wrapper);
+    assert(model?.type === 'account' && Array.isArray(model.data));
+
+    expect(model.chain).toBe('eth');
+    expect(model.data.map(entry => entry.address)).toStrictEqual(['0xa', '0xb']);
+  });
+
+  it('should ignore a linked chain the tab does not offer', async () => {
+    routeQuery.value = { add: 'true', addressToAdd: '0xa', chainToAdd: 'bitcoin' };
+    wrapper = mountPage();
+    await flushPromises();
+
+    expect(getDialogModel(wrapper)?.chain).toBe('all');
   });
 
   it('should seed a validator, not an address account, on the validators tab', async () => {

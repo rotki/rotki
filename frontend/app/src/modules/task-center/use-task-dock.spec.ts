@@ -52,6 +52,11 @@ function refresh(status: ActivityStatus, chain: ActivityStatus = status): Activi
   ];
 }
 
+/** Marks the refresh's chain as a skip that asked for attention. */
+function attentionOnChain(list: Activity[]): Activity[] {
+  return list.map(item => (item.parent === refreshId ? { ...item, attention: true } : item));
+}
+
 let scope: ReturnType<typeof effectScope> | undefined;
 
 function dock(): ReturnType<typeof useTaskDock> {
@@ -162,6 +167,39 @@ describe('useTaskDock', () => {
       expect(get(state)).toBe(DockState.DISMISSED);
       expect(get(failed)).toEqual([]);
       expect(get(dismissed).map(root => root.id)).toEqual([refreshId]);
+    });
+
+    it('should hold a skip that asked for attention apart from a clean run, and pass a routine skip as one', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const { failed, finished, flagged, state } = dock();
+
+      await transition(attentionOnChain(refresh(ActivityStatus.COMPLETE, ActivityStatus.SKIPPED)));
+
+      expect(get(state)).toBe(DockState.ATTENTION);
+      expect(get(flagged).map(root => root.id)).toEqual([refreshId]);
+      expect(get(finished)).toEqual([]);
+      expect(get(failed)).toEqual([]);
+
+      await transition(refresh(ActivityStatus.COMPLETE, ActivityStatus.SKIPPED));
+
+      expect(get(state)).toBe(DockState.DONE);
+      expect(get(flagged)).toEqual([]);
+    });
+
+    it('should keep a skip that asked for attention through the next run, as a failure is kept', async () => {
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const { finished, flagged, state } = dock();
+
+      const held = attentionOnChain(refresh(ActivityStatus.COMPLETE, ActivityStatus.SKIPPED));
+      await transition(held);
+      await endBatch();
+      await transition([...held, report(ActivityStatus.RUNNING)]);
+      await transition([...held, report(ActivityStatus.COMPLETE)]);
+
+      expect(get(state)).toBe(DockState.ATTENTION);
+      expect(get(flagged).map(root => root.id)).toEqual([refreshId]);
+      expect(get(finished).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT]);
     });
 
     it('should dismiss only the acknowledged job, keeping the panel open over the other failure', async () => {

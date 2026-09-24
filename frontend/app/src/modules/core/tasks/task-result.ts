@@ -17,12 +17,17 @@ export const Cancelled = tag('Cancelled');
 export const BackendCancelled = tag('BackendCancelled');
 
 /**
- * The work was deliberately not run because the user configured it off (a disabled chain, an
- * inactive module). Terminal and explainable: `message` is the user-facing reason ("disabled in
- * settings"), which the task center renders on the row.
+ * The work deliberately did nothing, for a reason the user should see: they configured it off (a
+ * disabled chain, an inactive module), or there was nothing to do (an address with no activity on
+ * any chain). Terminal and explainable: `message` is the user-facing reason ("disabled in
+ * settings"), which the task center renders on the row. Not a failure: nothing needs fixing.
  *
  * Not the `Skipped` tag removed in `6e128fcaa5`. That one meant "a duplicate was already in
  * flight" — an artefact of the dedup guard, invisible to users. This is a user-facing outcome.
+ *
+ * `attention` marks the rare skip that leaves the user without what they asked for, such as an
+ * address they added that ends up tracked nowhere. The task center then holds it for the user the
+ * way it holds a failure, where a routine skip (a disabled chain) passes as a clean run.
  */
 export const Skipped = tag('Skipped');
 
@@ -32,7 +37,7 @@ export const TaskFailed = tag('TaskFailed');
 export type TaskError =
   | ReturnType<typeof Cancelled<{ message: string }>>
   | ReturnType<typeof BackendCancelled<{ message: string }>>
-  | ReturnType<typeof Skipped<{ message: string }>>
+  | ReturnType<typeof Skipped<{ message: string; attention?: boolean }>>
   | ReturnType<typeof TaskFailed<{ message: string; cause?: unknown }>>;
 
 /** True when the error is any flavour of cancellation (user or backend). */

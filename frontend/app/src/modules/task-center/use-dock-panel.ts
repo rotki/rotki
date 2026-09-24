@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { groupTitle, isSafeToStop } from '@/modules/task-center/core/kinds';
-import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
+import { isTerminalStatus, needsAttention, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, type ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { DockState } from '@/modules/task-center/dock-state';
@@ -62,14 +62,15 @@ function byStart(a: Activity, b: Activity): number {
  * rather than leaving a gap the rows below close; and a job only appears once it has run for
  * {@link APPEAR_DELAY}, or failed, so work that is over in a moment never shows at all, nor turns up
  * in the clean report at the end (unless it is all there is). Once listed, a job stays listed. Only
- * a settled report reorders, failures first, so a mixed outcome is never below the fold.
+ * a settled report reorders: what is held for the user first, then what the user started, so
+ * neither is ever below the fold.
  */
 export function useDockPanel(
   jobs: MaybeRefOrGetter<PendingJob[]>,
   children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
 ): UseDockPanelReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { dismissed, dismissedFailure, failed, finished, state } = useTaskDock();
+  const { dismissed, dismissedFailure, failed, finished, flagged, state } = useTaskDock();
   const { rerun } = useTaskController();
 
   const now = useTimestamp({ interval: 250 });
@@ -77,17 +78,28 @@ export function useDockPanel(
   /** Jobs the panel has listed during this stretch of work, which stay listed however briefly they ran. */
   const shown = shallowRef<ReadonlySet<ActivityId>>(new Set());
 
-  const hasFailure = (root: Activity): boolean => someInSubtree(toValue(children), root, isFailed);
+  const isHeld = (root: Activity): boolean => someInSubtree(toValue(children), root, needsAttention);
+
+  /**
+   * Where a settled job sorts: what is held for the user first, then what the user asked for, then
+   * the upkeep that ran around it. A job the user started otherwise sinks below every refresh that
+   * happened to start before it.
+   */
+  const settledRank = (root: Activity): number => {
+    if (isHeld(root))
+      return 0;
+    return root.userStarted ? 1 : 2;
+  };
 
   /** Every job in flight, and every one this run finished, whatever the order they came in. */
   function working(): Activity[] {
-    const all = [...toValue(jobs).map(job => job.activity), ...get(failed), ...get(finished)];
+    const all = [...toValue(jobs).map(job => job.activity), ...get(failed), ...get(flagged), ...get(finished)];
     return all.filter((root, index) => all.findIndex(other => other.id === root.id) === index);
   }
 
-  /** Whether a job has earned its row: listed before, holding a failure, or still going past the delay. A job with no start time cannot be timed, so it lists at once. */
+  /** Whether a job has earned its row: listed before, held for the user, or still going past the delay. A job with no start time cannot be timed, so it lists at once. */
   function hasAppeared(root: Activity): boolean {
-    if (get(shown).has(root.id) || hasFailure(root))
+    if (get(shown).has(root.id) || isHeld(root))
       return true;
     if (isTerminalStatus(root.status))
       return false;
@@ -99,7 +111,9 @@ export function useDockPanel(
       case DockState.WORKING:
         return working().filter(hasAppeared);
       case DockState.FAILED:
-        return get(failed);
+        return [...get(failed), ...get(flagged)];
+      case DockState.ATTENTION:
+        return get(flagged);
       case DockState.DISMISSED:
         return get(dismissed);
       case DockState.DONE: {
@@ -115,7 +129,7 @@ export function useDockPanel(
     const ordered = [...listed()].sort(byStart);
     return get(state) === DockState.WORKING
       ? ordered
-      : ordered.sort((a, b) => Number(hasFailure(b)) - Number(hasFailure(a)));
+      : ordered.sort((a, b) => settledRank(a) - settledRank(b));
   });
 
   /** Remembers what was listed, and forgets it all once the dock has nothing left to show. */
@@ -160,7 +174,9 @@ export function useDockPanel(
   const title = computed<string>(() => {
     if (get(state) === DockState.WORKING)
       return t('task_dock.panel.title.working');
-    return get(reportsFailure) ? t('task_dock.panel.title.problems') : t('task_dock.panel.title.finished');
+    if (get(reportsFailure))
+      return t('task_dock.panel.title.problems');
+    return get(state) === DockState.ATTENTION ? t('task_dock.panel.title.attention') : t('task_dock.panel.title.finished');
   });
 
   const summary = computed<boolean>(() => get(roots).length > 1);

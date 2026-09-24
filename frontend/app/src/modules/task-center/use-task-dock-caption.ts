@@ -26,7 +26,7 @@ export function useTaskDockCaption(
   children: MaybeRefOrGetter<ReadonlyMap<ActivityId, Activity[]>>,
 ): ComputedRef<string> {
   const { t } = useI18n({ useScope: 'global' });
-  const { dismissed, failed, finished, state } = useTaskDock();
+  const { dismissed, failed, finished, flagged, state } = useTaskDock();
   const { isPrimaryRanked, primary } = useDockPrimary(jobs, children);
   const { labelOf } = useActivityLabel();
 
@@ -50,6 +50,13 @@ export function useTaskDockCaption(
       : t('task_dock.failed_count', { count: roots.length }, roots.length);
   }
 
+  /** Named by the job's title, never by a leaf: the leaf of an addition is an address, which the pill would show unscrambled. */
+  function attention(roots: Activity[]): string {
+    return roots.length === 1
+      ? t('task_dock.attention', { title: roots[0].title })
+      : t('task_dock.attention_count', { count: roots.length }, roots.length);
+  }
+
   function successes(roots: Activity[]): string {
     return roots.length === 1
       ? t('task_dock.done', { title: roots[0].title })
@@ -66,6 +73,8 @@ export function useTaskDockCaption(
     switch (get(state)) {
       case DockState.FAILED:
         return failures(get(failed));
+      case DockState.ATTENTION:
+        return attention(get(flagged));
       case DockState.DISMISSED:
         return dismissedCaption();
       case DockState.DONE:

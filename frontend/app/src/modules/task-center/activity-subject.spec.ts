@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { activitySubject } from './activity-subject';
@@ -55,6 +56,21 @@ describe('activitySubject', () => {
     const detection = activity(makeActivityId(ActivityKind.TOKEN_DETECTION, 'eth', ADDRESS), ActivityKind.TOKEN_DETECTION);
 
     expect(activitySubject(detection)).toEqual({ address: ADDRESS, chain: 'eth' });
+  });
+
+  it('should name the account of a single addition, without a chain for the every-EVM-chain one', () => {
+    const addition = (chain: string): Activity =>
+      activity(accountAddActivity.id({ chain, target: { address: ADDRESS, kind: 'address' } }), ActivityKind.ACCOUNTS);
+
+    expect(activitySubject(addition('optimism'))).toEqual({ address: ADDRESS, chain: 'optimism' });
+    expect(activitySubject(addition(EVM_PSEUDO_CHAIN))).toEqual({ address: ADDRESS });
+  });
+
+  it('should name nothing for a bulk addition, whose id holds several addresses', () => {
+    const bulk = accountAddActivity.id({ chain: 'eth', target: { addresses: [ADDRESS, '0xb'], kind: 'addresses' } });
+
+    expect(activitySubject(activity(bulk, ActivityKind.ACCOUNTS))).toBeUndefined();
+    expect(activitySubject(activity(accountAddActivity.batchId(['eth']), ActivityKind.ACCOUNTS))).toBeUndefined();
   });
 
   it('should name nothing for an id its kind\'s producer never mints', () => {

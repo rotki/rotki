@@ -56,6 +56,18 @@ function targetKey(target: AccountTarget): string {
   }
 }
 
+/** What a row names the target by: the address, each address on its own line, or the xpub. */
+export function accountTargetLabel(target: AccountTarget): string {
+  switch (target.kind) {
+    case 'address':
+      return target.address;
+    case 'addresses':
+      return target.addresses.join(',\n');
+    case 'xpub':
+      return target.xpub;
+  }
+}
+
 /**
  * The subtitles account activities render under, beside the ids they belong to.
  *
@@ -64,6 +76,8 @@ function targetKey(target: AccountTarget): string {
  */
 export const accountActivityLabel = {
   add: (address: string): ActivityText => activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+  addCount: (count: number): ActivityText =>
+    activityLabelFor(msg.$t('task_center.activity.accounts.add_count'), { count }, count),
   remove: (address: string): ActivityText => activityLabelFor(msg.$t('task_center.activity.accounts.remove'), { address }),
   removeCount: (count: number): ActivityText =>
     activityLabelFor(msg.$t('task_center.activity.accounts.remove_count'), { count }, count),
@@ -82,6 +96,25 @@ export function accountTargetOf(payload: AccountPayload[] | XpubAccountPayload):
 }
 
 /**
+ * Where an "every EVM chain" addition landed, per chain, as the backend reported it.
+ *
+ * @remarks
+ * Only that addition publishes it: a single-chain or xpub addition has one chain, and its status
+ * already says everything. The chains are detail rather than child activities because they are not
+ * separate work; the backend checks them all in one request.
+ */
+export interface AccountAdditionDetail {
+  /** The chains the address is now tracked on. Empty when {@link everyChain} is set. */
+  readonly added: readonly string[];
+  /** The backend added it on every EVM chain, which it reports as `all` instead of naming them. */
+  readonly everyChain: boolean;
+  readonly existed: readonly string[];
+  readonly noActivity: readonly string[];
+  /** Chains whose activity check or tracking failed. */
+  readonly failed: readonly string[];
+}
+
+/**
  * Adding accounts. Keyed `(chain, target)`: a bulk add fans out over one chain, and `submitTask`
  * dedups on id identity, so a chain-only id collapsed every address after the first onto the
  * first's promise and reported them added without ever sending them.
@@ -89,7 +122,7 @@ export function accountTargetOf(payload: AccountPayload[] | XpubAccountPayload):
  * The lane caps additions at 2 per chain. Concurrency lives there and nowhere else, as the warning
  * on `DECODE_LANE` requires.
  */
-export const accountAddActivity = defineActivity<AccountSubject, readonly [string, string]>({
+export const accountAddActivity = defineActivity<AccountSubject, readonly [string, string], AccountAdditionDetail>({
   key: subject => [subject.chain, targetKey(subject.target)],
   kind: ActivityKind.ACCOUNTS,
   lane: subject => familyLane(ACCOUNTS_ADD_LANE_PREFIX, subject.chain),

@@ -65,6 +65,7 @@ export function useEthStaking(): UseEthStakingReturn {
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.staking.add_validator'), { validator: id ? truncateAddress(String(id)) : '' }),
       title: t('task_center.group.staking'),
+      userStarted: true,
     });
 
     if (!isErr(outcome)) {

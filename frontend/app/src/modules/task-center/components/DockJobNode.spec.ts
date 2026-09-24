@@ -181,6 +181,16 @@ describe('dockJobNode', () => {
       expect(mountTree(settled(ActivityStatus.COMPLETE)).find('[data-testid=activity-outcome]').attributes('aria-label')).toBe('pending_task.status.failed');
     });
 
+    it('should report a skip that asked for attention beneath a completed parent as skipped, and a routine skip as done', () => {
+      const withSkip = (attention: boolean): Activity[] => settled(ActivityStatus.COMPLETE)
+        .map(item => (item.status === ActivityStatus.FAILED ? { ...item, attention, status: ActivityStatus.SKIPPED } : item));
+      const outcome = (tree: Activity[]): string | undefined =>
+        mountTree(tree).find('[data-testid=activity-outcome]').attributes('aria-label');
+
+      expect(outcome(withSkip(true))).toBe('pending_task.status.skipped');
+      expect(outcome(withSkip(false))).toBe('pending_task.status.done');
+    });
+
     it('should keep reporting a cancelled parent as cancelled, whatever failed beneath it', () => {
       expect(mountTree(settled(ActivityStatus.CANCELLED)).find('[data-testid=activity-outcome]').attributes('aria-label')).toBe('pending_task.status.cancelled');
     });

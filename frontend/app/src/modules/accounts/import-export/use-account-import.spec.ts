@@ -6,7 +6,7 @@ import { createMockCSV } from '@test/mocks/file';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
-import { createValidatorAccount } from '@/modules/accounts/create-account';
+import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
 import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -64,6 +64,7 @@ vi.mock('@/modules/accounts/use-account-additions', () => {
         [address]: ['eth', 'optimism', 'gnosis'],
       },
     })),
+    reportTracked: vi.fn().mockResolvedValue(undefined),
   };
   return {
     useAccountAdditions: vi.fn(() => mock),
@@ -84,21 +85,11 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
   };
 });
 
-vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
-  useAccountAdditionNotifications: vi.fn(() => ({
-    createFailureNotification: vi.fn(),
-    notifyFailedToAddAddress: vi.fn(),
-    notifyUser: vi.fn(),
-  })),
-}));
-
 const mockNotifyError = vi.fn();
-const mockNotifyInfo = vi.fn();
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn((): { notifyError: typeof mockNotifyError; notifyInfo: typeof mockNotifyInfo } => ({
+  useNotifications: vi.fn((): { notifyError: typeof mockNotifyError } => ({
     notifyError: mockNotifyError,
-    notifyInfo: mockNotifyInfo,
   })),
 }));
 
@@ -148,13 +139,13 @@ describe('useAccountImport', () => {
       address: '0x124',
       label: 'Name2',
       tags: ['tag1', 'tag2'],
-    }], { parent: expect.any(String) });
+    }], { parent: expect.any(String), userStarted: true });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    }, { parent: expect.any(String) });
+    }, { parent: expect.any(String), userStarted: true });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
@@ -181,16 +172,41 @@ describe('useAccountImport', () => {
       address: '0x125',
       label: 'Name3',
       tags: ['tag1', 'tag2'],
-    }], { parent: expect.any(String) });
+    }], { parent: expect.any(String), userStarted: true });
     expect(addEvmAccount).toHaveBeenCalledTimes(1);
     expect(addEvmAccount).toHaveBeenCalledWith({
       address: '0x123',
       label: 'Name1',
       tags: ['tag1', 'tag2'],
-    }, { parent: expect.any(String) });
+    }, { parent: expect.any(String), userStarted: true });
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
+  });
+
+  it('should report a row that is already tracked instead of adding it again', async () => {
+    const { addAccount, reportTracked } = useAccountAdditions();
+    const { updateAccounts } = useBlockchainAccountsStore();
+    updateAccounts(Blockchain.ETH, [
+      createAccount({ address: '0x124', label: null, tags: null }, { chain: Blockchain.ETH, nativeAsset: 'ETH' }),
+    ]);
+
+    const mockFile = createMockCSV([
+      'address,address extras,chain,label,tags',
+      '0x124,,eth,Name2,',
+      '0x125,,gnosis,Name3,',
+    ]);
+
+    const { importAccounts } = scope.run(() => useAccountImport())!;
+    await importAccounts(mockFile);
+
+    expect(addAccount).toHaveBeenCalledTimes(1);
+    expect(addAccount).toHaveBeenCalledWith('gnosis', expect.anything(), expect.anything());
+    expect(reportTracked).toHaveBeenCalledExactlyOnceWith(
+      'eth',
+      { address: '0x124', kind: 'address' },
+      { parent: expect.any(String), userStarted: true },
+    );
   });
 
   it('should not import from csv with missing headers', async () => {
@@ -230,7 +246,7 @@ describe('useAccountImport', () => {
         xpub: XPUB,
         xpubType: 'p2pkh',
       },
-    }, undefined);
+    }, { parent: undefined, userStarted: true });
 
     expect(queryAddTag).toHaveBeenCalledTimes(1);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
@@ -259,8 +275,9 @@ describe('useAccountImport', () => {
     });
   });
 
-  it('should skip a validator if it is already present', async () => {
+  it('should report a validator that is already present instead of adding it', async () => {
     const { save } = useAccountManage();
+    const { reportTracked } = useAccountAdditions();
     const { updateAccounts } = useBlockchainAccountsStore();
     updateAccounts(Blockchain.ETH2, [
       createValidatorAccount({
@@ -293,5 +310,10 @@ describe('useAccountImport', () => {
       mode: 'add',
       type: 'validator',
     });
+    expect(reportTracked).toHaveBeenCalledExactlyOnceWith(
+      'eth2',
+      { address: VALIDATOR_2, kind: 'address' },
+      { parent: undefined, userStarted: true },
+    );
   });
 });

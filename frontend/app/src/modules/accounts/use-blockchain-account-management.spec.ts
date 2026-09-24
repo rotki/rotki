@@ -17,7 +17,9 @@ const h = vi.hoisted(() => ({
 
 const mockAddRunning = ref<boolean>(false);
 
-const NOTHING = { added: [], cancelled: false, failed: [] };
+const NOTHING = { added: [], cancelled: false, failed: [], skipped: 0 };
+
+const NO_OPTIONS = { parent: undefined, userStarted: undefined };
 
 vi.mock('@/modules/accounts/use-account-addition-service', () => ({
   useAccountAdditionService: vi.fn(() => ({
@@ -111,7 +113,17 @@ describe('useBlockchainAccountManagement', () => {
 
       await useBlockchainAccountManagement().addAccounts('eth', { modules: undefined, payload: many }, { wait: true });
 
-      expect(h.addAccounts).toHaveBeenCalledWith('eth', many, undefined, expect.any(Function), undefined);
+      expect(h.addAccounts).toHaveBeenCalledWith('eth', many, undefined, expect.any(Function), NO_OPTIONS);
+    });
+
+    it('should pass userStarted through, so the dock opens only for an addition the caller says the user asked for', async () => {
+      h.addAccounts.mockResolvedValue(NOTHING);
+      h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
+      const { useBlockchainAccountManagement } = await importModule();
+
+      await useBlockchainAccountManagement().addAccounts('eth', payload, { userStarted: true, wait: true });
+
+      expect(h.addAccounts).toHaveBeenCalledWith('eth', expect.any(Array), undefined, expect.any(Function), { parent: undefined, userStarted: true });
     });
 
     it('should pass an xpub through unfiltered', async () => {
@@ -123,7 +135,7 @@ describe('useBlockchainAccountManagement', () => {
       const { useBlockchainAccountManagement } = await importModule();
       await useBlockchainAccountManagement().addAccounts('btc', xpubPayload, { wait: true });
 
-      expect(h.addAccounts).toHaveBeenCalledWith('btc', xpubPayload, [], expect.any(Function), undefined);
+      expect(h.addAccounts).toHaveBeenCalledWith('btc', xpubPayload, [], expect.any(Function), NO_OPTIONS);
       expect(h.getNewAccountPayload).not.toHaveBeenCalled();
     });
 

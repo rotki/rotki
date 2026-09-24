@@ -5,7 +5,7 @@ import DockJobBreakdown from '@/modules/task-center/components/DockJobBreakdown.
 import DockOutcomeSummary from '@/modules/task-center/components/DockOutcomeSummary.vue';
 import DockSkippedGroup from '@/modules/task-center/components/DockSkippedGroup.vue';
 import DockSyncHint from '@/modules/task-center/components/DockSyncHint.vue';
-import { isTerminalStatus, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
+import { isTerminalStatus, needsAttention, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { arrangeChildren, type DockChildEntry, groupFailedLeaves } from '@/modules/task-center/dock-children';
@@ -55,11 +55,16 @@ const jobBreakdown = useJobBreakdown(() => activity, () => children);
 
 const descendants = computed<Activity[]>(() => children.get(activity.id) ?? []);
 
-/** How a child ended: a completed parent over a failure reads as failed, as its own row does. */
+/**
+ * How a child ended: a completed parent over a failure reads as failed, as its own row does, and
+ * one over a skip that asked for attention reads as skipped, so its check does not say all is well.
+ */
 function outcomeOf(child: Activity): ActivityStatus {
-  return child.status === ActivityStatus.COMPLETE && someInSubtree(children, child, node => node.status === ActivityStatus.FAILED)
-    ? ActivityStatus.FAILED
-    : child.status;
+  if (child.status !== ActivityStatus.COMPLETE)
+    return child.status;
+  if (someInSubtree(children, child, node => node.status === ActivityStatus.FAILED))
+    return ActivityStatus.FAILED;
+  return someInSubtree(children, child, needsAttention) ? ActivityStatus.SKIPPED : child.status;
 }
 
 /** The unfolded children: start order while the job runs, sorted and grouped once it settles. */
@@ -132,6 +137,9 @@ const hiddenCount = computed<number>(() => get(leaves).length - get(failedLeaves
 const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTerminalStatus(activity.status)
   ? tallyStatuses(get(leaves).map(leaf => leaf.status))
   : undefined));
+
+/** The skipped leaves that asked for attention, which the summary counts apart from routine skips. */
+const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.status === ActivityStatus.SKIPPED && needsAttention(leaf)).length);
 </script>
 
 <template>
@@ -180,7 +188,10 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
         v-if="leafTally"
         #summary
       >
-        <DockOutcomeSummary :tally="leafTally" />
+        <DockOutcomeSummary
+          :tally="leafTally"
+          :attention="attentionLeaves"
+        />
       </template>
       <template
         v-if="breakdown.length > 0 || showSyncHint"

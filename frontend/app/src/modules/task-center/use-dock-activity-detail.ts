@@ -1,11 +1,13 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { toSentenceCase } from '@rotki/common';
 import { type MessageKey, msg } from '@/message-key';
+import { accountAddActivity, type AccountAdditionDetail, type AccountSubject } from '@/modules/accounts/accounts.activity';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
 import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { protocolCacheActivity, type ProtocolCacheDetail } from '@/modules/history/protocol-cache-activity';
-import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { activitySubject } from '@/modules/task-center/activity-subject';
+import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
 import { type Activity, ActivityKind, activityParts, ActivityStatus } from '@/modules/task-center/core/types';
 import { peekActivityDetail } from '@/modules/task-center/use-activity-detail';
 
@@ -32,7 +34,10 @@ export type DockDetail =
     readonly filled: DockDetailCache[];
     /** Left unfinished by work that has settled, cancelled or failed, so no longer filling. */
     readonly stopped: DockDetailCache[];
-  };
+  }
+  | { readonly type: 'addition' } & AccountAdditionDetail
+  /** An address the user asked to add that ended up tracked nowhere, which the row offers to track on a chain. */
+  | { readonly type: 'untracked'; readonly address: string };
 
 /** The step each transaction query status names, as an i18n key; `undefined` for a status that is not a step. */
 const SYNC_STEP: Record<TransactionsQueryStatus, MessageKey | undefined> = {
@@ -108,7 +113,8 @@ export function activityCaches(activity: Activity): ProtocolCacheDetail['protoco
  *
  * A query's step and range show only while the activity runs, since they describe a query in
  * flight and a settled row has its outcome to show instead. The caches stay once it settles, as the
- * record of what the work filled, the way the sync panel kept its completed list.
+ * record of what the work filled, the way the sync panel kept its completed list. An account
+ * addition's chains show only once it has completed, since they are its outcome.
  */
 export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): ComputedRef<DockDetail | undefined> {
   const { t } = useI18n({ useScope: 'global' });
@@ -146,6 +152,26 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     };
   }
 
+  /**
+   * Where an "every EVM chain" addition landed. Rebuilt for that subject only, since it is the one
+   * addition that publishes a breakdown; any other account id fails the id check and reads nothing.
+   */
+  function accountAddition(current: Activity): DockDetail | undefined {
+    const [, chain, address] = activityParts(current.id);
+    const subject: AccountSubject = { chain: chain ?? '', target: { address: address ?? '', kind: 'address' } };
+    if (address === undefined || accountAddActivity.id(subject) !== current.id)
+      return undefined;
+
+    const detail = peekActivityDetail(accountAddActivity, subject);
+    return detail === undefined ? undefined : { ...detail, type: 'addition' };
+  }
+
+  /** A single address whose addition asked for attention; the row offers to track it on a chain. */
+  function untracked(current: Activity): DockDetail | undefined {
+    const address = activitySubject(current)?.address;
+    return address === undefined || current.status !== ActivityStatus.SKIPPED ? undefined : { address, type: 'untracked' };
+  }
+
   /** The kinds whose producers stream a query in flight, each read back through its own descriptor. */
   const QUERY_READERS: Partial<Record<ActivityKind, (current: Activity) => DockDetail | undefined>> = {
     [ActivityKind.BANK_EVENTS]: events,
@@ -158,6 +184,10 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     const cached = cachesDetail(activityCaches(current), !isTerminalStatus(current.status));
     if (cached !== undefined)
       return cached;
+    if (current.kind === ActivityKind.ACCOUNTS && current.status === ActivityStatus.COMPLETE)
+      return accountAddition(current);
+    if (current.kind === ActivityKind.ACCOUNTS && needsAttention(current))
+      return untracked(current);
     return current.status === ActivityStatus.RUNNING ? QUERY_READERS[current.kind]?.(current) : undefined;
   });
 }

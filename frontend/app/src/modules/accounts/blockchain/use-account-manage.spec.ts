@@ -334,13 +334,24 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     });
 
     it('should not report a fully cancelled addition as saved, which would close the dialog and emit complete for an account never added', async () => {
-      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [] });
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [], skipped: 0 });
 
       const { modelErrorMessages, save } = useAccountManage();
       const result = await save(createSolanaAccountState());
 
       expect(result).toBe(false);
       // The user asked for the cancellation, so nothing is reported.
+      expect(get(modelErrorMessages)).toEqual({});
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should close on a skipped address without an error, leaving the dock to say why', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 1 });
+
+      const { modelErrorMessages, save } = useAccountManage();
+
+      expect(await save(createSolanaAccountState())).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(expect.any(String), expect.anything(), { userStarted: true, wait: true });
       expect(get(modelErrorMessages)).toEqual({});
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
@@ -376,7 +387,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       const { save } = useAccountManage();
 
       expect(await save(xpubState('add'))).toBe(true);
-      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.BTC, xpubState('add').data, { wait: true });
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.BTC, xpubState('add').data, { userStarted: true, wait: true });
     });
 
     /** An edit does not go through the addition summary, so the list is re-read instead. */
@@ -416,7 +427,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
     /** Cancelling the addition is not a failure, but nothing was added, so the dialog stays open. */
     it('should not report a fully cancelled addition as saved', async () => {
-      mockAddAccounts.mockResolvedValue({ added: [], cancelled: true, failed: [] });
+      mockAddAccounts.mockResolvedValue({ added: [], cancelled: true, failed: [], skipped: 0 });
 
       const { modelErrorMessages, save } = useAccountManage();
 

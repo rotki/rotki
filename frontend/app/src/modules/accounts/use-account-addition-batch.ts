@@ -1,3 +1,4 @@
+import type { AdditionOptions } from '@/modules/accounts/use-account-additions';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { msg } from '@/message-key';
 import { accountActivityLabel, accountAddActivity, accountImportActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
@@ -17,15 +18,13 @@ interface UseAccountAdditionBatchReturn {
   runAdditionBatch: <TItem, TResult>(
     chain: string,
     items: readonly TItem[],
-    addressOf: (item: TItem) => string,
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
-    parent?: ActivityId,
+    options?: AdditionOptions,
   ) => Promise<TResult[]>;
   runEvmAdditionBatch: <TItem, TResult>(
     items: readonly TItem[],
-    addressOf: (item: TItem) => string,
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
-    parent?: ActivityId,
+    options?: AdditionOptions,
   ) => Promise<TResult[]>;
   runImportBatch: <TItem, TResult>(
     items: readonly TItem[],
@@ -51,16 +50,16 @@ export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {
   const runAdditionBatch = async <TItem, TResult>(
     chain: string,
     items: readonly TItem[],
-    addressOf: (item: TItem) => string,
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
-    parent?: ActivityId,
+    options?: AdditionOptions,
   ): Promise<TResult[]> => runActivityBatch(
     {
       id: accountAddActivity.batchId([chain]),
       kind: accountAddActivity.kind,
-      parent,
-      subtitle: accountActivityLabel.add(items.map(item => addressOf(item)).join(',\n')),
+      parent: options?.parent,
+      subtitle: accountActivityLabel.addCount(items.length),
       title: t('task_center.group.accounts'),
+      userStarted: options?.userStarted,
     },
     items,
     run,
@@ -69,6 +68,9 @@ export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {
   /**
    * A whole CSV import as one umbrella over its rows. The outermost of the three: an import parents
    * its rows, and a row with several addresses parents those under its own per-chain umbrella.
+   *
+   * Always user started, since an import only runs from the user's file. The rows say so as well,
+   * for the one-row import that has no umbrella and whose row is therefore the root.
    */
   const runImportBatch = async <TItem, TResult>(
     items: readonly TItem[],
@@ -79,6 +81,7 @@ export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {
       kind: accountImportActivity.kind,
       subtitle: activityLabelFor(msg.$t('task_center.activity.accounts.import'), { count: items.length }, items.length),
       title: t('task_center.group.accounts'),
+      userStarted: true,
     },
     items,
     run,
@@ -87,10 +90,9 @@ export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {
   /** The same, for an "add to every EVM chain" request, which is tracked under the pseudo-chain. */
   const runEvmAdditionBatch = async <TItem, TResult>(
     items: readonly TItem[],
-    addressOf: (item: TItem) => string,
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
-    parent?: ActivityId,
-  ): Promise<TResult[]> => runAdditionBatch(EVM_PSEUDO_CHAIN, items, addressOf, run, parent);
+    options?: AdditionOptions,
+  ): Promise<TResult[]> => runAdditionBatch(EVM_PSEUDO_CHAIN, items, run, options);
 
   return { runAdditionBatch, runEvmAdditionBatch, runImportBatch };
 }

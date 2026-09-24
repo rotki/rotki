@@ -6,8 +6,8 @@ import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { pipe } from 'plainfp';
 import { err, isErr, mapError, map as mapResult, ok, type Result } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
 import { isEveryEvmChain, useAccountAdditionBatch } from '@/modules/accounts/use-account-addition-batch';
-import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
 import { type AdditionOptions, useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
@@ -63,6 +63,12 @@ export interface AdditionSummary {
    * in per-field errors instead of flattening every rejection into one generic message.
    */
   readonly failed: AccountAdditionFailure[];
+  /**
+   * Additions that deliberately added nothing, such as an address with no activity on any EVM
+   * chain. Neither a failure nor a cancellation: the dock already reports each one with its reason,
+   * so a form has nothing to hold open for.
+   */
+  readonly skipped: number;
   /** True when every failure was a cancellation, so nothing is worth reporting. */
   readonly cancelled: boolean;
 }
@@ -94,11 +100,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { evmChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
   const { runAdditionBatch, runEvmAdditionBatch } = useAccountAdditionBatch();
-  const {
-    createFailureNotification,
-    notifyFailedToAddAddress,
-    notifyUser,
-  } = useAccountAdditionNotifications();
 
   const getNewAccountPayload = (chain: string, payload: AccountPayload[]): AccountPayload[] => {
     const knownAddresses: string[] = getAddresses(chain);
@@ -185,6 +186,9 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
    * The backend's `added` is optional and may come back as `{}`, which is truthy but has no entry
    * to destructure, so it is read through `Object.entries` and checked rather than destructured
    * directly. An `all` entry stands for every EVM chain rather than naming them.
+   *
+   * Nothing is reported from here: the addition's own activity carries the outcome, per-chain
+   * breakdown included, into the dock.
    */
   const addSingleEvmAddress = async (
     account: AccountPayload,
@@ -200,9 +204,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       return err({ account, error: outcome.error });
     }
 
-    const { added, ...result } = outcome.value;
-
-    const [addedEntry] = Object.entries(added ?? {});
+    const [addedEntry] = Object.entries(outcome.value.added ?? {});
 
     if (addedEntry) {
       const [address, chains] = addedEntry;
@@ -220,11 +222,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
           chain,
         });
       });
-
-      notifyUser({ account, chains, isAll });
     }
-
-    createFailureNotification(result, account);
 
     return ok(addedAccounts);
   };
@@ -260,17 +258,18 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   ): Promise<AdditionSummary> => {
     const addedAccounts: Account[] = [];
     const failed: AccountAdditionFailure[] = [];
+    let skipped = 0;
     let cancelled = false;
 
     const isXpub = 'xpub' in payload;
     const everyEvmChain = isEveryEvmChain(chain);
 
     /**
-     * Sorts one addition's outcome into the added, cancelled or failed tally.
+     * Sorts one addition's outcome into the added, skipped, cancelled or failed tally.
      *
      * @remarks
-     * A cancellation is recorded but never reported: the user asked for it, so neither the failure
-     * list nor "failed to add N of M addresses" should mention it.
+     * Nothing is reported from here. Each addition's activity has already settled with its outcome,
+     * which the dock shows; a toast on top of that would say it twice.
      */
     const collect = (result: Result<Account[], AccountAdditionFailure<AccountPayload | XpubAccountPayload>>): void => {
       if (!isErr(result)) {
@@ -278,13 +277,17 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
         return;
       }
 
-      if (!isActionable(result.error.error)) {
+      const { error } = result.error;
+      if (isActionable(error))
+        failed.push(result.error);
+      else if (hasTag(error, 'Skipped'))
+        skipped++;
+      else
         cancelled = true;
-        return;
-      }
-
-      failed.push(result.error);
     };
+
+    /** A child's options: its umbrella, and whether the user asked, for the one-address case where it is the root. */
+    const childOptions = (parent: AdditionOptions['parent']): AdditionOptions => ({ parent, userStarted: options?.userStarted });
 
     if (isXpub) {
       collect(mapResult(
@@ -295,9 +298,8 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     else if (everyEvmChain) {
       const results = await runEvmAdditionBatch(
         payload,
-        account => account.address,
-        async (account, parent) => addSingleEvmAddress(account, parent ? { parent } : undefined),
-        options?.parent,
+        async (account, parent) => addSingleEvmAddress(account, childOptions(parent)),
+        options,
       );
       results.forEach(result => collect(result));
     }
@@ -305,18 +307,11 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       const results = await runAdditionBatch(
         chain,
         payload,
-        account => account.address,
-        async (account, parent) => addSingleAccount(account, chain, parent ? { parent } : undefined),
-        options?.parent,
+        async (account, parent) => addSingleAccount(account, chain, childOptions(parent)),
+        options,
       );
       results.forEach(result => collect(mapResult(result, address => [{ address, chain }])));
     }
-
-    const failedAddresses = failed
-      .map(failure => failure.account)
-      .filter((account): account is AccountPayload => !('xpub' in account));
-    if (failedAddresses.length > 0)
-      notifyFailedToAddAddress(failedAddresses, isXpub ? 1 : payload.length, everyEvmChain ? undefined : chain);
 
     startPromise(onComplete({
       addedAccounts,
@@ -325,7 +320,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable: modules,
     }));
 
-    return { added: addedAccounts, cancelled, failed };
+    return { added: addedAccounts, cancelled, failed, skipped };
   };
 
   return {

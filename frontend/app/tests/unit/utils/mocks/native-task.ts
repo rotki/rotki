@@ -15,6 +15,8 @@ export interface SubmittedSpec {
   subtitle?: string;
   /** Whether this activity claims freshness for its kind — an umbrella must not. */
   container?: boolean;
+  /** Whether the dock opens for it, which a producer spec asserts is the caller's choice. */
+  userStarted?: boolean;
 }
 
 /**
