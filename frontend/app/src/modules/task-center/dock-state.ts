@@ -8,6 +8,11 @@ export const DockState = {
   /** A settled job has a failure somewhere in its subtree; shown until dismissed. */
   FAILED: 'failed',
   /**
+   * No failure, but a settled job holds a skip that asked for attention, such as an address that
+   * ended up tracked nowhere; shown until dismissed, like a failure, in amber rather than red.
+   */
+  ATTENTION: 'attention',
+  /**
    * Everything reported has been dismissed; the pill shrinks to an icon that reopens it, and goes
    * away after {@link DISMISSED_HIDE_DELAY} collapsed with no interaction.
    */

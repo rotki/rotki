@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
 import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
@@ -136,5 +137,44 @@ describe('useDockActivityDetail', () => {
     const detail = useDockActivityDetail(activity(accountSyncActivity.id(account), ActivityKind.TX_SYNC, ActivityStatus.COMPLETE));
 
     expect(get(detail)).toBeUndefined();
+  });
+
+  describe('account addition', () => {
+    const addition = { chain: EVM_PSEUDO_CHAIN, target: { address: account.address, kind: 'address' } } as const;
+    const chains = { added: ['eth', 'base'], everyChain: false, existed: [], failed: ['scroll'], noActivity: ['gnosis'] };
+
+    it('should list where a completed addition landed, per chain', () => {
+      publishActivityDetail(accountAddActivity, addition, chains);
+
+      const detail = useDockActivityDetail(activity(accountAddActivity.id(addition), ActivityKind.ACCOUNTS, ActivityStatus.COMPLETE));
+
+      expect(get(detail)).toStrictEqual({ ...chains, type: 'addition' });
+    });
+
+    it('should say nothing while the addition is still running', () => {
+      publishActivityDetail(accountAddActivity, addition, chains);
+
+      const detail = useDockActivityDetail(activity(accountAddActivity.id(addition), ActivityKind.ACCOUNTS));
+
+      expect(get(detail)).toBeUndefined();
+    });
+
+    it('should offer to track an address whose skip asked for attention, and nothing for a routine skip', () => {
+      const skipped = (attention: boolean): Activity => ({
+        ...activity(accountAddActivity.id(addition), ActivityKind.ACCOUNTS, ActivityStatus.SKIPPED),
+        attention,
+      });
+
+      expect(get(useDockActivityDetail(skipped(true)))).toStrictEqual({ address: account.address, type: 'untracked' });
+      expect(get(useDockActivityDetail(skipped(false)))).toBeUndefined();
+    });
+
+    it('should give the addition umbrella nothing, though it shares the kind', () => {
+      publishActivityDetail(accountAddActivity, addition, chains);
+
+      const detail = useDockActivityDetail(activity(accountAddActivity.batchId([EVM_PSEUDO_CHAIN]), ActivityKind.ACCOUNTS, ActivityStatus.COMPLETE));
+
+      expect(get(detail)).toBeUndefined();
+    });
   });
 });

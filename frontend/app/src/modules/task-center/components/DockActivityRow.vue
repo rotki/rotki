@@ -72,6 +72,19 @@ const secondary = computed<string | undefined>(() => (get(nested) ? undefined : 
 
 const subject = computed<ActivitySubject | undefined>(() => activitySubject(activity));
 
+/**
+ * The message key of a top-level subtitle that names the row's own address and nothing else, as
+ * "Adding" and the address does, so the address can be drawn as a link inside the sentence. Any other
+ * subtitle stays text: the message would lose the params a link slot cannot carry.
+ */
+const addressSubtitle = computed<string | undefined>(() => {
+  const { subtitle } = activity;
+  if (get(nested) || subtitle === undefined || typeof subtitle === 'string' || subtitle.plural !== undefined)
+    return undefined;
+  const params = Object.keys(subtitle.params ?? {});
+  return params.length === 1 && subtitle.params?.address === get(subject)?.address ? subtitle.key : undefined;
+});
+
 /** The chain or location icon is left off when the parent's row already shows the same one. */
 const repeatsParentIcon = computed<boolean>(() => {
   const own = get(subject);
@@ -241,14 +254,31 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         >
           {{ label }}
         </div>
+        <i18n-t
+          v-if="addressSubtitle && subject?.address"
+          scope="global"
+          tag="div"
+          :keypath="addressSubtitle"
+          class="flex items-center gap-1 min-w-0 text-xs leading-4 text-rui-text-secondary whitespace-nowrap"
+          data-testid="dock-root-address"
+        >
+          <template #address>
+            <HashLink
+              class="min-w-0"
+              :text="subject.address"
+              :location="subject.chain"
+              size="12"
+              reveal-actions
+            />
+          </template>
+        </i18n-t>
         <div
-          v-if="secondary"
+          v-else-if="secondary"
           class="truncate text-xs leading-4 text-rui-text-secondary"
           :title="secondary"
         >
           {{ secondary }}
         </div>
-        <DockActivityDetail :activity="activity" />
         <div
           v-if="waitingLine"
           class="text-xs leading-4 text-rui-text-secondary break-words"
@@ -264,6 +294,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         >
           {{ reasonLine }}
         </div>
+        <DockActivityDetail :activity="activity" />
         <div
           v-if="showBar"
           class="flex items-center gap-2"

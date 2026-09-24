@@ -32,7 +32,7 @@ describe('useValidatorImport', () => {
   it('should save every validator in the file', async () => {
     const { useValidatorImport } = await importModule();
 
-    await useValidatorImport().importValidators([row('0xaaa'), row('0xbbb')], vi.fn());
+    await useValidatorImport().importValidators([row('0xaaa'), row('0xbbb')]);
 
     expect(mocks.save).toHaveBeenCalledTimes(2);
     expect(mocks.save.mock.calls.map(([action]) => action.data.publicKey)).toStrictEqual(['0xaaa', '0xbbb']);
@@ -50,33 +50,15 @@ describe('useValidatorImport', () => {
     });
     const { useValidatorImport } = await importModule();
 
-    await useValidatorImport().importValidators([row('0xaaa'), row('0xbbb'), row('0xccc')], vi.fn());
+    await useValidatorImport().importValidators([row('0xaaa'), row('0xbbb'), row('0xccc')]);
 
     expect(maxActive).toBe(1);
-  });
-
-  it('should count a validator only once it has been saved, so the bar never runs ahead', async () => {
-    const seen: number[] = [];
-    let progress = 0;
-    mocks.save.mockImplementation(async () => {
-      seen.push(progress);
-      return true;
-    });
-    const { useValidatorImport } = await importModule();
-
-    await useValidatorImport().importValidators([row('0xaaa'), row('0xbbb')], () => {
-      progress += 1;
-    });
-
-    // Each save observes only the validators finished before it.
-    expect(seen).toStrictEqual([0, 1]);
-    expect(progress).toBe(2);
   });
 
   it('should attempt a duplicated public key rather than dropping it', async () => {
     const { useValidatorImport } = await importModule();
 
-    await useValidatorImport().importValidators([row('0xaaa'), row('0xaaa')], vi.fn());
+    await useValidatorImport().importValidators([row('0xaaa'), row('0xaaa')]);
 
     expect(mocks.save).toHaveBeenCalledTimes(2);
   });

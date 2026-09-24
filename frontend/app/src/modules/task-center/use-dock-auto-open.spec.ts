@@ -41,9 +41,9 @@ function autoOpen(failedBeforeMount: Activity[] = []): void {
   scope?.stop();
   scope = effectScope();
   scope.run(() => useDockAutoOpen({
-    failed,
     failedBeforeMount: failedBeforeMount.map(activity => activity.id),
     finished,
+    held: failed,
     interacting,
     isActive,
     jobs,

@@ -199,8 +199,8 @@ export function useAccountManage(): UseAccountManageReturn {
    * Adds or edits an account.
    *
    * @returns whether the dialog should close. Nothing added with something failed keeps it open so
-   * the user can correct the input; a partial success closes it, because the failures have already
-   * been reported by the mechanism and the accounts that did land are real.
+   * the user can correct the input; a partial success or a skip closes it, because the task dock
+   * already reports each address's outcome and the accounts that did land are real.
    */
   async function saveAccount(state: AccountManage): Promise<boolean> {
     const edit = state.mode === 'edit';
@@ -217,7 +217,7 @@ export function useAccountManage(): UseAccountManageReturn {
       const summary = await addAccounts(chain, {
         modules: isEth || state.chain === ALL_EVM_CHAINS ? state.modules : undefined,
         payload: state.data,
-      }, { wait: true });
+      }, { userStarted: true, wait: true });
 
       if (summary.added.length === 0 && summary.failed.length > 0) {
         handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));
@@ -264,7 +264,7 @@ export function useAccountManage(): UseAccountManageReturn {
         startPromise(fetchAccounts({ blockchain: chain }));
       }
       else {
-        const summary = await addAccounts(chain, state.data, { wait: true });
+        const summary = await addAccounts(chain, state.data, { userStarted: true, wait: true });
         if (summary.added.length === 0 && summary.failed.length > 0) {
           handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)), {
             derivationPath: '',

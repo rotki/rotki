@@ -86,9 +86,6 @@
       "xpub_non_empty": "Поле XPUB не может быть пустым"
     }
   },
-  "account_import_progress": {
-    "importing": "rotki импортирует ваши аккаунты. Сейчас импортируется аккаунт {current} из {total}. Пожалуйста, подождите!"
-  },
   "account_management": {
     "about_tooltip": "Показать информацию о приложении",
     "creation": {
@@ -327,21 +324,8 @@
         }
       },
       "blockchain_accounts_add": {
-        "error": {
-          "failed": "Не удалось добавить адрес {address} в следующие сети:\n {list}",
-          "failed_list_description": "Не удалось добавить {addresses} новых аккаунтов {blockchain}. Проверьте правильность аккаунтов:\n {list}",
-          "failed_reason": {
-            "existed": "Уже был добавлен ранее",
-            "is_contract": "Является адресом контракта ETH",
-            "no_activity": "Нет активности"
-          },
-          "non_eth": "Все сети кроме ETH"
-        },
         "no_new": {
           "description": "Выбранные адреса уже отслеживаются в rotki"
-        },
-        "success": {
-          "description": "Адрес {address} успешно добавлен для всех EVM-сетей | Адрес {address} успешно добавлен для сетей: \n {list}"
         },
         "task": {
           "title": "Добавление аккаунта {blockchain}"
@@ -1391,7 +1375,6 @@
     },
     "group_label": "Балансы блокчейна",
     "import_blockchain_accounts": "Импорт блокчейн-аккаунтов",
-    "import_blockchain_accounts_complete": "Импорт аккаунтов завершен успешно. {imported} из {total} аккаунтов были импортированы. Пропущено {skipped} уже существующих аккаунтов.",
     "import_csv_example": "Смотрите пример CSV {here}",
     "import_error": {
       "invalid_format": "Неверный формат CSV. Должен содержать столбцы \"chain\" и \"address\".",

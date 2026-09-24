@@ -1,4 +1,4 @@
-import { type ActivityStatus, ActivityStatus as Status, type WorkStatus } from './types';
+import { type Activity, type ActivityStatus, ActivityStatus as Status, type WorkStatus } from './types';
 
 /** Sentinel percentage for work whose completion cannot be quantified. */
 export const INDETERMINATE = -1;
@@ -36,6 +36,14 @@ const STATUS_RANK: Record<ActivityStatus, number> = {
 
 export function statusRank(status: ActivityStatus): number {
   return STATUS_RANK[status];
+}
+
+/**
+ * Whether a settled activity is held for the user: a failure, or a skip that asked to be (see
+ * `Skipped` in `task-result.ts`). A routine skip is not.
+ */
+export function needsAttention(activity: Pick<Activity, 'attention' | 'status'>): boolean {
+  return activity.status === Status.FAILED || (activity.status === Status.SKIPPED && activity.attention === true);
 }
 
 /** True for statuses that represent finished work (no further progress expected). */

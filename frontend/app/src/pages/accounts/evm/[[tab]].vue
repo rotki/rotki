@@ -5,13 +5,12 @@ import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
-import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
+import { type AddAccountSeed, parseAddAccountLink } from '@/modules/accounts/add-account-link';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
 import EvmAccountPageButtons from '@/modules/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
-import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
@@ -40,7 +39,6 @@ const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 
 const category = 'evm';
-const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
 const { chainIds } = useAccountCategoryHelper(category);
 const { allowed: ethStakingAllowed } = useEthStakingAccess();
@@ -59,11 +57,16 @@ const usedChainIds = computed<string[]>(() => {
   return [Blockchain.ETH2];
 });
 
-function createNewBlockchainAccount(address?: string): void {
-  const state = createNewAccountForChain(get(usedChainIds)[0]);
+/**
+ * Opens the add dialog, optionally holding addresses on a chain. A chain the tab does not offer is
+ * ignored rather than trusted, so a link cannot open the dialog on something it cannot add to.
+ */
+function createNewBlockchainAccount({ addresses, chain }: AddAccountSeed = { addresses: [] }): void {
+  const usable = get(usedChainIds);
+  const state = createNewAccountForChain(chain && usable.includes(chain) ? chain : usable[0]);
 
-  if (address && state.type === 'account')
-    state.data = [{ address, tags: null }];
+  if (addresses.length > 0 && state.type === 'account')
+    state.data = addresses.map(address => ({ address, tags: null }));
 
   set(account, state);
 }
@@ -86,8 +89,7 @@ function getTabLink(category: string): RouteLocationRaw {
 }
 
 const { consumeAddQuery } = useAddQuery((query) => {
-  const addressToAdd = typeof query.addressToAdd === 'string' ? query.addressToAdd : undefined;
-  createNewBlockchainAccount(addressToAdd);
+  createNewBlockchainAccount(parseAddAccountLink(query));
 });
 
 onMounted(async () => {
@@ -142,10 +144,6 @@ watchImmediate(route, (route) => {
       </RuiTabs>
     </template>
 
-    <AccountImportProgress
-      v-if="importingAccounts"
-      class="-mb-4 -mt-1"
-    />
     <Transition
       enter-from-class="opacity-0 translate-x-8"
       enter-active-class="w-full transform duration-300 transition"

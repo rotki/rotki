@@ -15,8 +15,8 @@ import { errorOf } from '@/modules/core/tasks/task-result';
  * a backend field-level rejection still reaches the form as an `ApiValidationError` and highlights
  * the offending field; flattening it into a bare `Error` would show one generic toast instead.
  *
- * Several failures have no single field to highlight, so they get `fallback` and the mechanism's own
- * notification lists the addresses.
+ * Several failures have no single field to highlight, so they get `fallback` and the task dock lists
+ * the addresses.
  */
 export function additionError(failed: readonly AccountAdditionFailure[], fallback: string): Error {
   if (failed.length === 1)
@@ -29,7 +29,10 @@ export function additionError(failed: readonly AccountAdditionFailure[], fallbac
  * Nothing was added and every unit was cancelled. Not a success: treating it as one closes the
  * dialog, emits `complete` and refreshes for an account that was never added, discarding what the
  * user typed. Not an error either — the user asked for it, so nothing is reported.
+ *
+ * A skipped unit breaks the "nothing but": it ran to an answer, which the dock is showing, so the
+ * dialog has nothing left to hold open for.
  */
 export function isNothingButCancelled(summary: AdditionSummary): boolean {
-  return summary.added.length === 0 && summary.failed.length === 0 && summary.cancelled;
+  return summary.added.length === 0 && summary.failed.length === 0 && summary.skipped === 0 && summary.cancelled;
 }

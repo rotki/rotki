@@ -1,7 +1,9 @@
+import { I18nTStub } from '@test/stubs/I18nT';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { msg } from '@/message-key';
+import { accountAddActivity } from '@/modules/accounts/accounts.activity';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import DockActivityRow from '@/modules/task-center/components/DockActivityRow.vue';
 import {
@@ -187,6 +189,24 @@ describe('dockActivityRow', () => {
       expect(nested.props('location')).toBe('eth');
 
       expect(createWrapper({ activity: account }).findComponent({ name: 'HashLink' }).exists()).toBe(false);
+    });
+
+    it('should link the address inside a top-level subtitle that names only that address', () => {
+      const addition = activity({
+        id: accountAddActivity.id({ chain: 'optimism', target: { address: ADDRESS, kind: 'address' } }),
+        kind: ActivityKind.ACCOUNTS,
+        subtitle: { key: msg.$t('task_center.activity.accounts.add'), params: { address: ADDRESS } },
+      });
+
+      const wrapper = mount(DockActivityRow, {
+        global: { stubs: { I18nT: I18nTStub } },
+        props: { activity: addition, now: NOW, percentage: -1 },
+      });
+      const line = wrapper.find('[data-testid=dock-root-address]');
+      const link = line.findComponent({ name: 'HashLink' });
+
+      expect(link.props('text')).toBe(ADDRESS);
+      expect(link.props('location')).toBe('optimism');
     });
 
     it('should keep a nested account\'s copy and explorer buttons out of sight until the address is hovered', () => {

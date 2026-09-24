@@ -233,21 +233,8 @@
         }
       },
       "blockchain_accounts_add": {
-        "error": {
-          "failed": "Échec de l'ajout de l'adresse {address} à ces chaînes :\n {list}",
-          "failed_list_description": "Échec de l'ajout de {addresses} nouveaux comptes {blockchain}. Veuillez vérifier à nouveau si ces compte(s) sont valides :\n {list}",
-          "failed_reason": {
-            "existed": "A déjà été ajouté auparavant",
-            "is_contract": "Est une adresse de contrat ETH",
-            "no_activity": "Aucune activité"
-          },
-          "non_eth": "Toutes les chaînes non ETH"
-        },
         "no_new": {
           "description": "Les adresses sélectionnées sont déjà suivies par rotki"
-        },
-        "success": {
-          "description": "L'adresse {address} a été ajoutée avec succès pour toutes les chaînes EVM | L'adresse {address} a été ajoutée avec succès pour ces chaînes :\n {list}"
         },
         "task": {
           "title": "Ajout de compte {blockchain}"

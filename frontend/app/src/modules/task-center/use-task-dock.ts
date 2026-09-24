@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
 import { someInSubtree } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
 import { DISMISSED_HIDE_DELAY, DockState } from '@/modules/task-center/dock-state';
@@ -22,7 +22,9 @@ interface UseTaskDockReturn {
   modelExpanded: Ref<boolean>;
   /** Settled jobs with a failure anywhere in their subtree, not yet dismissed. */
   failed: ComputedRef<Activity[]>;
-  /** Settled jobs that neither failed nor were cancelled, not yet dismissed. */
+  /** Settled jobs held for the user by a skip that asked for attention, with no failure, not yet dismissed. */
+  flagged: ComputedRef<Activity[]>;
+  /** Settled jobs with nothing held for the user and not cancelled, not yet dismissed. */
   finished: ComputedRef<Activity[]>;
   /** Settled jobs the user has dismissed, failed or not; still reachable from the icon. */
   dismissed: ComputedRef<Activity[]>;
@@ -69,6 +71,9 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   const hasFailure = (root: Activity): boolean => someInSubtree(get(children), root, isFailed);
 
+  /** A failure, or a skip that asked for attention, anywhere beneath the job: either holds it for the user. */
+  const isHeld = (root: Activity): boolean => someInSubtree(get(children), root, needsAttention);
+
   /** Jobs that failed before the dock mounted; see the remarks on {@link useTaskDock}. */
   const failedBeforeMount = get(model).roots.filter(root => isTerminalStatus(root.status) && hasFailure(root)).map(root => root.id);
 
@@ -88,7 +93,11 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   const failed = computed<Activity[]>(() => get(reported).filter(root => hasFailure(root) && !get(acknowledged).has(root.id)));
 
-  const finished = computed<Activity[]>(() => get(reported).filter(root => !hasFailure(root) && !get(acknowledged).has(root.id)));
+  const flagged = computed<Activity[]>(() => get(reported).filter(root => isHeld(root) && !hasFailure(root) && !get(acknowledged).has(root.id)));
+
+  const finished = computed<Activity[]>(() => get(reported).filter(root => !isHeld(root) && !get(acknowledged).has(root.id)));
+
+  const held = computed<Activity[]>(() => [...get(failed), ...get(flagged)]);
 
   const dismissed = computed<Activity[]>(() => get(reported).filter(root => get(acknowledged).has(root.id)));
 
@@ -99,6 +108,8 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
       return DockState.WORKING;
     if (get(failed).length > 0)
       return DockState.FAILED;
+    if (get(flagged).length > 0)
+      return DockState.ATTENTION;
     if (get(finished).length > 0)
       return DockState.DONE;
     if (get(dismissed).length > 0)
@@ -122,14 +133,15 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   }
 
   /**
-   * Forgets the previous batch's settled jobs that hold no failure when a new batch starts, so its
-   * outcome replaces theirs. Failures stay: they are only cleared by dismissing or rerunning them.
+   * Forgets the previous batch's settled jobs that are not held for the user when a new batch
+   * starts, so its outcome replaces theirs. Held jobs stay: they are only cleared by dismissing or
+   * rerunning them.
    */
   function replacePreviousRun(active: boolean, wasActive: boolean | undefined): void {
     if (!active || wasActive)
       return;
 
-    const kept = new Set(get(settled).filter(hasFailure).map(root => root.id));
+    const kept = new Set(get(settled).filter(isHeld).map(root => root.id));
     const replaced = new Set(get(settled).filter(root => !kept.has(root.id)).map(root => root.id));
     set(tracked, new Set([...get(tracked)].filter(id => !replaced.has(id))));
     set(acknowledged, new Set([...get(acknowledged)].filter(id => !replaced.has(id))));
@@ -137,7 +149,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   function acknowledge(id: ActivityId): void {
     set(acknowledged, new Set([...get(acknowledged), id]));
-    if (get(failed).length === 0 && get(finished).length === 0)
+    if (get(held).length === 0 && get(finished).length === 0)
       set(modelExpanded, false);
   }
 
@@ -190,7 +202,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   watch(batchActive, replacePreviousRun);
   watch(batchActive, collapseWhenIdle);
   watch([state, modelExpanded, interacting], scheduleHide, { immediate: true });
-  useDockAutoOpen({ failed, failedBeforeMount, finished, interacting, isActive: batchActive, jobs, modelExpanded, working: isActive });
+  useDockAutoOpen({ failedBeforeMount, finished, held, interacting, isActive: batchActive, jobs, modelExpanded, working: isActive });
 
   return {
     acknowledge,
@@ -199,6 +211,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     dismissedFailure,
     failed,
     finished,
+    flagged,
     modelExpanded,
     state,
     visible,

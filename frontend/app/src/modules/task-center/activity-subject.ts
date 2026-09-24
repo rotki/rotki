@@ -1,3 +1,4 @@
+import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { type Activity, ActivityKind, ActivityPart, activityParts, makeActivityId } from '@/modules/task-center/core/types';
@@ -6,7 +7,7 @@ import { type Activity, ActivityKind, ActivityPart, activityParts, makeActivityI
 export interface ActivitySubject {
   /** A chain id (`eth`), never the display name a subtitle carries. */
   readonly chain?: string;
-  /** Present only with {@link chain}, which is what the explorer link needs. */
+  /** Linked to an explorer only when {@link chain} is present too. */
   readonly address?: string;
   /** An exchange or bank location (`kraken`). */
   readonly location?: string;
@@ -50,6 +51,24 @@ function detectionSubject(activity: Activity, [chain, address]: string[]): Activ
   return makeActivityId(ActivityKind.TOKEN_DETECTION, chain, address) === activity.id ? { address, chain } : undefined;
 }
 
+/**
+ * One address being added, `[add, chain, address]`. A bulk umbrella or an xpub fails the id check
+ * and reads nothing.
+ *
+ * @remarks
+ * The id check cannot tell two other shapes from a single address, so they are refused here: a
+ * payload of several addresses, joined with `,` into that one part, and a bulk umbrella, whose last
+ * part is the batch marker. The "every EVM chain" pseudo-chain is left out of the subject: it has no
+ * icon and no explorer, so the row gets the bare address.
+ */
+function additionSubject(activity: Activity, [, chain, address]: string[]): ActivitySubject | undefined {
+  if (chain === undefined || address === undefined || address === ActivityPart.BATCH || address.includes(','))
+    return undefined;
+  if (accountAddActivity.id({ chain, target: { address, kind: 'address' } }) !== activity.id)
+    return undefined;
+  return chain === EVM_PSEUDO_CHAIN ? { address } : { address, chain };
+}
+
 function exchangeBalancesSubject(activity: Activity, [location]: string[]): ActivitySubject | undefined {
   if (location === undefined)
     return undefined;
@@ -58,6 +77,7 @@ function exchangeBalancesSubject(activity: Activity, [location]: string[]): Acti
 
 /** The kinds whose ids name a chain, an account or a location, each read the way its producer builds it. */
 const READERS: Partial<Record<ActivityKind, SubjectReader>> = {
+  [ActivityKind.ACCOUNTS]: additionSubject,
   [ActivityKind.BANK_EVENTS]: eventsSubject,
   [ActivityKind.BLOCKCHAIN_BALANCES]: chainBalancesSubject,
   [ActivityKind.EXCHANGE_BALANCES]: exchangeBalancesSubject,

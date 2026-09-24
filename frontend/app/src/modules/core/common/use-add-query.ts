@@ -1,4 +1,5 @@
 import type { LocationQuery } from 'vue-router';
+import { startPromise } from '@shared/utils';
 
 interface UseAddQueryReturn {
   /**
@@ -34,6 +35,16 @@ export function useAddQuery(onAdd: (query: LocationQuery) => void | Promise<void
     await onAdd(query);
     return true;
   }
+
+  /**
+   * A link can also arrive while the page is open, as the task dock's "track on a chain" does from
+   * the page it links to. That navigation does not remount the page, so the mount-time call would
+   * never see it.
+   */
+  watch(() => get(route).query.add, (add) => {
+    if (add)
+      startPromise(consumeAddQuery());
+  });
 
   return { consumeAddQuery };
 }

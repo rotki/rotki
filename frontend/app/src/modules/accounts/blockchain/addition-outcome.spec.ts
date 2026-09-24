@@ -9,7 +9,7 @@ function failure(error: AccountAdditionFailure['error']): AccountAdditionFailure
 }
 
 function summary(partial: Partial<AdditionSummary>): AdditionSummary {
-  return { added: [], cancelled: false, failed: [], ...partial };
+  return { added: [], cancelled: false, failed: [], skipped: 0, ...partial };
 }
 
 describe('additionError', () => {
@@ -45,6 +45,10 @@ describe('isNothingButCancelled', () => {
 
   it('should be false when something failed for real, even alongside a cancellation', () => {
     expect(isNothingButCancelled(summary({ cancelled: true, failed: [failure(Cancelled({ message: 'x' }))] }))).toBe(false);
+  });
+
+  it('should be false when an address was skipped alongside a cancellation, since the dock reports the skip', () => {
+    expect(isNothingButCancelled(summary({ cancelled: true, skipped: 1 }))).toBe(false);
   });
 
   it('should be false for a plain empty summary', () => {

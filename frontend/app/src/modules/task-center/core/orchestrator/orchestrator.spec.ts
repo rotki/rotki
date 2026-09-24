@@ -133,6 +133,24 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, skippedId)?.reason).toBe('disabled in settings');
   });
 
+  it('should flag only a skip that asked for attention, and clear the flag on a rerun', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const flagged = controllable('a1', { rerunnable: true });
+    const routine = controllable('a2');
+    const flaggedId = orchestrator.submit(flagged.spec);
+    const routineId = orchestrator.submit(routine.spec);
+
+    flagged.settle({ error: Skipped({ attention: true, message: 'tracked nowhere' }), ok: false });
+    routine.settle({ error: Skipped({ message: 'disabled in settings' }), ok: false });
+    await flush();
+
+    expect(byId(orchestrator, flaggedId)?.attention).toBe(true);
+    expect(byId(orchestrator, routineId)?.attention).toBeUndefined();
+
+    orchestrator.rerun(flaggedId);
+    expect(byId(orchestrator, flaggedId)?.attention).toBeUndefined();
+  });
+
   it('should carry the thrown message onto an activity whose producer throws instead of returning an error', async () => {
     const orchestrator = createTaskOrchestrator();
     const id = orchestrator.submit({

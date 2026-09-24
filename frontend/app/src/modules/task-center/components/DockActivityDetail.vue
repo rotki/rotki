@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { Activity } from '@/modules/task-center/core/types';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import DockAdditionDetail from '@/modules/task-center/components/DockAdditionDetail.vue';
 import DockCacheList from '@/modules/task-center/components/DockCacheList.vue';
+import DockTrackAction from '@/modules/task-center/components/DockTrackAction.vue';
 import { useDockActivityDetail } from '@/modules/task-center/use-dock-activity-detail';
 
 const { activity } = defineProps<{
@@ -54,5 +56,18 @@ const detail = useDockActivityDetail(() => activity);
     :filled="detail.filled"
     :stopped="detail.stopped"
     data-testid="dock-activity-detail"
+  />
+  <DockAdditionDetail
+    v-else-if="detail?.type === 'addition'"
+    :added="detail.added"
+    :every-chain="detail.everyChain"
+    :existed="detail.existed"
+    :no-activity="detail.noActivity"
+    :failed="detail.failed"
+  />
+  <DockTrackAction
+    v-else-if="detail?.type === 'untracked'"
+    :addresses="[detail.address]"
+    :dismisses="activity.parent === undefined ? activity.id : undefined"
   />
 </template>

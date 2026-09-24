@@ -2,7 +2,7 @@ import { type StakingValidatorManage, useAccountManage } from '@/modules/account
 import { createValidatorAction, type CSVRow } from '@/modules/accounts/import-export/account-csv-schema';
 
 interface UseValidatorImportReturn {
-  importValidators: (validators: CSVRow[], onProgress: () => void) => Promise<void>;
+  importValidators: (validators: CSVRow[]) => Promise<void>;
 }
 
 /**
@@ -22,7 +22,7 @@ export function useValidatorImport(): UseValidatorImportReturn {
    * beaconcha.in calls in between, so two concurrent adds of one key can both pass the check. A
    * file listing the same validator twice is exactly that case, and every row is attempted.
    */
-  const importValidators = async (validators: CSVRow[], onProgress: () => void): Promise<void> => {
+  const importValidators = async (validators: CSVRow[]): Promise<void> => {
     const validatorActions: StakingValidatorManage[] = validators.map((validator) => {
       const ownershipPercentage = validator.addressExtras.ownershipPercentage || '100';
       return createValidatorAction('add', {
@@ -31,10 +31,8 @@ export function useValidatorImport(): UseValidatorImportReturn {
       });
     });
 
-    for (const item of validatorActions) {
+    for (const item of validatorActions)
       await save(item);
-      onProgress();
-    }
   };
 
   return { importValidators };

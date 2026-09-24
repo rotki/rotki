@@ -78,7 +78,7 @@ async function transition(next: Activity[]): Promise<void> {
   await nextTick();
 }
 
-const { COMPLETE, FAILED, RUNNING } = ActivityStatus;
+const { COMPLETE, FAILED, RUNNING, SKIPPED } = ActivityStatus;
 
 describe('useDockPanel', () => {
   beforeEach(() => {
@@ -215,6 +215,33 @@ describe('useDockPanel', () => {
 
       expect(get(title)).toBe('task_dock.panel.title.finished');
       expect(get(retryable)).toEqual([]);
+    });
+
+    it('should list a job the user started above the upkeep that started before it', async () => {
+      const imported = (status: ActivityStatus): Activity =>
+        activity(ActivityKind.ACCOUNTS, 'import', status, undefined, { startedAt: 2, userStarted: true });
+      const background = (status: ActivityStatus): Activity[] =>
+        balances(status, status, status, status).map(item => (item.parent ? item : { ...item, startedAt: 1 }));
+      set(activities, [...background(RUNNING), imported(RUNNING)]);
+      const { roots } = panel();
+
+      expect(get(roots).map(root => root.kind)).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.ACCOUNTS]);
+
+      await transition([...background(COMPLETE), imported(COMPLETE)]);
+
+      expect(get(roots).map(root => root.kind)).toEqual([ActivityKind.ACCOUNTS, ActivityKind.BLOCKCHAIN_BALANCES]);
+    });
+
+    it('should say the run needs attention, listing only the job whose skip asked for it', async () => {
+      set(activities, [report(RUNNING), ...balances(RUNNING, RUNNING, RUNNING, RUNNING)]);
+      const { roots, title } = panel();
+
+      const skipped = balances(COMPLETE, COMPLETE, SKIPPED, COMPLETE)
+        .map(item => (item.status === SKIPPED ? { ...item, attention: true } : item));
+      await transition([report(COMPLETE), ...skipped]);
+
+      expect(get(title)).toBe('task_dock.panel.title.attention');
+      expect(get(roots).map(root => root.id)).toEqual([balancesId]);
     });
   });
 

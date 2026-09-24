@@ -132,15 +132,30 @@ watch(() => state.address, (address) => {
 });
 
 watch(addresses, addresses => setAddress(addresses));
-onMounted(() => setAddress(get(addresses)));
+
+/**
+ * The form can open already holding several addresses, as the dock's "track on a chain" does, so
+ * the first fill switches to the mode that fits them. Only on mount: while the user types in the
+ * multiple field, rewriting it from the parsed list would fight them.
+ */
+onMounted(() => {
+  const seeded = get(addresses);
+  if (seeded.length > 1)
+    fillAddresses(seeded);
+  else
+    setAddress(seeded);
+});
 
 watch(multiple, () => {
   set(errorMessages, {});
   state.userAddresses = '';
 });
 
-/** Waits a tick, because switching mode empties the field the imported addresses are written to. */
-function updateAddressesFromWalletImport(addresses: string[]): void {
+/**
+ * Writes addresses in, switching to the single or multiple field to fit them. Waits a tick,
+ * because switching mode empties the field the addresses are written to.
+ */
+function fillAddresses(addresses: string[]): void {
   if (addresses.length > 1) {
     set(multiple, true);
     nextTick(() => {
@@ -206,7 +221,7 @@ defineExpose({
       <WalletAddressesImport
         v-if="showWalletImport"
         :disabled="disabled"
-        @update:addresses="updateAddressesFromWalletImport($event)"
+        @update:addresses="fillAddresses($event)"
       />
     </div>
 

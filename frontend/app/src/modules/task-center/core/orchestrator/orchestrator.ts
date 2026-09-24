@@ -18,7 +18,7 @@ import {
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
-import { endedIncomplete, liveChildrenOf, runActivity, terminalReason, terminalStatus } from './lifecycle';
+import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
 import { DEFAULT_RULES } from './rules';
 import { createScheduler } from './scheduler';
@@ -35,6 +35,8 @@ interface ActivityRecord {
    * {@link terminalReason} for which outcomes get one.
    */
   reason?: string;
+  /** Whether a skip is held for the user; cleared on re-run like {@link reason}. See {@link terminalAttention}. */
+  attention?: true;
   /** Set when the user cancelled a running activity; forces the terminal status to CANCELLED. */
   cancelRequested: boolean;
   /** Guards the spec's `cleanup` to fire once per run-cycle; re-armed on re-run. */
@@ -86,12 +88,13 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    * ever descends from a record this call has just made terminal, so a malformed parent cycle
    * still terminates.
    */
-  function settleTerminal(record: ActivityRecord, status: ActivityStatus, reason?: string): void {
+  function settleTerminal(record: ActivityRecord, status: ActivityStatus, reason?: string, attention?: true): void {
     if (records.get(record.spec.id) !== record)
       return;
 
     record.status = status;
     record.reason = reason;
+    record.attention = attention;
     if (!record.spec.container)
       recordSettlement(record.spec.id, record.spec.kind, status, now(), ledger);
     if (!record.cleanedUp) {
@@ -222,7 +225,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     const outcome = await runActivity(record.spec, report);
 
     const status = terminalStatus(record.cancelRequested, outcome);
-    settleTerminal(record, status, terminalReason(status, outcome));
+    settleTerminal(record, status, terminalReason(status, outcome), terminalAttention(status, outcome));
   }
 
   function schedule(record: ActivityRecord): void {
@@ -323,6 +326,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     record.steps = undefined;
     record.startedAt = undefined;
     record.reason = undefined;
+    record.attention = undefined;
     record.cancelRequested = false;
     record.cleanedUp = false;
     dropDetail(id);

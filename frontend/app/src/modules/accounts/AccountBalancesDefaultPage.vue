@@ -3,11 +3,9 @@ import type { AccountManageState } from '@/modules/accounts/blockchain/use-accou
 import { useTemplateRef } from 'vue';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
-import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
-import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
@@ -22,7 +20,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
-const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(() => category);
 
 const { chainIds } = useAccountCategoryHelper(() => category);
@@ -81,11 +78,6 @@ onMounted(async () => {
       <AccountBalancesExportImport />
     </template>
     <div>
-      <AccountImportProgress
-        v-if="importingAccounts"
-        class="-mb-4 -mt-1"
-      />
-
       <AccountBalances
         ref="table"
         :category="category"

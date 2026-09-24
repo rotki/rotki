@@ -91,6 +91,20 @@ export function terminalReason(
 }
 
 /**
+ * Whether a skip asked to be held for the user, as a failure is. Only a SKIPPED activity carries
+ * it; `undefined` rather than `false` otherwise, so the flag is absent from every other activity.
+ */
+export function terminalAttention(
+  status: ActivityStatus,
+  outcome: Result<unknown, TaskError>,
+): true | undefined {
+  if (outcome.ok || status !== Status.SKIPPED || !hasTag(outcome.error, 'Skipped'))
+    return undefined;
+
+  return outcome.error.attention === true ? true : undefined;
+}
+
+/**
  * Run a spec's body under its declared timeout and retry policy, as a value.
  *
  * The catch is not defensive dressing: a producer's `ResultAsync` should never reject, and one

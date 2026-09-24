@@ -1,13 +1,10 @@
-import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
-import { getAccountAddress, getXpubId } from '@/modules/accounts/account-utils';
-import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
-import { type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { additionItem, type CSVRow, CSVSchema, doesAccountExist, getChainType, type ImportItem, trackedItem } from '@/modules/accounts/import-export/account-csv-schema';
 import { useValidatorImport } from '@/modules/accounts/import-export/use-validator-import';
 import { useAccountAdditionBatch } from '@/modules/accounts/use-account-addition-batch';
-import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
+import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
-import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -27,16 +24,14 @@ export function useAccountImport(): UseAccountImportReturn {
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts } = useBlockchainAccountManagement();
+  const { reportTracked } = useAccountAdditions();
   const { runImportBatch } = useAccountAdditionBatch();
   const { attemptTagCreation } = useTagOperations();
   const { importValidators } = useValidatorImport();
-  const { notifyError, notifyInfo } = useNotifications();
+  const { notifyError } = useNotifications();
   const { parseCSV } = useCsvImportExport();
   const { t } = useI18n({ useScope: 'global' });
   const { allTags } = storeToRefs(useSessionMetadataStore());
-  const progressStore = useAccountImportProgressStore();
-  const { increment, setTotal, skip } = progressStore;
-  const { progress } = storeToRefs(progressStore);
 
   const { loadingBlockchainBalances: blockchainLoading } = useBalancesLoading();
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
@@ -45,9 +40,10 @@ export function useAccountImport(): UseAccountImportReturn {
    * Imports parsed CSV rows as blockchain accounts, creating any tags they reference.
    *
    * @remarks
-   * Resolves when every account has been added, and notifies the user itself. A failing row does
-   * not abort the import or reject this, so resolving means the import finished, not that every
-   * row succeeded; rows naming an existing account are skipped.
+   * Resolves when every account has been added. A failing row does not abort the import or reject
+   * this, so resolving means the import finished, not that every row succeeded. The dock reports
+   * the outcome row by row: a row naming an account that is already tracked is sent nowhere and
+   * reported as skipped, so the import accounts for every row of the file.
    *
    * Validators go last, once the account additions have settled, because both write blockchain
    * balances and the later write would be lost to a refresh already in flight.
@@ -55,8 +51,7 @@ export function useAccountImport(): UseAccountImportReturn {
   async function handleAccountRestore(rows: CSVRow[]): Promise<void> {
     const tags: string[] = [];
     const validators: CSVRow[] = [];
-    const evmAccounts: AddAccountsPayload[] = [];
-    const accounts: [string, string, AddAccountsPayload | XpubAccountPayload][] = [];
+    const items: ImportItem[] = [];
 
     const knownTags = Object.keys(get(allTags));
     const knownAccounts = getAccounts().map(group => ({
@@ -67,11 +62,9 @@ export function useAccountImport(): UseAccountImportReturn {
       chain: Blockchain.ETH2,
     })));
 
-    setTotal(rows.length);
-
     for (const row of rows) {
       if (doesAccountExist(row, knownAccounts)) {
-        skip();
+        items.push(trackedItem(row));
         continue;
       }
 
@@ -80,66 +73,31 @@ export function useAccountImport(): UseAccountImportReturn {
         tags.push(...missingTags);
       }
 
-      if (row.chain === 'evm') {
-        evmAccounts.push({ payload: [csvToAccount(row)] });
-      }
-      else if (row.chain === Blockchain.ETH2) {
+      if (row.chain === Blockchain.ETH2)
         validators.push(row);
-      }
-      else if (isPrefixed(row.address)) {
-        const xpub: XpubAccountPayload = {
-          label: row.label,
-          tags: row.tags,
-          xpub: {
-            derivationPath: row.addressExtras.derivationPath,
-            xpub: row.address,
-            xpubType: getKeyType(guessPrefix(row.address)),
-          },
-        };
-        const xpubId = getXpubId(xpub.xpub);
-        accounts.push([row.chain, xpubId, xpub] as const);
-      }
-      else {
-        accounts.push([row.chain, row.address, { payload: [csvToAccount(row)] }] as const);
-      }
+      else
+        items.push(additionItem(row));
     }
 
     await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
 
-    const additions = [
-      ...evmAccounts.map(payload => [EVM_PSEUDO_CHAIN, payload] as const),
-      ...accounts.map(([chain, _id, account]) => [chain, account] as const),
-    ];
+    const additions = items.filter(item => item.type === 'add');
 
-    await runImportBatch(
-      additions,
-      async ([chain, account], parent) => {
-        await addAccounts(chain, account, { parent, wait: true });
-        increment();
-      },
-    );
+    await runImportBatch(items, async (item, parent) => {
+      if (item.type === 'add')
+        await addAccounts(item.chain, item.account, { parent, userStarted: true, wait: true });
+      else
+        await reportTracked(item.chain, item.target, { parent, userStarted: true });
+    });
 
     if (validators.length > 0) {
-      if (evmAccounts.length > 0 || accounts.length > 0) {
+      if (additions.length > 0) {
         await until(blockchainLoading).toBe(true);
         await until(doneLoading).toBe(true);
       }
 
-      await importValidators(validators, increment);
+      await importValidators(validators);
     }
-
-    const { skipped, total } = get(progress);
-
-    notifyInfo(
-      t('blockchain_balances.import_blockchain_accounts'),
-      t('blockchain_balances.import_blockchain_accounts_complete', {
-        imported: total - skipped,
-        skipped,
-        total,
-      }),
-    );
-
-    setTotal(0);
   }
 
   async function importAccounts(file: File): Promise<void> {
