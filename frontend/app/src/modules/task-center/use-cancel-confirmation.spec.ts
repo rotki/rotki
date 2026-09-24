@@ -76,7 +76,7 @@ describe('useCancelConfirmation', () => {
     useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING, 'Ethereum'));
 
     expect(show).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'collapsed_pending_tasks.cancel_task_info::Ethereum' }),
+      expect.objectContaining({ message: 'task_dock.panel.stop_info::Ethereum', title: 'task_dock.panel.stop' }),
       expect.any(Function),
       expect.any(Function),
     );
@@ -87,7 +87,7 @@ describe('useCancelConfirmation', () => {
     useCancelConfirmation().confirmCancel(activity(ActivityStatus.RUNNING));
 
     expect(show).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'collapsed_pending_tasks.cancel_task_info::Transaction sync' }),
+      expect.objectContaining({ message: 'task_dock.panel.stop_info::Transaction sync' }),
       expect.any(Function),
       expect.any(Function),
     );

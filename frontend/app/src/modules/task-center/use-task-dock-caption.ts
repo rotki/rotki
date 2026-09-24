@@ -57,9 +57,14 @@ export function useTaskDockCaption(
       : t('task_dock.attention_count', { count: roots.length }, roots.length);
   }
 
+  /** Jobs that did not fail, told apart as cancelled only when every one of them was. */
   function successes(roots: Activity[]): string {
-    return roots.length === 1
-      ? t('task_dock.done', { title: roots[0].title })
+    const allCancelled = roots.every(root => root.status === ActivityStatus.CANCELLED);
+    if (roots.length === 1)
+      return allCancelled ? t('task_dock.cancelled', { title: roots[0].title }) : t('task_dock.done', { title: roots[0].title });
+
+    return allCancelled
+      ? t('task_dock.cancelled_count', { count: roots.length }, roots.length)
       : t('task_dock.done_count', { count: roots.length }, roots.length);
   }
 

@@ -1062,6 +1062,7 @@
     "transactions_redecode": {
       "error": {
         "description": "Failed to decode events from transactions: {error}",
+        "not_decoded": "The transactions could not be pulled or decoded",
         "title": "Decoding events from transactions"
       }
     },
@@ -2192,10 +2193,6 @@
       "empty_password": "Please provide a password",
       "password_mismatch": "The password confirmation does not match the provided password"
     }
-  },
-  "collapsed_pending_tasks": {
-    "cancel_task": "Cancel task",
-    "cancel_task_info": "This action will leave the running process ({title}) in an unfinished state, are you sure you want to cancel?"
   },
   "common": {
     "account": "Account",
@@ -6394,6 +6391,8 @@
   "task_dock": {
     "attention": "{title} needs attention",
     "attention_count": "{count} job needs attention | {count} jobs need attention",
+    "cancelled": "{title} cancelled",
+    "cancelled_count": "{count} job cancelled | {count} jobs cancelled",
     "detail": {
       "addition": {
         "every_chain": "Tracked on every EVM chain",
@@ -6441,9 +6440,11 @@
       "skipped_count": "{count} skipped | {count} skipped",
       "skipped_more": "+{count} more",
       "skipped_names_more": "{names}, +{count} more",
+      "stop": "Stop",
       "stop_all": "Stop all",
       "stop_all_info": "This stops {count} refresh or sync. What it already fetched is kept, and running it again finishes the rest. | This stops {count} refreshes and syncs. What they already fetched is kept, and running them again finishes the rest.",
       "stop_all_kept": "{count} task that changes your data keeps running, since stopping it could leave the data half-written. | {count} tasks that change your data keep running, since stopping them could leave the data half-written.",
+      "stop_info": "This stops {title} and leaves it unfinished.",
       "title": {
         "attention": "Needs attention",
         "finished": "Finished",

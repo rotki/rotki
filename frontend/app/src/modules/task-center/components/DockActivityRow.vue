@@ -344,7 +344,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
             color="primary"
             size="sm"
             icon
-            :aria-label="t('collapsed_pending_tasks.cancel_task')"
+            :aria-label="t('task_dock.panel.stop')"
             data-testid="cancel-activity"
             @click="emit('cancel', activity)"
           >
@@ -354,7 +354,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
             />
           </RuiButton>
         </template>
-        {{ t('collapsed_pending_tasks.cancel_task') }}
+        {{ t('task_dock.panel.stop') }}
       </RuiTooltip>
       <RuiButton
         v-if="retryable"

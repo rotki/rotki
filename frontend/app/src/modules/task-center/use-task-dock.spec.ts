@@ -327,13 +327,19 @@ describe('useTaskDock', () => {
       expect(get(state)).toBe(DockState.FAILED);
     });
 
-    it('should report nothing for a run the user cancelled', async () => {
+    it('should keep a run the user cancelled as an outcome until it is dismissed', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
-      const { visible } = dock();
+      const { acknowledge, finished, state } = dock();
 
       await transition(refresh(ActivityStatus.CANCELLED));
+      await vi.advanceTimersByTimeAsync(60000);
 
-      expect(get(visible)).toBe(false);
+      expect(get(state)).toBe(DockState.DONE);
+      expect(get(finished).map(root => root.id)).toEqual([refreshId]);
+
+      acknowledge(refreshId);
+
+      expect(get(state)).toBe(DockState.DISMISSED);
     });
 
     it('should summarize only the latest run, not the jobs of the one before', async () => {
@@ -375,12 +381,12 @@ describe('useTaskDock', () => {
       vi.useRealTimers();
     });
 
-    it('should close once the work goes idle with nothing to report, as after a cancelled run', async () => {
+    it('should close once the work goes idle with nothing to report, as when it leaves the ledger', async () => {
       set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.RUNNING)]);
       const { modelExpanded } = dock();
       set(modelExpanded, true);
 
-      set(activities, [activity(ActivityKind.HISTORY_SYNC, 'refresh', ActivityStatus.CANCELLED)]);
+      set(activities, []);
       await nextTick();
       await vi.advanceTimersByTimeAsync(1000);
 

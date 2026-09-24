@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
 
-type RowStatus = 'complete' | 'failed' | 'pending' | 'running' | 'skipped';
+type RowStatus = 'cancelled' | 'complete' | 'failed' | 'pending' | 'running' | 'skipped';
 
 /** The corner task dock: its pill, its panel, and the Stop all confirmation it raises. */
 export class TaskDockPage {
@@ -37,11 +37,6 @@ export class TaskDockPage {
 
   async expectRow(label: string, status: RowStatus): Promise<void> {
     await expect(this.row(label)).toHaveAttribute('data-status', status, { timeout: TIMEOUT_MEDIUM });
-  }
-
-  /** A job the user stopped leaves the panel rather than staying as a settled row. */
-  async expectNoRow(title: string): Promise<void> {
-    await expect(this.row(title)).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   }
 
   async expectRowMeter(label: string, text: string): Promise<void> {

@@ -24,7 +24,7 @@ interface UseTaskDockReturn {
   failed: ComputedRef<Activity[]>;
   /** Settled jobs held for the user by a skip that asked for attention, with no failure, not yet dismissed. */
   flagged: ComputedRef<Activity[]>;
-  /** Settled jobs with nothing held for the user and not cancelled, not yet dismissed. */
+  /** Settled jobs with nothing held for the user, cancelled ones included, not yet dismissed. */
   finished: ComputedRef<Activity[]>;
   /** Settled jobs the user has dismissed, failed or not; still reachable from the icon. */
   dismissed: ComputedRef<Activity[]>;
@@ -58,7 +58,8 @@ function isFailed(activity: Activity): boolean {
  * - A dismissed job shrinks to an icon rather than vanishing, so it can still be reopened. The dock
  * only goes away once everything is dismissed, the panel is collapsed, and nobody has touched the
  * dock for {@link DISMISSED_HIDE_DELAY}; hovering or focusing it starts that wait over.
- * - A run the user cancelled reports nothing, since they stopped it themselves.
+ * - A run the user stopped is reported like a clean one, as cancelled, so it stays where it was
+ * until dismissed rather than vanishing from under the user.
  *
  * Only jobs seen running are reported, so work that settled before the dock saw it does not resurface.
  * The exception is a failure: one that settled before the dock mounted, as work started during login
@@ -88,18 +89,15 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     return get(model).roots.filter(root => ids.has(root.id) && isTerminalStatus(root.status));
   });
 
-  /** Settled jobs worth reporting: a failure anywhere, or a run that was not cancelled. */
-  const reported = computed<Activity[]>(() => get(settled).filter(root => hasFailure(root) || root.status !== ActivityStatus.CANCELLED));
+  const failed = computed<Activity[]>(() => get(settled).filter(root => hasFailure(root) && !get(acknowledged).has(root.id)));
 
-  const failed = computed<Activity[]>(() => get(reported).filter(root => hasFailure(root) && !get(acknowledged).has(root.id)));
+  const flagged = computed<Activity[]>(() => get(settled).filter(root => isHeld(root) && !hasFailure(root) && !get(acknowledged).has(root.id)));
 
-  const flagged = computed<Activity[]>(() => get(reported).filter(root => isHeld(root) && !hasFailure(root) && !get(acknowledged).has(root.id)));
-
-  const finished = computed<Activity[]>(() => get(reported).filter(root => !isHeld(root) && !get(acknowledged).has(root.id)));
+  const finished = computed<Activity[]>(() => get(settled).filter(root => !isHeld(root) && !get(acknowledged).has(root.id)));
 
   const held = computed<Activity[]>(() => [...get(failed), ...get(flagged)]);
 
-  const dismissed = computed<Activity[]>(() => get(reported).filter(root => get(acknowledged).has(root.id)));
+  const dismissed = computed<Activity[]>(() => get(settled).filter(root => get(acknowledged).has(root.id)));
 
   const dismissedFailure = computed<boolean>(() => get(dismissed).some(hasFailure));
 
@@ -154,9 +152,9 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   }
 
   /**
-   * Closes the panel once work goes idle with nothing left to show, as after a run the user
-   * cancelled, so it does not spring open with the next run. A panel showing an outcome, dismissed
-   * ones included, stays open: the user may be reading it, and it is theirs to close.
+   * Closes the panel once work goes idle with nothing left to show, so it does not spring open with
+   * the next run. A panel showing an outcome, dismissed ones included, stays open: the user may be
+   * reading it, and it is theirs to close.
    */
   function collapseWhenIdle(active: boolean): void {
     if (!active && get(state) === undefined)
