@@ -2,14 +2,33 @@ import { createLocationNode as node } from '@test/utils/location-tree';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLocationManagement } from '@/modules/locations/use-location-management';
 
-const { addLocation, editLocation, refreshLocationTree } = vi.hoisted(() => ({
+const {
+  addLocation,
+  deleteLocation,
+  deleteLocationImage,
+  editLocation,
+  fetchLocationUsage,
+  refreshLocationTree,
+  uploadLocationImage,
+} = vi.hoisted(() => ({
   addLocation: vi.fn(),
+  deleteLocation: vi.fn(),
+  deleteLocationImage: vi.fn(),
   editLocation: vi.fn(),
+  fetchLocationUsage: vi.fn(),
   refreshLocationTree: vi.fn(),
+  uploadLocationImage: vi.fn(),
 }));
 
 vi.mock('@/modules/locations/use-location-tree-api', () => ({
-  useLocationTreeApi: (): Record<string, unknown> => ({ addLocation, editLocation }),
+  useLocationTreeApi: (): Record<string, unknown> => ({
+    addLocation,
+    deleteLocation,
+    deleteLocationImage,
+    editLocation,
+    fetchLocationUsage,
+    uploadLocationImage,
+  }),
 }));
 
 vi.mock('@/modules/locations/use-location-tree', () => ({
@@ -54,5 +73,67 @@ describe('useLocationManagement', () => {
     await edit('custom:ing', { dryRun: true, parentIdentifier: 'other' });
     expect(editLocation).toHaveBeenLastCalledWith('custom:ing', { dryRun: false, parentIdentifier: 'other' });
     expect(refreshLocationTree).toHaveBeenCalledOnce();
+  });
+
+  it('should read the usage of a location without reloading the tree', async () => {
+    fetchLocationUsage.mockResolvedValue({ deletable: false, usage: { historyEvents: 2 } });
+
+    const outcome = await useLocationManagement().fetchUsage('custom:ing');
+
+    assert(outcome.ok);
+    expect(outcome.value).toEqual({ deletable: false, usage: { historyEvents: 2 } });
+    expect(fetchLocationUsage).toHaveBeenCalledWith('custom:ing');
+    expect(refreshLocationTree).not.toHaveBeenCalled();
+  });
+
+  it('should hand back the message of a usage that could not be read', async () => {
+    fetchLocationUsage.mockRejectedValue(new Error('Location custom:gone does not exist'));
+
+    const outcome = await useLocationManagement().fetchUsage('custom:gone');
+
+    assert(!outcome.ok);
+    expect(outcome.error).toBe('Location custom:gone does not exist');
+  });
+
+  it('should reload the tree after a location is deleted', async () => {
+    deleteLocation.mockResolvedValue(true);
+
+    const outcome = await useLocationManagement().deleteLocation('custom:ing');
+
+    assert(outcome.ok);
+    expect(deleteLocation).toHaveBeenCalledWith('custom:ing');
+    expect(refreshLocationTree).toHaveBeenCalledOnce();
+  });
+
+  it('should reload the tree after an image upload, handing back the stored image name', async () => {
+    uploadLocationImage.mockResolvedValue('abc.png');
+    const file = new File(['png'], 'logo.png');
+
+    const outcome = await useLocationManagement().uploadImage('custom:ing', file);
+
+    assert(outcome.ok);
+    expect(outcome.value).toBe('abc.png');
+    expect(uploadLocationImage).toHaveBeenCalledWith('custom:ing', file);
+    expect(refreshLocationTree).toHaveBeenCalledOnce();
+  });
+
+  it('should reload the tree after an image is removed', async () => {
+    deleteLocationImage.mockResolvedValue(true);
+
+    const outcome = await useLocationManagement().removeImage('custom:ing');
+
+    assert(outcome.ok);
+    expect(deleteLocationImage).toHaveBeenCalledWith('custom:ing');
+    expect(refreshLocationTree).toHaveBeenCalledOnce();
+  });
+
+  it('should keep the tree when a delete is refused', async () => {
+    deleteLocation.mockRejectedValue(new Error('Location custom:ing is still in use'));
+
+    const outcome = await useLocationManagement().deleteLocation('custom:ing');
+
+    assert(!outcome.ok);
+    expect(outcome.error).toBe('Location custom:ing is still in use');
+    expect(refreshLocationTree).not.toHaveBeenCalled();
   });
 });

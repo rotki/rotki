@@ -174,4 +174,42 @@ describe('locationManager', () => {
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'offline' }));
     expect(show).not.toHaveBeenCalled();
   });
+
+  it('should report a refused archive and not keep the location listed as archived', async () => {
+    editLocation.mockResolvedValue(err('Location custom:ing has active children. Archive them first'));
+    wrapper = createWrapper();
+
+    await actionsOf('custom:ing').find('[data-testid=location-toggle-archive]').trigger('click');
+    await flushPromises();
+
+    expect(setMessage).toHaveBeenCalledExactlyOnceWith({
+      description: 'Location custom:ing has active children. Archive them first',
+      title: 'location_manager.error',
+    });
+    useLocationTreeStore().setNodes(useLocationTreeStore().nodes.map(item => (item.identifier === 'custom:ing' ? { ...item, isActive: false } : item)));
+    await flushPromises();
+    expect(row('custom:ing')).toBeUndefined();
+  });
+
+  it('should restore an archived location from its row', async () => {
+    wrapper = createWrapper();
+    await wrapper.find('[data-testid=location-manager-show-archived] input').setValue(true);
+
+    await actionsOf('custom:closed').find('[data-testid=location-toggle-archive]').trigger('click');
+    await flushPromises();
+
+    expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:closed', { isActive: true });
+  });
+
+  it('should report a delete the backend refused after it was confirmed', async () => {
+    fetchUsage.mockResolvedValue(ok({ deletable: true, usage: {} }));
+    deleteLocation.mockResolvedValue(err('Location custom:ing is still in use'));
+    wrapper = createWrapper();
+
+    await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
+    await flushPromises();
+    await show.mock.calls[0][1]();
+
+    expect(setMessage).toHaveBeenCalledExactlyOnceWith({ description: 'Location custom:ing is still in use', title: 'location_manager.error' });
+  });
 });

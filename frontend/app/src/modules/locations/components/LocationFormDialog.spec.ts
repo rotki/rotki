@@ -188,4 +188,56 @@ describe('locationFormDialog', () => {
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'A location named DKB already exists at the same level' }));
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
+
+  it('should keep a created location and close when only its image upload fails', async () => {
+    const created = node('custom:dkb', 'banks', 'DKB', { isBuiltin: false });
+    createLocation.mockResolvedValue(ok(created));
+    uploadImage.mockResolvedValue(err('Unsupported image type'));
+    wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' });
+    await wrapper.find('[data-testid=location-form-name] input').setValue('DKB');
+    await chooseImage(new File(['gif'], 'dkb.gif'));
+
+    await confirm();
+
+    expect(setMessage).toHaveBeenCalledExactlyOnceWith({ description: 'Unsupported image type', title: 'location_manager.image.error' });
+    expect(wrapper.emitted('created')).toEqual([[created]]);
+    expect(wrapper.emitted('saved')).toEqual([['custom:dkb']]);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+  });
+
+  it('should not ask to confirm a move whose preview was refused', async () => {
+    previewEdit.mockResolvedValue(err('Location custom:ing can not be moved below itself'));
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await chooseParent('other');
+
+    await confirm();
+
+    expect(setMessage).toHaveBeenCalledExactlyOnceWith({ description: 'Location custom:ing can not be moved below itself', title: 'location_manager.form.error' });
+    expect(show).not.toHaveBeenCalled();
+    expect(editLocation).not.toHaveBeenCalled();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('should keep the dialog open and skip the image when an edit is refused', async () => {
+    editLocation.mockResolvedValue(err('A location named Qonto already exists at the same level'));
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await wrapper.find('[data-testid=location-form-name] input').setValue('Qonto');
+    await chooseImage(null);
+
+    await confirm();
+
+    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'A location named Qonto already exists at the same level' }));
+    expect(removeImage).not.toHaveBeenCalled();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
+
+  it('should load the next location into the form when the dialog is reused', async () => {
+    const savings = node('custom:savings', 'custom:ing', 'Savings', { isBuiltin: false });
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await wrapper.find('[data-testid=location-form-name] input').setValue('typed but not saved');
+
+    await wrapper.setProps({ modelValue: { location: savings, mode: 'edit' } });
+
+    expect(wrapper.find<HTMLInputElement>('[data-testid=location-form-name] input').element.value).toBe('Savings');
+  });
 });

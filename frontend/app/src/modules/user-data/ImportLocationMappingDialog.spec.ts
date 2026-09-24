@@ -98,4 +98,19 @@ describe('importLocationMappingDialog', () => {
     expect(selector.attributes('data-items')).toBe('custom:a,custom:b,custom:c');
     expect(selector.props('modelValue')).toBe('custom:c');
   });
+
+  it('should start the next import with no mappings, no created locations and aliases saved again', async () => {
+    wrapper = createWrapper([ing]);
+    await wrapper.find('[data-testid=import-location-create]').trigger('click');
+    wrapper.findComponent(LocationFormDialogStub).vm.$emit('created', node('custom:c', 'total', 'ING', { isBuiltin: false }));
+    await wrapper.find('[data-testid=import-location-save-aliases] input').setValue(false);
+
+    await wrapper.setProps({ resolutions: [{ ...ing, candidates: ['custom:a', 'custom:b'] }] });
+
+    const selector = wrapper.findComponent(LocationSelectorStub);
+    expect(selector.props('modelValue')).toBe('');
+    expect(selector.attributes('data-items')).toBe('custom:a,custom:b');
+    expect(wrapper.findComponent(BigDialogStub).props('action')?.disabled).toBe(true);
+    expect(wrapper.find<HTMLInputElement>('[data-testid=import-location-save-aliases] input').element.checked).toBe(true);
+  });
 });

@@ -1,0 +1,3 @@
+Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp
+Deposit,ING,EUR,100.00,,,Salary paid into ING,1700000000000
+Deposit,Nordbank,EUR,250.00,,,Savings moved to Nordbank,1700086400000

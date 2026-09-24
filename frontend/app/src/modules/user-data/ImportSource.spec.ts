@@ -10,6 +10,7 @@ const submitTask = vi.fn();
 const useIsActive = vi.fn();
 const getPath = vi.fn();
 const importFile = vi.fn();
+const importDataFrom = vi.fn();
 const resolveLocations = vi.fn();
 const rememberAliases = vi.fn();
 
@@ -27,7 +28,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 
 vi.mock('@/modules/user-data/use-import-data-api', () => ({
   useImportDataApi: vi.fn().mockImplementation(() => ({
-    importDataFrom: vi.fn(),
+    importDataFrom,
     importFile,
   })),
 }));
@@ -68,6 +69,7 @@ describe('importSource', () => {
     vi.clearAllMocks();
     useIsActive.mockReturnValue(computed<boolean>(() => false));
     rememberAliases.mockResolvedValue(undefined);
+    getPath.mockReturnValue(undefined);
     vi.useFakeTimers();
   });
 
@@ -333,6 +335,51 @@ describe('importSource', () => {
       await submitFile();
 
       expect(wrapper.findComponent<StubInstance>({ name: 'FileUpload' }).props('errorMessage')).toBe('Could not read the file');
+    });
+
+    it('should resolve and import a file read from disk by its path, with the mapped locations', async () => {
+      getPath.mockReturnValue('/home/user/events.csv');
+      resolveLocations.mockResolvedValue({ mappings: { luno: 'custom:luno' }, proceed: true });
+      submitTask.mockResolvedValue(ok(true));
+      importDataFrom.mockResolvedValue({ taskId: 1 });
+      wrapper = createRotkiWrapper();
+      await submitFile();
+
+      expect(resolveLocations).toHaveBeenCalledWith('rotki_events', { path: '/home/user/events.csv' });
+      await submitTask.mock.calls[0][0].run({ runTask: async (task: () => Promise<unknown>) => ok(await task()) });
+      expect(importDataFrom).toHaveBeenCalledExactlyOnceWith({
+        file: '/home/user/events.csv',
+        locationMappings: '{"luno":"custom:luno"}',
+        source: 'rotki_events',
+        timestampFormat: null,
+        timezone: null,
+      });
+      expect(importFile).not.toHaveBeenCalled();
+    });
+
+    it('should leave the mappings out of a path import whose locations all resolved', async () => {
+      getPath.mockReturnValue('/home/user/events.csv');
+      resolveLocations.mockResolvedValue({ mappings: {}, proceed: true });
+      submitTask.mockResolvedValue(ok(true));
+      importDataFrom.mockResolvedValue({ taskId: 1 });
+      wrapper = createRotkiWrapper();
+      await submitFile();
+
+      await submitTask.mock.calls[0][0].run({ runTask: async (task: () => Promise<unknown>) => ok(await task()) });
+      expect(importDataFrom.mock.calls[0][0]).not.toHaveProperty('locationMappings');
+    });
+
+    it('should keep the import done but say so when the chosen aliases could not be saved', async () => {
+      resolveLocations.mockResolvedValue({ mappings: { luno: 'custom:luno' }, proceed: true });
+      submitTask.mockResolvedValue(ok(true));
+      rememberAliases.mockRejectedValue(new Error('Location custom:luno is archived'));
+      wrapper = createRotkiWrapper();
+      await submitFile();
+      await vi.advanceTimersToNextTimerAsync();
+
+      const upload = wrapper.findComponent<StubInstance>({ name: 'FileUpload' });
+      expect(upload.props('uploaded')).toBe(true);
+      expect(upload.props('errorMessage')).toBe('import_data.location_mapping.alias_error::Location custom:luno is archived');
     });
   });
 });

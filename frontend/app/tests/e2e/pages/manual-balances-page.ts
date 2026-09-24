@@ -159,4 +159,34 @@ export class ManualBalancesPage {
     await expect(this.page.locator('[data-testid=manual-balances-add-button]')).not.toBeDisabled();
     await this.page.locator('[data-testid=manual-balances-add-button]').click();
   }
+
+  /**
+   * The identifiers of the locations the open form offers for a search, read without picking one.
+   *
+   * @remarks
+   * The menu filters after the input settles, so the options are read only once every one shown
+   * matches the search; reading earlier returns the head of the unfiltered list.
+   */
+  async locationOptionsFor(search: string): Promise<string[]> {
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
+    const locationField = this.page.locator('[data-testid=manual-balances-form-location]');
+    await locationField.locator('[data-id=activator]').click();
+    const menu = this.page.locator('[role=menu]').last();
+    await menu.waitFor({ state: 'visible' });
+    await locationField.locator('input').fill(search);
+    const options = menu.locator('[id^="balance-location__"]');
+    const needle = search.toLowerCase();
+    await expect.poll(async () => {
+      const texts = await options.allTextContents();
+      return texts.length > 0 && texts.every(text => text.toLowerCase().includes(needle));
+    }).toBe(true);
+    const ids = await options.evaluateAll(items => items.map(item => item.id));
+    await this.page.keyboard.press('Escape');
+    return ids.map(id => id.replace('balance-location__', ''));
+  }
+
+  async cancelDialog(): Promise<void> {
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=cancel]').click();
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached' });
+  }
 }
