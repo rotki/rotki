@@ -23,7 +23,7 @@ L2_CHAINIDS_WITH_L1_FEES: set[L2ChainIdsWithL1FeesType] = set(typing.get_args(L2
 
 class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
     """Represent a transaction with an L1 fee. """
-    l1_fee: int
+    l1_fee: int | None
     tx_type: int
 
     def __init__(
@@ -40,7 +40,7 @@ class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemen
             gas_used: int,
             input_data: bytes,
             nonce: int,
-            l1_fee: int,
+            l1_fee: int | None,
             tx_type: int = 0,
             db_id: int = -1,
             authorization_list: list[EvmTransactionAuthorization] | None = None,
