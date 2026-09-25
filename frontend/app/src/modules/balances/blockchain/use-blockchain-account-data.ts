@@ -1,3 +1,4 @@
+import type { AssetBalance } from '@rotki/common';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type {
   Accounts,
@@ -7,24 +8,19 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
-import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/core/common/collection';
-import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
-import { omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 import { ok, type Result } from 'plainfp/result';
-import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
+import { sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
 import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
+import { accountAssetBalances, type AccountAssetPorts, accountsByGroup } from '@/modules/accounts/core/account-assets';
+import { type AccountGroupPorts, accountGroups } from '@/modules/accounts/core/account-groups';
 import { createAccountWithBalance } from '@/modules/accounts/create-account-with-balance';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { deduplicateTags } from '@/modules/tags/tag-utils';
 
 interface AccountBalances {
   assets: AssetBalance[];
@@ -44,67 +40,24 @@ interface UseBlockchainAccountDataReturn {
   getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
 
-function toAssetBalances(
-  balances: Record<string, ProtocolBalances>,
-  isIgnored: (asset: string) => boolean,
-  resolveIdentifier: (id: string) => string,
-): AssetBalance[] {
-  const intermediate: Record<string, Balance> = {};
-  for (const [assetIdentifier, balance] of Object.entries(balances)) {
-    const identifier = resolveIdentifier(assetIdentifier);
-    if (isIgnored(identifier))
-      continue;
-
-    for (const protocol in balance) {
-      if (balance[protocol].amount.isZero())
-        continue;
-
-      if (!intermediate[identifier]) {
-        intermediate[identifier] = balance[protocol];
-      }
-      else {
-        intermediate[identifier] = balanceSum(intermediate[identifier], balance[protocol]);
-      }
-    }
-  }
-  return Object.entries(intermediate).map(([asset, balance]) => ({ asset, ...balance } satisfies AssetBalance));
-}
-
 export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getAddressName } = useAddressNameResolution();
   const { getChainAccountType } = useSupportedChains();
   const { isAssetIgnored } = useAssetsStore();
-  const resolveAssetIdentifier = useResolveAssetIdentifier();
+  const resolveIdentifier = useResolveAssetIdentifier();
 
-  const getAccountBalances = (
-    balances: Balances,
-    chain: string,
-    address: string,
-  ): AccountBalances => {
-    const chainAssets = balances[chain] ?? {};
-    const addressAssets = chainAssets[address];
+  const assetPorts: AccountAssetPorts = { isAssetIgnored, resolveIdentifier };
+  const groupPorts: AccountGroupPorts = { accountType: getChainAccountType, isAssetIgnored };
 
-    if (addressAssets) {
-      const { assets, liabilities } = addressAssets;
-
-      return {
-        assets: toAssetBalances(assets, isAssetIgnored, resolveAssetIdentifier),
-        liabilities: !liabilities ? [] : toAssetBalances(liabilities, isAssetIgnored, resolveAssetIdentifier),
-      };
-    }
-
+  function getAccountDetails(chain: string, address: string): AccountBalances {
+    const accountBalances = get(balances)[chain]?.[address];
     return {
-      assets: [],
-      liabilities: [],
+      assets: accountBalances ? accountAssetBalances(accountBalances.assets, assetPorts) : [],
+      liabilities: accountBalances?.liabilities ? accountAssetBalances(accountBalances.liabilities, assetPorts) : [],
     };
-  };
-
-  const getAccountDetails = (
-    chain: string,
-    address: string,
-  ): AccountBalances => getAccountBalances(get(balances), get(chain), get(address));
+  }
 
   const useAccountTags = (address: MaybeRefOrGetter<string>): ComputedRef<string[]> => computed<string[]>(() => {
     const accountData = get(accounts);
@@ -141,84 +94,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     return accountsWithBalances;
   };
 
-  function getExpansionType(chains: string[], hasAssets: boolean): 'accounts' | 'assets' | undefined {
-    if (chains.length > 1)
-      return 'accounts';
-    if (hasAssets)
-      return 'assets';
-    return undefined;
-  }
-
-  const getGroups = (accounts: Accounts, balances: Balances): BlockchainAccountGroupWithBalance[] => {
-    const accountData = omit(accounts, [Blockchain.ETH2]);
-    const balanceData = omit(balances, [Blockchain.ETH2]);
-
-    const nonGroupAccounts = Object.values(accountData).flatMap(accounts => accounts.filter(account => !account.groupId));
-    const nonGroupAccountAddresses = nonGroupAccounts.map(account => getAccountAddress(account));
-    const groupIdentifiers: string[] = nonGroupAccountAddresses.filter(uniqueStrings);
-
-    const groupHeaders = groupIdentifiers.map((address) => {
-      const accountAssets = Object.values(balanceData)
-        .filter(data => !isEmpty(data) && !isEmpty(data[address]))
-        .map(data => data[address]);
-      const value = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets, isAssetIgnored)), Zero);
-
-      const accountsForAddress = Object.values(accountData).flatMap(
-        accounts => accounts.filter(account => getAccountAddress(account) === address),
-      );
-
-      const tags = accountsForAddress.flatMap(account => account.tags ?? []).filter(uniqueStrings);
-      const chains = accountsForAddress.map(account => account.chain);
-      const label = accountsForAddress.length > 0 ? getAccountLabel(accountsForAddress[0]) : undefined;
-
-      let hasAssets = false;
-      if (accountsForAddress.length === 1) {
-        const account = accountsForAddress[0];
-        const assets = accountAssets?.[0]?.assets ?? {};
-        hasAssets = hasTokens(account.nativeAsset, assets);
-      }
-
-      return {
-        category: getChainAccountType(chains[0]),
-        chains,
-        data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { address, type: 'address' },
-        expansion: getExpansionType(chains, hasAssets),
-        label,
-        tags: tags.length > 0 ? tags : undefined,
-        type: 'group',
-        value,
-      } satisfies BlockchainAccountGroupWithBalance;
-    });
-
-    const preGrouped = Object.values(accountData)
-      .flatMap(accounts => accounts.filter(account => account.groupHeader))
-      .map((account) => {
-        const balance: Balance = { amount: Zero, value: Zero };
-        const chainBalances = balanceData[account.chain];
-        const accounts = accountData[account.chain];
-        const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
-        for (const subAccount of groupAccounts) {
-          const { balance: subBalance } = getAccountBalance(subAccount, chainBalances, isAssetIgnored);
-          if (account.nativeAsset === subAccount.nativeAsset)
-            balance.amount = balance.amount.plus(subBalance.amount);
-
-          balance.value = balance.value.plus(subBalance.value);
-        }
-        const tags = account.tags ? deduplicateTags(account.tags) : undefined;
-        return {
-          ...omit(account, ['chain', 'groupId', 'groupHeader']),
-          ...balance,
-          category: getChainAccountType(account.chain),
-          chains: [account.chain],
-          expansion: groupAccounts.length > 0 ? 'accounts' : undefined,
-          tags,
-          type: 'group',
-        } satisfies BlockchainAccountGroupWithBalance;
-      });
-    return [...groupHeaders, ...preGrouped];
-  };
-
-  const getAccounts = (): BlockchainAccountGroupWithBalance[] => getGroups(get(accounts), get(balances));
+  const getAccounts = (): BlockchainAccountGroupWithBalance[] => accountGroups(get(accounts), get(balances), groupPorts);
 
   function getAccountList(accountData: Accounts, balanceData: Balances): BlockchainAccountWithBalance[] {
     const entries: BlockchainAccountWithBalance[] = [];
@@ -234,10 +110,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   }
 
   const getAccountsByCategory = (category: MaybeRefOrGetter<string>): ComputedRef<BlockchainAccountGroupWithBalance[]> => computed(() => {
-    const accountData = get(accounts);
-    const balanceData = get(balances);
-    const groups = getGroups(accountData, balanceData);
-
+    const groups = accountGroups(get(accounts), get(balances), groupPorts);
     return groups.filter(item => item.category === toValue(category));
   });
 
@@ -246,15 +119,14 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   ): Promise<Result<Collection<BlockchainAccountGroupWithBalance>, never>> => {
     const accountData = get(accounts);
     const balanceData = get(balances);
-    const blockchainAccounts = getAccountList(accountData, balanceData);
-    const groups = getGroups(accountData, balanceData);
+    const members = accountsByGroup(getAccountList(accountData, balanceData));
 
     return ok(sortAndFilterAccounts(
-      groups,
+      accountGroups(accountData, balanceData, groupPorts),
       get(payload),
       {
         getAccounts(groupId: string) {
-          return blockchainAccounts.filter(account => account.groupId === groupId);
+          return members.get(groupId) ?? [];
         },
         getLabel(account, chain) {
           return isXpubAccount(account) ? getAccountLabel(account) : getAddressName(getAccountAddress(account), chain);

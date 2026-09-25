@@ -196,6 +196,7 @@ export default rotki({
    * catches a stray `computed(` or `get(`.
    */
   files: [
+    'app/src/modules/accounts/core/**/*.ts',
     'app/src/modules/balances/aggregation/core/**/*.ts',
     'app/src/modules/balances/refresh/core/**/*.ts',
     'app/src/modules/dashboard/holdings/core/**/*.ts',

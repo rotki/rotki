@@ -1,12 +1,11 @@
 <script lang="ts" setup>
+import type { AssetBalance } from '@rotki/common';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import { type AssetBalance, Zero } from '@rotki/common';
-import { pick } from 'es-toolkit';
-import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { topTokens, xpubNativeHolding } from '@/modules/accounts/core/account-assets';
 import IconTokenDisplay from '@/modules/accounts/IconTokenDisplay.vue';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 
 const { chains, row, loading } = defineProps<{
@@ -21,19 +20,9 @@ const router = useRouter();
 const address = computed<string>(() => getAccountAddress(row));
 const balances = useBlockchainBalances(() => chains, address);
 
-const topTokens = computed<AssetBalance[]>(() => get(balances)
-  .map(balance => pick(balance, ['asset', 'amount', 'value']))
-  .sort((a, b) => sortDesc(a.value, b.value)));
-
 const assets = computed<AssetBalance[]>(() => {
-  if (isXpubAccount(row) && row.nativeAsset) {
-    return [{
-      amount: row.amount || Zero,
-      asset: row.nativeAsset,
-      value: row.value,
-    }];
-  }
-  return get(topTokens);
+  const native = xpubNativeHolding(row);
+  return native ? [native] : topTokens(get(balances));
 });
 
 async function navigateToAsset(asset: AssetBalance): Promise<void> {
