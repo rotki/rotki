@@ -6,9 +6,9 @@ import Eth2ValidatorLimitTooltip from '@/modules/accounts/blockchain/eth2/Eth2Va
 import IconTokenDisplay from '@/modules/accounts/IconTokenDisplay.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { assetsAtLocation, mergedBreakdown } from '@/modules/balances/aggregation/core/asset-breakdown';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
-import { groupAssetBreakdown } from '@/modules/core/common/display/balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -55,15 +55,9 @@ const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   return breakdown;
 });
 
-const rows = computed<AssetBreakdown[]>(() => {
-  const data: AssetBreakdown[] = Object.values(get(breakdown)).reduce((acc, item) => {
-    acc.push(...item);
-    return acc;
-  }, []);
-  return groupAssetBreakdown(data, item =>
-    // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
-    matchChain(item.location) || item.location);
-});
+const rows = computed<AssetBreakdown[]>(() => mergedBreakdown(get(breakdown), item =>
+  // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
+  matchChain(item.location) || item.location));
 
 const currencySymbol = useSetting('currencySymbol');
 
@@ -126,22 +120,7 @@ function percentage(value: BigNumber) {
 }
 
 function getAssets(location: string): AssetBalance[] {
-  const balances: AssetBalance[] = [];
-  const perAsset = get(breakdown);
-
-  for (const asset of Object.keys(perAsset)) {
-    const entries = perAsset[asset];
-    const entry = entries.find(entry => entry.location === location);
-    if (entry) {
-      balances.push({
-        amount: entry.amount,
-        asset,
-        value: entry.value,
-      });
-    }
-  }
-
-  return balances;
+  return assetsAtLocation(get(breakdown), location);
 }
 </script>
 

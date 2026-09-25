@@ -4,17 +4,15 @@ import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
+import { heldAssets } from '@/modules/balances/aggregation/core/held-assets';
 import { type BalanceInputs, locationSources } from '@/modules/balances/aggregation/core/location-sources';
+import { blockchainValue, totalsByChainLocation, totalsByLocation } from '@/modules/balances/aggregation/core/location-totals';
 import { fromBlockchain, fromExchanges, fromManual } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
-import { samePriceAssets } from '@/modules/balances/blockchain-types';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getBlockchainLocationBreakdown, getExchangeByLocationBalances } from '@/modules/balances/use-location-breakdown';
-import { bigNumberSum } from '@/modules/core/common/data/calculation';
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
@@ -44,7 +42,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();
-  const { isAssetIgnored, resolveIdentifier: resolveAssetIdentifier } = context;
+  const { isAssetIgnored } = context;
 
   const blockchainAssets = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances)));
   const blockchainLiabilities = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances), { key: 'liabilities' }));
@@ -130,52 +128,19 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     getExchangeBalances(exchange ? toValue(exchange) : undefined),
   );
 
-  const assets = computed<string[]>(() => {
-    const assetSet = new Set<string>();
+  const assets = computed<string[]>(() => heldAssets([
+    get(blockchainAssets),
+    get(blockchainLiabilities),
+    get(exchangeAssets),
+    get(manualAssets),
+    get(manualLiabilityEntries),
+  ]));
 
-    const processAsset = (asset: string): void => {
-      assetSet.add(asset);
-      const samePrices = samePriceAssets[asset];
-      if (samePrices)
-        samePrices.forEach(asset => assetSet.add(asset));
-    };
-
-    const processAssetBalances = (balances: Record<string, unknown>): void => {
-      Object.keys(balances).forEach(processAsset);
-    };
-
-    processAssetBalances(get(blockchainAssets));
-    processAssetBalances(get(blockchainLiabilities));
-    processAssetBalances(get(exchangeAssets));
-
-    get(manualBalances).forEach(({ asset }) => processAsset(asset));
-    get(manualLiabilities).forEach(({ asset }) => processAsset(asset));
-
-    return Array.from(assetSet);
-  });
-
-  const balancesByLocation = computed<Record<string, BigNumber>>(() => {
-    const blockchainAssets = getBlockchainLocationBreakdown(get(blockchainBalances), resolveAssetIdentifier, asset => isAssetIgnored(asset));
-    const blockchainTotal = bigNumberSum(Object.values(blockchainAssets).map(asset => asset.value));
-    const map: Record<string, BigNumber> = {
-      [TRADE_LOCATION_BLOCKCHAIN]: blockchainTotal,
-    };
-
-    const exchange = getExchangeByLocationBalances(get(exchanges));
-    for (const location in exchange) {
-      const total = map[location];
-      const locationValue = exchange[location];
-      map[location] = total ? total.plus(locationValue) : locationValue;
-    }
-
-    const manual = get(manualBalanceByLocation);
-    for (const { location, value } of manual) {
-      const total = map[location];
-      map[location] = total ? total.plus(value) : value;
-    }
-
-    return map;
-  });
+  const balancesByLocation = computed<Record<string, BigNumber>>(() => totalsByLocation(
+    blockchainValue(get(blockchainBalances), isAssetIgnored),
+    get(exchanges),
+    get(manualBalanceByLocation),
+  ));
 
   /**
    * On-chain totals per chain, keyed by trade-location identifier such as `ethereum`.
@@ -185,25 +150,12 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
    * that its umbrella `blockchain` aggregate stays authoritative for the premium consumers that
    * iterate that map.
    */
-  const balancesByChainLocation = computed<Record<string, BigNumber>>(() => {
-    const balances = get(blockchainBalances);
-    const locations = get(tradeLocations);
-    const result: Record<string, BigNumber> = {};
-    for (const location of locations) {
-      const chain = matchChain(location.identifier);
-      if (!chain || !balances[chain])
-        continue;
-      const assets = getBlockchainLocationBreakdown(
-        { [chain]: balances[chain] },
-        resolveAssetIdentifier,
-        asset => isAssetIgnored(asset),
-      );
-      const total = bigNumberSum(Object.values(assets).map(asset => asset.value));
-      if (!total.isZero())
-        result[location.identifier] = total;
-    }
-    return result;
-  });
+  const balancesByChainLocation = computed<Record<string, BigNumber>>(() => totalsByChainLocation(
+    get(blockchainBalances),
+    get(tradeLocations).map(location => location.identifier),
+    matchChain,
+    isAssetIgnored,
+  ));
 
   return {
     assets,
