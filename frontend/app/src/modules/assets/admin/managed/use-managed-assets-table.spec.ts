@@ -3,6 +3,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { useServerTable } from '@/modules/core/table/use-server-table';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, h, ref } from 'vue';
 import { IgnoredAssetHandlingType } from '@/modules/assets/types';
@@ -211,11 +212,16 @@ describe('modules/assets/admin/managed/useManagedAssetsTable', () => {
       expect(serverTableOptions?.urlState).toEqual({ mode: 'none' });
     });
 
-    it('should hand the table the asset query rather than fetching itself', () => {
+    it('should hand the table the asset query rather than fetching itself', async () => {
       mountTable();
-
-      expect(serverTableOptions?.fetch).toBe(queryAllAssets);
       expect(queryAllAssets).not.toHaveBeenCalled();
+
+      const page: Collection<SupportedAsset> = { data: [], found: 0, limit: 10, total: 0 };
+      queryAllAssets.mockResolvedValueOnce(page);
+      const payload = { limit: 10, offset: 0 };
+
+      expect(await serverTableOptions?.fetch(payload)).toEqual(ok(page));
+      expect(queryAllAssets).toHaveBeenCalledExactlyOnceWith(payload);
     });
 
     it('should start by excluding ignored assets', () => {

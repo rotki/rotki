@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type {
   AddressBookEntries,
   AddressBookEntry,
@@ -6,24 +7,18 @@ import type {
   AddressBookSimplePayload,
 } from '@/modules/accounts/address-book/eth-names';
 import type { Collection } from '@/modules/core/common/collection';
-import { Priority } from '@rotki/common';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
-import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 
 interface UseAddressBookOperationsReturn {
   addAddressBook: (location: AddressBookLocation, entries: AddressBookEntries, updateExisting?: boolean) => Promise<boolean>;
   deleteAddressBook: (location: AddressBookLocation, addresses: AddressBookSimplePayload[]) => Promise<boolean>;
-  getAddressBook: (location: AddressBookLocation, payload: AddressBookRequestPayload) => Promise<Collection<AddressBookEntry>>;
+  getAddressBook: (location: AddressBookLocation, payload: AddressBookRequestPayload) => ResultAsync<Collection<AddressBookEntry>, RequestError>;
   updateAddressBook: (location: AddressBookLocation, entries: AddressBookEntries) => Promise<boolean>;
 }
 
 export function useAddressBookOperations(): UseAddressBookOperationsReturn {
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
   const { resetAddressNamesData } = useAddressNameResolution();
 
   const {
@@ -36,23 +31,8 @@ export function useAddressBookOperations(): UseAddressBookOperationsReturn {
   const getAddressBook = async (
     location: AddressBookLocation,
     payload: AddressBookRequestPayload,
-  ): Promise<Collection<AddressBookEntry>> => {
-    try {
-      return await fetchAddressBook(location, payload);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      notifyError(
-        t('address_book.actions.fetch.error.title'),
-        t('address_book.actions.fetch.error.message', {
-          message: getErrorMessage(error),
-        }),
-        { priority: Priority.NORMAL },
-      );
-
-      return defaultCollectionState();
-    }
-  };
+  ): ResultAsync<Collection<AddressBookEntry>, RequestError> =>
+    fromRequest(async () => fetchAddressBook(location, payload));
 
   const addAddressBook = async (
     location: AddressBookLocation,

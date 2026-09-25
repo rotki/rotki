@@ -1,5 +1,5 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Schema } from 'zod';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
@@ -10,7 +10,7 @@ import { getApiSortingParams } from '@/modules/core/table/pagination-filter-util
 import { collectSources, mergeParams, type ParamSource, transformFilters } from '@/modules/core/table/param-sources';
 import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-change-intent';
-import { useTableData } from '@/modules/core/table/use-table-data';
+import { type TableFetch, useTableData, type UseTableDataReturn } from '@/modules/core/table/use-table-data';
 import { provideTableFetchError, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
 import { type PersistFilterSetting, useTablePersistence } from '@/modules/core/table/use-table-persistence';
@@ -47,7 +47,7 @@ interface UseServerTableOptions<
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
 > {
   /** The request function. `TPayload` is inferred from its parameter. */
-  fetch: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>;
+  fetch: TableFetch<TItem, TPayload>;
   /** URL query sync mode; defaults to `{ mode: 'none' }` (no URL binding). */
   urlState?: UrlState;
   /**
@@ -81,7 +81,7 @@ interface UseServerTableReturn<
   requestPayload: ComputedRef<TPayload>;
   isLoading: Ref<boolean>;
   /** The last fetch failure, so a table can render inline instead of only toasting. */
-  error: Ref<unknown>;
+  error: UseTableDataReturn<TItem>['error'];
   collection: Ref<Collection<TItem>>;
   filter: WritableComputedRef<TFilter>;
   sort: WritableComputedRef<DataTableSortData<TItem>>;

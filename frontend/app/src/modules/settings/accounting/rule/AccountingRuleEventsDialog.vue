@@ -83,6 +83,7 @@ watch(display, (value) => {
         v-model:pagination="pagination"
         hide-actions
         :source="source"
+        @refetch="refetch()"
         @set-page="setPage($event)"
       />
 

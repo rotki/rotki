@@ -1,5 +1,9 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, ok } from 'plainfp/result';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { isRequestFailure, RequestFailed } from '@/modules/core/api/request-result';
+import { createStatusError } from '@/modules/core/api/response-handlers';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 
@@ -7,7 +11,6 @@ const listIssues = vi.fn();
 const dismissIssue = vi.fn();
 const resolveIssueManually = vi.fn();
 const retryAutoRemediation = vi.fn();
-const notifyError = vi.fn();
 const setMessage = vi.fn();
 
 vi.mock('@/modules/history/data-issues/api/use-data-issues-api', () => ({
@@ -17,10 +20,6 @@ vi.mock('@/modules/history/data-issues/api/use-data-issues-api', () => ({
     retryAutoRemediation,
     listIssues,
   }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError }),
 }));
 
 vi.mock('@/modules/core/common/use-message-store', () => ({
@@ -60,19 +59,28 @@ describe('useDataIssues', () => {
 
     const result = await fetchData({ limit: 10, offset: 0 });
 
-    expect(result).toStrictEqual(collection);
-    expect(notifyError).not.toHaveBeenCalled();
+    expect(result).toStrictEqual(ok(collection));
   });
 
-  it('should notify and return an empty collection on a failed fetch', async () => {
-    listIssues.mockResolvedValue({ error: { message: 'boom' }, ok: false });
+  it('should carry the failure with its status for the table to show and file', async () => {
+    const cause = createStatusError(500, 'generic', { message: 'boom' });
+    listIssues.mockResolvedValue(err({ cause, message: 'generic', type: 'network' }));
     const { fetchData } = useDataIssues();
 
     const result = await fetchData({ limit: 10, offset: 0 });
 
-    expect(notifyError).toHaveBeenCalledOnce();
-    expect(result.data).toStrictEqual([]);
-    expect(result.found).toBe(0);
+    expect(result).toStrictEqual(err(RequestFailed({ cause, message: 'boom', path: undefined, status: 500 })));
+  });
+
+  it('should carry a cancelled list request as cancelled, not failed', async () => {
+    const cause = new RequestCancelledError('Request was cancelled');
+    listIssues.mockResolvedValue(err({ cause, message: 'Request was cancelled', type: 'network' }));
+    const { fetchData } = useDataIssues();
+
+    const result = await fetchData({ limit: 10, offset: 0 });
+
+    assert(!result.ok);
+    expect(isRequestFailure(result.error)).toBe(false);
   });
 
   it('should resolve the payload to a plain value before querying', async () => {

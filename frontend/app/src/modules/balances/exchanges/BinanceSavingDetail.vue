@@ -2,6 +2,8 @@
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
+import { pipe } from 'plainfp';
+import { map } from 'plainfp/result-async';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
@@ -43,12 +45,14 @@ const {
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload
 >({
-  async fetch(payload) {
-    const { assets = [], received = [], ...collection } = await fetchExchangeSavings(payload);
-    set(savingsAssets, assets);
-    set(savingsReceived, received);
-    return collection;
-  },
+  fetch: payload => pipe(
+    fetchExchangeSavings(payload),
+    map(({ assets = [], received = [], ...collection }) => {
+      set(savingsAssets, assets);
+      set(savingsReceived, received);
+      return collection;
+    }),
+  ),
   params: [{ isDefault: true, to: 'request', values: defaultParams }],
   sort: {
     default: {

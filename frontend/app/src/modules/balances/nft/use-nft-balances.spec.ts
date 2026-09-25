@@ -1,6 +1,8 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { EffectScope, MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
+import type { RequestError } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
@@ -51,7 +53,7 @@ vi.mock('@/modules/core/notifications/use-notifications', async (importOriginal)
 describe('useNftBalances', () => {
   let fetchNonFungibleBalances: (
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
-  ) => Promise<Collection<NonFungibleBalance>>;
+  ) => ResultAsync<Collection<NonFungibleBalance>, RequestError>;
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();

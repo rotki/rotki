@@ -1,6 +1,7 @@
 import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
@@ -154,7 +155,7 @@ describe('useBlockchainAccountData', () => {
         value: Zero,
       }];
 
-      expect(knownGroups.data).toMatchObject(expectedGroups);
+      expect(knownGroups).toMatchObject(ok({ data: expectedGroups }));
     });
 
     it('should return empty array when no BTC accounts exist', () => {

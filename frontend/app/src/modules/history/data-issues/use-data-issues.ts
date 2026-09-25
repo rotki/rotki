@@ -1,14 +1,14 @@
 import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
-import { Priority } from '@rotki/common';
-import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
+import { pipe } from 'plainfp';
+import { mapError, type ResultAsync } from 'plainfp/result-async';
+import { type RequestError, toRequestError } from '@/modules/core/api/request-result';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useDataIssuesApi } from '@/modules/history/data-issues/api/use-data-issues-api';
 
 interface UseDataIssuesReturn {
-  fetchData: (payload: MaybeRef<DataIssuesRequestPayload>) => Promise<Collection<DataIssue>>;
+  fetchData: (payload: MaybeRef<DataIssuesRequestPayload>) => ResultAsync<Collection<DataIssue>, RequestError>;
   dismiss: (id: number) => Promise<DataIssue | undefined>;
   resolveManually: (id: number, note?: string) => Promise<DataIssue | undefined>;
   retry: (id: number) => Promise<DataIssue | undefined>;
@@ -17,23 +17,14 @@ interface UseDataIssuesReturn {
 export function useDataIssues(): UseDataIssuesReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { dismissIssue, listIssues, resolveIssueManually, retryAutoRemediation } = useDataIssuesApi();
-  const { notifyError } = useNotifications();
   const { setMessage } = useMessageStore();
 
   const fetchData = async (
     payload: MaybeRef<DataIssuesRequestPayload>,
-  ): Promise<Collection<DataIssue>> => {
-    const result = await listIssues(get(payload));
-    if (result.ok)
-      return result.value;
-
-    notifyError(
-      t('data_issues.fetch.error.title'),
-      t('data_issues.fetch.error.message', { message: result.error.message }),
-      { priority: Priority.NORMAL },
-    );
-    return defaultCollectionState<DataIssue>();
-  };
+  ): ResultAsync<Collection<DataIssue>, RequestError> => pipe(
+    listIssues(get(payload)),
+    mapError((error): RequestError => toRequestError(error.cause)),
+  );
 
   async function runAction(
     action: Promise<{ ok: true; value: DataIssue } | { ok: false; error: { message: string } }>,

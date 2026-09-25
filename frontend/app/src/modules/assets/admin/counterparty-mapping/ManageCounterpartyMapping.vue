@@ -8,6 +8,7 @@ import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-m
 import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-fields';
 import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -30,7 +31,7 @@ const {
   CounterpartyMappingRequestPayload,
   Filters
 >({
-  fetch: fetchAllCounterpartyMapping,
+  fetch: async payload => fromRequest(async () => fetchAllCounterpartyMapping(payload)),
   fields,
   urlState: { mode: 'route' },
 });

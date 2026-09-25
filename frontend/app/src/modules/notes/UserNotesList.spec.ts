@@ -3,11 +3,13 @@ import type { UserNote } from '@/modules/core/common/notes';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Ref, ref } from 'vue';
+import { type Ref, ref, shallowRef } from 'vue';
+import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import UserNotesList from '@/modules/notes/UserNotesList.vue';
 
 interface TableState {
   collection?: Ref<Collection<UserNote>>;
+  error?: Ref<RequestFailure | undefined>;
   pagination?: Ref<{ limit: number; page: number }>;
 }
 
@@ -47,6 +49,7 @@ vi.mock('@/modules/notes/use-notes-count', () => ({
 vi.mock('@/modules/core/table/use-server-table', () => ({
   useServerTable: (): Record<string, unknown> => ({
     collection: tableState.collection,
+    error: tableState.error,
     pagination: tableState.pagination,
     refetch,
   }),
@@ -76,9 +79,10 @@ function collection(data: UserNote[]): Collection<UserNote> {
   return { data, found: data.length, limit: -1, total: data.length, totalValue: undefined };
 }
 
-async function createWrapper(data: UserNote[] = []): Promise<VueWrapper> {
+async function createWrapper(data: UserNote[] = [], failure?: RequestFailure): Promise<VueWrapper> {
   notes = ref<Collection<UserNote>>(collection(data));
   tableState.collection = notes;
+  tableState.error = shallowRef<RequestFailure | undefined>(failure);
   tableState.pagination = ref({ limit: 10, page: 1 });
 
   const wrapper = mount(UserNotesList, {
@@ -113,6 +117,35 @@ describe('modules/notes/UserNotesList.vue', () => {
     const wrapper = await createWrapper();
 
     expect(wrapper.text()).toContain('notes_menu.empty_notes');
+    expect(wrapper.find('[data-testid=notes-fetch-error]').exists()).toBe(false);
+  });
+
+  describe('when the notes could not be loaded', () => {
+    const failure = RequestFailed({ cause: undefined, message: 'backend is down' });
+
+    it('should name the failure instead of claiming there are no notes', async () => {
+      const wrapper = await createWrapper([], failure);
+
+      expect(wrapper.find('[data-testid=notes-fetch-error]').text()).toContain('backend is down');
+      expect(wrapper.text()).not.toContain('notes_menu.empty_notes');
+    });
+
+    it('should keep the notes it already shows beside the failure', async () => {
+      const wrapper = await createWrapper([note({ identifier: 1 })], failure);
+
+      expect(wrapper.find('[data-testid=notes-fetch-error]').exists()).toBe(true);
+      expect(wrapper.findAll('[data-testid=note-card]')).toHaveLength(1);
+    });
+
+    it('should load the notes again from the retry', async () => {
+      const wrapper = await createWrapper([], failure);
+      refetch.mockClear();
+
+      await wrapper.find('[data-testid=notes-retry]').trigger('click');
+      await flushPromises();
+
+      expect(refetch).toHaveBeenCalledOnce();
+    });
   });
 
   it('should open the dialog to add a note', async () => {

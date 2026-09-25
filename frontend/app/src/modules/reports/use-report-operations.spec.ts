@@ -1,4 +1,6 @@
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestFailed } from '@/modules/core/api/request-result';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 
 const mockFetchReportsCaller = vi.fn();
@@ -119,18 +121,19 @@ describe('useReportOperations', () => {
       const { fetchReportEvents } = useReportOperations();
       const result = await fetchReportEvents({ limit: 10, offset: 0, reportId: 1 });
 
-      expect(result.data).toBeDefined();
+      expect(result).toStrictEqual(ok({ data: [{ timestamp: 1000 }], found: 1, limit: 100, total: 1 }));
       expect(mockFetchReportEventsCaller).toHaveBeenCalledWith({ limit: 10, offset: 0, reportId: 1 });
     });
 
-    it('should return default events on error', async () => {
-      mockFetchReportEventsCaller.mockRejectedValue(new Error('Fetch failed'));
+    it('should carry the failure for the table to show, without notifying', async () => {
+      const failure = new Error('Fetch failed');
+      mockFetchReportEventsCaller.mockRejectedValue(failure);
 
       const { fetchReportEvents } = useReportOperations();
       const result = await fetchReportEvents({ limit: 10, offset: 0, reportId: 1 });
 
-      expect(result.data).toEqual([]);
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Fetch failed', path: undefined, status: undefined })));
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 

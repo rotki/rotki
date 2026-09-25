@@ -7,6 +7,7 @@ import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestFailed } from '@/modules/core/api/request-result';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useAccountingSettings } from './use-accounting-settings';
 
@@ -110,14 +111,15 @@ describe('useAccountingSettings', () => {
     it('should map the collection response', async () => {
       fetchAccountingRules.mockResolvedValue(collectionResponse);
       const result = await useAccountingSettings().getAccountingRules(rulePayload);
-      expect(result).toMatchObject({ data: [{ identifier: 1 }], found: 1, limit: 10, total: 1 });
+      expect(result).toMatchObject(ok({ data: [{ identifier: 1 }], found: 1, limit: 10, total: 1 }));
     });
 
-    it('should notify and return an empty collection on error', async () => {
-      fetchAccountingRules.mockRejectedValue(new Error('nope'));
+    it('should carry the failure without notifying', async () => {
+      const failure = new Error('nope');
+      fetchAccountingRules.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRules(rulePayload);
-      expect(result.data).toEqual([]);
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(notifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -125,14 +127,15 @@ describe('useAccountingSettings', () => {
     it('should map the collection response', async () => {
       fetchAccountingRuleConflicts.mockResolvedValue(collectionResponse);
       const result = await useAccountingSettings().getAccountingRulesConflicts(conflictPayload);
-      expect(result.total).toBe(1);
+      expect(result).toMatchObject(ok({ total: 1 }));
     });
 
-    it('should notify and return an empty collection on error', async () => {
-      fetchAccountingRuleConflicts.mockRejectedValue(new Error('nope'));
+    it('should carry the failure without notifying', async () => {
+      const failure = new Error('nope');
+      fetchAccountingRuleConflicts.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRulesConflicts(conflictPayload);
-      expect(result.data).toEqual([]);
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(notifyError).not.toHaveBeenCalled();
     });
   });
 

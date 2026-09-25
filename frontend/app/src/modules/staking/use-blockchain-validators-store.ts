@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type {
   EthereumValidator,
@@ -6,6 +7,7 @@ import type {
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { ok } from 'plainfp/result';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -51,14 +53,10 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
   const fetchValidators = async (
     payload: MaybeRef<EthereumValidatorRequestPayload>,
-  ): Promise<Collection<EthereumValidator>> => new Promise(
-    (resolve) => {
-      resolve(sortAndFilterValidators(
-        get(ethStakingValidators),
-        get(payload),
-      ));
-    },
-  );
+  ): ResultAsync<Collection<EthereumValidator>, never> => ok(sortAndFilterValidators(
+    get(ethStakingValidators),
+    get(payload),
+  ));
 
   /**
    * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.

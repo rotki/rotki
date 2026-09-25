@@ -5,9 +5,12 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
+import { pipe } from 'plainfp';
 import { map as mapResult, type Result } from 'plainfp/result';
+import { map, type ResultAsync } from 'plainfp/result-async';
 import { useNftBalancesApi } from '@/modules/balances/api/use-nft-balances-api';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
@@ -19,7 +22,7 @@ import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-cente
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface NftBalancesReturn {
-  fetchNonFungibleBalances: (payload: MaybeRef<NonFungibleBalancesRequestPayload>) => Promise<Collection<NonFungibleBalance>>;
+  fetchNonFungibleBalances: (payload: MaybeRef<NonFungibleBalancesRequestPayload>) => ResultAsync<Collection<NonFungibleBalance>, RequestError>;
   refreshNonFungibleBalances: (userInitiated?: boolean) => Promise<void>;
 }
 
@@ -33,14 +36,18 @@ export function useNftBalances(): NftBalancesReturn {
 
   const fetchNonFungibleBalances = async (
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
-  ): Promise<Collection<NonFungibleBalance>> => {
+  ): ResultAsync<Collection<NonFungibleBalance>, RequestError> => {
     const payloadVal = get(payload);
-    const result = await fetchNfBalances(get(payloadVal));
 
-    if (!payloadVal.ignoredAssetsHandling || payloadVal.ignoredAssetsHandling === 'exclude')
-      set(nonFungibleTotalValue, result.totalValue);
+    return pipe(
+      fromRequest(async () => fetchNfBalances(payloadVal)),
+      map((response) => {
+        if (!payloadVal.ignoredAssetsHandling || payloadVal.ignoredAssetsHandling === 'exclude')
+          set(nonFungibleTotalValue, response.totalValue);
 
-    return mapCollectionResponse(result);
+        return mapCollectionResponse(response);
+      }),
+    );
   };
 
   /**

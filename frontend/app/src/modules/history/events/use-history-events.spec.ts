@@ -1,5 +1,7 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
+import type { RequestError } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ParamSource } from '@/modules/core/table/param-sources';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
@@ -9,6 +11,7 @@ import type { Filters } from '@/modules/history/events/use-events-filter';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
+import { ok } from 'plainfp/result';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { FilterBehaviours } from '@/modules/core/table/filtering';
@@ -39,7 +42,7 @@ const fields: FieldDef[] = [
 ];
 
 describe('useHistoryEvents', () => {
-  let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventRow>>;
+  let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => ResultAsync<Collection<HistoryEventRow>, RequestError>;
   const mainPage = ref<boolean>(false);
   const protocols = ref<string[]>([]);
   const eventTypes = ref<string[]>([]);
@@ -236,9 +239,9 @@ describe('useHistoryEvents', () => {
     it('should send exclusion filters in the request payload when the filter write is user-attributed', async () => {
       const payloadsAtCallTime: Partial<HistoryEventRequestPayload>[] = [];
       const fetchHistoryEvents = vi.fn(
-        async (payload: MaybeRef<HistoryEventRequestPayload>): Promise<Collection<HistoryEvent>> => {
+        async (payload: MaybeRef<HistoryEventRequestPayload>): ResultAsync<Collection<HistoryEvent>, RequestError> => {
           payloadsAtCallTime.push({ ...get(payload) });
-          return { data: [], found: 0, limit: -1, total: 0 };
+          return ok({ data: [], found: 0, limit: -1, total: 0 });
         },
       );
 

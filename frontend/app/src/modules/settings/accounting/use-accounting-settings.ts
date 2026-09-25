@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
@@ -10,7 +11,8 @@ import type {
 } from '@/modules/settings/types/accounting';
 import { Priority } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { defaultCollectionState, mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -23,8 +25,8 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountingSettingsReturn {
   getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;
-  getAccountingRules: (payload: MaybeRef<AccountingRuleRequestPayload>) => Promise<Collection<AccountingRuleEntry>>;
-  getAccountingRulesConflicts: (payload: MaybeRef<AccountingRuleConflictRequestPayload>) => Promise<Collection<AccountingRuleConflict>>;
+  getAccountingRules: (payload: MaybeRef<AccountingRuleRequestPayload>) => ResultAsync<Collection<AccountingRuleEntry>, RequestError>;
+  getAccountingRulesConflicts: (payload: MaybeRef<AccountingRuleConflictRequestPayload>) => ResultAsync<Collection<AccountingRuleConflict>, RequestError>;
   resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<ActionStatus>;
   exportJSON: () => Promise<void>;
   importJSON: (file: File) => Promise<ActionStatus | null>;
@@ -72,51 +74,13 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   const getAccountingRules = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
-  ): Promise<Collection<AccountingRuleEntry>> => {
-    try {
-      const response = await fetchAccountingRules(get(payload));
-
-      return mapCollectionResponse(response);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      const message = getErrorMessage(error);
-
-      notifyError(
-        t('accounting_settings.rule.fetch_error.title'),
-        t('accounting_settings.rule.fetch_error.message', {
-          message,
-        }),
-        { priority: Priority.NORMAL },
-      );
-
-      return defaultCollectionState();
-    }
-  };
+  ): ResultAsync<Collection<AccountingRuleEntry>, RequestError> =>
+    fromRequest(async () => mapCollectionResponse(await fetchAccountingRules(get(payload))));
 
   const getAccountingRulesConflicts = async (
     payload: MaybeRef<AccountingRuleConflictRequestPayload>,
-  ): Promise<Collection<AccountingRuleConflict>> => {
-    try {
-      const response = await fetchAccountingRuleConflicts(get(payload));
-
-      return mapCollectionResponse(response);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      const message = getErrorMessage(error);
-
-      notifyError(
-        t('accounting_settings.rule.conflicts.fetch_error.title'),
-        t('accounting_settings.rule.conflicts.fetch_error.message', {
-          message,
-        }),
-        { priority: Priority.NORMAL },
-      );
-
-      return defaultCollectionState();
-    }
-  };
+  ): ResultAsync<Collection<AccountingRuleConflict>, RequestError> =>
+    fromRequest(async () => mapCollectionResponse(await fetchAccountingRuleConflicts(get(payload))));
 
   const resolveAccountingRuleConflicts = async (payload: AccountingRuleConflictResolution): Promise<ActionStatus> => {
     try {

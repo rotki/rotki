@@ -293,10 +293,6 @@
       }
     },
     "history_events": {
-      "error": {
-        "description": "无法查询历史事件：{error}",
-        "title": "历史事件查询"
-      },
       "missing_rule": {
         "add_rule": "添加缺失的会计规则",
         "edit": "编辑事件",
@@ -549,12 +545,6 @@
           "title": "地址簿编辑失败"
         },
         "tooltip": "编辑地址簿"
-      },
-      "fetch": {
-        "error": {
-          "message": "无法获取地址簿：{message}",
-          "title": "查询地址簿"
-        }
       }
     },
     "dialog": {

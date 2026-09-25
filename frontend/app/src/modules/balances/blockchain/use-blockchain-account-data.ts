@@ -12,6 +12,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
+import { ok, type Result } from 'plainfp/result';
 import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
 import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
@@ -31,8 +32,10 @@ interface AccountBalances {
 }
 
 interface UseBlockchainAccountDataReturn {
-  fetchAccounts: (payload: MaybeRef<BlockchainAccountRequestPayload>) => Promise<Collection<BlockchainAccountGroupWithBalance>>;
-  fetchGroupAccounts: (payload: MaybeRef<BlockchainAccountGroupRequestPayload>) => Promise<Collection<BlockchainAccountWithBalance>>;
+  /** Pages the accounts already in the store, so it cannot fail. */
+  fetchAccounts: (payload: MaybeRef<BlockchainAccountRequestPayload>) => Promise<Result<Collection<BlockchainAccountGroupWithBalance>, never>>;
+  /** Pages one group's accounts already in the store, so it cannot fail. */
+  fetchGroupAccounts: (payload: MaybeRef<BlockchainAccountGroupRequestPayload>) => Promise<Result<Collection<BlockchainAccountWithBalance>, never>>;
   getAccounts: () => BlockchainAccountGroupWithBalance[];
   getAccountDetails: (chain: string, address: string) => AccountBalances;
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
@@ -240,13 +243,13 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
 
   const fetchAccounts = async (
     payload: MaybeRef<BlockchainAccountRequestPayload>,
-  ): Promise<Collection<BlockchainAccountGroupWithBalance>> => new Promise((resolve) => {
+  ): Promise<Result<Collection<BlockchainAccountGroupWithBalance>, never>> => {
     const accountData = get(accounts);
     const balanceData = get(balances);
     const blockchainAccounts = getAccountList(accountData, balanceData);
     const groups = getGroups(accountData, balanceData);
 
-    resolve(sortAndFilterAccounts(
+    return ok(sortAndFilterAccounts(
       groups,
       get(payload),
       {
@@ -258,22 +261,22 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         },
       },
     ));
-  });
+  };
 
   const fetchGroupAccounts = async (
     payload: MaybeRef<BlockchainAccountGroupRequestPayload>,
-  ): Promise<Collection<BlockchainAccountWithBalance>> => new Promise((resolve) => {
+  ): Promise<Result<Collection<BlockchainAccountWithBalance>, never>> => {
     const params = get(payload);
     const accountData = get(accounts);
     const balanceData = get(balances);
     const blockchainAccounts = getAccountList(accountData, balanceData);
     const groupAccounts = blockchainAccounts.filter(account => account.groupId === params.groupId);
-    resolve(sortAndFilterAccounts(groupAccounts, params, {
+    return ok(sortAndFilterAccounts(groupAccounts, params, {
       getLabel(account, chain) {
         return getAddressName(getAccountAddress(account), chain);
       },
     }));
-  });
+  };
 
   return {
     fetchAccounts,

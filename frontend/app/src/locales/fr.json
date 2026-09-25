@@ -136,10 +136,6 @@
           "description": "Erreur lors de la résolution des conflits de règles comptables : {error}",
           "title": "Résolution des conflits de règles comptables"
         },
-        "fetch_error": {
-          "message": "Échec de la récupération des conflits de règles comptables : {message}",
-          "title": "Récupération des conflits de règles comptables"
-        },
         "labels": {
           "choose_version": "Choisir la Version"
         },
@@ -373,10 +369,6 @@
       }
     },
     "history_events": {
-      "error": {
-        "description": "Échec de la requête des événements historiques : {error}",
-        "title": "Requête des événements historiques"
-      },
       "missing_rule": {
         "add_rule": "Ajouter une règle comptable manquante",
         "edit": "Éditer l'événement",
@@ -635,12 +627,6 @@
           "title": "Échec de la modification de l'annuaire d'adresses"
         },
         "tooltip": "Modifier l'annuaire d'adresses"
-      },
-      "fetch": {
-        "error": {
-          "message": "Échec de la récupération de l'annuaire d'adresses : {message}",
-          "title": "Requête d'annuaire d'adresses"
-        }
       }
     },
     "dialog": {

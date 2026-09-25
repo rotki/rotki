@@ -25,13 +25,16 @@ export function useAccountingRuleConflicts(): UseAccountingRuleConflictsReturn {
   const modelConflictsDialogOpen = shallowRef<boolean>(false);
 
   async function checkConflicts(): Promise<void> {
-    const { total } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
-    set(conflictsNumber, total);
+    const result = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
+    // A failed count keeps the last known one rather than claiming there are no conflicts.
+    if (result.ok)
+      set(conflictsNumber, result.value.total);
 
     if (!get(route).query.resolveConflicts)
       return;
 
-    if (total > 0)
+    // Unknown counts open too: the dialog's table says why it could not load them.
+    if (!result.ok || result.value.total > 0)
       set(modelConflictsDialogOpen, true);
 
     await router.replace({ query: {} });

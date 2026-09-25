@@ -117,13 +117,17 @@ export function useTradeRecipientAddress(model: Ref<string>): UseTradeRecipientA
   }
 
   async function getAddressBookData(name: string): Promise<RecipientOption[]> {
-    const data = await getAddressBook('private', {
+    const result = await getAddressBook('private', {
       limit: 10,
       nameSubstring: name,
       offset: 0,
     });
 
-    return data.data
+    // A suggester: a failed lookup offers no address book matches, the typed address still works.
+    if (!result.ok)
+      return [];
+
+    return result.value.data
       .filter(item => isValidEthAddress(item.address))
       .map(item => ({ address: item.address, name: item.name }));
   }

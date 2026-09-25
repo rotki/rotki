@@ -1,8 +1,11 @@
+import type { Collection } from '@/modules/core/common/collection';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { get, set } from '@vueuse/core';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { PANEL_PAGE_SIZE } from '@/modules/history/data-issues/data-issues-panel-utils';
 import { useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-issues-panel-list';
@@ -40,13 +43,18 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
 }
 
 /** A page of `count` issues out of `found` total, with ids offset so pages differ. */
-function page(count: number, found: number, startId = 1): { data: DataIssue[]; found: number; limit: number; total: number } {
+function collectionPage(count: number, found: number, startId = 1): Collection<DataIssue> {
   return {
     data: Array.from({ length: count }, (_, index) => createIssue({ id: startId + index })),
     found,
     limit: PANEL_PAGE_SIZE,
     total: found,
   };
+}
+
+/** The successful fetch of {@link collectionPage}. */
+function page(count: number, found: number, startId = 1): Result<Collection<DataIssue>, RequestError> {
+  return ok(collectionPage(count, found, startId));
 }
 
 describe('useDataIssuesPanelList', () => {
@@ -166,20 +174,45 @@ describe('useDataIssuesPanelList', () => {
     expect(get(loadingMore)).toBe(false);
   });
 
-  it('should clear the loading flag when the request rejects', async () => {
-    fetchData.mockRejectedValueOnce(new Error('boom'));
-    const { loading, refreshList } = useDataIssuesPanelList(ref<Filters>({}));
+  it('should expose a failed load and keep the rows it had', async () => {
+    fetchData.mockResolvedValueOnce(page(2, 2));
+    const { error, loading, refreshList, rows } = useDataIssuesPanelList(ref<Filters>({}));
+    await refreshList();
 
-    await expect(refreshList()).rejects.toThrow('boom');
+    const failure = RequestFailed({ cause: new Error('boom'), message: 'boom' });
+    fetchData.mockResolvedValueOnce(err(failure));
+    await refreshList();
 
     expect(get(loading)).toBe(false);
+    expect(get(error)).toBe(failure);
+    expect(get(rows)).toHaveLength(2);
+  });
+
+  it('should clear the failure once a later load succeeds', async () => {
+    fetchData.mockResolvedValueOnce(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+    const { error, refreshList } = useDataIssuesPanelList(ref<Filters>({}));
+    await refreshList();
+
+    fetchData.mockResolvedValueOnce(page(1, 1));
+    await refreshList();
+
+    expect(get(error)).toBeUndefined();
+  });
+
+  it('should not report a cancelled load as a failure', async () => {
+    fetchData.mockResolvedValueOnce(err(RequestCancelled({ message: 'Request was cancelled' })));
+    const { error, refreshList } = useDataIssuesPanelList(ref<Filters>({}));
+
+    await refreshList();
+
+    expect(get(error)).toBeUndefined();
   });
 
   it('should report a remediating row so the caller can start polling', async () => {
-    fetchData.mockResolvedValueOnce({
-      ...page(1, 1),
+    fetchData.mockResolvedValueOnce(ok({
+      ...collectionPage(1, 1),
       data: [createIssue({ state: IssueState.AUTO_REMEDIATING })],
-    });
+    }));
     const { hasRemediatingRows, refreshList } = useDataIssuesPanelList(ref<Filters>({}));
 
     await refreshList();
@@ -188,10 +221,10 @@ describe('useDataIssuesPanelList', () => {
   });
 
   it('should report no remediating rows when every issue is settled', async () => {
-    fetchData.mockResolvedValueOnce({
-      ...page(1, 1),
+    fetchData.mockResolvedValueOnce(ok({
+      ...collectionPage(1, 1),
       data: [createIssue({ state: IssueState.OPEN })],
-    });
+    }));
     const { hasRemediatingRows, refreshList } = useDataIssuesPanelList(ref<Filters>({}));
 
     await refreshList();

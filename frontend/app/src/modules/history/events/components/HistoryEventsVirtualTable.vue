@@ -3,6 +3,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
+import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
@@ -58,7 +59,7 @@ const { redecode, rowContext, shell, virtual } = useHistoryEventsTable({
   requestPayload: () => source.requestPayload,
 }, emit);
 
-const { entriesFoundTotal, found, groups, loading, showUpgradeRow, total } = shell;
+const { entriesFoundTotal, eventsError, found, groups, loading, retryEvents, showUpgradeRow, total } = shell;
 const { containerProps, list, wrapperProps } = virtual;
 const {
   confirm: confirmRedecode,
@@ -67,6 +68,10 @@ const {
   payload: redecodePayload,
   showIndexerOptions,
 } = redecode;
+
+const fetchError = useTableFetchError();
+const emptyState = useTableEmptyState();
+const fetchFailed = computed<boolean>(() => !!(fetchError && get(fetchError)));
 
 const tableContainerStyle = computed<{ height: string }>(() => ({
   height: `calc(100vh - ${tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
@@ -102,6 +107,27 @@ provideHistoryEventsRowContext(rowContext);
       :colspan="5"
     />
 
+    <RuiAlert
+      v-if="eventsError && groups.length > 0"
+      type="error"
+      class="m-2"
+      :title="t('data_table.fetch_failed')"
+      data-testid="history-events-events-error"
+    >
+      <div class="flex flex-col items-start gap-2">
+        <span>{{ eventsError.message }}</span>
+        <RuiButton
+          size="sm"
+          color="error"
+          variant="outlined"
+          data-testid="history-events-events-retry"
+          @click="retryEvents()"
+        >
+          {{ t('common.actions.retry') }}
+        </RuiButton>
+      </div>
+    </RuiAlert>
+
     <!-- Loading state -->
     <div
       v-if="loading && groups.length === 0"
@@ -122,7 +148,18 @@ provideHistoryEventsRowContext(rowContext);
       :style="tableContainerStyle"
       class="flex flex-col items-center justify-center gap-2 text-rui-text-secondary whitespace-break-spaces text-center"
     >
-      <template v-if="hasActiveFilters">
+      <template v-if="fetchFailed">
+        <span class="text-rui-text font-medium">{{ emptyState.label }}</span>
+        <span data-testid="history-events-fetch-error">{{ emptyState.description }}</span>
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="emit('refetch')"
+        >
+          {{ t('common.actions.retry') }}
+        </RuiButton>
+      </template>
+      <template v-else-if="hasActiveFilters">
         {{ t('transactions.empty_state.no_data_with_filters') }}
         <RuiButton
           variant="text"

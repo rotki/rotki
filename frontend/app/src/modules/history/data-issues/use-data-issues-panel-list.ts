@@ -3,6 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
+import { isRequestFailure, type RequestFailure } from '@/modules/core/api/request-result';
 import { IssueState } from '@/modules/history/data-issues/constants';
 import { buildPanelPayload, PANEL_PAGE_SIZE } from '@/modules/history/data-issues/data-issues-panel-utils';
 import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/transforms';
@@ -17,6 +18,8 @@ export interface PanelRow {
 }
 
 interface UseDataIssuesPanelListReturn {
+  /** The last load's failure, cleared when the next load starts. */
+  error: Readonly<Ref<RequestFailure | undefined>>;
   loading: Readonly<Ref<boolean>>;
   loadingMore: Readonly<Ref<boolean>>;
   rows: ComputedRef<PanelRow[]>;
@@ -41,6 +44,7 @@ export function useDataIssuesPanelList(filters: MaybeRefOrGetter<Filters>): UseD
   const loadingMore = shallowRef<boolean>(false);
   const offset = shallowRef<number>(0);
   const total = shallowRef<number>(0);
+  const error = shallowRef<RequestFailure>();
 
   const canLoadMore = computed<boolean>(() => get(issues).length < get(total));
   const isEmpty = computed<boolean>(() => get(issues).length === 0);
@@ -60,14 +64,20 @@ export function useDataIssuesPanelList(filters: MaybeRefOrGetter<Filters>): UseD
   async function loadList(append: boolean): Promise<void> {
     const busy = append ? loadingMore : loading;
     set(busy, true);
-    try {
-      const collection = await fetchData(buildPanelPayload(toValue(filters), get(offset)));
-      set(issues, append ? [...get(issues), ...collection.data] : collection.data);
-      set(total, collection.found);
+    set(error, undefined);
+
+    const result = await fetchData(buildPanelPayload(toValue(filters), get(offset)));
+    set(busy, false);
+
+    if (!result.ok) {
+      if (isRequestFailure(result.error))
+        set(error, result.error);
+      return;
     }
-    finally {
-      set(busy, false);
-    }
+
+    const collection = result.value;
+    set(issues, append ? [...get(issues), ...collection.data] : collection.data);
+    set(total, collection.found);
   }
 
   /** Reloads from the first page, replacing the current list (on mount, filter change, refresh). */
@@ -89,6 +99,7 @@ export function useDataIssuesPanelList(filters: MaybeRefOrGetter<Filters>): UseD
   }
 
   return {
+    error: shallowReadonly(error),
     hasRemediatingRows,
     isEmpty,
     loading: readonly(loading),

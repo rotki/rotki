@@ -2,6 +2,7 @@ import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modu
 import type { Collection } from '@/modules/core/common/collection';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useManualBalancePagination } from './use-manual-balance-pagination';
 
@@ -39,7 +40,7 @@ describe('useManualBalancePagination', () => {
   it('should sort and filter the manual balances', async () => {
     const result = await useManualBalancePagination().fetchBalances(payload);
     expect(spies.sortAndFilterManualBalance).toHaveBeenCalledWith(get(manualBalances), payload, expect.any(Object));
-    expect(result).toEqual({ data: [], found: 0, limit: 10, total: 0 });
+    expect(result).toEqual(ok({ data: [], found: 0, limit: 10, total: 0 }));
   });
 
   it('should sort and filter the manual liabilities', async () => {

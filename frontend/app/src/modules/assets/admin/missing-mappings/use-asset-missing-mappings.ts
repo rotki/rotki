@@ -10,6 +10,7 @@ import {
   useMissingMappingsDB,
 } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
 import { useMissingMappingsFields } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-fields';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
 interface UseAssetMissingMappingsReturn {
@@ -94,7 +95,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
     refetch,
     sort,
   } = useServerTable<MissingMapping, MissingMappingsRequestPayload, Filters>({
-    fetch: getData,
+    fetch: async payload => fromRequest(async () => getData(payload)),
     fields,
     sort: {
       default: {

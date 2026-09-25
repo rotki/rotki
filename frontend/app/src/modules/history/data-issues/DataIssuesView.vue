@@ -40,6 +40,7 @@ const fields = useDataIssueFields();
 
 const {
   collection: state,
+  error: fetchError,
   filter: filters,
   isLoading,
   pagination,
@@ -90,6 +91,9 @@ const activeStates = computed<string[]>(() => {
 });
 
 const hasAnyIssues = computed<boolean>(() => get(baselineTotal) > 0);
+
+/** All clear only on a successful read: a failed one leaves the table up to say why. */
+const isAllClear = computed<boolean>(() => get(loadedOnce) && !get(hasAnyIssues) && !get(fetchError));
 const hasActiveFilters = computed<boolean>(() => Object.keys(get(filters)).length > 0);
 const isEmpty = computed<boolean>(() => get(state).data.length === 0);
 
@@ -224,7 +228,7 @@ onMounted(async () => {
     </template>
 
     <NoDataScreen
-      v-if="loadedOnce && !hasAnyIssues"
+      v-if="isAllClear"
       full
       variant="success"
       icon="lu-shield-check"

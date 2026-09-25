@@ -240,10 +240,6 @@
           "description": "Error while resolving accounting rules conflicts: {error}",
           "title": "Resolving accounting rules conflicts"
         },
-        "fetch_error": {
-          "message": "Failed retrieving accounting rules conflicts: {message}",
-          "title": "Retrieving accounting rules conflicts"
-        },
         "labels": {
           "choose_version": "Choose Version"
         },
@@ -764,10 +760,6 @@
       }
     },
     "history_events": {
-      "error": {
-        "description": "Failed to query history events: {error}",
-        "title": "History Events Query"
-      },
       "fetch_mapping": {
         "actions": {
           "fetch_again": "Fetch again"
@@ -867,14 +859,6 @@
         "missing_api_key": {
           "beaconchain": "{queryType} skipped: this query requires a Beaconcha.in API key. If you have one, you can add it in settings.",
           "default": "{queryType} skipped: a required API key is missing."
-        }
-      }
-    },
-    "report_events": {
-      "fetch": {
-        "error": {
-          "description": "An unexpected error occurred while loading the report events: {error}",
-          "title": "Loading generated report events"
         }
       }
     },
@@ -1112,12 +1096,6 @@
           "title": "Address book edit failed"
         },
         "tooltip": "Edit or add to address book"
-      },
-      "fetch": {
-        "error": {
-          "message": "Failed to retrieve the address book: {message}",
-          "title": "Querying address book"
-        }
       }
     },
     "dialog": {
@@ -2916,12 +2894,6 @@
       "clear_filters": "Clear filters",
       "filtered": "No issues match these filters.",
       "none": "No open issues. Everything rotki flagged has been handled."
-    },
-    "fetch": {
-      "error": {
-        "message": "Could not load data issues: {message}",
-        "title": "Data issues"
-      }
     },
     "filter": {
       "account": "Account",
@@ -5243,12 +5215,6 @@
       "error": {
         "description": "Failed to edit oracle price: {message}",
         "title": "Oracle price edit failed"
-      }
-    },
-    "fetch": {
-      "failure": {
-        "message": "Failed to fetch oracle prices: {message}",
-        "title": "Oracle prices fetch failed"
       }
     },
     "filter_field_labels": {

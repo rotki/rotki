@@ -4,9 +4,12 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { assert, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
+
+type EventsPage = Result<{ data: HistoryEventRow[] }, RequestError>;
 
 const mockItemsPerPage = ref<number>(10);
 
@@ -101,7 +104,7 @@ describe('use-history-events-data', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     scope = effectScope();
-    mockFetchHistoryEvents.mockResolvedValue({ data: [] });
+    mockFetchHistoryEvents.mockResolvedValue(ok({ data: [] }));
     mockIsAssetIgnored.mockReturnValue(false);
     set(mockIgnoredAssets, []);
   });
@@ -291,7 +294,7 @@ describe('use-history-events-data', () => {
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1, event2] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1, event2]));
       const options = {
@@ -325,7 +328,7 @@ describe('use-history-events-data', () => {
       const event2 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
       const event3 = createMockEvent({ groupIdentifier: 'group2', identifier: 3 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2, event3] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1, event2, event3] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1, event3]));
       const options = {
@@ -351,7 +354,7 @@ describe('use-history-events-data', () => {
       const visibleEvent = createMockEvent({ groupIdentifier: 'group1', hidden: false, identifier: 1 });
       const hiddenEvent = createMockEvent({ groupIdentifier: 'group1', hidden: true, identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [visibleEvent, hiddenEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [visibleEvent, hiddenEvent] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([visibleEvent]));
       const options = {
@@ -376,7 +379,7 @@ describe('use-history-events-data', () => {
 
       const event1 = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -400,7 +403,7 @@ describe('use-history-events-data', () => {
       const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
       const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [ethEvent, btcEvent] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'BTC');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([ethEvent]));
@@ -426,7 +429,7 @@ describe('use-history-events-data', () => {
 
       const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 1 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [btcEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [btcEvent] }));
       mockIsAssetIgnored.mockReturnValue(true);
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([btcEvent]));
@@ -454,7 +457,7 @@ describe('use-history-events-data', () => {
       const swapReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 3 });
 
       const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
-      mockFetchHistoryEvents.mockResolvedValue({ data: [approveEvent, swapSubgroup] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [approveEvent, swapSubgroup] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([approveEvent]));
@@ -486,7 +489,7 @@ describe('use-history-events-data', () => {
       const swapReceive = createMockEvent({ asset: 'USDC', groupIdentifier: 'group1', identifier: 2 });
 
       const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
-      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [swapSubgroup] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
       const options = {
@@ -526,7 +529,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -550,14 +553,14 @@ describe('use-history-events-data', () => {
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
 
-      let resolveStaleFetch: ((value: { data: HistoryEventRow[] }) => void) | undefined;
-      const staleFetch = new Promise<{ data: HistoryEventRow[] }>((resolve) => {
+      let resolveStaleFetch: ((value: EventsPage) => void) | undefined;
+      const staleFetch = new Promise<EventsPage>((resolve) => {
         resolveStaleFetch = resolve;
       });
 
       mockFetchHistoryEvents
         .mockReturnValueOnce(staleFetch)
-        .mockResolvedValueOnce({ data: [event2] });
+        .mockResolvedValueOnce(ok({ data: [event2] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -577,7 +580,7 @@ describe('use-history-events-data', () => {
       await vi.runAllTimersAsync();
       await nextTick();
 
-      resolveStaleFetch!({ data: [event1] });
+      resolveStaleFetch!(ok({ data: [event1] }));
       await vi.runAllTimersAsync();
       await nextTick();
 
@@ -586,12 +589,12 @@ describe('use-history-events-data', () => {
       expect(rawEvents[0]).toEqual(event2);
     });
 
-    it('should handle RequestCancelledError silently without clearing events', async () => {
+    it('should clear the events, stop loading and expose the failure when a fetch fails', async () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
 
-      mockFetchHistoryEvents.mockResolvedValueOnce({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValueOnce(ok({ data: [event1] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -607,7 +610,65 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
       expect(get(result.rawEvents)).toHaveLength(1);
 
-      mockFetchHistoryEvents.mockRejectedValueOnce(new RequestCancelledError());
+      const failure = RequestFailed({ cause: new Error('boom'), message: 'boom' });
+      mockFetchHistoryEvents.mockResolvedValueOnce(err(failure));
+
+      const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
+      set(groups, createMockCollection([event2]));
+      await waitForFetchEvents();
+
+      expect(get(result.rawEvents)).toStrictEqual([]);
+      expect(get(result.eventsLoading)).toBe(false);
+      expect(get(result.eventsError)).toBe(failure);
+    });
+
+    it('should clear the failure once a later fetch succeeds', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+
+      mockFetchHistoryEvents.mockResolvedValueOnce(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups: ref<Collection<HistoryEventRow>>(createMockCollection([event1])),
+        requestPayload: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const result = scope.run(() => useHistoryEventsData(options, vi.fn()))!;
+      await waitForFetchEvents();
+      expect(get(result.eventsError)).toBeDefined();
+
+      mockFetchHistoryEvents.mockResolvedValueOnce(ok({ data: [event1] }));
+      await result.fetchEvents();
+
+      expect(get(result.eventsError)).toBeUndefined();
+      expect(get(result.rawEvents)).toStrictEqual([event1]);
+    });
+
+    it('should keep the events on a cancelled fetch', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+
+      mockFetchHistoryEvents.mockResolvedValueOnce(ok({ data: [event1] }));
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups,
+        requestPayload: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
+
+      await waitForFetchEvents();
+      expect(get(result.rawEvents)).toHaveLength(1);
+
+      mockFetchHistoryEvents.mockResolvedValueOnce(err(RequestCancelled({ message: 'Request was cancelled' })));
 
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
       set(groups, createMockCollection([event2]));
@@ -615,6 +676,7 @@ describe('use-history-events-data', () => {
 
       expect(get(result.rawEvents)).toHaveLength(1);
       expect(get(result.rawEvents)[0]).toEqual(event1);
+      expect(get(result.eventsError)).toBeUndefined();
     });
 
     it('should set eventsLoading during fetch and reset after', async () => {
@@ -622,8 +684,8 @@ describe('use-history-events-data', () => {
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
 
-      let resolvePromise: ((value: { data: HistoryEventRow[] }) => void) | undefined;
-      mockFetchHistoryEvents.mockReturnValue(new Promise<{ data: HistoryEventRow[] }>((resolve) => {
+      let resolvePromise: ((value: EventsPage) => void) | undefined;
+      mockFetchHistoryEvents.mockReturnValue(new Promise<EventsPage>((resolve) => {
         resolvePromise = resolve;
       }));
 
@@ -641,7 +703,7 @@ describe('use-history-events-data', () => {
       await nextTick();
       expect(get(result.eventsLoading)).toBe(true);
 
-      resolvePromise!({ data: [event1] });
+      resolvePromise!(ok({ data: [event1] }));
       await vi.runAllTimersAsync();
       await nextTick();
 
@@ -654,13 +716,13 @@ describe('use-history-events-data', () => {
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
 
-      let resolveFirst: ((value: { data: HistoryEventRow[] }) => void) | undefined;
-      const firstPromise = new Promise<{ data: HistoryEventRow[] }>((resolve) => {
+      let resolveFirst: ((value: EventsPage) => void) | undefined;
+      const firstPromise = new Promise<EventsPage>((resolve) => {
         resolveFirst = resolve;
       });
 
-      let resolveSecond: ((value: { data: HistoryEventRow[] }) => void) | undefined;
-      const secondPromise = new Promise<{ data: HistoryEventRow[] }>((resolve) => {
+      let resolveSecond: ((value: EventsPage) => void) | undefined;
+      const secondPromise = new Promise<EventsPage>((resolve) => {
         resolveSecond = resolve;
       });
 
@@ -687,13 +749,13 @@ describe('use-history-events-data', () => {
       await vi.runAllTimersAsync();
       await nextTick();
 
-      resolveFirst!({ data: [event1] });
+      resolveFirst!(ok({ data: [event1] }));
       await vi.runAllTimersAsync();
       await nextTick();
 
       expect(get(result.eventsLoading)).toBe(true);
 
-      resolveSecond!({ data: [event2] });
+      resolveSecond!(ok({ data: [event2] }));
       await vi.runAllTimersAsync();
       await nextTick();
 
@@ -704,7 +766,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1] }));
 
       const groupLoading = ref<boolean>(false);
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
@@ -731,7 +793,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1] }));
 
       const groupLoading = ref<boolean>(true);
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
@@ -758,7 +820,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      mockFetchHistoryEvents.mockResolvedValueOnce({ data: [event1] });
+      mockFetchHistoryEvents.mockResolvedValueOnce(ok({ data: [event1] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -827,7 +889,7 @@ describe('use-history-events-data', () => {
       const swapSpend = createSwapEvent({ groupIdentifier: 'group1', identifier: 1, eventSubtype: 'spend' });
       const swapReceive = createSwapEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'receive', asset: 'USDC' });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSpend, swapReceive] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [swapSpend, swapReceive] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
       const options = {
@@ -855,7 +917,7 @@ describe('use-history-events-data', () => {
 
       const swapEvent = createSwapEvent({ groupIdentifier: 'group1', identifier: 1 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [swapEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [swapEvent] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapEvent]));
       const options = {
@@ -881,7 +943,7 @@ describe('use-history-events-data', () => {
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const event2 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [event1, event2] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
       const options = {
@@ -927,7 +989,7 @@ describe('use-history-events-data', () => {
       const swapReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 2 });
 
       const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
-      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [swapSubgroup] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
@@ -956,7 +1018,7 @@ describe('use-history-events-data', () => {
       const swapReceive = createMockEvent({ asset: 'USDC', groupIdentifier: 'group1', identifier: 2 });
 
       const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
-      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [swapSubgroup] }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
       const options = {
@@ -1018,7 +1080,7 @@ describe('use-history-events-data', () => {
       const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
       const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [ethEvent, btcEvent] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
       set(mockIgnoredAssets, ['BTC']);
 
@@ -1055,7 +1117,7 @@ describe('use-history-events-data', () => {
       const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
       const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [ethEvent, btcEvent] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
       set(mockIgnoredAssets, ['BTC']);
 
@@ -1088,7 +1150,7 @@ describe('use-history-events-data', () => {
       const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
       const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
 
-      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [ethEvent, btcEvent] }));
       mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
       set(mockIgnoredAssets, ['BTC']);
 

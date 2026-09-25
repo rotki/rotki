@@ -10,6 +10,7 @@ import { isEqual } from 'es-toolkit';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
+import { fromRequest, type RequestFailure } from '@/modules/core/api/request-result';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { RouterAccountsSchema } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -18,6 +19,8 @@ interface UseCalendarDataReturn {
   dateFormat: string;
   events: Ref<Collection<CalendarEvent>>;
   eventsWithDate: ComputedRef<(CalendarEvent & { date: string })[]>;
+  /** Why the last read of the visible range failed, or `undefined` once one succeeds. */
+  error: Readonly<Ref<RequestFailure | undefined>>;
   fetchData: () => Promise<void>;
   initializePagination: () => void;
   isLoading: Ref<boolean>;
@@ -77,6 +80,7 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
 
   const {
     collection: events,
+    error,
     isLoading,
     pagination,
     refetch: fetchData,
@@ -84,7 +88,7 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     CalendarEvent,
     CalendarEventRequestPayload
   >({
-    fetch: fetchCalendarEvents,
+    fetch: async payload => fromRequest(async () => fetchCalendarEvents(payload)),
     params: [
       {
         fromQuery(query): void {
@@ -163,6 +167,7 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
 
   return {
     dateFormat,
+    error,
     events,
     eventsWithDate,
     fetchData,

@@ -1,6 +1,7 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { UseVirtualListReturn } from '@vueuse/core';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { RequestFailure } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/events/action-types';
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
@@ -44,6 +45,10 @@ export interface UseHistoryEventsTableReturn {
   /** State the table shell renders itself: header, upgrade row, loading and empty states. */
   shell: {
     loading: Readonly<Ref<boolean>>;
+    /** Why the events of the groups on screen failed to load, shown above the rows with a retry. */
+    eventsError: Readonly<Ref<RequestFailure | undefined>>;
+    /** Loads the events of the groups on screen again. */
+    retryEvents: () => Promise<void>;
     groups: ComputedRef<HistoryEventEntry[]>;
     total: ComputedRef<number>;
     found: ComputedRef<number>;
@@ -211,9 +216,11 @@ export function useHistoryEventsTable(
     rowContext,
     shell: {
       entriesFoundTotal: data.entriesFoundTotal,
+      eventsError: data.eventsError,
       found: data.found,
       groups: data.groups,
       loading: data.loading,
+      retryEvents: data.fetchEvents,
       showUpgradeRow: data.showUpgradeRow,
       total: data.total,
     },

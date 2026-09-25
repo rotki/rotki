@@ -4,23 +4,23 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AddHistoryEventPayload, HistoryEventRequestPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventCollectionRow, HistoryEventRow, HistoryEventsCollectionResponse } from '@/modules/history/events/schemas';
-import { Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { map, type ResultAsync } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
-import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { fromRequest, isRequestFailure, type RequestError } from '@/modules/core/api/request-result';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { arrayify } from '@/modules/core/common/data/array';
-import { defaultCollectionState, mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
 interface UseHistoryEventsReturn {
-  fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => Promise<Collection<HistoryEventRow>>;
+  fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => ResultAsync<Collection<HistoryEventRow>, RequestError>;
   addHistoryEvent: (event: AddHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
@@ -28,9 +28,6 @@ interface UseHistoryEventsReturn {
 }
 
 export function useHistoryEvents(): UseHistoryEventsReturn {
-  const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
-
   const {
     addHistoryEvent: addHistoryEventCaller,
     deleteHistoryEvent: deleteHistoryEventCaller,
@@ -78,53 +75,46 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       startPromise(fetchEnsNames(addressesNamesPayload));
   }
 
+  /** Flattens each row's `entry` into the row, keeping grouped rows as arrays. */
+  function toEventRows(collection: Collection<HistoryEventCollectionRow>): Collection<HistoryEventRow> {
+    const { data, ...others } = collection;
+
+    const flatData: HistoryEventRow[] = [];
+
+    for (const row of data) {
+      if (!Array.isArray(row)) {
+        const { entry, ...meta } = row;
+        flatData.push({ ...entry, ...meta });
+      }
+      else {
+        const events = row.map((event) => {
+          const { entry, ...meta } = event;
+          return ({ ...entry, ...meta });
+        });
+        flatData.push(events);
+      }
+    }
+
+    return { data: flatData, ...others };
+  }
+
   const fetchHistoryEvents = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
     options?: { tags?: string[] },
-  ): Promise<Collection<HistoryEventRow>> => {
-    try {
-      const requestData = get(payload);
-      const collection = mapCollectionResponse<
-        HistoryEventCollectionRow,
-        HistoryEventsCollectionResponse
-      >(await fetchHistoryEventsCaller(requestData, options));
+  ): ResultAsync<Collection<HistoryEventRow>, RequestError> => {
+    const requestData = get(payload);
 
-      if (!requestData.aggregateByGroupIds) {
+    const response = fromRequest(async () => mapCollectionResponse<
+      HistoryEventCollectionRow,
+      HistoryEventsCollectionResponse
+    >(await fetchHistoryEventsCaller(requestData, options)));
+
+    return map(response, (collection) => {
+      if (!requestData.aggregateByGroupIds)
         populateAddressBook(collection);
-      }
 
-      const { data, ...others } = collection;
-
-      const flatData: HistoryEventRow[] = [];
-
-      for (const row of data) {
-        if (!Array.isArray(row)) {
-          const { entry, ...meta } = row;
-          flatData.push({ ...entry, ...meta });
-        }
-        else {
-          const events = row.map((event) => {
-            const { entry, ...meta } = event;
-            return ({ ...entry, ...meta });
-          });
-          flatData.push(events);
-        }
-      }
-
-      return { data: flatData, ...others };
-    }
-    catch (error: unknown) {
-      if (error instanceof RequestCancelledError)
-        throw error;
-
-      logger.error(error);
-      notifyError(
-        t('actions.history_events.error.title'),
-        t('actions.history_events.error.description', { error }).toString(),
-        { priority: Priority.NORMAL },
-      );
-      return defaultCollectionState();
-    }
+      return toEventRows(collection);
+    });
   };
 
   const addHistoryEvent = async (event: AddHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
@@ -185,8 +175,14 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       orderByAttributes: ['timestamp'],
     });
 
-    if (response.data.length === 1) {
-      const firstRow = response.data[0];
+    if (!response.ok) {
+      if (isRequestFailure(response.error))
+        logger.error(response.error.cause);
+      return undefined;
+    }
+
+    if (response.value.data.length === 1) {
+      const firstRow = response.value.data[0];
       const timestamp = Array.isArray(firstRow) ? firstRow[0].timestamp : firstRow.timestamp;
       return millisecondsToSeconds(timestamp);
     }

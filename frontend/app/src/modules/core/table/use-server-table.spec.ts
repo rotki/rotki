@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { EffectScope, MaybeRef, Ref } from 'vue';
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
@@ -7,7 +8,9 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, type Mock, vi } from 'vitest';
+import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -107,25 +110,22 @@ interface TestFilters extends MatchedKeywordWithBehaviour<string> {
   txRefs?: string[];
 }
 
-function mockRequestData(): (payload: MaybeRef<TestPayload>) => Promise<Collection<TestItem>> {
-  return vi.fn().mockResolvedValue({
+function emptyPage(): Result<Collection<TestItem>, RequestError> {
+  return ok({
     data: [],
     found: 0,
     limit: -1,
     total: 0,
-    totalUsdValue: '0',
   });
 }
 
+function mockRequestData(): (payload: MaybeRef<TestPayload>) => ResultAsync<Collection<TestItem>, RequestError> {
+  return vi.fn().mockResolvedValue(emptyPage());
+}
+
 /** Typed against the wider payload, so `TPayload` has something distinctive to infer. */
-function mockRequestWithExtras(): (payload: MaybeRef<TestPayloadWithExtras>) => Promise<Collection<TestItem>> {
-  return vi.fn().mockResolvedValue({
-    data: [],
-    found: 0,
-    limit: -1,
-    total: 0,
-    totalUsdValue: '0',
-  });
+function mockRequestWithExtras(): (payload: MaybeRef<TestPayloadWithExtras>) => ResultAsync<Collection<TestItem>, RequestError> {
+  return vi.fn().mockResolvedValue(emptyPage());
 }
 
 /**
@@ -760,12 +760,12 @@ describe('request.debounce', () => {
   });
 
   it('should debounce refetch when request.debounce is set', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -794,12 +794,12 @@ describe('request.debounce', () => {
   });
 
   it('should fetch immediately when request.debounce is unset', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -838,12 +838,12 @@ describe('request.cancelTag', () => {
   });
 
   it('should call api.cancelByTag before each refetch when request.cancelTag is set', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -864,12 +864,12 @@ describe('request.cancelTag', () => {
   });
 
   it('should not call api.cancelByTag when request.cancelTag is not set', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -888,30 +888,36 @@ describe('request.cancelTag', () => {
     expect(cancelByTagSpy).not.toHaveBeenCalled();
   });
 
-  it('should silently ignore RequestCancelledError in onError', async () => {
-    const { RequestCancelledError: MockRequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
-    const requestFn = vi.fn().mockRejectedValue(new MockRequestCancelledError());
+  it('should not report a cancelled fetch as a failure', async () => {
+    const requestFn = vi.fn().mockResolvedValue(err(RequestCancelled({ message: 'Request was cancelled' })));
 
-    scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
+    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
       request: { cancelTag: 'test-cancel-tag' },
       urlState: { mode: 'route' },
       ...createTestFilterOptions(),
-    }));
+    }))!;
 
     await nextTick();
     await flushPromises();
+
+    set(filter, { asset: 'ETH' });
+    await nextTick();
+    await flushPromises();
+
+    expect(requestFn).toHaveBeenCalled();
+    expect(get(error)).toBeUndefined();
   });
 
   it('should still fetch when url-only and request-only sources change together', async () => {
     vi.useFakeTimers();
 
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const locationLabels = ref<string[]>([]);
 
@@ -957,12 +963,12 @@ describe('request.cancelTag', () => {
   it('should fetch when clearing locationLabels after having values', async () => {
     vi.useFakeTimers();
 
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const locationLabels = ref<string[]>(['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
 
@@ -1006,12 +1012,12 @@ describe('request.cancelTag', () => {
   });
 
   it('should apply url state on external navigation (browser back/forward)', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -1032,12 +1038,12 @@ describe('request.cancelTag', () => {
   it('should cancel before fetching when combined with request.debounce', async () => {
     vi.useFakeTimers();
 
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -1222,12 +1228,12 @@ describe('source destinations', () => {
   });
 
   it('should write the URL when a url-only source changes even though no fetch fires, since such values never reach the request payload', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
     const urlOnly = ref<string>('');
 
     scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
@@ -1325,12 +1331,12 @@ describe('urlState modes', () => {
   });
 
   it('should not watch the route nor write the URL when mode is none', async () => {
-    const requestFn = vi.fn().mockResolvedValue({
+    const requestFn = vi.fn().mockResolvedValue(ok({
       data: [],
       found: 0,
       limit: -1,
       total: 0,
-    });
+    }));
 
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -1460,9 +1466,9 @@ describe('error', () => {
     vi.clearAllMocks();
   });
 
-  it('should expose the failure when the fetch rejects', async () => {
-    const failure = new Error('request blew up');
-    const requestFn = vi.fn().mockRejectedValue(failure);
+  it('should expose the failure the fetch carries', async () => {
+    const failure = RequestFailed({ cause: new Error('request blew up'), message: 'request blew up' });
+    const requestFn = vi.fn().mockResolvedValue(err(failure));
 
     const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: requestFn,
@@ -1479,6 +1485,66 @@ describe('error', () => {
 
     expect(requestFn).toHaveBeenCalled();
     expect(get(error)).toBe(failure);
+  });
+
+  it('should clear the failure once a later fetch succeeds', async () => {
+    const failure = RequestFailed({ cause: new Error('request blew up'), message: 'request blew up' });
+    const requestFn = vi.fn().mockResolvedValue(err(failure));
+
+    const { error, filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
+      fetch: requestFn,
+      urlState: { mode: 'route' },
+      ...createTestFilterOptions(),
+    }))!;
+
+    await nextTick();
+    await flushPromises();
+
+    set(filter, { asset: 'ETH' });
+    await nextTick();
+    await flushPromises();
+    expect(get(error)).toBe(failure);
+
+    requestFn.mockResolvedValue(emptyPage());
+    set(filter, { asset: 'BTC' });
+    await nextTick();
+    await flushPromises();
+
+    expect(get(error)).toBeUndefined();
+  });
+
+  it('should keep the newer outcome when an older fetch settles last', async () => {
+    const newer: Collection<TestItem> = { data: [{ id: 2, name: 'newer' }], found: 1, limit: -1, total: 1 };
+    let settleOlder: (result: Result<Collection<TestItem>, RequestError>) => void = () => {};
+
+    const requestFn = vi.fn(async (payload: MaybeRef<TestPayloadWithExtras>): ResultAsync<Collection<TestItem>, RequestError> => {
+      if (get(payload).asset === 'OLD')
+        return new Promise((resolve) => { settleOlder = resolve; });
+      return ok(newer);
+    });
+
+    const { collection, error, filter } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
+      fetch: requestFn,
+      urlState: { mode: 'route' },
+      ...createTestFilterOptions(),
+    }))!;
+
+    await nextTick();
+    await flushPromises();
+
+    set(filter, { asset: 'OLD' });
+    await nextTick();
+    await flushPromises();
+
+    set(filter, { asset: 'NEW' });
+    await nextTick();
+    await flushPromises();
+
+    settleOlder(err(RequestFailed({ cause: undefined, message: 'too late' })));
+    await flushPromises();
+
+    expect(get(collection)).toEqual(newer);
+    expect(get(error)).toBeUndefined();
   });
 
   it('should leave error unset while fetches succeed', async () => {

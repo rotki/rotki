@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type {
   ExchangeSavingsCollection,
@@ -11,6 +12,7 @@ import { map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -22,7 +24,7 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseBinanceSavingsReturn {
-  fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;
+  fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => ResultAsync<ExchangeSavingsCollection, RequestError>;
   refreshExchangeSavings: (userInitiated?: boolean) => Promise<void>;
 }
 
@@ -50,14 +52,12 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
 
   const fetchExchangeSavings = async (
     payload: MaybeRef<ExchangeSavingsRequestPayload>,
-  ): Promise<ExchangeSavingsCollection> => {
-    const response = await getExchangeSavings({
+  ): ResultAsync<ExchangeSavingsCollection, RequestError> => fromRequest(async () => mapCollectionResponse(
+    await getExchangeSavings({
       ...get(payload),
       onlyCache: true,
-    });
-
-    return mapCollectionResponse(response);
-  };
+    }),
+  ));
 
   /**
    * Asks the backend to refresh one location's savings interest, as a task center activity.

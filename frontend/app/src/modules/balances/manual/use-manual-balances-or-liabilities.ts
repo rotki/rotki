@@ -1,3 +1,4 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type {
   ManualBalanceRequestPayload,
@@ -11,7 +12,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 
 interface UseManualBalancesOrLiabilitiesReturn {
   dataSource: ComputedRef<ManualBalanceWithValue[]>;
-  fetch: (payload: MaybeRef<ManualBalanceRequestPayload>) => Promise<Collection<ManualBalanceWithPrice>>;
+  fetch: (payload: MaybeRef<ManualBalanceRequestPayload>) => ResultAsync<Collection<ManualBalanceWithPrice>, never>;
   locations: ComputedRef<string[]>;
 }
 
@@ -29,7 +30,7 @@ export function useManualBalancesOrLiabilities(
 
   const fetch = async (
     payload: MaybeRef<ManualBalanceRequestPayload>,
-  ): Promise<Collection<ManualBalanceWithPrice>> => toValue(type) === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload);
+  ): ResultAsync<Collection<ManualBalanceWithPrice>, never> => toValue(type) === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload);
 
   return {
     dataSource,

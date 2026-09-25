@@ -2,6 +2,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { Filters } from './use-internal-tx-conflicts-filter';
 import { startPromise } from '@shared/utils';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { internalTxFixedSignal } from '@/modules/core/messaging/handlers/internal-tx-fixed';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -67,7 +68,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     setPage,
     sort,
   } = useServerTable<InternalTxConflict, InternalTxConflictsRequestPayload, Filters>({
-    fetch: fetchInternalTxConflicts,
+    fetch: async payload => fromRequest(async () => fetchInternalTxConflicts(payload)),
     params: [{ skipEmpty: true, to: 'request', values: requestParams }],
     sort: {
       default: {
