@@ -86,10 +86,26 @@ describe('createNoAvailableIndexersHandler', () => {
     expect(result.title).toContain('paid_key_required.title');
     expect(result.message).toContain('paid_key_required.message');
     const actions = Array.isArray(result.action) ? result.action : [result.action];
-    const enterKeyAction = actions.find(a => a?.label.includes('enter_key'));
+    const enterKeyAction = actions.find(a => a?.label.includes('enter_etherscan_key'));
     assert(enterKeyAction);
     await enterKeyAction.action();
     expect(push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'etherscan' } });
+  });
+
+  it('should offer a free blockscout key before paid etherscan when both can restore queries', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const result = await handler.handle({
+      chain: 'optimism',
+      reason: 'blockscout_or_paid_etherscan_key_required',
+    });
+    assert(result);
+    expect(result.title).toContain('blockscout_or_paid_etherscan_key_required.title');
+    expect(result.message).toContain('blockscout_or_paid_etherscan_key_required.message');
+    const actions = Array.isArray(result.action) ? result.action : [result.action];
+    const enterKeyAction = actions.find(a => a?.label.includes('enter_blockscout_key'));
+    assert(enterKeyAction);
+    await enterKeyAction.action();
+    expect(push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'blockscout' } });
   });
 
   it('should not offer to enter a key when no reason is given', async () => {
@@ -98,7 +114,7 @@ describe('createNoAvailableIndexersHandler', () => {
     assert(result);
     expect(result.title).not.toContain('paid_key_required');
     const actions = Array.isArray(result.action) ? result.action : [result.action];
-    expect(actions.find(a => a?.label.includes('enter_key'))).toBeUndefined();
+    expect(actions.find(a => a?.label.includes('enter_'))).toBeUndefined();
   });
 
   it('should return null when the chain is in the suppression list', async () => {

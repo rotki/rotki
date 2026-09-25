@@ -73,6 +73,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    BLOCKSCOUT_SUPPORTED_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     CacheType,
@@ -2087,14 +2088,19 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _maybe_notify_no_indexers(self) -> None:
         """Tell the user once that no indexer can serve this chain. If etherscan refused the
-        chain for the configured key, say so, since a paid etherscan key is then the fix."""
+        chain for the configured key, explain which API key can restore transaction queries."""
         if self._no_indexer_notified:
             return
 
         self._no_indexer_notified = True
         data: dict[str, str] = {'chain': self.blockchain.value}
         if self._etherscan_refused_chain:
-            data['reason'] = 'etherscan_paid_key_required'
+            data['reason'] = (
+                'blockscout_or_paid_etherscan_key_required'
+                if self.chain_id in BLOCKSCOUT_SUPPORTED_CHAINS and
+                EvmIndexer.BLOCKSCOUT in self.available_indexers
+                else 'etherscan_paid_key_required'
+            )
         self.database.msg_aggregator.add_message(
             message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
             data=data,

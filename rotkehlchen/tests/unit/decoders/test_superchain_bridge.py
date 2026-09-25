@@ -231,7 +231,11 @@ def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', BLOCKSCOUT_FIRST_OPTIMISM_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x654A855e48F6943966788B81dc739117C5Bff6A1']])
-def test_receive_eth_on_optimism_only_once(optimism_inquirer, optimism_accounts):
+def test_receive_eth_on_optimism_only_once(
+        optimism_inquirer,
+        optimism_accounts,
+        allow_optimism_routescan,
+):
     """Regression test for duplicate bridge decoding on native ETH deposits."""
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05b30df1b010f6d8e800dc4389c1210f56fc63a510d8a8021ba6674874500c03')))  # noqa: E501
     assert events == [

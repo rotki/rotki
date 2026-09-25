@@ -1,11 +1,12 @@
 from http import HTTPStatus
+from typing import Literal
 from unittest.mock import _patch, patch
 
 import pytest
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS, Routescan
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -25,8 +26,24 @@ def test_routescan_url_formatting(routescan: Routescan) -> None:
     formatted_url = routescan._get_url(chain_id=ChainID.ETHEREUM)
     assert formatted_url == 'https://api.routescan.io/v2/network/mainnet/evm/1/etherscan/api'
 
-    formatted_url = routescan._get_url(chain_id=ChainID.OPTIMISM)
-    assert formatted_url == 'https://api.routescan.io/v2/network/mainnet/evm/10/etherscan/api'
+    with pytest.raises(ChainNotSupported, match='Routescan does not support OPTIMISM'):
+        routescan._get_url(chain_id=ChainID.OPTIMISM)
+
+
+@pytest.mark.parametrize('action', ['txlist', 'eth_getTransactionReceipt'])
+def test_routescan_classifies_unsupported_chain_response(
+        routescan: Routescan,
+        action: Literal['txlist', 'eth_getTransactionReceipt'],
+) -> None:
+    """The error must also be detected on actions where a null result can be legitimate."""
+    with (
+        patch.object(routescan.session, 'get', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"status":"0","message":"chain not supported","result":null}',
+        )),
+        pytest.raises(ChainNotSupported, match='Routescan does not support ETHEREUM'),
+    ):
+        routescan._query(chain_id=ChainID.ETHEREUM, module='account', action=action)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -165,7 +182,10 @@ def test_routescan_internal_by_txhash_paginate_by_page(routescan: Routescan) -> 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_routescan_internal_by_txhash_optimism_regression(routescan: Routescan) -> None:
+def test_routescan_internal_by_txhash_optimism_regression(
+        routescan: Routescan,
+        allow_optimism_routescan: None,
+) -> None:
     parent_tx_hash = deserialize_evm_tx_hash('0xa3b955a1264dc26d966f4f33242ae88eec7f2081fcfce8cd82377b16d51a9f2f')  # noqa: E501
     result = list(routescan.get_transactions(
         chain_id=ChainID.OPTIMISM,

@@ -1119,6 +1119,7 @@ def test_indexers_fall_back_properly(
         optimism_manager: OptimismManager,
         optimism_accounts: list[ChecksumEvmAddress],
         tested_indexer: str,
+        allow_optimism_routescan: None,
 ) -> None:
     """Test that queries such as txlist, txlistinteral, etc which rely on indexers such as
     etherscan, blockscout, and routescan properly fall back to the next indexer on failure.

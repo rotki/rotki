@@ -13,7 +13,59 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
  * Sent by the backend when etherscan refused the chain for the configured key, which happens on
  * the chains its free tier does not cover, and no other indexer could serve it either.
  */
+const BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED = 'blockscout_or_paid_etherscan_key_required';
 const ETHERSCAN_PAID_KEY_REQUIRED = 'etherscan_paid_key_required';
+
+function getKeyAction(
+  t: ReturnType<typeof useI18n>['t'],
+  router: Pick<Router, 'push'>,
+  reason?: string,
+): NotificationAction | undefined {
+  let service: 'blockscout' | 'etherscan' | undefined;
+  if (reason === BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED)
+    service = 'blockscout';
+  else if (reason === ETHERSCAN_PAID_KEY_REQUIRED)
+    service = 'etherscan';
+
+  if (!service)
+    return undefined;
+  const route = getServiceRegisterUrl(service)?.route;
+  if (!route)
+    return undefined;
+
+  return {
+    action: async () => router.push(route),
+    label: service === 'blockscout'
+      ? t('notification_messages.no_available_indexers.enter_blockscout_key')
+      : t('notification_messages.no_available_indexers.enter_etherscan_key'),
+    persist: true,
+  };
+}
+
+function getNotificationContent(
+  t: ReturnType<typeof useI18n>['t'],
+  chainName: string,
+  reason?: string,
+): { message: string; title: string } {
+  if (reason === BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED) {
+    return {
+      message: t('notification_messages.no_available_indexers.blockscout_or_paid_etherscan_key_required.message', { chain: chainName }),
+      title: t('notification_messages.no_available_indexers.blockscout_or_paid_etherscan_key_required.title', { chain: chainName }),
+    };
+  }
+
+  if (reason === ETHERSCAN_PAID_KEY_REQUIRED) {
+    return {
+      message: t('notification_messages.no_available_indexers.paid_key_required.message', { chain: chainName }),
+      title: t('notification_messages.no_available_indexers.paid_key_required.title', { chain: chainName }),
+    };
+  }
+
+  return {
+    message: t('notification_messages.no_available_indexers.message', { chain: chainName }),
+    title: t('notification_messages.no_available_indexers.title'),
+  };
+}
 
 export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['t'], router: Pick<Router, 'push'>): MessageHandler<NoAvailableIndexersData> {
   const { updateFrontendSetting } = useSettingsOperations();
@@ -26,17 +78,12 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       return null;
 
     const chainName = getChainName(chain);
-    const paidKeyRequired = reason === ETHERSCAN_PAID_KEY_REQUIRED;
-    const etherscanRoute = getServiceRegisterUrl('etherscan')?.route;
+    const { message, title } = getNotificationContent(t, chainName, reason);
 
     const actions: NotificationAction[] = [];
-    if (paidKeyRequired && etherscanRoute) {
-      actions.push({
-        action: async () => router.push(etherscanRoute),
-        label: t('notification_messages.no_available_indexers.enter_key'),
-        persist: true,
-      });
-    }
+    const keyAction = getKeyAction(t, router, reason);
+    if (keyAction)
+      actions.push(keyAction);
     actions.push(
       {
         action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
@@ -70,14 +117,10 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       // Per chain: each chain has its own missing indexers and its own suppression entry, so they
       // must not collapse into one notification that only ever shows the chain that arrived last.
       group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
-      message: paidKeyRequired
-        ? t('notification_messages.no_available_indexers.paid_key_required.message', { chain: chainName })
-        : t('notification_messages.no_available_indexers.message', { chain: chainName }),
+      message,
       priority: Priority.ACTION,
       severity: Severity.WARNING,
-      title: paidKeyRequired
-        ? t('notification_messages.no_available_indexers.paid_key_required.title', { chain: chainName })
-        : t('notification_messages.no_available_indexers.title'),
+      title,
     };
   });
 }

@@ -1911,7 +1911,11 @@ def test_find_beefy_finance_reward_pool_vault_price(ethereum_inquirer: EthereumI
 }])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_uniswap_v3_position_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
+def test_find_uniswap_v3_position_price(
+        database: DBHandler,
+        inquirer_defi: Inquirer,
+        allow_optimism_routescan: None,
+) -> None:
     """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
 
     def get_position_price(

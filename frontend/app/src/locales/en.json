@@ -4916,8 +4916,13 @@
     },
     "no_available_indexers": {
       "action": "Configure indexers",
+      "blockscout_or_paid_etherscan_key_required": {
+        "message": "rotki could not query {chain} transactions from any indexer. Add a free Blockscout API key to resume queries, or use a paid Etherscan API key.",
+        "title": "{chain} transactions need an API key"
+      },
       "do_not_show_again": "Do not show again for this chain",
-      "enter_key": "Enter Etherscan key",
+      "enter_blockscout_key": "Enter free Blockscout key",
+      "enter_etherscan_key": "Enter Etherscan key",
       "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
       "paid_key_required": {
         "message": "rotki could not query {chain} transactions from any indexer. Etherscan's free tier does not cover {chain} and the free alternatives no longer do either, so a paid Etherscan API key is needed to query {chain} transactions. The queries will resume once a key is added.",

@@ -410,10 +410,10 @@ class EtherscanLikeApi(ABC):
 
             try:
                 if (result := json_ret.get('result')) is None:
+                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
-                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
                     raise RemoteError(
                         f'Unexpected format of {self.name} response for request {response.url}. '
                         f'Missing a result in response. Response was: {response.text}',

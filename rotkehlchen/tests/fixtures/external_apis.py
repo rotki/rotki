@@ -65,6 +65,21 @@ def fixture_allow_base_routescan():
         yield
 
 
+@pytest.fixture(name='allow_optimism_routescan')
+def fixture_allow_optimism_routescan():
+    """Keep cassettes recorded while Routescan served Optimism replayable.
+
+    New code must not rely on this fixture. Remove it when the affected cassettes are re-recorded
+    against an indexer that still supports Optimism.
+    """
+    test_warnings.warn(UserWarning('Temporarily allowing Routescan for Optimism'))
+    with patch(
+        target='rotkehlchen.externalapis.routescan.ROUTESCAN_SUPPORTED_CHAINS',
+        new=ROUTESCAN_SUPPORTED_CHAINS + (ChainID.OPTIMISM,),
+    ):
+        yield
+
+
 @contextmanager
 def _force_etherscan_indexer(chain: ChainID) -> Iterator[None]:
     """Pin a chain to etherscan regardless of the configured indexer order.
