@@ -412,22 +412,32 @@ class BitcoinManager(BitcoinCommonManager):
         if (status := data['status']).get('confirmed') is not True:
             return None
 
+        inputs = []
+        for position, vin in enumerate(data['vin']):
+            if (prevout := vin.get('prevout')) is not None:
+                inputs.append(BtcTxIO.deserialize(
+                    data=prevout,
+                    direction=BtcTxIODirection.INPUT,
+                    position=position,
+                    deserialize_fn=self.deserialize_tx_io_from_mempool,
+                ))
+            elif vin.get('is_coinbase') is True or (len(data['vin']) == 1 and vin.get('prevout') is None):
+                # Mempool coinbase input: carries no prevout. Represent it as a standard
+                # zero-valued placeholder TxIO without an address.
+                inputs.append(BtcTxIO(
+                    value=ZERO,
+                    script=bytes.fromhex(script) if (script := vin.get('scriptsig')) is not None else None,
+                    address=None,
+                    direction=BtcTxIODirection.INPUT,
+                    io_index=position,
+                ))
+
         return BitcoinTx(
             tx_id=data['txid'],
             timestamp=deserialize_timestamp(status['block_time']),
             block_height=deserialize_int(value=status['block_height'], location='btc tx block height'),  # noqa: E501
             fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='btc tx fees')),
-            # A coinbase input has no prevout and is the only input of its transaction, so
-            # dropping it leaves no other input misplaced.
-            # TODO: The decoder treats a transaction without inputs as one without transfers,
-            # so a mining reward paid to a tracked address gets no receive event. The same
-            # happens for the other explorers (blockchain.info reports the coinbase input as
-            # a prev_out without address). A coinbase transaction needs its own decoding.
-            inputs=BtcTxIO.deserialize_list(
-                data_list=[prevout for vin in data['vin'] if (prevout := vin.get('prevout')) is not None],  # noqa: E501
-                direction=BtcTxIODirection.INPUT,
-                deserialize_fn=self.deserialize_tx_io_from_mempool,
-            ),
+            inputs=inputs,
             outputs=BtcTxIO.deserialize_list(
                 data_list=data['vout'],
                 direction=BtcTxIODirection.OUTPUT,
@@ -496,7 +506,7 @@ class BitcoinManager(BitcoinCommonManager):
                 location='btc TxIO value',
             )),
             script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
-            address=addresses[0] if (addresses := data['addresses']) is not None else None,
+            address=addresses[0] if (addresses := data.get('addresses')) else None,
             direction=direction,
             io_index=position,  # this api returns every TxIO, so the position is the real index
         )

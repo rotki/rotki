@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
@@ -97,6 +98,20 @@ class BitcoinTx(NamedTuple):
     # default to the length of the lists for APIs that always return everything.
     vin_count: int | None = None
     vout_count: int | None = None
+
+    @property
+    def is_coinbase(self) -> bool:
+        """Whether the transaction pays newly minted coins. Its single input creates value
+        instead of spending it, so explorers report a zero-value placeholder TxIO without an address.
+        A coinbase transaction strictly has exactly one input (vin_count is 1 or unset),
+        whose placeholder input has zero value and no normal address.
+        """
+        return (
+            (self.vin_count is None or self.vin_count == 1) and
+            len(self.inputs) == 1 and
+            self.inputs[0].value == ZERO and
+            self.inputs[0].address is None
+        )
 
     @property
     def is_complete(self) -> bool:

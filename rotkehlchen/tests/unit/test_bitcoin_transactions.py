@@ -1615,6 +1615,294 @@ def test_deserialize_mempool_coinbase_tx(bitcoin_manager: BitcoinManager) -> Non
     assert len(tx.outputs) == 1
 
 
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_to_tracked_address_is_a_reward(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A coinbase transaction pays newly minted coins to a miner. Its single input
+    creates value instead of spending it, so the outputs a tracked address receives
+    decode as reward events even though the input cannot be deserialized.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000),
+            _esplora_p2wpkh_txio(value=5_000, address=string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')),  # noqa: E501
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    assert tx.is_coinbase is True
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx.tx_id),
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}',
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_BTC,
+        amount=FVal('3.125'),
+        location_label=btc_accounts[0],
+        notes='Receive 3.125 BTC as a mining reward',
+    )]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_to_untracked_addresses_decodes_to_nothing(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Outputs of a coinbase transaction that pay nobody tracked produce no events."""
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000, address=string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')),  # noqa: E501
+            {'scriptpubkey': '6a0b68656c6c6f20776f726c64', 'scriptpubkey_type': 'op_return', 'value': 0},  # noqa: E501
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    assert tx.is_coinbase is True
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == []
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS, string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')]])  # noqa: E501
+def test_coinbase_tx_with_two_tracked_addresses_gets_one_event_each(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Like mining pools paying several tracked addresses, every tracked address gets its own
+    reward event with a distinct sequence index.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=312_500_000, address=btc_accounts[0]),
+            _esplora_p2wpkh_txio(value=5_000, address=btc_accounts[1]),
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    assert tx.is_coinbase is True
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [
+        BitcoinEvent(
+            tx_ref=BTCTxId(tx.tx_id),
+            group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}'),
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1700000000000)),
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_BTC,
+            amount=FVal('3.125'),
+            location_label=btc_accounts[0],
+            notes='Receive 3.125 BTC as a mining reward',
+        ),
+        BitcoinEvent(
+            tx_ref=BTCTxId(tx.tx_id),
+            group_identifier=group_identifier,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_BTC,
+            amount=FVal('0.00005'),
+            location_label=btc_accounts[1],
+            notes='Receive 0.00005 BTC as a mining reward',
+        ),
+    ]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_with_multiple_outputs_to_same_address_aggregates_into_single_event(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """When a coinbase transaction contains multiple outputs paying the same tracked address,
+    the amounts are combined into a single reward event for that address, matching the
+    established address-level aggregation convention of decode_transaction.
+    """
+    tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
+        block_height=900_000,
+        block_time=1700000000,
+        vin=[{'is_coinbase': True, 'prevout': None}],
+        vout=[
+            _esplora_p2wpkh_txio(value=300_000_000, address=btc_accounts[0]),
+            _esplora_p2wpkh_txio(value=12_500_000, address=btc_accounts[0]),
+        ],
+        fee=0,
+    ))
+    assert tx is not None
+    assert tx.is_coinbase is True
+    bitcoin_manager.refresh_tracked_accounts()
+    assert bitcoin_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId(tx.tx_id),
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx.tx_id}',
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_BTC,
+        amount=FVal('3.125'),
+        location_label=btc_accounts[0],
+        notes='Receive 3.125 BTC as a mining reward',
+    )]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_incomplete_non_coinbase_tx_not_detected_as_coinbase(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """An incomplete regular transaction with missing inputs (e.g. vin_count=2, inputs=[])
+    must NOT be classified as a coinbase transaction and must NOT generate mining reward events.
+    """
+    tx = BitcoinTx(
+        tx_id='abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        timestamp=Timestamp(1700000000),
+        block_height=900_000,
+        fee=FVal('0.0001'),
+        inputs=[],
+        outputs=[
+            BtcTxIO(
+                value=FVal('1.5'),
+                script=b'\x00\x14' + b'\x11' * 20,
+                address=btc_accounts[0],
+                direction=BtcTxIODirection.OUTPUT,
+                io_index=0,
+            ),
+        ],
+        vin_count=2,
+        vout_count=1,
+    )
+    assert tx.is_complete is False
+    assert tx.is_coinbase is False
+
+    bitcoin_manager.refresh_tracked_accounts()
+    # Incomplete transaction with no inputs is not coinbase and should not produce a reward event
+    events = bitcoin_manager.decode_transaction(tx)
+    for event in events:
+        assert event.event_subtype != HistoryEventSubType.REWARD
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_deserialize_blockcypher_real_coinbase_tx(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A real BlockCypher coinbase transaction (e.g. block 900000 tx) omits the 'addresses' field
+    on the coinbase input entirely. Deserialization must succeed and reach the coinbase decoder.
+    """
+    blockcypher_raw_tx = {
+        'hash': '21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
+        'block_height': 900000,
+        'confirmed': '2025-06-03T20:29:49Z',
+        'fees': 0,
+        'vin_sz': 1,
+        'vout_sz': 3,
+        'inputs': [{
+            'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
+            'output_index': -1,
+            'script': '0360bb0d',
+            'output_value': 0,
+            'sequence': 4294967295,
+            # Notice: no 'addresses' field here, exactly as returned by BlockCypher API
+        }],
+        'outputs': [
+            {
+                'value': 312500000,
+                'script': '0014' + '11' * 20,
+                'addresses': [btc_accounts[0]],
+                'n': 0,
+            },
+            {
+                'value': 0,
+                'script': '6a24aa21a9ed57c0db690f0553757',
+                'addresses': None,
+                'n': 1,
+            },
+        ],
+    }
+    tx = bitcoin_manager.deserialize_tx_from_blockcypher(blockcypher_raw_tx)
+    assert tx.is_coinbase is True
+    assert len(tx.inputs) == 1
+    assert tx.inputs[0].value == ZERO
+    assert tx.inputs[0].address is None
+
+    bitcoin_manager.refresh_tracked_accounts()
+    events = bitcoin_manager.decode_transaction(tx)
+    assert len(events) == 1
+    assert events[0].event_type == HistoryEventType.RECEIVE
+    assert events[0].event_subtype == HistoryEventSubType.REWARD
+    assert events[0].amount == FVal('3.125')
+    assert events[0].location_label == btc_accounts[0]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_coinbase_tx_decoding_does_not_emit_spurious_decode_errors(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Decoding a coinbase transaction with zero-valued placeholder input and addressless
+    OP_RETURN outputs does not log any 'Failed to decode' errors.
+    """
+    tx = BitcoinTx(
+        tx_id='21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
+        timestamp=Timestamp(1700000000),
+        block_height=900_000,
+        fee=ZERO,
+        inputs=[
+            BtcTxIO(
+                value=ZERO,
+                script=b'\x03\x60\xbb\x0d',
+                address=None,
+                direction=BtcTxIODirection.INPUT,
+                io_index=0,
+            ),
+        ],
+        outputs=[
+            BtcTxIO(
+                value=FVal('3.125'),
+                script=b'\x00\x14' + b'\x11' * 20,
+                address=btc_accounts[0],
+                direction=BtcTxIODirection.OUTPUT,
+                io_index=0,
+            ),
+            BtcTxIO(
+                value=ZERO,
+                script=b'\x6a\x24\xaa\x21\xa9\xed',
+                address=None,
+                direction=BtcTxIODirection.OUTPUT,
+                io_index=1,
+            ),
+        ],
+        vin_count=1,
+        vout_count=2,
+    )
+    assert tx.is_coinbase is True
+
+    bitcoin_manager.refresh_tracked_accounts()
+    with caplog.at_level(logging.ERROR):
+        events = bitcoin_manager.decode_transaction(tx)
+
+    assert len(events) == 1
+    assert events[0].event_subtype == HistoryEventSubType.REWARD
+    assert 'Failed to decode' not in caplog.text
+
+
 def test_deserialize_mempool_unconfirmed_tx(bitcoin_manager: BitcoinManager) -> None:
     assert bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(block_height=None)) is None
 
