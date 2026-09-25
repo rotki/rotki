@@ -44,12 +44,17 @@ function tagsByAddress(chain: string, accounts: readonly BlockchainAccount[]): M
 }
 
 /**
- * The account rows for `asset` on-chain, one per address and identifier.
+ * Whether a balance held as `identifier` belongs in the breakdown of `asset`.
  *
  * @remarks
- * The asset is looked up both as given and as it resolves, so asking for `ETH2` while it is treated
- * as `ETH` also finds the `ETH` held by the same account.
+ * One rule for every source. Asking for `ETH` while `ETH2` is treated as `ETH` takes both, so the rows
+ * add up to the merged total; asking for `ETH2` takes only `ETH2`.
  */
+function countsAs(identifier: string, asset: string, ports: BreakdownPorts): boolean {
+  return identifier === asset || ports.resolveIdentifier(identifier) === asset;
+}
+
+/** The account rows for `asset` on-chain, one per address and identifier held. */
 function blockchainRows(
   asset: string,
   inputs: Pick<BreakdownInputs, 'accounts' | 'balances'>,
@@ -59,17 +64,14 @@ function blockchainRows(
 ): AssetBreakdown[] {
   const { chains = [], groupId } = filters;
   const key: keyof EthBalance = isLiability ? 'liabilities' : 'assets';
-  const resolved = ports.resolveIdentifier(asset);
-  const identifiers = resolved === asset ? [asset] : [asset, resolved];
 
   return (chains.length > 0 ? chains : Object.keys(inputs.accounts)).flatMap((chain) => {
     const tags = tagsByAddress(chain, inputs.accounts[chain] ?? []);
     return Object.entries(inputs.balances[chain] ?? {})
       .filter(([address]) => !groupId || address === groupId)
-      .flatMap(([address, accountBalances]) => identifiers
-        .map(identifier => accountBalances[key][identifier])
-        .filter(protocols => protocols !== undefined)
-        .map(protocols => ({
+      .flatMap(([address, accountBalances]) => Object.entries(accountBalances[key])
+        .filter(([identifier]) => countsAs(identifier, asset, ports))
+        .map(([, protocols]) => ({
           address,
           location: ports.chainLabel(chain),
           ...perProtocolBalanceSum(zeroBalance(), protocols),
@@ -80,7 +82,7 @@ function blockchainRows(
 
 function manualRows(asset: string, manual: readonly ManualBalanceWithValue[], ports: BreakdownPorts): AssetBreakdown[] {
   return manual
-    .filter(balance => ports.resolveIdentifier(balance.asset) === asset)
+    .filter(balance => countsAs(balance.asset, asset, ports))
     .map(({ amount, location, tags, value }) => ({
       address: '',
       amount,
@@ -94,7 +96,7 @@ function exchangeRows(asset: string, exchanges: ExchangeData, ports: BreakdownPo
   const rows: AssetBreakdown[] = [];
   for (const [location, assets] of Object.entries(exchanges)) {
     for (const [exchangeAsset, balance] of Object.entries(assets)) {
-      if (ports.resolveIdentifier(exchangeAsset) === asset)
+      if (countsAs(exchangeAsset, asset, ports))
         rows.push({ address: '', location, tags: undefined, ...balance });
     }
   }

@@ -2,7 +2,7 @@ import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance, createTestManualBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
-import { createAccount } from '@/modules/accounts/create-account';
+import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { assetBreakdown, assetsAtLocation, type BreakdownInputs, type BreakdownPorts, mergedBreakdown } from './asset-breakdown';
 
@@ -70,6 +70,33 @@ describe('assetBreakdown', () => {
   it('should leave out rows holding nothing', () => {
     const addresses = assetBreakdown('ETH', inputs, false, { chains: ['eth'] }, ports).map(row => row.address);
     expect(addresses).not.toContain('0x2');
+  });
+});
+
+describe('assetBreakdown with an asset treated as another', () => {
+  const staking: BreakdownInputs = {
+    accounts: {
+      eth: [createAccount({ address: '0x1', label: null, tags: null }, { chain: 'eth', nativeAsset: 'ETH' })],
+      eth2: [createValidatorAccount({ index: 1, publicKey: '0xvalidator', status: 'active' }, { chain: 'eth2', nativeAsset: 'ETH' })],
+    },
+    balances: {
+      eth: { '0x1': { assets: { ETH: { address: createTestBalance(1, 10) } }, liabilities: {} } },
+      eth2: { '0xvalidator': { assets: { ETH2: { address: createTestBalance(32, 320) } }, liabilities: {} } },
+    },
+    exchanges: { kraken: { ETH2: createTestBalance(2, 20) } },
+    manual: [],
+  };
+
+  function locations(asset: string): string[] {
+    return assetBreakdown(asset, staking, false, {}, ports).map(row => `${row.location}:${row.amount.toFixed()}`);
+  }
+
+  it('should list the validator rows of the merged asset alongside its other holdings', () => {
+    expect(locations('ETH')).toEqual(['eth2:32', 'kraken:2', 'ethereum:1']);
+  });
+
+  it('should list only the asset itself when asked for the identifier that is merged away', () => {
+    expect(locations('ETH2')).toEqual(['eth2:32', 'kraken:2']);
   });
 });
 
