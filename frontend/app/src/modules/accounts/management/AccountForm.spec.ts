@@ -26,6 +26,15 @@ const ethereum: EvmChainInfo = {
   type: 'evm',
 };
 
+const optimism: EvmChainInfo = {
+  evmChainName: 'optimism',
+  id: 'optimism',
+  image: '',
+  name: 'Optimism',
+  nativeToken: 'ETH',
+  type: 'evm',
+};
+
 /**
  * `AccountForm.validate()` falls back to `true` when the selected child does not expose a
  * `validate` method, so a child that stops exposing it under that exact name sends every account
@@ -270,6 +279,41 @@ describe('modules/accounts/management/AccountForm', () => {
       await nextTick();
 
       expect(wrapper.text()).toContain('external_services.etherscan.api_key_message');
+    });
+
+    /*
+     * Optimism, Base and Gnosis lead with Blockscout, and Etherscan's free tier does not serve
+     * them, so there a missing Blockscout key is what stops the query, Etherscan key or not.
+     */
+    function mountOnOptimism(): void {
+      useSupportedChainsStore().supportedChains = [optimism];
+      wrapper = createWrapper({
+        chain: 'optimism',
+        data: [{ address: '', tags: null }],
+        mode: 'add',
+        type: 'account',
+      });
+      updateGeneralSettings({
+        defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT],
+        evmIndexersOrder: { optimism: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN] },
+      });
+    }
+
+    it('should ask for a blockscout key naming the chain when blockscout leads without one', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      mountOnOptimism();
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.blockscout.api_key_message::Optimism');
+      expect(wrapper.text()).not.toContain('external_services.etherscan.api_key_message');
+    });
+
+    it('should not ask for a blockscout key when blockscout leads and has one', async () => {
+      apiKeys.set('blockscout', 'blockscout-key');
+      mountOnOptimism();
+      await nextTick();
+
+      expect(wrapper.text()).not.toContain('external_services.blockscout.api_key_message');
     });
   });
 });

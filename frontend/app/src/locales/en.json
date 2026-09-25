@@ -3062,8 +3062,7 @@
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
       "chain_warnings": {
-        "base_limited_indexers": "Blockscout is the only freely available indexer for Base. Consider setting it as your first priority. Blockscout is currently reindexing Base, so data may be temporarily incomplete.",
-        "gnosis_key_required": "Gnosis needs an API key for one of these two indexers: a Blockscout key, or a paid Etherscan plan (Etherscan no longer serves Gnosis on the free tier). Either one on its own is enough, and an indexer with no usable key is skipped so the other one is used.",
+        "key_required": "This chain needs an API key for one of these two indexers: a Blockscout key (the free plan is enough), or a paid Etherscan plan (Etherscan does not serve it on the free tier). Either one on its own is enough, and an indexer with no usable key is skipped so the other one is used.",
         "optimism_blockscout": "Blockscout does not have properly indexed transactions for Optimism before the Bedrock upgrade. Pre-Bedrock transaction history may be incomplete when using Blockscout."
       },
       "data_name": "indexer",
@@ -3224,7 +3223,7 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "api_key_message": "Blockscout API key is needed to query historical EVM transactions.",
+      "api_key_message": "Transactions on {chains} are queried from Blockscout first, which needs an API key. Add a Blockscout key (the free plan is enough) to query their history. Where Etherscan serves the chain, a paid Etherscan key works too.",
       "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",
       "hint": "Enter your Blockscout API key",
       "title": "Blockscout"
@@ -4917,7 +4916,12 @@
     "no_available_indexers": {
       "action": "Configure indexers",
       "do_not_show_again": "Do not show again for this chain",
+      "enter_blockscout_key": "Enter Blockscout key",
       "enter_key": "Enter Etherscan key",
+      "key_required": {
+        "message": "rotki could not query {chain} transactions from any indexer. Etherscan's free tier does not cover {chain}, and Blockscout needs an API key for it. Add a Blockscout key (the free plan is enough) or a paid Etherscan key, and the queries will resume.",
+        "title": "{chain} transactions need an API key"
+      },
       "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
       "paid_key_required": {
         "message": "rotki could not query {chain} transactions from any indexer. Etherscan's free tier does not cover {chain} and the free alternatives no longer do either, so a paid Etherscan API key is needed to query {chain} transactions. The queries will resume once a key is added.",

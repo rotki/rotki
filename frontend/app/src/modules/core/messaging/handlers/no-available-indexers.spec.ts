@@ -81,15 +81,35 @@ describe('createNoAvailableIndexersHandler', () => {
 
   it('should explain the paid etherscan key and offer to enter it when that is the reason', async () => {
     const handler = createNoAvailableIndexersHandler(mockT, router);
-    const result = await handler.handle({ chain: 'base', reason: 'etherscan_paid_key_required' });
+    const result = await handler.handle({ chain: 'binance_sc', reason: 'etherscan_paid_key_required' });
     assert(result);
     expect(result.title).toContain('paid_key_required.title');
     expect(result.message).toContain('paid_key_required.message');
     const actions = Array.isArray(result.action) ? result.action : [result.action];
+    expect(actions.find(a => a?.label.includes('enter_blockscout_key'))).toBeUndefined();
     const enterKeyAction = actions.find(a => a?.label.includes('enter_key'));
     assert(enterKeyAction);
     await enterKeyAction.action();
     expect(push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'etherscan' } });
+  });
+
+  /*
+   * Etherscan refusing a chain Blockscout also serves is not a paid-key-only problem: a Blockscout
+   * key, which has a free plan, fixes it as well, so the notification names both.
+   */
+  it('should offer a blockscout key too when blockscout serves the refused chain', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const result = await handler.handle({ chain: 'base', reason: 'etherscan_paid_key_required' });
+    assert(result);
+    expect(result.title).toContain('key_required.title');
+    expect(result.title).not.toContain('paid_key_required');
+    expect(result.message).toContain('key_required.message');
+    const actions = Array.isArray(result.action) ? result.action : [result.action];
+    expect(actions.find(a => a?.label === 'notification_messages.no_available_indexers.enter_key')).toBeDefined();
+    const blockscoutAction = actions.find(a => a?.label.includes('enter_blockscout_key'));
+    assert(blockscoutAction);
+    await blockscoutAction.action();
+    expect(push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'blockscout' } });
   });
 
   it('should not offer to enter a key when no reason is given', async () => {

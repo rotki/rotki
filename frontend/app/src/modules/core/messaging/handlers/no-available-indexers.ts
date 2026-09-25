@@ -6,6 +6,8 @@ import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { getAvailableIndexersForChain } from '@/modules/settings/evm/evm-indexer-utils';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
@@ -21,15 +23,45 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
   const { getChainName } = useSupportedChains();
   const { show } = useConfirmStore();
 
+  function describe(chain: string, paidKeyRequired: boolean, blockscoutAlternative: boolean): { message: string; title: string } {
+    if (blockscoutAlternative) {
+      return {
+        message: t('notification_messages.no_available_indexers.key_required.message', { chain }),
+        title: t('notification_messages.no_available_indexers.key_required.title', { chain }),
+      };
+    }
+    if (paidKeyRequired) {
+      return {
+        message: t('notification_messages.no_available_indexers.paid_key_required.message', { chain }),
+        title: t('notification_messages.no_available_indexers.paid_key_required.title', { chain }),
+      };
+    }
+    return {
+      message: t('notification_messages.no_available_indexers.message', { chain }),
+      title: t('notification_messages.no_available_indexers.title'),
+    };
+  }
+
   return createConditionalHandler<NoAvailableIndexersData>(({ chain, reason }) => {
     if (get(suppressNoIndexerChains).includes(chain))
       return null;
 
     const chainName = getChainName(chain);
     const paidKeyRequired = reason === ETHERSCAN_PAID_KEY_REQUIRED;
+    // Where Blockscout serves the chain its key is the cheaper fix, since its free plan covers it.
+    const blockscoutAlternative = paidKeyRequired
+      && getAvailableIndexersForChain(chain).itemDataForId(EvmIndexer.BLOCKSCOUT) !== undefined;
     const etherscanRoute = getServiceRegisterUrl('etherscan')?.route;
+    const blockscoutRoute = getServiceRegisterUrl('blockscout')?.route;
 
     const actions: NotificationAction[] = [];
+    if (blockscoutAlternative && blockscoutRoute) {
+      actions.push({
+        action: async () => router.push(blockscoutRoute),
+        label: t('notification_messages.no_available_indexers.enter_blockscout_key'),
+        persist: true,
+      });
+    }
     if (paidKeyRequired && etherscanRoute) {
       actions.push({
         action: async () => router.push(etherscanRoute),
@@ -70,14 +102,9 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       // Per chain: each chain has its own missing indexers and its own suppression entry, so they
       // must not collapse into one notification that only ever shows the chain that arrived last.
       group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
-      message: paidKeyRequired
-        ? t('notification_messages.no_available_indexers.paid_key_required.message', { chain: chainName })
-        : t('notification_messages.no_available_indexers.message', { chain: chainName }),
+      ...describe(chainName, paidKeyRequired, blockscoutAlternative),
       priority: Priority.ACTION,
       severity: Severity.WARNING,
-      title: paidKeyRequired
-        ? t('notification_messages.no_available_indexers.paid_key_required.title', { chain: chainName })
-        : t('notification_messages.no_available_indexers.title'),
     };
   });
 }
