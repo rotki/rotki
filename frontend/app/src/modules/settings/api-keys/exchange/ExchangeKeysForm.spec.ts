@@ -13,7 +13,10 @@ describe('exchange-keys-form', () => {
   let pinia: Pinia;
   let wrapper: VueWrapper<InstanceType<typeof ExchangeKeysForm>>;
 
-  function createWrapper(overrides: Partial<ExchangeFormData> = {}): VueWrapper<InstanceType<typeof ExchangeKeysForm>> {
+  function createWrapper(
+    overrides: Partial<ExchangeFormData> = {},
+    stateUpdated: boolean = false,
+  ): VueWrapper<InstanceType<typeof ExchangeKeysForm>> {
     return shallowMount(ExchangeKeysForm, {
       global: {
         plugins: [pinia],
@@ -33,7 +36,7 @@ describe('exchange-keys-form', () => {
           passphrase: '',
           ...overrides,
         },
-        stateUpdated: false,
+        stateUpdated,
       },
     });
   }
@@ -45,6 +48,12 @@ describe('exchange-keys-form', () => {
 
   afterEach(() => {
     wrapper?.unmount();
+  });
+
+  it('should disarm a flag left armed by a previous edit when it mounts', () => {
+    wrapper = createWrapper({}, true);
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
   });
 
   it('should link to the Binance CSV import when adding Binance', () => {

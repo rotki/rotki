@@ -58,14 +58,7 @@ watch(errors, (value) => {
   form.setServerErrors({ [SETTING_FIELD]: toMessages(value[ERROR_KEY]) });
 }, { deep: true, immediate: true });
 
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
-
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
-});
+syncRefs(form.dirty, stateUpdated);
 
 defineExpose({
   validate: (): boolean => form.validate(),

@@ -69,6 +69,7 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     modelValue: AccountingRuleEntry;
     errorMessages?: ValidationErrors;
     eventIds?: number[];
+    stateUpdated?: boolean;
   }): VueWrapper<AccountingRuleFormInstance> {
     return mount(AccountingRuleForm, {
       global: {
@@ -259,14 +260,8 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
   });
 
-  it('should disarm the dirty flag when it goes away', async () => {
-    wrapper = createWrapper({ modelValue: createRule() });
-
-    counterpartyInput().vm.$emit('update:modelValue', 'aave');
-    await nextTick();
-    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([true]);
-
-    wrapper.unmount();
+  it('should disarm a flag left armed by a previous edit when it mounts', () => {
+    wrapper = createWrapper({ modelValue: createRule(), stateUpdated: true });
 
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
   });

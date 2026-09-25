@@ -49,11 +49,6 @@ function touchEventType(): void {
   form.touch('eventSubtype');
 }
 
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
-});
-
 defineExpose({
   validate: (): boolean => form.validate(),
 });
