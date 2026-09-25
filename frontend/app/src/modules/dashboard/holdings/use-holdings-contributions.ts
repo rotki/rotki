@@ -3,11 +3,10 @@ import type { ComputedRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { blockchainValue } from '@/modules/balances/aggregation/core/location-totals';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getBlockchainLocationBreakdown } from '@/modules/balances/use-location-breakdown';
 import { useBankData } from '@/modules/banks/use-bank-data';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { useLocations } from '@/modules/core/common/use-locations';
@@ -42,7 +41,6 @@ export function useHoldingsContributions(): HoldingsInputs {
   const { banks } = useBankData();
   const { tradeLocations } = useLocations();
   const { matchChain } = useSupportedChains();
-  const resolveAssetIdentifier = useResolveAssetIdentifier();
   const nftsInNetValue = useSetting('nftsInNetValue');
   const liabilityBalances = useLiabilities();
 
@@ -62,12 +60,11 @@ export function useHoldingsContributions(): HoldingsInputs {
   }
 
   function chainContribution(chain: string, accounts: Balances[string]): SourceContribution {
-    const assets = getBlockchainLocationBreakdown({ [chain]: accounts }, resolveAssetIdentifier, isAssetIgnored);
     return {
       chain,
       kind: SourceKind.BLOCKCHAIN,
       loading: isChainPricePending(accounts),
-      value: bigNumberSum(Object.values(assets).map(asset => asset.value)),
+      value: blockchainValue({ [chain]: accounts }, isAssetIgnored),
     };
   }
 
