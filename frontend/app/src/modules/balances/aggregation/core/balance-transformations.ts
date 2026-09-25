@@ -20,7 +20,7 @@ import {
   type ProtocolBalancesWithManual,
   protocolBreakdown,
   singleAssetEntry,
-} from '@/modules/balances/balance-grouping';
+} from '@/modules/balances/aggregation/core/balance-grouping';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
 

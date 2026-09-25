@@ -1,4 +1,4 @@
-import type { AssetProtocolBalancesWithChains } from '@/modules/balances/balance-transformations';
+import type { AssetProtocolBalancesWithChains } from '@/modules/balances/aggregation/core/balance-transformations';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
