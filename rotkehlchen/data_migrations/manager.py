@@ -17,6 +17,7 @@ from rotkehlchen.data_migrations.migrations.migration_24 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_25 import data_migration_25
 from rotkehlchen.data_migrations.migrations.migration_26 import data_migration_26
 from rotkehlchen.data_migrations.migrations.migration_27 import data_migration_27
+from rotkehlchen.data_migrations.migrations.migration_28 import data_migration_28
 from rotkehlchen.data_migrations.migrations.migrations_13 import data_migration_13
 from rotkehlchen.data_migrations.migrations.migrations_14 import data_migration_14
 from rotkehlchen.data_migrations.migrations.migrations_18 import data_migration_18
@@ -59,6 +60,7 @@ MIGRATION_LIST = [  # remember to bump LAST_USERDB_DATA_MIGRATION if editing thi
     MigrationRecord(version=25, function=data_migration_25),
     MigrationRecord(version=26, function=data_migration_26),
     MigrationRecord(version=27, function=data_migration_27),
+    MigrationRecord(version=28, function=data_migration_28),
 ]
 
 
