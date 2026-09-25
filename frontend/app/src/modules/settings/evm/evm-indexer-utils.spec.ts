@@ -138,23 +138,17 @@ describe('evm-indexer-utils', () => {
       expect(getChainIndexerWarnings(DEFAULT_INDEXER_TAB, [EvmIndexer.BLOCKSCOUT])).toEqual([]);
     });
 
-    it('should warn when optimism includes blockscout', () => {
+    it('should warn about pre-Bedrock history when optimism includes blockscout', () => {
       expect(getChainIndexerWarnings('optimism', [EvmIndexer.BLOCKSCOUT]))
-        .toEqual(['evm_settings.indexer.chain_warnings.optimism_blockscout']);
-      expect(getChainIndexerWarnings('optimism', [EvmIndexer.ETHERSCAN])).toEqual([]);
+        .toContain('evm_settings.indexer.chain_warnings.optimism_blockscout');
+      expect(getChainIndexerWarnings('optimism', [EvmIndexer.ETHERSCAN]))
+        .not
+        .toContain('evm_settings.indexer.chain_warnings.optimism_blockscout');
     });
 
-    it('should warn when base does not lead with blockscout', () => {
-      expect(getChainIndexerWarnings('base', [EvmIndexer.ETHERSCAN]))
-        .toEqual(['evm_settings.indexer.chain_warnings.base_limited_indexers']);
-      expect(getChainIndexerWarnings('base', []))
-        .toEqual(['evm_settings.indexer.chain_warnings.base_limited_indexers']);
-      expect(getChainIndexerWarnings('base', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN])).toEqual([]);
-    });
-
-    it('should always warn on gnosis', () => {
-      expect(getChainIndexerWarnings('gnosis', [EvmIndexer.ETHERSCAN]))
-        .toEqual(['evm_settings.indexer.chain_warnings.gnosis_key_required']);
+    it.each(['base', 'gnosis', 'optimism'])('should say %s needs a key whatever the order', (chain) => {
+      for (const order of [[EvmIndexer.BLOCKSCOUT], [EvmIndexer.ETHERSCAN], []])
+        expect(getChainIndexerWarnings(chain, order)).toContain('evm_settings.indexer.chain_warnings.key_required');
     });
 
     it('should return an empty list for a chain with no caveat', () => {
