@@ -21,6 +21,7 @@ interface MockState {
   filters: Record<string, unknown>;
   isLoading: boolean;
   rows: DataIssue[];
+  summaryFailed: boolean;
 }
 
 const state = vi.hoisted((): MockState => ({
@@ -28,6 +29,7 @@ const state = vi.hoisted((): MockState => ({
   filters: {},
   isLoading: false,
   rows: [],
+  summaryFailed: false,
 }));
 
 vi.mock('@/modules/core/table/use-server-table', () => ({
@@ -68,6 +70,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
     counts: ref({}),
     dismissInlinePanels: vi.fn(),
     refreshSummary: vi.fn().mockResolvedValue(undefined),
+    summaryFailed: ref(state.summaryFailed),
   }),
 }));
 
@@ -101,6 +104,16 @@ describe('data-issues view empty states', () => {
     state.filters = {};
     state.isLoading = false;
     state.rows = [];
+    state.summaryFailed = false;
+  });
+
+  it('should show the table, not the all-clear screen, when counting the issues failed', async () => {
+    state.baselineTotal = 0;
+    state.summaryFailed = true;
+    const wrapper = await createWrapper();
+
+    expect(wrapper.findComponent(NoDataScreen).exists()).toBe(false);
+    expect(wrapper.findComponent(DataIssuesTable).exists()).toBe(true);
   });
 
   it('should show the table, not the all-clear screen, when reading the issues failed', async () => {

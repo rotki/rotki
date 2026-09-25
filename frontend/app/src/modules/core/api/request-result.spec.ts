@@ -1,3 +1,4 @@
+import { FetchError } from 'ofetch';
 import { assert, describe, expect, it } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { fromRequest, isRequestFailure, RequestCancelled, RequestFailed } from '@/modules/core/api/request-result';
@@ -66,5 +67,23 @@ describe('fromRequest', () => {
 
     assert(!result.ok);
     expect(isRequestFailure(result.error)).toBe(false);
+  });
+
+  it('should mark an abort wrapped by the http client as cancelled, not failed', async () => {
+    const wrapped = new FetchError('[GET] "/api/1/data_issues": <no response> aborted', { cause: new DOMException('aborted', 'AbortError') });
+
+    const result = await fromRequest(async () => Promise.reject(wrapped));
+
+    assert(!result.ok);
+    expect(isRequestFailure(result.error)).toBe(false);
+  });
+
+  it('should keep a network failure wrapped by the http client as a failure', async () => {
+    const wrapped = new FetchError('[GET] "/api/1/data_issues": <no response> fetch failed', { cause: new TypeError('fetch failed') });
+
+    const result = await fromRequest(async () => Promise.reject(wrapped));
+
+    assert(!result.ok);
+    expect(isRequestFailure(result.error)).toBe(true);
   });
 });

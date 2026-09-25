@@ -109,6 +109,16 @@ describe('use-virtual-rows', () => {
       expect(placeholderRows).toHaveLength(3);
     });
 
+    it('should show only the header, not loading placeholders, when the events failed to load', () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1, groupedEventsNum: 3 });
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({ group1: [] }));
+
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false, true);
+
+      expect(get(flattenedRows).map(row => row.type)).toEqual(['group-header']);
+    });
+
     it('should limit placeholder rows to INITIAL_EVENTS_LIMIT', () => {
       const group = createMockEvent({
         groupIdentifier: 'group1',

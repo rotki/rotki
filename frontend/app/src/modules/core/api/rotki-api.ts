@@ -176,7 +176,7 @@ export class RotkiApi {
    * status outside the allowed set, mirroring the raw fetch error handling.
    */
   private checkResponseStatus<T>(
-    response: { status: number; _data?: ActionResult<T> },
+    response: { status: number; url: string; _data?: ActionResult<T> },
     flags: { validStatuses?: ValidStatuses; skipAuthHandler?: boolean },
   ): void {
     const status = response.status;
@@ -185,12 +185,12 @@ export class RotkiApi {
       if (!flags.skipAuthHandler)
         this.handleAuthFailure();
 
-      throw createStatusError(status, response._data?.message, response._data);
+      throw createStatusError(status, response._data?.message, response._data, response.url);
     }
 
     const allowedStatuses: readonly number[] = flags.validStatuses ?? VALID_STATUS_CODES;
     if (!allowedStatuses.includes(status))
-      throw createStatusError(status, response._data?.message, response._data);
+      throw createStatusError(status, response._data?.message, response._data, response.url);
   }
 
   /**

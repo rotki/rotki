@@ -107,7 +107,7 @@ export function useHistoryEventsTable(
     requestPayload,
   }, emit);
 
-  const rows = useVirtualRows(data.groups, data.displayedEventsMapped, data.isSubgroupIncomplete);
+  const rows = useVirtualRows(data.groups, data.displayedEventsMapped, data.isSubgroupIncomplete, () => !!get(data.eventsError));
 
   const scroll = useVirtualScrollHighlight({
     flattenedRows: rows.flattenedRows,

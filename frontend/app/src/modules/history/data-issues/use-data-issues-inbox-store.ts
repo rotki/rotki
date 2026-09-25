@@ -23,6 +23,8 @@ export function emptyCounts(): StateCounts {
 export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', () => {
   const counts = ref<StateCounts>(emptyCounts());
   const baselineTotal = ref<number>(0);
+  /** The last summary refresh failed, so the counts are the previous ones and a 0 is not all clear. */
+  const summaryFailed = ref<boolean>(false);
   const historicalBalanceProcessingCompleted = ref<number>(0);
 
   /** Issues awaiting the user: open + needs-attention. Auto-remediating issues
@@ -33,6 +35,11 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   function setSummary(newCounts: StateCounts, baseline: number): void {
     set(counts, newCounts);
     set(baselineTotal, baseline);
+    set(summaryFailed, false);
+  }
+
+  function markSummaryFailed(): void {
+    set(summaryFailed, true);
   }
 
   function notifyHistoricalBalanceProcessingCompleted(): void {
@@ -52,8 +59,10 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     counts,
     dismissInlinePanels,
     historicalBalanceProcessingCompleted,
+    markSummaryFailed,
     notifyHistoricalBalanceProcessingCompleted,
     setSummary,
+    summaryFailed,
   };
 });
 
