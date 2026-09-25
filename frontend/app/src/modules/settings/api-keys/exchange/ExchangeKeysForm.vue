@@ -221,11 +221,6 @@ const okxLocations = OkxLocation.options.map(item => ({
   label: t(OKX_LOCATION_KEYS[item]),
 }));
 
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
-});
-
 /**
  * The dialog owns the entry, so a write to `modelValue` only comes back on the next tick. Every
  * caller therefore hands the entry it just wrote straight to the baseline instead of reading it

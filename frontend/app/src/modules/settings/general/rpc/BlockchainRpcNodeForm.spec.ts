@@ -42,6 +42,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
   function createWrapper(
     modelValue: BlockchainRpcNodeManageState = stateFor(),
     errorMessages: ValidationErrors = {},
+    stateUpdated: boolean = false,
   ): VueWrapper<FormInstance> {
     return mount(BlockchainRpcNodeForm, {
       global: {
@@ -53,7 +54,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
         'onUpdate:errorMessages': async (value: ValidationErrors): Promise<void> => wrapper.setProps({ errorMessages: value }),
         'onUpdate:modelValue': async (value: BlockchainRpcNodeManageState): Promise<void> => wrapper.setProps({ modelValue: value }),
         'onUpdate:stateUpdated': async (value: boolean): Promise<void> => wrapper.setProps({ stateUpdated: value }),
-        'stateUpdated': false,
+        stateUpdated,
       },
     });
   }
@@ -144,5 +145,11 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
     await vi.advanceTimersByTimeAsync(600);
 
     expect(wrapper.props('stateUpdated')).toBe(true);
+  });
+
+  it('should disarm a flag left armed by a previous edit when it mounts', () => {
+    wrapper = createWrapper(stateFor(), {}, true);
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
   });
 });

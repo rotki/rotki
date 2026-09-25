@@ -134,13 +134,7 @@ export function useHistoryEventForm<
     form.setServerErrors(errors);
   });
 
-  watch(form.dirty, (dirty) => {
-    set(stateUpdated, dirty);
-  });
-
-  onUnmounted(() => {
-    set(stateUpdated, false);
-  });
+  syncRefs(form.dirty, stateUpdated);
 
   return {
     form,

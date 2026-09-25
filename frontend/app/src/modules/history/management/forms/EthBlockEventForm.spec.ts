@@ -101,6 +101,17 @@ describe('forms/EthBlockEventForm.vue', () => {
       ...options,
     });
 
+  it('should disarm a prompt-on-close flag left armed by a previous edit when it mounts', () => {
+    wrapper = createWrapper({
+      props: {
+        data: { nextSequenceId: '0', type: 'add' },
+        stateUpdated: true,
+      },
+    });
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
+  });
+
   it('should render the documented e2e selector contract', () => {
     wrapper = createWrapper();
     // The e2e suite finds every field through these selectors; losing one is an e2e break.

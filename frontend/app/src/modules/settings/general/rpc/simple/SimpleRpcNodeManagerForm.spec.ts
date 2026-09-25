@@ -27,6 +27,7 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
   function createWrapper(
     modelValue: string = '',
     errorMessages: ValidationErrors = {},
+    stateUpdated: boolean = false,
   ): VueWrapper<FormInstance> {
     return mount(SimpleRpcNodeManagerForm, {
       global: {
@@ -35,7 +36,7 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
       props: {
         'errorMessages': errorMessages,
         'modelValue': modelValue,
-        'stateUpdated': false,
+        stateUpdated,
         'onUpdate:errorMessages': async (value: ValidationErrors): Promise<void> => wrapper.setProps({ errorMessages: value }),
         'onUpdate:modelValue': async (value: string): Promise<void> => wrapper.setProps({ modelValue: value }),
         'onUpdate:stateUpdated': async (value: boolean): Promise<void> => wrapper.setProps({ stateUpdated: value }),
@@ -110,5 +111,11 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', () => {
     await vi.advanceTimersByTimeAsync(600);
 
     expect(wrapper.props('stateUpdated')).toBe(true);
+  });
+
+  it('should disarm a flag left armed by a previous edit when it mounts', () => {
+    wrapper = createWrapper('https://example.com', {}, true);
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
   });
 });
