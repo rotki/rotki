@@ -8,10 +8,14 @@ import { describe, expect, it } from 'vitest';
 import { updateBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
 
 describe('utils/prices', () => {
+  /** ETH carries a different `usdPrice`, so every ETH value below shows `price.value` is the one used. */
+  const ETH_PRICE = 2000;
+  const ETH_USD_PRICE = 2500;
+
   const mockPrices = {
     BTC: createTestPriceInfo(40000, 'cryptocompare'),
     DAI: createTestPriceInfo(1, 'coingecko'),
-    ETH: createTestPriceInfo(2000, 'coingecko', false, 2500),
+    ETH: createTestPriceInfo(ETH_PRICE, 'coingecko', false, ETH_USD_PRICE),
   };
 
   describe('updateBalancesPrices', () => {
@@ -28,9 +32,8 @@ describe('utils/prices', () => {
 
       const result = updateBalancesPrices(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.ETH.uniswap.value).toEqual(bigNumberify(20000));
-      expect(result.ETH.compound.value).toEqual(bigNumberify(10000));
+      expect(result.ETH.uniswap.value).toEqual(bigNumberify(10 * ETH_PRICE));
+      expect(result.ETH.compound.value).toEqual(bigNumberify(5 * ETH_PRICE));
       expect(result.BTC.protocol1.value).toEqual(bigNumberify(80000));
     });
 
@@ -78,9 +81,8 @@ describe('utils/prices', () => {
 
       const result = updateBalancesPrices(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.ETH.protocol1.value).toEqual(bigNumberify(2000));
-      expect(result.ETH.protocol2.value).toEqual(bigNumberify(4000));
+      expect(result.ETH.protocol1.value).toEqual(bigNumberify(ETH_PRICE));
+      expect(result.ETH.protocol2.value).toEqual(bigNumberify(2 * ETH_PRICE));
     });
   });
 
@@ -93,8 +95,7 @@ describe('utils/prices', () => {
 
       const result = updateExchangeBalancesPrices(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.ETH.value).toEqual(bigNumberify(20000));
+      expect(result.ETH.value).toEqual(bigNumberify(10 * ETH_PRICE));
       expect(result.DAI.value).toEqual(bigNumberify(1000));
     });
 
@@ -136,10 +137,9 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.eth['0xAddress1'].assets.ETH.native.value).toEqual(bigNumberify(20000));
+      expect(result.eth['0xAddress1'].assets.ETH.native.value).toEqual(bigNumberify(10 * ETH_PRICE));
       expect(result.eth['0xAddress1'].liabilities.DAI.compound.value).toEqual(bigNumberify(1000));
-      expect(result.eth['0xAddress2'].assets.ETH.uniswap.value).toEqual(bigNumberify(10000));
+      expect(result.eth['0xAddress2'].assets.ETH.uniswap.value).toEqual(bigNumberify(5 * ETH_PRICE));
       expect(result.btc.bc1Address.assets.BTC.native.value).toEqual(bigNumberify(80000));
     });
 
@@ -188,8 +188,7 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.eth['0xAddress'].assets.ETH.native.value).toEqual(bigNumberify(20000));
+      expect(result.eth['0xAddress'].assets.ETH.native.value).toEqual(bigNumberify(10 * ETH_PRICE));
       expect(result.eth['0xAddress'].assets.UNKNOWN).toEqual(balances.eth['0xAddress'].assets.UNKNOWN);
     });
 
@@ -214,11 +213,10 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      // Uses price.value (2000) for ETH, not usdPrice (2500)
-      expect(result.eth['0xAddress1'].assets.ETH.protocol1.value).toEqual(bigNumberify(2000));
+      expect(result.eth['0xAddress1'].assets.ETH.protocol1.value).toEqual(bigNumberify(ETH_PRICE));
       expect(result.eth['0xAddress1'].assets.DAI.protocol2.value).toEqual(bigNumberify(100));
       expect(result.eth['0xAddress1'].liabilities.DAI.lending1.value).toEqual(bigNumberify(50));
-      expect(result.polygon['0xAddress2'].assets.ETH.bridge.value).toEqual(bigNumberify(4000));
+      expect(result.polygon['0xAddress2'].assets.ETH.bridge.value).toEqual(bigNumberify(2 * ETH_PRICE));
     });
   });
 
