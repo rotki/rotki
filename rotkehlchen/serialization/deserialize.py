@@ -756,20 +756,11 @@ def deserialize_evm_transaction(
                     if raw_receipt_data is not None:
                         with suppress(DeserializationError, KeyError):
                             l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
-                    if l1_fee is None:
-                        l1_fee = 0
                 else:  # should never happen
                     log.error(
                         f'Cannot retrieve L1 fee for {chain_id.to_name()} transaction {tx_hash!s}. '  # noqa: E501
                         f'Both evm_inquirer and indexer are None.',
                     )
-
-            if l1_fee is None:
-                log.error(
-                    f'Failed to retrieve L1 fee while deserializing {chain_id.to_name()} '
-                    f'transaction {tx_hash!s}. Using 0 L1 fee.',
-                )
-                l1_fee = 0
 
             return L2WithL1FeesTransaction(
                 timestamp=timestamp,

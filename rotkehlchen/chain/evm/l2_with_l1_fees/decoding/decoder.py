@@ -61,7 +61,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
         )
 
     def _calculate_fees(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
-        return from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))
+        return from_wei(FVal(tx.gas_used * tx.gas_price + (tx.l1_fee or 0)))
 
     def _chain_specific_post_decoding_rules(
             self,

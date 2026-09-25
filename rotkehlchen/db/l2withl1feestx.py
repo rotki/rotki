@@ -31,7 +31,8 @@ class DBL2WithL1FeesTx(DBEvmTx):
     def set_l1_fee(write_cursor: DBCursor, tx_id: int, l1_fee: int) -> None:
         write_cursor.execute(
             'INSERT INTO optimism_transactions(tx_id, l1_fee) VALUES (?, ?)'
-            ' ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee',
+            ' ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee '
+            "WHERE optimism_transactions.l1_fee IS NULL OR excluded.l1_fee!='0'",
             (tx_id, str(l1_fee)),
         )
 
@@ -51,14 +52,19 @@ class DBL2WithL1FeesTx(DBEvmTx):
             relevant_address,
         )
 
-        tx_tuples = [(str(tx.l1_fee), tx.tx_hash, tx.chain_id.serialize_for_db()) for tx in evm_transactions]  # noqa: E501
+        tx_tuples = [
+            (None if tx.l1_fee is None else str(tx.l1_fee), tx.tx_hash, tx.chain_id.serialize_for_db())  # noqa: E501
+            for tx in evm_transactions
+        ]
         query = """
             INSERT INTO optimism_transactions(tx_id, l1_fee)
             SELECT evm_transactions.identifier, ? FROM
             evm_transactions WHERE tx_hash=? and chain_id=?
             ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee
-            WHERE (optimism_transactions.l1_fee IS NULL OR optimism_transactions.l1_fee='0')
-            AND excluded.l1_fee!='0'
+            WHERE excluded.l1_fee IS NOT NULL AND (
+                optimism_transactions.l1_fee IS NULL OR
+                (optimism_transactions.l1_fee='0' AND excluded.l1_fee!='0')
+            )
         """
         write_cursor.executemany(query, tx_tuples)
         return newly_inserted
@@ -92,7 +98,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
             input_data=result[10],
             nonce=result[11],
             db_id=result[12],
-            l1_fee=0 if result[13] is None else int(result[13]),  # this check is only needed when _build_evm_transaction is called from a code path that does not call assert_tx_data_is_pulled().  # noqa: E501
+            l1_fee=None if result[13] is None else int(result[13]),
             tx_type=0 if result[14] is None else result[14],  # the receipt may not have been pulled yet  # noqa: E501
             authorization_list=None if len(authorization_list_result) == 0 else [
                 EvmTransactionAuthorization(nonce=entry[0], delegated_address=entry[1])
@@ -106,7 +112,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
             chain_id: ChainID,
             data: dict[str, Any],
     ) -> int:
-        """Adds L2WithL1Fees receipt data and any nonzero L1 fee in the receipt.
+        """Adds L2WithL1Fees receipt data and any resolved L1 fee in the receipt.
         Returns the db identifier of the transaction corresponding to this receipt.
         """
         tx_id = super().add_or_ignore_receipt_data(
@@ -124,7 +130,6 @@ class DBL2WithL1FeesTx(DBEvmTx):
             log.warning(f'Failed to get L1 fee from receipt while adding receipt to the DB due to {e!s}.')  # noqa: E501
             return tx_id
 
-        if l1_fee != 0:  # A zero must not replace a fee already supplied by the transaction list.
-            self.set_l1_fee(write_cursor=write_cursor, tx_id=tx_id, l1_fee=l1_fee)
+        self.set_l1_fee(write_cursor=write_cursor, tx_id=tx_id, l1_fee=l1_fee)
 
         return tx_id

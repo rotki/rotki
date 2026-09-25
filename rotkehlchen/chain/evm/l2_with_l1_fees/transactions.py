@@ -36,7 +36,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)
         self.dbevmtx = DBL2WithL1FeesTx(database)
-        self._fresh_zero_fee_hashes: LRUSetCache[EVMTxHash] = LRUSetCache(maxsize=512)
+        self._fresh_unresolved_fee_hashes: LRUSetCache[EVMTxHash] = LRUSetCache(maxsize=512)
 
     def _enrich_receipts(self, receipts: list[dict[str, Any]]) -> None:
         """Fill missing receipt fees from indexers before writing the receipt batch."""
@@ -64,7 +64,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             ).fetchall()
 
         for raw_hash, account, block_number, saved_fee in rows:
-            if saved_fee is not None and int(saved_fee) != 0:
+            if saved_fee is not None:
                 continue
             tx_hash = deserialize_evm_tx_hash(raw_hash)
             if (fee := self.evm_inquirer.maybe_get_l1_fees(
@@ -73,8 +73,8 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                 block_number=block_number,
             )) is not None:
                 missing[tx_hash]['l1Fee'] = fee
-            if fee in (None, 0):
-                self._fresh_zero_fee_hashes.add(tx_hash)
+            if fee is None:
+                self._fresh_unresolved_fee_hashes.add(tx_hash)
 
     def ensure_tx_data_exists(
             self,
@@ -100,21 +100,21 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             'WHERE txs.tx_hash=? AND txs.chain_id=?',
             (tx_hash, self.evm_inquirer.chain_id.serialize_for_db()),
         ).fetchone()
-        if saved_fee is not None and int(saved_fee) != 0 and isinstance(evm_tx, L2WithL1FeesTransaction):  # noqa: E501
+        if saved_fee is not None and isinstance(evm_tx, L2WithL1FeesTransaction):
             return evm_tx, tx_receipt
 
         # A fresh query or receipt batch already tried to resolve the fee. Reuse that
-        # result during the next decode, then allow later attempts to repair old zero fees.
-        if (saved_fee is None or int(saved_fee) == 0) and isinstance(evm_tx, L2WithL1FeesTransaction):  # noqa: E501
-            if tx_hash in self._fresh_zero_fee_hashes:
-                self._fresh_zero_fee_hashes.remove(tx_hash)
+        # result during the next decode, then allow later attempts to repair missing fees.
+        if isinstance(evm_tx, L2WithL1FeesTransaction):
+            if tx_hash in self._fresh_unresolved_fee_hashes:
+                self._fresh_unresolved_fee_hashes.remove(tx_hash)
                 return evm_tx, tx_receipt
 
             if (l1_fee := self.evm_inquirer.maybe_get_l1_fees(
                 account=evm_tx.from_address,
                 tx_hash=tx_hash,
                 block_number=evm_tx.block_number,
-            )) in (None, 0):
+            )) is None:
                 # Old rows do not retain raw receipt fields. If indexers cannot repair one,
                 # retry the direct transaction path, which can read l1Fee from an RPC receipt.
                 try:
@@ -132,16 +132,15 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                         l1_fee=l1_fee,
                     )
             else:
-                l1_fee = 0
                 log.warning(
                     'Could not resolve L1 fee for %s on %s',
                     tx_hash,
                     self.evm_inquirer.chain_name,
                 )
         else:
-            if saved_fee is None or int(saved_fee) == 0:
-                self._fresh_zero_fee_hashes.add(tx_hash)
-            l1_fee = 0 if saved_fee is None else int(saved_fee)
+            if saved_fee is None:
+                self._fresh_unresolved_fee_hashes.add(tx_hash)
+            l1_fee = None if saved_fee is None else int(saved_fee)
 
         return L2WithL1FeesTransaction(
             tx_hash=evm_tx.tx_hash,
