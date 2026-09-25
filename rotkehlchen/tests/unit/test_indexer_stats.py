@@ -10,6 +10,7 @@ import pytest
 import requests
 
 from rotkehlchen import indexer_stats
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -71,6 +72,40 @@ def test_indexer_usage_aggregates_periodic_and_final_windows(monkeypatch) -> Non
     assert windows[0]['session_id'] == windows[1]['session_id']
 
 
+@pytest.mark.parametrize('db_settings', [{'submit_usage_analytics': False}])
+def test_indexer_usage_opt_in_starts_new_window(monkeypatch, rotkehlchen_instance) -> None:
+    stats = rotkehlchen_instance.indexer_stats
+    assert stats is not None
+    stats._is_production = True
+    assert stats._has_consent() is False
+    now = [stats._window_start]
+    monkeypatch.setattr(indexer_stats, 'time', SimpleNamespace(monotonic=lambda: now[0]))
+    submit = MagicMock(return_value=True)
+    monkeypatch.setattr(indexer_stats, 'submit_sigil_batch', submit)
+
+    now[0] += 5 * 60 * 60  # No requests were counted while consent was off.
+    stats.maybe_flush()
+    assert rotkehlchen_instance.set_settings(ModifiableDBSettings(
+        submit_usage_analytics=True,
+    )) == (True, '')
+    stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
+    now[0] += 10
+    stats.maybe_flush()
+    first_worker = stats._worker
+    assert first_worker is None
+    submit.assert_not_called()
+
+    now[0] += indexer_stats.INDEXER_ANALYTICS_INTERVAL - 10
+    stats.maybe_flush()
+    worker = stats._worker
+    assert worker is not None
+    worker.join(timeout=2)
+    submit.assert_called_once()
+    assert _events(submit.call_args.kwargs['batch'])[0]['data']['seconds'] == (
+        indexer_stats.INDEXER_ANALYTICS_INTERVAL
+    )
+
+
 def test_indexer_usage_retries_failed_batch_and_discards_on_opt_out(monkeypatch) -> None:
     consent = [True]
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: consent[0])
@@ -93,6 +128,36 @@ def test_indexer_usage_retries_failed_batch_and_discards_on_opt_out(monkeypatch)
     stats.close()
     assert submit.call_count == 2
     assert stats._close_worker is None
+
+
+@pytest.mark.parametrize('close', [False, True])
+def test_indexer_usage_failed_upload_log_matches_close_state(
+        monkeypatch,
+        caplog,
+        close: bool,
+) -> None:
+    monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
+    submit = MagicMock(return_value=False)
+    monkeypatch.setattr(indexer_stats, 'submit_sigil_batch', submit)
+    stats = indexer_stats.IndexerStats()
+    stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
+
+    with caplog.at_level(logging.DEBUG, logger='rotkehlchen.indexer_stats'):
+        if close:
+            stats.close()
+            worker = stats._close_worker
+        else:
+            stats._window_start -= indexer_stats.INDEXER_ANALYTICS_INTERVAL
+            stats.maybe_flush()
+            worker = stats._worker
+        assert worker is not None
+        worker.join(timeout=2)
+
+    submit.assert_called_once()
+    periodic_message = 'Could not submit indexer usage analytics; will retry later'
+    final_message = 'Could not submit final indexer usage analytics before close'
+    assert (periodic_message in caplog.text) is not close
+    assert (final_message in caplog.text) is close
 
 
 def test_indexer_usage_drops_failed_batches_without_blocking_later_windows(monkeypatch) -> None:

@@ -161,7 +161,10 @@ class IndexerStats:
                 if submitted is False:
                     if self._record_failed_attempt(batch):
                         continue
-                    log.debug('Could not submit indexer usage analytics; will retry later')
+                    if deadline is None:
+                        log.debug('Could not submit indexer usage analytics; will retry later')
+                    else:
+                        log.debug('Could not submit final indexer usage analytics before close')
                     return
 
                 with self._lock:

@@ -1504,7 +1504,7 @@ class Rotkehlchen:
 
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
-        if settings.submit_usage_analytics is False and self.indexer_stats is not None:
+        if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
             self.indexer_stats.discard()
 
         return True, ''
