@@ -71,7 +71,7 @@ class Defillama(
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
-        self.session = create_session(retry_reads=False)
+        self.session = create_session(retry_policy='no_read_retries')
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
         self._rate_limiter = TokenBucket(

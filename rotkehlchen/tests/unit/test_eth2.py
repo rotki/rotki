@@ -1,4 +1,7 @@
 import os
+import socket
+import threading
+from time import monotonic
 from typing import TYPE_CHECKING, Final
 from unittest.mock import patch
 
@@ -1333,6 +1336,71 @@ def test_beacon_node_bad_version_response_raises_remote_error():
             pytest.raises(RemoteError),
         ):
             BeaconNode(rpc_endpoint='http://localhost:6969')
+
+
+@pytest.mark.parametrize(('user_timeout', 'expected_timeout'), [
+    ((2, 1), (2, 1)),
+    ((30, 30), (5, 5)),
+])
+def test_beacon_node_handshake_respects_user_timeouts(
+        user_timeout: tuple[int, int],
+        expected_timeout: tuple[int, int],
+) -> None:
+    with (
+        patch(
+            'rotkehlchen.chain.ethereum.modules.eth2.beacon.CachedSettings.get_timeout_tuple',
+            return_value=user_timeout,
+        ),
+        patch.object(BeaconNode, 'query', return_value={'version': 'test'}) as query,
+    ):
+        BeaconNode(rpc_endpoint='http://localhost:6969')
+
+    assert query.call_args.kwargs['timeout'] == expected_timeout
+
+
+def test_beacon_node_handshake_is_a_single_bounded_attempt() -> None:
+    """A server that accepts but never responds gets one read attempt with a short timeout."""
+    attempts = 0
+    real_getaddrinfo = socket.getaddrinfo
+
+    def counting_getaddrinfo(*args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        return real_getaddrinfo(*args, **kwargs)
+
+    # a server that accepts connections and never answers, so the request can only end
+    # through its own timeout and not because the endpoint refused the connection
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(('127.0.0.1', 0))
+    listener.listen(1)
+    port = listener.getsockname()[1]
+    held_connections: list[socket.socket] = []
+
+    def accept_and_stay_silent() -> None:
+        while True:
+            try:
+                held_connections.append(listener.accept()[0])  # keep it open, send nothing
+            except OSError:
+                return
+
+    threading.Thread(target=accept_and_stay_silent, daemon=True).start()
+    start = monotonic()
+    try:
+        with (
+            patch('socket.getaddrinfo', side_effect=counting_getaddrinfo),
+            patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BEACON_NODE_PROBE_TIMEOUT', 1),
+            pytest.raises(RemoteError),
+        ):
+            BeaconNode(rpc_endpoint=f'http://127.0.0.1:{port}')
+    finally:
+        listener.close()
+        for connection in held_connections:
+            connection.close()
+
+    elapsed = monotonic() - start
+    assert attempts == 1, 'the handshake must not retry'
+    assert elapsed < 5, f'the handshake took {elapsed:.1f}s so it did not use the probe timeout'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
