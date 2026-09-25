@@ -6,6 +6,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.user_messages import MissingPrice
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -64,6 +65,7 @@ def get_manually_tracked_balances(
     except RemoteError as e:
         db.msg_aggregator.add_warning(
             f'Could not find prices during manually tracked balance querying due to {e!s}',
+            classification=MissingPrice(asset=None, timestamp=None),
         )
         prices = {}
 

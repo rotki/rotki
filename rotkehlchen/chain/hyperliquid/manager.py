@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -13,6 +14,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
+from rotkehlchen.user_messages import NetworkFailure
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -175,6 +178,11 @@ class HyperliquidManager(EvmManager):
                     self.transactions.msg_aggregator.add_error(
                         f'Failed to query Hyperliquid history for {address}. '
                         'Will retry in a future sync.',
+                        classification=NetworkFailure(
+                            record=UserMessageRecord.TRANSACTION,
+                            error=str(e),
+                        ),
+                        subject=Location.HYPERLIQUID,
                     )
                     continue
 

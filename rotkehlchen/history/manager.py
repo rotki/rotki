@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -10,6 +11,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -114,6 +116,11 @@ class HistoryQueryingManager:
                 self.msg_aggregator.add_error(
                     f'Failed to query some events from {location.name} exchanges '
                     f'{",".join(exchange_names)}',
+                    classification=NetworkFailure(
+                        record=UserMessageRecord.HISTORY_EVENT,
+                        error='Lending interest history query failed',
+                    ),
+                    subject=location,
                 )
 
         db = DBHistoryEvents(self.db)
@@ -224,6 +231,8 @@ class HistoryQueryingManager:
                 self.msg_aggregator.add_error(
                     f'There was an error when querying {str_blockchain} etherscan for transactions: {msg}'  # noqa: E501
                     f'The final history result will not include {str_blockchain} transactions',
+                    classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error=msg),
+                    subject=Location.from_chain(blockchain),
                 )
                 empty_or_error += '\n' + msg
 

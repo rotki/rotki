@@ -15,7 +15,7 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep, UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import (
@@ -73,6 +73,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import (
     combine_dicts,
     pairwise,
@@ -600,9 +601,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
             except DeserializationError as e:
                 msg = str(e)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Error processing kraken balance for {kraken_name}. Check logs '
                     f'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=msg),
                 )
                 log.error(
                     'Error processing kraken balance',
@@ -808,9 +810,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f'Found kraken spend/receive events {event_id} with '
                 f'less than 2 parts. {trade_parts}',
             )
-            self.msg_aggregator.add_warning(
+            self.add_classified_warning(
                 f'Found kraken spend/receive events {event_id} with '
                 f'less than 2 parts. Skipping...',
+                BadData(record=UserMessageRecord.TRADE, error='Less than 2 spend/receive parts'),
             )
             return []
 
@@ -861,9 +864,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f"Failed to process {event_id}. Couldn't find "
                 f'spend/receive parts {trade_parts}',
             )
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Failed to read trades for event {event_id}. '
                 f'More details are available at the logs',
+                BadData(record=UserMessageRecord.TRADE, error='Missing spend or receive part'),
             )
             return []
 
@@ -997,9 +1001,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     key=lambda x: deserialize_fval(x['time'], 'time', 'kraken ledgers') * 1000,
                 )
             except DeserializationError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to read timestamp in kraken event group '
                     f'due to {e!s}. For more information read the logs. Skipping event',
+                    BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                 )
                 log.error(f'Failed to read timestamp for {raw_events} from {events_source}')
                 continue
@@ -1123,9 +1128,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     "ConnectionResetError(104, 'Connection reset by peer'))"
                     not in str(e)
             ):
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
                     f'{timestamp_to_date(end_ts)}. {e!s}',
+                    NetworkFailure(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
                 )
             spot_with_errors = True
 
@@ -1518,12 +1524,17 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     current_fee_index += 1
             except (DeserializationError, KeyError, UnknownAsset) as e:
                 skipped = True
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Keyrror {msg}'
-                self.msg_aggregator.add_error(
-                    f'Failed to read ledger event from kraken {raw_event} due to {msg}',
-                )
+                if isinstance(e, UnknownAsset):
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='ledger event',
+                    )
+                else:
+                    msg = f'Missing key: {e!s}' if isinstance(e, KeyError) else str(e)
+                    self.add_classified_error(
+                        f'Failed to read ledger event from kraken {raw_event} due to {msg}',
+                        BadData(record=UserMessageRecord.HISTORY_EVENT, error=msg),
+                    )
                 if save_skipped_events:
                     with self.db.user_write() as write_cursor:
                         self.db.add_skipped_external_event(

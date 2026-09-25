@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.utils import normalized_fval_value_decimals, symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -39,6 +40,7 @@ from rotkehlchen.types import (
     ExchangeAuthCredentials,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -416,9 +418,10 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Unexpected data encountered during deserialization of a bitmex '
                     'asset movement. Check logs for details and open a bug report.',
+                    BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=msg),
                 )
                 log.error(
                     f'Unexpected data encountered during deserialization of bitmex '

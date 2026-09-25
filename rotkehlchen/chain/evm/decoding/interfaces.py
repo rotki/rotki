@@ -23,6 +23,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
+from rotkehlchen.user_messages import UnknownAssetSeen
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -159,6 +160,8 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
             f'Could not identify asset {event.asset} decoding ethereum event in {counterparty}. '
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.tx_ref!s}.',
+            classification=UnknownAssetSeen(identifier=event.asset.identifier),
+            subject=event.location,
         )
 
 

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Unpack, cast,
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
@@ -88,6 +89,7 @@ from rotkehlchen.db.settings import (
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
+    TUPLE_TYPE_ENTRIES,
     DBAssetBalance,
     DBTupleType,
     LocationData,
@@ -164,6 +166,12 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     UserNote,
+)
+from rotkehlchen.user_messages import (
+    ROTKI_PREMIUM_SERVICE,
+    AuthFailure,
+    LocalDbProblem,
+    UnknownAssetSeen,
 )
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
@@ -364,6 +372,7 @@ class DBHandler:
         self.msg_aggregator.add_warning(
             f'Your encrypted database was in a half-upgraded state. '
             f'Trying to login with a backup {backup_to_use}',
+            classification=LocalDbProblem(entry=UserMessageEntry.DB_UPGRADE),
         )
         self._connect()
 
@@ -2174,6 +2183,7 @@ class DBHandler:
                     self.msg_aggregator.add_warning(
                         f'Could not deserialize {value} as a token when reading latest '
                         f'tokens list of {address}',
+                        classification=LocalDbProblem(entry=UserMessageEntry.TOKEN_LIST),
                     )
                     continue
 
@@ -2293,6 +2303,7 @@ class DBHandler:
                 f'This should not happen unless the DB was manually modified. '
                 f'Skipping entry. This needs to be fixed manually. If you '
                 f'can not do that alone ask for help in the issue tracker',
+                classification=LocalDbProblem(entry=UserMessageEntry.BLOCKCHAIN_ACCOUNT),
             )
             return None
 
@@ -2426,6 +2437,7 @@ class DBHandler:
                     f'This should not happen unless the DB was manually modified. '
                     f'Skipping entry. This needs to be fixed manually. If you '
                     f'can not do that alone ask for help in the issue tracker',
+                    classification=LocalDbProblem(entry=UserMessageEntry.BLOCKCHAIN_ACCOUNT),
                 )
                 continue
 
@@ -2475,6 +2487,7 @@ class DBHandler:
                 # ValueError would be due to FVal failing
                 self.msg_aggregator.add_warning(
                     f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.MANUALLY_TRACKED_BALANCE),
                 )
 
         return data
@@ -2624,7 +2637,10 @@ class DBHandler:
             self.add_multiple_balances(write_cursor, balances)
             self.add_multiple_location_data(write_cursor, locations)
         except InputError as err:
-            self.msg_aggregator.add_warning(str(err))
+            self.msg_aggregator.add_warning(
+                str(err),
+                classification=LocalDbProblem(entry=UserMessageEntry.BALANCE_SNAPSHOT),
+            )
 
     def add_exchange(
             self,
@@ -3023,6 +3039,7 @@ class DBHandler:
                     f'Found unknown location {entry[1]} for exchange {entry[0]} at '
                     f'get_exchange_credentials. This could mean that you are opening '
                     f'the app with an older version. {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.EXCHANGE_CREDENTIALS),
                 )
                 continue
 
@@ -3163,6 +3180,7 @@ class DBHandler:
             self.msg_aggregator.add_error(
                 f'Failed to add "{tuple_type}" to the DB with overflow error. '
                 f'Check the logs for more details',
+                classification=LocalDbProblem(entry=TUPLE_TYPE_ENTRIES[tuple_type]),
             )
             log.error(
                 f'Overflow error while trying to add "{tuple_type}" tuples to the'
@@ -3318,12 +3336,14 @@ class DBHandler:
                 self.msg_aggregator.add_error(
                     f'Error deserializing margin position from the DB. '
                     f'Skipping it. Error was: {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.MARGIN_POSITION),
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing margin position from the DB. Skipping it. '
                     f'Unknown asset {e.identifier} found',
+                    classification=UnknownAssetSeen(identifier=e.identifier),
                 )
                 continue
             margin_positions.append(margin)
@@ -3537,6 +3557,7 @@ class DBHandler:
         except IncorrectApiKeyFormat:
             self.msg_aggregator.add_error(
                 'Incorrect rotki API Key/Secret format found in the DB. Skipping ...',
+                classification=AuthFailure(service=ROTKI_PREMIUM_SERVICE, account=None),
             )
             return None
 
@@ -3908,6 +3929,7 @@ class DBHandler:
                         self.msg_aggregator.add_error(
                             f'Asset with non-string type {type(asset_id)} found in the '
                             f'database. Skipping it.',
+                            classification=LocalDbProblem(entry=UserMessageEntry.ASSET),
                         )
                         continue
                     table_asset_ids.add(asset_id)
@@ -3925,6 +3947,7 @@ class DBHandler:
                             f'Unknown/unsupported asset {asset_id} found in the '
                             f'manually tracked balances. Have you modified the assets DB? '
                             f'Make sure that the aforementioned asset is in there.',
+                            classification=UnknownAssetSeen(identifier=asset_id),
                         )
                     else:
                         log.debug(
@@ -4153,6 +4176,7 @@ class DBHandler:
             if description is not None and not isinstance(description, str):
                 self.msg_aggregator.add_warning(
                     f'Tag {name} with invalid description found in the DB. Skipping tag',
+                    classification=LocalDbProblem(entry=UserMessageEntry.TAG),
                 )
                 continue
 
@@ -4162,6 +4186,7 @@ class DBHandler:
             except DeserializationError as e:
                 self.msg_aggregator.add_warning(
                     f'Tag {name} with invalid color code found in the DB. {e!s}. Skipping tag',
+                    classification=LocalDbProblem(entry=UserMessageEntry.TAG),
                 )
                 continue
 

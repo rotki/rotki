@@ -7,6 +7,25 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Classified User Messages
+------------------------
+
+* **Renamed Message**: ``legacy`` is now ``user_message``. Consumers matching the old type name must migrate.
+* **Changed Message**: ``user_message``
+
+  - Besides ``verbosity`` and ``value``, ``data`` now always carries ``key`` and ``fields``, and carries ``subject``, which is ``null`` for a message about no single location.
+  - ``key`` is why the message happened, one of ``bad_data``, ``network``, ``auth``, ``unknown_asset``, ``local_db``, ``price``, ``unsupported`` or ``internal``.
+  - ``fields`` holds the unrendered data of that family, e.g. ``record`` and ``error`` for ``bad_data``. ``value`` keeps the rendered sentence.
+
+* **Changed Endpoint**: ``GET /api/(version)/messages``
+
+  - Each entry of ``errors`` and ``warnings`` is now the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string. This applies to every queued type, ``balance_snapshot_error`` included.
+  - Every message type that could not be delivered over a websocket is now queued here, whether the send failed, no client was connected, or the client disconnected before receiving it. Only progress and status types (``progress_updates``, ``transaction_status``, ``history_events_status``, ``db_upgrade_status``, ``data_migration_status``, ``database_upload_progress``) are dropped, as they only mean something to a connected client. Previously each of those three paths applied a different policy.
+
+* **Changed Message**: ``exchange_unknown_asset``
+
+  - Now also sent for unknown assets in bit2me balances, deposits/withdrawals and trades, cryptocom deposits/withdrawals and trades, and kraken ledger events. These previously arrived as ``user_message`` errors.
+
 No Available Indexers Websocket Message
 ---------------------------------------
 

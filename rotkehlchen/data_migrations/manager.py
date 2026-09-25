@@ -2,6 +2,7 @@ import logging
 import traceback
 from typing import TYPE_CHECKING, NamedTuple
 
+from rotkehlchen.api.websockets.typedefs import UserMessageOperation
 from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
@@ -22,6 +23,7 @@ from rotkehlchen.data_migrations.migrations.migrations_14 import data_migration_
 from rotkehlchen.data_migrations.migrations.migrations_18 import data_migration_18
 from rotkehlchen.data_migrations.migrations.migrations_19 import data_migration_19
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import Internal
 
 from .constants import LAST_USERDB_DATA_MIGRATION
 from .progress import MigrationProgressHandler
@@ -104,7 +106,10 @@ class DataMigrationManager:
         except BaseException as e:
             stacktrace = traceback.format_exc()
             error = f'Failed to run soft data migration to version {migration.version} due to {e!s}'  # noqa: E501
-            self.rotki.msg_aggregator.add_error(error)
+            self.rotki.msg_aggregator.add_error(
+                error,
+                classification=Internal(operation=UserMessageOperation.DATA_MIGRATION),
+            )
             log.error(f'{error}\n{stacktrace}')
             return False
 

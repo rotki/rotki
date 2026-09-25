@@ -3,10 +3,11 @@ import urllib
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -48,6 +49,7 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -71,6 +73,10 @@ API_KEY_ERROR_CODE_ACTION: dict = {
 }
 API_MAX_LIMIT = 1000  # Max limit for all API v1 endpoints
 MIN_TIMESTAMP = Timestamp(1000000000)  # minimum timestamp that can be queried as per woo docs
+PAGINATED_ENDPOINT_RECORDS: Final = {
+    'v1/client/hist_trades': UserMessageRecord.TRADE,
+    'v1/asset/history': UserMessageRecord.ASSET_MOVEMENT,
+}
 
 
 class TradePairData(NamedTuple):
@@ -140,9 +146,10 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 asset = asset_from_woo(entry['token'])
             except (DeserializationError, KeyError) as e:
                 log.error('Error processing a Woo balance.', entry=entry, error=str(e))
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Failed to deserialize a Woo balance entry.'
                     'Check logs for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
             except UnknownAsset as e:
@@ -352,13 +359,19 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     f'Woo {endpoint} query failed due to a remote error: {e}',
                     options=call_options,
                 )
-                self.msg_aggregator.add_error(f'Got remote error while querying Woo: {e}')
+                self.add_classified_error(
+                    f'Got remote error while querying Woo: {e}',
+                    NetworkFailure(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
+                )
                 raise
             try:
                 entries: list[dict[str, Any]] = response[entries_key]
             except KeyError as e:
                 msg = f'Woo {endpoint} missing key {entries_key} in response'
-                self.msg_aggregator.add_error(msg)
+                self.add_classified_error(
+                    msg,
+                    BadData(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
+                )
                 log.error(f'{msg}: {response}', options=call_options)
                 raise RemoteError(msg) from e
             page_results = []
@@ -368,7 +381,10 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error(f'Woo {endpoint} {msg}: {entry}')
-                    self.msg_aggregator.add_error(msg)
+                    self.add_classified_error(
+                        msg,
+                        BadData(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
+                    )
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -401,8 +417,9 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     f'Error loading all Woo {endpoint}. {msg}',
                     entries=entries,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to load all Woo {endpoint}. Check logs for details.',
+                    BadData(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
                 )
                 raise RemoteError(msg) from e
 

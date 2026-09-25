@@ -13,9 +13,17 @@ export const PeriodicClientQueryResultSchema = z.object({
 
 export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResultSchema>;
 
+/**
+ * The polling fallback's queue, drained by `GET /messages`.
+ *
+ * @remarks
+ * Each entry is a `{ type, data }` message in the websocket's shape. Entries are validated one by
+ * one where they are dispatched, so a message this build does not know drops alone instead of
+ * failing the whole batch.
+ */
 export const MessagesSchema = z.object({
-  errors: z.array(z.string()),
-  warnings: z.array(z.string()),
+  errors: z.array(z.unknown()),
+  warnings: z.array(z.unknown()),
 });
 
 export type Messages = z.infer<typeof MessagesSchema>;
