@@ -1,5 +1,5 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
-import type { AssetProtocolBalancesWithChains } from '@/modules/balances/balance-transformations';
+import type { AssetProtocolBalancesWithChains } from '@/modules/balances/aggregation/core/balance-transformations';
 import { Zero } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
 import { describe, expect, it, vi } from 'vitest';

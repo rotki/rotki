@@ -6,8 +6,8 @@ import type { ExchangeInfo } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { aggregateTotals } from '@/modules/accounts/account-helpers';
-import { summarizeAssetProtocols } from '@/modules/balances/asset-summary';
-import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/modules/balances/balance-transformations';
+import { summarizeAssetProtocols } from '@/modules/balances/aggregation/core/asset-summary';
+import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/modules/balances/aggregation/core/balance-transformations';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 
 /**

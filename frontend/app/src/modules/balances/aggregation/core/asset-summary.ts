@@ -1,11 +1,11 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
-import { compareRowsByValue } from '@/modules/balances/balance-grouping';
+import { compareRowsByValue } from '@/modules/balances/aggregation/core/balance-grouping';
 import {
   aggregateSourceBalances,
   createAssetBalanceFromAggregated,
   processCollectionGrouping,
-} from '@/modules/balances/balance-transformations';
+} from '@/modules/balances/aggregation/core/balance-transformations';
 
 /**
  * Configuration for asset sources and identifier resolution
