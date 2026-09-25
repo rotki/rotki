@@ -147,7 +147,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 if is_legacy:
                     fallback_name = f'Reward {underlying_token.name}'
                     fallback_symbol = f'r{underlying_token.symbol}'
-                    fallback_decimals = underlying_token.decimals
+                    fallback_decimals = underlying_token.get_decimals()
             else:  # case of cowcentrated vaults
                 underlying_tokens = None
 

@@ -981,7 +981,6 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
         decimals=18,
         name='SLOUGI',
         symbol='SLOUGI',
-        underlying_tokens=None,
     )
     globaldb.add_asset(token)
 

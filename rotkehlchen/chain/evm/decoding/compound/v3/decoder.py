@@ -67,7 +67,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
     def _get_compound_underlying_token(self, compound_token: EvmToken) -> EvmToken | None:
         """Get the underlying token for a compound token."""
         if compound_token not in self.underlying_tokens:
-            if compound_token.underlying_tokens is None:
+            if len(compound_token.underlying_tokens) == 0:
                 log.debug(f'No underlying tokens found for {compound_token}')
                 self.underlying_tokens[compound_token] = None
             else:

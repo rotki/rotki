@@ -1338,11 +1338,11 @@ def test_update_lending_protocol_underlying_assets_task(
                         db_token.decimals == 8
                     )
 
-            assert [UnderlyingToken(
+            assert (UnderlyingToken(
                 address=string_to_evm_address(underlying_token_address),
                 token_kind=TokenKind.ERC20,
                 weight=ONE,
-            )] == db_token.underlying_tokens
+            ),) == db_token.underlying_tokens
 
         with task_manager.database.conn.read_ctx() as cursor:
             cache_key = (

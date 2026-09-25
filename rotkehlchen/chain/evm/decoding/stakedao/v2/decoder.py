@@ -120,10 +120,8 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        underlying_tokens = vault_token.underlying_tokens
         if (
-            underlying_tokens is None or
-            len(underlying_tokens) != 1 or
+            len(underlying_tokens := vault_token.underlying_tokens) != 1 or
             (underlying_token := self.base.get_evm_token(address=underlying_tokens[0].address)) is None  # noqa: E501
         ):
             log.error(

@@ -315,7 +315,7 @@ class PriceHistorian:
                 )
                 return None
 
-        if from_asset.is_evm_token() and (evm_token := from_asset.resolve_to_evm_token()).underlying_tokens is not None:  # noqa: E501
+        if from_asset.is_evm_token() and len((evm_token := from_asset.resolve_to_evm_token()).underlying_tokens) != 0:  # noqa: E501
             aggregated_price = ZERO
             for underlying_token in evm_token.underlying_tokens:
                 underlying_asset = EvmToken(underlying_token.get_identifier(parent_chain=evm_token.chain_id))  # noqa: E501

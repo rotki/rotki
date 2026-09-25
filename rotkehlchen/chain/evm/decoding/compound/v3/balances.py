@@ -128,7 +128,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                         chain_id=self.evm_inquirer.chain_id,
                         token_type=TokenKind.ERC20,
                     ))
-                    if compound_token.underlying_tokens is None:
+                    if len(compound_token.underlying_tokens) == 0:
                         log.error(f'No underlying token found for {compound_token!s}.')
                         continue
 

@@ -138,7 +138,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         Returns the tokens and amounts in a tuple or None on error."""
         try:
             vault_token = self.base.get_or_create_evm_token(address=vault_address)
-            if vault_token.underlying_tokens is None:
+            if len(vault_token.underlying_tokens) == 0:
                 return None
 
             underlying_token = self.base.get_or_create_evm_token(

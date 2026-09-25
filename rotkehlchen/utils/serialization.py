@@ -1,6 +1,6 @@
 import json
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -13,11 +13,15 @@ from rotkehlchen.assets.asset import (
     HyperliquidToken,
     SolanaToken,
     UnderlyingToken,
+    token_name_and_symbol_from_db_data,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, Location, Timestamp, TokenKind
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class RKLEncoder(json.JSONEncoder):
@@ -68,7 +72,7 @@ def rlk_jsondumps(data: dict | list) -> str:
 def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: list[UnderlyingToken] | None,
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> AssetWithOracles:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class
@@ -79,15 +83,12 @@ def deserialize_asset_with_oracles_from_db(
     """
     identifier = asset_data[0]
     if asset_type == AssetType.EVM_TOKEN:
-        decimals = 18 if asset_data[3] is None else asset_data[3]
-        name = identifier if asset_data[4] is None else asset_data[4]
-        symbol = asset_data[5] if asset_data[5] is not None else ''
-
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return EvmToken.initialize(
             address=asset_data[2],
             chain_id=ChainID(asset_data[12]),
             token_kind=TokenKind.deserialize_evm_from_db(asset_data[13]),
-            decimals=decimals,
+            decimals=asset_data[3],
             name=name,
             symbol=symbol,
             started=Timestamp(asset_data[6]),
@@ -99,12 +100,13 @@ def deserialize_asset_with_oracles_from_db(
             collectible_id=tokenid_to_collectible_id(identifier=identifier),
         )
     if asset_type == AssetType.SOLANA_TOKEN:
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return SolanaToken.initialize(
             address=asset_data[2],
             token_kind=TokenKind.deserialize_solana_from_db(asset_data[13]),
             decimals=asset_data[3],
-            name=identifier if asset_data[4] is None else asset_data[4],
-            symbol=asset_data[5],
+            name=name,
+            symbol=symbol,
             started=Timestamp(asset_data[6]),
             swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
             coingecko=asset_data[9],
@@ -112,11 +114,12 @@ def deserialize_asset_with_oracles_from_db(
             protocol=asset_data[11],
         )
     if asset_type == AssetType.HYPERLIQUID_TOKEN:
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return HyperliquidToken.initialize(
             address=asset_data[2],
             decimals=asset_data[3],
-            name=identifier if asset_data[4] is None else asset_data[4],
-            symbol=asset_data[5],
+            name=name,
+            symbol=symbol,
             started=Timestamp(asset_data[6]),
             forked=CryptoAsset(asset_data[7]) if asset_data[7] is not None else None,
             swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
@@ -148,7 +151,7 @@ def deserialize_asset_with_oracles_from_db(
 def deserialize_generic_asset_from_db(
         asset_type: AssetType,
         asset_data: list[Any],
-        underlying_tokens: list[UnderlyingToken] | None,
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> AssetWithNameAndType:
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class

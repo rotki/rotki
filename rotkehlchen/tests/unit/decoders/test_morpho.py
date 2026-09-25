@@ -76,7 +76,6 @@ def test_morpho_deposit_base(
     assert vault_token.symbol == 'mwUSDC'
     assert vault_token.name == 'Moonwell Flagship USDC'
     assert vault_token.protocol == CPT_MORPHO
-    assert vault_token.underlying_tokens is not None
     assert len(vault_token.underlying_tokens) == 1
     assert vault_token.underlying_tokens[0].address == underlying_addr
     user_address = base_accounts[0]

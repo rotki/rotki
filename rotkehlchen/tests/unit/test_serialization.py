@@ -189,7 +189,6 @@ def test_evm_token_serialization_normalizes_underlying_token_weights() -> None:
         )],
     )
     serialized = token.to_dict()
-    assert serialized['underlying_tokens'] is not None
     normalized_weights = [FVal(entry['weight']) / FVal(100) for entry in serialized['underlying_tokens']]  # noqa: E501
     assert normalized_weights == [FVal('0.4'), FVal('0.6')]
 

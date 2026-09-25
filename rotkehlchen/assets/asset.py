@@ -2,7 +2,7 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from eth_utils import to_checksum_address
 
@@ -34,6 +34,9 @@ from rotkehlchen.types import (
 )
 
 from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -78,7 +81,7 @@ class UnderlyingToken(NamedTuple):
 
 
 def normalize_underlying_token_weights(
-        underlying_tokens: list[UnderlyingToken],
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> list[UnderlyingToken]:
     """Normalize underlying token weights to sum to exactly 100%"""
     normalized_tokens = []
@@ -96,10 +99,25 @@ def normalize_underlying_token_weights(
 
 
 def _serialize_underlying_tokens(
-        underlying_tokens: list[UnderlyingToken],
+        underlying_tokens: Sequence[UnderlyingToken],
 ) -> list[dict[str, Any]]:
     """Serialize underlying tokens while ensuring exported weights sum to exactly 100%."""
     return [x.serialize() for x in normalize_underlying_token_weights(underlying_tokens)]
+
+
+def token_name_and_symbol_from_db_data(
+        identifier: str,
+        name: str | None,
+        symbol: str | None,
+) -> tuple[str, str]:
+    """Return the name and symbol a token loaded from the DB is given.
+
+    The DB stores NULL for the name, symbol and decimals of a token whose information could
+    not be queried. A loaded token takes its identifier as name, which is also how a token with
+    missing information is recognized so it can be queried again, and an empty symbol. Decimals
+    are kept as None and are read through get_decimals().
+    """
+    return (identifier if name is None else name), ('' if symbol is None else symbol)
 
 
 @total_ordering
@@ -602,7 +620,7 @@ class EvmToken(CryptoAsset):
     token_kind: EVM_TOKEN_KINDS_TYPE = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
-    underlying_tokens: list[UnderlyingToken] | None = field(init=False)
+    underlying_tokens: tuple[UnderlyingToken, ...] = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         super(EvmToken, self).__post_init__(direct_field_initialization)
@@ -638,7 +656,7 @@ class EvmToken(CryptoAsset):
             cryptocompare: str | None = '',
             decimals: int | None = None,
             protocol: str | None = None,
-            underlying_tokens: list[UnderlyingToken] | None = None,
+            underlying_tokens: Sequence[UnderlyingToken] = (),
             collectible_id: str | None = None,
     ) -> EvmToken:
         identifier = evm_address_to_identifier(
@@ -662,7 +680,7 @@ class EvmToken(CryptoAsset):
             token_kind=token_kind,
             decimals=decimals,
             protocol=protocol,
-            underlying_tokens=underlying_tokens,
+            underlying_tokens=tuple(underlying_tokens),
         )
         return asset
 
@@ -670,19 +688,24 @@ class EvmToken(CryptoAsset):
     def deserialize_from_db(
             cls: type[EvmToken],
             entry: EthereumTokenDBTuple,
-            underlying_tokens: list[UnderlyingToken] | None = None,
+            underlying_tokens: Sequence[UnderlyingToken] = (),
     ) -> EvmToken:
         """May raise UnknownAsset if the swapped for asset can't be recognized
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[5],
+            symbol=entry[6],
+        )
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
             chain_id=ChainID(entry[2]),
             token_kind=TokenKind.deserialize_evm_from_db(entry[3]),
             decimals=entry[4],
-            name=entry[5],
-            symbol=entry[6] if entry[6] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[7]),  # type: ignore
             swapped_for=swapped_for,
             coingecko=entry[9],
@@ -693,18 +716,16 @@ class EvmToken(CryptoAsset):
         )
 
     def to_dict(self) -> dict[str, Any]:
-        underlying_tokens = (
-            _serialize_underlying_tokens(self.underlying_tokens)
-            if self.underlying_tokens is not None
-            else None
-        )
         result = super(EvmToken, self).to_dict() | {
             'address': self.evm_address,
             'evm_chain': self.chain_id.to_name(),
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,
-            'underlying_tokens': underlying_tokens,
+            'underlying_tokens': (  # None for none since the API rejects an empty list
+                _serialize_underlying_tokens(self.underlying_tokens)
+                if len(self.underlying_tokens) != 0 else None
+            ),
         }
         if self.token_kind == TokenKind.ERC721:  # only include collectible_id for ERC721 tokens
             result['collectible_id'] = tokenid_to_collectible_id(self.identifier)
@@ -751,7 +772,7 @@ class Nft(EvmToken):
             token_kind=TokenKind.ERC721,
             decimals=0,
             protocol=None,
-            underlying_tokens=None,
+            underlying_tokens=(),
         )
 
     @classmethod
@@ -785,7 +806,7 @@ class Nft(EvmToken):
             token_kind=TokenKind.ERC721,
             decimals=0,
             protocol=None,
-            underlying_tokens=None,
+            underlying_tokens=(),
         )
         return asset
 
@@ -861,12 +882,17 @@ class SolanaToken(CryptoAsset):
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[7]) if entry[7] is not None else None
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[4],
+            symbol=entry[5],
+        )
         return SolanaToken.initialize(
             address=SolanaAddress(entry[1]),
             token_kind=TokenKind.deserialize_solana_from_db(entry[2]),
             decimals=entry[3],
-            name=entry[4],
-            symbol=entry[5] if entry[5] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[6]),  # type: ignore
             swapped_for=swapped_for,
             coingecko=entry[8],
@@ -944,11 +970,16 @@ class HyperliquidToken(CryptoAsset):
             cls: type[HyperliquidToken],
             entry: HyperliquidTokenDBTuple,
     ) -> HyperliquidToken:
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[3],
+            symbol=entry[4],
+        )
         return HyperliquidToken.initialize(
             address=HyperliquidTokenAddress(entry[1]),
             decimals=entry[2],
-            name=entry[3],
-            symbol=entry[4] if entry[4] is not None else '',
+            name=name,
+            symbol=symbol,
             started=Timestamp(entry[5]),  # type: ignore
             swapped_for=CryptoAsset(entry[6]) if entry[6] is not None else None,
             coingecko=entry[7],

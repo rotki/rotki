@@ -662,24 +662,18 @@ class GlobalDBHandler:
     def fetch_underlying_tokens(
             cursor: DBCursor,
             parent_token_identifier: str,
-    ) -> list[UnderlyingToken] | None:
-        """Fetch underlying tokens for a token address if they exist"""
-        cursor.execute(
+    ) -> tuple[UnderlyingToken, ...]:
+        """Fetch the underlying tokens of a token. Empty if it has none"""
+        return tuple(UnderlyingToken.deserialize_from_db(x) for x in cursor.execute(
             'SELECT B.address, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
             (parent_token_identifier,),
-        )
-        results = cursor.fetchall()
-        underlying_tokens = None
-        if len(results) != 0:
-            underlying_tokens = [UnderlyingToken.deserialize_from_db(x) for x in results]
-
-        return underlying_tokens
+        ))
 
     @staticmethod
     def _add_underlying_tokens(
             write_cursor: DBCursor,
             parent_token_identifier: str,
-            underlying_tokens: list[UnderlyingToken],
+            underlying_tokens: Sequence[UnderlyingToken],
             chain_id: ChainID,
     ) -> None:
         """Add the underlying tokens for the parent token
@@ -901,7 +895,8 @@ class GlobalDBHandler:
             if len(results := cursor.execute(querystr, bindings_list).fetchall()) == 0:
                 return None
 
-            token_data, underlying_tokens = results[0], None
+            token_data = results[0]
+            underlying_tokens: tuple[UnderlyingToken, ...] = ()
             if issubclass(token_class, EvmToken):
                 underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(cursor, token_data[0])
 
@@ -988,7 +983,7 @@ class GlobalDBHandler:
             tokens = []
 
             for entry in cursor:
-                underlying_tokens = None
+                underlying_tokens: tuple[UnderlyingToken, ...] = ()
                 if issubclass(token_class, EvmToken):
                     with GlobalDBHandler().conn.read_ctx() as other_cursor:
                         underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
@@ -1096,7 +1091,7 @@ class GlobalDBHandler:
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
                 chain_id=entry.chain_id,
-            ) if entry.underlying_tokens is not None else None,
+            ),
         )
 
     @staticmethod
@@ -1184,13 +1179,12 @@ class GlobalDBHandler:
                 'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
                 (_entry.identifier,),
             )
-            if _entry.underlying_tokens is not None:
-                GlobalDBHandler()._add_underlying_tokens(
-                    write_cursor=write_cursor,
-                    parent_token_identifier=_entry.identifier,
-                    underlying_tokens=_entry.underlying_tokens,
-                    chain_id=_entry.chain_id,
-                )
+            GlobalDBHandler._add_underlying_tokens(
+                write_cursor=write_cursor,
+                parent_token_identifier=_entry.identifier,
+                underlying_tokens=_entry.underlying_tokens,
+                chain_id=_entry.chain_id,
+            )
 
         return GlobalDBHandler._edit_token(
             entry=entry,
@@ -1198,6 +1192,55 @@ class GlobalDBHandler:
             address=entry.evm_address,
             token_specific_update_callback=evm_update_callback,
         )
+
+    @staticmethod
+    def edit_token_fields(token: EvmToken | SolanaToken, fields: set[str]) -> None:
+        """Persist only the given fields of an already existing token.
+
+        Unlike edit_evm_token/edit_solana_token the rest of the row is left untouched, so the
+        placeholder values a loaded token holds for missing metadata are never written back to
+        the DB.
+
+        May raise:
+        - InputError if a constraint is hit or the underlying tokens are invalid
+        """
+        table_columns = {
+            'assets': [x for x in ('name',) if x in fields],
+            'common_asset_details': [
+                x for x in ('symbol', 'coingecko', 'cryptocompare', 'started') if x in fields
+            ],
+            token.db_table: [x for x in ('decimals', 'protocol') if x in fields],
+        }
+        try:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                for table, columns in table_columns.items():
+                    if len(columns) == 0:
+                        continue
+
+                    write_cursor.execute(
+                        f'UPDATE {table} SET {", ".join(f"{x}=?" for x in columns)} '
+                        'WHERE identifier=?',
+                        (*(getattr(token, x) for x in columns), token.identifier),
+                    )
+
+                if 'underlying_tokens' in fields and isinstance(token, EvmToken):
+                    write_cursor.execute(
+                        'DELETE FROM underlying_tokens_list WHERE parent_token_entry=?',
+                        (token.identifier,),
+                    )
+                    GlobalDBHandler._add_underlying_tokens(
+                        write_cursor=write_cursor,
+                        parent_token_identifier=token.identifier,
+                        underlying_tokens=token.underlying_tokens,
+                        chain_id=token.chain_id,
+                    )
+        except rsqlite.IntegrityError as e:
+            raise InputError(
+                f'Failed to update DB entry for token {token.identifier} due to a '
+                f'constraint being hit. Make sure the new values are valid',
+            ) from e
+
+        AssetResolver.clean_memory_cache(token.identifier)
 
     @staticmethod
     def edit_solana_token(entry: SolanaToken) -> str:
@@ -1477,7 +1520,7 @@ class GlobalDBHandler:
             )
             for entry in cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
-                underlying_tokens: list[UnderlyingToken] | None = None
+                underlying_tokens: tuple[UnderlyingToken, ...] = ()
                 if asset_type == AssetType.EVM_TOKEN:
                     underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                         cursor=cursor,
@@ -2251,7 +2294,7 @@ class GlobalDBHandler:
                     yield deserialize_generic_asset_from_db(
                         asset_type=asset_type,
                         asset_data=list(row),
-                        underlying_tokens=underlying_tokens_map.get(row[0]),
+                        underlying_tokens=underlying_tokens_map.get(row[0], ()),
                     )
 
                 log.debug('Chunk %s/%s resolved %s assets in %.3fs', chunk_index, total_chunks, len(rows), perf_counter() - chunk_start)  # noqa: E501
@@ -2318,7 +2361,7 @@ class GlobalDBHandler:
                 raise UnknownAsset(identifier)
 
             asset_type = AssetType.deserialize_from_db(asset_data[1])
-            underlying_tokens = None
+            underlying_tokens: tuple[UnderlyingToken, ...] = ()
             if asset_type == AssetType.EVM_TOKEN:
                 underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                     cursor=cursor,

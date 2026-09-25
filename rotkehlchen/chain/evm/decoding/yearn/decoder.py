@@ -236,7 +236,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             )
 
         vault_token = self.base.get_or_create_evm_token(vault_address)
-        if vault_token.underlying_tokens is None:
+        if len(vault_token.underlying_tokens) == 0:
             log.error(f'Failed to find underlying token for yearn vault {vault_address}')
             return DEFAULT_EVM_DECODING_OUTPUT
         underlying_vault_token = self.base.get_or_create_evm_token(vault_token.underlying_tokens[0].address)  # noqa: E501
@@ -425,7 +425,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 out_event is None and
                 (vault_token := self.base.get_evm_token(address=context.tx_log.address))
                 is not None and
-                vault_token.underlying_tokens is not None
+                len(vault_token.underlying_tokens) != 0
             ):
                 underlying_token = self.base.get_or_create_evm_token(
                     vault_token.underlying_tokens[0].address,
@@ -570,7 +570,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if (
-            gauge_token.underlying_tokens is None or
+            len(gauge_token.underlying_tokens) == 0 or
             (vault_token := get_single_underlying_token(gauge_token)) is None or
             (yield_token := get_single_underlying_token(vault_token)) is None
         ):

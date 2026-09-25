@@ -232,7 +232,6 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
         chain_id=ChainID.ETHEREUM,
     )) is not None  # After decoding the pool token should have been added with proper protocol and underlying token  # noqa: E501
     assert pool_token.protocol == CPT_AURA_FINANCE
-    assert pool_token.underlying_tokens is not None
     assert len(pool_token.underlying_tokens) == 1
     assert pool_token.underlying_tokens[0].address == string_to_evm_address('0xfbfaD5fa9E99081da6461F36f229B5cC88A64c63')  # noqa: E501
     user_address, timestamp, gas_str, approval_amount, deposit_amount, receive_amount = ethereum_accounts[0], TimestampMS(1732603247000), '0.004522784347764904', '3046599999999999952014.290938920480356746', '17520.54161498940427181', '17520.54161498940427181'  # noqa: E501

@@ -12,7 +12,15 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets import asset as asset_module
-from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
+from rotkehlchen.assets.asset import (
+    Asset,
+    CryptoAsset,
+    CustomAsset,
+    EvmToken,
+    FiatAsset,
+    Nft,
+    UnderlyingToken,
+)
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
@@ -22,6 +30,7 @@ from rotkehlchen.assets.utils import (
     get_or_create_evm_token,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
@@ -1140,6 +1149,75 @@ def test_get_or_create_evm_token(globaldb, database):
         chain_id=ChainID.ETHEREUM,
     ) == A_USDT
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
+
+
+def test_edit_placeholder_token_keeps_missing_metadata(globaldb, database):
+    """Editing a single field of a token with missing metadata must not persist the
+    placeholders the loaded token object holds for that missing metadata"""
+    GlobalDBHandler.add_asset(EvmToken.initialize(
+        address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Parent',
+        symbol='PRNT',
+        decimals=18,
+        underlying_tokens=[UnderlyingToken(
+            address=(underlying_address := make_evm_address()),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    ))
+    token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=underlying_address,
+        chain_id=ChainID.ETHEREUM,
+        protocol='some-protocol',
+    )
+    assert globaldb.conn.cursor().execute(
+        'SELECT A.name, C.symbol, B.decimals, B.protocol FROM assets AS A '
+        'JOIN evm_tokens AS B ON A.identifier=B.identifier '
+        'JOIN common_asset_details AS C ON A.identifier=C.identifier WHERE A.identifier=?',
+        (token.identifier,),
+    ).fetchone() == (None, None, None, 'some-protocol')
+
+
+def test_same_underlying_tokens_as_list_do_not_edit_token(database):
+    """Underlying tokens given as a list equal to the stored ones are not a change"""
+    GlobalDBHandler.add_asset(EvmToken.initialize(
+        address=(address := make_evm_address()),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Parent',
+        symbol='PRNT',
+        decimals=18,
+        underlying_tokens=(underlying_tokens := [UnderlyingToken(
+            address=A_DAI.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )]),
+    ))
+    with patch.object(GlobalDBHandler, 'edit_token_fields') as edit_token_fields:
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=address,
+            chain_id=ChainID.ETHEREUM,
+            underlying_tokens=underlying_tokens,
+        )
+    assert edit_token_fields.call_count == 0
+
+
+def test_token_with_missing_metadata_loads_the_same_everywhere(globaldb):
+    """A token with NULL name, symbol and decimals must load with the same values
+    through the resolver and through the token queries"""
+    GlobalDBHandler.add_asset(EvmToken.initialize(
+        address=(address := make_evm_address()),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+    ))
+    resolved = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+    queried = globaldb.get_evm_token(address=address, chain_id=ChainID.ETHEREUM)
+    assert resolved.to_dict() == queried.to_dict()
+    assert (resolved.name, resolved.symbol, resolved.decimals) == (resolved.identifier, '', None)
 
 
 def test_resolve_nft():

@@ -60,7 +60,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.assets.types import AssetType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -139,7 +139,7 @@ def edit_token_and_clean_cache(
         decimals: int | None,
         started: Timestamp | None,
         chain_inquirer: EvmNodeInquirer | SolanaInquirer | None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
         protocol: str | None = None,
@@ -150,11 +150,10 @@ def edit_token_and_clean_cache(
     May raise:
         - InputError if there is an error while editing the token
     """
-    updated_fields = False
-
+    updated_fields: set[str] = set()
     if name is not None and token.name != name:
         object.__setattr__(token, 'name', name)
-        updated_fields = True
+        updated_fields.add('name')
     elif token.name == token.identifier and chain_inquirer is not None:
         # query the chain for available information
         on_chain_name, on_chain_symbol, on_chain_decimals, _ = _query_or_get_given_token_info(
@@ -168,46 +167,30 @@ def edit_token_and_clean_cache(
         object.__setattr__(token, 'name', on_chain_name)
         object.__setattr__(token, 'symbol', on_chain_symbol)
         object.__setattr__(token, 'decimals', on_chain_decimals)
-        updated_fields = True
+        updated_fields.update(('name', 'symbol', 'decimals'))
 
-    if symbol is not None and token.symbol != symbol:
-        object.__setattr__(token, 'symbol', symbol)
-        updated_fields = True
-
-    if decimals is not None and token.decimals != decimals:
-        object.__setattr__(token, 'decimals', decimals)
-        updated_fields = True
-
-    if started is not None and token.started != started:
-        object.__setattr__(token, 'started', started)
-        updated_fields = True
+    for field_name, value in (
+            ('symbol', symbol),
+            ('decimals', decimals),
+            ('started', started),
+            ('coingecko', coingecko),
+            ('cryptocompare', cryptocompare),
+            ('protocol', protocol),
+    ):
+        if value is not None and getattr(token, field_name) != value:
+            object.__setattr__(token, field_name, value)
+            updated_fields.add(field_name)
 
     if (
         underlying_tokens is not None and
         isinstance(token, EvmToken) and
-        token.underlying_tokens != underlying_tokens
+        token.underlying_tokens != (underlying_tokens := tuple(underlying_tokens))
     ):
         object.__setattr__(token, 'underlying_tokens', underlying_tokens)
-        updated_fields = True
+        updated_fields.add('underlying_tokens')
 
-    if coingecko is not None and token.coingecko != coingecko:
-        object.__setattr__(token, 'coingecko', coingecko)
-        updated_fields = True
-
-    if cryptocompare is not None and token.cryptocompare != cryptocompare:
-        object.__setattr__(token, 'cryptocompare', cryptocompare)
-        updated_fields = True
-
-    if protocol is not None and token.protocol != protocol:
-        object.__setattr__(token, 'protocol', protocol)
-        updated_fields = True
-
-    # clean the cache if we need to update the token
-    if updated_fields is True:
-        if isinstance(token, EvmToken):
-            GlobalDBHandler.edit_evm_token(token)
-        else:
-            GlobalDBHandler.edit_solana_token(token)
+    if len(updated_fields) != 0:
+        GlobalDBHandler.edit_token_fields(token=token, fields=updated_fields)
 
 
 def check_if_spam_token(symbol: str | None, name: str | None) -> bool:
@@ -290,7 +273,6 @@ def get_single_underlying_token(token: EvmToken) -> EvmToken | None:
     Returns the underlying token or None if the token has no/multiple underlying tokens.
     """
     if (
-        token.underlying_tokens is not None and
         len(token.underlying_tokens) == 1 and
         (underlying_token := get_evm_token(
             evm_address=token.underlying_tokens[0].address,
@@ -312,7 +294,7 @@ def get_or_create_evm_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         evm_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -435,7 +417,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: EvmNodeInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -462,7 +444,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -487,7 +469,7 @@ def _get_or_create_token(
         decimals: int | None = None,
         protocol: str | None = None,
         started: Timestamp | None = None,
-        underlying_tokens: list[UnderlyingToken] | None = None,
+        underlying_tokens: Sequence[UnderlyingToken] | None = None,
         chain_inquirer: EvmNodeInquirer | SolanaInquirer | None = None,
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
@@ -609,7 +591,7 @@ def _get_or_create_token(
             token_kwargs.update({
                 'chain_id': chain_id,  # type: ignore[dict-item]
                 'collectible_id': collectible_id,
-                'underlying_tokens': underlying_tokens,  # type: ignore[dict-item]
+                'underlying_tokens': () if underlying_tokens is None else underlying_tokens,  # type: ignore[dict-item]
             })
 
         # Store the information in the database
