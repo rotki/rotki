@@ -1,14 +1,8 @@
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type { AssetBalances } from '@/modules/balances/types/balances';
-import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeInfo } from '@/modules/balances/types/exchanges';
-import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
-import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { aggregateTotals } from '@/modules/accounts/account-helpers';
-import { summarizeAssetProtocols } from '@/modules/balances/aggregation/core/asset-summary';
-import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/modules/balances/aggregation/core/balance-transformations';
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 
 /**
  * Gets blockchain location breakdown
@@ -36,57 +30,4 @@ export function getExchangeByLocationBalances(
     balances[location] = !balance ? total : total.plus(balance);
   }
   return balances;
-}
-
-/**
- * Every asset held at one location, on-chain and manual alike.
- *
- * @remarks
- * A location identifier may be a chain alias, such as `ethereum` standing for `eth`, which is what
- * `matchChain` resolves. Where it resolves, the location is treated as that specific chain, so the
- * blockchain balances scoped to it surface alongside any manual balance tagged with the same label.
- */
-export function useLocationBreakdown(
-  location: MaybeRefOrGetter<string>,
-  blockchainBalances: MaybeRefOrGetter<Balances>,
-  resolveIdentifier: (id: string) => string,
-  manualBalances: MaybeRefOrGetter<ManualBalanceWithValue[]>,
-  useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => MaybeRefOrGetter<AssetProtocolBalances>,
-  isAssetIgnored: (identifier: string) => boolean,
-  getCollectionId: (asset: string) => string | undefined,
-  getCollectionMainAsset: (collectionId: string) => string | undefined,
-  getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber,
-  noPrice: BigNumber,
-  matchChain: (location: string) => string | undefined,
-): ComputedRef<AssetBalanceWithPrice[]> {
-  return computed<AssetBalanceWithPrice[]>(() => {
-    const selectedLocation = toValue(location);
-    const isBlockchainLocation = selectedLocation === TRADE_LOCATION_BLOCKCHAIN;
-    const chain = isBlockchainLocation ? undefined : matchChain(selectedLocation);
-
-    let blockchainSource: AssetProtocolBalances = {};
-    if (isBlockchainLocation)
-      blockchainSource = blockchainToAssetProtocolBalances(toValue(blockchainBalances));
-    else if (chain)
-      blockchainSource = blockchainToAssetProtocolBalances(toValue(blockchainBalances), 'assets', [chain]);
-
-    const sources: Record<string, AssetProtocolBalances> = {
-      blockchain: blockchainSource,
-      exchanges: isBlockchainLocation || chain
-        ? {}
-        : toValue(useBaseExchangeBalances(selectedLocation)),
-      manual: manualToAssetProtocolBalances(
-        toValue(manualBalances).filter(balance => balance.location === selectedLocation),
-      ),
-    };
-
-    return summarizeAssetProtocols({ resolveIdentifier, sources }, { hideIgnored: true, isAssetIgnored }, {
-      getAssetPrice,
-      noPrice,
-    }, {
-      groupCollections: true,
-      getCollectionId,
-      getCollectionMainAsset,
-    });
-  });
 }

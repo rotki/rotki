@@ -48,21 +48,6 @@ describe('useExchangeData', () => {
     expect(get(exchanges).map(exchange => exchange.location)).toEqual(['coinbase', 'kraken']);
   });
 
-  it('should show the per asset balances', () => {
-    const { useBaseExchangeBalances } = useExchangeData();
-
-    expect(get(useBaseExchangeBalances())).toMatchObject({
-      ETH: {
-        coinbase: createTestBalance(2000, 2000),
-        kraken: createTestBalance(1000, 1000),
-      },
-      ETH2: {
-        coinbase: createTestBalance(2000, 2000),
-        kraken: createTestBalance(1000, 1000),
-      },
-    });
-  });
-
   it('should respect the asset association per asset breakdown', () => {
     const { useAssetBreakdown } = useAssetBalancesBreakdown();
     const breakdown = useAssetBreakdown('ETH');

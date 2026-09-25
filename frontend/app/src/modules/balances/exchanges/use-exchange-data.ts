@@ -1,17 +1,14 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import type { ComputedRef } from 'vue';
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
-import { balanceSum, exchangeAssetSum } from '@/modules/core/common/data/calculation';
+import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseExchangeDataReturn {
-  getBaseExchangeBalances: (exchange?: string) => AssetProtocolBalances;
-  useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetProtocolBalances>;
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
   isSameExchange: (a: Exchange, b: Exchange) => boolean;
@@ -37,37 +34,6 @@ export function useExchangeData(): UseExchangeDataReturn {
       .sort((a, b) => sortDesc(a.total, b.total));
   });
 
-  function getBaseExchangeBalances(name?: string): AssetProtocolBalances {
-    const balances = get(exchangeBalances);
-    const protocolBalances: AssetProtocolBalances = {};
-
-    for (const [exchange, assets] of Object.entries(balances)) {
-      if (name && name !== exchange) {
-        continue;
-      }
-
-      for (const [asset, balance] of Object.entries(assets)) {
-        if (!protocolBalances[asset]) {
-          protocolBalances[asset] = {};
-        }
-        if (!protocolBalances[asset][exchange]) {
-          protocolBalances[asset][exchange] = balance;
-        }
-        else {
-          protocolBalances[asset][exchange] = balanceSum(protocolBalances[asset][exchange], balance);
-        }
-      }
-    }
-
-    return protocolBalances;
-  }
-
-  const useBaseExchangeBalances = (
-    exchange?: MaybeRefOrGetter<string>,
-  ): ComputedRef<AssetProtocolBalances> => computed<AssetProtocolBalances>(() =>
-    getBaseExchangeBalances(exchange ? toValue(exchange) : undefined),
-  );
-
   function isSameExchange(a: Exchange, b: Exchange): boolean {
     return a.location === b.location && a.name === b.name;
   }
@@ -80,8 +46,6 @@ export function useExchangeData(): UseExchangeDataReturn {
 
   return {
     exchanges,
-    getBaseExchangeBalances,
-    useBaseExchangeBalances,
     syncingExchanges,
     isSameExchange,
   };
