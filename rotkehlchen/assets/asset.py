@@ -105,7 +105,7 @@ def _serialize_underlying_tokens(
     return [x.serialize() for x in normalize_underlying_token_weights(underlying_tokens)]
 
 
-def token_name_and_symbol_from_db(
+def token_name_and_symbol_from_db_data(
         identifier: str,
         name: str | None,
         symbol: str | None,
@@ -694,7 +694,11 @@ class EvmToken(CryptoAsset):
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
-        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[5], symbol=entry[6])
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[5],
+            symbol=entry[6],
+        )
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
             chain_id=ChainID(entry[2]),
@@ -878,7 +882,11 @@ class SolanaToken(CryptoAsset):
         That error would be bad because it would mean somehow an unknown id made it into the DB
         """
         swapped_for = CryptoAsset(entry[7]) if entry[7] is not None else None
-        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[4], symbol=entry[5])
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[4],
+            symbol=entry[5],
+        )
         return SolanaToken.initialize(
             address=SolanaAddress(entry[1]),
             token_kind=TokenKind.deserialize_solana_from_db(entry[2]),
@@ -962,7 +970,11 @@ class HyperliquidToken(CryptoAsset):
             cls: type[HyperliquidToken],
             entry: HyperliquidTokenDBTuple,
     ) -> HyperliquidToken:
-        name, symbol = token_name_and_symbol_from_db(entry[0], name=entry[3], symbol=entry[4])
+        name, symbol = token_name_and_symbol_from_db_data(
+            entry[0],
+            name=entry[3],
+            symbol=entry[4],
+        )
         return HyperliquidToken.initialize(
             address=HyperliquidTokenAddress(entry[1]),
             decimals=entry[2],

@@ -1153,7 +1153,7 @@ def test_get_or_create_evm_token(globaldb, database):
 
 def test_edit_placeholder_token_keeps_missing_metadata(globaldb, database):
     """Editing a single field of a token with missing metadata must not persist the
-    defaults the loaded token object holds for that missing metadata"""
+    placeholders the loaded token object holds for that missing metadata"""
     GlobalDBHandler.add_asset(EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,

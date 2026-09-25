@@ -1179,7 +1179,7 @@ class GlobalDBHandler:
                 'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
                 (_entry.identifier,),
             )
-            GlobalDBHandler()._add_underlying_tokens(
+            GlobalDBHandler._add_underlying_tokens(
                 write_cursor=write_cursor,
                 parent_token_identifier=_entry.identifier,
                 underlying_tokens=_entry.underlying_tokens,
@@ -1198,8 +1198,8 @@ class GlobalDBHandler:
         """Persist only the given fields of an already existing token.
 
         Unlike edit_evm_token/edit_solana_token the rest of the row is left untouched, so the
-        values a loaded token holds in place of missing metadata (e.g. 18 decimals) are
-        never written back to the DB.
+        placeholder values a loaded token holds for missing metadata are never written back to
+        the DB.
 
         May raise:
         - InputError if a constraint is hit or the underlying tokens are invalid

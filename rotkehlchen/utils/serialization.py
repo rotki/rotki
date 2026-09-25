@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import (
     HyperliquidToken,
     SolanaToken,
     UnderlyingToken,
-    token_name_and_symbol_from_db,
+    token_name_and_symbol_from_db_data,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
@@ -83,7 +83,7 @@ def deserialize_asset_with_oracles_from_db(
     """
     identifier = asset_data[0]
     if asset_type == AssetType.EVM_TOKEN:
-        name, symbol = token_name_and_symbol_from_db(identifier, asset_data[4], asset_data[5])
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return EvmToken.initialize(
             address=asset_data[2],
             chain_id=ChainID(asset_data[12]),
@@ -100,7 +100,7 @@ def deserialize_asset_with_oracles_from_db(
             collectible_id=tokenid_to_collectible_id(identifier=identifier),
         )
     if asset_type == AssetType.SOLANA_TOKEN:
-        name, symbol = token_name_and_symbol_from_db(identifier, asset_data[4], asset_data[5])
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return SolanaToken.initialize(
             address=asset_data[2],
             token_kind=TokenKind.deserialize_solana_from_db(asset_data[13]),
@@ -114,7 +114,7 @@ def deserialize_asset_with_oracles_from_db(
             protocol=asset_data[11],
         )
     if asset_type == AssetType.HYPERLIQUID_TOKEN:
-        name, symbol = token_name_and_symbol_from_db(identifier, asset_data[4], asset_data[5])
+        name, symbol = token_name_and_symbol_from_db_data(identifier, asset_data[4], asset_data[5])
         return HyperliquidToken.initialize(
             address=asset_data[2],
             decimals=asset_data[3],
