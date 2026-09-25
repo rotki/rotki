@@ -61,8 +61,8 @@ MACHO_THIN_MAGICS = {b'\xcf\xfa\xed\xfe', b'\xce\xfa\xed\xfe'}  # little endian
 
 def macho_min_macos(data: bytes, cpu_type: int) -> tuple[int, int] | None:
     """
-    The minimum macOS of the ``cpu_type`` slice of a Mach-O file, or None when
-    the data is not Mach-O, has no such slice or records no minimum.
+    The minimum macOS of the ``cpu_type`` slice of a Mach-O file. None when the
+    file has no such slice, (0, 0) when the slice records no minimum.
     """
     if len(data) < 8:
         return None
@@ -71,7 +71,7 @@ def macho_min_macos(data: bytes, cpu_type: int) -> tuple[int, int] | None:
         arch_size = 32 if is_fat64 else 20
         count = struct.unpack_from('>I', data, 4)[0]
         if count > 16:  # a Java class file shares the fat magic
-            return None
+            return 0, 0
         arch_format = '>iiQQ' if is_fat64 else '>iiII'
         for index in range(count):
             fields = struct.unpack_from(arch_format, data, 8 + index * arch_size)
@@ -92,15 +92,18 @@ def macho_min_macos(data: bytes, cpu_type: int) -> tuple[int, int] | None:
             minos = struct.unpack_from('<I', data, field)[0]
             return minos >> 16, (minos >> 8) & 0xFF
         offset += cmdsize
-    return None
+    return 0, 0
 
 
 def binaries_above_macos(
         directories: list[Path],
         target: tuple[int, int],
         arch: str,
-) -> list[tuple[Path, tuple[int, int]]]:
-    """Every Mach-O file under ``directories`` that needs a newer macOS than ``target``"""
+) -> list[tuple[Path, tuple[int, int] | None]]:
+    """
+    Every Mach-O file under ``directories`` that needs a newer macOS than ``target``,
+    or that has no ``arch`` slice (None) and so cannot load at all.
+    """
     offenders = []
     for directory in directories:
         for path in directory.rglob('*'):
@@ -113,7 +116,7 @@ def binaries_above_macos(
                 minimum = macho_min_macos(path.read_bytes(), MACHO_CPU_TYPES[arch])
             except struct.error:  # truncated, so not a loadable binary either
                 continue
-            if minimum is not None and minimum > target:
+            if minimum is None or minimum > target:
                 offenders.append((path, minimum))
     return offenders
 
@@ -282,11 +285,26 @@ class Environment:
 
         Without it uv picks wheels for the build host's macOS, which can be newer than
         MACOSX_DEPLOYMENT_TARGET (numpy's macosx_14_0 wheel crashes on macOS 12).
-        With it, uv honours MACOSX_DEPLOYMENT_TARGET and defaults to 13.0 when unset.
+        With it, uv honours MACOSX_DEPLOYMENT_TARGET.
         """
         if not self.is_mac():
             return None
         return f"{'aarch64' if self.target_arch == 'arm64' else self.target_arch}-apple-darwin"
+
+    def macos_deployment_target(self) -> tuple[int, int]:
+        """
+        MACOSX_DEPLOYMENT_TARGET as (major, minor). Exits when it is unset, since without
+        it the dependencies may have been installed for the build host's macOS.
+        """
+        if (target := os.environ.get('MACOSX_DEPLOYMENT_TARGET')) is None:
+            logger.error(
+                'MACOSX_DEPLOYMENT_TARGET must be set for macOS packaging, and the '
+                'dependencies synced with `uv sync --python-platform %s`',
+                self.uv_python_platform(),
+            )
+            sys.exit(1)
+        major, _, minor = target.partition('.')
+        return int(major), int(minor or 0)
 
     def backend_suffix(self) -> str:
         """
@@ -749,6 +767,7 @@ class BackendBuilder:
         win = self.__win
         if win is not None:
             win.setup_miniupnpc()
+        macos_target = self.__env.macos_deployment_target() if mac is not None else None
 
         os.chdir(self.__storage.working_directory)
         self.pip_install('.', use_pep_517=True)
@@ -762,8 +781,8 @@ class BackendBuilder:
         self.__sanity_check()
         self.__package()
 
-        if mac is not None:
-            self.__check_macos_floor()
+        if mac is not None and macos_target is not None:
+            self.__check_macos_floor(macos_target)
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))
 
@@ -926,30 +945,30 @@ class BackendBuilder:
             sys.exit(1)
 
     @log_group('macOS floor')
-    def __check_macos_floor(self) -> None:
-        """Fails the build when a bundled binary needs a newer macOS than the deployment target"""
-        if (target := os.environ.get('MACOSX_DEPLOYMENT_TARGET')) is None:
-            logger.warning('MACOSX_DEPLOYMENT_TARGET is not set, skipping the macOS floor check')
-            return
-
-        major, _, minor = target.partition('.')
+    def __check_macos_floor(self, target: tuple[int, int]) -> None:
+        """
+        Fails the build when a bundled binary needs a newer macOS than the deployment
+        target, or has no slice for the target architecture
+        """
         storage = self.__storage
+        arch = self.__env.target_arch
         offenders = binaries_above_macos(
             directories=[
                 storage.backend_directory,
                 storage.colibri_directory / 'bin',
                 storage.starling_directory / 'bin',
             ],
-            target=(int(major), int(minor or 0)),
-            arch=self.__env.target_arch,
+            target=target,
+            arch=arch,
         )
-        for path, (need_major, need_minor) in offenders:
-            logger.error(
-                '%s needs macOS %d.%d, above target %s', path, need_major, need_minor, target,
-            )
+        for path, minimum in offenders:
+            if minimum is None:
+                logger.error('%s has no %s slice', path, arch)
+            else:
+                logger.error('%s needs macOS %d.%d, above target %d.%d', path, *minimum, *target)
         if len(offenders) != 0:
             sys.exit(1)
-        logger.info('every bundled binary runs on macOS %s', target)
+        logger.info('every bundled binary runs on macOS %d.%d %s', *target, arch)
 
     @log_group('Pyinstaller')
     def __install_pyinstaller(self) -> None:
