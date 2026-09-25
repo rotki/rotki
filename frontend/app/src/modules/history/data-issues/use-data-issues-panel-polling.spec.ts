@@ -3,7 +3,7 @@ import { set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, KeepAlive, type Ref, ref, shallowRef } from 'vue';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
 
 const syncCompleted = ref<boolean>(false);
@@ -151,7 +151,7 @@ describe('useDataIssuesPanelPolling', () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     const panel = mountPanel(ref(false), reload);
 
-    useDataIssuesInboxStore().notifyHistoricalBalanceProcessingCompleted();
+    useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingCompleted();
     await vi.advanceTimersByTimeAsync(0);
 
     expect(reload).toHaveBeenCalledOnce();

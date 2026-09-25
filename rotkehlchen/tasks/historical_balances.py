@@ -545,6 +545,10 @@ def process_historical_balances(
             database=database,
             modification_ts_at_start=modification_ts_at_start,
         )
+        msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+            data={},
+        )
         return True
 
     metrics_batch: list[MetricRow] = []
@@ -628,6 +632,10 @@ def process_historical_balances(
     )
     _detect_unmatched_bridge_issues(database=database)
     _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
+    msg_aggregator.add_message(
+        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+        data={},
+    )
     log.debug(
         'Completed historical balance processing for %s events with %s modified buckets',
         total_events,
