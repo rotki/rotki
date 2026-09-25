@@ -158,6 +158,18 @@ describe('summarizeBalances invariants', () => {
     }
   });
 
+  it('should break value ties by identifier, for rows and for protocols, whatever order they arrive in', () => {
+    const tied: AssetBalanceEntries = {
+      ZRX: { uniswap: createTestBalance(1, 5), aave: createTestBalance(1, 5) },
+      AAVE: { kraken: createTestBalance(1, 10) },
+    };
+    for (const source of [tied, Object.fromEntries(Object.entries(tied).reverse())]) {
+      const rows = summarize([source], false);
+      expect(rows.map(row => row.asset)).toEqual(['AAVE', 'ZRX']);
+      expect(rows[1].perProtocol?.map(protocol => protocol.protocol)).toEqual(['aave', 'uniswap']);
+    }
+  });
+
   it('should keep the grand total when collections are grouped', () => {
     expect(grandTotal(summarize(sources))).toBe(grandTotal(summarize(sources, false)));
   });
