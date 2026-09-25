@@ -106,15 +106,12 @@ function onDecimalInput(value: string): void {
   submitPair();
 }
 
-// Reflect external changes into the fields, but ignore the echo of our own writes (same string).
 watch(thousandSource, (value) => {
-  if (value !== form.state.thousand)
-    form.state.thousand = value;
+  form.state.thousand = value;
 });
 
 watch(decimalSource, (value) => {
-  if (value !== form.state.decimal)
-    form.state.decimal = value;
+  form.state.decimal = value;
 });
 </script>
 

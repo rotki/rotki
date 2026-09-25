@@ -48,6 +48,13 @@ describe('settingNumber', () => {
     expect(wrapper.find('.model').text()).toBe('3');
   });
 
+  it('should show a value changed elsewhere in the field', async () => {
+    const wrapper = createWrapper();
+    set(model, 7);
+    await nextTick();
+    expect(wrapper.find('.model').text()).toBe('7');
+  });
+
   it('should persist a valid value as a number', async () => {
     const wrapper = createWrapper({ min: 1, max: 20 });
     await wrapper.findComponent(RuiTextFieldStub).vm.$emit('update:model-value', '15');
