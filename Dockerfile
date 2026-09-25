@@ -77,8 +77,8 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
       uv pip install pyinstaller==${PYINSTALLER_VERSION}; \
     fi && \
     cd /app && \
-    uv run python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
-    PYTHONOPTIMIZE=2 uv run pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
+    uv run --no-sync python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
+    PYTHONOPTIMIZE=2 uv run --no-sync pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
 # Layout stage: assemble everything the runtime needs, while a shell still
 # exists. The final stage is distroless and has none, so nothing can be computed
