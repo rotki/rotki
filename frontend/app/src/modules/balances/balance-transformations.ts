@@ -7,13 +7,14 @@ import type {
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import {
   type AssetBalanceWithPriceAndChains,
-  type Balance,
   type BigNumber,
   Zero,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import { pipe } from 'plainfp';
+import { fromNullable, match } from 'plainfp/option';
+import { addBalanceEntry, type BalanceEntry } from '@/modules/balances/aggregation/core/balance-entry';
 import {
-  type BalanceWithManual,
   getSortedProtocolBalances,
   type IntermediateGroupRepresentation,
   type ProtocolBalancesWithManual,
@@ -21,15 +22,9 @@ import {
   singleAssetEntry,
 } from '@/modules/balances/balance-grouping';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
-import { balanceSum, perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
+import { perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
 
-type BalanceWithChains = Balance & { chains?: Record<string, Balance> };
-
-type ProtocolBalancesWithChains = Record<string, BalanceWithChains>;
-
-export type AssetProtocolBalancesWithChains = Record<string, ProtocolBalancesWithChains>;
-
-type AssetProtocolBalancesWithManual = Record<string, ProtocolBalancesWithManual>;
+export type AssetProtocolBalancesWithChains = Record<string, ProtocolBalancesWithManual>;
 
 /**
  * Converts manual balances to asset protocol balances format
@@ -37,47 +32,10 @@ type AssetProtocolBalancesWithManual = Record<string, ProtocolBalancesWithManual
 export function manualToAssetProtocolBalances(balances: ManualBalanceWithValue[]): AssetProtocolBalances {
   const protocolBalances: AssetProtocolBalances = {};
 
-  for (const { amount, asset, location, value } of balances) {
-    const balance: Balance = { amount, value };
+  for (const { amount, asset, location, value } of balances)
+    addBalanceEntry(protocolBalances[asset] ??= {}, location, { amount, value });
 
-    protocolBalances[asset] ??= {};
-
-    protocolBalances[asset][location] = protocolBalances[asset][location]
-      ? balanceSum(protocolBalances[asset][location], balance)
-      : balance;
-  }
   return protocolBalances;
-}
-
-function updateExistingBalance(
-  existing: BalanceWithChains,
-  balance: Balance,
-  location: string,
-  chainId?: string,
-): BalanceWithChains {
-  if (location === 'address' && chainId) {
-    const chains = existing.chains ?? {};
-    chains[chainId] = chains[chainId] ? balanceSum(chains[chainId], balance) : balance;
-    return {
-      ...balanceSum(existing, balance),
-      chains,
-    };
-  }
-  return balanceSum(existing, balance);
-}
-
-function createNewBalance(
-  balance: Balance,
-  location: string,
-  chainId?: string,
-): BalanceWithChains {
-  if (location === 'address' && chainId) {
-    return {
-      ...balance,
-      chains: { [chainId]: balance },
-    };
-  }
-  return balance;
 }
 
 function processAddressBalances(
@@ -85,7 +43,7 @@ function processAddressBalances(
   address: string | undefined,
   key: keyof EthBalance,
   aggregatedProtocolBalances: AssetProtocolBalancesWithChains,
-  chainId?: string,
+  chainId: string,
 ): void {
   for (const [balanceAddress, accountBalances] of Object.entries(chainBalances)) {
     if (address && balanceAddress !== address) {
@@ -93,14 +51,13 @@ function processAddressBalances(
     }
 
     for (const [asset, protocolBalances] of Object.entries(accountBalances[key])) {
-      aggregatedProtocolBalances[asset] ??= {};
+      const assetBalances = aggregatedProtocolBalances[asset] ??= {};
 
       for (const [location, balance] of Object.entries(protocolBalances)) {
-        const existing = aggregatedProtocolBalances[asset][location];
-
-        aggregatedProtocolBalances[asset][location] = existing
-          ? updateExistingBalance(existing, balance, location, chainId)
-          : createNewBalance(balance, location, chainId);
+        const entry: BalanceEntry = location === 'address'
+          ? { ...balance, chains: { [chainId]: balance } }
+          : balance;
+        addBalanceEntry(assetBalances, location, entry);
       }
     }
   }
@@ -128,64 +85,6 @@ export function blockchainToAssetProtocolBalances(
   return aggregatedProtocolBalances;
 }
 
-function mergeChains(
-  existingChains: Record<string, Balance>,
-  newChains: Record<string, Balance>,
-): Record<string, Balance> {
-  const mergedChains = { ...existingChains };
-  for (const [chainId, chainBalance] of Object.entries(newChains)) {
-    mergedChains[chainId] = mergedChains[chainId]
-      ? balanceSum(mergedChains[chainId], chainBalance)
-      : chainBalance;
-  }
-  return mergedChains;
-}
-
-function aggregateAddressProtocol(
-  existingBalance: BalanceWithManual,
-  newBalance: BalanceWithManual,
-  summedBalance: Balance,
-  shouldMarkAsManual: boolean,
-): BalanceWithManual {
-  const result = shouldMarkAsManual
-    ? { ...summedBalance, chains: existingBalance.chains, containsManual: true }
-    : { ...summedBalance, chains: existingBalance.chains };
-
-  const newBalanceChains = newBalance.chains;
-  if (newBalanceChains && existingBalance.chains) {
-    result.chains = mergeChains(existingBalance.chains, newBalanceChains);
-  }
-
-  return result;
-}
-
-/**
- * Helper function to aggregate balance for a protocol
- */
-function aggregateBalanceForProtocol(
-  existingBalance: BalanceWithManual | undefined,
-  newBalance: Balance,
-  isManualSource: boolean,
-  protocol?: string,
-): BalanceWithManual {
-  if (!existingBalance) {
-    return isManualSource
-      ? { ...newBalance, containsManual: true }
-      : newBalance;
-  }
-
-  const summedBalance = balanceSum(existingBalance, newBalance);
-  const shouldMarkAsManual = isManualSource || Boolean(existingBalance.containsManual);
-
-  if (protocol === 'address' && existingBalance.chains) {
-    return aggregateAddressProtocol(existingBalance, newBalance, summedBalance, shouldMarkAsManual);
-  }
-
-  return shouldMarkAsManual
-    ? { ...summedBalance, containsManual: true }
-    : summedBalance;
-}
-
 /**
  * Aggregates balances from different sources
  */
@@ -194,8 +93,8 @@ export function aggregateSourceBalances(
   resolveIdentifier: (id: string) => string,
   isAssetIgnored: (identifier: string) => boolean,
   hideIgnored: boolean,
-): AssetProtocolBalancesWithManual {
-  const aggregatedBalances: AssetProtocolBalancesWithManual = {};
+): AssetProtocolBalancesWithChains {
+  const aggregatedBalances: AssetProtocolBalancesWithChains = {};
 
   for (const [sourceType, source] of Object.entries(sources)) {
     const isManualSource = sourceType === 'manual';
@@ -206,16 +105,10 @@ export function aggregateSourceBalances(
         continue;
       }
 
-      aggregatedBalances[identifier] ??= {};
+      const assetBalances = aggregatedBalances[identifier] ??= {};
 
-      for (const [protocol, balance] of Object.entries(source[asset])) {
-        aggregatedBalances[identifier][protocol] = aggregateBalanceForProtocol(
-          aggregatedBalances[identifier][protocol],
-          balance,
-          isManualSource,
-          protocol,
-        );
-      }
+      for (const [protocol, balance] of Object.entries(source[asset]))
+        addBalanceEntry(assetBalances, protocol, isManualSource ? { ...balance, containsManual: true } : balance);
     }
   }
 
@@ -262,8 +155,63 @@ function addCollectionMainAsset(
   });
 }
 
+function chainOf(identifier: string): string {
+  return identifier.slice(0, Math.max(0, identifier.indexOf('/')));
+}
+
+/**
+ * The only member holding a balance, when it sits on a different chain than the main asset.
+ *
+ * @remarks
+ * Such a group shows that member under its own identifier, since heading it with the main asset
+ * would name a chain the user holds nothing on.
+ */
+function soleHolderOnAnotherChain(
+  main: IntermediateGroupRepresentation,
+  groupAssets: IntermediateGroupRepresentation[],
+): IntermediateGroupRepresentation | undefined {
+  const holders = groupAssets.filter(value => value.amount.gt(0));
+  if (holders.length !== 1 || chainOf(holders[0].asset) === chainOf(main.asset))
+    return undefined;
+
+  return holders[0];
+}
+
+/** Folds a collection's members into one row headed by its main asset. */
+function collapseCollection(
+  main: IntermediateGroupRepresentation,
+  groupAssets: IntermediateGroupRepresentation[],
+): AssetBalanceWithPriceAndChains {
+  const soleHolder = soleHolderOnAnotherChain(main, groupAssets);
+  if (soleHolder) {
+    const filteredAsset = omit(soleHolder, ['isMain']);
+    return { ...filteredAsset, perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol) };
+  }
+
+  let groupAmount = Zero;
+  let groupValue = Zero;
+  const groupProtocolBalances: ProtocolBalancesWithManual = {};
+
+  for (const asset of groupAssets) {
+    groupAmount = groupAmount.plus(asset.amount);
+    groupValue = groupValue.plus(asset.value);
+
+    for (const [protocol, balance] of Object.entries(asset.perProtocol))
+      addBalanceEntry(groupProtocolBalances, protocol, balance);
+  }
+
+  const filteredAsset = omit(main, ['isMain']);
+  return {
+    ...filteredAsset,
+    amount: groupAmount,
+    breakdown: protocolBreakdown(groupAssets),
+    perProtocol: getSortedProtocolBalances(groupProtocolBalances),
+    value: groupValue,
+  };
+}
+
 export function processCollectionGrouping(
-  aggregatedBalances: AssetProtocolBalancesWithManual,
+  aggregatedBalances: AssetProtocolBalancesWithChains,
   getCollectionId: (asset: string) => string | undefined,
   getCollectionMainAsset: (collectionId: string) => string | undefined,
   getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber,
@@ -294,52 +242,19 @@ export function processCollectionGrouping(
     });
   }
 
-  return Object.entries(grouped).map(([groupId, groupAssets]) => {
+  return Object.entries(grouped).flatMap(([groupId, groupAssets]) => {
     addCollectionMainAsset(groupId, groupAssets, collectionCache, asset => getAssetPrice(asset, noPrice));
 
     // Early return for single assets to avoid unnecessary processing
     if (groupAssets.length === 1)
-      return singleAssetEntry(groupAssets);
+      return [singleAssetEntry(groupAssets)];
 
-    const main = groupAssets.find(value => value.isMain);
-    if (!main) {
-      throw new Error('Main asset not found for collection');
-    }
-
-    // When only one asset has balance from a different chain, use its real identifier
-    const assetsWithBalance = groupAssets.filter(value => value.amount.gt(0));
-    if (assetsWithBalance.length === 1) {
-      const actualAsset = assetsWithBalance[0];
-      const chainOf = (id: string): string => id.slice(0, Math.max(0, id.indexOf('/')));
-      if (chainOf(actualAsset.asset) !== chainOf(main.asset)) {
-        const filteredAsset = omit(actualAsset, ['isMain']);
-        return { ...filteredAsset, perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol) };
-      }
-    }
-
-    let groupAmount = Zero;
-    let groupValue = Zero;
-    const groupProtocolBalances: Record<string, BalanceWithManual> = {};
-
-    for (const asset of groupAssets) {
-      groupAmount = groupAmount.plus(asset.amount);
-      groupValue = groupValue.plus(asset.value);
-
-      for (const [protocol, balance] of Object.entries(asset.perProtocol)) {
-        const existing = groupProtocolBalances[protocol];
-        groupProtocolBalances[protocol] = existing
-          ? aggregateBalanceForProtocol(existing, balance, false, protocol)
-          : balance;
-      }
-    }
-
-    const filteredAsset = omit(main, ['isMain']);
-    return {
-      ...filteredAsset,
-      amount: groupAmount,
-      breakdown: protocolBreakdown(groupAssets),
-      perProtocol: getSortedProtocolBalances(groupProtocolBalances),
-      value: groupValue,
-    };
+    return pipe(
+      fromNullable(groupAssets.find(value => value.isMain)),
+      match({
+        none: () => groupAssets.map(asset => singleAssetEntry([asset])),
+        some: main => [collapseCollection(main, groupAssets)],
+      }),
+    );
   });
 }

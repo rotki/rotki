@@ -1,8 +1,8 @@
 import type { AssetProtocolBalancesWithChains } from '@/modules/balances/balance-transformations';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
-import { Zero } from '@rotki/common';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 import { summarizeAssetProtocols } from './asset-summary';
 
 describe('summarizeAssetProtocols with chains', () => {
@@ -160,5 +160,119 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(addressProtocol.chains!.eth.amount.toString()).toBe('1');
     expect(addressProtocol.chains!.polygon).toBeDefined();
     expect(addressProtocol.chains!.polygon.amount.toString()).toBe('2');
+  });
+});
+
+describe('summarizeAssetProtocols invariants', () => {
+  type Sources = Record<string, AssetProtocolBalances | AssetProtocolBalancesWithChains>;
+
+  const collections: Record<string, { members: string[]; main: string | undefined }> = {
+    stable: { main: 'USDC', members: ['USDC', 'eip155:10/erc20:0xusdc', 'eip155:137/erc20:0xusdc'] },
+  };
+
+  function summarize(sources: Sources, groupCollections: boolean = true): AssetBalanceWithPriceAndChains[] {
+    return summarizeAssetProtocols(
+      { resolveIdentifier: (id: string): string => id, sources },
+      { hideIgnored: true, isAssetIgnored: (id: string): boolean => id === 'SPAM' },
+      { getAssetPrice: (): BigNumber => bigNumberify(1), noPrice: Zero },
+      groupCollections
+        ? {
+            getCollectionId: (asset: string): string | undefined =>
+              Object.keys(collections).find(id => collections[id].members.includes(asset)),
+            getCollectionMainAsset: (id: string): string | undefined => collections[id]?.main,
+            groupCollections: true,
+          }
+        : { groupCollections: false },
+    );
+  }
+
+  /** BigNumbers built along different paths can differ internally while holding the same value. */
+  function plain(rows: AssetBalanceWithPriceAndChains[]): unknown {
+    return JSON.parse(JSON.stringify(rows));
+  }
+
+  function reversed(sources: Sources): Sources {
+    return Object.fromEntries(Object.entries(sources).reverse().map(([source, assets]) => [
+      source,
+      Object.fromEntries(Object.entries(assets).reverse()),
+    ]));
+  }
+
+  function grandTotal(rows: AssetBalanceWithPriceAndChains[]): string {
+    return rows.reduce((total, row) => total.plus(row.value), Zero).toFixed();
+  }
+
+  const sources: Sources = {
+    blockchain: {
+      'ETH': {
+        address: { ...createTestBalance(1, 3000), chains: { eth: createTestBalance(1, 3000) } },
+        aave: createTestBalance(2, 6000),
+      },
+      'SPAM': { address: { ...createTestBalance(9, 9), chains: { eth: createTestBalance(9, 9) } } },
+      'eip155:10/erc20:0xusdc': {
+        address: { ...createTestBalance(10, 10), chains: { optimism: createTestBalance(10, 10) } },
+      },
+      'eip155:137/erc20:0xusdc': {
+        address: { ...createTestBalance(20, 20), chains: { polygon: createTestBalance(20, 20) } },
+      },
+    },
+    exchanges: {
+      'BTC': { kraken: createTestBalance(1, 50000) },
+      'eip155:10/erc20:0xusdc': { kraken: createTestBalance(5, 5) },
+    },
+    manual: {
+      BTC: { kraken: createTestBalance(1, 50000) },
+      USDC: { kraken: createTestBalance(7, 7) },
+    },
+  };
+
+  it('should produce the same rows whichever order the sources and assets arrive in', () => {
+    expect(plain(summarize(reversed(sources)))).toEqual(plain(summarize(sources)));
+    expect(plain(summarize(reversed(sources), false))).toEqual(plain(summarize(sources, false)));
+  });
+
+  it('should list rows by value, highest first, with or without collection grouping', () => {
+    for (const groupCollections of [true, false]) {
+      const values = summarize(sources, groupCollections).map(row => row.value.toNumber());
+      expect(values).toEqual([...values].sort((a, b) => b - a));
+    }
+  });
+
+  it('should keep the grand total when collections are grouped', () => {
+    expect(grandTotal(summarize(sources))).toBe(grandTotal(summarize(sources, false)));
+  });
+
+  it('should mark a merged collection protocol as manual whichever member holds the manual balance', () => {
+    for (const ordered of [sources, reversed(sources)]) {
+      const stable = summarize(ordered).find(row => row.asset === 'USDC');
+      const kraken = stable?.perProtocol?.find(protocol => protocol.protocol === 'kraken');
+      expect(kraken?.containsManual).toBe(true);
+      expect(kraken?.amount.toFixed()).toBe('12');
+    }
+  });
+
+  it('should keep every chain of a merged address protocol whichever member arrives first', () => {
+    for (const ordered of [sources, reversed(sources)]) {
+      const stable = summarize(ordered).find(row => row.asset === 'USDC');
+      const address = stable?.perProtocol?.find(protocol => protocol.protocol === 'address');
+      assert(address && 'chains' in address && address.chains);
+      expect(Object.keys(address.chains).sort()).toEqual(['optimism', 'polygon']);
+    }
+  });
+
+  it('should list the members of a collection separately when its main asset is unknown', () => {
+    collections.stable.main = undefined;
+    try {
+      const rows = summarize(sources);
+      expect(rows.map(row => row.asset)).toEqual(expect.arrayContaining([
+        'USDC',
+        'eip155:10/erc20:0xusdc',
+        'eip155:137/erc20:0xusdc',
+      ]));
+      expect(grandTotal(rows)).toBe(grandTotal(summarize(sources, false)));
+    }
+    finally {
+      collections.stable.main = 'USDC';
+    }
   });
 });

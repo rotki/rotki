@@ -1,12 +1,15 @@
-import type { AssetBalanceWithPriceAndChains, Balance, BigNumber, ProtocolBalance, ProtocolBalanceWithChains } from '@rotki/common';
+import type { AssetBalanceWithPriceAndChains, BigNumber, ProtocolBalance, ProtocolBalanceWithChains } from '@rotki/common';
+import type { BalanceEntry } from '@/modules/balances/aggregation/core/balance-entry';
 import { omit } from 'es-toolkit';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 
-/** A protocol balance that may have been merged from manual entries, tracking which chains fed it. */
-export type BalanceWithManual = Balance & { containsManual?: boolean; chains?: Record<string, Balance> };
+export type ProtocolBalancesWithManual = Record<string, BalanceEntry>;
 
-export type ProtocolBalancesWithManual = Record<string, BalanceWithManual>;
+/** Highest value first; equal values fall back to the identifier, so the order never depends on input order. */
+export function compareRowsByValue(a: AssetBalanceWithPriceAndChains, b: AssetBalanceWithPriceAndChains): number {
+  return sortDesc(a.value, b.value) || a.asset.localeCompare(b.asset);
+}
 
 /** An asset while its group is still being assembled, before the group collapses to one row. */
 export interface IntermediateGroupRepresentation {
@@ -53,7 +56,8 @@ export function protocolBreakdown(groupAssets: IntermediateGroupRepresentation[]
     .map(value => ({
       ...omit(value, ['isMain']),
       perProtocol: getSortedProtocolBalances(value.perProtocol),
-    }));
+    }))
+    .sort(compareRowsByValue);
 }
 
 /** A lone asset needs no aggregation; a native token still carries its per-protocol breakdown. */

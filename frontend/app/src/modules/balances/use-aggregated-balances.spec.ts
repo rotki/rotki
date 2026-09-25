@@ -554,17 +554,6 @@ describe('useAggregatedBalances', () => {
       const breakdown = useLocationBreakdown('external');
 
       expect(get(breakdown)).toMatchObject([{
-        amount: bigNumberify(50),
-        asset: 'ETH',
-        perProtocol: [{
-          amount: bigNumberify(50),
-          containsManual: true,
-          protocol: 'external',
-          value: bigNumberify(50),
-        }],
-        price: bigNumberify(-1),
-        value: bigNumberify(50),
-      }, {
         amount: bigNumberify(100),
         asset: 'ETH2',
         perProtocol: [{
@@ -575,6 +564,17 @@ describe('useAggregatedBalances', () => {
         }],
         price: bigNumberify(-1),
         value: bigNumberify(100),
+      }, {
+        amount: bigNumberify(50),
+        asset: 'ETH',
+        perProtocol: [{
+          amount: bigNumberify(50),
+          containsManual: true,
+          protocol: 'external',
+          value: bigNumberify(50),
+        }],
+        price: bigNumberify(-1),
+        value: bigNumberify(50),
       }]);
 
       updateGeneralSettings({ treatEth2AsEth: true });

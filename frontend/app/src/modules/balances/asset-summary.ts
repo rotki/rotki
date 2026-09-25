@@ -1,11 +1,11 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import { compareRowsByValue } from '@/modules/balances/balance-grouping';
 import {
   aggregateSourceBalances,
   createAssetBalanceFromAggregated,
   processCollectionGrouping,
 } from '@/modules/balances/balance-transformations';
-import { sortDesc } from '@/modules/core/common/data/bignumbers';
 
 /**
  * Configuration for asset sources and identifier resolution
@@ -93,7 +93,7 @@ export function summarizeAssetProtocols(
       .map(([asset, protocolBalances]) =>
         createAssetBalanceFromAggregated(asset, protocolBalances, asset => getAssetPrice(asset, noPrice)),
       )
-      .sort((a, b) => sortDesc(a.value, b.value));
+      .sort(compareRowsByValue);
   }
 
   const { getCollectionId, getCollectionMainAsset } = collectionConfig;
@@ -104,5 +104,5 @@ export function summarizeAssetProtocols(
     getCollectionMainAsset,
     getAssetPrice,
     noPrice,
-  );
+  ).sort(compareRowsByValue);
 }
