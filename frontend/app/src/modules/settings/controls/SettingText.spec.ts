@@ -49,6 +49,13 @@ describe('settingText', () => {
     expect(wrapper.find('.model').text()).toBe(',');
   });
 
+  it('should show a value changed elsewhere in the field', async () => {
+    const wrapper = createWrapper();
+    set(model, ';');
+    await nextTick();
+    expect(wrapper.find('.model').text()).toBe(';');
+  });
+
   it('should persist a valid value', async () => {
     const wrapper = createWrapper({ maxLength: 1, required: true });
     await wrapper.findComponent(RuiTextFieldStub).vm.$emit('update:model-value', ';');

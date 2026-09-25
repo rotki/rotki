@@ -58,10 +58,8 @@ async function onInput(value: string): Promise<void> {
   await form.submit();
 }
 
-// Reflect external changes into the field, but ignore the echo of our own writes (same string).
 watch(model, (value) => {
-  if (String(value) !== form.state.value)
-    form.state.value = String(value);
+  form.state.value = String(value);
 });
 
 watch(writeSuccess, (saved) => {

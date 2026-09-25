@@ -75,10 +75,8 @@ const form = useForm<SettingFieldState, SettingFieldState>({
 
 const hasDefault = computed<boolean>(() => defaultValue !== undefined);
 
-// Reflect external changes into the field, but ignore the echo of our own writes (same string).
 watch(model, (value) => {
-  if (value !== form.state.value)
-    form.state.value = value;
+  form.state.value = value;
 });
 
 watch(writeSuccess, (saved) => {
