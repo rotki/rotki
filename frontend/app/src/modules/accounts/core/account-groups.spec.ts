@@ -87,6 +87,29 @@ describe('accountGroups', () => {
     expect(nativeOnly[0].expansion).toBeUndefined();
   });
 
+  it('should show a tracked address whose balances have not loaded yet as an empty, unexpandable row', () => {
+    const fresh = accountGroups(
+      { eth: [createAccount({ address: '0xnew', label: null, tags: null }, { chain: 'eth', nativeAsset: 'ETH' })] },
+      {},
+      ports,
+    );
+    expect(fresh).toHaveLength(1);
+    expect(fresh[0].value.toFixed()).toBe('0');
+    expect(fresh[0].expansion).toBeUndefined();
+  });
+
+  it('should show an xpub with no derived addresses as an empty, unexpandable row', () => {
+    const lone = accountGroups(
+      { btc: [createXpubAccount({ addresses: null, derivationPath: null, label: null, tags: null, xpub: 'xpub2' }, { chain: 'btc', groupHeader: true, groupId: 'xpub2#btc', nativeAsset: 'BTC' })] },
+      {},
+      ports,
+    );
+    expect(lone).toHaveLength(1);
+    expect(lone[0].value.toFixed()).toBe('0');
+    expect(lone[0].expansion).toBeUndefined();
+    expect(lone[0].tags).toBeUndefined();
+  });
+
   it('should sum an xpub\'s value over every derived address but its amount over its native asset only', () => {
     const xpub = groupFor('xpub1');
     expect(xpub?.amount?.toFixed()).toBe('3');
