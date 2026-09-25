@@ -249,25 +249,26 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             cursor=cursor,
             name=location_string,
         ) == (
-            (start_ts, Timestamp(start_ts + 10)) if partial_pre_coverage else
             (OP_BEDROCK_UPGRADE, end_ts) if post_succeeds else
+            (start_ts, Timestamp(start_ts + 10)) if partial_pre_coverage else
             None
         )
 
-    if post_succeeds and not partial_pre_coverage:
+    if post_succeeds:
         with (
             patch.object(inquirer, '_resolve_timestamp_range', return_value=(
                 OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset(),
             )) as resolve_retry,
             patch.object(inquirer, 'get_transactions_with_source', return_value=(
                 iter([[]]), EvmIndexer.ROUTESCAN,
-            )) as query_retry,
+            ), side_effect=RemoteError('pre-Bedrock indexers still unavailable') if partial_pre_coverage else None,  # noqa: E501
+            ) as query_retry,
         ):
             assert optimism_transactions._get_internal_transactions_for_ranges(
                 address=address,
                 start_ts=start_ts,
                 end_ts=end_ts,
-            ) is True
+            ) is (not partial_pre_coverage)
 
         resolve_retry.assert_called_once()
         query_retry.assert_called_once()
@@ -275,7 +276,50 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             assert optimism_transactions.database.get_used_query_range(
                 cursor=cursor,
                 name=location_string,
-            ) == (start_ts, end_ts)
+            ) == (
+                (OP_BEDROCK_UPGRADE, end_ts) if partial_pre_coverage else (start_ts, end_ts)
+            )
+
+
+def test_post_bedrock_replacement_keeps_pre_coverage_if_probe_fails(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """Do not discard older progress when recent newer coverage cannot be established."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = ts_now()
+    saved_range = (start_ts, Timestamp(start_ts + 10))
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    with optimism_transactions.database.conn.write_ctx() as cursor:
+        DBQueryRanges(optimism_transactions.database).update_used_query_range(
+            write_cursor=cursor,
+            location_string=location_string,
+            queried_ranges=[saved_range],
+        )
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            RemoteError('pre-Bedrock indexers unavailable'),
+            (iter([[]]), EvmIndexer.BLOCKSCOUT),
+        ]),
+        patch.object(inquirer, 'get_blocknumber_by_time', side_effect=RemoteError(
+            'could not determine indexed end',
+        )) as end_probe,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is False
+
+    end_probe.assert_called_once_with(ts=end_ts, closest='before')
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == saved_range  # noqa: E501
 
 
 @pytest.mark.parametrize('saved_range', [
@@ -359,7 +403,7 @@ def _interrupted_internal_batches(
 def test_pre_bedrock_interruption_keeps_batch_progress(
         optimism_transactions: OptimismTransactions,
 ) -> None:
-    """Keep a fetched older batch without marking the gap before the newer half."""
+    """Keep a fetched older batch when the newer half also fails."""
     address = make_evm_address()
     start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
     end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
@@ -384,11 +428,10 @@ def test_pre_bedrock_interruption_keeps_batch_progress(
         ]),
         patch.object(inquirer, 'get_transactions_with_source', side_effect=[
             (_interrupted_internal_batches(internal_tx), EvmIndexer.ROUTESCAN),
-            (iter([[]]), EvmIndexer.BLOCKSCOUT),
+            RemoteError('post-Bedrock indexers unavailable'),
         ]) as query_indexers,
-        patch.object(optimism_transactions, '_process_internal_transactions_batch', side_effect=[
-            [(internal_tx, batch_ts)],
-            [],
+        patch.object(optimism_transactions, '_process_internal_transactions_batch', return_value=[
+            (internal_tx, batch_ts),
         ]),
         patch.object(optimism_transactions.dbevmtx, 'add_evm_internal_transactions') as save_batch,
         patch.object(
@@ -466,6 +509,7 @@ def test_successful_bedrock_split_marks_combined_range_once(
         'location_string': location_string,
         'start_ts': start_ts,
         'end_ts': end_ts,
+        'replace_existing': False,
     }
     end_block_probe.assert_called_once_with(ts=end_ts, closest='before')
     assert end_timestamp_probe.call_count == 1

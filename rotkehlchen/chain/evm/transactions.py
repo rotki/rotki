@@ -449,6 +449,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            replace_existing: bool = False,
     ) -> None:
         """Record the range as queried, clamped to what the indexers were actually asked.
 
@@ -466,6 +467,9 @@ class EvmTransactions(ABC):  # noqa: B024
         On a healthy chain the clamp costs nothing, as the gap is a single block time. When
         the covered end cannot be established the range is left unrecorded, so it is
         retried rather than assumed complete.
+
+        replace_existing is used when the new covered range cannot join an older saved fragment.
+        The replacement happens only after the covered end has been established.
         """
         covered_end_ts = end_ts
         if end_ts >= ts_now() - RECENT_RANGE_MARGIN:
@@ -496,11 +500,19 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts, end_ts,
         )
         with self.database.user_write() as write_cursor:
-            self.dbranges.update_used_query_range(
-                write_cursor=write_cursor,
-                location_string=location_string,
-                queried_ranges=[(start_ts, covered_end_ts)],
-            )
+            if replace_existing:
+                self.database.update_used_query_range(
+                    write_cursor=write_cursor,
+                    name=location_string,
+                    start_ts=start_ts,
+                    end_ts=covered_end_ts,
+                )
+            else:
+                self.dbranges.update_used_query_range(
+                    write_cursor=write_cursor,
+                    location_string=location_string,
+                    queried_ranges=[(start_ts, covered_end_ts)],
+                )
 
     def _get_transactions_for_range(
             self,

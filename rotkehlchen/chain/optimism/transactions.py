@@ -101,12 +101,21 @@ class OptimismTransactions(L2WithL1FeesTransactions):
 
         with self.database.conn.read_ctx() as cursor:
             saved_range = self.database.get_used_query_range(cursor, location_string)
-        if (saved_range is None or (
-                saved_range[0] <= mark_end + 1 and saved_range[1] >= mark_start - 1
-        )) and (saved_range is None or saved_range[0] > mark_start or saved_range[1] < mark_end):
+        # An incomplete older fragment cannot join the newer half. Keep the newer coverage so
+        # repeated failures of the older half do not download the newer history on every sync.
+        replace_partial_pre_range = (
+            not pre_bedrock_ok and post_bedrock_ok and
+            saved_range is not None and saved_range[1] < pre_end
+        )
+        should_mark = saved_range is None or (
+            saved_range[0] <= mark_end + 1 and saved_range[1] >= mark_start - 1 and
+            (saved_range[0] > mark_start or saved_range[1] < mark_end)
+        )
+        if replace_partial_pre_range or should_mark:
             self._mark_range_as_queried(
                 location_string=location_string,
                 start_ts=mark_start,
                 end_ts=mark_end,
+                replace_existing=replace_partial_pre_range,
             )
         return pre_bedrock_ok and post_bedrock_ok
