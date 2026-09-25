@@ -7,7 +7,6 @@ import type {
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { camelCase } from 'es-toolkit';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import AccountFormApiKeyAlertContent from '@/modules/accounts/management/AccountFormApiKeyAlertContent.vue';
@@ -16,12 +15,12 @@ import AddressAccountForm from '@/modules/accounts/management/types/AddressAccou
 import AgnosticAddressAccountForm from '@/modules/accounts/management/types/AgnosticAddressAccountForm.vue';
 import BtcAccountForm from '@/modules/accounts/management/types/BtcAccountForm.vue';
 import ValidatorAccountForm from '@/modules/accounts/management/types/ValidatorAccountForm.vue';
+import { useAccountFormIndexerKeys } from '@/modules/accounts/management/use-account-form-indexer-keys';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { InputMode } from '@/modules/core/common/input-mode';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSetting } from '@/modules/settings/use-setting';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
@@ -58,41 +57,16 @@ function setValidator(data: StakingValidatorManage['data']): void {
   set(modelValue, { ...state, data });
 }
 
-const { getChainName, isEarlyIntegrationChain, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
+const { getChainName, isEarlyIntegrationChain, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
 
 const beaconRpcEndpoint = useSetting('beaconRpcEndpoint');
-const defaultEvmIndexerOrder = useSetting('defaultEvmIndexerOrder');
-const evmIndexersOrder = useSetting('evmIndexersOrder');
 
-/**
- * Checks if etherscan is the top priority indexer for a given chain.
- */
-function isEtherscanTopPriority(chainId: string): boolean {
-  const chainOrders = get(evmIndexersOrder);
-  const evmChainName = camelCase(get(txEvmChains).find(c => c.id === chainId)?.evmChainName || '');
-  const indexerOrder = evmChainName && chainOrders[evmChainName]
-    ? chainOrders[evmChainName]
-    : get(defaultEvmIndexerOrder);
-
-  return indexerOrder[0] === EvmIndexer.ETHERSCAN;
-}
-
-/**
- * Checks if etherscan is the top priority for the selected chain(s).
- * For 'all', returns true if etherscan is top priority for any EVM chain.
- */
-function shouldShowEtherscanWarning(selectedChain: string): boolean {
-  if (selectedChain === 'all') {
-    return get(txEvmChains).some(chain => isEtherscanTopPriority(chain.id));
-  }
-
-  if (!isEvm(selectedChain))
-    return false;
-
-  return isEtherscanTopPriority(selectedChain);
-}
+const { blockscoutKeyChainNames, missingIndexerKeys } = useAccountFormIndexerKeys(chain, () => {
+  const state = get(modelValue);
+  return state.mode === 'add' && state.type !== 'validator';
+});
 
 /** Without a beaconchain key, validators fall back to a consensus RPC, which needs its own endpoint. */
 function validatorKeyService(): 'beaconchain' | 'consensusRpc' | undefined {
@@ -102,18 +76,7 @@ function validatorKeyService(): 'beaconchain' | 'consensusRpc' | undefined {
   return get(beaconRpcEndpoint) ? 'beaconchain' : 'consensusRpc';
 }
 
-/**
- * Only an Etherscan that leads the indexer order is worth a warning. With its key set it answers
- * the queries, and a keyless Blockscout is skipped for the next indexer, so it blocks nothing.
- */
-function indexerKeyService(chain: string): 'etherscan' | undefined {
-  if (!shouldShowEtherscanWarning(chain) || getApiKey('etherscan'))
-    return undefined;
-
-  return 'etherscan';
-}
-
-const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout' | undefined>(() => {
+const missingApiKeyService = computed<'helius' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
@@ -126,7 +89,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
   if (isSolanaChains(selectedChain))
     return getApiKey('helius') ? undefined : 'helius';
 
-  return indexerKeyService(selectedChain);
+  return undefined;
 });
 
 const showSolanaInitialAlert = computed<boolean>(() => {
@@ -178,6 +141,8 @@ const warnings = computed<WarningItem[]>(() => {
   const service = get(missingApiKeyService);
   if (service && !isBeaconchainService(service))
     result.push({ service, type: 'apiKey' });
+  for (const indexer of get(missingIndexerKeys))
+    result.push({ service: indexer, type: 'apiKey' });
   if (get(showSolanaInitialAlert))
     result.push({ type: 'solana' });
   const earlyChain = get(earlyIntegrationChain);
@@ -345,7 +310,10 @@ defineExpose({
           :key="warning.type"
         >
           <template v-if="warning.type === 'apiKey' && warning.service">
-            <AccountFormApiKeyAlertContent :service="warning.service" />
+            <AccountFormApiKeyAlertContent
+              :service="warning.service"
+              :chains="warning.service === 'blockscout' ? blockscoutKeyChainNames : undefined"
+            />
           </template>
           <template v-else-if="warning.type === 'solana'">
             {{ t('blockchain_balances.solana_warning') }}

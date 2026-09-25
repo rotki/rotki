@@ -176,7 +176,7 @@ describe('indexerOrderSetting', () => {
 
     const warnings = wrapper.findAll('[data-testid=chain-warning-alert]');
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.gnosis_key_required');
+    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.key_required');
   });
 
   it('should not warn on the default tab', async () => {

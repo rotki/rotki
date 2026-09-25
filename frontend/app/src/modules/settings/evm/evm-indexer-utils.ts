@@ -107,6 +107,12 @@ export function getAvailableChainItems(chains: ChainItem[], configuredChains: st
     .map(({ id, name }) => ({ id, name }));
 }
 
+/**
+ * Chains no indexer serves without a key: Etherscan's free tier skips them, Blockscout needs a key
+ * on them, and Routescan does not cover them (it dropped Optimism).
+ */
+const KEY_REQUIRED_CHAINS: string[] = ['base', 'gnosis', 'optimism'];
+
 /** Chain-specific caveats about the selected order. Keys are resolved by the caller. */
 export function getChainIndexerWarnings(tab: string, order: PrioritizedListId[]): MessageKey[] {
   if (tab === DEFAULT_INDEXER_TAB)
@@ -114,14 +120,11 @@ export function getChainIndexerWarnings(tab: string, order: PrioritizedListId[])
 
   const warnings: MessageKey[] = [];
 
+  if (KEY_REQUIRED_CHAINS.includes(tab))
+    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.key_required'));
+
   if (tab === 'optimism' && order.includes(EvmIndexer.BLOCKSCOUT))
     warnings.push(msg.$t('evm_settings.indexer.chain_warnings.optimism_blockscout'));
-
-  if (tab === 'base' && (order.length === 0 || order[0] !== EvmIndexer.BLOCKSCOUT))
-    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.base_limited_indexers'));
-
-  if (tab === 'gnosis')
-    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.gnosis_key_required'));
 
   return warnings;
 }

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Adding an account on Optimism, Base or Gnosis without a Blockscout or paid Etherscan key now warns that their history cannot be queried, and their indexer settings say they need one of the two keys.
 * :bug:`-` Optimism transaction queries no longer try Routescan after the service dropped support for the chain. When free indexers cannot serve Optimism, Base or Gnosis, rotki now offers a free Blockscout API key before suggesting paid Etherscan access.
 * :bug:`13216` rotki starts again on macOS 12 (Monterey) and 13 (Ventura). Since 1.44.0 the backend failed to start there with a numpy "Symbol not found" error.
 * :bug:`13220` When etherscan asks rotki to split a long transaction query into smaller ones, the progress of each part is now saved. Before, only the first part was recorded, so an interrupted first sync of a busy address downloaded most of its history again, and the logs showed "Gap detected" errors.
