@@ -1,5 +1,4 @@
 import type {
-  Balances,
   BitcoinAccounts,
   BlockchainAccount,
   BlockchainAccountGroupWithBalance,
@@ -10,7 +9,6 @@ import type { BlockchainAssetBalances, BlockchainTotals, BtcBalances } from '@/m
 import { type Balance, bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import {
-  aggregateTotals,
   convertBtcAccounts,
   convertBtcBalances,
   getAccountBalance,
@@ -368,35 +366,6 @@ describe('convertBtcBalances', () => {
     expect(result.perAccount.btc).toEqual({
       bc1child: { assets: { BTC: { address: bal(2, 100000) } }, liabilities: {} },
     });
-  });
-});
-
-describe('aggregateTotals', () => {
-  const balances: Balances = {
-    eth: { '0xabc': { assets: { ETH: { evm: bal(1, 1000) } }, liabilities: {} } },
-    optimism: { '0xdef': { assets: { ETH: { evm: bal(2, 2000) } }, liabilities: {} } },
-  };
-
-  it('should aggregate the same asset across chains', () => {
-    const result = aggregateTotals(balances);
-    expect(result.ETH.amount.toNumber()).toBe(3);
-    expect(result.ETH.value.toNumber()).toBe(3000);
-  });
-
-  it('should restrict aggregation to the requested chains', () => {
-    const result = aggregateTotals(balances, 'assets', { chains: ['eth'] });
-    expect(result.ETH.amount.toNumber()).toBe(1);
-  });
-
-  it('should skip identifiers rejected by the predicate', () => {
-    const result = aggregateTotals(balances, 'assets', { skipIdentifier: id => id === 'ETH' });
-    expect(result.ETH).toBeUndefined();
-  });
-
-  it('should resolve identifiers through the resolver', () => {
-    const result = aggregateTotals(balances, 'assets', { resolveIdentifier: () => 'WETH' });
-    expect(result.WETH.amount.toNumber()).toBe(3);
-    expect(result.ETH).toBeUndefined();
   });
 });
 

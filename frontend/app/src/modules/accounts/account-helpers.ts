@@ -1,6 +1,5 @@
 import type {
   AddressData,
-  Balances,
   BitcoinAccounts,
   BlockchainAccount,
   BlockchainAccountBalance,
@@ -8,7 +7,6 @@ import type {
   BlockchainAccountWithBalance,
   ValidatorData,
 } from '@/modules/accounts/blockchain-accounts';
-import type { AssetBalances } from '@/modules/balances/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
@@ -24,7 +22,7 @@ import { isEmpty } from 'es-toolkit/compat';
 import { isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
 import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
-import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
+import { assetSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { sum } from '@/modules/core/common/display/balances';
 
@@ -287,71 +285,6 @@ export function convertBtcBalances(
     perAccount: { [chain]: chainBalances },
     totals,
   };
-}
-
-interface GeneratorFilters {
-  chains?: string[];
-  skipIdentifier?: (asset: string) => boolean;
-  resolveIdentifier?: (id: string) => string;
-}
-
-const GENERATOR_FILTER_DEFAULTS: Required<GeneratorFilters> = {
-  chains: [],
-  resolveIdentifier: (id: string): string => id,
-  skipIdentifier: (): boolean => false,
-};
-
-/** An empty chain list means every chain, rather than none. */
-function includesChain(chains: string[], chain: string): boolean {
-  return chains.length === 0 || chains.includes(chain);
-}
-
-function sumProtocolBalances(protocolBalances: Record<string, Balance>): Balance {
-  return Object.values(protocolBalances).reduce<Balance>((sum, current) => ({
-    amount: sum.amount.plus(current.amount),
-    value: sum.value.plus(current.value),
-  }), { amount: Zero, value: Zero });
-}
-
-function* iterateAssets(
-  balances: Balances,
-  key: keyof EthBalance,
-  filters: GeneratorFilters,
-): Generator<[string, Balance]> {
-  const { chains, resolveIdentifier, skipIdentifier } = { ...GENERATOR_FILTER_DEFAULTS, ...filters };
-
-  for (const chain of Object.keys(balances)) {
-    if (!includesChain(chains, chain))
-      continue;
-
-    for (const account of Object.values(balances[chain])) {
-      if (!account[key])
-        continue;
-
-      for (const [identifier, protocolBalances] of Object.entries(account[key])) {
-        if (skipIdentifier(identifier))
-          continue;
-
-        yield [resolveIdentifier(identifier), sumProtocolBalances(protocolBalances)] as const;
-      }
-    }
-  }
-}
-
-export function aggregateTotals(
-  balances: Balances,
-  key: keyof EthBalance = 'assets',
-  filters: GeneratorFilters = {},
-): AssetBalances {
-  const aggregated: AssetBalances = {};
-
-  for (const [identifier, balance] of iterateAssets(balances, key, filters)) {
-    if (!aggregated[identifier])
-      aggregated[identifier] = balance;
-    else
-      aggregated[identifier] = balanceSum(aggregated[identifier], balance);
-  }
-  return aggregated;
 }
 
 export function hasTokens(nativeAsset: string, assetBalances?: AssetProtocolBalances): boolean {
