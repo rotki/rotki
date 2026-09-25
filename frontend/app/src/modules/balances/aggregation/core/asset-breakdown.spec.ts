@@ -67,6 +67,10 @@ describe('assetBreakdown', () => {
     ]);
   });
 
+  it('should give no rows for a chain filter naming a chain with no accounts or balances', () => {
+    expect(assetBreakdown('ETH', inputs, false, { chains: ['base'] }, ports)).toEqual([]);
+  });
+
   it('should leave out rows holding nothing', () => {
     const addresses = assetBreakdown('ETH', inputs, false, { chains: ['eth'] }, ports).map(row => row.address);
     expect(addresses).not.toContain('0x2');
