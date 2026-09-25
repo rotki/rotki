@@ -38,6 +38,7 @@ const filterWrapper = useTemplateRef<HTMLElement>('filterWrapper');
 const filterEngaged = usePanelFilterEngagement(filterWrapper);
 
 const {
+  error,
   hasRemediatingRows,
   isEmpty,
   loading,
@@ -155,6 +156,26 @@ onMounted(() => {
       </RuiButton>
     </div>
 
+    <RuiAlert
+      v-if="error && !isEmpty"
+      type="error"
+      class="mx-3 mt-2 shrink-0"
+      :title="t('data_table.fetch_failed')"
+      data-testid="data-issues-panel-refresh-error"
+    >
+      <div class="flex flex-col items-start gap-2">
+        <span class="break-words">{{ error.message }}</span>
+        <RuiButton
+          size="sm"
+          color="error"
+          variant="outlined"
+          @click="startPromise(refreshList())"
+        >
+          {{ t('common.actions.retry') }}
+        </RuiButton>
+      </div>
+    </RuiAlert>
+
     <div
       v-if="loading && isEmpty"
       class="flex flex-1 items-center justify-center"
@@ -166,6 +187,31 @@ onMounted(() => {
         thickness="2"
         color="primary"
       />
+    </div>
+
+    <div
+      v-else-if="isEmpty && error"
+      class="flex flex-col items-center justify-center flex-1 px-6 text-center gap-2"
+      data-testid="data-issues-panel-error"
+    >
+      <RuiIcon
+        size="40px"
+        color="error"
+        name="lu-circle-alert"
+      />
+      <div class="text-rui-text text-body-1">
+        {{ t('data_table.fetch_failed') }}
+      </div>
+      <div class="text-rui-text-secondary text-body-2 break-words">
+        {{ error.message }}
+      </div>
+      <RuiButton
+        variant="text"
+        color="primary"
+        @click="startPromise(refreshList())"
+      >
+        {{ t('common.actions.retry') }}
+      </RuiButton>
     </div>
 
     <div

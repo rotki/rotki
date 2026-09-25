@@ -120,7 +120,7 @@ export function useHistoryEventsFilters(
 
   const fetchHistoryEventsTagged = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
-  ): Promise<Collection<HistoryEventRow>> =>
+  ): ReturnType<typeof fetchHistoryEvents> =>
     fetchHistoryEvents(payload, { tags: [GROUPS_CANCEL_TAG] });
 
   // Define these early since they're used in extraParams / requestParams

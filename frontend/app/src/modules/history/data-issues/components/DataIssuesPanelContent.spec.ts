@@ -4,11 +4,13 @@ import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { computed, type Ref, ref } from 'vue';
+import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import DataIssuesPanelContent from '@/modules/history/data-issues/components/DataIssuesPanelContent.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 
 interface MockState {
+  error?: RequestFailure;
   hasActiveSelection: boolean;
   issues: DataIssue[];
   loading: boolean;
@@ -26,6 +28,7 @@ const reloadAll = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('@/modules/history/data-issues/use-data-issues-panel-list', () => ({
   useDataIssuesPanelList: (): Record<string, unknown> => ({
+    error: computed(() => state.error),
     hasRemediatingRows: computed(() => false),
     isEmpty: computed(() => state.issues.length === 0),
     loading: computed(() => state.loading),
@@ -134,9 +137,50 @@ describe('dataIssuesPanelContent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setActivePinia(createPinia());
+    state.error = undefined;
     state.hasActiveSelection = false;
     state.issues = [];
     state.loading = false;
+  });
+
+  describe('when the issues could not be loaded', () => {
+    const failure = RequestFailed({ cause: undefined, message: 'backend is down' });
+
+    it('should name the failure instead of reporting all clear', async () => {
+      state.error = failure;
+      const wrapper = await createWrapper();
+
+      expect(wrapper.find('[data-testid=data-issues-panel-error]').text()).toContain('backend is down');
+      expect(wrapper.text()).not.toContain('data_issues.empty.all_clear_title');
+    });
+
+    it('should load the list again from the retry', async () => {
+      state.error = failure;
+      const wrapper = await createWrapper();
+      refreshList.mockClear();
+
+      await wrapper.find('[data-testid=data-issues-panel-error] button').trigger('click');
+
+      expect(refreshList).toHaveBeenCalledOnce();
+    });
+
+    it('should keep the issues it already shows and flag the failed refresh above them', async () => {
+      state.error = failure;
+      state.issues = [createIssue(1)];
+      const wrapper = await createWrapper();
+
+      expect(wrapper.find('[data-testid=data-issues-panel-refresh-error]').text()).toContain('backend is down');
+      expect(wrapper.find('[data-testid=data-issues-panel-error]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=data-issues-panel-list]').exists()).toBe(true);
+    });
+  });
+
+  it('should report all clear only when the load succeeded empty', async () => {
+    const wrapper = await createWrapper();
+
+    expect(wrapper.find('[data-testid=data-issues-panel-error]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=data-issues-panel-refresh-error]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('data_issues.empty.all_clear_title');
   });
 
   it('should load the list and the summary on mount', async () => {

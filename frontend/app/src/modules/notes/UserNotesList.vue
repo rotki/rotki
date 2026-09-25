@@ -22,6 +22,7 @@ const {
   deleteNote,
   editMode,
   editNote,
+  error,
   idToDelete,
   limit,
   loadInitialNotes,
@@ -93,6 +94,27 @@ onMounted(async () => {
     ref="wrapper"
     class="px-4 pb-4 max-h-[calc(100%-120px)] overflow-auto flex-1"
   >
+    <RuiAlert
+      v-if="error"
+      type="error"
+      class="mb-4"
+      :title="t('data_table.fetch_failed')"
+      data-testid="notes-fetch-error"
+    >
+      <div class="flex flex-col items-start gap-2">
+        <span>{{ error.message }}</span>
+        <RuiButton
+          size="sm"
+          color="error"
+          variant="outlined"
+          data-testid="notes-retry"
+          @click="refreshNotes()"
+        >
+          {{ t('common.actions.retry') }}
+        </RuiButton>
+      </div>
+    </RuiAlert>
+
     <RuiAlert
       v-if="showUpgradeRow"
       type="warning"
@@ -243,7 +265,7 @@ onMounted(async () => {
     </div>
 
     <div
-      v-else
+      v-else-if="!error"
       class="text-2xl font-light mt-8 text-center text-rui-text"
     >
       {{ t('notes_menu.empty_notes') }}

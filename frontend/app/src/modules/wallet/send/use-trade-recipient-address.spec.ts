@@ -1,14 +1,16 @@
 import type { Ref } from 'vue';
 import type { AddressBookEntry } from '@/modules/accounts/address-book/eth-names';
 import type { Collection } from '@/modules/core/common/collection';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { useTradeRecipientAddress } from '@/modules/wallet/send/use-trade-recipient-address';
 
 const ALICE = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 const BOB = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12';
 const CONNECTED = '0x1234567890123456789012345678901234567890';
 
-const getAddressBook = vi.fn<() => Promise<Collection<AddressBookEntry>>>();
+const getAddressBook = vi.fn<() => Promise<Result<Collection<AddressBookEntry>, RequestError>>>();
 const fetchEnsNames = vi.fn<() => Promise<void>>();
 const resolveEnsToAddress = vi.fn<(name: string) => Promise<string | null>>();
 
@@ -35,14 +37,14 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: (): { connectedAddress: typeof connectedAddress } => ({ connectedAddress }),
 }));
 
-function bookEntries(...entries: { address: string; name: string }[]): Collection<AddressBookEntry> {
-  return {
+function bookEntries(...entries: { address: string; name: string }[]): Result<Collection<AddressBookEntry>, RequestError> {
+  return ok({
     data: entries.map(entry => ({ address: entry.address, blockchain: null, name: entry.name })),
     found: entries.length,
     limit: 10,
     total: entries.length,
     totalValue: undefined,
-  };
+  });
 }
 
 describe('useTradeRecipientAddress', () => {
@@ -80,6 +82,15 @@ describe('useTradeRecipientAddress', () => {
 
       expect(getAddressBook).toHaveBeenCalledWith('private', { limit: 10, nameSubstring: 'ali', offset: 0 });
       expect(get(recipient.directOptions)).toEqual([{ address: ALICE, name: 'Alice' }]);
+    });
+
+    it('should still offer the other matches when the address book lookup fails', async () => {
+      getAddressBook.mockResolvedValue(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      set(addresses, { eth: [ALICE] });
+
+      await recipient.searchAddresses(ALICE.slice(0, 6));
+
+      expect(get(recipient.directOptions)).toEqual([{ address: ALICE }]);
     });
 
     it('should skip an address book entry that is not an address', async () => {

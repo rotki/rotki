@@ -1,6 +1,8 @@
 import type { LocationQuery } from 'vue-router';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { useAccountingRuleEditor } from '@/modules/settings/accounting/rule/use-accounting-rule-editor';
 
 const replace = vi.fn(async (): Promise<void> => {});
@@ -14,13 +16,18 @@ vi.mock('vue-router', () => ({
 }));
 
 const getAccountingRule = vi.fn(async (): Promise<AccountingRuleEntry | undefined> => undefined);
-const getAccountingRules = vi.fn(async (): Promise<{ data: AccountingRuleEntry[] }> => ({ data: [] }));
+const getAccountingRules = vi.fn(async (): Promise<Result<{ data: AccountingRuleEntry[] }, RequestError>> => ok({ data: [] }));
+const notifyError = vi.fn();
 
 vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
   useAccountingSettings: (): Record<string, unknown> => ({
     getAccountingRule,
     getAccountingRules,
   }),
+}));
+
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): Record<string, unknown> => ({ notifyError }),
 }));
 
 function buildRule(overrides: Partial<AccountingRuleEntry> = {}): AccountingRuleEntry {
@@ -42,7 +49,8 @@ describe('useAccountingRuleEditor', () => {
     query = {};
     replace.mockClear();
     getAccountingRule.mockClear().mockResolvedValue(undefined);
-    getAccountingRules.mockClear().mockResolvedValue({ data: [] });
+    getAccountingRules.mockClear().mockResolvedValue(ok({ data: [] }));
+    notifyError.mockClear();
   });
 
   describe('add and edit', () => {
@@ -134,7 +142,7 @@ describe('useAccountingRuleEditor', () => {
     it('should offer both the general rule and the event\'s own when the edit link names an event', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventSubtype': 'fee', 'eventType': 'spend' };
       getAccountingRule.mockResolvedValue(buildRule({ identifier: 1 }));
-      getAccountingRules.mockResolvedValue({ data: [buildRule({ eventIds: [42], identifier: 2 })] });
+      getAccountingRules.mockResolvedValue(ok({ data: [buildRule({ eventIds: [42], identifier: 2 })] }));
       const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
       await applyRouteIntent();
 
@@ -145,6 +153,17 @@ describe('useAccountingRuleEditor', () => {
         hasGeneralRule: true,
         open: true,
       });
+    });
+
+    it('should report a failed lookup of the event\'s rules instead of offering to add a duplicate', async () => {
+      query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
+      getAccountingRules.mockResolvedValue(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
+      await applyRouteIntent();
+
+      expect(get(actionDialog).open).toBe(false);
+      expect(notifyError).toHaveBeenCalledOnce();
+      expect(replace).toHaveBeenCalledWith({ query: {} });
     });
 
     it('should report only the general rule when the event has none of its own', async () => {

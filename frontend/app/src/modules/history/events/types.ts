@@ -75,6 +75,8 @@ export interface HistoryEventsTableEmits {
   'show:dialog': [options: DialogShowOptions];
   'set-page': [page: number];
   'refresh': [payload?: PullLocationTransactionPayload];
+  /** Asks the owner to load the groups again, after a failed fetch. */
+  'refetch': [];
   'refresh:block-event': [payload: PullEthBlockEventPayload];
   'update-event-ids': [payload: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }];
 }

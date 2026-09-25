@@ -2,7 +2,8 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
+import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssuesView from '@/modules/history/data-issues/DataIssuesView.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
@@ -16,6 +17,7 @@ import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
  */
 interface MockState {
   baselineTotal: number;
+  error?: RequestFailure;
   filters: Record<string, unknown>;
   isLoading: boolean;
   rows: DataIssue[];
@@ -32,6 +34,7 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
   routeWhen: (): { mode: 'route' } => ({ mode: 'route' }),
   useServerTable: (): Record<string, unknown> => ({
     collection: ref({ data: state.rows, found: state.rows.length, limit: 10, total: state.rows.length }),
+    error: shallowRef(state.error),
     filter: ref(state.filters),
     isLoading: ref(state.isLoading),
     pagination: ref({}),
@@ -94,9 +97,19 @@ describe('data-issues view empty states', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     state.baselineTotal = 0;
+    state.error = undefined;
     state.filters = {};
     state.isLoading = false;
     state.rows = [];
+  });
+
+  it('should show the table, not the all-clear screen, when reading the issues failed', async () => {
+    state.baselineTotal = 0;
+    state.error = RequestFailed({ cause: undefined, message: 'backend is down' });
+    const wrapper = await createWrapper();
+
+    expect(wrapper.findComponent(NoDataScreen).exists()).toBe(false);
+    expect(wrapper.findComponent(DataIssuesTable).exists()).toBe(true);
   });
 
   it('should show the reassuring all-clear screen when no issues exist at all', async () => {

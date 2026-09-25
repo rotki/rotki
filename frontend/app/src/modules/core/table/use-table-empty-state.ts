@@ -36,6 +36,14 @@ export function provideTableFetchError(error: Ref<unknown>): void {
 }
 
 /**
+ * The last fetch failure a server table further up the tree provided, for a table that renders its
+ * own empty state rather than handing {@link useTableEmptyState}'s text to `RuiDataTable`.
+ */
+export function useTableFetchError(): Ref<unknown> | undefined {
+  return inject(TableFetchErrorKey, undefined);
+}
+
+/**
  * A table's empty text, replaced by the reason its last fetch failed.
  *
  * @remarks
@@ -45,7 +53,7 @@ export function provideTableFetchError(error: Ref<unknown>): void {
  */
 export function useTableEmptyState(options: TableEmptyStateOptions = {}): ComputedRef<TableEmptyState> {
   const { error, fallback } = options;
-  const provided = inject(TableFetchErrorKey, undefined);
+  const provided = useTableFetchError();
   const { t } = useI18n({ useScope: 'global' });
 
   return computed<TableEmptyState>(() => {

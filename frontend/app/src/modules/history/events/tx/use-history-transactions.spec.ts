@@ -167,7 +167,8 @@ describe('useHistoryTransactions', () => {
       aggregateByGroupIds: false,
     });
 
-    events = eventsCollection.data;
+    assert(eventsCollection.ok);
+    events = eventsCollection.value.data;
   });
 
   afterEach(() => {

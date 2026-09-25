@@ -4,7 +4,10 @@ import type { Collection, CollectionResponse } from '@/modules/core/common/colle
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
 import { Blockchain, Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { pipe } from 'plainfp';
+import { type ResultAsync, tap } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -12,12 +15,12 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { isTransactionEvent } from '@/modules/reports/report-utils';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
-import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 
 interface UseReportOperationsReturn {
   createCsv: (reportId: number, path: string) => Promise<void>;
   deleteReport: (reportId: number) => Promise<void>;
-  fetchReportEvents: (payload: MaybeRef<ProfitLossEventsPayload>) => Promise<Collection<ProfitLossEvent>>;
+  fetchReportEvents: (payload: MaybeRef<ProfitLossEventsPayload>) => ResultAsync<Collection<ProfitLossEvent>, RequestError>;
   fetchReports: () => Promise<void>;
   getActionableItems: () => Promise<void>;
 }
@@ -93,18 +96,13 @@ export function useReportOperations(): UseReportOperationsReturn {
       startPromise(fetchEnsNames(addressesNamesPayload));
   }
 
-  async function fetchReportEvents(payload: MaybeRef<ProfitLossEventsPayload>): Promise<Collection<ProfitLossEvent>> {
-    try {
-      const response = await fetchReportEventsCaller(get(payload));
-      const events = mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(response);
-      fetchEnsNamesFromTransactions(events);
-      return events;
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      notifyError(t('actions.report_events.fetch.error.title'), t('actions.report_events.fetch.error.description', { error }), { priority: Priority.NORMAL });
-      return defaultReportEvents();
-    }
+  async function fetchReportEvents(payload: MaybeRef<ProfitLossEventsPayload>): ResultAsync<Collection<ProfitLossEvent>, RequestError> {
+    return pipe(
+      fromRequest(async () => mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(
+        await fetchReportEventsCaller(get(payload)),
+      )),
+      tap(fetchEnsNamesFromTransactions),
+    );
   }
 
   async function getActionableItems(): Promise<void> {

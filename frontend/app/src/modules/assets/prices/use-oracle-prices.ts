@@ -1,17 +1,17 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
 import type { Collection } from '@/modules/core/common/collection';
-import { Priority } from '@rotki/common';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseOraclePricesReturn {
   deletePrice: (item: OraclePriceEntry) => Promise<boolean>;
-  fetchData: (payload: MaybeRef<OraclePricesQuery>) => Promise<Collection<OraclePriceEntry>>;
+  fetchData: (payload: MaybeRef<OraclePricesQuery>) => ResultAsync<Collection<OraclePriceEntry>, RequestError>;
 }
 
 export function useOraclePrices(): UseOraclePricesReturn {
@@ -23,22 +23,8 @@ export function useOraclePrices(): UseOraclePricesReturn {
 
   const fetchData = async (
     payload: MaybeRef<OraclePricesQuery>,
-  ): Promise<Collection<OraclePriceEntry>> => {
-    try {
-      return await fetchOraclePrices(get(payload));
-    }
-    catch (error: unknown) {
-      if (isRequestCancellation(error))
-        return defaultCollectionState<OraclePriceEntry>();
-
-      notifyError(
-        t('oracle_prices.fetch.failure.title'),
-        t('oracle_prices.fetch.failure.message', { message: getErrorMessage(error) }),
-        { priority: Priority.NORMAL },
-      );
-      return defaultCollectionState<OraclePriceEntry>();
-    }
-  };
+  ): ResultAsync<Collection<OraclePriceEntry>, RequestError> =>
+    fromRequest(async () => fetchOraclePrices(get(payload)));
 
   const deletePrice = async (item: OraclePriceEntry): Promise<boolean> => {
     try {

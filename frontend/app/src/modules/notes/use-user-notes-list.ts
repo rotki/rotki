@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { fromRequest, type RequestFailure } from '@/modules/core/api/request-result';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
 import { NoteLocation, type UserNote, type UserNoteDraft, type UserNotesRequestPayload } from '@/modules/core/common/notes';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -46,6 +47,8 @@ interface UseUserNotesListReturn {
   editNote: (note: UserNote) => void;
   /** Whether the dialog is editing rather than creating. */
   editMode: Readonly<Ref<boolean>>;
+  /** Why the last page could not be loaded, or `undefined` once one loads. */
+  error: Readonly<Ref<RequestFailure | undefined>>;
   /** The note the delete confirmation is armed for, or null. */
   idToDelete: Readonly<Ref<number | null>>;
   /** The free-tier note cap. */
@@ -108,8 +111,8 @@ export function useUserNotesList(options: UseUserNotesListOptions): UseUserNotes
     titleSubstring: get(titleSubstring),
   }));
 
-  const { collection: notes, pagination, refetch } = useServerTable<UserNote, UserNotesRequestPayload>({
-    fetch: fetchUserNotes,
+  const { collection: notes, error, pagination, refetch } = useServerTable<UserNote, UserNotesRequestPayload>({
+    fetch: async payload => fromRequest(async () => fetchUserNotes(payload)),
     params: [{ to: 'both', values: extraParams }],
     sort: {
       default: [{
@@ -239,6 +242,7 @@ export function useUserNotesList(options: UseUserNotesListOptions): UseUserNotes
     deleteNote,
     editMode: readonly(editMode),
     editNote,
+    error,
     idToDelete: readonly(idToDelete),
     limit,
     loadInitialNotes,

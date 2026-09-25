@@ -1,8 +1,10 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { RequestFailed } from '@/modules/core/api/request-result';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 
 vi.mock('@/modules/accounts/address-book/use-addresses-names-api', () => ({
@@ -17,12 +19,6 @@ vi.mock('@/modules/accounts/address-book/use-addresses-names-api', () => ({
 vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
   useAddressNameResolution: vi.fn().mockReturnValue({
     resetAddressNamesData: vi.fn(),
-  }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockReturnValue({
-    notifyError: vi.fn(),
   }),
 }));
 
@@ -104,17 +100,18 @@ describe('useAddressBookOperations', () => {
       const { getAddressBook } = useAddressBookOperations();
       const result = await getAddressBook('private', { limit: 10, offset: 0 });
 
-      expect(result).toEqual(mockData);
+      expect(result).toEqual(ok(mockData));
       expect(api.fetchAddressBook).toHaveBeenCalledWith('private', { limit: 10, offset: 0 });
     });
 
-    it('should return default collection state on error', async () => {
-      vi.mocked(api.fetchAddressBook).mockRejectedValue(new Error('Network error'));
+    it('should carry the failure instead of an empty collection', async () => {
+      const failure = new Error('Network error');
+      vi.mocked(api.fetchAddressBook).mockRejectedValue(failure);
 
       const { getAddressBook } = useAddressBookOperations();
       const result = await getAddressBook('private', { limit: 10, offset: 0 });
 
-      expect(result).toEqual(defaultCollectionState());
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Network error', path: undefined, status: undefined })));
     });
   });
 });

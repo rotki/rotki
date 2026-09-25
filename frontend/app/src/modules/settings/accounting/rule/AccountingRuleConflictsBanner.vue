@@ -3,7 +3,10 @@ import AccountingRuleConflictsDialog from '@/modules/settings/accounting/rule/Ac
 
 const open = defineModel<boolean>('open', { required: true });
 
-/** How many rules conflict. Zero draws nothing: there is nothing to warn about or resolve. */
+/**
+ * How many rules conflict. Zero draws no button, but an `open` dialog still renders: a link asking
+ * for the conflicts opens it even when counting them failed, so its table can say why.
+ */
 const { count } = defineProps<{
   count: number;
 }>();
@@ -37,10 +40,10 @@ const { t } = useI18n({ useScope: 'global' });
         </RuiChip>
       </template>
     </RuiButton>
-    <AccountingRuleConflictsDialog
-      v-if="open"
-      @close="open = false"
-      @refresh="emit('refresh')"
-    />
   </template>
+  <AccountingRuleConflictsDialog
+    v-if="open"
+    @close="open = false"
+    @refresh="emit('refresh')"
+  />
 </template>

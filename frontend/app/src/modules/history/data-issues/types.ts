@@ -9,11 +9,12 @@ import type { TransactionDecodingComparison } from '@/modules/history/data-issue
  * Maps the backend status codes: `404` to not-found, `409` to conflict (an invalid state
  * transition), `400` to validation, anything else to network.
  */
-export type DataIssueError =
-  | { readonly type: 'not-found'; readonly message: string }
-  | { readonly type: 'conflict'; readonly message: string }
-  | { readonly type: 'validation'; readonly message: string }
-  | { readonly type: 'network'; readonly message: string };
+export interface DataIssueError {
+  readonly type: 'not-found' | 'conflict' | 'validation' | 'network';
+  readonly message: string;
+  /** The value the request threw, so a caller can still tell a cancellation or read the status. */
+  readonly cause: unknown;
+}
 
 /** One entry in the auto-remediation timeline shown in the detail drawer. */
 export interface RemediationTimelineItem {

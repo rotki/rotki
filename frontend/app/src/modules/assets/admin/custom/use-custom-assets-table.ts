@@ -5,6 +5,7 @@ import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/ty
 import type { Collection } from '@/modules/core/common/collection';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
@@ -70,7 +71,7 @@ export function useCustomAssetsTable(options: UseCustomAssetsTableOptions): UseC
     CustomAssetRequestPayload,
     Filters
   >({
-    fetch: queryAllCustomAssets,
+    fetch: async payload => fromRequest(async () => queryAllCustomAssets(payload)),
     fields,
     sort: {
       default: [{

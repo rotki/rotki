@@ -1,7 +1,9 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef, Ref } from 'vue';
 import type { NewDetectedToken, NewDetectedTokenInput, NewDetectedTokenKind, NewDetectedTokensRequestPayload } from './types';
 import type { Collection } from '@/modules/core/common/collection';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useNewlyDetectedTokensDb } from './use-newly-detected-tokens-db';
 
@@ -10,7 +12,7 @@ interface UseNewlyDetectedTokensReturn {
   clearInternalTokens: () => Promise<void>;
   count: () => Promise<number>;
   getAllIdentifiers: (tokenKind?: NewDetectedTokenKind) => Promise<string[]>;
-  getData: (payload: MaybeRef<NewDetectedTokensRequestPayload>) => Promise<Collection<NewDetectedToken>>;
+  getData: (payload: MaybeRef<NewDetectedTokensRequestPayload>) => ResultAsync<Collection<NewDetectedToken>, RequestError>;
   isReady: Ref<boolean>;
   removeNewDetectedTokens: (tokensToRemove: string[]) => Promise<void>;
 }
@@ -27,10 +29,14 @@ export const useNewlyDetectedTokens = createSharedComposable((): UseNewlyDetecte
     clearAll,
     count,
     getAllIdentifiers,
-    getData,
+    getData: queryTokens,
     isReady,
     removeTokens,
   } = useNewlyDetectedTokensDb();
+
+  async function getData(payload: MaybeRef<NewDetectedTokensRequestPayload>): ResultAsync<Collection<NewDetectedToken>, RequestError> {
+    return fromRequest(async () => queryTokens(payload));
+  }
 
   async function addNewDetectedToken(data: NewDetectedTokenInput): Promise<boolean> {
     if (!get(notifyNewNfts) && data.tokenIdentifier.includes('erc721'))

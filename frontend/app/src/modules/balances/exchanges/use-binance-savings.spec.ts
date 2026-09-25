@@ -2,10 +2,13 @@ import type { AssetBalance } from '@rotki/common';
 import type { EffectScope, MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
+import type { RequestError } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
+import { pipe } from 'plainfp';
 import { err, ok } from 'plainfp/result';
+import { map, type ResultAsync } from 'plainfp/result-async';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
@@ -53,7 +56,7 @@ vi.mock('@/modules/core/notifications/use-notifications', async importOriginal =
 }));
 
 describe('useBinanceSavings', () => {
-  let fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;
+  let fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => ResultAsync<ExchangeSavingsCollection, RequestError>;
   const exchange = ref<string>('binance');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
@@ -79,11 +82,15 @@ describe('useBinanceSavings', () => {
       location: get(exchange).toString(),
     }));
 
-    async function fetchSavings(payload: MaybeRef<ExchangeSavingsRequestPayload>): Promise<Collection<ExchangeSavingsEvent>> {
-      const { received = [], assets = [], ...collection } = await fetchExchangeSavings(payload);
-      set(exchangeAssets, assets);
-      set(exchangeReceived, received);
-      return collection;
+    async function fetchSavings(payload: MaybeRef<ExchangeSavingsRequestPayload>): ResultAsync<Collection<ExchangeSavingsEvent>, RequestError> {
+      return pipe(
+        fetchExchangeSavings(payload),
+        map(({ received = [], assets = [], ...collection }) => {
+          set(exchangeAssets, assets);
+          set(exchangeReceived, received);
+          return collection;
+        }),
+      );
     }
 
     beforeEach((): void => {
@@ -135,7 +142,7 @@ describe('useBinanceSavings', () => {
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload
       >({
-        fetch: fetchExchangeSavings,
+        fetch: fetchSavings,
         urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
         params: [{ isDefault: true, to: 'request', values: defaultParams }],
         sort: {

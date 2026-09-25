@@ -1,5 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { AccountingRuleAction, AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import { isRequestFailure } from '@/modules/core/api/request-result';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import {
   type AccountingRuleQuery,
   parseEventId,
@@ -56,6 +58,8 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
   const router = useRouter();
   const route = useRoute();
   const { getAccountingRule, getAccountingRules } = useAccountingSettings();
+  const { notifyError } = useNotifications();
+  const { t } = useI18n({ useScope: 'global' });
 
   const modelRule = ref<AccountingRuleEntry>();
   const modelEditMode = shallowRef<boolean>(false);
@@ -116,9 +120,21 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
       }),
     ]);
 
+    // Without the event's own rules the chooser would offer to create one that may already exist.
+    if (!eventSpecificRules.ok) {
+      if (isRequestFailure(eventSpecificRules.error)) {
+        notifyError(
+          t('accounting_settings.rule.fetch_error.title'),
+          t('accounting_settings.rule.fetch_error.message', { message: eventSpecificRules.error.message }),
+        );
+      }
+      await consumeQuery();
+      return;
+    }
+
     set(context, {
       eventId,
-      eventSpecificRule: eventSpecificRules.data.at(0),
+      eventSpecificRule: eventSpecificRules.value.data.at(0),
       generalRule,
     });
     set(open, true);

@@ -1,7 +1,9 @@
 import { bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestFailed } from '@/modules/core/api/request-result';
 import '@test/i18n';
 
 const mockFetchOraclePrices = vi.fn();
@@ -55,7 +57,7 @@ describe('useOraclePrices', () => {
       limit: 100,
       offset: 0,
     });
-    expect(collection.data).toEqual([]);
+    expect(collection).toStrictEqual(ok(emptyCollection()));
   });
 
   it('should return mapped entries from the API response', async () => {
@@ -79,21 +81,18 @@ describe('useOraclePrices', () => {
 
     const collection = await result.fetchData({ limit: 100, offset: 0 });
 
-    expect(collection.data).toHaveLength(1);
-    expect(collection.data[0].fromAsset).toBe('ETH');
-    expect(collection.data[0].sourceType).toBe('coingecko');
-    expect(collection.found).toBe(1);
+    expect(collection).toStrictEqual(ok({ data: entries, found: 1, limit: -1, total: 1 }));
   });
 
-  it('should return empty collection when fetch fails', async () => {
-    mockFetchOraclePrices.mockRejectedValueOnce(new Error('Network error'));
+  it('should carry the failure instead of an empty collection when fetch fails', async () => {
+    const failure = new Error('Network error');
+    mockFetchOraclePrices.mockRejectedValueOnce(failure);
 
     const { result } = withSetup(() => useOraclePrices());
 
     const collection = await result.fetchData({ limit: 100, offset: 0 });
 
-    expect(collection.data).toEqual([]);
-    expect(collection.found).toBe(0);
+    expect(collection).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Network error', path: undefined, status: undefined })));
   });
 
   it('should delete a price and return true on success', async () => {

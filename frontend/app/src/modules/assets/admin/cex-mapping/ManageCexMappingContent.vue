@@ -7,6 +7,7 @@ import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-
 import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -29,7 +30,7 @@ const {
   CexMappingRequestPayload,
   Filters
 >({
-  fetch: fetchAllCexMapping,
+  fetch: async payload => fromRequest(async () => fetchAllCexMapping(payload)),
   fields,
   urlState: { mode: 'route' },
 });

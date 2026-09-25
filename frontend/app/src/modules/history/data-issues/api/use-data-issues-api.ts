@@ -29,13 +29,13 @@ const VALID_STATUSES = { validStatuses: [HTTPStatus.OK, HTTPStatus.BAD_REQUEST] 
 function toDataIssueError(cause: unknown): DataIssueError {
   const message = getErrorMessage(cause);
   if (cause instanceof FetchError && cause.status === 404)
-    return { message, type: 'not-found' };
+    return { cause, message, type: 'not-found' };
   if (cause instanceof FetchError && cause.status === 409)
-    return { message, type: 'conflict' };
+    return { cause, message, type: 'conflict' };
   // 400 validation errors arrive as ApiValidationError wrapping the backend's field data.
   if (cause instanceof ApiValidationError || (cause instanceof FetchError && cause.status === 400))
-    return { message, type: 'validation' };
-  return { message, type: 'network' };
+    return { cause, message, type: 'validation' };
+  return { cause, message, type: 'network' };
 }
 
 interface UseDataIssuesApiReturn {

@@ -1,14 +1,17 @@
 import type { BigNumber } from '@rotki/common';
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import type { Collection } from '@/modules/core/common/collection';
+import { ok } from 'plainfp/result';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { sortAndFilterManualBalance } from '@/modules/balances/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 
+/** Both page the balances already in the store, so neither can fail. */
 interface UseManualBalancePaginationReturn {
-  fetchBalances: (payload: MaybeRef<ManualBalanceRequestPayload>) => Promise<Collection<ManualBalanceWithPrice>>;
-  fetchLiabilities: (payload: MaybeRef<ManualBalanceRequestPayload>) => Promise<Collection<ManualBalanceWithPrice>>;
+  fetchBalances: (payload: MaybeRef<ManualBalanceRequestPayload>) => ResultAsync<Collection<ManualBalanceWithPrice>, never>;
+  fetchLiabilities: (payload: MaybeRef<ManualBalanceRequestPayload>) => ResultAsync<Collection<ManualBalanceWithPrice>, never>;
 }
 
 export function useManualBalancePagination(): UseManualBalancePaginationReturn {
@@ -25,11 +28,13 @@ export function useManualBalancePagination(): UseManualBalancePaginationReturn {
 
   const fetchLiabilities = async (
     payload: MaybeRef<ManualBalanceRequestPayload>,
-  ): Promise<Collection<ManualBalanceWithPrice>> =>
-    Promise.resolve(sortAndFilterManualBalance(get(manualLiabilities), get(payload), resolvers));
+  ): ResultAsync<Collection<ManualBalanceWithPrice>, never> =>
+    ok(sortAndFilterManualBalance(get(manualLiabilities), get(payload), resolvers));
 
-  const fetchBalances = async (payload: MaybeRef<ManualBalanceRequestPayload>): Promise<Collection<ManualBalanceWithPrice>> =>
-    Promise.resolve(sortAndFilterManualBalance(get(manualBalances), get(payload), resolvers));
+  const fetchBalances = async (
+    payload: MaybeRef<ManualBalanceRequestPayload>,
+  ): ResultAsync<Collection<ManualBalanceWithPrice>, never> =>
+    ok(sortAndFilterManualBalance(get(manualBalances), get(payload), resolvers));
 
   return {
     fetchBalances,

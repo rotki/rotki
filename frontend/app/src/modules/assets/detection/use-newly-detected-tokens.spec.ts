@@ -1,5 +1,7 @@
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { RequestFailed } from '@/modules/core/api/request-result';
 import { type NewDetectedTokenInput, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 
 const mockIgnoredAssets = ref<string[]>([]);
@@ -188,8 +190,18 @@ describe('useNewlyDetectedTokens', () => {
       };
       const result = await getData(payload);
 
-      expect(result).toEqual(mockData);
+      expect(result).toEqual(ok(mockData));
       expect(mockGetData).toHaveBeenCalledWith(payload);
+    });
+
+    it('should carry a failed database read as a failure', async () => {
+      const failure = new Error('database closed');
+      mockGetData.mockRejectedValue(failure);
+      const { getData } = useNewlyDetectedTokens();
+
+      const result = await getData({ limit: 10, offset: 0 });
+
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'database closed', path: undefined, status: undefined })));
     });
   });
 

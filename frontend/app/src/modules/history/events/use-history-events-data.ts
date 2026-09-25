@@ -7,7 +7,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { flatten } from 'es-toolkit';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { isRequestFailure, type RequestFailure } from '@/modules/core/api/request-result';
 import { api } from '@/modules/core/api/rotki-api';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -32,6 +32,8 @@ interface UseHistoryEventsDataOptions {
 
 interface UseHistoryEventsDataReturn {
   eventsLoading: Readonly<Ref<boolean>>;
+  /** Why the events of the groups on screen failed to load; the groups stay, their events are cleared. */
+  eventsError: Readonly<Ref<RequestFailure | undefined>>;
   sectionLoading: ComputedRef<boolean>;
   loading: Readonly<Ref<boolean>>;
 
@@ -75,6 +77,7 @@ export function useHistoryEventsData(
   const { excludeIgnored, groupLoading, groups, identifiers, requestPayload } = options;
 
   const eventsLoading = shallowRef<boolean>(false);
+  const eventsError = shallowRef<RequestFailure>();
   const events = ref<HistoryEventRow[]>([]);
   let fetchVersion = 0;
 
@@ -110,29 +113,31 @@ export function useHistoryEventsData(
 
     const currentVersion = ++fetchVersion;
     set(eventsLoading, true);
+    set(eventsError, undefined);
     api.cancelByTag(EVENTS_CANCEL_TAG);
 
-    try {
-      const response = await fetchHistoryEvents({
-        ...toValue(requestPayload),
-        aggregateByGroupIds: false,
-        excludeIgnoredAssets: false,
-        groupIdentifiers: groupIds,
-        identifiers: toValue(identifiers),
-        limit: -1,
-        offset: 0,
-      }, { tags: [EVENTS_CANCEL_TAG] });
+    const response = await fetchHistoryEvents({
+      ...toValue(requestPayload),
+      aggregateByGroupIds: false,
+      excludeIgnoredAssets: false,
+      groupIdentifiers: groupIds,
+      identifiers: toValue(identifiers),
+      limit: -1,
+      offset: 0,
+    }, { tags: [EVENTS_CANCEL_TAG] });
 
-      if (currentVersion === fetchVersion)
-        set(events, response.data);
+    if (currentVersion !== fetchVersion)
+      return;
+
+    set(eventsLoading, false);
+
+    if (response.ok) {
+      set(events, response.value.data);
     }
-    catch (error: unknown) {
-      if (!(error instanceof RequestCancelledError))
-        logger.error(error);
-    }
-    finally {
-      if (currentVersion === fetchVersion)
-        set(eventsLoading, false);
+    else if (isRequestFailure(response.error)) {
+      logger.error(response.error.cause);
+      set(events, []);
+      set(eventsError, response.error);
     }
   }
 
@@ -316,6 +321,7 @@ export function useHistoryEventsData(
     displayedEventsMapped,
     entriesFoundTotal,
     events: flattenedEvents,
+    eventsError: shallowReadonly(eventsError),
     eventsLoading: readonly(eventsLoading),
     fetchEvents,
     found,

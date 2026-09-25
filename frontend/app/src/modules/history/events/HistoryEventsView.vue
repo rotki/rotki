@@ -271,6 +271,7 @@ useHistoryEventsDialogRouting(dialogContainer);
               @show:dialog="dialogContainer?.show($event)"
               @refresh="handleRedecode($event)"
               @refresh:block-event="actions.redecode.blocks($event)"
+              @refetch="refetch()"
               @set-page="setPage($event)"
               @update-event-ids="handleUpdateEventIds($event)"
             />

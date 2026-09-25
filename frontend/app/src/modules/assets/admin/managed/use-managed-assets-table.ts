@@ -10,6 +10,7 @@ import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management
 import { type AssetRequestPayload, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
@@ -100,7 +101,7 @@ export function useManagedAssetsTable(
     setPage,
     sort,
   } = useServerTable<SupportedAsset, AssetRequestPayload, Filters>({
-    fetch: queryAllAssets,
+    fetch: async payload => fromRequest(async () => queryAllAssets(payload)),
     fields,
     params: [statusSource],
     sort: {

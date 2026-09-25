@@ -21,6 +21,7 @@ const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
 const {
   dateFormat,
+  error,
   eventsWithDate,
   fetchData,
   initializePagination,
@@ -96,6 +97,26 @@ onMounted(async () => {
             />
           </div>
         </HistoryTableActions>
+        <RuiAlert
+          v-if="error"
+          type="error"
+          class="mb-4"
+          :title="t('data_table.fetch_failed')"
+          data-testid="calendar-fetch-error"
+        >
+          <div class="flex flex-col items-start gap-2">
+            <span>{{ error.message }}</span>
+            <RuiButton
+              size="sm"
+              color="error"
+              variant="outlined"
+              data-testid="calendar-retry"
+              @click="fetchData()"
+            >
+              {{ t('common.actions.retry') }}
+            </RuiButton>
+          </div>
+        </RuiAlert>
         <CalendarGrid
           :today="today"
           :selected-date="modelSelectedDate"
