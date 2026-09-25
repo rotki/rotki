@@ -9,7 +9,7 @@ function counts(overrides: Partial<StateCounts> = {}): StateCounts {
   return { ...emptyCounts(), ...overrides };
 }
 
-function createWrapper(props: { counts: StateCounts; activeStates: string[] }): VueWrapper<InstanceType<typeof DataIssueSummaryBar>> {
+function createWrapper(props: { counts: StateCounts; activeStates: string[]; failed?: boolean }): VueWrapper<InstanceType<typeof DataIssueSummaryBar>> {
   return mount(DataIssueSummaryBar, {
     global: {
       plugins: [createRuiPlugin({})],
@@ -61,6 +61,12 @@ describe('dataIssueSummaryBar', () => {
     expect(wrapper.text()).toContain('data_issues.summary.all_clear');
 
     await wrapper.setProps({ counts: counts({ [IssueState.OPEN]: 1 }) });
+    expect(wrapper.text()).not.toContain('data_issues.summary.all_clear');
+  });
+
+  it('should not claim all clear when the counts could not be refreshed', () => {
+    const wrapper = createWrapper({ activeStates: [], counts: counts(), failed: true });
+
     expect(wrapper.text()).not.toContain('data_issues.summary.all_clear');
   });
 });

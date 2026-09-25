@@ -1,4 +1,4 @@
-import type { ComputedRef, DeepReadonly, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
@@ -155,11 +155,16 @@ interface UseVirtualRowsReturn {
  * from the expanded sets is collapsed, so nothing has to be seeded when a group first arrives. The
  * expanded sets are keyed by `subgroupKey`, not by identifier, because a subgroup has no id of its
  * own.
+ *
+ * A group whose events have not arrived shows one placeholder per event it holds, up to the visible
+ * limit, as a loading state. When the events fetch failed there is nothing coming, so the group
+ * shows its header alone and the failure is reported above the rows.
  */
 export function useVirtualRows(
   groups: ComputedRef<HistoryEventEntry[]>,
   eventsByGroup: ComputedRef<Record<string, HistoryEventRow[]>>,
   isSubgroupIncomplete: (events: HistoryEventEntry[]) => boolean,
+  eventsFailed: MaybeRefOrGetter<boolean> = false,
 ): UseVirtualRowsReturn {
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
   const expandedSwaps = shallowRef<Set<string>>(new Set());
@@ -186,8 +191,7 @@ export function useVirtualRows(
       const customLimit = visibleCounts.get(groupId);
       const limit = customLimit ?? INITIAL_EVENTS_LIMIT;
 
-      // If events not loaded yet, show placeholders based on groupedEventsNum
-      if (allEvents.length === 0 && group.groupedEventsNum) {
+      if (allEvents.length === 0 && group.groupedEventsNum && !toValue(eventsFailed)) {
         const placeholderCount = Math.min(group.groupedEventsNum, limit);
         for (let i = 0; i < placeholderCount; i++) {
           rows.push({

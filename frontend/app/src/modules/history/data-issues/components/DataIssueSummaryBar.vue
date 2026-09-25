@@ -3,9 +3,11 @@ import type { StateCounts } from '@/modules/history/data-issues/use-data-issues-
 import { IssueState, STATE_META } from '@/modules/history/data-issues/constants';
 import { useDataIssuesFormat } from '@/modules/history/data-issues/use-data-issues-format';
 
-const { counts, activeStates } = defineProps<{
+const { counts, activeStates, failed = false } = defineProps<{
   counts: StateCounts;
   activeStates: string[];
+  /** The counts could not be refreshed, so zeros do not mean all clear. */
+  failed?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,7 +38,7 @@ const cards = computed(() => SUMMARY_STATES.map((state) => {
   };
 }));
 
-const allClear = computed<boolean>(() => SUMMARY_STATES.every(state => counts[state] === 0));
+const allClear = computed<boolean>(() => !failed && SUMMARY_STATES.every(state => counts[state] === 0));
 </script>
 
 <template>

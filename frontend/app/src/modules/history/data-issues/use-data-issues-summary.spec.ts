@@ -1,6 +1,7 @@
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { IssueState } from '@/modules/history/data-issues/constants';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 
@@ -52,13 +53,37 @@ describe('useDataIssuesSummary', () => {
     expect(get(actionableCount)).toBe(8);
   });
 
-  it('should treat a failed query as a zero count', async () => {
-    listIssues.mockResolvedValue({ error: { message: 'boom' }, ok: false });
-    const { baselineTotal, counts, refreshSummary } = useDataIssuesSummary();
+  it('should keep the previous counts and mark the summary failed when a query fails', async () => {
+    const { baselineTotal, counts, refreshSummary, summaryFailed } = useDataIssuesSummary();
+    await refreshSummary();
+
+    listIssues.mockResolvedValueOnce({ error: { cause: new TypeError('fetch failed'), message: 'fetch failed', type: 'network' }, ok: false });
+    await refreshSummary();
+
+    expect(get(counts)[IssueState.OPEN]).toBe(3);
+    expect(get(baselineTotal)).toBe(BASELINE);
+    expect(get(summaryFailed)).toBe(true);
+  });
+
+  it('should leave the summary untouched when a query is cancelled', async () => {
+    const { counts, refreshSummary, summaryFailed } = useDataIssuesSummary();
+    await refreshSummary();
+
+    listIssues.mockResolvedValueOnce({ error: { cause: new RequestCancelledError('All requests cancelled'), message: 'All requests cancelled', type: 'network' }, ok: false });
+    await refreshSummary();
+
+    expect(get(counts)[IssueState.OPEN]).toBe(3);
+    expect(get(summaryFailed)).toBe(false);
+  });
+
+  it('should clear the failure once a refresh succeeds', async () => {
+    const { refreshSummary, summaryFailed } = useDataIssuesSummary();
+    listIssues.mockResolvedValueOnce({ error: { cause: new TypeError('fetch failed'), message: 'fetch failed', type: 'network' }, ok: false });
+    await refreshSummary();
+    expect(get(summaryFailed)).toBe(true);
 
     await refreshSummary();
 
-    expect(get(counts)[IssueState.OPEN]).toBe(0);
-    expect(get(baselineTotal)).toBe(0);
+    expect(get(summaryFailed)).toBe(false);
   });
 });

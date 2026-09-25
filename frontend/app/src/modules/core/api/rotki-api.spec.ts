@@ -532,6 +532,18 @@ describe('modules/api/rotki-api', () => {
       await expect(api.get('test')).rejects.toThrow();
     });
 
+    it('should name the url that failed on a status error', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, () =>
+          HttpResponse.json({ message: 'Not here' }, { status: HTTPStatus.NOT_FOUND })),
+      );
+
+      await expect(api.get('test')).rejects.toMatchObject({
+        request: `${backendUrl}/api/1/test`,
+        statusCode: HTTPStatus.NOT_FOUND,
+      });
+    });
+
     it('should throw Error for conflict status with message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>

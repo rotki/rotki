@@ -32,7 +32,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
 const { fetchData } = useDataIssues();
-const { baselineTotal, counts, dismissInlinePanels, refreshSummary } = useDataIssuesSummary();
+const { baselineTotal, counts, dismissInlinePanels, refreshSummary, summaryFailed } = useDataIssuesSummary();
 const { historicalBalanceProcessingCompleted } = storeToRefs(useDataIssuesInboxStore());
 const { syncCompleted } = useSyncCompleted();
 
@@ -92,8 +92,8 @@ const activeStates = computed<string[]>(() => {
 
 const hasAnyIssues = computed<boolean>(() => get(baselineTotal) > 0);
 
-/** All clear only on a successful read: a failed one leaves the table up to say why. */
-const isAllClear = computed<boolean>(() => get(loadedOnce) && !get(hasAnyIssues) && !get(fetchError));
+/** All clear only when both the table and the summary read succeeded: a failed one leaves the table up to say why. */
+const isAllClear = computed<boolean>(() => get(loadedOnce) && !get(hasAnyIssues) && !get(fetchError) && !get(summaryFailed));
 const hasActiveFilters = computed<boolean>(() => Object.keys(get(filters)).length > 0);
 const isEmpty = computed<boolean>(() => get(state).data.length === 0);
 
@@ -246,6 +246,7 @@ onMounted(async () => {
     >
       <DataIssueSummaryBar
         :counts="counts"
+        :failed="summaryFailed"
         :active-states="activeStates"
         @select="selectState($event)"
       />
