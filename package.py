@@ -6,6 +6,7 @@ import os
 import platform
 import shutil
 import stat
+import struct
 import subprocess  # noqa: S404
 import sys
 import urllib.request
@@ -49,6 +50,72 @@ APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
 X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
 ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
+
+
+MACHO_CPU_TYPES = {'x86_64': 0x01000007, 'arm64': 0x0100000C}
+LC_VERSION_MIN_MACOSX = 0x24
+LC_BUILD_VERSION = 0x32
+MACHO_FAT_MAGICS = {b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf'}  # big endian
+MACHO_THIN_MAGICS = {b'\xcf\xfa\xed\xfe', b'\xce\xfa\xed\xfe'}  # little endian
+
+
+def macho_min_macos(data: bytes, cpu_type: int) -> tuple[int, int] | None:
+    """
+    The minimum macOS of the ``cpu_type`` slice of a Mach-O file, or None when
+    the data is not Mach-O, has no such slice or records no minimum.
+    """
+    if len(data) < 8:
+        return None
+    if data[:4] in MACHO_FAT_MAGICS:
+        is_fat64 = data[3] == 0xBF
+        arch_size = 32 if is_fat64 else 20
+        count = struct.unpack_from('>I', data, 4)[0]
+        if count > 16:  # a Java class file shares the fat magic
+            return None
+        arch_format = '>iiQQ' if is_fat64 else '>iiII'
+        for index in range(count):
+            fields = struct.unpack_from(arch_format, data, 8 + index * arch_size)
+            if fields[0] == cpu_type:
+                return macho_min_macos(data[fields[2]:fields[2] + fields[3]], cpu_type)
+        return None
+    if data[:4] not in MACHO_THIN_MAGICS:
+        return None
+    if struct.unpack_from('<i', data, 4)[0] != cpu_type:
+        return None
+    ncmds = struct.unpack_from('<I', data, 16)[0]
+    offset = 32 if data[0] == 0xCF else 28
+    for _ in range(ncmds):
+        cmd, cmdsize = struct.unpack_from('<II', data, offset)
+        if cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}:
+            # minos follows the platform field in LC_BUILD_VERSION
+            field = offset + (12 if cmd == LC_BUILD_VERSION else 8)
+            minos = struct.unpack_from('<I', data, field)[0]
+            return minos >> 16, (minos >> 8) & 0xFF
+        offset += cmdsize
+    return None
+
+
+def binaries_above_macos(
+        directories: list[Path],
+        target: tuple[int, int],
+        arch: str,
+) -> list[tuple[Path, tuple[int, int]]]:
+    """Every Mach-O file under ``directories`` that needs a newer macOS than ``target``"""
+    offenders = []
+    for directory in directories:
+        for path in directory.rglob('*'):
+            if not path.is_file() or path.is_symlink():
+                continue
+            with path.open('rb') as file:
+                if file.read(4) not in MACHO_FAT_MAGICS | MACHO_THIN_MAGICS:
+                    continue
+            try:
+                minimum = macho_min_macos(path.read_bytes(), MACHO_CPU_TYPES[arch])
+            except struct.error:  # truncated, so not a loadable binary either
+                continue
+            if minimum is not None and minimum > target:
+                offenders.append((path, minimum))
+    return offenders
 
 
 def env_var_to_bool(value: str | None) -> bool:
@@ -208,6 +275,18 @@ class Environment:
 
     def is_x86_64(self) -> bool:
         return self.arch in {'x86_64', 'AMD64'}
+
+    def uv_python_platform(self) -> str | None:
+        """
+        The uv target platform for installs on macOS.
+
+        Without it uv picks wheels for the build host's macOS, which can be newer than
+        MACOSX_DEPLOYMENT_TARGET (numpy's macosx_14_0 wheel crashes on macOS 12).
+        With it, uv honours MACOSX_DEPLOYMENT_TARGET and defaults to 13.0 when unset.
+        """
+        if not self.is_mac():
+            return None
+        return f"{'aarch64' if self.target_arch == 'arm64' else self.target_arch}-apple-darwin"
 
     def backend_suffix(self) -> str:
         """
@@ -550,6 +629,8 @@ class BackendBuilder:
         base_command = 'uv pip install '
         if use_pep_517 is False:
             base_command += '--no-use-pep517 '
+        if (uv_platform := self.__env.uv_python_platform()) is not None:
+            base_command += f'--python-platform {uv_platform} '
 
         ret_code = subprocess.call(
             f'{base_command} {what}',
@@ -682,6 +763,7 @@ class BackendBuilder:
         self.__package()
 
         if mac is not None:
+            self.__check_macos_floor()
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))
 
@@ -842,6 +924,32 @@ class BackendBuilder:
         if ret_code != 0:
             logger.error('backend binary check failed')
             sys.exit(1)
+
+    @log_group('macOS floor')
+    def __check_macos_floor(self) -> None:
+        """Fails the build when a bundled binary needs a newer macOS than the deployment target"""
+        if (target := os.environ.get('MACOSX_DEPLOYMENT_TARGET')) is None:
+            logger.warning('MACOSX_DEPLOYMENT_TARGET is not set, skipping the macOS floor check')
+            return
+
+        major, _, minor = target.partition('.')
+        storage = self.__storage
+        offenders = binaries_above_macos(
+            directories=[
+                storage.backend_directory,
+                storage.colibri_directory / 'bin',
+                storage.starling_directory / 'bin',
+            ],
+            target=(int(major), int(minor or 0)),
+            arch=self.__env.target_arch,
+        )
+        for path, (need_major, need_minor) in offenders:
+            logger.error(
+                '%s needs macOS %d.%d, above target %s', path, need_major, need_minor, target,
+            )
+        if len(offenders) != 0:
+            sys.exit(1)
+        logger.info('every bundled binary runs on macOS %s', target)
 
     @log_group('Pyinstaller')
     def __install_pyinstaller(self) -> None:
