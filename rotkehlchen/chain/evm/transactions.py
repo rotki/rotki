@@ -1533,6 +1533,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
         return tx_receipt
 
+    def _enrich_receipts(self, receipts: list[dict[str, Any]]) -> None:
+        """Allow chain-specific data to be resolved before receipts are saved."""
+        return None
+
     def get_receipts_for_transactions_missing_them(
             self,
             limit: int | None = None,
@@ -1582,6 +1586,7 @@ class EvmTransactions(ABC):  # noqa: B024
                                 self.evm_inquirer.chain_name, entry, e,
                             )
 
+                self._enrich_receipts(receipts)
                 with self.database.user_write() as write_cursor:
                     for tx_receipt_data in receipts:
                         self.dbevmtx.add_or_ignore_receipt_data(

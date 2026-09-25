@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Literal, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -14,7 +15,6 @@ from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
@@ -622,8 +622,8 @@ def deserialize_evm_transaction(
     , that the hash is missing from the data string, so it is provided in that case
     as an argument.
 
-    For L2 chains with L1 fees, the indexer parameter is used to fetch L1 fees when called
-    from indexers, since they don't have access to evm_inquirer.
+    For L2 chains with L1 fees, missing fees in indexer transaction lists are resolved later
+    from the receipts needed for decoding.
 
     Can raise DeserializationError if something is wrong
 
@@ -750,16 +750,14 @@ def deserialize_evm_transaction(
                             tx_hash=tx_hash,
                             block_number=block_number,
                         )
-                elif indexer is not None:  # fallback to indexers for non-Etherscan sources
-                    try:
-                        l1_fee = indexer.get_l1_fee(
-                            chain_id=chain_id,
-                            account=from_address,
-                            tx_hash=tx_hash,
-                            block_number=block_number,
-                        )
-                    except (KeyError, RemoteError, DeserializationError) as e:
-                        log.warning(f'Failed to get L1 fee from {indexer.name} due to {e!s}')
+                elif indexer is not None:
+                    # Address queries also collect receipts for decoding. Leave the fee pending
+                    # instead of making one indexer request per transaction before that batch.
+                    if raw_receipt_data is not None:
+                        with suppress(DeserializationError, KeyError):
+                            l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+                    if l1_fee is None:
+                        l1_fee = 0
                 else:  # should never happen
                     log.error(
                         f'Cannot retrieve L1 fee for {chain_id.to_name()} transaction {tx_hash!s}. '  # noqa: E501

@@ -85,7 +85,7 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
     ]
 
 
-@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xfa8666aE51F5b136596248d9411b03AC9040fff0']])
 def test_receive_eth_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0xd47e37dc8acb08b86bd90214d1df15549305e6d5fe126b97ff3b66a1b814b801')  # noqa: E501
@@ -261,7 +261,7 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
     ]
 
 
-@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xD297a2E732537f9fFb2Da53816FC84c7A50a11C2']])
 def test_receive_erc20_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x630cd85723676d993f4afdd9f182cd2468444748eb7b1c6c0c8cc1db0d925c15')  # noqa: E501
@@ -489,7 +489,7 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xd32dEe97C7D7Fdfb826CC3bB210dD009D2750ae2']])
 def test_receive_deposit_message_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x2844533993f614da06a4a81ee692f10562b4b2d077265a33605ca9415d0dcacb')  # noqa: E501

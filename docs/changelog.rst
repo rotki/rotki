@@ -18,6 +18,7 @@ Changelog
 * :bug:`-` Turning syncing back on for one exchange under API Keys -> Exchanges no longer turns it back on for every exchange listed after it that you had paused.
 * :bug:`-` Updates to the default RPC node lists now take effect immediately, so newly added nodes can be used without logging out and back in.
 * :bug:`-` Failed remote data updates no longer block other updates and are retried.
+* :bug:`13218` Refreshing transaction history on Optimism, Base and Scroll now avoids redundant L1 fee requests when receipts already contain the fee.
 * :bug:`-` Pasting a date into a date and time field, such as the one in the add event form, now works when the text leaves out the seconds or milliseconds, uses ISO format, carries a timezone, or is a unix timestamp. Text that is not a date shows a message instead of doing nothing.
 * :bug:`-` Profit and loss reports no longer show a misleading missing accounting rule warning for trade receive events when the spent asset is ignored.
 * :bug:`-` Clicking an amount to copy it now copies the full decimal number, such as ``0.000000001``, instead of scientific notation like ``1e-9`` for very small or very large amounts.

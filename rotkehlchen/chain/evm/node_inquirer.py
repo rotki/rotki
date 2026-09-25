@@ -1694,7 +1694,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     block_number=block_number,
                 ),
             )
-        except RemoteError as e:
+        except (RemoteError, NoAvailableIndexers) as e:
             log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
             return None
 

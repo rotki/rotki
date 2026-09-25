@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.utils import maybe_read_integer
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import (
@@ -27,6 +27,14 @@ class DBL2WithL1FeesTx(DBEvmTx):
     # receipt type is included at index 14, shifting auth fields to start at 15
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 15
 
+    @staticmethod
+    def set_l1_fee(write_cursor: DBCursor, tx_id: int, l1_fee: int) -> None:
+        write_cursor.execute(
+            'INSERT INTO optimism_transactions(tx_id, l1_fee) VALUES (?, ?)'
+            ' ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee',
+            (tx_id, str(l1_fee)),
+        )
+
     def add_transactions(
             self,
             write_cursor: DBCursor,
@@ -43,11 +51,14 @@ class DBL2WithL1FeesTx(DBEvmTx):
             relevant_address,
         )
 
-        tx_tuples = [(tx.l1_fee, tx.tx_hash, tx.chain_id.serialize_for_db()) for tx in evm_transactions]  # noqa: E501
+        tx_tuples = [(str(tx.l1_fee), tx.tx_hash, tx.chain_id.serialize_for_db()) for tx in evm_transactions]  # noqa: E501
         query = """
-            INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee)
+            INSERT INTO optimism_transactions(tx_id, l1_fee)
             SELECT evm_transactions.identifier, ? FROM
             evm_transactions WHERE tx_hash=? and chain_id=?
+            ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee
+            WHERE (optimism_transactions.l1_fee IS NULL OR optimism_transactions.l1_fee='0')
+            AND excluded.l1_fee!='0'
         """
         write_cursor.executemany(query, tx_tuples)
         return newly_inserted
@@ -95,9 +106,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
             chain_id: ChainID,
             data: dict[str, Any],
     ) -> int:
-        """Adds L2WithL1Fees tx receipt data to the database, and also saves the L1 fee data
-        from the receipt if its not zero. Updates any existing l1 fee value since it may have
-        already been added with a value of 0 if it wasn't present in the indexer's txlist data.
+        """Adds L2WithL1Fees receipt data and any nonzero L1 fee in the receipt.
         Returns the db identifier of the transaction corresponding to this receipt.
         """
         tx_id = super().add_or_ignore_receipt_data(
@@ -106,17 +115,16 @@ class DBL2WithL1FeesTx(DBEvmTx):
             data=data,
         )
 
+        if data.get('l1Fee') is None:
+            return tx_id
+
         try:
-            l1_fee = maybe_read_integer(data, 'l1Fee')
+            l1_fee = read_integer(data, 'l1Fee')
         except DeserializationError as e:
             log.warning(f'Failed to get L1 fee from receipt while adding receipt to the DB due to {e!s}.')  # noqa: E501
             return tx_id
 
-        if l1_fee != 0:
-            write_cursor.execute(  # Ensure l1_fee is in the db. Updates any existing entry using `excluded` to reference the incoming row which was excluded from the insert due to conflict  # noqa: E501
-                'INSERT INTO optimism_transactions(tx_id, l1_fee) VALUES (?, ?)'
-                ' ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee',
-                (tx_id, l1_fee),
-            )
+        if l1_fee != 0:  # A zero must not replace a fee already supplied by the transaction list.
+            self.set_l1_fee(write_cursor=write_cursor, tx_id=tx_id, l1_fee=l1_fee)
 
         return tx_id
