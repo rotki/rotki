@@ -195,16 +195,22 @@ jobs:
             arch: 'arm64'
             target: 11
             platform: macosx-11.0-arm64
+            uv-platform: aarch64-apple-darwin
           - runner: macos-15-intel
             arch: 'x86_64'
-            target: 10.15
-            platform: macosx-10.15-x86_64
+            target: 11
+            platform: macosx-11.0-x86_64
+            uv-platform: x86_64-apple-darwin
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ARCHFLAGS: -arch ${{ matrix.os.arch }}
       _PYTHON_HOST_PLATFORM: ${{ matrix.os.platform }}
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os.target }}
+      # uv otherwise picks wheels for the runner's macOS, e.g. a numpy that needs macOS 14
+      UV_TARGET_PLATFORM: ${{ matrix.os.uv-platform }}
+      # pyyaml builds from source and would link Homebrew's libyaml, built for the runner's macOS
+      PYYAML_FORCE_LIBYAML: 0
       CMAKE_OSX_ARCHITECTURES: ${{ matrix.os.arch }}
       NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
@@ -266,9 +272,9 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          uv sync --locked --group packaging
+          uv sync --locked --group packaging --python-platform "${UV_TARGET_PLATFORM}"
           echo "::endgroup::"
-          uv run ./package.py --build full
+          uv run --no-sync ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
