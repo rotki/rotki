@@ -322,6 +322,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -333,6 +334,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -344,6 +346,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -354,6 +357,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str | None = None,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Helper function to abstract tx querying functionality for different range types
@@ -363,7 +367,8 @@ class EvmTransactions(ABC):  # noqa: B024
         If return_queried_hashes is True, returns only the transaction hashes that were saved.
         """
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-        queried_from_ts = Timestamp(period.from_value)
+        # Include a completed earlier split in the first saved batch of this one.
+        queried_from_ts = progress_start_ts if progress_start_ts is not None else Timestamp(period.from_value)  # noqa: E501
         with self.evm_inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
             for new_transactions in self.evm_inquirer.get_transactions(
                     account=address,
@@ -410,7 +415,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def _query_range_in_splittable_chunks(
             self,
-            query: Callable[[Timestamp, Timestamp], Any],
+            query: Callable[[Timestamp, Timestamp, Timestamp], Any],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> None:
@@ -422,7 +427,11 @@ class EvmTransactions(ABC):  # noqa: B024
         on the chains where etherscan is the only indexer there is nothing to fall back to.
         Splitting the range is exactly what the indexer is asking us to do.
 
-        Chunks run oldest first so the query ranges recorded along the way stay monotonic.
+        query is called with the chunk's start and end, plus start_ts as the point its saved
+        progress can begin from. Chunks run oldest first and a chunk only starts once every
+        earlier one completed, so start_ts up to the chunk's start is always covered. A chunk
+        only records progress up to its last returned item, not its end, so starting the next
+        chunk's progress at its own start would leave a gap the saved query range rejects.
 
         May raise:
         - RemoteError if a chunk too small to split further still cannot be served
@@ -432,7 +441,7 @@ class EvmTransactions(ABC):  # noqa: B024
         while len(pending) != 0:
             chunk_start, chunk_end = pending.pop()
             try:
-                query(chunk_start, chunk_end)
+                query(chunk_start, chunk_end, start_ts)
             except RequestTooLargeError as e:
                 if chunk_end - chunk_start <= MIN_SPLITTABLE_QUERY_RANGE:
                     raise
@@ -536,7 +545,7 @@ class EvmTransactions(ABC):  # noqa: B024
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
                 self._query_range_in_splittable_chunks(
-                    query=lambda chunk_start, chunk_end: self._query_and_save_transactions_for_range(  # noqa: E501
+                    query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_transactions_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
                             range_type='timestamps',
@@ -544,6 +553,7 @@ class EvmTransactions(ABC):  # noqa: B024
                             to_value=chunk_end,
                         ),
                         location_string=location_string,
+                        progress_start_ts=progress_start,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -993,7 +1003,7 @@ class EvmTransactions(ABC):  # noqa: B024
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
                 self._query_range_in_splittable_chunks(
-                    query=lambda chunk_start, chunk_end: self._query_and_save_internal_transactions_for_range(  # noqa: E501
+                    query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_internal_transactions_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
                             range_type='timestamps',
@@ -1002,7 +1012,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         ),
                         location_string=location_string,
                         update_ranges=record_range if update_ranges is None else update_ranges,
-                        progress_start_ts=progress_start_ts,
+                        progress_start_ts=progress_start_ts if progress_start_ts is not None else progress_start,  # noqa: E501
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -1055,7 +1065,7 @@ class EvmTransactions(ABC):  # noqa: B024
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
                 self._query_range_in_splittable_chunks(
-                    query=lambda chunk_start, chunk_end: self._query_and_save_erc20_transfers_for_range(  # noqa: E501
+                    query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_erc20_transfers_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
                             range_type='timestamps',
@@ -1063,6 +1073,7 @@ class EvmTransactions(ABC):  # noqa: B024
                             to_value=chunk_end,
                         ),
                         location_string=location_string,
+                        progress_start_ts=progress_start,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -1097,6 +1108,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -1108,6 +1120,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -1119,6 +1132,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -1129,6 +1143,7 @@ class EvmTransactions(ABC):  # noqa: B024
             period: TimestampOrBlockRange,
             location_string: str,
             update_ranges: bool = True,
+            progress_start_ts: Timestamp | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Helper function to abstract ERC20 transfer querying functionality for different range types
@@ -1141,7 +1156,8 @@ class EvmTransactions(ABC):  # noqa: B024
 
             log.debug('Querying erc20 transfers of %s from %s to %s in %s', address, period.from_value, period.to_value, self.evm_inquirer.chain_name)  # noqa: E501
             queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-            queried_from_ts = Timestamp(period.from_value)
+            # Include a completed earlier split in the first saved batch of this one.
+            queried_from_ts = progress_start_ts if progress_start_ts is not None else Timestamp(period.from_value)  # noqa: E501
             for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
                 account=address,
                 from_block=from_block,
