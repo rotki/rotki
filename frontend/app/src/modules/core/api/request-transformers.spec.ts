@@ -110,7 +110,6 @@ describe('request-transformers', () => {
 
       const result = transformRequestQuery(query, {});
 
-      // queryTransformer converts keys to snake_case but preserves value types
       expect(result).toEqual({ page_size: 10, sort_order: 'asc' });
     });
 
@@ -141,7 +140,6 @@ describe('request-transformers', () => {
 
       const result = transformRequestQuery(query, { filterEmptyProperties: true });
 
-      // queryTransformer preserves value types
       expect(result).toEqual({ page: 1 });
     });
 
@@ -152,36 +150,32 @@ describe('request-transformers', () => {
         filterEmptyProperties: { removeEmptyString: true },
       });
 
-      // queryTransformer preserves value types (numbers stay as numbers)
       expect(result).toEqual({ page: 1, filter: 'active' });
     });
 
-    it('should keep alwaysPickKeys even if empty', () => {
+    it('should keep an empty alwaysPickKeys value while still dropping null ones', () => {
       const query = { page: 1, required: '', optional: null };
 
       const result = transformRequestQuery(query, {
         filterEmptyProperties: { alwaysPickKeys: ['required'] },
       });
 
-      // queryTransformer skips null/undefined values, but alwaysPickKeys preserves empty strings
       expect(result).toEqual({ page: 1, required: '' });
     });
 
-    it('should handle boolean values', () => {
+    it('should keep boolean values as booleans', () => {
       const query = { isActive: true, isDeleted: false };
 
       const result = transformRequestQuery(query, {});
 
-      // queryTransformer converts keys to snake_case but preserves value types
       expect(result).toEqual({ is_active: true, is_deleted: false });
     });
 
-    it('should handle numeric values', () => {
+    it('should keep numeric values as numbers, including 0', () => {
       const query = { limit: 100, offset: 0 };
 
       const result = transformRequestQuery(query, {});
 
-      // queryTransformer converts keys to snake_case but preserves value types
       expect(result).toEqual({ limit: 100, offset: 0 });
     });
   });

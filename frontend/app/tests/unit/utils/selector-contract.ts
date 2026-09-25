@@ -15,11 +15,11 @@ const VALUE_ATTRIBUTES = ['data-key', 'data-index'] as const;
 /**
  * The test-id selectors a component renders, as `attribute=value`, deduplicated and sorted.
  *
+ * @remarks
  * The e2e suite drives the history event forms purely through these selectors, so the set a form
  * renders *is* its contract with `tests/e2e`. Snapshotting it turns "an e2e selector silently
  * disappeared during a refactor" into a millisecond-scale unit failure with a readable diff, instead
  * of a ten-minute e2e run that fails on a timeout somewhere unrelated.
- *
  *
  * Deliberately only the selector set: not the DOM, not the order, not every other attribute. Anything
  * finer would break on every markup tweak and get snapshot-updated without being read, which is the

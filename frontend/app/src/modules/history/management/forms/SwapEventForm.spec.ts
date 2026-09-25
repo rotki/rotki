@@ -125,9 +125,8 @@ describe('forms/SwapEventForm', () => {
     ...options,
   });
 
-  it('should render the documented e2e selector contract', () => {
+  it('should keep every selector the e2e suite uses', () => {
     wrapper = createWrapper();
-    // The e2e suite finds every field through these selectors; losing one is an e2e break.
     expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
       [
         "data-testid=advanced-accordion",
