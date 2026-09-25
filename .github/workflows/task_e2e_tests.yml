@@ -131,7 +131,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: target/backend
-          key: ${{ runner.os }}-rotki-core-${{ hashFiles('uv.lock', 'pyproject.toml', 'rotkehlchen.spec', 'rotkehlchen/**/*.py', 'rotkehlchen/data/**') }}
+          key: ${{ runner.os }}-rotki-core-${{ hashFiles('uv.lock', 'pyproject.toml', 'rotkehlchen.spec', 'rotkehlchen/**/*.py', 'rotkehlchen/data/**', '.github/workflows/task_e2e_tests.yml') }}
 
       - name: Setup python
         if: steps.core-cache.outputs.cache-hit != 'true'
@@ -154,8 +154,8 @@ jobs:
       - name: Freeze core
         if: steps.core-cache.outputs.cache-hit != 'true'
         run: |
-          uv sync --locked
-          uv run --with "pyinstaller==${PYINSTALLER_VERSION}" \
+          uv sync --locked --no-dev
+          uv run --no-sync --with "pyinstaller==${PYINSTALLER_VERSION}" \
             pyinstaller --noconfirm --clean --distpath target/backend rotkehlchen.spec
 
       - name: Upload frozen core
