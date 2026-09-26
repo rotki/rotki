@@ -6,9 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.evm.types import (
-    EvmIndexer,
-)
+from rotkehlchen.chain.evm.types import DEFAULT_INDEXERS_ORDER, EvmIndexer
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS
@@ -48,6 +46,34 @@ def fixture_monerium_credentials(database):
         )
 
 
+@contextmanager
+def _allow_routescan(chain: ChainID) -> Iterator[None]:
+    """Let Routescan serve a chain it no longer supports, in the indexer order it had back then.
+
+    Used by the fixtures below to keep cassettes recorded while Routescan served the chain
+    replayable. Restoring its support alone is not enough, since the chain's default order no
+    longer lists it and the queries would go straight to the next indexer instead.
+    """
+    test_warnings.warn(UserWarning(f'Temporarily allowing Routescan for {chain.to_name()}'))
+    cached = CachedSettings()
+    try:
+        with (
+            patch(
+                target='rotkehlchen.externalapis.routescan.ROUTESCAN_SUPPORTED_CHAINS',
+                new=ROUTESCAN_SUPPORTED_CHAINS + (chain,),
+            ),
+            patch.dict(DEFAULT_INDEXERS_ORDER.order, {chain: (
+                EvmIndexer.BLOCKSCOUT,
+                EvmIndexer.ROUTESCAN,
+                EvmIndexer.ETHERSCAN,
+            )}),
+        ):
+            cached._refresh_indexers_cache()
+            yield
+    finally:
+        cached._refresh_indexers_cache()
+
+
 @pytest.fixture(name='allow_base_routescan')
 def fixture_allow_base_routescan():
     """Routescan no longer fully indexes Base, so we've removed it from its supported chains to
@@ -57,26 +83,17 @@ def fixture_allow_base_routescan():
     this internal tx error happens to continue using routescan.
     # TODO: Remove this once Blockscout is finished with their db migrations.
     """
-    test_warnings.warn(UserWarning('Temporarily allowing Routescan for Base'))
-    with patch(
-        target='rotkehlchen.externalapis.routescan.ROUTESCAN_SUPPORTED_CHAINS',
-        new=ROUTESCAN_SUPPORTED_CHAINS + (ChainID.BASE,),
-    ):
+    with _allow_routescan(ChainID.BASE):
         yield
 
 
 @pytest.fixture(name='allow_optimism_routescan')
 def fixture_allow_optimism_routescan():
-    """Keep cassettes recorded while Routescan served Optimism replayable.
-
-    New code must not rely on this fixture. Remove it when the affected cassettes are re-recorded
-    against an indexer that still supports Optimism.
+    """Routescan stopped serving Optimism, so it was removed from its supported chains and from
+    the default Optimism indexer order. This fixture keeps the cassettes recorded before that
+    replayable. Can remove if we re-record all tests that have it.
     """
-    test_warnings.warn(UserWarning('Temporarily allowing Routescan for Optimism'))
-    with patch(
-        target='rotkehlchen.externalapis.routescan.ROUTESCAN_SUPPORTED_CHAINS',
-        new=ROUTESCAN_SUPPORTED_CHAINS + (ChainID.OPTIMISM,),
-    ):
+    with _allow_routescan(ChainID.OPTIMISM):
         yield
 
 

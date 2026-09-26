@@ -73,7 +73,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
-    BLOCKSCOUT_SUPPORTED_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     CacheType,
@@ -2095,10 +2094,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self._no_indexer_notified = True
         data: dict[str, str] = {'chain': self.blockchain.value}
         if self._etherscan_refused_chain:
-            data['reason'] = (
+            data['reason'] = (  # offer a blockscout key only if it is used and still missing
                 'blockscout_or_paid_etherscan_key_required'
-                if self.chain_id in BLOCKSCOUT_SUPPORTED_CHAINS and
-                EvmIndexer.BLOCKSCOUT in self.available_indexers
+                if EvmIndexer.BLOCKSCOUT in self.available_indexers and
+                EvmIndexer.BLOCKSCOUT in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id) and  # noqa: E501
+                self.blockscout.needs_api_key_for_chain(chain_id=self.chain_id)
                 else 'etherscan_paid_key_required'
             )
         self.database.msg_aggregator.add_message(

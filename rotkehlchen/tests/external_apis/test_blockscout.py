@@ -478,3 +478,12 @@ def test_blockscout_internal_by_txhash_keeps_server_paging(blockscout: Blockscou
     query_options = query_mock.call_args.kwargs['options']
     assert 'page' not in query_options
     assert 'offset' not in query_options
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False, True])
+def test_needs_api_key_for_chain(blockscout: Blockscout, include_blockscout_key: bool) -> None:
+    """Only the PRO endpoints need a key. Hyperliquid's own instance and chains blockscout
+    does not serve can never be fixed by adding one."""
+    assert blockscout.needs_api_key_for_chain(ChainID.BASE) is not include_blockscout_key
+    assert blockscout.needs_api_key_for_chain(ChainID.HYPERLIQUID) is False
+    assert blockscout.needs_api_key_for_chain(ChainID.BINANCE_SC) is False

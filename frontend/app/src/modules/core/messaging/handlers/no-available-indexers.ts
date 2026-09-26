@@ -11,7 +11,9 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 
 /**
  * Sent by the backend when etherscan refused the chain for the configured key, which happens on
- * the chains its free tier does not cover, and no other indexer could serve it either.
+ * the chains its free tier does not cover, and no other indexer could serve it either. The
+ * blockscout variant is sent when blockscout is in the chain's order but has no key yet, so a
+ * free blockscout key would also restore the queries.
  */
 const BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED = 'blockscout_or_paid_etherscan_key_required';
 const ETHERSCAN_PAID_KEY_REQUIRED = 'etherscan_paid_key_required';

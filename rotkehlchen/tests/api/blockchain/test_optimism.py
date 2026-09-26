@@ -27,7 +27,10 @@ TEST_ADDY = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('network_mocking', [False])
-def test_add_optimism_blockchain_account(rotkehlchen_api_server: APIServer) -> None:
+def test_add_optimism_blockchain_account(
+        rotkehlchen_api_server: APIServer,
+        allow_optimism_routescan: None,
+) -> None:
     """Test adding an optimism account when there is none in the db
     works as expected and that balances are returned and tokens are detected.
     """
