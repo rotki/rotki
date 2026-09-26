@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,6 +10,7 @@ from rotkehlchen.api.v1.fields import BlockchainField
 from rotkehlchen.api.v1.schemas import HistoryEventsDeletionSchema
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
@@ -31,6 +33,9 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 
 TEST_DATA = {
     'a': FVal('5.4'),
@@ -256,3 +261,35 @@ def test_deserialize_evm_transaction_empty_gas_price():
 
     assert tx.gas_price == int(expected_gas_price, 16)
     assert tx.gas_used == 21000
+
+
+@pytest.mark.parametrize(('raw_l1_fee', 'expected_l1_fee'), [(None, None), ('0', 0)])
+def test_deserialize_indexer_l1_fee(raw_l1_fee: str | None, expected_l1_fee: int | None) -> None:
+    data: dict[str, Any] = {
+        'timeStamp': 1688269337,
+        'blockNumber': 739995,
+        'hash': '0x847267ff6d61f991df9c2bbfa8d0cf20f97386bb2fba2e2bb6136d9fc471b547',
+        'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24',
+        'to': '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe',
+        'value': 0,
+        'gas': 21000,
+        'gasPrice': 1,
+        'gasUsed': 21000,
+        'input': '0x',
+        'nonce': 0,
+    }
+    if raw_l1_fee is not None:
+        data['L1FeesPaid'] = raw_l1_fee
+    indexer = MagicMock()
+
+    tx, _ = deserialize_evm_transaction(
+        data=data,
+        internal=False,
+        chain_id=ChainID.OPTIMISM,
+        evm_inquirer=None,
+        indexer=cast('EtherscanLikeApi', indexer),
+    )
+
+    assert isinstance(tx, L2WithL1FeesTransaction)
+    assert tx.l1_fee == expected_l1_fee
+    indexer.get_l1_fee.assert_not_called()

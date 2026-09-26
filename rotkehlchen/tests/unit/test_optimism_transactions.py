@@ -4,12 +4,14 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
@@ -25,9 +27,37 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
-    from rotkehlchen.chain.optimism.transactions import OptimismTransactions
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
+
+
+def _add_pending_transaction(
+        optimism_transactions: OptimismTransactions,
+        l1_fee: int | None = None,
+) -> tuple[EVMTxHash, ChecksumEvmAddress]:
+    tx_hash = make_evm_tx_hash()
+    account = make_evm_address()
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[L2WithL1FeesTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.OPTIMISM,
+                timestamp=Timestamp(1689113567),
+                block_number=106757395,
+                from_address=account,
+                to_address=make_evm_address(),
+                value=0,
+                gas=21000,
+                gas_price=1,
+                gas_used=21000,
+                input_data=b'',
+                nonce=1,
+                l1_fee=l1_fee,
+            )],
+            relevant_address=None,
+        )
+    return tx_hash, account
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -49,7 +79,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         assert transactions[0].tx_hash == tx_hash
         assert transactions[0].chain_id == ChainID.OPTIMISM
         assert transactions[0].db_id == 2
-        assert transactions[0].l1_fee == (115752642875381 if should_have_l1 else 0)
+        assert transactions[0].l1_fee == (115752642875381 if should_have_l1 else None)
         assert transactions[0].gas == 523212
         assert transactions[0].gas_used == 322803
         assert transactions[0].timestamp == 1689113567
@@ -160,29 +190,25 @@ def test_l1_fee_fetched_during_indexer_tx_query(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
 ):
-    """Test that L1 fees are fetched via indexer's get_l1_fee during transaction queries.
-
-    This tests the fix where get_transactions() in etherscan_like.py now calls get_l1_fee()
-    for L2 chains when using non-Etherscan indexers (Blockscout, Routescan) since these
-    indexers don't include L1 fee in their txlist response.
-    """
+    """Blockscout's txlist leaves the fee pending until the receipt query."""
     address = optimism_accounts[0]
-    expected_l1_fee = 115752642875381
     tx_hash = deserialize_evm_tx_hash('0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665')  # noqa: E501
 
-    for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
-        account=address,
-        action='txlist',
-        period_or_hash=TimestampOrBlockRange(
-            range_type='blocks',
-            from_value=106757395,
-            to_value=106757395,
-        ),
-    ):
-        for tx in tx_batch:
-            if tx.tx_hash == tx_hash:
-                assert cast('L2WithL1FeesTransaction', tx).l1_fee == expected_l1_fee
-                return
+    with patch.object(optimism_transactions.evm_inquirer.blockscout, 'get_l1_fee') as fee_query:
+        for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
+            account=address,
+            action='txlist',
+            period_or_hash=TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=106757395,
+                to_value=106757395,
+            ),
+        ):
+            for tx in tx_batch:
+                if tx.tx_hash == tx_hash:
+                    assert cast('L2WithL1FeesTransaction', tx).l1_fee is None
+                    fee_query.assert_not_called()
+                    return
 
     raise AssertionError('Expected transaction not found')
 
@@ -587,3 +613,347 @@ def test_post_bedrock_interruption_keeps_batch_progress(
             saved_range_start if saved_range_start is not None else OP_BEDROCK_UPGRADE,
             batch_ts,
         )
+
+
+@pytest.mark.parametrize(('saved_fee', 'incoming_fee', 'expected_fee'), [
+    (123, None, '123'),
+    (0, None, '0'),
+    (0, 456, '456'),
+    (None, 0, '0'),
+])
+def test_l1_fee_transaction_upsert(
+        optimism_transactions: OptimismTransactions,
+        saved_fee: int | None,
+        incoming_fee: int | None,
+        expected_fee: str,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions, saved_fee)
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        tx = optimism_transactions.dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
+        )[0]
+    assert isinstance(tx, L2WithL1FeesTransaction)
+    tx.l1_fee = incoming_fee
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=None,
+        )
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == (expected_fee,)
+
+
+@pytest.mark.parametrize(('saved_fee', 'receipt_fee', 'fallback_fee', 'expected_fee', 'fallback_calls'), [  # noqa: E501
+    (None, 123, None, '123', 0),
+    (None, 0, None, '0', 0),
+    (None, None, 456, '456', 1),
+    (None, 'invalid', 456, '456', 1),
+    (789, None, None, '789', 0),
+    (789, 0, None, '789', 0),
+    (None, None, None, None, 1),
+    (0, None, None, '0', 0),
+])
+def test_receipt_batch_resolves_l1_fee(
+        optimism_transactions: OptimismTransactions,
+        saved_fee: int | None,
+        receipt_fee: int | str | None,
+        fallback_fee: int | None,
+        expected_fee: str | None,
+        fallback_calls: int,
+) -> None:
+    tx_hash, account = _add_pending_transaction(optimism_transactions, saved_fee)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+    }
+    if receipt_fee is not None:
+        receipt['l1Fee'] = receipt_fee
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]) as batch_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=fallback_fee) as indexer_fee_query,  # noqa: E501
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+
+    batch_query.assert_called_once_with(tx_hashes=[tx_hash])
+    assert indexer_fee_query.call_count == fallback_calls
+    if fallback_calls:
+        indexer_fee_query.assert_called_once_with(
+            account=account,
+            tx_hash=tx_hash,
+            block_number=106757395,
+        )
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id '
+            'WHERE txs.tx_hash=? AND txs.chain_id=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone() == (expected_fee,)
+        assert optimism_transactions.dbevmtx.get_receipt(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            chain_id=ChainID.OPTIMISM,
+        ) is not None
+
+
+def test_failed_batch_fee_lookup_is_not_repeated_during_decode(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+    }
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]),  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=None) as fee_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+
+    assert tx.l1_fee is None
+    fee_query.assert_called_once()
+    transaction_query.assert_not_called()
+
+
+def test_resolved_zero_fee_survives_new_transaction_handler(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+                'l1Fee': 0,
+            },
+        )
+
+    new_transactions = OptimismTransactions(
+        optimism_inquirer=cast('OptimismInquirer', optimism_transactions.evm_inquirer),
+        database=optimism_transactions.database,
+    )
+    inquirer = new_transactions.evm_inquirer
+    with (
+        patch.object(inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+        patch.object(inquirer, 'get_transaction_by_hash') as transaction_query,
+        new_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = new_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee == 0
+    indexer_fee_query.assert_not_called()
+    transaction_query.assert_not_called()
+
+
+def test_existing_receipt_repairs_missing_l1_fee_without_refetch(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as indexer_fee_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee == 321
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee == 321
+
+    transaction_query.assert_not_called()
+    indexer_fee_query.assert_called_once()
+
+
+def test_fresh_transaction_with_unresolved_fee_does_not_repeat_lookup(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        queried_tx = optimism_transactions.dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
+        )[0]
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash', return_value=(
+            queried_tx,
+            {'transactionHash': str(tx_hash), 'contractAddress': None, 'status': 1, 'type': 0, 'logs': []},  # noqa: E501
+        )) as transaction_query,
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee is None
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee is None
+    transaction_query.assert_called_once_with(tx_hash)
+    indexer_fee_query.assert_not_called()
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as retry_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee == 321
+    retry_query.assert_called_once()
+
+
+@pytest.mark.parametrize(('indexer_fee', 'expected_fee', 'expected_rpc_calls'), [
+    (None, 999, 1),
+    (0, 0, 0),
+])
+def test_existing_receipt_uses_rpc_when_indexers_cannot_repair_fee(
+        optimism_transactions: OptimismTransactions,
+        indexer_fee: int | None,
+        expected_fee: int,
+        expected_rpc_calls: int,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        queried_tx = optimism_transactions.dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
+        )[0]
+    assert isinstance(queried_tx, L2WithL1FeesTransaction)
+    queried_tx.l1_fee = 999
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=indexer_fee),  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash', return_value=(queried_tx, {})) as transaction_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee == expected_fee
+    assert transaction_query.call_count == expected_rpc_calls
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == (str(expected_fee),)
+
+
+def test_l1_fee_resolved_after_receipt_batch_failure(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+        'l1Fee': 888,
+    }
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=None),  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipt', return_value=receipt) as receipt_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+
+    receipt_query.assert_called_once_with(tx_hash=tx_hash)
+    indexer_fee_query.assert_not_called()
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == ('888',)
+
+
+def test_l1_fee_lookup_without_indexers(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, account = _add_pending_transaction(optimism_transactions)
+    with patch.object(
+        optimism_transactions.evm_inquirer,
+        '_try_indexers',
+        side_effect=NoAvailableIndexers('No indexers available'),
+    ):
+        assert optimism_transactions.evm_inquirer.maybe_get_l1_fees(
+            account=account,
+            tx_hash=tx_hash,
+            block_number=106757395,
+        ) is None
