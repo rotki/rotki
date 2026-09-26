@@ -2087,14 +2087,20 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _maybe_notify_no_indexers(self) -> None:
         """Tell the user once that no indexer can serve this chain. If etherscan refused the
-        chain for the configured key, say so, since a paid etherscan key is then the fix."""
+        chain for the configured key, explain which API key can restore transaction queries."""
         if self._no_indexer_notified:
             return
 
         self._no_indexer_notified = True
         data: dict[str, str] = {'chain': self.blockchain.value}
         if self._etherscan_refused_chain:
-            data['reason'] = 'etherscan_paid_key_required'
+            data['reason'] = (  # offer a blockscout key only if it is used and still missing
+                'blockscout_or_paid_etherscan_key_required'
+                if EvmIndexer.BLOCKSCOUT in self.available_indexers and
+                EvmIndexer.BLOCKSCOUT in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id) and  # noqa: E501
+                self.blockscout.needs_api_key_for_chain(chain_id=self.chain_id)
+                else 'etherscan_paid_key_required'
+            )
         self.database.msg_aggregator.add_message(
             message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
             data=data,

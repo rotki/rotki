@@ -483,6 +483,7 @@ def test_indexer_http_attempts_include_retries_and_normalize_blockscout_paths(
         monkeypatch,
         database,
         messages_aggregator,
+        allow_optimism_routescan,
 ) -> None:
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
     submit = MagicMock(return_value=True)

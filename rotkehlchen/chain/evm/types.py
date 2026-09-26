@@ -176,7 +176,6 @@ DEFAULT_EVM_INDEXER_ORDER: Final = (
 # https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
 BLOCKSCOUT_PRIORITY_ORDER: Final = (
     EvmIndexer.BLOCKSCOUT,
-    EvmIndexer.ROUTESCAN,
     EvmIndexer.ETHERSCAN,
 )
 # Chains that etherscan serves only to paid api keys. Their default order puts other indexers

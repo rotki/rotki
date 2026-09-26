@@ -149,7 +149,12 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
 }])
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xE1343a4b5e64d47B0c0f208d05Fb4B5973443818']])
-def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_global_caches):
+def test_add_liquidity_v1(
+        optimism_transaction_decoder,
+        optimism_accounts,
+        load_global_caches,
+        allow_optimism_routescan,
+):
     """Check that adding liquidity to a velodrome v1 pool is properly decoded."""
     _add_velodrome_pool(pool := string_to_evm_address('0x6fE665F19517Cd6076866dB0548177d0E628156a'))  # noqa: E501
     assert GlobalDBHandler.get_evm_token(address=pool, chain_id=ChainID.OPTIMISM) is None
@@ -437,7 +442,12 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
 }])
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xB1D34002ee676516787fd8CDb9C549a415F68aA8']])
-def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
+def test_swap_eth_to_token_v1(
+        optimism_accounts,
+        optimism_transaction_decoder,
+        load_global_caches,
+        allow_optimism_routescan,
+):
     """Check that swapping eth to token in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x7866C6072B09539fC0FDE82963846b80203d7beb'))
     user_address = optimism_accounts[0]
@@ -493,7 +503,12 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
 }])
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x2359497cc3F8F11A80d775715367d5CB3D0fD274']])
-def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
+def test_swap_token_to_eth_v2(
+        optimism_accounts,
+        optimism_transaction_decoder,
+        load_global_caches,
+        allow_optimism_routescan,
+):
     """Check that swapping token to eth in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'))
     user_address = optimism_accounts[0]
@@ -615,7 +630,12 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
 }])
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x60583f22aDA7B1352bB2faF694b3eAaf942696DD']])
-def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
+def test_swap_tokens_v2(
+        optimism_accounts,
+        optimism_transaction_decoder,
+        load_global_caches,
+        allow_optimism_routescan,
+):
     """Check that swapping tokens in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6'))
     _add_velodrome_pool(string_to_evm_address('0xBf75051F6e6dF9fEcF90d9bebbBB08a85950858C'))

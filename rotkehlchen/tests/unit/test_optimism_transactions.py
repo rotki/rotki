@@ -96,6 +96,7 @@ def test_l1_fee_queried_when_missing(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
         optimism_manager_connect_at_start: Sequence[WeightedNode],
+        allow_optimism_routescan: None,
 ):
     """Test that if the L1 fee is initially missing it gets queried from either
     the mainnet node or from an indexer. The RPC and etherscan responses are mocked since they

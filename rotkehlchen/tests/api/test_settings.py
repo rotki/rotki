@@ -700,7 +700,8 @@ def test_set_evm_indexers_order(rotkehlchen_api_server: APIServer) -> None:
         response=requests.get(settings_url),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
-    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['blockscout', 'routescan', 'etherscan']  # noqa: E501
+    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['blockscout', 'etherscan']  # noqa: E501
+    assert settings['evm_indexers_order'][ChainID.BASE.to_name()] == ['blockscout', 'etherscan']
     # etherscan only serves gnosis to paid keys, so blockscout leads and it stays as fallback
     assert settings['evm_indexers_order'][ChainID.GNOSIS.to_name()] == ['blockscout', 'etherscan']
 

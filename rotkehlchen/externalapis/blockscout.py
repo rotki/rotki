@@ -125,6 +125,14 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         return url
 
+    def needs_api_key_for_chain(self, chain_id: ChainID) -> bool:
+        """Whether adding a Blockscout api key would let the given chain be queried."""
+        return (
+            chain_id in self.api_urls and
+            chain_id not in AUTOSCOUT_INSTANCES and
+            self._get_api_key() is None
+        )
+
     def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
         """Blockscout uses the same api key for all supported chains."""
         if chain_id not in BLOCKSCOUT_SUPPORTED_CHAINS:

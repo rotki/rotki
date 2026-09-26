@@ -28,6 +28,10 @@ if TYPE_CHECKING:
 class DummyIndexer:
     name: str
     has_paid_api_key: bool = False
+    missing_api_key: bool = True
+
+    def needs_api_key_for_chain(self, chain_id: ChainID) -> bool:
+        return self.missing_api_key
 
 
 class DummyEvmNodeInquirer(EvmNodeInquirer):
@@ -162,8 +166,8 @@ def test_try_indexers_sends_ws_notification_when_no_indexers() -> None:
     )
 
 
-def test_try_indexers_notifies_paid_key_needed_when_etherscan_refuses_chain() -> None:
-    """A failed Blockscout request still prompts for a paid key on Base."""
+def test_try_indexers_notifies_blockscout_key_when_etherscan_refuses_chain() -> None:
+    """A failed keyless Blockscout request offers its free key before a paid Etherscan key."""
     inquirer = DummyEvmNodeInquirer()
     inquirer.chain_id = ChainID.BASE
     inquirer.blockchain = SupportedBlockchain.BASE
@@ -173,13 +177,48 @@ def test_try_indexers_notifies_paid_key_needed_when_etherscan_refuses_chain() ->
             raise ChainNotSupported('Free API access is not supported for this chain')
         if indexer.name == 'Routescan':
             raise ChainNotSupported('Routescan does not support BASE')
-        raise RemoteError('Blockscout is missing data')
+        raise RemoteError('Blockscout has no API key configured')
 
     for _ in range(3):
         with pytest.raises(RemoteError, match='Failed to query any indexer'):
             inquirer._try_indexers(func=query)
 
-    assert set(inquirer.available_indexers) == {EvmIndexer.BLOCKSCOUT}
+    assert EvmIndexer.ETHERSCAN not in inquirer.available_indexers
+    inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
+        message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+        data={
+            'chain': SupportedBlockchain.BASE.value,
+            'reason': 'blockscout_or_paid_etherscan_key_required',
+        },
+    )
+
+
+@pytest.mark.parametrize(('custom_order', 'missing_blockscout_key'), [
+    ((EvmIndexer.ETHERSCAN,), True),  # blockscout is not used, so its key would not help
+    (None, False),  # blockscout already has a key, so it failed for another reason
+])
+def test_try_indexers_notifies_paid_key_when_blockscout_key_would_not_help(
+        custom_order: tuple[EvmIndexer, ...] | None,
+        missing_blockscout_key: bool,
+) -> None:
+    """Only offer a Blockscout key when Blockscout is in the order and has no key yet."""
+    inquirer = DummyEvmNodeInquirer()
+    inquirer.chain_id = ChainID.BASE
+    inquirer.blockchain = SupportedBlockchain.BASE
+    cast('Any', inquirer.blockscout).missing_api_key = missing_blockscout_key
+
+    def query(indexer: Any) -> str:
+        if indexer.name == 'Etherscan':
+            raise ChainNotSupported('Free API access is not supported for this chain')
+        raise RemoteError('Blockscout is down')
+
+    token = CachedSettings.evm_indexers_order_override_var.set(custom_order)
+    try:
+        with pytest.raises(RemoteError, match='Failed to query any indexer'):
+            inquirer._try_indexers(func=query)
+    finally:
+        CachedSettings.evm_indexers_order_override_var.reset(token)
+
     inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
         message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
         data={'chain': SupportedBlockchain.BASE.value, 'reason': 'etherscan_paid_key_required'},
@@ -262,9 +301,17 @@ def test_paid_etherscan_key_respects_a_custom_order() -> None:
     inquirer.chain_id = ChainID.BASE
     inquirer.blockchain = SupportedBlockchain.BASE
     cast('Any', inquirer.etherscan).has_paid_api_key = True
-    token = CachedSettings.evm_indexers_order_override_var.set((EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN))  # noqa: E501
+    token = CachedSettings.evm_indexers_order_override_var.set((
+        EvmIndexer.BLOCKSCOUT,
+        EvmIndexer.ROUTESCAN,
+        EvmIndexer.ETHERSCAN,
+    ))
     try:
-        assert [name for name, _ in inquirer._get_indexers_in_order()] == [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]  # noqa: E501
+        assert [name for name, _ in inquirer._get_indexers_in_order()] == [
+            EvmIndexer.BLOCKSCOUT,
+            EvmIndexer.ROUTESCAN,
+            EvmIndexer.ETHERSCAN,
+        ]
     finally:
         CachedSettings.evm_indexers_order_override_var.reset(token)
 
