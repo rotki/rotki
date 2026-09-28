@@ -21,7 +21,7 @@ export function createBusinessRegistry(
   | typeof SocketMessageType.REFRESH_BALANCES
 > {
   const newTokenDetectedHandler = createNewTokenDetectedHandler(t, router);
-  const accountingRuleConflictHandler = createAccountingRuleConflictHandler(t, router);
+  const accountingRuleConflictHandler = createAccountingRuleConflictHandler();
   const calendarReminderHandler = createCalendarReminderHandler(t, router);
   const exchangeUnknownAssetHandler = createExchangeUnknownAssetHandler();
 

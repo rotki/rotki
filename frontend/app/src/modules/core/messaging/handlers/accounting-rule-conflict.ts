@@ -1,27 +1,19 @@
-import type { NotificationHandler } from '../interfaces';
+import type { StateHandler } from '../interfaces';
 import type { AccountingRuleConflictData } from '../types/business-types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
-import { createNotificationHandler } from '@/modules/core/messaging/utils';
+import { createStateHandler } from '@/modules/core/messaging/utils';
+import { useAccountingRuleConflictsCount } from '@/modules/settings/accounting/rule/use-accounting-rule-conflicts-count';
 
-export function createAccountingRuleConflictHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<AccountingRuleConflictData> {
-  return createNotificationHandler<AccountingRuleConflictData>((data) => {
-    const { numOfConflicts } = data;
+/**
+ * Re-reads the conflicting accounting rules, which the action center counts.
+ *
+ * @remarks
+ * Creates no notification: the count stays in the center until the conflicts are resolved. The
+ * message's own count is not used, since a re-read also covers conflicts resolved since.
+ */
+export function createAccountingRuleConflictHandler(): StateHandler<AccountingRuleConflictData> {
+  const { refresh } = useAccountingRuleConflictsCount();
 
-    return {
-      action: {
-        action: async (): Promise<void> => {
-          await router.push({
-            path: '/settings/accounting',
-            query: { resolveConflicts: 'true' },
-          });
-        },
-        label: t('notification_messages.accounting_rule_conflict.action'),
-      },
-      category: NotificationCategory.DEFAULT,
-      message: t('notification_messages.accounting_rule_conflict.message', { conflicts: numOfConflicts }),
-      priority: Priority.HIGH,
-      severity: Severity.WARNING,
-      title: t('notification_messages.accounting_rule_conflict.title'),
-    };
+  return createStateHandler<AccountingRuleConflictData>(async () => {
+    await refresh();
   });
 }

@@ -144,7 +144,6 @@ describe('useSettingsRepo frontend channel', () => {
       autoDetectTokensOnLogin: false,
       autoRerunOnEdit: false,
       lastAutoDetectAt: 0,
-      gnosisPaySafeMigrationLastNotified: 0,
       gnosisPaySafeMigrationNeverNotify: false,
     };
 

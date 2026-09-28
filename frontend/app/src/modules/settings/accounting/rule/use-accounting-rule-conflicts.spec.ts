@@ -14,10 +14,17 @@ vi.mock('vue-router', () => ({
   useRouter: (): { replace: typeof replace } => ({ replace }),
 }));
 
-const getAccountingRulesConflicts = vi.fn(async (): Promise<Result<{ total: number }, RequestError>> => ok({ total: 0 }));
+const { count, refresh } = vi.hoisted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
+  const { ref: vueRef } = require('vue');
+  return {
+    count: vueRef(0),
+    refresh: vi.fn<() => Promise<Result<number, RequestError>>>(),
+  };
+});
 
-vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
-  useAccountingSettings: (): Record<string, unknown> => ({ getAccountingRulesConflicts }),
+vi.mock('@/modules/settings/accounting/rule/use-accounting-rule-conflicts-count', () => ({
+  useAccountingRuleConflictsCount: (): Record<string, unknown> => ({ count, refresh }),
 }));
 
 const failure = err(RequestFailed({ cause: new Error('boom'), message: 'boom' }));
@@ -25,23 +32,25 @@ const failure = err(RequestFailed({ cause: new Error('boom'), message: 'boom' })
 describe('useAccountingRuleConflicts', () => {
   beforeEach(() => {
     query = {};
+    set(count, 0);
     replace.mockClear();
-    getAccountingRulesConflicts.mockClear().mockResolvedValue(ok({ total: 0 }));
+    refresh.mockReset().mockResolvedValue(ok(0));
   });
 
-  it('should count the conflicts without opening the dialog', async () => {
-    getAccountingRulesConflicts.mockResolvedValue(ok({ total: 3 }));
+  it('should count what the action center counts, so the page and the row agree', async () => {
+    set(count, 3);
     const { checkConflicts, conflictsNumber, modelConflictsDialogOpen } = useAccountingRuleConflicts();
     await checkConflicts();
 
+    expect(refresh).toHaveBeenCalledOnce();
     expect(get(conflictsNumber)).toBe(3);
     expect(get(modelConflictsDialogOpen)).toBe(false);
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('should open the dialog when the route asks for it, as the notification link does', async () => {
+  it('should open the dialog when the route asks for it, as the action center row does', async () => {
     query = { resolveConflicts: 'true' };
-    getAccountingRulesConflicts.mockResolvedValue(ok({ total: 2 }));
+    refresh.mockResolvedValue(ok(2));
     const { checkConflicts, modelConflictsDialogOpen } = useAccountingRuleConflicts();
     await checkConflicts();
 
@@ -59,20 +68,9 @@ describe('useAccountingRuleConflicts', () => {
     expect(replace).toHaveBeenCalledWith({ query: {} });
   });
 
-  it('should keep the last known count when a recount fails, rather than claiming none', async () => {
-    getAccountingRulesConflicts.mockResolvedValueOnce(ok({ total: 3 }));
-    const { checkConflicts, conflictsNumber } = useAccountingRuleConflicts();
-    await checkConflicts();
-
-    getAccountingRulesConflicts.mockResolvedValueOnce(failure);
-    await checkConflicts();
-
-    expect(get(conflictsNumber)).toBe(3);
-  });
-
   it('should open the dialog on a failed count when the route asks, so its table can say why', async () => {
     query = { resolveConflicts: 'true' };
-    getAccountingRulesConflicts.mockResolvedValue(failure);
+    refresh.mockResolvedValue(failure);
     const { checkConflicts, modelConflictsDialogOpen } = useAccountingRuleConflicts();
     await checkConflicts();
 

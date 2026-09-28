@@ -1,10 +1,8 @@
-import { startPromise } from '@shared/utils';
 import { lastLogin } from '@/modules/auth/account-management';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { useGnosisPaySafeMigration } from '@/modules/integrations/gnosis-pay/use-gnosis-pay-safe-migration';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 
@@ -30,7 +28,6 @@ export function useSessionReady(): UseSessionReadyReturn {
   const { navigateToDashboard } = useAppNavigation();
   const { showReleaseNotes } = useUpdateMessage();
   const { refreshSupportedChains } = useSupportedChains();
-  const { checkAndNotify: checkGnosisPaySafeMigration } = useGnosisPaySafeMigration();
 
   async function handleSessionReady(): Promise<void> {
     clearUpgradeMessages();
@@ -41,7 +38,6 @@ export function useSessionReady(): UseSessionReadyReturn {
     await fetchTransactionStatusSummary();
     await navigateToDashboard();
     set(showReleaseNotes, false);
-    startPromise(checkGnosisPaySafeMigration());
   }
 
   return { handleSessionReady };

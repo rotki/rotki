@@ -332,6 +332,11 @@
           "action": "Add prices",
           "description": "An oracle priced these assets before but reports none now, so they count as zero in your balances.",
           "title": "Assets without a price"
+        },
+        "solana_token_migration": {
+          "action": "Migrate tokens",
+          "description": "Some Solana tokens are missing fields rotki needs and have to be migrated by hand.",
+          "title": "Solana tokens to migrate"
         }
       },
       "chains": {
@@ -352,6 +357,11 @@
         }
       },
       "history": {
+        "accounting_rule_conflicts": {
+          "action": "Resolve",
+          "description": "Your accounting rules differ from the updated remote ones. Choose which version to keep.",
+          "title": "Accounting rule conflicts"
+        },
         "sync": {
           "action": "Sync now",
           "description": "Completed on {date}. Protocol balances may be stale or missing until history is refreshed.",
@@ -366,6 +376,13 @@
         }
       },
       "integrations": {
+        "gnosis_pay_safe_migration": {
+          "do_not_show_again": "Do not show again",
+          "suppress_confirm": {
+            "message": "The untracked Gnosis Pay Safe will no longer be reported. You can still add it from the Gnosis Pay card in the external services.",
+            "title": "Stop reporting this Safe?"
+          }
+        },
         "gnosis_pay_session": {
           "description": "Sign in again to keep importing Gnosis Pay transactions.",
           "title": "Gnosis Pay session expired"
@@ -3492,7 +3509,6 @@
         "add_success": "Added {address} as a Gnosis Chain account.",
         "missing_new": "Gnosis Pay replaced your Safe. You track only the previous one; add the new active Safe {address} to track future activity.",
         "missing_old": "Gnosis Pay replaced your Safe. You track only the new one; add the previous Safe {address} to keep its historical activity.",
-        "never_action": "Never show again",
         "title": "Gnosis Pay Safe migration"
       },
       "siwe": {
@@ -5053,11 +5069,6 @@
     "tooltip_unread": "Notifications, something new arrived"
   },
   "notification_messages": {
-    "accounting_rule_conflict": {
-      "action": "Resolve conflicts",
-      "message": "Conflicts detected for {conflicts} accounting rule(s)",
-      "title": "Accounting rule conflict"
-    },
     "address_migration": {
       "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}",
       "title": "Address has been added to {chain}|Addresses have been added to {chain}"
@@ -5082,11 +5093,6 @@
       "title": "CSV Import Result: {sourceName}"
     },
     "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
-    "gnosis_pay_safe_migration": {
-      "message_new": "Gnosis Pay replaced your Safe in its security migration. You track only the previous Safe. Add the new active Safe {address} to track future activity.",
-      "message_old": "Gnosis Pay replaced your Safe in its security migration. You track only the new Safe. Add the previous Safe {address} to keep its historical activity.",
-      "title": "Gnosis Pay Safe migration"
-    },
     "new_detected_token": {
       "action": "See more",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
@@ -5115,11 +5121,6 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
-    },
-    "solana_tokens_migration": {
-      "action": "Migrate tokens",
-      "message": "Tokens with these identifiers are missing some fields and need to be migrated manually:\n {tokens}",
-      "title": "Solana Tokens Migration"
     }
   },
   "notification_popup": {

@@ -1,33 +1,19 @@
-import type { MessageHandler } from '@/modules/core/messaging/interfaces';
+import type { StateHandler } from '@/modules/core/messaging/interfaces';
 import type { SolanaTokensMigrationData } from '@/modules/core/messaging/types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
-import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
+import { createStateHandler } from '@/modules/core/messaging/utils';
 
-export function createSolanaTokensHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
-): MessageHandler<SolanaTokensMigrationData> {
+/**
+ * Records the Solana tokens that need migrating by hand, which the action center counts.
+ *
+ * @remarks
+ * Creates no notification. The backend sends the list once per unlock and nothing can read it again,
+ * so the store is the session's only copy; migrating or merging a token takes it off.
+ */
+export function createSolanaTokensHandler(): StateHandler<SolanaTokensMigrationData> {
   const store = useSolanaTokenMigrationStore();
 
-  return createStateWithNotificationHandler<SolanaTokensMigrationData>(
-    (data) => {
-      store.setIdentifiers(data.identifiers);
-    },
-    data => ({
-      action: {
-        action: async () => router.push({ name: '/asset-manager/more/solana-token-migration/' }),
-        icon: 'lu-arrow-right',
-        label: t('notification_messages.solana_tokens_migration.action'),
-        persist: true,
-      },
-      category: NotificationCategory.DEFAULT,
-      message: t('notification_messages.solana_tokens_migration.message', {
-        tokens: data.identifiers.map(item => `- ${item}`).join('\n'),
-      }),
-      priority: Priority.HIGH,
-      severity: Severity.WARNING,
-      title: t('notification_messages.solana_tokens_migration.title'),
-    }),
-  );
+  return createStateHandler<SolanaTokensMigrationData>((data) => {
+    store.setIdentifiers(data.identifiers);
+  });
 }

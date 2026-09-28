@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { useMissingMappingsCount } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-count';
+import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
 import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-missing-prices-dialog';
 import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
@@ -10,11 +11,15 @@ interface UseAssetRowsReturn {
   refresh: () => Promise<void>;
 }
 
-/** The asset rows: exchange assets that have no mapping in rotki, and assets an oracle stopped pricing. */
+/**
+ * The asset rows: exchange assets that have no mapping in rotki, assets an oracle stopped pricing,
+ * and Solana tokens that need migrating by hand.
+ */
 export function useAssetRows(): UseAssetRowsReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { count, refresh } = useMissingMappingsCount();
+  const { identifiers: solanaTokens } = storeToRefs(useSolanaTokenMigrationStore());
   const { missingPricesCount } = useMissingPrices();
   const { show: showMissingPrices } = useMissingPricesDialog();
 
@@ -40,6 +45,16 @@ export function useAssetRows(): UseAssetRowsReturn {
       urgency: ActionUrgency.DECISION,
       target: { kind: 'route', to: { name: '/asset-manager/more/missing-mappings/' } },
       title: t('action_center.rows.assets.missing_mappings.title'),
+    }),
+    createActionItem<ActionTarget, string>({
+      actionLabel: t('action_center.rows.assets.solana_token_migration.action'),
+      count: get(solanaTokens).length,
+      description: t('action_center.rows.assets.solana_token_migration.description'),
+      icon: 'lu-arrow-right-left',
+      id: 'solana-token-migration',
+      urgency: ActionUrgency.DECISION,
+      target: { kind: 'route', to: { name: '/asset-manager/more/solana-token-migration/' } },
+      title: t('action_center.rows.assets.solana_token_migration.title'),
     }),
   ]);
 

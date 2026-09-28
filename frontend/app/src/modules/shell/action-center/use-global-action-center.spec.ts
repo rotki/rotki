@@ -9,14 +9,18 @@ import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } f
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 
 const state = {
+  accountingRows: ref<ActionItem[]>([]),
   assetRows: ref<ActionItem[]>([]),
   chainRows: ref<ActionItem[]>([]),
+  gnosisPaySafeRows: ref<ActionItem[]>([]),
   historyChecking: ref<boolean>(false),
   historyIssues: ref<HistoryEventIssue[]>([]),
   historySyncRows: ref<ActionItem[]>([]),
   integrationRows: ref<ActionItem[]>([]),
   processing: ref<boolean>(false),
+  refreshAccounting: vi.fn<() => Promise<void>>(),
   refreshAssets: vi.fn<() => Promise<void>>(),
+  refreshGnosisPaySafe: vi.fn<() => Promise<void>>(),
   refreshHistory: vi.fn<() => Promise<void>>(),
   rescanHistory: vi.fn<() => Promise<void>>(),
 };
@@ -46,6 +50,14 @@ vi.mock('@/modules/shell/action-center/use-chain-rows', () => ({
 
 vi.mock('@/modules/shell/action-center/use-asset-rows', () => ({
   useAssetRows: (): object => ({ refresh: state.refreshAssets, rows: computed(() => get(state.assetRows)) }),
+}));
+
+vi.mock('@/modules/shell/action-center/use-accounting-rows', () => ({
+  useAccountingRows: (): object => ({ refresh: state.refreshAccounting, rows: computed(() => get(state.accountingRows)) }),
+}));
+
+vi.mock('@/modules/shell/action-center/use-gnosis-pay-safe-rows', () => ({
+  useGnosisPaySafeRows: (): object => ({ refresh: state.refreshGnosisPaySafe, rows: computed(() => get(state.gnosisPaySafeRows)) }),
 }));
 
 const route = reactive<{ name: string; query: LocationQuery }>({ name: '/dashboard/', query: {} });
@@ -101,11 +113,15 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     vi.clearAllMocks();
     route.name = '/dashboard/';
     route.query = {};
+    state.refreshAccounting.mockResolvedValue();
     state.refreshAssets.mockResolvedValue();
+    state.refreshGnosisPaySafe.mockResolvedValue();
     state.refreshHistory.mockResolvedValue();
     state.rescanHistory.mockResolvedValue();
+    set(state.accountingRows, []);
     set(state.assetRows, []);
     set(state.chainRows, []);
+    set(state.gnosisPaySafeRows, []);
     set(state.historyChecking, false);
     set(state.historyIssues, []);
     set(state.historySyncRows, []);
@@ -246,6 +262,44 @@ describe('modules/shell/action-center/use-global-action-center', () => {
 
     expect(state.refreshHistory).toHaveBeenCalledOnce();
     expect(state.refreshAssets).toHaveBeenCalledOnce();
+    expect(state.refreshAccounting).toHaveBeenCalledOnce();
+    expect(state.refreshGnosisPaySafe).toHaveBeenCalledOnce();
+  });
+
+  it('should leave accounting conflicts and the Gnosis Pay Safe alone when history settles again, since history work cannot change them', async () => {
+    center();
+    await flushPromises();
+
+    set(state.processing, true);
+    await flushPromises();
+    set(state.processing, false);
+    await flushPromises();
+
+    expect(state.rescanHistory).toHaveBeenCalledOnce();
+    expect(state.refreshAccounting).toHaveBeenCalledOnce();
+    expect(state.refreshGnosisPaySafe).toHaveBeenCalledOnce();
+  });
+
+  it('should read accounting conflicts and the Gnosis Pay Safe again when the user asks for a re-scan', async () => {
+    const { refreshAll } = center();
+    await flushPromises();
+
+    await refreshAll();
+
+    expect(state.refreshAccounting).toHaveBeenCalledTimes(2);
+    expect(state.refreshGnosisPaySafe).toHaveBeenCalledTimes(2);
+  });
+
+  it('should list accounting conflicts under history and the Gnosis Pay Safe under integrations', async () => {
+    set(state.accountingRows, [row('accounting-rule-conflicts')]);
+    set(state.gnosisPaySafeRows, [row('gnosis-pay-safe-migration')]);
+    const { sections } = center();
+    await flushPromises();
+
+    expect(get(sections).map(section => [section.id, section.items.map(item => item.id)])).toEqual([
+      ['history', ['accounting-rule-conflicts']],
+      ['integrations', ['gnosis-pay-safe-migration']],
+    ]);
   });
 
   it('should scan again when the history work settles, and not while it runs', async () => {

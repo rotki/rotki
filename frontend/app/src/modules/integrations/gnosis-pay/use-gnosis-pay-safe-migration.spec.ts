@@ -1,20 +1,17 @@
+import type { AdditionSummary } from '@/modules/accounts/use-account-addition-service';
 import type { GnosisPaySafeMigration } from '@/modules/integrations/gnosis-pay/types';
 import { Blockchain } from '@rotki/common';
-import dayjs from 'dayjs';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
-const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 const NEW_SAFE = '0xabcdef1234567890abcdef1234567890abcdef12';
 const OLD_SAFE = '0x1234567890abcdef1234567890abcdef12345678';
 
 const fetchGnosisPaySafeMigration = vi.fn();
 const addAccounts = vi.fn();
-const notify = vi.fn();
 const showErrorMessage = vi.fn();
 const showSuccessMessage = vi.fn();
-const updateFrontendSetting = vi.fn();
 const getApiKey = vi.fn();
 const loadExternalKeys = vi.fn();
 const externalKeys = ref<Record<string, unknown> | undefined>({ gnosis_pay: { apiKey: 'gpay-token' } });
@@ -28,11 +25,7 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockImplementation(() => ({ notify, showErrorMessage, showSuccessMessage })),
-}));
-
-vi.mock('@/modules/settings/use-settings-operations', () => ({
-  useSettingsOperations: vi.fn().mockImplementation(() => ({ updateFrontendSetting })),
+  useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage, showSuccessMessage })),
 }));
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
@@ -47,13 +40,9 @@ function migration(untracked: GnosisPaySafeMigration['untrackedAddresses']): Gno
   return { migrationId: 'safe-replacement-2026-06', untrackedAddresses: untracked };
 }
 
-async function setup(settings?: Record<string, unknown>): Promise<{
+async function setup(): Promise<{
   composable: Awaited<ReturnType<typeof import('./use-gnosis-pay-safe-migration')['useGnosisPaySafeMigration']>>;
 }> {
-  if (settings) {
-    const { useSettingsRepo } = await import('@/modules/settings/settings-repo');
-    useSettingsRepo().updateFrontend(settings);
-  }
   const { useGnosisPaySafeMigration } = await import('./use-gnosis-pay-safe-migration');
   return { composable: useGnosisPaySafeMigration() };
 }
@@ -68,10 +57,8 @@ describe('useGnosisPaySafeMigration', () => {
       cancelled: false,
       failed: [],
     });
-    notify.mockReset();
     showErrorMessage.mockReset();
     showSuccessMessage.mockReset();
-    updateFrontendSetting.mockReset().mockResolvedValue(undefined);
     getApiKey.mockReset().mockReturnValue('gpay-token');
     loadExternalKeys.mockReset().mockResolvedValue(undefined);
     set(externalKeys, { gnosis_pay: { apiKey: 'gpay-token' } });
@@ -185,62 +172,36 @@ describe('useGnosisPaySafeMigration', () => {
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
   });
 
-  it('should notify once and record the timestamp when never shown before', async () => {
+  it('should mark itself adding only while the addition runs', async () => {
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
-    const { composable } = await setup({ gnosisPaySafeMigrationLastNotified: 0, gnosisPaySafeMigrationNeverNotify: false });
+    let resolve: (summary: AdditionSummary) => void = () => {};
+    addAccounts.mockReturnValue(new Promise<AdditionSummary>((settle) => {
+      resolve = settle;
+    }));
+    const { composable } = await setup();
+    await composable.checkMigration();
 
-    await composable.checkAndNotify();
+    const adding = composable.addMissingSafe();
 
-    expect(notify).toHaveBeenCalledTimes(1);
-    const payload = notify.mock.calls[0][0];
-    expect(payload.message).toContain('message_new');
-    expect(payload.message).toContain(NEW_SAFE);
-    expect(updateFrontendSetting).toHaveBeenCalledWith(
-      expect.objectContaining({ gnosisPaySafeMigrationLastNotified: expect.any(Number) }),
-    );
+    expect(get(composable.adding)).toBe(true);
+
+    resolve({ added: [{ address: NEW_SAFE, chain: Blockchain.GNOSIS }], cancelled: false, failed: [], skipped: 0 });
+    await adding;
+
+    expect(get(composable.adding)).toBe(false);
   });
 
-  it('should not notify when the user chose never to be reminded', async () => {
+  it('should forget the untracked safe when the user logs out', async () => {
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
-    const { composable } = await setup({ gnosisPaySafeMigrationNeverNotify: true });
+    const { useSessionAuthStore } = await import('@/modules/auth/use-session-auth-store');
+    const store = useSessionAuthStore();
+    store.logged = true;
+    const { composable } = await setup();
+    await composable.checkMigration();
 
-    await composable.checkAndNotify();
+    store.logged = false;
+    await nextTick();
 
-    expect(notify).not.toHaveBeenCalled();
-  });
-
-  it('should not notify again within a week', async () => {
-    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
-    const { composable } = await setup({ gnosisPaySafeMigrationLastNotified: dayjs().unix() - 10 });
-
-    await composable.checkAndNotify();
-
-    expect(notify).not.toHaveBeenCalled();
-  });
-
-  it('should notify again once a week has passed', async () => {
-    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
-    const { composable } = await setup({ gnosisPaySafeMigrationLastNotified: dayjs().unix() - WEEK_IN_SECONDS - 10 });
-
-    await composable.checkAndNotify();
-
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify.mock.calls[0][0].message).toContain('message_old');
-  });
-
-  it('should wire the notification actions to add and to never-show-again', async () => {
-    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
-    const { composable } = await setup({ gnosisPaySafeMigrationLastNotified: 0 });
-
-    await composable.checkAndNotify();
-
-    const actions = notify.mock.calls[0][0].action;
-    expect(actions).toHaveLength(2);
-
-    await actions[0].action();
-    expect(addAccounts).toHaveBeenCalled();
-
-    await actions[1].action();
-    expect(updateFrontendSetting).toHaveBeenCalledWith({ gnosisPaySafeMigrationNeverNotify: true });
+    expect(get(composable.untrackedSafe)).toBeUndefined();
   });
 });
