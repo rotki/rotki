@@ -41,6 +41,8 @@ class PendingTransactionsTracker:
         self.decoding_clean_ts: dict[SupportedBlockchain, Timestamp] = {}
         # chain -> timestamp of the last failure to resolve an L1 fee while decoding
         self.l1_fee_failure_ts: dict[SupportedBlockchain, Timestamp] = {}
+        # chain -> number of runs that probed a transaction with an unresolved L1 fee
+        self.l1_fee_probes: dict[SupportedBlockchain, int] = {}
 
     def should_scan_receipts(self, blockchain: SupportedBlockchain, now: Timestamp) -> bool:
         return now - self.receipts_clean_ts.get(blockchain, 0) > PENDING_TX_RESCAN_AFTER
@@ -75,3 +77,11 @@ class PendingTransactionsTracker:
         L1 fee is unresolved, since a lookup failed recently. They are retried once the
         delay passes. State is in memory, so a restart only brings the retry forward."""
         return now - self.l1_fee_failure_ts.get(blockchain, 0) <= UNRESOLVED_L1_FEE_RETRY_AFTER
+
+    def next_l1_fee_probe_index(self, blockchain: SupportedBlockchain, count: int) -> int:
+        """Pick which of `count` transactions with an unresolved L1 fee to probe, in round
+        robin across runs, so one whose fee can never be resolved does not keep failing the
+        probe and deferring the retries of the others."""
+        probes = self.l1_fee_probes.get(blockchain, 0)
+        self.l1_fee_probes[blockchain] = probes + 1
+        return probes % count
