@@ -19,7 +19,7 @@ from rotkehlchen.db.pending_transactions import UNRESOLVED_L1_FEE_RETRY_AFTER
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
@@ -44,6 +44,7 @@ def _add_pending_transaction(
         optimism_transactions: OptimismTransactions,
         l1_fee: int | None = None,
         account: ChecksumEvmAddress | None = None,
+        timestamp: Timestamp | None = None,
 ) -> tuple[EVMTxHash, ChecksumEvmAddress]:
     tx_hash = make_evm_tx_hash()
     account = account if account is not None else make_evm_address()
@@ -53,7 +54,7 @@ def _add_pending_transaction(
             evm_transactions=[L2WithL1FeesTransaction(
                 tx_hash=tx_hash,
                 chain_id=ChainID.OPTIMISM,
-                timestamp=Timestamp(1689113567),
+                timestamp=Timestamp(1689113567) if timestamp is None else timestamp,
                 block_number=106757395,
                 from_address=account,
                 to_address=make_evm_address(),
@@ -1046,17 +1047,19 @@ def test_unresolved_l1_fee_leaves_transaction_undecoded(
     """A transaction whose L1 fee cannot be resolved is left undecoded instead of getting a
     gas event without its L1 part, which would never be repaired once marked as decoded.
 
-    The first unresolved transaction of a run probes the lookup, and its failure defers the
-    rest without asking for their fees. Until the retry delay passes the periodic decoding
-    skips them and still decodes newer transactions. Afterwards they are decoded."""
+    One unresolved transaction per run probes the lookup, and its failure defers the rest
+    without asking for their fees until the retry delay passes. The probe rotates, so a
+    transaction whose fee can never be resolved does not block the retries of the others.
+    Transactions are decoded oldest first, except for the unresolved ones the probe skips."""
     optimism_transactions = optimism_transaction_decoder.transactions
     database = optimism_transactions.database
 
-    def add_pending_with_receipt(l1_fee: int | None) -> EVMTxHash:
+    def add_pending_with_receipt(timestamp: int, l1_fee: int | None) -> EVMTxHash:
         tx_hash, _ = _add_pending_transaction(
             optimism_transactions=optimism_transactions,  # type: ignore[arg-type]  # it is the optimism one
             l1_fee=l1_fee,
             account=optimism_accounts[0],
+            timestamp=Timestamp(timestamp),
         )
         with database.user_write() as write_cursor:
             optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
@@ -1072,49 +1075,74 @@ def test_unresolved_l1_fee_leaves_transaction_undecoded(
             )
         return tx_hash
 
-    def get_fee_events_and_undecoded_count() -> tuple[list, int]:
+    def decode_run(resolvable: set[EVMTxHash]) -> tuple[list[EVMTxHash], list[EVMTxHash]]:
+        """Run the periodic decoding. Return the hashes it decoded, in order, and the ones
+        it asked a fee for, which is only resolved for the `resolvable` ones."""
+        with (
+            patch.object(
+                target=inquirer,
+                attribute='maybe_get_l1_fees',
+                side_effect=lambda tx_hash, **_kwargs: l1_fee if tx_hash in resolvable else None,
+            ) as fee_query,
+            patch.object(inquirer, 'get_transaction_receipt', return_value={}),
+            patch.object(
+                target=optimism_transaction_decoder,
+                attribute='_decode_transaction',
+                wraps=optimism_transaction_decoder._decode_transaction,
+            ) as decode,
+        ):
+            optimism_transaction_decoder.get_and_decode_undecoded_transactions()
+
+        return (
+            [x.kwargs['transaction'].tx_hash for x in decode.call_args_list],
+            [x.kwargs['tx_hash'] for x in fee_query.call_args_list],
+        )
+
+    def get_decoded_fees() -> dict[EVMTxHash, FVal]:
         with database.conn.read_ctx() as cursor:
-            return sorted(
-                (event.tx_ref, event.event_type, event.event_subtype, event.amount)
+            return {
+                event.tx_ref: event.amount
                 for event in DBHistoryEvents(database).get_history_events_internal(
                     cursor=cursor,
-                    filter_query=EvmEventFilterQuery.make(tx_hashes=stuck_hashes),
-                )
-            ), optimism_transactions.dbevmtx.count_hashes_not_decoded(
-                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM),
-            )
+                    filter_query=EvmEventFilterQuery.make(),
+                ) if event.event_subtype == HistoryEventSubType.FEE
+            }
 
-    stuck_hashes = sorted(add_pending_with_receipt(l1_fee=None) for _ in range(2))
-    inquirer = optimism_transactions.evm_inquirer
-    with (
-        patch.object(inquirer, 'maybe_get_l1_fees', return_value=None) as fee_query,
-        patch.object(inquirer, 'get_transaction_receipt', return_value={}),
-    ):
-        assert set(optimism_transaction_decoder.get_and_decode_undecoded_transactions()) == set(stuck_hashes)  # noqa: E501
+    def expire_retry_delay() -> None:
+        database.pending_txs_tracker.mark_l1_fee_unresolved(
+            blockchain=SupportedBlockchain.OPTIMISM,
+            now=Timestamp(ts_now() - UNRESOLVED_L1_FEE_RETRY_AFTER - 1),
+        )
 
-    assert fee_query.call_count == 1  # only the probe asked for its fee
-    assert get_fee_events_and_undecoded_count() == ([], 2)
+    inquirer, l1_fee = optimism_transactions.evm_inquirer, 5000
+    older = add_pending_with_receipt(timestamp=1, l1_fee=10)
+    # the fee of the oldest stuck one can never be resolved
+    never, stuck_1, stuck_2 = (add_pending_with_receipt(timestamp=ts, l1_fee=None) for ts in (2, 3, 4))  # noqa: E501
+    newer = add_pending_with_receipt(timestamp=5, l1_fee=10)
+
+    # during an outage the probe fails and the other unresolved ones are not even tried
+    assert decode_run(resolvable=set()) == ([older, never, newer], [never])
+    assert set(get_decoded_fees()) == {older, newer}
     assert optimism_transaction_decoder.count_undecoded_transactions() == 0  # deferred
 
-    newer_tx_hash = add_pending_with_receipt(l1_fee=10)
-    assert optimism_transaction_decoder.count_undecoded_transactions() == 1
-    with patch.object(inquirer, 'maybe_get_l1_fees') as fee_query:
-        assert optimism_transaction_decoder.get_and_decode_undecoded_transactions() == [newer_tx_hash]  # noqa: E501
+    # a transaction added during the delay is still decoded, without any fee lookup
+    newest = add_pending_with_receipt(timestamp=6, l1_fee=10)
+    assert decode_run(resolvable=set()) == ([newest], [])
 
-    fee_query.assert_not_called()
-    assert get_fee_events_and_undecoded_count() == ([], 2)
-
-    database.pending_txs_tracker.mark_l1_fee_unresolved(  # the retry delay passes
-        blockchain=SupportedBlockchain.OPTIMISM,
-        now=Timestamp(ts_now() - UNRESOLVED_L1_FEE_RETRY_AFTER - 1),
+    # after the delay the outage is over, and the probe moves on to the next transaction,
+    # so the one that never resolves does not block the others
+    expire_retry_delay()
+    assert decode_run(resolvable={stuck_1, stuck_2}) == (
+        [stuck_1, never, stuck_2],  # the probe, then the rest oldest first
+        [stuck_1, never, stuck_2],
     )
-    assert optimism_transaction_decoder.count_undecoded_transactions() == 2
-    with patch.object(inquirer, 'maybe_get_l1_fees', return_value=(l1_fee := 5000)):
-        assert set(optimism_transaction_decoder.get_and_decode_undecoded_transactions()) == set(stuck_hashes)  # noqa: E501
-
-    assert get_fee_events_and_undecoded_count() == ([(
-        tx_hash,
-        HistoryEventType.SPEND,
-        HistoryEventSubType.FEE,
-        from_wei(FVal(21000 + l1_fee)),  # gas_used * gas_price of the pending tx plus L1 fee
-    ) for tx_hash in stuck_hashes], 0)
+    assert get_decoded_fees() == {  # gas_used * gas_price of the pending txs plus the L1 fee
+        older: from_wei(FVal(21000 + 10)),
+        newer: from_wei(FVal(21000 + 10)),
+        newest: from_wei(FVal(21000 + 10)),
+        stuck_1: from_wei(FVal(21000 + l1_fee)),
+        stuck_2: from_wei(FVal(21000 + l1_fee)),
+    }
+    assert optimism_transaction_decoder.dbtx.count_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM),
+    ) == 1  # only the one that never resolves is left

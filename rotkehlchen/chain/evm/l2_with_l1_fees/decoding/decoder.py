@@ -120,26 +120,44 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             tx_hashes: list[EVMTxHash],
             send_ws_notifications: bool,
     ) -> None:
-        """Decode the transactions with an unresolved L1 fee after the rest, and probe with
-        the first of them before the others. The lookups of an outage all fail, so a failed
-        probe defers the remaining ones instead of repeating the lookup for each of them."""
-        unresolved = DBL2WithL1FeesTx(self.database).get_hashes_with_unresolved_l1_fee(
+        """Probe with one of the transactions whose L1 fee is unresolved before decoding the
+        others. The lookups of an outage all fail, so a failed probe defers the remaining
+        unresolved ones instead of repeating the lookup for each of them.
+
+        Decoding stays oldest first: the transactions older than the probe and the probe go
+        in one batch and the newer ones in another. Only the unresolved transactions left
+        out of the first batch are decoded later than their turn, since whether they are
+        decoded at all depends on the probe."""
+        unresolved_set = DBL2WithL1FeesTx(self.database).get_hashes_with_unresolved_l1_fee(
             chain_id=self.evm_inquirer.chain_id,
             tx_hashes=tx_hashes,
         )
-        if len(resolved := [x for x in tx_hashes if x not in unresolved]) != 0:
+        if len(unresolved := [x for x in tx_hashes if x in unresolved_set]) == 0:
             super()._decode_undecoded_transaction_hashes(
-                tx_hashes=resolved,
+                tx_hashes=tx_hashes,
                 send_ws_notifications=send_ws_notifications,
             )
+            return
 
-        unresolved_hashes = [x for x in tx_hashes if x in unresolved]
-        for batch in (unresolved_hashes[:1], unresolved_hashes[1:]):  # the probe, then the rest
-            if len(batch) == 0 or self._should_defer_unresolved_l1_fees():
-                break
+        probe = unresolved[self.database.pending_txs_tracker.next_l1_fee_probe_index(
+            blockchain=self.evm_inquirer.blockchain,
+            count=len(unresolved),
+        )]
+        probe_index = tx_hashes.index(probe)
+        first_batch = [x for x in tx_hashes[:probe_index] if x not in unresolved_set] + [probe]
+        super()._decode_undecoded_transaction_hashes(
+            tx_hashes=first_batch,
+            send_ws_notifications=send_ws_notifications,
+        )
+        # the unresolved ones older than the probe, which the first batch left out, and then
+        # everything newer than the probe
+        rest = [x for x in tx_hashes[:probe_index] if x in unresolved_set] + tx_hashes[probe_index + 1:]  # noqa: E501
+        if self._should_defer_unresolved_l1_fees():  # the probe failed
+            rest = [x for x in rest if x not in unresolved_set]
 
+        if len(rest) != 0:
             super()._decode_undecoded_transaction_hashes(
-                tx_hashes=batch,
+                tx_hashes=rest,
                 send_ws_notifications=send_ws_notifications,
             )
 
