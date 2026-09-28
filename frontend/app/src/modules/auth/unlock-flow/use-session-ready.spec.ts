@@ -10,16 +10,15 @@ const {
   refreshSupportedChains,
   showGetPremiumButton,
   showReleaseNotesRef,
-} = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+} = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
   return {
     fetchTransactionStatusSummary: vi.fn(),
-    lastLoginRef: vueRef(''),
+    lastLoginRef: ref<string>(''),
     navigateToDashboard: vi.fn(),
     refreshSupportedChains: vi.fn(),
     showGetPremiumButton: vi.fn(),
-    showReleaseNotesRef: vueRef(true),
+    showReleaseNotesRef: ref<boolean>(true),
   };
 });
 

@@ -4,12 +4,11 @@ import { shallowMount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from '@/modules/auth/login/LoginForm.vue';
 import LoginUnlockStage from '@/modules/auth/unlock-flow/LoginUnlockStage.vue';
-import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
+import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import LoginPage from './index.vue';
 
-const { applyUpdate, clearErrors, errorsRef, loadingRef, performInitialChecks, reset, skipUpdate, stateRef, upgradeVisibleRef, userLogin } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+const { applyUpdate, clearErrors, errorsRef, loadingRef, performInitialChecks, reset, skipUpdate, stateRef, upgradeVisibleRef, userLogin } = await vi.hoisted(async () => {
+  const { ref: vueRef } = await import('vue');
   return {
     applyUpdate: vi.fn().mockResolvedValue(undefined),
     clearErrors: vi.fn(),
@@ -18,7 +17,7 @@ const { applyUpdate, clearErrors, errorsRef, loadingRef, performInitialChecks, r
     performInitialChecks: vi.fn().mockResolvedValue(undefined),
     reset: vi.fn(),
     skipUpdate: vi.fn().mockResolvedValue(undefined),
-    stateRef: vueRef({ kind: 'idle' }),
+    stateRef: vueRef<UnlockState>({ kind: 'idle' }),
     upgradeVisibleRef: vueRef(false),
     userLogin: vi.fn().mockResolvedValue(undefined),
   };
@@ -36,15 +35,19 @@ vi.mock('@/pages/user/login/use-login-initial-checks', () => ({
   useLoginInitialChecks: vi.fn(() => ({ performInitialChecks })),
 }));
 
-vi.mock('@/modules/core/messaging/use-dynamic-messages', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- the factory is hoisted above the imports, so ref has to be required inside it
-  useDynamicMessages: vi.fn(() => ({ activeWelcomeMessages: require('vue').ref([]), fetchMessages: vi.fn(), welcomeHeader: require('vue').ref(undefined), welcomeMessage: require('vue').ref(undefined) })),
-}));
+vi.mock('@/modules/core/messaging/use-dynamic-messages', async () => {
+  const { ref } = await import('vue');
+  return {
+    useDynamicMessages: vi.fn(() => ({ activeWelcomeMessages: ref([]), fetchMessages: vi.fn(), welcomeHeader: ref(undefined), welcomeMessage: ref(undefined) })),
+  };
+});
 
-vi.mock('@/modules/core/messaging/use-update-message', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- the factory is hoisted above the imports, so ref has to be required inside it
-  useUpdateMessage: vi.fn(() => ({ showReleaseNotes: require('vue').ref(false) })),
-}));
+vi.mock('@/modules/core/messaging/use-update-message', async () => {
+  const { ref } = await import('vue');
+  return {
+    useUpdateMessage: vi.fn(() => ({ showReleaseNotes: ref(false) })),
+  };
+});
 
 vi.mock('@/modules/shell/app/use-backend-management', () => ({
   useBackendManagement: vi.fn(() => ({ backendChanged: vi.fn() })),

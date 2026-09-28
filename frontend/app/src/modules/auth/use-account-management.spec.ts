@@ -8,9 +8,8 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { Constraints } from '@/modules/core/common/constraints';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
-const { controllerErrors, controllerLoading, controllerState, reset, startCreate, startLogin, startAuto } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+const { controllerErrors, controllerLoading, controllerState, reset, startCreate, startLogin, startAuto } = await vi.hoisted(async () => {
+  const { ref: vueRef } = await import('vue');
   return {
     controllerErrors: vueRef([]),
     controllerLoading: vueRef(false),

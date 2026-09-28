@@ -3,10 +3,9 @@ import { ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-rows';
 
-const { count, recount } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
-  return { count: vueRef(0), recount: vi.fn() };
+const { count, recount } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { count: ref<number>(0), recount: vi.fn() };
 });
 
 vi.mock('@/modules/settings/accounting/rule/use-accounting-rule-conflicts-count', () => ({
