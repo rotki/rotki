@@ -9,7 +9,10 @@ if TYPE_CHECKING:
 
 @enter_exit_debug_log()
 def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
-    """Make legacy zero L1 fees repairable; only newly resolved zeros remain stored as zero."""
+    """Introduced at v1.44.1
+
+    Make legacy zero L1 fees repairable; only newly resolved zeros remain stored as zero.
+    """
     progress_handler.set_total_steps(1)
     progress_handler.new_step('Marking legacy zero L1 fees as unresolved')
     with rotki.data.db.user_write() as write_cursor:

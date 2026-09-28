@@ -6,7 +6,7 @@ from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.externalapis.utils import maybe_read_integer
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
@@ -171,6 +171,6 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Failed to get receipt data from {self.name} for tx {tx_hash!s}')
 
         try:
-            return maybe_read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
-        except DeserializationError as e:
-            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e
+            return read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
+        except (KeyError, DeserializationError) as e:
+            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501

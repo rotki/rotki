@@ -14,7 +14,7 @@ from rotkehlchen.externalapis.interface import (
     ExternalServiceWithApiKey,
     ExternalServiceWithRecommendedApiKey,
 )
-from rotkehlchen.externalapis.utils import maybe_read_integer
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
@@ -490,10 +490,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 if raw_tx.get('hash') != str(tx_hash):
                     continue  # skip unrelated txs for this account in the same block
 
-                return maybe_read_integer(data=raw_tx, key='L1FeesPaid', api=self.name)
-        except (DeserializationError, RemoteError) as e:
-            # If the query fails or L1FeesPaid is missing or invalid, log an error and return None.
-            msg = str(e)
+                return read_integer(data=raw_tx, key='L1FeesPaid', api=self.name)
+        except (KeyError, DeserializationError, RemoteError) as e:
+            # A missing L1FeesPaid is an unknown fee, not a zero fee, so it must raise as well.
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
         else:
             msg = 'requested tx was not returned'
 

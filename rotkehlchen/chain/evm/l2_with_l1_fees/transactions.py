@@ -103,8 +103,8 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
         if saved_fee is not None and isinstance(evm_tx, L2WithL1FeesTransaction):
             return evm_tx, tx_receipt
 
-        # A fresh query or receipt batch already tried to resolve the fee. Reuse that
-        # result during the next decode, then allow later attempts to repair missing fees.
+        # The receipt batch already asked the indexers for this fee. Reuse that result for
+        # the decode that follows it, then allow later attempts to repair the missing fee.
         if isinstance(evm_tx, L2WithL1FeesTransaction):
             if tx_hash in self._fresh_unresolved_fee_hashes:
                 self._fresh_unresolved_fee_hashes.remove(tx_hash)
@@ -116,13 +116,19 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                 block_number=evm_tx.block_number,
             )) is None:
                 # Old rows do not retain raw receipt fields. If indexers cannot repair one,
-                # retry the direct transaction path, which can read l1Fee from an RPC receipt.
+                # read l1Fee from a freshly queried receipt. Only the receipt is fetched since
+                # deserializing the whole transaction would ask the indexers again.
                 try:
-                    queried_tx, _ = self.evm_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
-                    if isinstance(queried_tx, L2WithL1FeesTransaction):
-                        l1_fee = queried_tx.l1_fee
-                except RemoteError as e:
-                    log.warning('Could not repair L1 fee for %s from a receipt: %s', tx_hash, e)
+                    l1_fee = read_integer(
+                        data=self.evm_inquirer.get_transaction_receipt(tx_hash=tx_hash),
+                        key='l1Fee',
+                    )
+                except (RemoteError, KeyError, DeserializationError) as e:
+                    log.warning(
+                        'Could not repair L1 fee for %s from a receipt due to %r',
+                        tx_hash,
+                        e,
+                    )
 
             if l1_fee is not None:
                 with self.database.user_write() as write_cursor:
@@ -137,9 +143,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                     tx_hash,
                     self.evm_inquirer.chain_name,
                 )
-        else:
-            if saved_fee is None:
-                self._fresh_unresolved_fee_hashes.add(tx_hash)
+        else:  # freshly queried, so the fee was already looked up during this call
             l1_fee = None if saved_fee is None else int(saved_fee)
 
         return L2WithL1FeesTransaction(

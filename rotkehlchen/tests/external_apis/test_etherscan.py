@@ -22,7 +22,7 @@ from rotkehlchen.externalapis.etherscan import (
 )
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
@@ -511,3 +511,37 @@ def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> No
             action='tokentx',
             options={'address': make_evm_address()},
         )
+
+
+@pytest.mark.parametrize(('extra_fields', 'expected_fee'), [
+    ({'L1FeesPaid': '12345'}, 12345),
+    ({'L1FeesPaid': '0'}, 0),
+    ({}, None),
+])
+def test_get_l1_fee_missing_key_raises(
+        temp_etherscan: Etherscan,
+        extra_fields: dict[str, str],
+        expected_fee: int | None,
+) -> None:
+    """A txlist entry without L1FeesPaid must raise instead of being reported as a zero fee."""
+    tx_hash, account = make_evm_tx_hash(), make_evm_address()
+    with patch.object(
+        temp_etherscan,
+        '_query',
+        return_value=[{'hash': str(make_evm_tx_hash())}, {'hash': str(tx_hash), **extra_fields}],
+    ):
+        if expected_fee is None:
+            with pytest.raises(RemoteError, match="missing key 'L1FeesPaid'"):
+                temp_etherscan.get_l1_fee(
+                    chain_id=ChainID.OPTIMISM,
+                    account=account,
+                    tx_hash=tx_hash,
+                    block_number=1,
+                )
+        else:
+            assert temp_etherscan.get_l1_fee(
+                chain_id=ChainID.OPTIMISM,
+                account=account,
+                tx_hash=tx_hash,
+                block_number=1,
+            ) == expected_fee

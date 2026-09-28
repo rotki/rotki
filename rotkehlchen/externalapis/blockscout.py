@@ -15,7 +15,7 @@ from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeNotCovered, R
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
-from rotkehlchen.externalapis.utils import get_earliest_ts, maybe_read_integer
+from rotkehlchen.externalapis.utils import get_earliest_ts, read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
@@ -837,6 +837,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             block_number: int,
     ) -> int:
         """Query the L1 fee for the given tx hash from the v2 transactions endpoint.
+        Scroll nests the fee under a `scroll` key while OP stack chains return it at the top.
         May raise:
         - RemoteError if unable to get the L1 fee amount or query fails.
         """
@@ -846,6 +847,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             encoded_args=str(tx_hash),
         )
         try:
-            return maybe_read_integer(data=response, key='l1_fee', api=self.name)
-        except DeserializationError as e:
-            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e
+            return read_integer(
+                data=response['scroll'] if chain_id == ChainID.SCROLL else response,
+                key='l1_fee',
+                api=self.name,
+            )
+        except (KeyError, TypeError, DeserializationError) as e:
+            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501
