@@ -5,9 +5,8 @@ import { type EffectScope, effectScope } from 'vue';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { createAutoLogin } from './use-auto-login';
 
-const { checkIfPasswordConfirmationNeeded, confirmPassword, controllerStateRef, lastLoginRef, needsPasswordConfirmationRef, resetSessionBackend, startAuto } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+const { checkIfPasswordConfirmationNeeded, confirmPassword, controllerStateRef, lastLoginRef, needsPasswordConfirmationRef, resetSessionBackend, startAuto } = await vi.hoisted(async () => {
+  const { ref: vueRef } = await import('vue');
   return {
     checkIfPasswordConfirmationNeeded: vi.fn(),
     confirmPassword: vi.fn(),

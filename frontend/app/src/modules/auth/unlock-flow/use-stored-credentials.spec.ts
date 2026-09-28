@@ -4,9 +4,8 @@ import { none, some } from 'plainfp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStoredCredentials } from './use-stored-credentials';
 
-const { getPassword, isPackagedRef, lastLoginRef, savedRememberPasswordRef } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+const { getPassword, isPackagedRef, lastLoginRef, savedRememberPasswordRef } = await vi.hoisted(async () => {
+  const { ref: vueRef } = await import('vue');
   return {
     getPassword: vi.fn(),
     isPackagedRef: vueRef(false),

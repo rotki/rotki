@@ -14,11 +14,10 @@ vi.mock('vue-router', () => ({
   useRouter: (): { replace: typeof replace } => ({ replace }),
 }));
 
-const { count, refresh } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
-  const { ref: vueRef } = require('vue');
+const { count, refresh } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
   return {
-    count: vueRef(0),
+    count: ref<number>(0),
     refresh: vi.fn<() => Promise<Result<number, RequestError>>>(),
   };
 });

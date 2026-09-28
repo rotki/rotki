@@ -652,6 +652,27 @@ without returning it, is still yours to clean up.
   assert(!result.ok);                          // fails loudly, and narrows to the error variant
   expect(result.error.type).toBe('not-found');
   ```
+- **Values a `vi.mock` factory needs come from an async `vi.hoisted`**, imported with `await import`.
+  `vi.hoisted` runs before the file's imports, so a `ref` or anything else it builds cannot come from
+  a top-level import. Never reach for `require` with an `eslint-disable` for
+  `@typescript-eslint/no-require-imports` instead: specs are ESM, top-level `await` works, and the
+  import stays typed. A value built inside a `vi.mock` factory works the same way: make the factory
+  `async` and `await import` there. A type-only import at the top of the file can still annotate
+  these values (`ref<UnlockState>(...)`), since it is erased before anything runs.
+  ```typescript
+  // ✅ Correct
+  const { count, refresh } = await vi.hoisted(async () => {
+    const { ref } = await import('vue');
+    return { count: ref<number>(0), refresh: vi.fn<() => Promise<void>>() };
+  });
+
+  // ❌ Incorrect
+  const { count } = vi.hoisted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- ...
+    const { ref } = require('vue');
+    return { count: ref(0) };
+  });
+  ```
 - **Shared test helpers** live in `frontend/app/tests/unit/` and are imported through the `@test/*`
   alias (defined in `tsconfig.vitest.json`):
   - `createMock<T>(overrides?)` from `@test/utils/create-mock` is the generic stubber. Use it for
