@@ -3426,11 +3426,6 @@
     "tooltip": "Уведомления"
   },
   "notification_messages": {
-    "accounting_rule_conflict": {
-      "action": "Разрешить конфликты",
-      "message": "Обнаружены конфликты для {conflicts} правил(а) учета",
-      "title": "Конфликт правил учета"
-    },
     "address_migration": {
       "message": "Следующий адрес был добавлен в {chain}: {addresses}|Следующие адреса были добавлены в {chain}: {addresses}",
       "title": "Адрес был добавлен в {chain}|Адреса были добавлены в {chain}"
@@ -3476,11 +3471,6 @@
     "snapshot_failed": {
       "message": "Не удалось сохранить снимок баланса в {location}. {error}",
       "title": "Ошибка снимка баланса"
-    },
-    "solana_tokens_migration": {
-      "action": "Мигрировать токены",
-      "message": "Токены с этими идентификаторами не имеют некоторых полей и должны быть мигрированы вручную:\n {tokens}",
-      "title": "Миграция токенов Solana"
     }
   },
   "notification_popup": {

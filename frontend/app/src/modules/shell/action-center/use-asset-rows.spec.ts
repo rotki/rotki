@@ -1,5 +1,6 @@
 import type { EffectScope } from 'vue';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 
 const missingPricesCount = ref<number>(0);
@@ -30,6 +31,7 @@ function assetRows(): ReturnType<typeof useAssetRows> {
 
 describe('modules/shell/action-center/use-asset-rows', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     set(missingPricesCount, 0);
     set(mappingsCount, 0);
@@ -66,5 +68,25 @@ describe('modules/shell/action-center/use-asset-rows', () => {
 
     expect(row.count).toBe(2);
     expect(row.target).toEqual({ kind: 'route', to: { name: '/asset-manager/more/missing-mappings/' } });
+  });
+
+  it('should count the Solana tokens left to migrate, and drop one as soon as it is migrated', () => {
+    const store = useSolanaTokenMigrationStore();
+    store.setIdentifiers(['BONK', 'JUP']);
+    const { rows } = assetRows();
+
+    const count = (): number | undefined => get(rows).find(({ id }) => id === 'solana-token-migration')?.count;
+    expect(count()).toBe(2);
+
+    store.removeIdentifier('BONK');
+
+    expect(count()).toBe(1);
+  });
+
+  it('should lead the Solana row to the migration page', () => {
+    const row = get(assetRows().rows).find(({ id }) => id === 'solana-token-migration');
+    assert(row);
+
+    expect(row.target).toEqual({ kind: 'route', to: { name: '/asset-manager/more/solana-token-migration/' } });
   });
 });

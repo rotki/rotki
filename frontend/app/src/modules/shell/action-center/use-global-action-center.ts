@@ -7,10 +7,12 @@ import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { toGlobalTarget } from '@/modules/history/events/actions-center/history-issue-routes';
 import { useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
 import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
+import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-rows';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
+import { useGnosisPaySafeRows } from '@/modules/shell/action-center/use-gnosis-pay-safe-rows';
 import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-sync-row';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
 
@@ -56,6 +58,12 @@ function isRaised(item: ActionItem): boolean {
 }
 
 /**
+ * The re-scan of a source that history work cannot change, so it is read only on the first scan and
+ * when the user asks for a re-scan.
+ */
+async function noRescan(): Promise<void> {}
+
+/**
  * The action center for the whole app: every module's rows in one panel, grouped by module.
  *
  * @remarks
@@ -72,6 +80,8 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const integrationRows = useIntegrationRows();
   const chainRows = useChainRows();
   const { refresh: refreshAssetRows, rows: assetRows } = useAssetRows();
+  const { refresh: refreshAccountingRows, rows: accountingRows } = useAccountingRows();
+  const { refresh: refreshGnosisPaySafeRows, rows: gnosisPaySafeRows } = useGnosisPaySafeRows();
 
   const route = useRoute();
   const historyPageQuery = computed<LocationQuery | undefined>(() => (route.name === '/history/events/' ? route.query : undefined));
@@ -90,9 +100,9 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const { onSnoozeChange, withSnooze } = useActionCenterSnooze();
 
   const groups = computed<ActionCenterSection[]>(() => [
-    { id: 'history', items: [...get(historySyncRow), ...get(historyRows)], title: t('action_center.sections.history') },
+    { id: 'history', items: [...get(historySyncRow), ...get(historyRows), ...get(accountingRows)], title: t('action_center.sections.history') },
     { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
-    { id: 'integrations', items: get(integrationRows), title: t('action_center.sections.integrations') },
+    { id: 'integrations', items: [...get(integrationRows), ...get(gnosisPaySafeRows)], title: t('action_center.sections.integrations') },
     { id: 'assets', items: get(assetRows), title: t('action_center.sections.assets') },
   ].map(group => ({ ...group, items: group.items.map(withSnooze) })));
 
@@ -103,6 +113,8 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     sources: [
       { loading: history.refreshing, refresh: history.refreshAll, rescan: history.rescan },
       { refresh: refreshAssetRows },
+      { refresh: refreshAccountingRows, rescan: noRescan },
+      { refresh: refreshGnosisPaySafeRows, rescan: noRescan },
     ],
   });
 

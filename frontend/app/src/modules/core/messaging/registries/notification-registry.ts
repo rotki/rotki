@@ -41,7 +41,7 @@ export function createNotificationRegistry(
     [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(),
     [SocketMessageType.ORACLE_PENALIZED]: createOraclePenalizedHandler(t, router),
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
-    [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
+    [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(),
     [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(),
   };

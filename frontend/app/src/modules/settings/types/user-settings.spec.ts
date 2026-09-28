@@ -105,7 +105,6 @@ describe('user-types', () => {
       autoDetectTokensOnLogin: false,
       autoRerunOnEdit: false,
       lastAutoDetectAt: 0,
-      gnosisPaySafeMigrationLastNotified: 0,
       gnosisPaySafeMigrationNeverNotify: false,
       answeredSuggestions: [],
     };

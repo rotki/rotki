@@ -91,7 +91,6 @@ export const frontendRegistry = {
       titleKey: msg.$t('explorers.title'),
     },
   }),
-  gnosisPaySafeMigrationLastNotified: frontend('gnosisPaySafeMigrationLastNotified', { userFacing: false }),
   gnosisPaySafeMigrationNeverNotify: frontend('gnosisPaySafeMigrationNeverNotify'),
   graphZeroBased: frontend('graphZeroBased', {
     anchor: SettingsHighlightIds.GRAPH_BASIS,

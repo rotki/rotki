@@ -2397,11 +2397,6 @@
     }
   },
   "notification_messages": {
-    "accounting_rule_conflict": {
-      "action": "Résoudre les conflits",
-      "message": "Conflits détectés pour la(les) règle(s) de comptabilisation {conflicts}",
-      "title": "Conflit de règle de comptabilisation"
-    },
     "address_migration": {
       "message": "L'adresse suivante a été ajoutée à {chain}: {addresses}|Les adresses suivantes ont été ajoutées à {chain}: {addresses}",
       "title": "Adresse ajoutée à {chain}|Adresses ajoutées à {chain}"

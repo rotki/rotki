@@ -1,19 +1,19 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { GnosisPaySafeMigration, GnosisPayUntrackedSafe } from '@/modules/integrations/gnosis-pay/types';
-import { type Account, Blockchain, NotificationCategory, Priority, Severity } from '@rotki/common';
-import dayjs from 'dayjs';
+import type { GnosisPayUntrackedSafe } from '@/modules/integrations/gnosis-pay/types';
+import { type Account, Blockchain } from '@rotki/common';
+import { pipe } from 'plainfp';
+import { getOr } from 'plainfp/option';
+import { flatMap, fromAsync, match } from 'plainfp/result-async';
 import { msg } from '@/message-key';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { errorOf } from '@/modules/core/tasks/task-result';
+import { findUntrackedSafe, readSafeAddition } from '@/modules/integrations/gnosis-pay/core/safe-migration';
 import { useGnosisPaySiweApi } from '@/modules/integrations/gnosis-pay/use-gnosis-pay-api';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
-const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 const GNOSIS_PAY_SERVICE = 'gnosis_pay';
 
 interface UseGnosisPaySafeMigrationReturn {
@@ -24,14 +24,16 @@ interface UseGnosisPaySafeMigrationReturn {
   adding: Ref<boolean>;
   checkMigration: () => Promise<void>;
   addMissingSafe: () => Promise<void>;
-  checkAndNotify: () => Promise<void>;
 }
 
 /**
  * Consumes the backend `/services/gnosispay/migration` endpoint, which reports the
  * Safe address a user is missing after the Gnosis Pay Safe security migration (when
- * exactly one of the two migration Safes is tracked). The request is skipped unless
- * Gnosis Pay is configured, and it is premium-gated, so a failed fetch is swallowed.
+ * exactly one of the two migration Safes is tracked).
+ *
+ * @remarks
+ * Shared by the Gnosis Pay card and the action center row, so both show the same Safe. It belongs to
+ * the logged in user, so it is cleared on logout.
  */
 export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPaySafeMigrationReturn => {
   const untrackedSafe = ref<GnosisPayUntrackedSafe>();
@@ -52,11 +54,9 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   const { t } = useI18n({ useScope: 'global' });
   const { fetchGnosisPaySafeMigration } = useGnosisPaySiweApi();
   const { addAccounts } = useBlockchainAccountManagement();
-  const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
-  const { updateFrontendSetting } = useSettingsOperations();
-  const gnosisPaySafeMigrationNeverNotify = useSetting('gnosisPaySafeMigrationNeverNotify');
-  const gnosisPaySafeMigrationLastNotified = useSetting('gnosisPaySafeMigrationLastNotified');
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { getApiKey, keys, load } = useExternalApiKeys();
+  const { logged } = storeToRefs(useSessionAuthStore());
 
   const isGnosisPayConfigured = async (): Promise<boolean> => {
     if (!isDefined(keys)) // external service keys not loaded yet (e.g. right after login)
@@ -66,27 +66,24 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   };
 
   /**
-   * Looks for a safe migration the user has not tracked yet.
+   * Looks for a Safe the migration left untracked.
    *
    * @remarks
-   * The request is premium-gated, so it is not made at all unless Gnosis Pay is configured. A user
-   * without it would otherwise be told about a premium requirement for a service they do not use.
+   * A failed request means nothing to suggest, since not being premium fails it too, so it is only
+   * logged at debug level.
    */
   const checkMigration = async (): Promise<void> => {
-    if (!await isGnosisPayConfigured()) {
-      set(untrackedSafe, undefined);
-      return;
-    }
-
-    try {
-      const migration: GnosisPaySafeMigration = await fetchGnosisPaySafeMigration();
-      set(untrackedSafe, migration.untrackedAddresses[0]);
-    }
-    catch (error: unknown) {
-      // Not premium / remote error: nothing to suggest.
-      logger.debug(`Failed to fetch Gnosis Pay Safe migration: ${getErrorMessage(error)}`);
-      set(untrackedSafe, undefined);
-    }
+    const safe = await pipe(
+      findUntrackedSafe({ fetchMigration: fetchGnosisPaySafeMigration, isConfigured: isGnosisPayConfigured }),
+      match({
+        err: (error: unknown): GnosisPayUntrackedSafe | undefined => {
+          logger.debug(`Failed to fetch Gnosis Pay Safe migration: ${getErrorMessage(error)}`);
+          return undefined;
+        },
+        ok: found => getOr(found, undefined),
+      }),
+    );
+    set(untrackedSafe, safe);
   };
 
   const addMissingSafe = async (): Promise<void> => {
@@ -95,88 +92,39 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
       return;
 
     set(adding, true);
-    try {
-      const summary = await addAccounts(Blockchain.GNOSIS, {
+    const title = t('external_services.gnosispay.safe_migration.title');
+    await pipe(
+      fromAsync(async () => addAccounts(Blockchain.GNOSIS, {
         payload: [{
           address: safe.address,
           label: t('external_services.gnosispay.safe_migration.account_label'),
           tags: null,
         }],
-      }, { wait: true });
+      }, { wait: true }), getErrorMessage),
+      flatMap(async summary => readSafeAddition(summary)),
+      match({
+        err: (error: string): void => {
+          showErrorMessage(title, t('external_services.gnosispay.safe_migration.add_error', { error }));
+        },
+        ok: (added): void => {
+          if (!added)
+            return;
+          set(untrackedSafe, undefined);
+          showSuccessMessage(title, t('external_services.gnosispay.safe_migration.add_success', { address: safe.address }));
+        },
+      }),
+    );
+    set(adding, false);
+  };
 
-      if (summary.added.length === 0) {
-        if (summary.failed.length > 0) {
-          showErrorMessage(
-            t('external_services.gnosispay.safe_migration.title'),
-            t('external_services.gnosispay.safe_migration.add_error', {
-              error: errorOf(summary.failed[0].error).message,
-            }),
-          );
-        }
-        return;
-      }
-
+  watch(logged, (isLogged) => {
+    if (!isLogged)
       set(untrackedSafe, undefined);
-      showSuccessMessage(
-        t('external_services.gnosispay.safe_migration.title'),
-        t('external_services.gnosispay.safe_migration.add_success', { address: safe.address }),
-      );
-    }
-    catch (error: unknown) {
-      showErrorMessage(
-        t('external_services.gnosispay.safe_migration.title'),
-        t('external_services.gnosispay.safe_migration.add_error', { error: getErrorMessage(error) }),
-      );
-    }
-    finally {
-      set(adding, false);
-    }
-  };
-
-  const notifyIfNeeded = async (): Promise<void> => {
-    const safe = get(untrackedSafe);
-    if (!safe || get(gnosisPaySafeMigrationNeverNotify))
-      return;
-
-    const lastNotified = get(gnosisPaySafeMigrationLastNotified);
-    const now = dayjs().unix();
-    if (lastNotified !== 0 && (now - lastNotified) <= WEEK_IN_SECONDS)
-      return;
-
-    notify({
-      action: [
-        {
-          action: async (): Promise<void> => addMissingSafe(),
-          label: t('external_services.gnosispay.safe_migration.add_action'),
-        },
-        {
-          action: async (): Promise<void> => {
-            await updateFrontendSetting({ gnosisPaySafeMigrationNeverNotify: true });
-          },
-          label: t('external_services.gnosispay.safe_migration.never_action'),
-        },
-      ],
-      category: NotificationCategory.DEFAULT,
-      message: safe.type === 'new'
-        ? t('notification_messages.gnosis_pay_safe_migration.message_new', { address: safe.address })
-        : t('notification_messages.gnosis_pay_safe_migration.message_old', { address: safe.address }),
-      priority: Priority.HIGH,
-      severity: Severity.WARNING,
-      title: t('notification_messages.gnosis_pay_safe_migration.title'),
-    });
-
-    await updateFrontendSetting({ gnosisPaySafeMigrationLastNotified: now });
-  };
-
-  const checkAndNotify = async (): Promise<void> => {
-    await checkMigration();
-    await notifyIfNeeded();
-  };
+  });
 
   return {
     addMissingSafe,
     adding,
-    checkAndNotify,
     checkMigration,
     hasUntrackedSafe,
     safeMigrationKeypath,
