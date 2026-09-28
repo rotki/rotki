@@ -12,7 +12,6 @@ function validator(index: number): EthereumValidator {
     index,
     publicKey: '0xabc',
     status: 'active',
-    type: 'validator',
     value: bigNumberify(64000),
   };
 }

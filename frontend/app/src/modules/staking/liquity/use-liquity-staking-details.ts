@@ -5,8 +5,7 @@ import type {
   LiquityStatisticDetails,
 } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import {
   aggregateEntries,
@@ -26,7 +25,7 @@ interface UseLiquityStakingDetailsReturn {
   availableAddresses: ComputedRef<string[]>;
   liquityHistoricPriceStatus: ReturnType<ReturnType<typeof useHistoricCachePriceStore>['getProtocolStatsPriceQueryStatus']>;
   loading: ComputedRef<boolean>;
-  modelSelectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
+  modelSelectedAccounts: Ref<AddressAccount[]>;
   proxyInformation: ComputedRef<Record<string, string[]> | null>;
   stakingQueryStatus: ComputedRef<ActivitySteps | undefined>;
 }
@@ -36,7 +35,7 @@ export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
   const { useActivity, useIsActive } = useTaskCenter();
   const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
-  const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+  const modelSelectedAccounts = ref<AddressAccount[]>([]);
 
   const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKE);
   const stakingQueryStatus = computed<ActivitySteps | undefined>(() => get(stakingActivity)?.steps);
@@ -44,13 +43,10 @@ export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
   const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
 
   const selectedAddresses = computed<string[]>(() =>
-    get(modelSelectedAccounts).map(account => getAccountAddress(account)));
+    get(modelSelectedAccounts).map(({ address }) => address));
 
   const accountFilter = computed<Account[]>(() =>
-    get(modelSelectedAccounts).map(account => ({
-      address: getAccountAddress(account),
-      chain: account.chain,
-    })));
+    get(modelSelectedAccounts).map(({ address, chain }) => ({ address, chain })));
 
   const aggregatedStake = computed<LiquityStakingDetailEntry | null>(() =>
     aggregateEntries(get(staking), get(selectedAddresses)));

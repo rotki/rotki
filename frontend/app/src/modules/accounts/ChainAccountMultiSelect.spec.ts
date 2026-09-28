@@ -16,19 +16,21 @@ vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
 
 function addressAccount(chain: string, address: string, label?: string): BlockchainAccount {
   return {
+    address,
     chain,
-    data: { type: 'address', address },
+    kind: 'address',
     label,
-    nativeAsset: 'ETH',
   };
 }
 
 function validatorAccount(chain: string, publicKey: string, index: number, label?: string): BlockchainAccount {
   return {
     chain,
-    data: { type: 'validator', publicKey, index, status: 'active' },
+    index,
+    kind: 'validator',
     label,
-    nativeAsset: 'ETH',
+    publicKey,
+    status: 'active',
   };
 }
 

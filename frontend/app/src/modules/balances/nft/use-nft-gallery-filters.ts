@@ -1,8 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { assert, BigNumber } from '@rotki/common';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 
 const NFT_SORT_KEYS = ['name', 'price', 'collection'] as const;
@@ -38,7 +37,7 @@ interface UseNftGalleryFiltersReturn {
   availableAddresses: ComputedRef<string[]>;
   collections: ComputedRef<string[]>;
   items: ComputedRef<GalleryNft[]>;
-  modelSelectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
+  modelSelectedAccounts: Ref<AddressAccount[]>;
   modelSelectedCollection: Ref<string | undefined>;
   modelSortBy: Ref<'name' | 'price' | 'collection'>;
   modelSortDescending: Ref<boolean>;
@@ -49,7 +48,7 @@ export function useNftGalleryFilters(
   nfts: ComputedRef<GalleryNft[]>,
   perAccount: MaybeRefOrGetter<Nfts | null>,
 ): UseNftGalleryFiltersReturn {
-  const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+  const modelSelectedAccounts = ref<AddressAccount[]>([]);
   const modelSelectedCollection = ref<string | undefined>();
   const modelSortBy = shallowRef<'name' | 'price' | 'collection'>('name');
   const modelSortDescending = shallowRef<boolean>(false);
@@ -77,7 +76,7 @@ export function useNftGalleryFilters(
     if (hasAccounts || selection) {
       return allNfts
         .filter(({ address, collection }) => {
-          const sameAccount = hasAccounts ? accounts.find(account => getAccountAddress(account) === address) : true;
+          const sameAccount = hasAccounts ? accounts.find(account => account.address === address) : true;
           const sameCollection = selection ? selection === collection?.name : true;
           return sameAccount && sameCollection;
         })

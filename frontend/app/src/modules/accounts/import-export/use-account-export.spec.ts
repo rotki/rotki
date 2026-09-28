@@ -53,21 +53,13 @@ describe('useAccountExport', () => {
       tags,
     };
 
-    const chainInfo = {
-      chain: Blockchain.ETH,
-      nativeAsset: 'ETH',
-    };
-
     updateAccounts(Blockchain.ETH, [
-      createAccount(account, chainInfo),
-      createAccount(secondAccount, chainInfo),
+      createAccount(account, Blockchain.ETH),
+      createAccount(secondAccount, Blockchain.ETH),
     ]);
 
     updateAccounts(Blockchain.OPTIMISM, [
-      createAccount(account, {
-        chain: Blockchain.OPTIMISM,
-        nativeAsset: 'ETH',
-      }),
+      createAccount(account, Blockchain.OPTIMISM),
     ]);
 
     const { exportAccounts } = useAccountExport();
@@ -88,24 +80,19 @@ describe('useAccountExport', () => {
   it('should export validators', () => {
     const { updateAccounts } = useBlockchainAccountsStore();
 
-    const chainInfo = {
-      chain: Blockchain.ETH2,
-      nativeAsset: 'ETH',
-    };
-
     updateAccounts(Blockchain.ETH2, [
       createValidatorAccount({
         index: INDEX_1,
         ownershipPercentage: '22',
         publicKey: VALIDATOR_1,
         status: 'active',
-      }, chainInfo),
+      }, Blockchain.ETH2),
       createValidatorAccount({
         index: INDEX_2,
         ownershipPercentage: '44',
         publicKey: VALIDATOR_2,
         status: 'exited',
-      }, chainInfo),
+      }, Blockchain.ETH2),
     ]);
 
     const { exportAccounts } = useAccountExport();

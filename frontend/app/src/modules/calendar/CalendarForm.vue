@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { useTemplateRef } from 'vue';
-import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import CalendarColorInput from '@/modules/calendar/CalendarColorInput.vue';
@@ -46,20 +46,20 @@ const form = useModelForm<CalendarEvent>({
  * The selector works in accounts while the event stores an address and a chain, so this is a view
  * over two state fields rather than a field of its own.
  */
-const accounts = computed<BlockchainAccount<AddressData>[]>({
+const accounts = computed<AddressAccount[]>({
   get: () => {
     const found = Object.values(get(accountsPerChain))
       .flatMap(x => x)
-      .filter(hasAccountAddress)
+      .filter(isAddressAccount)
       .find(item =>
-        getAccountAddress(item) === form.state.address
+        item.address === form.state.address
         && (!form.state.blockchain || form.state.blockchain === item.chain));
 
     return found ? [found] : [];
   },
-  set: (value: BlockchainAccount<AddressData>[]) => {
+  set: (value: AddressAccount[]) => {
     const account = value[0];
-    form.state.address = account ? getAccountAddress(account) : undefined;
+    form.state.address = account?.address;
     form.state.blockchain = account && isBlockchain(account.chain) ? account.chain : undefined;
   },
 });

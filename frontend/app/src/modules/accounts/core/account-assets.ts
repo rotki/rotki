@@ -1,6 +1,6 @@
+import type { AssetBalance, Balance } from '@rotki/common';
 import type { BlockchainAccountBalance, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
-import { type AssetBalance, type Balance, Zero } from '@rotki/common';
 import { type AccountGroupId, isXpubAccount } from '@/modules/accounts/account-utils';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum } from '@/modules/core/common/data/calculation';
@@ -49,17 +49,15 @@ export function topTokens(balances: readonly AssetBalance[]): AssetBalance[] {
  * is no per-token list to show. Any other row returns `undefined`.
  */
 export function xpubNativeHolding(row: BlockchainAccountBalance): AssetBalance | undefined {
-  if (!isXpubAccount(row) || !row.nativeAsset)
+  if (!isXpubAccount(row))
     return undefined;
-  return { amount: row.amount ?? Zero, asset: row.nativeAsset, value: row.value };
+  return { amount: row.amount, asset: row.nativeAsset, value: row.value };
 }
 
 /** The accounts behind each group, keyed by group id, so a group's members are found without a scan. */
 export function accountsByGroup(accounts: readonly BlockchainAccountWithBalance[]): Map<AccountGroupId, BlockchainAccountWithBalance[]> {
   const byGroup = new Map<AccountGroupId, BlockchainAccountWithBalance[]>();
   for (const account of accounts) {
-    if (!account.groupId)
-      continue;
     const members = byGroup.get(account.groupId);
     if (members)
       members.push(account);

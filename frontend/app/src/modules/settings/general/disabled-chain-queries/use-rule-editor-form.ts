@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { Rule, RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
-import { isValidatorAccount } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 
 type RuleKind = 'chain' | 'address';
 
@@ -58,9 +58,9 @@ function buildAddressOptions(
   const byAddress = new Map<string, AddressEntry>();
   for (const [chain, list] of Object.entries(accounts)) {
     for (const account of list) {
-      if (isValidatorAccount(account) || account.data.type !== 'address')
+      if (!isAddressAccount(account))
         continue;
-      const addr = account.data.address;
+      const addr = account.address;
       let entry = byAddress.get(addr);
       if (entry === undefined) {
         entry = { chains: new Set(), labels: new Set() };

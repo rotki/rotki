@@ -22,10 +22,10 @@ vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
 
 function trackAccount(overrides: Record<string, unknown> = {}): void {
   useBlockchainAccountsStore().updateAccounts('eth', [{
+    address: '0xA',
     chain: 'eth',
-    data: { address: '0xA', type: 'address' },
+    kind: 'address',
     label: 'Main wallet',
-    nativeAsset: 'ETH',
     tags: ['defi'],
     ...overrides,
   }]);

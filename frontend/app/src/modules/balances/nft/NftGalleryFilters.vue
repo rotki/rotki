@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import NftCollectionSelector from '@/modules/balances/nft/NftCollectionSelector.vue';
@@ -10,7 +10,7 @@ interface Props {
   collections: string[];
 }
 
-const selectedAccounts = defineModel<BlockchainAccount<AddressData>[]>('selectedAccounts', { required: true });
+const selectedAccounts = defineModel<AddressAccount[]>('selectedAccounts', { required: true });
 
 const selectedCollection = defineModel<string | undefined>('selectedCollection', { required: true });
 

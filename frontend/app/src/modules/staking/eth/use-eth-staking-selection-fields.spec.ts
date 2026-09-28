@@ -13,14 +13,11 @@ const WITHDRAWAL_ADDRESS = '0x347AC2e04dD10cBF70F65c058Ac3a078D4D9E0e5';
 function validatorAccount(index: number, withdrawalAddress?: string): BlockchainAccount {
   return {
     chain: Blockchain.ETH2,
-    data: {
-      index,
-      publicKey: `0xpub${index}`,
-      status: 'active',
-      type: 'validator',
-      withdrawalAddress,
-    },
-    nativeAsset: 'ETH',
+    index,
+    kind: 'validator',
+    publicKey: `0xpub${index}`,
+    status: 'active',
+    withdrawalAddress,
   };
 }
 

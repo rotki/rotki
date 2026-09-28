@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import dayjs from 'dayjs';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import CalendarDateNavigator from '@/modules/calendar/CalendarDateNavigator.vue';
@@ -17,7 +17,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+const accounts = ref<AddressAccount[]>([]);
 
 const {
   dateFormat,

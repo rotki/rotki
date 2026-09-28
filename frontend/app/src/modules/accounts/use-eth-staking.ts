@@ -4,6 +4,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -115,9 +116,9 @@ export function useEthStaking(): UseEthStakingReturn {
       const success = await deleteEth2ValidatorsCaller(pendingRemoval);
       if (success) {
         if (get(premium)) {
-          const remainingValidators = getAccounts(Blockchain.ETH2).filter(
-            ({ data }) => 'publicKey' in data && !validators.includes(data.publicKey),
-          );
+          const remainingValidators = getAccounts(Blockchain.ETH2)
+            .filter(isValidatorAccount)
+            .filter(account => !validators.includes(account.publicKey));
           updateAccounts(Blockchain.ETH2, remainingValidators);
         }
         else {

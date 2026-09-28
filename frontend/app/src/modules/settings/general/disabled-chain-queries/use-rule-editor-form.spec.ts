@@ -12,18 +12,20 @@ const ADDR_B = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';
 
 function addressAccount(chain: string, address: string, label?: string): BlockchainAccount {
   return {
+    address,
     chain,
-    data: { address, type: 'address' },
+    kind: 'address',
     label,
-    nativeAsset: 'ETH',
   };
 }
 
 function validatorAccount(chain: string, publicKey: string): BlockchainAccount {
   return {
     chain,
-    data: { index: 1, publicKey, status: 'active', type: 'validator' },
-    nativeAsset: 'ETH',
+    index: 1,
+    kind: 'validator',
+    publicKey,
+    status: 'active',
   };
 }
 

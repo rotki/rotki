@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { AccountDataRow } from '../../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, isAddressAccount } from '@/modules/accounts/account-utils';
 import TokenDetection from '@/modules/accounts/blockchain/TokenDetection.vue';
 import AccountSkipQueriesToggle from '@/modules/accounts/table/components/table/AccountSkipQueriesToggle.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -55,7 +55,7 @@ const skipChains = computed<string[]>(() => row.type === 'group' ? row.chains : 
  * A validator row carries a public key and an xpub group its xpub, neither of which the backend
  * matches a rule against.
  */
-const canSkipQueries = computed<boolean>(() => row.data.type === 'address' && get(skipChains).length > 0);
+const canSkipQueries = computed<boolean>(() => isAddressAccount(row) && get(skipChains).length > 0);
 
 function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
   if (row.type === 'group')

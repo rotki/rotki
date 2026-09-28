@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { ZodType } from 'zod';
-import type { BlockchainAccount, ValidatorData } from '@/modules/accounts/blockchain-accounts';
+import type { ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, toHumanReadable } from '@rotki/common';
@@ -75,15 +75,15 @@ const filterModeOptions = computed<{ id: RepullingFilterMode; label: string }[]>
 
 const eth2Accounts = computed(() => get(accountsPerChain)[Blockchain.ETH2] ?? []);
 
-const validatorAccounts = computed<BlockchainAccount<ValidatorData>[]>(() =>
+const validatorAccounts = computed<ValidatorAccount[]>(() =>
   get(eth2Accounts).filter(isValidatorAccount),
 );
 
 const withdrawalAddressOptions = computed<string[]>(() => {
   const addresses = new Set<string>();
   for (const account of get(validatorAccounts)) {
-    if (account.data.withdrawalAddress)
-      addresses.add(account.data.withdrawalAddress);
+    if (account.withdrawalAddress)
+      addresses.add(account.withdrawalAddress);
   }
   return [...addresses];
 });

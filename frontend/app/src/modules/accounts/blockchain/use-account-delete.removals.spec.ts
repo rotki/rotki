@@ -1,8 +1,8 @@
 import type {
-  AddressData,
-  BlockchainAccount,
-  BlockchainAccountGroupWithBalance,
-  XpubData,
+  AddressAccount,
+  AddressGroupWithBalance,
+  XpubAccount,
+  XpubGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { err, ok, type Result } from 'plainfp/result';
@@ -59,50 +59,56 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 const ADDRESS = '0x123';
 const XPUB = 'xpub123';
 
-const account: BlockchainAccount<AddressData> = {
+const account: AddressAccount = {
+  address: ADDRESS,
   chain: 'eth',
-  data: { address: ADDRESS, type: 'address' },
-  nativeAsset: 'ETH',
+  kind: 'address',
 };
 
-function singleChainGroup(): BlockchainAccountGroupWithBalance<AddressData> {
+function singleChainGroup(): AddressGroupWithBalance {
   return {
+    address: ADDRESS,
     category: 'evm',
     chains: ['eth'],
-    data: { address: ADDRESS, type: 'address' },
+    kind: 'address',
     type: 'group',
     value: bigNumberify(0),
   };
 }
 
-function groupShowingAllChains(chains: string[]): BlockchainAccountGroupWithBalance<AddressData> {
+function groupShowingAllChains(chains: string[]): AddressGroupWithBalance {
   return {
+    address: ADDRESS,
     category: 'evm',
     chains,
-    data: { address: ADDRESS, type: 'address' },
+    kind: 'address',
     type: 'group',
     value: bigNumberify(0),
   };
 }
 
-function groupShowingSomeChains(chains: string[], allChains: string[]): BlockchainAccountGroupWithBalance<AddressData> {
+function groupShowingSomeChains(chains: string[], allChains: string[]): AddressGroupWithBalance {
   return {
+    address: ADDRESS,
     allChains,
     category: 'evm',
     chains,
-    data: { address: ADDRESS, type: 'address' },
+    kind: 'address',
     type: 'group',
     value: bigNumberify(0),
   };
 }
 
-function xpubGroup(): BlockchainAccountGroupWithBalance<XpubData> {
+function xpubGroup(): XpubGroupWithBalance {
   return {
+    amount: bigNumberify(0),
     category: 'bitcoin',
     chains: ['btc'],
-    data: { type: 'xpub', xpub: XPUB },
+    kind: 'xpub',
+    nativeAsset: 'BTC',
     type: 'group',
     value: bigNumberify(0),
+    xpub: XPUB,
   };
 }
 
@@ -130,13 +136,13 @@ function backendFails(chains: string[]): void {
   });
 }
 
-function accountOn(chain: string): BlockchainAccount<AddressData> {
-  return { chain, data: { address: ADDRESS, type: 'address' }, nativeAsset: chain.toUpperCase() };
+function accountOn(chain: string): AddressAccount {
+  return { address: ADDRESS, chain, kind: 'address' };
 }
 
 interface Harness {
   accounts: ReturnType<typeof import('@/modules/accounts/use-blockchain-accounts-store')['useBlockchainAccountsStore']>;
-  confirmRemoval: (row: BlockchainAccountGroupWithBalance<AddressData> | BlockchainAccountGroupWithBalance<XpubData>) => Promise<void>;
+  confirmRemoval: (row: AddressGroupWithBalance | XpubGroupWithBalance) => Promise<void>;
   fetchChain: (chain: string) => Promise<void>;
 }
 
@@ -233,8 +239,8 @@ describe('useAccountDelete against the real removal wiring', () => {
     const { accounts, confirmRemoval } = await setup();
     accounts.updateAccounts('btc', [{
       chain: 'btc',
-      data: { type: 'xpub', xpub: XPUB },
-      nativeAsset: 'BTC',
+      kind: 'xpub',
+      xpub: XPUB,
     }]);
 
     await confirmRemoval(xpubGroup());
@@ -245,10 +251,10 @@ describe('useAccountDelete against the real removal wiring', () => {
 
   it('should keep the xpub when its removal fails', async () => {
     const { accounts, confirmRemoval } = await setup();
-    const xpubAccount: BlockchainAccount<XpubData> = {
+    const xpubAccount: XpubAccount = {
       chain: 'btc',
-      data: { type: 'xpub', xpub: XPUB },
-      nativeAsset: 'BTC',
+      kind: 'xpub',
+      xpub: XPUB,
     };
     accounts.updateAccounts('btc', [xpubAccount]);
     backendReports(err(TaskFailed({ message: 'boom' })));

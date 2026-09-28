@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import { assert, Blockchain, type EthStakingPayload, type EthStakingPerformance, type EthStakingPerformanceResponse } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { isAccountWithBalanceValidator } from '@/modules/accounts/account-utils';
+import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -118,15 +118,15 @@ export function useEth2Staking(): UseEth2StakingReturn {
 
   const performance = computed<EthStakingPerformance>(() => {
     const performance = get(state);
-    const accounts = getBlockchainAccounts(Blockchain.ETH2).filter(isAccountWithBalanceValidator);
+    const accounts = getBlockchainAccounts(Blockchain.ETH2).filter(isValidatorAccount);
     return {
       ...omit(performance, ['validators']),
       validators: Object.entries(performance.validators).map(([idx, value]) => {
         const index = parseInt(idx);
 
-        const validator = accounts.find(x => x.data.index === index);
-        const status = validator?.data?.status;
-        const consolidatedInto = validator?.data?.consolidatedInto;
+        const validator = accounts.find(x => x.index === index);
+        const status = validator?.status;
+        const consolidatedInto = validator?.consolidatedInto;
         const total = validator?.amount;
         return {
           consolidatedInto,

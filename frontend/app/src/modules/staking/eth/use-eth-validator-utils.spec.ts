@@ -10,7 +10,6 @@ function validator(overrides: Partial<EthereumValidator> = {}): EthereumValidato
     index: 1,
     publicKey: '0xabc',
     status: 'active',
-    type: 'validator',
     value: bigNumberify(64000),
     ...overrides,
   };

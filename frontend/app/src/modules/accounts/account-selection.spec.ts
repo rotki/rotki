@@ -1,4 +1,4 @@
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { describe, expect, it } from 'vitest';
 import { matchesAccountQuery, selectableAccounts } from '@/modules/accounts/account-selection';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
@@ -7,11 +7,11 @@ import { createAccount } from '@/modules/accounts/create-account';
 const ADDRESS_A = '0x1111111111111111111111111111111111111111';
 const ADDRESS_B = '0x2222222222222222222222222222222222222222';
 
-function account(address: string, chain: string, tags?: string[]): BlockchainAccount<AddressData> {
-  return createAccount({ address, label: null, tags: tags ?? null }, { chain, nativeAsset: '' });
+function account(address: string, chain: string, tags?: string[]): AddressAccount {
+  return createAccount({ address, label: null, tags: tags ?? null }, chain);
 }
 
-function chainsOf(accounts: BlockchainAccount<AddressData>[]): string[] {
+function chainsOf(accounts: AddressAccount[]): string[] {
   return accounts.map(item => item.chain);
 }
 

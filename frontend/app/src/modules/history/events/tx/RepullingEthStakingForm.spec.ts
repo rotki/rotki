@@ -31,14 +31,11 @@ function stub(name: string, props: string[]): Record<string, unknown> {
 function validatorAccount(): BlockchainAccount {
   return {
     chain: Blockchain.ETH2,
-    data: {
-      index: VALIDATOR.index,
-      publicKey: VALIDATOR.publicKey,
-      status: 'active',
-      type: 'validator',
-      withdrawalAddress: WITHDRAWAL_ADDRESS,
-    },
-    nativeAsset: 'ETH',
+    index: VALIDATOR.index,
+    kind: 'validator',
+    publicKey: VALIDATOR.publicKey,
+    status: 'active',
+    withdrawalAddress: WITHDRAWAL_ADDRESS,
   };
 }
 

@@ -7,6 +7,7 @@ import type {
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { ok } from 'plainfp/result';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
@@ -38,12 +39,12 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
     const validators: EthereumValidator[] = [];
     for (const account of accountData.filter(isValidatorAccount)) {
-      const accountBalance: Balance = accountBalances[account.data.publicKey]?.assets?.ETH2?.address ?? {
+      const accountBalance: Balance = accountBalances[account.publicKey]?.assets?.ETH2?.address ?? {
         amount: Zero,
         value: Zero,
       };
       validators.push({
-        ...account.data,
+        ...omit(account, ['chain', 'kind', 'label', 'tags']),
         ...accountBalance,
       });
     }
@@ -66,15 +67,12 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
    */
   const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
     const validators = [...get(accounts)[Blockchain.ETH2]?.filter(isValidatorAccount) ?? []];
-    const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
+    const validatorIndex = validators.findIndex(validator => validator.publicKey === publicKey);
     const [validator] = validators.splice(validatorIndex, 1);
-    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage ?? 100);
+    const oldOwnershipPercentage = bigNumberify(validator.ownershipPercentage ?? 100);
     validators.push({
       ...validator,
-      data: {
-        ...validator.data,
-        ownershipPercentage: newOwnershipPercentage.isEqualTo(100) ? undefined : newOwnershipPercentage.toString(),
-      },
+      ownershipPercentage: newOwnershipPercentage.isEqualTo(100) ? undefined : newOwnershipPercentage.toString(),
     });
 
     updateAccounts(Blockchain.ETH2, validators);

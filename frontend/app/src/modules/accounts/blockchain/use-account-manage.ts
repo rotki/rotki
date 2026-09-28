@@ -3,16 +3,16 @@ import type {
   AccountPayload,
   BlockchainAccountBalance,
   BlockchainAccountGroupWithBalance,
-  ValidatorData,
+  ValidatorDetails,
   XpubAccountPayload,
-  XpubData,
+  XpubGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { AccountCategory } from '@/modules/core/api/types/chains';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getChain, matchKind } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { additionError, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
@@ -71,7 +71,7 @@ export type AccountManage = AccountManageAdd | AccountManageEdit;
 
 export type AccountManageState = AccountManage | StakingValidatorManage | XpubManage | AccountAgnosticManage;
 
-function buildValidatorManage(data: ValidatorData): StakingValidatorManage {
+function buildValidatorManage(data: ValidatorDetails): StakingValidatorManage {
   const { index, ownershipPercentage = '100', publicKey } = data;
   return {
     chain: Blockchain.ETH2,
@@ -85,18 +85,18 @@ function buildValidatorManage(data: ValidatorData): StakingValidatorManage {
   };
 }
 
-function buildXpubManage(account: BlockchainAccountBalance, data: XpubData): XpubManage {
+function buildXpubManage(account: XpubGroupWithBalance): XpubManage {
   const chain = getChain(account);
   assert(chain && isBtcChain(chain));
-  const prefix = guessPrefix(data.xpub);
+  const prefix = guessPrefix(account.xpub);
   return {
     chain,
     data: {
       label: account.label,
       tags: account.tags ?? null,
       xpub: {
-        derivationPath: data.derivationPath ?? '',
-        xpub: data.xpub,
+        derivationPath: account.derivationPath ?? '',
+        xpub: account.xpub,
         xpubType: getKeyType(prefix),
       },
     },
@@ -137,16 +137,11 @@ function buildAddressManage(account: BlockchainAccountBalance): AccountManageEdi
 }
 
 export function editBlockchainAccount(account: BlockchainAccountBalance): AccountManageState {
-  if ('publicKey' in account.data)
-    return buildValidatorManage(account.data);
-
-  if ('xpub' in account.data)
-    return buildXpubManage(account, account.data);
-
-  if (account.type === 'group' && account.chains.length > 1)
-    return buildGroupManage(account);
-
-  return buildAddressManage(account);
+  return matchKind<BlockchainAccountBalance, AccountManageState>(account, {
+    address: row => (row.type === 'group' && row.chains.length > 1 ? buildGroupManage(row) : buildAddressManage(row)),
+    validator: row => buildValidatorManage(row),
+    xpub: row => buildXpubManage(row),
+  });
 }
 
 interface UseAccountManageReturn {

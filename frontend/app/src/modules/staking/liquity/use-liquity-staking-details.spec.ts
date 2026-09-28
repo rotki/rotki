@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
 import type { ActivitySteps } from '@/modules/task-center/core/types';
 import {
@@ -11,6 +11,7 @@ import {
 import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAccount } from '@/modules/accounts/create-account';
 import { useLiquityStakingDetails } from './use-liquity-staking-details';
 
 const OWNER_A = '0xaaa';
@@ -65,11 +66,8 @@ vi.mock('pinia', async importOriginal => ({
   storeToRefs: (store: Record<string, unknown>): Record<string, unknown> => store,
 }));
 
-function account(address: string): BlockchainAccount<AddressData> {
-  return createMock<BlockchainAccount<AddressData>>({
-    chain: 'eth',
-    data: { address, type: 'address' },
-  });
+function account(address: string): AddressAccount {
+  return createAccount({ address, label: null, tags: null }, 'eth');
 }
 
 function stakeOf(amount: number): LiquityStakingDetails[string] {

@@ -1,22 +1,27 @@
 import type {
-  BlockchainAccountGroupWithBalance,
+  AddressAccount,
+  AddressGroupWithBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
+import { getAccountAddress, getAccountGroupId } from '@/modules/accounts/account-utils';
 import { sortAndFilterAccounts } from './account-list';
 
-function account(overrides: Partial<BlockchainAccountWithBalance> = {}): BlockchainAccountWithBalance {
-  return {
+type AddressRow = BlockchainAccountWithBalance<AddressAccount>;
+
+function account(overrides: Partial<Omit<AddressRow, 'groupId'>> = {}): AddressRow {
+  const row: Omit<AddressRow, 'groupId'> = {
+    address: '0xabc',
     amount: bigNumberify(1),
     chain: 'eth',
-    data: { address: '0xabc', type: 'address' },
-    nativeAsset: 'ETH',
+    kind: 'address',
     type: 'account',
     value: bigNumberify(1000),
     ...overrides,
   };
+  return { ...row, groupId: getAccountGroupId(row) };
 }
 
 function payload(overrides: Partial<BlockchainAccountRequestPayload> = {}): BlockchainAccountRequestPayload {
@@ -31,9 +36,9 @@ const noLabel = (): undefined => undefined;
 
 describe('sortAndFilterAccounts', () => {
   const accounts = (): BlockchainAccountWithBalance[] => [
-    account({ chain: 'eth', data: { address: '0xaaa', type: 'address' }, label: 'Alpha', tags: ['hot'], value: bigNumberify(300) }),
-    account({ chain: 'optimism', data: { address: '0xbbb', type: 'address' }, label: 'Beta', tags: ['cold'], value: bigNumberify(100) }),
-    account({ chain: 'eth', data: { address: '0xccc', type: 'address' }, label: 'Gamma', tags: ['hot', 'cold'], value: bigNumberify(200) }),
+    account({ address: '0xaaa', chain: 'eth', label: 'Alpha', tags: ['hot'], value: bigNumberify(300) }),
+    account({ address: '0xbbb', chain: 'optimism', label: 'Beta', tags: ['cold'], value: bigNumberify(100) }),
+    account({ address: '0xccc', chain: 'eth', label: 'Gamma', tags: ['hot', 'cold'], value: bigNumberify(200) }),
   ];
 
   it('should return all accounts when no filter is applied', () => {
@@ -46,19 +51,17 @@ describe('sortAndFilterAccounts', () => {
 
   it('should filter by a picked address', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xbbb'] }), { getLabel: noLabel });
-    expect(result.data).toHaveLength(1);
-    expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xbbb']);
   });
 
   it('should keep every account among several picked addresses, which are alternatives rather than requirements', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xaaa', '0xccc'] }), { getLabel: noLabel });
-    expect(result.data.map(item => item.data)).toMatchObject([{ address: '0xaaa' }, { address: '0xccc' }]);
+    expect(result.data.map(getAccountAddress)).toEqual(['0xaaa', '0xccc']);
   });
 
   it('should match a picked address regardless of case', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xBBB'] }), { getLabel: noLabel });
-    expect(result.data).toHaveLength(1);
-    expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xbbb']);
   });
 
   it('should not match a picked address by fragment, which would silently widen what the user chose', () => {
@@ -68,7 +71,7 @@ describe('sortAndFilterAccounts', () => {
 
   it('should filter by chain', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ chain: ['eth'] }), { getLabel: noLabel });
-    expect(result.data.map(a => getAddress(a))).toEqual(['0xaaa', '0xccc']);
+    expect(result.data.map(getAccountAddress)).toEqual(['0xaaa', '0xccc']);
   });
 
   it('should filter by tags requiring every tag to match', () => {
@@ -110,12 +113,12 @@ describe('sortAndFilterAccounts', () => {
  * exclusion that drops some of them, has to be resolved against the members rather than the group.
  */
 describe('sortAndFilterAccounts, over groups', () => {
-  function group(overrides: Partial<BlockchainAccountGroupWithBalance> = {}): BlockchainAccountGroupWithBalance {
+  function group(overrides: Partial<AddressGroupWithBalance> = {}): AddressGroupWithBalance {
     return {
-      amount: bigNumberify(3),
+      address: '0xaaa',
       category: 'evm',
       chains: ['eth', 'optimism'],
-      data: { address: '0xaaa', type: 'address' },
+      kind: 'address',
       tags: ['hot'],
       type: 'group',
       value: bigNumberify(300),
@@ -124,7 +127,7 @@ describe('sortAndFilterAccounts, over groups', () => {
   }
 
   function member(chain: string, value: number, tags: string[]): BlockchainAccountWithBalance {
-    return account({ chain, data: { address: '0xaaa', type: 'address' }, tags, value: bigNumberify(value) });
+    return account({ address: '0xaaa', chain, tags, value: bigNumberify(value) });
   }
 
   const members = (): BlockchainAccountWithBalance[] => [
@@ -133,7 +136,7 @@ describe('sortAndFilterAccounts, over groups', () => {
   ];
 
   it('should keep only the groups of the picked category', () => {
-    const bitcoin = group({ category: 'bitcoin', chains: ['btc'], data: { address: 'bc1qaaa', type: 'address' } });
+    const bitcoin = group({ address: 'bc1qaaa', category: 'bitcoin', chains: ['btc'] });
     const result = sortAndFilterAccounts([group(), bitcoin], payload({ category: 'bitcoin' }), { getLabel: noLabel });
 
     expect(result.data).toEqual([bitcoin]);
@@ -263,7 +266,3 @@ describe('sortAndFilterAccounts, over groups', () => {
     });
   });
 });
-
-function getAddress(acc: BlockchainAccountGroupWithBalance | BlockchainAccountWithBalance): string {
-  return 'address' in acc.data ? acc.data.address : '';
-}

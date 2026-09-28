@@ -21,13 +21,13 @@ const { t } = useI18n({ useScope: 'global' });
 const accountAddress = computed<string>(() => getAccountAddress(account));
 
 const derivationPath = computed<string | undefined>(() => {
-  if ('xpub' in account.data)
-    return account.data.derivationPath;
+  if (isXpubAccount(account))
+    return account.derivationPath;
 
   return undefined;
 });
 
-const isXpub = computed<boolean>(() => 'xpub' in account.data);
+const isXpub = computed<boolean>(() => isXpubAccount(account));
 
 const label = computed<string>(() => {
   const label = getAccountLabel(account);

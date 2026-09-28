@@ -1,8 +1,4 @@
-import type {
-  AddressData,
-  BlockchainAccount,
-  BlockchainAccountGroupWithBalance,
-} from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, AddressGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { bigNumberify } from '@rotki/common';
 import { ok, type Result } from 'plainfp/result';
@@ -33,15 +29,13 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   })),
 }));
 
-function groupAccount(chains: string[], allChains?: string[]): BlockchainAccountGroupWithBalance<AddressData> {
+function groupAccount(chains: string[], allChains?: string[]): AddressGroupWithBalance {
   return {
+    address: '0x123',
     allChains,
     category: 'evm',
     chains,
-    data: {
-      address: '0x123',
-      type: 'address',
-    },
+    kind: 'address',
     type: 'group',
     value: bigNumberify(0),
   };
@@ -61,13 +55,10 @@ describe('useAccountDelete', () => {
     const store = useBalancesStore();
     const { removeAccounts } = useAccountDelete();
 
-    const account: BlockchainAccount<AddressData> = {
+    const account: AddressAccount = {
+      address: '0x123',
       chain: 'eth',
-      data: {
-        address: '0x123',
-        type: 'address',
-      },
-      nativeAsset: 'ETH',
+      kind: 'address',
     };
 
     const balances = {
@@ -114,14 +105,14 @@ describe('useAccountDelete', () => {
       const accountStore = useBlockchainAccountsStore();
       for (const chain of chains) {
         accountStore.updateAccounts(chain, [{
+          address: '0x123',
           chain,
-          data: { address: '0x123', type: 'address' },
-          nativeAsset: chain.toUpperCase(),
+          kind: 'address',
         }]);
       }
     };
 
-    const confirmRemoval = async (account: BlockchainAccountGroupWithBalance<AddressData>): Promise<void> => {
+    const confirmRemoval = async (account: AddressGroupWithBalance): Promise<void> => {
       const { showConfirmation } = useAccountDelete();
       showConfirmation({ data: account, type: 'account' });
       await useConfirmStore().confirm();

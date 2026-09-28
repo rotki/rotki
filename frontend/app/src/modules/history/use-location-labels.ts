@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { getTextToken } from '@rotki/common';
-import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -34,10 +34,10 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
 
   const locationLabelOptions = computed<LocationLabel[]>(() => toValue(options) ?? get(storeLocationLabels));
 
-  const accounts = computed<BlockchainAccount<AddressData>[]>(() =>
+  const accounts = computed<AddressAccount[]>(() =>
     Object.values(get(accountsPerChain))
       .flatMap(x => x)
-      .filter(hasAccountAddress),
+      .filter(isAddressAccount),
   );
 
   function getBlockchainLocation(location: string): string | undefined {
@@ -51,13 +51,13 @@ export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | un
     return chain;
   }
 
-  function getRegisteredAccounts(item: LocationLabel): BlockchainAccount<AddressData>[] {
+  function getRegisteredAccounts(item: LocationLabel): AddressAccount[] {
     const chain = getBlockchainLocation(item.location);
 
     if (!chain)
       return [];
 
-    return get(accounts).filter(acc => getAccountAddress(acc) === item.locationLabel && acc.chain === chain);
+    return get(accounts).filter(acc => acc.address === item.locationLabel && acc.chain === chain);
   }
 
   function getTags(item: LocationLabel): string[] {

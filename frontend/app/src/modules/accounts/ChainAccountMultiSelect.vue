@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isValidatorAccount } from '@/modules/accounts/account-utils';
+import { isAddressAccount, isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
@@ -43,11 +43,11 @@ const options = computed<AccountOption[]>(() => {
 
   for (const account of list) {
     if (isValidatorAccount(account)) {
-      const id = account.data.publicKey;
+      const id = account.publicKey;
       if (seen.has(id))
         continue;
       seen.add(id);
-      const index = account.data.index;
+      const index = account.index;
       built.push({
         id,
         kind: OptionKind.VALIDATOR,
@@ -55,8 +55,8 @@ const options = computed<AccountOption[]>(() => {
         searchText: [id, String(index), account.label].filter(Boolean).join(' ').toLowerCase(),
       });
     }
-    else if (account.data.type === 'address') {
-      const id = account.data.address;
+    else if (isAddressAccount(account)) {
+      const id = account.address;
       if (seen.has(id))
         continue;
       seen.add(id);

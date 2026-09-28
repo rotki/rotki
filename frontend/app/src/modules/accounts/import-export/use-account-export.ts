@@ -22,8 +22,8 @@ export function useAccountExport(): UseAccountExportReturn {
     const rows: CSVRow[] = [];
 
     for (const account of getAccounts()) {
-      const addressExtras: Record<string, string> = isXpubAccount(account) && account.data.derivationPath
-        ? { derivationPath: account.data.derivationPath }
+      const addressExtras: Record<string, string> = isXpubAccount(account) && account.derivationPath
+        ? { derivationPath: account.derivationPath }
         : {};
 
       rows.push({

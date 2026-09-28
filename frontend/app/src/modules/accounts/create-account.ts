@@ -1,48 +1,45 @@
 import type { Eth2ValidatorEntry } from '@rotki/common';
-import type {
-  AccountExtraParams,
-  AddressData,
-  BasicBlockchainAccount,
-  BitcoinXpubAccount,
-  BlockchainAccount,
-  ValidatorData,
-  XpubData,
+import {
+  AccountKind,
+  type AddressAccount,
+  type BasicBlockchainAccount,
+  type BitcoinXpubAccount,
+  type ValidatorAccount,
+  type XpubAccount,
+  type XpubKey,
 } from '@/modules/accounts/blockchain-accounts';
 
-export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
+export function createXpubAccount(data: BitcoinXpubAccount, chain: string): XpubAccount {
   return {
-    data: {
-      derivationPath: data.derivationPath ?? undefined,
-      type: 'xpub',
-      xpub: data.xpub,
-    },
+    chain,
+    derivationPath: data.derivationPath ?? undefined,
+    kind: AccountKind.XPUB,
     label: data.label ?? undefined,
     tags: data.tags ?? undefined,
-    ...extra,
+    xpub: data.xpub,
   };
 }
 
-export function createValidatorAccount(
-  data: Eth2ValidatorEntry,
-  extra: AccountExtraParams,
-): BlockchainAccount<ValidatorData> {
+export function createValidatorAccount(data: Eth2ValidatorEntry, chain: string): ValidatorAccount {
   return {
-    data: {
-      type: 'validator',
-      ...data,
-    },
-    ...extra,
+    ...data,
+    chain,
+    kind: AccountKind.VALIDATOR,
   };
 }
 
-export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraParams): BlockchainAccount<AddressData> {
+/**
+ * @param data - the account as the backend lists it
+ * @param chain - the chain it is tracked on
+ * @param xpubParent - the xpub the address was derived from, for an address that is not standalone
+ */
+export function createAccount(data: BasicBlockchainAccount, chain: string, xpubParent?: XpubKey): AddressAccount {
   return {
-    data: {
-      address: data.address,
-      type: 'address',
-    },
+    address: data.address,
+    chain,
+    kind: AccountKind.ADDRESS,
     label: data.label ?? undefined,
     tags: data.tags ?? undefined,
-    ...extra,
+    ...(xpubParent ? { xpubParent } : {}),
   };
 }

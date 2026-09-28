@@ -46,12 +46,9 @@ describe('useDivergenceSelection', () => {
     mockFetchLocationLabels.mockResolvedValue(undefined);
     useHistoryStore().setLocationLabels([]);
     useBlockchainAccountsStore().updateAccounts('eth', [{
+      address: '0xA',
       chain: 'eth',
-      data: {
-        address: '0xA',
-        type: 'address',
-      },
-      nativeAsset: 'ETH',
+      kind: 'address',
     }]);
   });
 

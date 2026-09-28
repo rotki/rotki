@@ -1,14 +1,11 @@
 import type { ComputedRef } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAccount } from '@/modules/accounts/create-account';
 import { useNftGalleryFilters } from './use-nft-gallery-filters';
-
-vi.mock('@/modules/accounts/account-utils', () => ({
-  getAccountAddress: (account: { data: { address: string } }): string => account.data.address,
-}));
 
 function nft(overrides: { address?: string; name?: string; price?: number; collection?: string | null }): GalleryNft {
   return createMock<GalleryNft>({
@@ -19,8 +16,8 @@ function nft(overrides: { address?: string; name?: string; price?: number; colle
   });
 }
 
-function account(address: string): BlockchainAccount<AddressData> {
-  return createMock<BlockchainAccount<AddressData>>({ data: { address } });
+function account(address: string): AddressAccount {
+  return createAccount({ address, label: null, tags: null }, 'eth');
 }
 
 describe('useNftGalleryFilters', () => {

@@ -1,10 +1,8 @@
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { getTextToken } from '@rotki/common';
 import { uniqBy } from 'es-toolkit';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { createAccount } from '@/modules/accounts/create-account';
-
-type AccountWithAddressData = BlockchainAccount<AddressData>;
 
 /** How the caller wants the offered accounts narrowed. */
 export interface AccountSelectionOptions {
@@ -30,9 +28,9 @@ export interface AccountSelectionOptions {
  * @returns the accounts to offer, in the order they were tracked
  */
 export function selectableAccounts(
-  accounts: AccountWithAddressData[],
+  accounts: AddressAccount[],
   options: AccountSelectionOptions = {},
-): AccountWithAddressData[] {
+): AddressAccount[] {
   const { chains = [], multichain = false, unique = false } = options;
 
   const byChain = chains.length === 0
@@ -47,16 +45,14 @@ export function selectableAccounts(
 }
 
 /** An all-chains entry for each address that appears on more than one chain. */
-function allChainsEntries(accounts: AccountWithAddressData[]): AccountWithAddressData[] {
+function allChainsEntries(accounts: AddressAccount[]): AddressAccount[] {
   const perAddress = new Map<string, number>();
-  for (const account of accounts) {
-    const address = getAccountAddress(account);
+  for (const { address } of accounts)
     perAddress.set(address, (perAddress.get(address) ?? 0) + 1);
-  }
 
   return [...perAddress]
     .filter(([, count]) => count > 1)
-    .map(([address]) => createAccount({ address, label: null, tags: null }, { chain: 'ALL', nativeAsset: '' }));
+    .map(([address]) => createAccount({ address, label: null, tags: null }, 'ALL'));
 }
 
 /**

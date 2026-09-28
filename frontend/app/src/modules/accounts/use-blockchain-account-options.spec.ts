@@ -1,15 +1,14 @@
+import type {
+  AddressGroupWithBalance,
+  BlockchainAccountGroupWithBalance,
+  XpubGroupWithBalance,
+} from '@/modules/accounts/blockchain-accounts';
+import { Zero } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useBlockchainAccountOptions } from '@/modules/accounts/use-blockchain-account-options';
 
-interface TestAccount {
-  data: { type: string; address?: string; xpub?: string };
-  chains: string[];
-  label?: string;
-  tags?: string[];
-}
-
-const accounts = ref<TestAccount[]>([]);
+const accounts = ref<BlockchainAccountGroupWithBalance[]>([]);
 const names: Record<string, string> = {};
 
 vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', () => ({
@@ -30,8 +29,12 @@ vi.mock('@/modules/settings/use-scramble', () => ({
   }),
 }));
 
-function addressAccount(address: string, extras: Partial<TestAccount> = {}): TestAccount {
-  return { chains: ['eth'], data: { address, type: 'address' }, ...extras };
+function addressAccount(address: string, extras: Partial<AddressGroupWithBalance> = {}): AddressGroupWithBalance {
+  return { address, category: 'evm', chains: ['eth'], kind: 'address', type: 'group', value: Zero, ...extras };
+}
+
+function xpubAccount(xpub: string, extras: Partial<XpubGroupWithBalance> = {}): XpubGroupWithBalance {
+  return { amount: Zero, category: 'bitcoin', chains: ['btc'], kind: 'xpub', nativeAsset: 'BTC', type: 'group', value: Zero, xpub, ...extras };
 }
 
 describe('useBlockchainAccountOptions', () => {
@@ -63,7 +66,7 @@ describe('useBlockchainAccountOptions', () => {
 
   it('should show an unlabelled xpub as its shortened value alone, rather than render it twice as both label and caption', () => {
     const xpub = 'xpub68V4ZQQ62mea7ZUKn2urQuIpsGtRSfRkACCWo4KKR8dQ';
-    accounts.value = [{ chains: ['btc'], data: { type: 'xpub', xpub } }];
+    accounts.value = [xpubAccount(xpub)];
 
     const { resolveCaption, resolveLabel, suggest } = useBlockchainAccountOptions('btc');
     expect(suggest()).toStrictEqual([xpub]);
@@ -73,7 +76,7 @@ describe('useBlockchainAccountOptions', () => {
 
   it('should name an xpub by its own label rather than the address book', () => {
     const xpub = 'xpub68V4ZQQ62mea7ZUKn2urQuIpsGtRSfRkACCWo4KKR8dQ';
-    accounts.value = [{ chains: ['btc'], data: { type: 'xpub', xpub }, label: 'Cold storage' }];
+    accounts.value = [xpubAccount(xpub, { label: 'Cold storage' })];
 
     const { resolveCaption, resolveLabel } = useBlockchainAccountOptions('btc');
     expect(resolveLabel(xpub)).toBe('Cold storage');
@@ -82,7 +85,7 @@ describe('useBlockchainAccountOptions', () => {
 
   it('should fall back to the label a non-evm account was tracked under, which rarely has an alias name to resolve', () => {
     const address = '13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB';
-    accounts.value = [{ chains: ['polkadot'], data: { address, type: 'address' }, label: 'Staking' }];
+    accounts.value = [addressAccount(address, { category: 'substrate', chains: ['polkadot'], label: 'Staking' })];
 
     const { resolveLabel, suggest } = useBlockchainAccountOptions('substrate');
     expect(suggest()).toStrictEqual([address]);

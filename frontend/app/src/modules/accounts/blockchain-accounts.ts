@@ -6,19 +6,21 @@ import type { PaginationRequestPayload } from '@/modules/core/common/common-type
 import type { Module } from '@/modules/core/common/modules';
 import { z } from 'zod';
 
-export interface AddressData {
-  readonly type: 'address';
-  readonly address: string;
-}
+/** What identifies an account: an address, an xpub, or a beacon chain validator. */
+export const AccountKind = {
+  ADDRESS: 'address',
+  VALIDATOR: 'validator',
+  XPUB: 'xpub',
+} as const;
 
-export interface XpubData {
-  readonly type: 'xpub';
+export type AccountKind = (typeof AccountKind)[keyof typeof AccountKind];
+
+export interface XpubKey {
   readonly xpub: string;
   readonly derivationPath?: string;
 }
 
-export interface ValidatorData {
-  readonly type: 'validator';
+export interface ValidatorDetails {
   readonly index: number;
   readonly publicKey: string;
   readonly status: string;
@@ -29,59 +31,88 @@ export interface ValidatorData {
   readonly withdrawableTimestamp?: number;
 }
 
-export type BlockchainAccountData = AddressData | XpubData | ValidatorData;
+export interface AddressIdentity {
+  readonly kind: typeof AccountKind.ADDRESS;
+  readonly address: string;
+}
 
-export interface BlockchainAccount<T extends BlockchainAccountData = BlockchainAccountData> {
-  readonly data: T;
-  readonly tags?: string[];
+export interface XpubIdentity extends XpubKey {
+  readonly kind: typeof AccountKind.XPUB;
+}
+
+export interface ValidatorIdentity extends ValidatorDetails {
+  readonly kind: typeof AccountKind.VALIDATOR;
+}
+
+/** The identity part shared by stored accounts and table rows, discriminated by `kind`. */
+export type AccountIdentity = AddressIdentity | XpubIdentity | ValidatorIdentity;
+
+interface AccountMeta {
   readonly label?: string;
-  readonly chain: string;
-  readonly nativeAsset: string;
-  readonly groupId?: AccountGroupId;
-  readonly groupHeader?: boolean;
+  readonly tags?: string[];
 }
 
-export interface AccountExtraParams {
+interface OnChain {
   readonly chain: string;
-  readonly nativeAsset: string;
-  readonly groupId?: AccountGroupId;
-  readonly groupHeader?: boolean;
 }
 
-interface AccountExpansion {
+export interface AddressAccount extends AddressIdentity, AccountMeta, OnChain {
+  /** The xpub this address was derived from; absent for an address added on its own. */
+  readonly xpubParent?: XpubKey;
+}
+
+export interface XpubAccount extends XpubIdentity, AccountMeta, OnChain {}
+
+export interface ValidatorAccount extends ValidatorIdentity, AccountMeta, OnChain {}
+
+/** An account as tracked in the store, one per chain. */
+export type BlockchainAccount = AddressAccount | XpubAccount | ValidatorAccount;
+
+interface RowBalance {
+  readonly value: BigNumber;
+  /** The value left once the chains excluded from the row are taken out. */
+  readonly includedValue?: BigNumber;
   readonly expansion?: 'accounts' | 'assets';
 }
 
-export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = BlockchainAccountData>
-  extends BlockchainAccount<T>, AccountExpansion {
+/**
+ * An account with its balance. An xpub is never a row of its own; it is shown as an
+ * {@link XpubGroupWithBalance} over its derived addresses.
+ */
+export type BlockchainAccountWithBalance<A extends AddressAccount | ValidatorAccount = AddressAccount | ValidatorAccount> = A & RowBalance & {
   readonly type: 'account';
   readonly amount: BigNumber;
-  readonly value: BigNumber;
-  readonly includedValue?: BigNumber;
+  readonly groupId: AccountGroupId;
+};
+
+interface GroupRow extends AccountMeta, RowBalance {
+  readonly type: 'group';
+  readonly category: AccountCategory;
+  readonly chains: string[];
+  /** Every chain the group spans, kept when a filter narrows `chains`. */
+  readonly allChains?: string[];
 }
 
-export type EthereumValidator = ValidatorData & Balance;
+/** One address across every chain it is tracked on. */
+export interface AddressGroupWithBalance extends AddressIdentity, GroupRow {}
+
+/** One xpub, summing the addresses derived from it. */
+export interface XpubGroupWithBalance extends XpubIdentity, GroupRow {
+  readonly amount: BigNumber;
+  readonly nativeAsset: string;
+}
+
+export type BlockchainAccountGroupWithBalance = AddressGroupWithBalance | XpubGroupWithBalance;
+
+export type BlockchainAccountBalance = BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
+
+export type EthereumValidator = ValidatorDetails & Balance;
 
 export interface EthereumValidatorRequestPayload extends PaginationRequestPayload<EthereumValidator> {
   readonly index?: string[];
   readonly publicKey?: string[];
   readonly status?: string[];
 }
-
-export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain'>, AccountExpansion {
-  readonly type: 'group';
-  readonly category: AccountCategory;
-  readonly amount?: BigNumber;
-  readonly value: BigNumber;
-  readonly includedValue?: BigNumber;
-  readonly nativeAsset?: string;
-  readonly chains: string[];
-  readonly allChains?: string[];
-}
-
-export type BlockchainAccountBalance<
-  T extends BlockchainAccountData = BlockchainAccountData,
-> = BlockchainAccountWithBalance<T> | BlockchainAccountGroupWithBalance<T>;
 
 export interface BlockchainAccountRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
   /** Picked account addresses; a row matches when it is one of them. */

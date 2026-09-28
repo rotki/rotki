@@ -6,29 +6,17 @@ import type {
   BtcBalances,
   EthBalance,
 } from '@/modules/balances/types/blockchain-balances';
-import { getXpubGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
 
-export function convertBtcAccounts(
-  getNativeAsset: (chain: string) => string,
-  chain: string,
-  accounts: BitcoinAccounts,
-): BlockchainAccount[] {
-  const chainInfo = {
-    chain,
-    nativeAsset: getNativeAsset(chain).toUpperCase(),
-  };
-
-  const fromXpub = accounts.xpubs.flatMap((xpub) => {
-    const extras = {
-      groupId: getXpubGroupId({ derivationPath: xpub.derivationPath ?? undefined, xpub: xpub.xpub }, chain),
-      ...chainInfo,
-    };
-    const group = createXpubAccount(xpub, { ...extras, groupHeader: true });
-    return [group, ...(xpub.addresses ? xpub.addresses.map(account => createAccount(account, extras)) : [])];
+/** Each xpub followed by the addresses derived from it, then the standalone addresses. */
+export function convertBtcAccounts(chain: string, accounts: BitcoinAccounts): BlockchainAccount[] {
+  const fromXpub = accounts.xpubs.flatMap((data) => {
+    const xpub = createXpubAccount(data, chain);
+    const parent = { derivationPath: xpub.derivationPath, xpub: xpub.xpub };
+    return [xpub, ...(data.addresses ?? []).map(account => createAccount(account, chain, parent))];
   });
 
-  const standalone = accounts.standalone.map(account => createAccount(account, chainInfo));
+  const standalone = accounts.standalone.map(account => createAccount(account, chain));
 
   return [...fromXpub, ...standalone];
 }

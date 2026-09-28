@@ -10,9 +10,9 @@ import {
 
 function createMockAccount(address: string, chain: string): BlockchainAccount {
   return {
+    address,
     chain,
-    data: { address, type: 'address' },
-    nativeAsset: 'ETH',
+    kind: 'address',
   };
 }
 

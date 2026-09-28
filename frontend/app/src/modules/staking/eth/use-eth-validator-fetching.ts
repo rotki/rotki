@@ -4,7 +4,6 @@ import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
@@ -23,7 +22,6 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
 
   const { updateAccounts } = useBlockchainAccountsStore();
   const { getEth2Validators } = useBlockchainAccountsApi();
-  const { getNativeAsset } = useSupportedChains();
   const { notifyError } = useNotifications();
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
@@ -46,12 +44,7 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
           const validators = Eth2Validators.parse(result);
           updateAccounts(
             Blockchain.ETH2,
-            validators.entries.map(validator =>
-              createValidatorAccount(validator, {
-                chain: Blockchain.ETH2,
-                nativeAsset: getNativeAsset(Blockchain.ETH2),
-              }),
-            ),
+            validators.entries.map(validator => createValidatorAccount(validator, Blockchain.ETH2)),
           );
           set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
         },

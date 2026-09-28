@@ -1,21 +1,30 @@
-import type {
-  Accounts,
-  Balances,
-  BlockchainAccount,
-  BlockchainAccountGroupWithBalance,
-} from '@/modules/accounts/blockchain-accounts';
 import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { AccountCategory } from '@/modules/core/api/types/chains';
 import { type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { getAccountAddress, getAccountLabel } from '@/modules/accounts/account-utils';
-import { getAccountBalance, hasTokens } from '@/modules/accounts/core/account-balance';
+import {
+  getAccountAddress,
+  getAccountLabel,
+  getXpubGroupId,
+  isAddressAccount,
+  isXpubAccount,
+} from '@/modules/accounts/account-utils';
+import {
+  AccountKind,
+  type Accounts,
+  type AddressGroupWithBalance,
+  type Balances,
+  type BlockchainAccount,
+  type BlockchainAccountGroupWithBalance,
+  type XpubAccount,
+  type XpubGroupWithBalance,
+} from '@/modules/accounts/blockchain-accounts';
+import { type AccountBalancePorts, getAccountBalance, hasTokens } from '@/modules/accounts/core/account-balance';
 import { assetSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { deduplicateTags } from '@/modules/tags/tag-utils';
 
-export interface AccountGroupPorts {
-  readonly isAssetIgnored: (identifier: string) => boolean;
+export interface AccountGroupPorts extends AccountBalancePorts {
   /** The account category a chain belongs to, or undefined for a chain the backend did not report. */
   readonly accountType: (chain: string) => AccountCategory | undefined;
 }
@@ -60,16 +69,15 @@ function expansionOf(chains: readonly string[], hasAssets: boolean): 'accounts' 
  * One row per address, merging the address's accounts on every chain it is tracked on.
  *
  * @remarks
- * Only addresses with an account outside an xpub or other group get a row; those groups have their
- * own header in {@link xpubGroups}. A lone account keeps its own data and expands to its tokens,
- * several expand to their per-chain accounts. An address on a chain without a category is left out,
- * since no accounts page could list it.
+ * Only standalone addresses get a row; an address derived from an xpub is counted in the xpub's row
+ * from {@link xpubGroups}. A lone account expands to its tokens, several expand to their per-chain
+ * accounts. An address on a chain without a category is left out, since no accounts page could list it.
  */
-function addressGroups(accounts: Accounts, balances: Balances, ports: AccountGroupPorts): BlockchainAccountGroupWithBalance[] {
+function addressGroups(accounts: Accounts, balances: Balances, ports: AccountGroupPorts): AddressGroupWithBalance[] {
   const byAddress = accountsByAddress(accounts);
   const balancesOf = balancesByAddress(balances);
   const addresses = Object.values(accounts)
-    .flatMap(chainAccounts => chainAccounts.filter(account => !account.groupId))
+    .flatMap(chainAccounts => chainAccounts.filter(account => isAddressAccount(account) && !account.xpubParent))
     .map(account => getAccountAddress(account))
     .filter(uniqueStrings);
 
@@ -79,7 +87,7 @@ function addressGroups(accounts: Accounts, balances: Balances, ports: AccountGro
     if (!category)
       return [];
 
-    return [addressGroup(address, addressAccounts, balancesOf.get(address) ?? [], { category, isAssetIgnored: ports.isAssetIgnored })];
+    return [addressGroup(address, addressAccounts, balancesOf.get(address) ?? [], { ...ports, category })];
   });
 }
 
@@ -87,19 +95,20 @@ function addressGroup(
   address: string,
   addressAccounts: BlockchainAccount[],
   addressBalances: EthBalance[],
-  context: { category: AccountCategory; isAssetIgnored: (identifier: string) => boolean },
-): BlockchainAccountGroupWithBalance {
+  context: AccountBalancePorts & { category: AccountCategory },
+): AddressGroupWithBalance {
   const [first] = addressAccounts;
   const single = addressAccounts.length === 1 ? first : undefined;
   const chains = addressAccounts.map(account => account.chain);
   const tags = addressAccounts.flatMap(account => account.tags ?? []).filter(uniqueStrings);
-  const hasAssets = single ? hasTokens(single.nativeAsset, addressBalances[0]?.assets ?? {}) : false;
+  const hasAssets = single ? hasTokens(context.nativeAssetOf(single.chain), addressBalances[0]?.assets ?? {}) : false;
 
   return {
+    address,
     category: context.category,
     chains,
-    data: single ? single.data : { address, type: 'address' },
     expansion: expansionOf(chains, hasAssets),
+    kind: AccountKind.ADDRESS,
     label: first ? getAccountLabel(first) : undefined,
     tags: tags.length > 0 ? tags : undefined,
     type: 'group',
@@ -111,35 +120,48 @@ function addressGroup(
  * One row per xpub, summing the addresses derived from it.
  *
  * @remarks
- * The amount counts only children holding the xpub's own native asset; the value counts every child.
+ * The amount counts the chain's native asset only; the value counts every asset the addresses hold.
  */
-function xpubGroups(accounts: Accounts, balances: Balances, ports: AccountGroupPorts): BlockchainAccountGroupWithBalance[] {
+function xpubGroups(accounts: Accounts, balances: Balances, ports: AccountGroupPorts): XpubGroupWithBalance[] {
   return Object.values(accounts).flatMap(chainAccounts => chainAccounts
-    .filter(account => account.groupHeader)
-    .flatMap((header) => {
-      const category = ports.accountType(header.chain);
-      if (!category)
-        return [];
-
-      const children = chainAccounts.filter(account => !account.groupHeader && account.groupId === header.groupId);
-      const total: Balance = { amount: Zero, value: Zero };
-      for (const child of children) {
-        const { balance } = getAccountBalance(child, balances[header.chain], ports.isAssetIgnored);
-        if (header.nativeAsset === child.nativeAsset)
-          total.amount = total.amount.plus(balance.amount);
-        total.value = total.value.plus(balance.value);
-      }
-
-      return [{
-        ...omit(header, ['chain', 'groupId', 'groupHeader']),
-        ...total,
-        category,
-        chains: [header.chain],
-        expansion: children.length > 0 ? 'accounts' : undefined,
-        tags: header.tags ? deduplicateTags(header.tags) : undefined,
-        type: 'group',
-      } satisfies BlockchainAccountGroupWithBalance];
+    .filter(isXpubAccount)
+    .flatMap((xpub) => {
+      const category = ports.accountType(xpub.chain);
+      return category ? [xpubGroup(xpub, chainAccounts, balances, { ...ports, category })] : [];
     }));
+}
+
+function xpubGroup(
+  xpub: XpubAccount,
+  chainAccounts: BlockchainAccount[],
+  balances: Balances,
+  context: AccountBalancePorts & { category: AccountCategory },
+): XpubGroupWithBalance {
+  const groupId = getXpubGroupId(xpub, xpub.chain);
+  const children = chainAccounts
+    .filter(isAddressAccount)
+    .filter(account => account.xpubParent && getXpubGroupId(account.xpubParent, account.chain) === groupId);
+
+  const total: Balance = { amount: Zero, value: Zero };
+  for (const child of children) {
+    const { balance } = getAccountBalance(child, balances[xpub.chain] ?? {}, context);
+    total.amount = total.amount.plus(balance.amount);
+    total.value = total.value.plus(balance.value);
+  }
+
+  return {
+    ...total,
+    category: context.category,
+    chains: [xpub.chain],
+    derivationPath: xpub.derivationPath,
+    expansion: children.length > 0 ? 'accounts' : undefined,
+    kind: AccountKind.XPUB,
+    label: xpub.label,
+    nativeAsset: context.nativeAssetOf(xpub.chain),
+    tags: xpub.tags ? deduplicateTags(xpub.tags) : undefined,
+    type: 'group',
+    xpub: xpub.xpub,
+  };
 }
 
 /** The top-level rows of the accounts table: one per address, then one per xpub. Validators have their own table. */

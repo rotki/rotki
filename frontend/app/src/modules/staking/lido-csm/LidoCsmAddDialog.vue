@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { z, type ZodType } from 'zod';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { requiredField } from '@/modules/core/form/fields';
@@ -21,7 +20,7 @@ const emit = defineEmits<{
 
 interface NodeOperatorState {
   nodeOperatorId: string;
-  selectedAccount: BlockchainAccount<AddressData>[];
+  selectedAccount: AddressAccount[];
 }
 
 interface NodeOperatorPayload {
@@ -44,9 +43,9 @@ const schema = computed<ZodType>(() => z.object({
     if (!(Number.isInteger(parsed) && parsed >= 0))
       ctx.addIssue({ code: 'custom', message: t('staking_page.lido_csm.form.validation.invalid_id') });
   }),
-  selectedAccount: z.array(z.custom<BlockchainAccount<AddressData>>()).superRefine((accounts, ctx) => {
+  selectedAccount: z.array(z.custom<AddressAccount>()).superRefine((accounts, ctx) => {
     const account = accounts[0];
-    if (!account || getAccountAddress(account).trim() === '')
+    if (!account || account.address.trim() === '')
       ctx.addIssue({ code: 'custom', message: t('staking_page.lido_csm.form.validation.non_empty_address') });
   }),
 }));
@@ -78,7 +77,7 @@ const form = useForm<NodeOperatorState, NodeOperatorPayload>({
   transform: (state): NodeOperatorPayload => {
     const account = state.selectedAccount[0];
     return {
-      address: account ? getAccountAddress(account) : '',
+      address: account?.address ?? '',
       nodeOperatorId: Number(state.nodeOperatorId),
     };
   },

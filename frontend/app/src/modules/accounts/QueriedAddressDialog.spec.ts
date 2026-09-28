@@ -1,4 +1,4 @@
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,11 +38,11 @@ const AccountSelectorStub = defineComponent({
   template: '<div />',
 });
 
-function account(address: string): BlockchainAccount<AddressData> {
+function account(address: string): AddressAccount {
   return {
+    address,
     chain: Blockchain.ETH,
-    data: { address, type: 'address' },
-    nativeAsset: 'ETH',
+    kind: 'address',
     tags: ['mine'],
   };
 }
@@ -53,7 +53,7 @@ function createWrapper(module: Module = Module.ETH2): VueWrapper<any> {
       stubs: {
         AppImage: true,
         BlockchainAccountSelector: AccountSelectorStub,
-        LabeledAddressDisplay: { props: ['account'], template: '<div class="address">{{ account.data.address }}</div>' },
+        LabeledAddressDisplay: { props: ['account'], template: '<div class="address">{{ account.address }}</div>' },
         RuiDialog: { template: '<div><slot /></div>' },
         RuiTooltip: { template: '<div><slot name="activator" /></div>' },
         TagDisplay: true,

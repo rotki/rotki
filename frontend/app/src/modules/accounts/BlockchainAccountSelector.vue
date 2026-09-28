@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type Account, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { matchesAccountQuery, selectableAccounts } from '@/modules/accounts/account-selection';
-import { getAccountAddress, getAccountId, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getAccountId, isAddressAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getNonRootAttrs, getRootAttrs } from '@/modules/core/common/helpers/attrs';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
-type AccountWithAddressData = BlockchainAccount<AddressData>;
-
-type AccountWithExtra = AccountWithAddressData & { address: string; key: string };
+type AccountWithExtra = AddressAccount & { key: string };
 
 /** Which accounts the selector offers. These are consumed together by `selectableAccounts`. */
 interface AccountSelectorSource {
@@ -38,7 +36,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
+const modelValue = defineModel<AddressAccount[]>({ required: true });
 
 const {
   field,
@@ -75,10 +73,10 @@ const label = computed<string>(() => field?.label || t('blockchain_account_selec
 
 const noDataText = computed<string>(() => field?.noDataText || t('blockchain_account_selector.no_data'));
 
-const accounts = computed<AccountWithAddressData[]>(() =>
+const accounts = computed<AddressAccount[]>(() =>
   Object.values(get(accountsPerChain))
     .flatMap(x => x)
-    .filter(hasAccountAddress),
+    .filter(isAddressAccount),
 );
 
 const internalValue = computed<AccountWithExtra | undefined>(() => {
@@ -86,10 +84,10 @@ const internalValue = computed<AccountWithExtra | undefined>(() => {
   if (!first)
     return undefined;
 
-  return { ...first, address: getAccountAddress(first), key: getAccountId(first) };
+  return { ...first, key: getAccountId(first) };
 });
 
-const offeredAccounts = computed<AccountWithAddressData[]>(() => selectableAccounts(get(accounts), {
+const offeredAccounts = computed<AddressAccount[]>(() => selectableAccounts(get(accounts), {
   chains: get(chains),
   multichain: source?.multichain,
   unique: source?.unique,
@@ -98,7 +96,6 @@ const offeredAccounts = computed<AccountWithAddressData[]>(() => selectableAccou
 const displayedAccounts = computed<AccountWithExtra[]>(() => {
   const accounts = Array.from(get(offeredAccounts), item => ({
     ...item,
-    address: getAccountAddress(item),
     key: getAccountId(item),
   }));
   const usable = get(usableAddresses);
@@ -119,16 +116,16 @@ function filter(item: BlockchainAccount, queryText: string): boolean {
  * @remarks
  * The model stays a one-element array so callers keep their shape while the selector behaves as
  * single-select: RuiAutoComplete infers multi-select from an array model value, and the
- * `internalValue` bound to it is never one. The `address` and `key` fields are derived for display
- * and are stripped back off on the way out.
+ * `internalValue` bound to it is never one. The `key` field is derived for display and is
+ * stripped back off on the way out.
  */
 function input(nextValue?: AccountWithExtra): void {
-  set(modelValue, nextValue ? [omit(nextValue, ['address', 'key'])] : []);
+  set(modelValue, nextValue ? [omit(nextValue, ['key'])] : []);
 }
 
-function getAccount(account: AccountWithAddressData): Account {
+function getAccount(account: AddressAccount): Account {
   return {
-    address: getAccountAddress(account),
+    address: account.address,
     chain: account.chain,
   };
 }

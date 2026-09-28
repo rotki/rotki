@@ -81,37 +81,28 @@ describe('useBlockchainAccountData', () => {
       const { updateBalances } = useBalancesStore();
       const { getBlockchainAccounts } = useBlockchainAccountData();
 
-      updateAccounts(
-        Blockchain.BTC,
-        convertBtcAccounts(chain => chain.toUpperCase(), Blockchain.BTC, accounts),
-      );
+      updateAccounts(Blockchain.BTC, convertBtcAccounts(Blockchain.BTC, accounts));
       updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
       expect(getBlockchainAccounts(Blockchain.BTC)).toMatchObject([{
+        address: '1234',
         amount: bigNumberify(10),
         chain: Blockchain.BTC,
-        data: {
-          address: '1234',
-          type: 'address',
-        },
         expansion: undefined,
         groupId: 'xpub123#m#btc',
+        kind: 'address',
         label: undefined,
-        nativeAsset: 'BTC',
         tags: undefined,
         type: 'account',
         value: bigNumberify(10),
       }, {
+        address: '123',
         amount: bigNumberify(10),
         chain: Blockchain.BTC,
-        data: {
-          address: '123',
-          type: 'address',
-        },
         expansion: undefined,
         groupId: '123',
+        kind: 'address',
         label: undefined,
-        nativeAsset: 'BTC',
         tags: undefined,
         type: 'account',
         value: bigNumberify(10),
@@ -122,12 +113,10 @@ describe('useBlockchainAccountData', () => {
       const chain = Blockchain.BTC.toString();
 
       const expectedGroups: BlockchainAccountGroupWithBalance[] = [{
+        address: '123',
         category: 'bitcoin',
         chains: [chain],
-        data: {
-          address: '123',
-          type: 'address',
-        },
+        kind: 'address',
         label: '123',
         tags: undefined,
         type: 'group',
@@ -136,31 +125,27 @@ describe('useBlockchainAccountData', () => {
         amount: bigNumberify(10),
         category: 'bitcoin',
         chains: [chain],
-        data: {
-          derivationPath: 'm',
-          type: 'xpub',
-          xpub: 'xpub123',
-        },
+        derivationPath: 'm',
         expansion: 'accounts',
+        kind: 'xpub',
         label: undefined,
         nativeAsset: 'BTC',
         tags: undefined,
         type: 'group',
         value: bigNumberify(10),
+        xpub: 'xpub123',
       }, {
         amount: Zero,
         category: 'bitcoin',
         chains: [chain],
-        data: {
-          derivationPath: undefined,
-          type: 'xpub',
-          xpub: 'xpub1234',
-        },
+        derivationPath: undefined,
+        kind: 'xpub',
         label: '123',
         nativeAsset: 'BTC',
         tags: ['a'],
         type: 'group',
         value: Zero,
+        xpub: 'xpub1234',
       }];
 
       expect(knownGroups).toMatchObject(ok({ data: expectedGroups }));
@@ -191,10 +176,7 @@ describe('useBlockchainAccountData', () => {
         }],
       };
 
-      updateAccounts(
-        Blockchain.BTC,
-        convertBtcAccounts(chain => chain.toUpperCase(), Blockchain.BTC, accounts),
-      );
+      updateAccounts(Blockchain.BTC, convertBtcAccounts(Blockchain.BTC, accounts));
 
       const result = getBlockchainAccounts(Blockchain.BTC);
 
@@ -208,14 +190,7 @@ describe('useBlockchainAccountData', () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       const { getBlockchainAccounts } = useBlockchainAccountData();
 
-      const mockAccounts: BlockchainAccount[] = [{
-        chain: Blockchain.BTC,
-        data: { type: 'xpub', xpub: 'xpub123' },
-        groupHeader: false,
-        groupId: undefined,
-        nativeAsset: 'BTC',
-        tags: undefined,
-      }];
+      const mockAccounts: BlockchainAccount[] = [{ chain: Blockchain.BTC, kind: 'xpub', xpub: 'xpub123' }];
 
       updateAccounts(Blockchain.BTC, mockAccounts);
 
@@ -267,14 +242,7 @@ describe('useBlockchainAccountData', () => {
       const { useAccountTags } = useBlockchainAccountData();
       const { updateAccounts } = useBlockchainAccountsStore();
 
-      const mockAccounts: BlockchainAccount[] = [{
-        chain: Blockchain.ETH,
-        data: { address: '0x123', type: 'address' },
-        groupHeader: false,
-        groupId: undefined,
-        nativeAsset: 'ETH',
-        tags: ['tag1', 'tag2'],
-      }];
+      const mockAccounts: BlockchainAccount[] = [{ address: '0x123', chain: Blockchain.ETH, kind: 'address', tags: ['tag1', 'tag2'] }];
 
       updateAccounts(Blockchain.ETH, mockAccounts);
 

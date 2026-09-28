@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccount, XpubAccount } from '@/modules/accounts/blockchain-accounts';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
@@ -41,23 +41,26 @@ vi.mock('@vueuse/core', async () => {
 
 const ADDRESS = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 
-function account(overrides: Partial<BlockchainAccount> = {}): BlockchainAccount {
+function account(overrides: Partial<AddressAccount> = {}): AddressAccount {
   return {
+    address: ADDRESS,
     chain: 'eth',
-    data: { address: ADDRESS, type: 'address' },
+    kind: 'address',
     label: 'my wallet',
-    nativeAsset: 'ETH',
     tags: undefined,
     ...overrides,
   };
 }
 
-function xpubAccount(): BlockchainAccount {
-  return account({
+function xpubAccount(): XpubAccount {
+  return {
     chain: 'btc',
-    data: { derivationPath: 'm/84/0/0', type: 'xpub', xpub: 'xpub6C...' },
+    derivationPath: 'm/84/0/0',
+    kind: 'xpub',
     label: 'cold storage',
-  });
+    tags: undefined,
+    xpub: 'xpub6C...',
+  };
 }
 
 function createWrapper(acc: BlockchainAccount = account()): VueWrapper<any> {

@@ -2,7 +2,7 @@ import type { Accounts } from '@/modules/accounts/blockchain-accounts';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 function stubAccount(address: string): Accounts[string][number] {
-  return { data: { type: 'address', address }, chain: 'eth', nativeAsset: 'ETH' };
+  return { address, chain: 'eth', kind: 'address' };
 }
 
 describe('useBalancesSummaryHandler', () => {
