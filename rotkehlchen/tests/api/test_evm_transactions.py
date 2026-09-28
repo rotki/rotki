@@ -8,11 +8,13 @@ import requests
 
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS
+from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS, TX_INTERNALS_QUERIED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS
@@ -34,7 +36,7 @@ from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR2,
     setup_ethereum_transactions_test,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS,
     ChainID,
@@ -579,3 +581,77 @@ def test_force_refetch_transactions_without_chain(
                 end_ts=now,
                 return_queried_hashes=True,
             )
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+def test_force_redecode_retries_marked_unresolved_l1_fee(
+        rotkehlchen_api_server: APIServer,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A marker left by an earlier unresolved fee lookup must not stop a user-triggered
+    redecode of the whole chain from trying to repair the fee."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    transactions = rotki.chains_aggregator.optimism.transactions
+    assert isinstance(transactions, L2WithL1FeesTransactions)
+    with rotki.data.db.user_write() as write_cursor:
+        transactions.dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[L2WithL1FeesTransaction(
+                tx_hash=(tx_hash := make_evm_tx_hash()),
+                chain_id=ChainID.OPTIMISM,
+                timestamp=Timestamp(1689113567),
+                block_number=106757395,
+                from_address=optimism_accounts[0],
+                to_address=make_evm_address(),
+                value=0,
+                gas=21000,
+                gas_price=1,
+                gas_used=21000,
+                input_data=b'',
+                nonce=1,
+                l1_fee=None,
+            )],
+            relevant_address=optimism_accounts[0],
+        )
+        tx_id = transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+        write_cursor.execute(  # avoid querying internal transactions during the decode
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_INTERNALS_QUERIED),
+        )
+
+    transactions._fresh_unresolved_fee_hashes.add(tx_hash)  # left by an earlier lookup
+    with patch.object(
+        transactions.evm_inquirer,
+        'maybe_get_l1_fees',
+        return_value=321,
+    ) as indexer_fee_query:
+        assert_proper_response_with_result(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+                json={'async_query': False, 'ignore_cache': True, 'chain': 'optimism'},
+            ),
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=False,
+        )
+
+    indexer_fee_query.assert_called_once_with(
+        account=optimism_accounts[0],
+        tx_hash=tx_hash,
+        block_number=106757395,
+    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT l1_fee FROM optimism_transactions WHERE tx_id=?', (tx_id,),
+        ).fetchone() == ('321',)

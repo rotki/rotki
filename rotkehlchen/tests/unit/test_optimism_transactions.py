@@ -13,6 +13,7 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.types import (
@@ -850,6 +851,79 @@ def test_fresh_transaction_unresolved_fee_is_repaired_on_next_call(
     assert tx.l1_fee == 321
     transaction_query.assert_called_once_with(tx_hash)
     indexer_fee_query.assert_called_once()
+
+
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+def test_add_transaction_by_hash_unresolved_fee(
+        optimism_transactions: OptimismTransactions,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Adding a tx by hash asks the indexers once for a fee missing from the receipt. The
+    decode that follows reuses that result, and a later call can still repair the fee."""
+    inquirer = optimism_transactions.evm_inquirer
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash := make_evm_tx_hash()),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'gasUsed': 21000,
+        'logs': [],
+    }
+    with (
+        patch.object(inquirer, 'maybe_get_transaction_by_hash', side_effect=lambda tx_hash, must_exist: deserialize_evm_transaction(  # noqa: E501
+            data={
+                'hash': str(tx_hash),
+                'blockNumber': 106757395,
+                'timeStamp': 1689113567,
+                'from': optimism_accounts[0],
+                'to': make_evm_address(),
+                'value': 0,
+                'gas': 21000,
+                'gasPrice': 1,
+                'input': '0x',
+                'nonce': 1,
+            },
+            internal=False,
+            chain_id=ChainID.OPTIMISM,
+            evm_inquirer=inquirer,
+        )),
+        patch.object(inquirer, 'get_transaction_receipt', return_value=receipt),
+        patch.object(inquirer, 'maybe_get_l1_fees', return_value=None) as indexer_fee_query,
+    ):
+        transaction, _ = optimism_transactions.add_transaction_by_hash(
+            tx_hash=tx_hash,
+            associated_address=optimism_accounts[0],
+            must_exist=True,
+        )
+        assert isinstance(transaction, L2WithL1FeesTransaction)
+        assert transaction.l1_fee is None
+        assert indexer_fee_query.call_count == 1
+
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(  # the decode that follows
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+        assert tx.l1_fee is None
+        assert indexer_fee_query.call_count == 1
+
+        indexer_fee_query.return_value = 321
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(  # a later redecode
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+        assert tx.l1_fee == 321
+        assert indexer_fee_query.call_count == 2
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == ('321',)
 
 
 @pytest.mark.parametrize(('indexer_fee', 'receipt', 'expected_fee', 'receipt_calls', 'indexer_calls'), [  # noqa: E501
