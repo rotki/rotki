@@ -2234,6 +2234,26 @@ class DBHandler:
             [(address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, x.identifier) for x in tokens],
         )
 
+    def get_cached_token_ids(
+            self,
+            cursor: DBCursor,
+            address: ChecksumEvmAddress,
+            chain_id: ChainID,
+            token_ids: Collection[str],
+    ) -> set[str]:
+        """Returns which of the given token identifiers are in the detected tokens of the
+        address. Queries by the full primary key in bounded chunks so it doesn't scan the
+        detected tokens of other accounts or load every cached token of the chain."""
+        cached: set[str] = set()
+        for chunk in get_chunks(list(token_ids), n=500):
+            cached.update(row[0] for row in cursor.execute(
+                'SELECT value FROM evm_accounts_details WHERE account=? AND chain_id=? AND '
+                f'key=? AND value IN ({",".join(["?"] * len(chunk))})',
+                (address, chain_id.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS, *chunk),
+            ))
+
+        return cached
+
     def _deserialize_account_blockchain_from_db(
             self,
             chain_str: str,

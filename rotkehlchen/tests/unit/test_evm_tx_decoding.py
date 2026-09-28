@@ -506,15 +506,17 @@ def test_token_detection_after_decoding(
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that the tokens found in new IN history events are saved as detected tokens."""
-    with patch.object(database, 'save_tokens_for_address') as save_tokens_mock:
-        get_decoded_events_of_transaction(
-            evm_inquirer=ethereum_inquirer,
-            tx_hash=deserialize_evm_tx_hash('0x21713730e79832ad0a88c9695745a95cd6e475fe69232f2aa8993ca98e6db92f'),
-        )
-        assert save_tokens_mock.call_count == 1
-        assert save_tokens_mock.call_args_list[0].kwargs['address'] == ethereum_accounts[0]
-        assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
-        assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [Asset('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c')]  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x21713730e79832ad0a88c9695745a95cd6e475fe69232f2aa8993ca98e6db92f'),
+    )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_tokens_for_address(
+            cursor=cursor,
+            address=ethereum_accounts[0],
+            blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
+        )[0] == [Asset('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c')]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
