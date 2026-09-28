@@ -10,6 +10,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.mixins.rpc_nodes import NodeStatus
@@ -644,6 +645,15 @@ class TransactionsService:
 
             chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain)
             if chain.is_evm():
+                if force_redecode and isinstance(
+                    transactions := chain_manager.transactions,  # type: ignore[attr-defined]
+                    L2WithL1FeesTransactions,
+                ):
+                    # Forget the unresolved fee lookups kept for the decode that follows them,
+                    # since a marker left by an earlier lookup would otherwise skip this
+                    # redecode's attempt to repair the fee.
+                    transactions._fresh_unresolved_fee_hashes.clear()
+
                 chain_manager.transactions.get_receipts_for_transactions_missing_them()  # type: ignore[attr-defined]
                 decoded_count = dbevmtx.count_hashes_not_decoded(
                     filter_query=EvmTransactionsNotDecodedFilterQuery.make(

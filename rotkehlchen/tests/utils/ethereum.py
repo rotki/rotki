@@ -15,7 +15,6 @@ from rotkehlchen.chain.ethereum.constants import (
 )
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.decoding.decoder import GnosisTransactionDecoder
@@ -33,7 +32,6 @@ from rotkehlchen.chain.scroll.transactions import ScrollTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import AlreadyExists
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -327,50 +325,6 @@ def setup_ethereum_transactions_test(
     return transactions, [expected_receipt1, expected_receipt2]
 
 
-def _add_l2_transaction(
-        transactions: L2WithL1FeesTransactions,
-        tx_hash: EVMTxHash,
-        relevant_address: ChecksumAddress | None,
-) -> bool:
-    """Add an L2 transaction through add_transaction_by_hash, as the add-by-hash endpoint
-    does, so the decode that follows reuses its L1 fee lookup instead of repeating it.
-
-    Returns False when the transaction is already in the DB or no tracked account can be
-    associated with it, so that the caller falls back to the plain query path.
-    """
-    with transactions.database.conn.read_ctx() as cursor:
-        tracked_accounts = transactions.database.get_blockchain_accounts(cursor).get(
-            transactions.evm_inquirer.blockchain,
-        )
-    if relevant_address is not None:
-        if relevant_address not in tracked_accounts:
-            return False
-        associated_address = relevant_address
-    elif len(tracked_accounts) == 0:
-        return False
-    else:
-        associated_address = tracked_accounts[0]
-
-    try:
-        transaction, _ = transactions.add_transaction_by_hash(
-            tx_hash=tx_hash,
-            associated_address=associated_address,
-            must_exist=True,
-        )
-    except AlreadyExists:
-        return False
-
-    # Query internal txs as get_or_query_transaction_receipt does. Calling that would load
-    # the transaction again and use up the unresolved fee marker before the decode.
-    if transaction.to_address is not None:
-        transactions._query_and_save_internal_transactions_for_parent_hash(
-            address=None,
-            parent_tx_hash=tx_hash,
-            tx_timestamp=transaction.timestamp,
-        )
-    return True
-
-
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: EthereumInquirer,
@@ -525,21 +479,15 @@ def get_decoded_events_of_transaction(
     else:
         raise AssertionError('Unsupported chainID at tests')
 
-    if not (isinstance(transactions, L2WithL1FeesTransactions) and _add_l2_transaction(
-        transactions=transactions,
-        tx_hash=tx_hash,
-        relevant_address=relevant_address,
-    )):
-        if relevant_address is not None:
-            with evm_inquirer.database.conn.read_ctx() as cursor:
-                transactions.get_or_create_transaction(
-                    cursor=cursor,
-                    tx_hash=tx_hash,
-                    relevant_address=relevant_address,
-                )
+    if relevant_address is not None:
+        with evm_inquirer.database.conn.read_ctx() as cursor:
+            transactions.get_or_create_transaction(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=relevant_address,
+            )
 
-        transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-
+    transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
     original_run_all_post_decoding_rules = decoder.run_all_post_decoding_rules
     expected_call_count = 0
 
