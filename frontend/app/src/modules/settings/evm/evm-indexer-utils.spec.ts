@@ -6,6 +6,7 @@ import {
   getAvailableIndexersForChain,
   getChainIndexerWarnings,
   getMissingApiKeyIndexer,
+  initialOrderForChain,
   isEvmIndexer,
   keyedPrimaryIndexer,
   orderForChain,
@@ -37,10 +38,20 @@ describe('evm-indexer-utils', () => {
       expect(available.itemDataForId(EvmIndexer.ROUTESCAN)).toBeDefined();
     });
 
-    it('should offer every indexer for a chain with no restriction', () => {
-      const available = getAvailableIndexersForChain('optimism');
+    it('should offer routescan on ethereum only', () => {
+      expect(getAvailableIndexersForChain('eth').itemDataForId(EvmIndexer.ROUTESCAN)).toBeDefined();
+
+      const optimism = getAvailableIndexersForChain('optimism');
+      expect(optimism.itemDataForId(EvmIndexer.ETHERSCAN)).toBeDefined();
+      expect(optimism.itemDataForId(EvmIndexer.BLOCKSCOUT)).toBeDefined();
+      expect(optimism.itemDataForId(EvmIndexer.ROUTESCAN)).toBeUndefined();
+    });
+
+    it('should offer only blockscout on scroll', () => {
+      const available = getAvailableIndexersForChain('scroll');
 
       expect(available.itemDataForId(EvmIndexer.BLOCKSCOUT)).toBeDefined();
+      expect(available.itemDataForId(EvmIndexer.ETHERSCAN)).toBeUndefined();
     });
 
     it('should restrict a chain that only one indexer serves', () => {
@@ -63,10 +74,27 @@ describe('evm-indexer-utils', () => {
         .toEqual([EvmIndexer.ETHERSCAN]);
     });
 
-    it('should fall back to etherscan rather than leave a chain with no indexer', () => {
-      expect(orderForChain('binance_sc', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]))
+    it('should drop routescan from a saved optimism order', () => {
+      expect(orderForChain('optimism', [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]))
+        .toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    });
+
+    it('should leave a saved order empty rather than invent an indexer the backend will not use', () => {
+      expect(orderForChain('optimism', [EvmIndexer.ROUTESCAN])).toEqual([]);
+    });
+  });
+
+  describe('initialOrderForChain', () => {
+    it('should start a new override from the default order the chain supports', () => {
+      expect(initialOrderForChain('optimism', [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]))
+        .toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    });
+
+    it('should fall back to the first supported indexer rather than start a chain with none', () => {
+      expect(initialOrderForChain('binance_sc', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]))
         .toEqual([EvmIndexer.ETHERSCAN]);
-      expect(orderForChain('optimism', [])).toEqual([EvmIndexer.ETHERSCAN]);
+      expect(initialOrderForChain('optimism', [])).toEqual([EvmIndexer.ETHERSCAN]);
+      expect(initialOrderForChain('scroll', [EvmIndexer.ETHERSCAN])).toEqual([EvmIndexer.BLOCKSCOUT]);
     });
   });
 
@@ -138,23 +166,17 @@ describe('evm-indexer-utils', () => {
       expect(getChainIndexerWarnings(DEFAULT_INDEXER_TAB, [EvmIndexer.BLOCKSCOUT])).toEqual([]);
     });
 
-    it('should warn when optimism includes blockscout', () => {
+    it('should warn about pre-Bedrock history when optimism includes blockscout', () => {
       expect(getChainIndexerWarnings('optimism', [EvmIndexer.BLOCKSCOUT]))
-        .toEqual(['evm_settings.indexer.chain_warnings.optimism_blockscout']);
-      expect(getChainIndexerWarnings('optimism', [EvmIndexer.ETHERSCAN])).toEqual([]);
+        .toContain('evm_settings.indexer.chain_warnings.optimism_blockscout');
+      expect(getChainIndexerWarnings('optimism', [EvmIndexer.ETHERSCAN]))
+        .not
+        .toContain('evm_settings.indexer.chain_warnings.optimism_blockscout');
     });
 
-    it('should warn when base does not lead with blockscout', () => {
-      expect(getChainIndexerWarnings('base', [EvmIndexer.ETHERSCAN]))
-        .toEqual(['evm_settings.indexer.chain_warnings.base_limited_indexers']);
-      expect(getChainIndexerWarnings('base', []))
-        .toEqual(['evm_settings.indexer.chain_warnings.base_limited_indexers']);
-      expect(getChainIndexerWarnings('base', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN])).toEqual([]);
-    });
-
-    it('should always warn on gnosis', () => {
-      expect(getChainIndexerWarnings('gnosis', [EvmIndexer.ETHERSCAN]))
-        .toEqual(['evm_settings.indexer.chain_warnings.gnosis_key_required']);
+    it.each(['base', 'gnosis', 'optimism'])('should say %s needs a key whatever the order', (chain) => {
+      for (const order of [[EvmIndexer.BLOCKSCOUT], [EvmIndexer.ETHERSCAN], []])
+        expect(getChainIndexerWarnings(chain, order)).toContain('evm_settings.indexer.chain_warnings.key_required');
     });
 
     it('should return an empty list for a chain with no caveat', () => {

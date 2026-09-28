@@ -176,7 +176,7 @@ describe('indexerOrderSetting', () => {
 
     const warnings = wrapper.findAll('[data-testid=chain-warning-alert]');
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.gnosis_key_required');
+    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.key_required');
   });
 
   it('should not warn on the default tab', async () => {
@@ -226,6 +226,23 @@ describe('indexerOrderSetting', () => {
     await nextTick();
 
     expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should leave routescan out of a saved optimism order, since it no longer serves the chain', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], {
+      optimism: [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN],
+    });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should show a routescan-only optimism order as empty instead of inventing an indexer', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], { optimism: [EvmIndexer.ROUTESCAN] });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([]);
+    expect(wrapper.text()).toContain('evm_settings.indexer.no_indexers_warning');
   });
 
   it('should persist the remaining overrides when a chain is removed', async () => {

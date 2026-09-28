@@ -11,7 +11,10 @@ import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 
-const apiKeys = vi.hoisted(() => new Map<string, string>());
+const apiKeys = await vi.hoisted(async () => {
+  const { reactive } = await import('vue');
+  return reactive(new Map<string, string>());
+});
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
   useExternalApiKeys: vi.fn(() => ({ getApiKey: (name: string): string => apiKeys.get(name) ?? '' })),
@@ -22,6 +25,24 @@ const ethereum: EvmChainInfo = {
   id: Blockchain.ETH,
   image: '',
   name: 'Ethereum',
+  nativeToken: 'ETH',
+  type: 'evm',
+};
+
+const optimism: EvmChainInfo = {
+  evmChainName: 'optimism',
+  id: 'optimism',
+  image: '',
+  name: 'Optimism',
+  nativeToken: 'ETH',
+  type: 'evm',
+};
+
+const arbitrum: EvmChainInfo = {
+  evmChainName: 'arbitrum_one',
+  id: 'arbitrum_one',
+  image: '',
+  name: 'Arbitrum One',
   nativeToken: 'ETH',
   type: 'evm',
 };
@@ -270,6 +291,88 @@ describe('modules/accounts/management/AccountForm', () => {
       await nextTick();
 
       expect(wrapper.text()).toContain('external_services.etherscan.api_key_message');
+    });
+
+    /*
+     * Optimism, Base and Gnosis lead with Blockscout, and Etherscan's free tier does not serve
+     * them, so there a missing Blockscout key is what stops the query, Etherscan key or not.
+     */
+    function mountOnOptimism(order: EvmIndexer[] = [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN]): void {
+      useSupportedChainsStore().supportedChains = [optimism];
+      wrapper = createWrapper({
+        chain: 'optimism',
+        data: [{ address: '', tags: null }],
+        mode: 'add',
+        type: 'account',
+      });
+      updateGeneralSettings({
+        defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT],
+        evmIndexersOrder: { optimism: order },
+      });
+    }
+
+    // Routescan no longer serves Optimism, so the backend skips it and Blockscout leads in its place.
+    it('should ask for a blockscout key when routescan leads an optimism order', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      mountOnOptimism([EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.blockscout.api_key_message::Optimism');
+    });
+
+    it('should ask for a blockscout key naming the chain when blockscout leads without one', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      mountOnOptimism();
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.blockscout.api_key_message::Optimism');
+      expect(wrapper.text()).not.toContain('external_services.etherscan.api_key_message');
+    });
+
+    it('should read the override of a chain whose evm chain name is snake_case', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      useSupportedChainsStore().supportedChains = [arbitrum];
+      wrapper = createWrapper({ chain: 'arbitrum_one', data: [{ address: '', tags: null }], mode: 'add', type: 'account' });
+      updateGeneralSettings({
+        defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT],
+        evmIndexersOrder: { arbitrum_one: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
+      });
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.blockscout.api_key_message::Arbitrum One');
+    });
+
+    it('should keep the blockscout warning row when an etherscan key clears the row above it', async () => {
+      useSupportedChainsStore().supportedChains = [ethereum, optimism];
+      wrapper = createWrapper({ chain: 'all', data: [{ address: '', tags: null }], mode: 'add', type: 'account' });
+      updateGeneralSettings({
+        defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT],
+        evmIndexersOrder: { optimism: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] },
+      });
+      await nextTick();
+      const showMore = wrapper.findAll('button').find(button => button.text().includes('show_more_num'));
+      assert(showMore);
+      await showMore.trigger('click');
+
+      const blockscoutRow = (): Element | undefined => wrapper.findAll('li')
+        .find(item => item.text().includes('external_services.blockscout.api_key_message'))
+        ?.element;
+      const before = blockscoutRow();
+      assert(before);
+
+      apiKeys.set('etherscan', 'etherscan-key');
+      await nextTick();
+
+      expect(wrapper.text()).not.toContain('external_services.etherscan.api_key_message');
+      expect(blockscoutRow()).toBe(before);
+    });
+
+    it('should not ask for a blockscout key when blockscout leads and has one', async () => {
+      apiKeys.set('blockscout', 'blockscout-key');
+      mountOnOptimism();
+      await nextTick();
+
+      expect(wrapper.text()).not.toContain('external_services.blockscout.api_key_message');
     });
   });
 });
