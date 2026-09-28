@@ -33,7 +33,7 @@ export function createNotificationRegistry(
 > {
   return {
     [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: createSnapshotErrorHandler(t),
-    [SocketMessageType.BINANCE_PAIRS_MISSING]: createBinancePairsMissingHandler(t, router),
+    [SocketMessageType.BINANCE_PAIRS_MISSING]: createBinancePairsMissingHandler(),
     [SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED]: createGnosisPaySessionHandler(),
     [SocketMessageType.LEGACY]: createLegacyHandler(t),
     [SocketMessageType.MISSING_API_KEY]: createMissingApiKeyHandler(),

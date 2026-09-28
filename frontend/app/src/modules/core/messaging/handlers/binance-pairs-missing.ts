@@ -1,22 +1,20 @@
-import type { NotificationHandler } from '../interfaces';
+import type { StateHandler } from '../interfaces';
 import type { BinancePairsMissingData } from '@/modules/core/messaging/types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
-import { createNotificationHandler } from '@/modules/core/messaging/utils';
+import { createStateHandler } from '@/modules/core/messaging/utils';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-export function createBinancePairsMissingHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<BinancePairsMissingData> {
-  return createNotificationHandler<BinancePairsMissingData>(({ location, name }) => ({
-    action: {
-      action: async () => router.push({
-        name: '/api-keys/exchanges/',
-        query: { location, name },
-      }),
-      label: t('notification_messages.binance_pairs_missing.action'),
-      persist: true,
-    },
-    category: NotificationCategory.DEFAULT,
-    message: t('notification_messages.binance_pairs_missing.message', { name }),
-    priority: Priority.HIGH,
-    severity: Severity.WARNING,
-    title: t('notification_messages.binance_pairs_missing.title'),
-  }));
+/**
+ * Records a Binance account whose trades cannot be imported because it has no market pairs
+ * selected, which the action center lists.
+ *
+ * @remarks
+ * Creates no notification. The backend repeats the report on every trade history query, and a
+ * repeat replaces the account's condition rather than adding another.
+ */
+export function createBinancePairsMissingHandler(): StateHandler<BinancePairsMissingData> {
+  const { raise } = useRaisedConditionsStore();
+
+  return createStateHandler<BinancePairsMissingData>(({ location, name }) => {
+    raise({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, location, name });
+  });
 }

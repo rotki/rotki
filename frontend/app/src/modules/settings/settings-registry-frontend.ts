@@ -181,6 +181,7 @@ export const frontendRegistry = {
       titleKey: msg.$t('rounding_settings.subscript.title'),
     },
   }),
+  suppressBinancePairsMissing: frontend('suppressBinancePairsMissing', { userFacing: false }),
   suppressNoIndexerChains: frontend('suppressNoIndexerChains', {
     anchor: SettingsHighlightIds.SUPPRESSED_NO_INDEXER_CHAINS,
     search: {

@@ -2216,11 +2216,6 @@
       "active": {
         "message": "检测到您的高级订阅。",
         "title": "高级功能已激活"
-      },
-      "inactive": {
-        "expired_message": "您的高级订阅已过期。前往 rotki 网站续订您的订阅。",
-        "network_problem_message": "由于网络问题，我们无法验证您的高级订阅。",
-        "title": "高级功能已停用"
       }
     },
     "snapshot_failed": {

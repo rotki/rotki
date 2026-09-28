@@ -139,6 +139,7 @@ describe('useSettingsRepo frontend channel', () => {
       passwordConfirmationInterval: 604800,
       newlyDetectedTokensMaxCount: 500,
       newlyDetectedTokensTtlDays: 30,
+      suppressBinancePairsMissing: [],
       suppressNoIndexerChains: [],
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: false,

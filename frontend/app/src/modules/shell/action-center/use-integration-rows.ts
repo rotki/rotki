@@ -170,6 +170,8 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
           title: t('action_center.rows.integrations.gnosis_pay_session.title'),
         }));
       case RaisedConditionKind.NO_AVAILABLE_INDEXERS:
+      case RaisedConditionKind.PREMIUM_INACTIVE:
+      case RaisedConditionKind.BINANCE_PAIRS_MISSING:
         return none;
     }
   }

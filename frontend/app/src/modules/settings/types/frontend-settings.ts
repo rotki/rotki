@@ -285,6 +285,8 @@ export const FrontendSettings = z.object({
   showGraphRangeSelector: z.boolean().default(true),
   silentNotifications: z.boolean().default(false),
   subscriptDecimals: z.boolean().default(false),
+  /** Binance accounts, as `location:name`, whose missing market pairs are no longer reported. */
+  suppressBinancePairsMissing: z.array(z.string()).default([]),
   suppressNoIndexerChains: z.array(z.string()).default([]),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
