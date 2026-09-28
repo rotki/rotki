@@ -1,6 +1,6 @@
 import { Blockchain, Priority } from '@rotki/common';
-import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
+import { convertBtcAccounts } from '@/modules/accounts/core/bitcoin-accounts';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';

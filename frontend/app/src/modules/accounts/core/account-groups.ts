@@ -7,8 +7,8 @@ import type {
 import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { getAccountBalance, hasTokens } from '@/modules/accounts/account-helpers';
 import { getAccountAddress, getAccountLabel } from '@/modules/accounts/account-utils';
+import { getAccountBalance, hasTokens } from '@/modules/accounts/core/account-balance';
 import { assetSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { deduplicateTags } from '@/modules/tags/tag-utils';

@@ -1,7 +1,7 @@
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { Blockchain } from '@rotki/common';
 import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
-import { convertBtcBalances } from '@/modules/accounts/account-helpers';
+import { convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import {

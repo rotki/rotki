@@ -10,11 +10,11 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { ok, type Result } from 'plainfp/result';
-import { sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
 import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { accountAssetBalances, type AccountAssetPorts, accountsByGroup } from '@/modules/accounts/core/account-assets';
 import { type AccountGroupPorts, accountGroups } from '@/modules/accounts/core/account-groups';
+import { sortAndFilterAccounts } from '@/modules/accounts/core/account-list';
 import { createAccountWithBalance } from '@/modules/accounts/create-account-with-balance';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
