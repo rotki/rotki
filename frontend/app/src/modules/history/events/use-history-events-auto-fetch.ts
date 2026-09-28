@@ -81,13 +81,30 @@ export function useHistoryEventsAutoFetch(
     get(active).filter(activity => EVENT_PRODUCING_KINDS.has(activity.kind)).length,
   );
 
+  /** A read was asked for while one was running, so the one running may already be stale. */
+  let readAgain = false;
+
+  /**
+   * Reads the events, one read at a time.
+   *
+   * @remarks
+   * A request that arrives during a read is held and served by one more read once it finishes,
+   * however many arrived. Dropping it would lose the change for good: every caller is
+   * edge-triggered, so nothing asks again.
+   */
   function read(): void {
-    if (get(isFetching))
+    if (get(isFetching)) {
+      readAgain = true;
       return;
+    }
 
     set(isFetching, true);
     startPromise(handlers.onProgress().finally(() => {
       set(isFetching, false);
+      if (readAgain) {
+        readAgain = false;
+        read();
+      }
     }));
   }
 

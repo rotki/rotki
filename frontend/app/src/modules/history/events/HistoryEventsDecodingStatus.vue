@@ -49,6 +49,13 @@ const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
 
+/**
+ * Clears the undecoded status, but only when nothing is listed.
+ *
+ * @remarks
+ * Clearing while entries are listed would wipe a breakdown that is still true, or one being
+ * fetched as decoding ends, and an empty list reads as "all decoded".
+ */
 function refresh() {
   if (decodingStatus.length === 0)
     emit('reset-undecoded-transactions');
@@ -82,10 +89,8 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 }>();
 
 watch(isDecoding, (loading) => {
-  if (!loading) {
+  if (!loading)
     refresh();
-    emit('reset-undecoded-transactions');
-  }
 });
 
 const combinedDecodingStatus = computed(() => {

@@ -56,10 +56,20 @@ describe('useSessionPurge', () => {
     it('should surface a failed deletion as a failed activity', async () => {
       const deleteData = vi.fn().mockRejectedValue(new Error('nope'));
 
-      await useSessionPurge().purgeData(Purgeable.TRANSACTIONS, '', deleteData);
+      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, '', deleteData)).rejects.toThrow();
 
       const outcome = await submitTask.mock.results[0].value;
       expect(outcome).toStrictEqual(err(TaskFailed({ cause: new Error('nope'), message: 'nope' })));
+    });
+
+    it('should reject when the deletion fails, so the purge page does not report success', async () => {
+      const deleteData = vi.fn().mockRejectedValue(new Error('nope'));
+
+      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', deleteData)).rejects.toThrow('nope');
+    });
+
+    it('should resolve when the deletion succeeds', async () => {
+      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', vi.fn().mockResolvedValue(undefined))).resolves.toBeUndefined();
     });
   });
 
