@@ -30,6 +30,7 @@ from rotkehlchen.constants.assets import (
     A_USDT,
 )
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -696,6 +697,49 @@ def test_uniswap_v3_v4_balances(
     asset_balances = result['per_account']['arbitrum_one'][user_address]['assets']
     assert asset_balances[v3_nft]['uniswap-v3']['amount'] == '1'
     assert asset_balances[v4_nft]['uniswap-v4']['amount'] == '1'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_historical_positions_decoded_after_snapshot_are_detected(
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13226
+
+    Positions minted before the latest balance snapshot but decoded after it must show up
+    in the first fresh balance query without an explicit token re-detection.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:  # snapshot newer than both mints
+        rotki.data.db.add_multiple_location_data(
+            write_cursor=write_cursor,
+            location_data=[LocationData(
+                time=ts_now(),
+                location=Location.TOTAL.serialize_for_db(),
+                usd_value='1',
+            )],
+        )
+
+    for tx_hash in (
+        '0x0ca4942007ea1e93a7b979da6066bb9b5ac25c14ebd8a8a4002bd03c339c0606',
+        '0xe2b6233758c84618e8f08c8df0782e45b3ba4a012c8d5fe0b4281fae7cbcce50',
+    ):
+        get_decoded_events_of_transaction(
+            evm_inquirer=rotki.chains_aggregator.arbitrum_one.node_inquirer,
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
+        )
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        json={'blockchain': SupportedBlockchain.ARBITRUM_ONE.serialize()},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    asset_balances = result['per_account']['arbitrum_one'][arbitrum_one_accounts[0]]['assets']
+    assert asset_balances['eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/4818837']['uniswap-v3']['amount'] == '1'  # noqa: E501
+    assert asset_balances['eip155:42161/erc721:0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869/61912']['uniswap-v4']['amount'] == '1'  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

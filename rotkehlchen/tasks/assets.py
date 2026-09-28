@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
@@ -29,6 +29,7 @@ from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_EVM,
 )
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
+from rotkehlchen.chain.evm.tokens import query_owned_erc721_tokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
@@ -51,10 +52,12 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
     HISTORY_BASE_ENTRY_FIELDS,
 )
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
@@ -501,4 +504,104 @@ def maybe_detect_new_tokens(database: DBHandler) -> None:
                 address=address,
                 blockchain=chain,
                 tokens=list(set(old_tokens or {}).union(tokens)),
+            )
+
+
+def detect_tokens_from_decoded_events(
+        database: DBHandler,
+        evm_inquirer: EvmNodeInquirer,
+        events: Sequence[EvmEvent],
+) -> None:
+    """Save as detected the tokens that tracked accounts received in the given decoded events.
+
+    Contrary to maybe_detect_new_tokens this doesn't depend on the on-chain timestamp of the
+    events, so historical transactions decoded after the latest balance snapshot are also
+    taken into account. To avoid caching spam only events decoded with a counterparty are
+    considered. ERC721 tokens are only saved if the account currently owns them. The tokens
+    are added to the existing cache, so a failed ownership check can be retried by a
+    later token detection without having lost the previously cached tokens.
+    """
+    settings = CachedSettings().get_settings()
+    if not settings.auto_detect_tokens:
+        return
+
+    chain = evm_inquirer.blockchain
+    if (disabled := settings.disabled_chain_queries.get(chain)) is not None and len(disabled) == 0:
+        return  # the whole chain is disabled
+
+    candidates: set[tuple[str, str]] = {
+        (event.location_label, event.asset.identifier)
+        for event in events
+        if (
+            event.counterparty is not None and
+            event.location_label is not None and
+            event.maybe_get_direction() == EventDirection.IN
+        )
+    }
+    if len(candidates) == 0:
+        return
+
+    with database.conn.read_ctx() as cursor:
+        tracked_accounts = set(database.get_blockchain_accounts(cursor).get(chain))
+        ignored_asset_ids = database.get_ignored_asset_ids(cursor)
+        candidates -= set(cursor.execute(  # skip already cached tokens to avoid ownerOf calls
+            'SELECT account, value FROM evm_accounts_details WHERE chain_id=? AND key=?',
+            (evm_inquirer.chain_id.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS),
+        ))
+
+    fungible_tokens: list[tuple[ChecksumEvmAddress, EvmToken]] = []
+    erc721_tokens: list[tuple[ChecksumEvmAddress, EvmToken]] = []
+    # sorted so the ownerOf calls batched into the multicall below have a deterministic
+    # order regardless of set hash randomization
+    for location_label, asset_id in sorted(candidates):
+        if (
+            location_label not in tracked_accounts or
+            (disabled is not None and location_label in disabled) or
+            asset_id in ignored_asset_ids
+        ):
+            continue
+
+        try:
+            token = EvmToken(asset_id)
+        except (UnknownAsset, WrongAssetType):
+            continue  # not an evm token
+
+        if token.chain_id != evm_inquirer.chain_id or token.protocol == SPAM_PROTOCOL:
+            continue
+
+        address = string_to_evm_address(location_label)
+        if token.token_kind == TokenKind.ERC721:
+            erc721_tokens.append((address, token))
+        else:
+            fungible_tokens.append((address, token))
+
+    try:
+        owned_erc721_tokens = query_owned_erc721_tokens(
+            evm_inquirer=evm_inquirer,
+            candidates=erc721_tokens,
+        )
+    except RemoteError as e:
+        log.error(
+            'Failed to check ownership of %s erc721 tokens in %s due to %s. '
+            'They will be picked by the next token detection.',
+            len(erc721_tokens),
+            evm_inquirer.chain_name,
+            e,
+        )
+        owned_erc721_tokens = set()
+
+    tokens_per_address: defaultdict[ChecksumEvmAddress, list[EvmToken]] = defaultdict(list)
+    for address, token in (*fungible_tokens, *owned_erc721_tokens):
+        tokens_per_address[address].append(token)
+
+    if len(tokens_per_address) == 0:
+        return
+
+    with database.user_write() as write_cursor:
+        for address, tokens in tokens_per_address.items():
+            database.add_tokens_for_address(
+                write_cursor=write_cursor,
+                address=address,
+                blockchain=chain,
+                tokens=tokens,
             )

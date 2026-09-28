@@ -80,7 +80,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
-from rotkehlchen.tasks.assets import maybe_detect_new_tokens
+from rotkehlchen.tasks.assets import detect_tokens_from_decoded_events, maybe_detect_new_tokens
 from rotkehlchen.types import (
     EVM_TOKEN_KINDS_TYPE,
     ChainID,
@@ -813,6 +813,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events=[x for x in new_events if x.counterparty in self.rules.post_processing_rules],
         )
         maybe_detect_new_tokens(self.database)
+        detect_tokens_from_decoded_events(  # also catch historical txs decoded after a snapshot
+            database=self.database,
+            evm_inquirer=self.evm_inquirer,
+            events=new_events,
+        )
         return refresh_balances, new_events
 
     def _get_or_decode_transaction_events(

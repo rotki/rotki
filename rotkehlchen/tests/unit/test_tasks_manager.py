@@ -9,6 +9,7 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
@@ -44,7 +45,11 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
+from rotkehlchen.tasks.assets import (
+    _find_missing_tokens,
+    detect_tokens_from_decoded_events,
+    maybe_detect_new_tokens,
+)
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
@@ -82,6 +87,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1072,6 +1078,84 @@ def test_maybe_detect_new_tokens_filters_events(
             blockchain=SupportedBlockchain.ETHEREUM,
             token_exceptions=set(),
         )[0] == [detected_token]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_detect_tokens_from_decoded_events(
+        database: DBHandler,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Tokens received in decoded events are cached regardless of the last balance snapshot,
+    but only if the event has a counterparty and, for erc721, if the account still owns it.
+    Position 61913 belongs to the same collection as the owned 61912 but to another account,
+    so a positive collection balance must not be enough to cache it."""
+    owned_nft, transferred_nft = (get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in ('61912', '61913'))
+    protocol_token, spam_token = (get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ARBITRUM_ONE,
+        name=name,
+        symbol=name,
+        decimals=18,
+    ) for name in ('PROTO', 'SPAM'))
+    with database.user_write() as write_cursor:  # snapshot newer than all the events
+        database.add_multiple_location_data(write_cursor=write_cursor, location_data=[
+            LocationData(time=ts_now(), location=Location.TOTAL.serialize_for_db(), usd_value='1'),
+        ])
+
+    events = [EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=idx,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset,
+        amount=ONE,
+        location_label=arbitrum_one_accounts[0],
+        counterparty=counterparty,
+    ) for idx, (asset, counterparty) in enumerate((
+        (owned_nft, 'uniswap-v4'),
+        (transferred_nft, 'uniswap-v4'),
+        (protocol_token, 'uniswap-v4'),
+        (protocol_token, 'uniswap-v4'),  # duplicated events are deduplicated
+        (spam_token, None),  # no counterparty -> skipped
+    ))]
+    detect_tokens_from_decoded_events(
+        database=database,
+        evm_inquirer=arbitrum_one_inquirer,
+        events=events,
+    )
+    with database.conn.read_ctx() as cursor:
+        assert set(database.get_tokens_for_address(
+            cursor=cursor,
+            address=arbitrum_one_accounts[0],
+            blockchain=SupportedBlockchain.ARBITRUM_ONE,
+            token_exceptions=set(),
+        )[0] or []) == {owned_nft, protocol_token}
+
+    # re-decoding only re-checks the ownership of the nfts that are not cached yet
+    with patch.object(
+        arbitrum_one_inquirer,
+        'multicall_2',
+        return_value=[(False, b'')],
+    ) as multicall_mock:
+        detect_tokens_from_decoded_events(
+            database=database,
+            evm_inquirer=arbitrum_one_inquirer,
+            events=events,
+        )
+
+    assert multicall_mock.call_count == 1
+    assert len(multicall_mock.call_args.kwargs['calls']) == 1
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

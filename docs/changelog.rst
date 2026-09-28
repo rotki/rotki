@@ -11,6 +11,7 @@ Changelog
 * :bug:`13216` rotki starts again on macOS 12 (Monterey) and 13 (Ventura). Since 1.44.0 the backend failed to start there with a numpy "Symbol not found" error.
 * :bug:`13220` When etherscan asks rotki to split a long transaction query into smaller ones, the progress of each part is now saved. Before, only the first part was recorded, so an interrupted first sync of a busy address downloaded most of its history again, and the logs showed "Gap detected" errors.
 * :bug:`-` A configured beacon node that does not answer no longer blocks login for minutes. The connection check is now a single attempt, so rotki falls back to beaconcha.in quickly.
+* :bug:`13226` NFT positions and tokens received from protocols, such as Uniswap v4 positions, now show up in balances right after their transactions are decoded, without needing to re-detect tokens.
 * :bug:`-` Deleting every event of a transaction now offers Cancel, Exclude from Accounting and Delete Transaction as separate choices. Before, the button meant to exclude the transaction read "Cancel", so cancelling, or pressing Escape, led to the exclusion prompt instead of closing. Other confirmations also show the dismiss label they ask for.
 * :bug:`-` Adding an account on a chain that queries Etherscan first no longer claims a Blockscout API key is needed when an Etherscan key is already set.
 * :bug:`-` Velo/Aero gauges will now be refreshed properly.
