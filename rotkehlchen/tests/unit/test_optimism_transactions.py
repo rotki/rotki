@@ -9,10 +9,16 @@ from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode, stri
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import (
+    EvmEventFilterQuery,
+    EvmTransactionsFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
+)
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
@@ -23,11 +29,12 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import from_wei, ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
@@ -35,9 +42,10 @@ if TYPE_CHECKING:
 def _add_pending_transaction(
         optimism_transactions: OptimismTransactions,
         l1_fee: int | None = None,
+        account: ChecksumEvmAddress | None = None,
 ) -> tuple[EVMTxHash, ChecksumEvmAddress]:
     tx_hash = make_evm_tx_hash()
-    account = make_evm_address()
+    account = account if account is not None else make_evm_address()
     with optimism_transactions.database.user_write() as write_cursor:
         optimism_transactions.dbevmtx.add_transactions(
             write_cursor=write_cursor,
@@ -708,9 +716,11 @@ def test_receipt_batch_resolves_l1_fee(
         ) is not None
 
 
-def test_failed_batch_fee_lookup_is_not_repeated_during_decode(
+def test_failed_batch_fee_lookup_is_retried_during_decode(
         optimism_transactions: OptimismTransactions,
 ) -> None:
+    """A fee the receipt batch could not resolve is asked for again by the decode, which
+    repairs it once the indexers answer, without refetching the whole transaction."""
     tx_hash, _ = _add_pending_transaction(optimism_transactions)
     receipt: dict[str, Any] = {
         'transactionHash': str(tx_hash),
@@ -721,7 +731,7 @@ def test_failed_batch_fee_lookup_is_not_repeated_during_decode(
     }
     with (
         patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]),  # noqa: E501
-        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=None) as fee_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', side_effect=[None, 321]) as fee_query,  # noqa: E501
         patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
     ):
         optimism_transactions.get_receipts_for_transactions_missing_them()
@@ -732,8 +742,8 @@ def test_failed_batch_fee_lookup_is_not_repeated_during_decode(
                 relevant_address=None,
             )
 
-    assert tx.l1_fee is None
-    fee_query.assert_called_once()
+    assert tx.l1_fee == 321
+    assert fee_query.call_count == 2
     transaction_query.assert_not_called()
 
 
@@ -858,8 +868,9 @@ def test_add_transaction_by_hash_unresolved_fee(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """Adding a tx by hash asks the indexers once for a fee missing from the receipt. The
-    decode that follows reuses that result, and a later call can still repair the fee."""
+    """Adding a tx by hash asks the indexers once for a fee missing from the receipt. No
+    failed lookup is remembered, so every later call, starting with the decode that
+    follows, asks again until the fee is repaired."""
     inquirer = optimism_transactions.evm_inquirer
     receipt: dict[str, Any] = {
         'transactionHash': str(tx_hash := make_evm_tx_hash()),
@@ -906,7 +917,7 @@ def test_add_transaction_by_hash_unresolved_fee(
                 relevant_address=None,
             )
         assert tx.l1_fee is None
-        assert indexer_fee_query.call_count == 1
+        assert indexer_fee_query.call_count == 2
 
         indexer_fee_query.return_value = 321
         with optimism_transactions.database.conn.read_ctx() as cursor:
@@ -916,7 +927,7 @@ def test_add_transaction_by_hash_unresolved_fee(
                 relevant_address=None,
             )
         assert tx.l1_fee == 321
-        assert indexer_fee_query.call_count == 2
+        assert indexer_fee_query.call_count == 3
 
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -1024,3 +1035,59 @@ def test_l1_fee_lookup_without_indexers(
             tx_hash=tx_hash,
             block_number=106757395,
         ) is None
+
+
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+def test_unresolved_l1_fee_leaves_transaction_undecoded(
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A transaction whose L1 fee cannot be resolved is left undecoded instead of getting a
+    gas event without its L1 part, which would never be repaired once marked as decoded.
+    The next decoding of undecoded transactions decodes it once the fee is available."""
+    optimism_transactions = optimism_transaction_decoder.transactions
+    tx_hash, _ = _add_pending_transaction(
+        optimism_transactions=optimism_transactions,  # type: ignore[arg-type]  # it is the optimism one
+        account=optimism_accounts[0],
+    )
+    with (database := optimism_transactions.database).user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={  # a receipt without l1Fee
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+
+    def get_events_and_undecoded_count() -> tuple[list, int]:
+        with database.conn.read_ctx() as cursor:
+            return DBHistoryEvents(database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+            ), optimism_transactions.dbevmtx.count_hashes_not_decoded(
+                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM),
+            )
+
+    inquirer = optimism_transactions.evm_inquirer
+    with (
+        patch.object(inquirer, 'maybe_get_l1_fees', return_value=None),
+        patch.object(inquirer, 'get_transaction_receipt', return_value={}),
+    ):
+        assert optimism_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
+
+    assert get_events_and_undecoded_count() == ([], 1)
+
+    with patch.object(inquirer, 'maybe_get_l1_fees', return_value=(l1_fee := 5000)):
+        assert optimism_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
+
+    events, undecoded_count = get_events_and_undecoded_count()
+    assert undecoded_count == 0
+    assert [(event.event_type, event.event_subtype, event.amount) for event in events] == [(
+        HistoryEventType.SPEND,
+        HistoryEventSubType.FEE,
+        from_wei(FVal(21000 + l1_fee)),  # gas_used * gas_price of the pending tx plus L1 fee
+    )]
