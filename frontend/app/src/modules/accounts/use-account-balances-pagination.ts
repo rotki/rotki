@@ -34,8 +34,8 @@ interface UseAccountBalancesPaginationOptions {
    */
   chains: Ref<string[]>;
   /**
-   * Per-group chain exclusions keyed by group id, forwarded as the `excluded` request param. Read only,
-   * this composable never writes it.
+   * Per-group chain exclusions keyed by group id, passed as `excluded` to the local account filter.
+   * Read only, this composable never writes it.
    */
   chainExclusionFilter: Ref<Record<string, string[]>>;
   /**

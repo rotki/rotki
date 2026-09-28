@@ -15,7 +15,6 @@ interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
   getCategoryTotal: (category: string) => BigNumber;
   getChains: (row: AccountDataRow<T>) => string[];
   isExpanded: (row: AccountDataRow<T>) => boolean;
-  isVirtual: (row: AccountDataRow<T>) => boolean;
   rows: ComputedRef<AccountDataRow<T>[]>;
   totalValue: ComputedRef<BigNumber | undefined>;
 }
@@ -83,10 +82,6 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
     set(expanded, isExpanded(item) ? [] : [item]);
   }
 
-  function isVirtual(row: AccountDataRow<T>): boolean {
-    return !!(('virtual' in row) && row.virtual);
-  }
-
   return {
     anyExpansion,
     collapsed: modelCollapsed,
@@ -95,7 +90,6 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
     getCategoryTotal,
     getChains,
     isExpanded,
-    isVirtual,
     rows,
     totalValue,
   };

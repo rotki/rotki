@@ -1,4 +1,4 @@
-import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
+import type { Balance, BigNumber } from '@rotki/common';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { Module } from '@/modules/core/common/modules';
@@ -37,7 +37,6 @@ export interface BlockchainAccount<T extends BlockchainAccountData = BlockchainA
   readonly nativeAsset: string;
   readonly groupId?: string;
   readonly groupHeader?: boolean;
-  readonly virtual?: boolean;
 }
 
 export interface AccountExtraParams {
@@ -68,14 +67,13 @@ export interface EthereumValidatorRequestPayload extends PaginationRequestPayloa
   readonly status?: string[];
 }
 
-export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain' | 'virtual'>, AccountExpansion {
+export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain'>, AccountExpansion {
   readonly type: 'group';
   readonly category?: string;
   readonly amount?: BigNumber;
   readonly value: BigNumber;
   readonly includedValue?: BigNumber;
   readonly nativeAsset?: string;
-  readonly aggregatedAssets?: AssetBalance[];
   readonly chains: string[];
   readonly allChains?: string[];
 }
