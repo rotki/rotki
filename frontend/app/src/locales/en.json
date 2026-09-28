@@ -401,7 +401,7 @@
       "history": "History",
       "integrations": "Integrations & keys"
     },
-    "subtitle": "{count} category needs your attention | {count} categories need your attention",
+    "subtitle": "{count} category to look at | {count} categories to look at",
     "subtitle_checking": "Checking for anything that needs your attention.",
     "subtitle_clear": "Everything has been checked.",
     "title": "Actions needed",

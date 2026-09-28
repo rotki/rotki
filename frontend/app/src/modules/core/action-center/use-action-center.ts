@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { ActionItem } from '@/modules/core/action-center/types';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { type ActionItem, type ActionUrgency, URGENCY_RANK } from '@/modules/core/action-center/types';
 
 /** One provider of counts behind a center: how to re-read it, and whether it is reading now. */
 interface ActionCenterSource {
@@ -34,6 +34,8 @@ export interface UseActionCenterReturn<TTarget extends { kind: string }, TId ext
   /** nothing to do, or not counted yet */
   clearedItems: ComputedRef<ActionItem<TTarget, TId>[]>;
   categoryCount: ComputedRef<number>;
+  /** the most pressing urgency among the active items, undefined when there are none */
+  urgency: ComputedRef<ActionUrgency | undefined>;
   hasItems: ComputedRef<boolean>;
   /** counts are still incomplete (a source is reading, or the domain is still working) */
   checking: ComputedRef<boolean>;
@@ -139,6 +141,11 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
 
   const categoryCount = computed<number>(() => get(activeItems).length);
 
+  const urgency = computed<ActionUrgency | undefined>(() => get(activeItems).reduce<ActionUrgency | undefined>(
+    (pressing, item) => (pressing === undefined || URGENCY_RANK[item.urgency] < URGENCY_RANK[pressing] ? item.urgency : pressing),
+    undefined,
+  ));
+
   const hasItems = computed<boolean>(() => get(categoryCount) > 0);
 
   const domainBusy = computed<boolean>(() => busy !== undefined && toValue(busy));
@@ -202,5 +209,6 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
     refreshing,
     rescan,
     reviewItems,
+    urgency,
   };
 }

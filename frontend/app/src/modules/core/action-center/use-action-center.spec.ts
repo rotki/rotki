@@ -76,6 +76,29 @@ describe('modules/core/action-center/useActionCenter', () => {
     expect(get(hasItems)).toBe(true);
   });
 
+  it('should report the most pressing urgency among the active items only', () => {
+    const items = ref<ActionItem[]>([
+      createItem({ count: 1, id: 'automatic', urgency: ActionUrgency.AUTOMATIC }),
+      createItem({ count: 1, id: 'todo', urgency: ActionUrgency.TODO }),
+      createItem({ count: 1, id: 'locked-decision', locked: true, urgency: ActionUrgency.DECISION }),
+      createItem({ count: 1, id: 'set-aside-decision', informational: true, urgency: ActionUrgency.DECISION }),
+      createItem({ count: 0, id: 'cleared-decision', urgency: ActionUrgency.DECISION }),
+    ]);
+    const { urgency } = useActionCenter({ id: 'test', items, sources: [] });
+
+    expect(get(urgency)).toBe(ActionUrgency.TODO);
+
+    set(items, [...get(items), createItem({ count: 1, id: 'decision', urgency: ActionUrgency.DECISION })]);
+    expect(get(urgency)).toBe(ActionUrgency.DECISION);
+  });
+
+  it('should report no urgency when nothing is active', () => {
+    const items = ref<ActionItem[]>([createItem({ count: 0, id: 'cleared' })]);
+    const { urgency } = useActionCenter({ id: 'test', items, sources: [] });
+
+    expect(get(urgency)).toBeUndefined();
+  });
+
   it('should keep a raised item raised, with its last finished count, while it re-reads', () => {
     const items = ref<ActionItem[]>([createItem({ count: 9, id: 'recounting' })]);
     const { activeItems, clearedItems } = useActionCenter({ id: 'test', items, sources: [] });

@@ -21,6 +21,13 @@ export const ActionUrgency = {
 
 export type ActionUrgency = (typeof ActionUrgency)[keyof typeof ActionUrgency];
 
+/** How pressing each urgency is, most pressing lowest. */
+export const URGENCY_RANK: Record<ActionUrgency, number> = {
+  [ActionUrgency.DECISION]: 0,
+  [ActionUrgency.TODO]: 1,
+  [ActionUrgency.AUTOMATIC]: 2,
+};
+
 /**
  * The targets every action center understands.
  *

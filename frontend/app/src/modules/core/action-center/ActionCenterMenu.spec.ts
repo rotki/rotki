@@ -1,16 +1,20 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ActionCenterMenu from '@/modules/core/action-center/ActionCenterMenu.vue';
+import { ActionUrgency } from '@/modules/core/action-center/types';
 
 interface MenuProps {
   count: number;
+  urgency?: ActionUrgency;
   newCount?: number;
   checking?: boolean;
   badge?: boolean;
 }
 
+/** Pending categories always carry an urgency, so a count without one stands for a decision. */
 function mountMenu(props: MenuProps): VueWrapper<InstanceType<typeof ActionCenterMenu>> {
-  return mount(ActionCenterMenu, { props, slots: { default: '<div>panel</div>' } });
+  const urgency = props.urgency ?? (props.count > 0 ? ActionUrgency.DECISION : undefined);
+  return mount(ActionCenterMenu, { props: { ...props, urgency }, slots: { default: '<div>panel</div>' } });
 }
 
 describe('modules/core/action-center/ActionCenterMenu', () => {
@@ -42,6 +46,17 @@ describe('modules/core/action-center/ActionCenterMenu', () => {
     const wrapper = mountMenu({ badge: true, count: 0 });
 
     expect(wrapper.findComponent({ name: 'RuiBadge' }).props('modelValue')).toBe(false);
+  });
+
+  it.each([
+    [ActionUrgency.DECISION, 'lu-triangle-alert', 'warning'],
+    [ActionUrgency.TODO, 'lu-list-todo', 'info'],
+    [ActionUrgency.AUTOMATIC, 'lu-list-todo', 'secondary'],
+  ])('should take its icon and badge colour from the most pressing urgency (%s)', (urgency, icon, color) => {
+    const wrapper = mountMenu({ badge: true, count: 1, urgency });
+
+    expect(wrapper.find('[data-testid=actions-center-button] .rui-icon').text()).toBe(icon);
+    expect(wrapper.findComponent({ name: 'RuiBadge' }).props('color')).toBe(color);
   });
 
   it('should spell the count out in the accessible name, since a badge reaches a screen reader as a bare number', () => {

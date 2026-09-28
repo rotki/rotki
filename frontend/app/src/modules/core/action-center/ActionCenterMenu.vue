@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import { ActionUrgency } from '@/modules/core/action-center/types';
 
 const open = defineModel<boolean>({ default: false });
 
-const { badge = false, checking = false, count, newCount = 0 } = defineProps<{
+const { badge = false, checking = false, count, newCount = 0, urgency } = defineProps<{
   /** how many categories are asking for something */
   count: number;
+  /** the most pressing urgency among them, which sets the trigger's icon and colour; undefined when none are asking */
+  urgency: ActionUrgency | undefined;
   /** how many of them are new since the user last looked, which is the number the badge shows */
   newCount?: number;
   checking?: boolean;
@@ -26,7 +29,22 @@ defineSlots<{
   default: () => any;
 }>();
 
+interface TriggerTone {
+  icon: RuiIcons;
+  textClass: string;
+  badgeColor: ContextColorsType;
+}
+
+/** Matches the row colours, so the trigger never sounds more alarmed than the rows it opens. */
+const URGENCY_TONES: Record<ActionUrgency, TriggerTone> = {
+  [ActionUrgency.AUTOMATIC]: { badgeColor: 'secondary', icon: 'lu-list-todo', textClass: '!text-rui-text-secondary' },
+  [ActionUrgency.DECISION]: { badgeColor: 'warning', icon: 'lu-triangle-alert', textClass: '!text-rui-warning' },
+  [ActionUrgency.TODO]: { badgeColor: 'info', icon: 'lu-list-todo', textClass: '!text-rui-info' },
+};
+
 const { t } = useI18n({ useScope: 'global' });
+
+const tone = computed<TriggerTone | undefined>(() => (urgency ? URGENCY_TONES[urgency] : undefined));
 
 /**
  * Names the trigger's state, and doubles as its accessible name.
@@ -50,8 +68,9 @@ const tooltip = computed<string>(() => {
  * add noise.
  */
 const icon = computed<RuiIcons>(() => {
-  if (count > 0)
-    return 'lu-triangle-alert';
+  const active = get(tone);
+  if (active)
+    return active.icon;
   return checking ? 'lu-circle-dashed' : 'lu-circle-check';
 });
 </script>
@@ -72,16 +91,16 @@ const icon = computed<RuiIcons>(() => {
             variant="text"
             icon
             size="lg"
-            :class="count > 0 ? '!text-rui-warning' : '!text-rui-text-secondary'"
+            :class="tone?.textClass ?? '!text-rui-text-secondary'"
             data-testid="actions-center-button"
             :aria-label="tooltip"
             v-bind="attrs"
           >
             <RuiBadge
-              :model-value="badge && count > 0"
+              :model-value="badge && !!tone"
               :dot="newCount === 0"
               :text="newCount > 0 ? newCount.toString() : undefined"
-              color="warning"
+              :color="tone?.badgeColor"
               placement="top"
               size="sm"
               offset-y="4"
