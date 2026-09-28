@@ -1,23 +1,23 @@
-import type { BlockchainAccount, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccountWithBalance, ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
-import { getGroupId } from '@/modules/accounts/account-utils';
-import { getAccountBalance } from '@/modules/accounts/core/account-balance';
+import { getAccountGroupId } from '@/modules/accounts/account-utils';
+import { type AccountBalancePorts, getAccountBalance } from '@/modules/accounts/core/account-balance';
 import { deduplicateTags } from '@/modules/tags/tag-utils';
 
 export function createAccountWithBalance(
-  account: BlockchainAccount,
+  account: AddressAccount | ValidatorAccount,
   chainBalances: BlockchainAssetBalances,
-  isAssetIgnored: (asset: string) => boolean,
+  ports: AccountBalancePorts,
 ): BlockchainAccountWithBalance {
-  const { balance, expansion } = getAccountBalance(account, chainBalances, isAssetIgnored);
+  const { balance, expansion } = getAccountBalance(account, chainBalances, ports);
   const tags = account.tags ? deduplicateTags(account.tags) : undefined;
 
   return {
-    groupId: getGroupId({ chains: [account.chain], data: account.data }),
-    type: 'account',
     ...account,
     ...balance,
     expansion,
+    groupId: getAccountGroupId(account),
     tags,
-  } satisfies BlockchainAccountWithBalance;
+    type: 'account',
+  };
 }

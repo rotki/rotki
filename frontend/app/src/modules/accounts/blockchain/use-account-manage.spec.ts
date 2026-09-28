@@ -3,7 +3,9 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import { Blockchain, Zero } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAccountGroupId } from '@/modules/accounts/account-utils';
 import { type BlockchainAccountBalance, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
+import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
@@ -469,12 +471,12 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
   describe('editBlockchainAccount', () => {
     it('should build a validator edit state from validator data', () => {
+      const validator = createValidatorAccount({ index: 12345, ownershipPercentage: '50', publicKey: '0xabc', status: 'active' }, Blockchain.ETH2);
       const account: BlockchainAccountBalance = {
+        ...validator,
         amount: Zero,
-        chain: Blockchain.ETH2,
-        data: { index: 12345, ownershipPercentage: '50', publicKey: '0xabc', status: 'active', type: 'validator' },
+        groupId: getAccountGroupId(validator),
         label: 'My validator',
-        nativeAsset: 'ETH',
         type: 'account',
         value: Zero,
       };
@@ -488,11 +490,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     });
 
     it('should default the validator ownership to 100 when missing', () => {
+      const validator = createValidatorAccount({ index: 7, publicKey: '0xdef', status: 'active' }, Blockchain.ETH2);
       const account: BlockchainAccountBalance = {
+        ...validator,
         amount: Zero,
-        chain: Blockchain.ETH2,
-        data: { index: 7, publicKey: '0xdef', status: 'active', type: 'validator' },
-        nativeAsset: 'ETH',
+        groupId: getAccountGroupId(validator),
         type: 'account',
         value: Zero,
       };
@@ -506,13 +508,16 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should build an xpub edit state from xpub data', () => {
       const account: BlockchainAccountBalance = {
         amount: Zero,
-        chain: Blockchain.BTC,
-        data: { derivationPath: 'm/0', type: 'xpub', xpub: 'xpubSomeKey' },
+        category: 'bitcoin',
+        chains: [Blockchain.BTC],
+        derivationPath: 'm/0',
+        kind: 'xpub',
         label: 'My xpub',
         nativeAsset: 'BTC',
         tags: ['cold'],
-        type: 'account',
+        type: 'group',
         value: Zero,
+        xpub: 'xpubSomeKey',
       };
 
       expect(editBlockchainAccount(account)).toEqual({
@@ -529,9 +534,10 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
     it('should build an agnostic group edit state for multi-chain groups', () => {
       const account: BlockchainAccountBalance = {
+        address: '0xADDRESS',
         category: 'evm',
         chains: [Blockchain.ETH, Blockchain.OPTIMISM],
-        data: { address: '0xADDRESS', type: 'address' },
+        kind: 'address',
         label: '0xADDRESS',
         type: 'group',
         value: Zero,
@@ -547,13 +553,11 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     });
 
     it('should build a single-account edit state and keep a distinct label', () => {
+      const address = createAccount({ address: '0xABC', label: 'Main wallet', tags: ['hot'] }, Blockchain.ETH);
       const account: BlockchainAccountBalance = {
+        ...address,
         amount: Zero,
-        chain: Blockchain.ETH,
-        data: { address: '0xABC', type: 'address' },
-        label: 'Main wallet',
-        nativeAsset: 'ETH',
-        tags: ['hot'],
+        groupId: getAccountGroupId(address),
         type: 'account',
         value: Zero,
       };

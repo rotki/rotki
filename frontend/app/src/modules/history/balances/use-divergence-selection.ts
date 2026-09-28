@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { startPromise } from '@shared/utils';
-import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
@@ -48,10 +48,10 @@ export function useDivergenceSelection(): UseDivergenceSelectionReturn {
     get(locationLabels).forEach(addLabel);
     Object.values(get(accountsPerChain))
       .flatMap(accounts => accounts)
-      .filter(hasAccountAddress)
+      .filter(isAddressAccount)
       .forEach(account => addLabel({
         location: account.chain,
-        locationLabel: getAccountAddress(account),
+        locationLabel: account.address,
       }));
 
     return [...labels.values()];

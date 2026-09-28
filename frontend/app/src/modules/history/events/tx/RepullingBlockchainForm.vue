@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { ZodType } from 'zod';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
-import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -34,15 +34,15 @@ const hasNoAccounts = computed<boolean>(() => get(chainOptions).length === 0);
 
 const usableChains = computed<string[]>(() => getUsableChains(form.state.chain));
 
-const accounts = computed<BlockchainAccount<AddressData>[]>({
+const accounts = computed<AddressAccount[]>({
   get: () => {
     const { address, chain } = form.state;
     const accountFound = Object.values(get(accountsPerChain))
       .flatMap(x => x)
-      .filter(hasAccountAddress)
+      .filter(isAddressAccount)
       .find(
         item =>
-          getAccountAddress(item) === address
+          item.address === address
           && (!chain || chain === 'all' || chain === item.chain),
       );
 
@@ -52,9 +52,9 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
 
     return [];
   },
-  set: (value: BlockchainAccount<AddressData>[]) => {
+  set: (value: AddressAccount[]) => {
     const account = value[0];
-    form.state.address = account ? getAccountAddress(account) : '';
+    form.state.address = account?.address ?? '';
     form.touch('address');
   },
 });

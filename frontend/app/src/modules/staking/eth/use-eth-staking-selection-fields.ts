@@ -37,8 +37,8 @@ function useWithdrawalAddressOptions(): AccountFieldOptions {
   const declared = computed<string[]>(() => {
     const addresses = new Set<string>();
     for (const account of get(accountsPerChain)[Blockchain.ETH2] ?? []) {
-      if (isValidatorAccount(account) && account.data.withdrawalAddress)
-        addresses.add(account.data.withdrawalAddress);
+      if (isValidatorAccount(account) && account.withdrawalAddress)
+        addresses.add(account.withdrawalAddress);
     }
     return [...addresses];
   });

@@ -1,11 +1,12 @@
 import type {
+  BlockchainAccount,
   BlockchainAccountBalance,
+  DeleteXpubParams,
   EthereumValidator,
-  XpubData,
 } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { isErr } from 'plainfp/result';
-import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getXpubGroupId, isAddressAccount, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAccountRemovals } from '@/modules/accounts/use-account-removals';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
@@ -37,7 +38,7 @@ type Payload = {
   data: EvmPayloadData;
 } | {
   type: 'xpub';
-  data: XpubData & { chain: string };
+  data: DeleteXpubParams;
 } | {
   type: 'account';
   data: {
@@ -73,8 +74,9 @@ function toPayload(params: ShowConfirmationParams): Payload {
     if (isXpubAccount(account)) {
       return {
         data: {
-          ...account.data,
           chain: account.chains[0],
+          derivationPath: account.derivationPath,
+          xpub: account.xpub,
         },
         type: 'xpub',
       };
@@ -151,16 +153,17 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       const chainAccounts = knownAccounts[chain];
       if (chainAccounts) {
         const groupIds = chainAccounts
-          .filter(account => addresses.includes(getAccountAddress(account)) && account.groupId && account.groupHeader)
-          .map(account => account.groupId!);
+          .filter(isXpubAccount)
+          .filter(xpub => addresses.includes(getAccountAddress(xpub)))
+          .map(xpub => getXpubGroupId(xpub, chain));
 
-        const groups = chainAccounts.filter(account => account.groupId && groupIds.includes(account.groupId));
-        groupAddresses.push(...groups.map(account => getAccountAddress(account)));
+        const isDerivedFromRemoved = (account: BlockchainAccount): boolean =>
+          isAddressAccount(account) && !!account.xpubParent && groupIds.includes(getXpubGroupId(account.xpubParent, chain));
+
+        groupAddresses.push(...chainAccounts.filter(isDerivedFromRemoved).map(account => getAccountAddress(account)));
 
         knownAccounts[chain] = chainAccounts.filter(
-          account => !(
-            addresses.includes(getAccountAddress(account)) || (account.groupId && groupIds.includes(account.groupId))
-          ),
+          account => !(addresses.includes(getAccountAddress(account)) || isDerivedFromRemoved(account)),
         );
       }
 
@@ -229,13 +232,13 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     });
   }
 
-  async function removeXpub(payload: XpubData & { chain: string }): Promise<void> {
+  async function removeXpub(payload: DeleteXpubParams): Promise<void> {
     const outcome = await deleteXpub(payload);
     if (isErr(outcome))
       return;
 
     removeAccounts({
-      addresses: [getAccountAddress({ data: payload })],
+      addresses: [payload.xpub],
       chains: [payload.chain],
     });
   }

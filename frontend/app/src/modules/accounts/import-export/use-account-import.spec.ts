@@ -189,7 +189,7 @@ describe('useAccountImport', () => {
     const { addAccount, reportTracked } = useAccountAdditions();
     const { updateAccounts } = useBlockchainAccountsStore();
     updateAccounts(Blockchain.ETH, [
-      createAccount({ address: '0x124', label: null, tags: null }, { chain: Blockchain.ETH, nativeAsset: 'ETH' }),
+      createAccount({ address: '0x124', label: null, tags: null }, Blockchain.ETH),
     ]);
 
     const mockFile = createMockCSV([
@@ -286,10 +286,7 @@ describe('useAccountImport', () => {
         ownershipPercentage: '44',
         publicKey: VALIDATOR_2,
         status: 'exited',
-      }, {
-        chain: Blockchain.ETH2,
-        nativeAsset: 'ETH',
-      }),
+      }, Blockchain.ETH2),
     ]);
 
     const mockFile = createMockCSV([

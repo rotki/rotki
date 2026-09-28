@@ -1,12 +1,14 @@
-import type {
-  AddressData,
-  BlockchainAccount,
-  BlockchainAccountData,
-  BlockchainAccountWithBalance,
-  ValidatorData,
-  XpubData,
-} from '@/modules/accounts/blockchain-accounts';
 import { type Brand, make } from 'plainfp/brand';
+import {
+  type AccountIdentity,
+  AccountKind,
+  type AddressAccount,
+  type AddressIdentity,
+  type ValidatorAccount,
+  type ValidatorIdentity,
+  type XpubIdentity,
+  type XpubKey,
+} from '@/modules/accounts/blockchain-accounts';
 
 /**
  * The key of an accounts-table group row: an address, a validator public key, or an xpub on a chain.
@@ -19,81 +21,94 @@ export type AccountGroupId = Brand<string, 'AccountGroupId'>;
 /** The key of one account on one chain. */
 export type AccountId = Brand<string, 'AccountId'>;
 
-export function getXpubId(data: Omit<XpubData, 'type'>): string {
-  if (!data.derivationPath)
-    return data.xpub;
+type KindHandlers<T extends AccountIdentity, R> = {
+  readonly [K in AccountKind]: (item: T & { readonly kind: K }) => R;
+};
 
-  return `${data.xpub}#${data.derivationPath}`;
+/**
+ * Runs the handler for the item's kind. Every kind needs a handler, so adding one fails to compile
+ * until each call site decides what it means there.
+ *
+ * @throws Error for an item whose `kind` is none of the known ones, which only untyped data can carry.
+ */
+export function matchKind<T extends AccountIdentity, R>(item: T, handlers: KindHandlers<T, R>): R {
+  if (isAddressAccount(item))
+    return handlers.address(item);
+  if (isXpubAccount(item))
+    return handlers.xpub(item);
+  if (isValidatorAccount(item))
+    return handlers.validator(item);
+  throw new Error(`Unknown account kind: ${String(Reflect.get(item, 'kind'))}`);
+}
+
+export function isAddressAccount<T extends AccountIdentity>(account: T): account is T & AddressIdentity {
+  return account.kind === AccountKind.ADDRESS;
+}
+
+export function isValidatorAccount<T extends AccountIdentity>(account: T): account is T & ValidatorIdentity {
+  return account.kind === AccountKind.VALIDATOR;
+}
+
+export function isXpubAccount<T extends AccountIdentity>(account: T): account is T & XpubIdentity {
+  return account.kind === AccountKind.XPUB;
+}
+
+export function getXpubId(key: XpubKey): string {
+  if (!key.derivationPath)
+    return key.xpub;
+
+  return `${key.xpub}#${key.derivationPath}`;
 }
 
 /** The group of an xpub and every address derived from it on that chain. */
-export function getXpubGroupId(data: Omit<XpubData, 'type'>, chain: string): AccountGroupId {
-  return make<string, 'AccountGroupId'>(`${getXpubId(data)}#${chain}`);
+export function getXpubGroupId(key: XpubKey, chain: string): AccountGroupId {
+  return make<string, 'AccountGroupId'>(`${getXpubId(key)}#${chain}`);
 }
 
-function getDataId(group: { data: BlockchainAccountData }): string {
-  if (isAddressAccount(group))
-    return group.data.address;
-  else if (isValidatorAccount(group))
-    return group.data.publicKey;
-  else if (isXpubAccount(group))
-    return getXpubId(group.data);
-  return '';
+function getIdentityId(identity: AccountIdentity): string {
+  return matchKind(identity, {
+    address: ({ address }) => address,
+    validator: ({ publicKey }) => publicKey,
+    xpub: key => getXpubId(key),
+  });
 }
 
-export function getGroupId(group: { data: BlockchainAccountData; chains: string[] }): AccountGroupId {
+export function getGroupId(group: AccountIdentity & { chains: string[] }): AccountGroupId {
   if (isXpubAccount(group))
-    return getXpubGroupId(group.data, getChain(group) ?? '');
+    return getXpubGroupId(group, getChain(group) ?? '');
 
-  return make<string, 'AccountGroupId'>(getDataId(group));
+  return make<string, 'AccountGroupId'>(getIdentityId(group));
 }
 
-export function getAccountId(account: { data: BlockchainAccountData; chain: string }): AccountId {
-  return make<string, 'AccountId'>(`${getDataId(account)}#${account.chain}`);
+/** The group an account belongs to: its xpub's when derived from one, its own otherwise. */
+export function getAccountGroupId(account: AddressAccount | ValidatorAccount): AccountGroupId {
+  if (isAddressAccount(account) && account.xpubParent)
+    return getXpubGroupId(account.xpubParent, account.chain);
+
+  return make<string, 'AccountGroupId'>(getIdentityId(account));
 }
 
-export function getAccountAddress(account: { data: BlockchainAccountData }): string {
-  if (isAddressAccount(account))
-    return account.data.address;
-  else if (isValidatorAccount(account))
-    return account.data.publicKey;
-  else if (isXpubAccount(account))
-    return account.data.xpub;
-  return '';
+export function getAccountId(account: AccountIdentity & { chain: string }): AccountId {
+  return make<string, 'AccountId'>(`${getIdentityId(account)}#${account.chain}`);
 }
 
-export function getAccountLabel(account: { data: BlockchainAccountData; label?: string }): string {
+export function getAccountAddress(account: AccountIdentity): string {
+  return matchKind(account, {
+    address: ({ address }) => address,
+    validator: ({ publicKey }) => publicKey,
+    xpub: ({ xpub }) => xpub,
+  });
+}
+
+export function getAccountLabel(account: AccountIdentity & { label?: string }): string {
   if (account.label)
     return account.label;
-  else if (isAddressAccount(account))
-    return account.data.address;
-  else if (isValidatorAccount(account))
-    return account.data.index.toString();
-  else if (isXpubAccount(account))
-    return account.data.xpub;
-  return '';
-}
 
-function isAddressAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: AddressData } {
-  return account.data.type === 'address';
-}
-
-export function isValidatorAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: ValidatorData } {
-  return account.data.type === 'validator';
-}
-
-export function isXpubAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: XpubData } {
-  return account.data.type === 'xpub';
-}
-
-export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {
-  return 'address' in data.data;
-}
-
-export function isAccountWithBalanceValidator(
-  account: BlockchainAccountWithBalance,
-): account is BlockchainAccountWithBalance<ValidatorData> {
-  return 'publicKey' in account.data;
+  return matchKind(account, {
+    address: ({ address }) => address,
+    validator: ({ index }) => index.toString(),
+    xpub: ({ xpub }) => xpub,
+  });
 }
 
 export function getChain(account: { chain: string } | { chains: string[] }): string | undefined {

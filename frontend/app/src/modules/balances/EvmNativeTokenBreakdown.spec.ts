@@ -106,19 +106,13 @@ const testExchangeBalances: ExchangeData = {
 };
 
 const testEthereumAccounts: BlockchainAccount[] = [{
+  address: '0xaddress1',
   chain: 'eth',
-  data: {
-    address: '0xaddress1',
-    type: 'address',
-  },
-  nativeAsset: 'ETH',
+  kind: 'address',
 }, {
+  address: '0xaddress2',
   chain: 'eth',
-  data: {
-    address: '0xaddress2',
-    type: 'address',
-  },
-  nativeAsset: 'ETH',
+  kind: 'address',
 }];
 
 const testEthereumBalances: BlockchainBalances = {
@@ -156,12 +150,9 @@ const testEthereumBalances: BlockchainBalances = {
 };
 
 const testOptimismAccounts: BlockchainAccount[] = [{
+  address: '0xaddress3',
   chain: 'opt',
-  data: {
-    address: '0xaddress3',
-    type: 'address',
-  },
-  nativeAsset: 'ETH',
+  kind: 'address',
 }];
 
 const testOptimismBalances: BlockchainBalances = {

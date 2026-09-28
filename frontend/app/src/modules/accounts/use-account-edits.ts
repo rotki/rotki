@@ -5,7 +5,6 @@ import { convertBtcAccounts } from '@/modules/accounts/core/bitcoin-accounts';
 import { createAccount } from '@/modules/accounts/create-account';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAccountEditsReturn {
   editAccount: (payload: AccountPayload | XpubAccountPayload, chain: string) => Promise<BlockchainAccount[]>;
@@ -15,7 +14,6 @@ interface UseAccountEditsReturn {
 export function useAccountEdits(): UseAccountEditsReturn {
   const { editAgnosticBlockchainAccount, editBlockchainAccount, editBtcAccount } = useBlockchainAccountsApi();
   const { resetAddressNamesData } = useAddressNameResolution();
-  const { getNativeAsset } = useSupportedChains();
 
   /**
    * An edit can change a label, so any cached name for the address is stale. Failing to reset it is
@@ -35,7 +33,7 @@ export function useAccountEdits(): UseAccountEditsReturn {
     chain: string,
   ): Promise<BlockchainAccount[]> => {
     if (isBtcChain(chain) || 'xpub' in payload) {
-      const response = convertBtcAccounts(getNativeAsset, chain, await editBtcAccount(payload, chain));
+      const response = convertBtcAccounts(chain, await editBtcAccount(payload, chain));
 
       if (!('xpub' in payload))
         resetAddressesData(chain, payload);
@@ -47,12 +45,7 @@ export function useAccountEdits(): UseAccountEditsReturn {
 
     resetAddressesData(chain, payload);
 
-    const chainInfo = {
-      chain,
-      nativeAsset: getNativeAsset(chain),
-    };
-
-    return result.map(account => createAccount(account, chainInfo));
+    return result.map(account => createAccount(account, chain));
   };
 
   const editAgnosticAccount = async (chainType: string, payload: AccountPayload): Promise<boolean> => {

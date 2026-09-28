@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainAccountsStore } from './use-blockchain-accounts-store';
 
 vi.mock('@/modules/accounts/account-utils', () => ({
-  getAccountAddress: (account: { data: { address: string } }): string => account.data.address,
+  getAccountAddress: (account: { address: string }): string => account.address,
 }));
 
 function account(address: string, tags: string[] = [], label = ''): BlockchainAccount {
-  return { chain: 'eth', data: { address, type: 'address' }, label, nativeAsset: 'ETH', tags };
+  return { address, chain: 'eth', kind: 'address', label, tags };
 }
 
 describe('useBlockchainAccountsStore', () => {

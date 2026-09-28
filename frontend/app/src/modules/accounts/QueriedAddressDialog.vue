@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { assert, Blockchain, transformCase } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
@@ -16,7 +16,7 @@ const { module } = defineProps<{ module: Module }>();
 
 const emit = defineEmits<{ close: [] }>();
 
-const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+const selectedAccounts = ref<AddressAccount[]>([]);
 const ETH = Blockchain.ETH;
 
 const { addQueriedAddress, deleteQueriedAddress } = useQueriedAddressOperations();

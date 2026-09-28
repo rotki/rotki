@@ -14,10 +14,10 @@ const ports: BreakdownPorts = {
 const inputs: BreakdownInputs = {
   accounts: {
     eth: [
-      createAccount({ address: '0x1', label: null, tags: ['hot'] }, { chain: 'eth', nativeAsset: 'ETH' }),
-      createAccount({ address: '0x2', label: null, tags: null }, { chain: 'eth', nativeAsset: 'ETH' }),
+      createAccount({ address: '0x1', label: null, tags: ['hot'] }, 'eth'),
+      createAccount({ address: '0x2', label: null, tags: null }, 'eth'),
     ],
-    optimism: [createAccount({ address: '0x1', label: null, tags: ['l2'] }, { chain: 'optimism', nativeAsset: 'ETH' })],
+    optimism: [createAccount({ address: '0x1', label: null, tags: ['l2'] }, 'optimism')],
   },
   balances: {
     eth: {
@@ -80,8 +80,8 @@ describe('assetBreakdown', () => {
 describe('assetBreakdown with an asset treated as another', () => {
   const staking: BreakdownInputs = {
     accounts: {
-      eth: [createAccount({ address: '0x1', label: null, tags: null }, { chain: 'eth', nativeAsset: 'ETH' })],
-      eth2: [createValidatorAccount({ index: 1, publicKey: '0xvalidator', status: 'active' }, { chain: 'eth2', nativeAsset: 'ETH' })],
+      eth: [createAccount({ address: '0x1', label: null, tags: null }, 'eth')],
+      eth2: [createValidatorAccount({ index: 1, publicKey: '0xvalidator', status: 'active' }, 'eth2')],
     },
     balances: {
       eth: { '0x1': { assets: { ETH: { address: createTestBalance(1, 10) } }, liabilities: {} } },

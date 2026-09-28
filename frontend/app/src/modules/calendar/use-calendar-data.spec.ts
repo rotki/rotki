@@ -73,7 +73,7 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
 }));
 
 function makeAccount(address: string, chain: string): BlockchainAccount {
-  return { chain, data: { address, type: 'address' }, nativeAsset: 'ETH' };
+  return { address, chain, kind: 'address' };
 }
 
 function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {

@@ -44,12 +44,12 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getAddressName } = useAddressNameResolution();
-  const { getChainAccountType } = useSupportedChains();
+  const { getChainAccountType, getNativeAsset } = useSupportedChains();
   const { isAssetIgnored } = useAssetsStore();
   const resolveIdentifier = useResolveAssetIdentifier();
 
   const assetPorts: AccountAssetPorts = { isAssetIgnored, resolveIdentifier };
-  const groupPorts: AccountGroupPorts = { accountType: getChainAccountType, isAssetIgnored };
+  const groupPorts: AccountGroupPorts = { accountType: getChainAccountType, isAssetIgnored, nativeAssetOf: getNativeAsset };
 
   function getAccountDetails(chain: string, address: string): AccountBalances {
     const accountBalances = get(balances)[chain]?.[address];
@@ -89,7 +89,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     for (const account of accountData) {
       if (isXpubAccount(account))
         continue;
-      accountsWithBalances.push(createAccountWithBalance(account, balanceData, isAssetIgnored));
+      accountsWithBalances.push(createAccountWithBalance(account, balanceData, groupPorts));
     }
     return accountsWithBalances;
   };
@@ -101,9 +101,8 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     for (const [chain, accounts] of Object.entries(accountData)) {
       const chainBalances = balanceData[chain] ?? {};
       for (const account of accounts) {
-        if (!account.groupHeader) {
-          entries.push(createAccountWithBalance(account, chainBalances, isAssetIgnored));
-        }
+        if (!isXpubAccount(account))
+          entries.push(createAccountWithBalance(account, chainBalances, groupPorts));
       }
     }
     return entries;

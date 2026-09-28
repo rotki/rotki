@@ -72,7 +72,7 @@ describe('useAccountEdits', () => {
       const { useAccountEdits } = await importModule();
       const result = await useAccountEdits().editAccount({ address: '0xabc', tags: null }, 'eth');
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({ chain: 'eth', data: { address: '0xabc', type: 'address' }, nativeAsset: 'ETH' });
+      expect(result[0]).toEqual({ address: '0xabc', chain: 'eth', kind: 'address', label: undefined, tags: undefined });
       expect(mocks.resetAddressNamesData).toHaveBeenCalledOnce();
     });
   });

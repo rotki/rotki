@@ -131,7 +131,7 @@ describe('useBlockchainBalances', () => {
       updateAccounts(Blockchain.ETH, [
         createAccount(
           { address: '0x49ff149D649769033d43783E7456F626862CD160', label: null, tags: null },
-          { chain: Blockchain.ETH, nativeAsset: 'ETH' },
+          Blockchain.ETH,
         ),
       ]);
     });
@@ -482,7 +482,7 @@ describe('useBlockchainBalances', () => {
       updateAccounts(Blockchain.BTC, [
         createAccount(
           { address: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz', label: null, tags: null },
-          { chain: Blockchain.BTC, nativeAsset: 'BTC' },
+          Blockchain.BTC,
         ),
       ]);
 

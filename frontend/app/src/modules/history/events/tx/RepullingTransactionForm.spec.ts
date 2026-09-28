@@ -39,9 +39,9 @@ function stub(name: string, props: string[]): Record<string, unknown> {
 
 function addressAccount(chain: string, address: string): BlockchainAccount {
   return {
+    address,
     chain,
-    data: { address, type: 'address' },
-    nativeAsset: 'ETH',
+    kind: 'address',
   };
 }
 

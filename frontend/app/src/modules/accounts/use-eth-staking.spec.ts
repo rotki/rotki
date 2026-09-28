@@ -1,9 +1,10 @@
-import type { BlockchainAccount, ValidatorData } from '@/modules/accounts/blockchain-accounts';
+import type { ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { Module } from '@/modules/core/common/modules';
@@ -82,8 +83,8 @@ function whenAdd(outcome: Result<boolean, TaskError>, invoke = true): void {
   });
 }
 
-function validatorAccount(publicKey: string, index: number): BlockchainAccount<ValidatorData> {
-  return { chain: 'eth2', data: { index, publicKey, status: 'active', type: 'validator' }, nativeAsset: 'ETH2' };
+function validatorAccount(publicKey: string, index: number): ValidatorAccount {
+  return { chain: 'eth2', index, kind: 'validator', publicKey, status: 'active' };
 }
 
 async function importModule(): Promise<typeof import('./use-eth-staking')> {
@@ -212,7 +213,7 @@ describe('useEthStaking', () => {
       const { useEthStaking } = await importModule();
       await useEthStaking().deleteEth2Validators(['0xaaa']);
       const accountsStore = useBlockchainAccountsStore();
-      const remaining = accountsStore.getAccounts(Blockchain.ETH2).map(a => 'publicKey' in a.data ? a.data.publicKey : '');
+      const remaining = accountsStore.getAccounts(Blockchain.ETH2).map(a => (isValidatorAccount(a) ? a.publicKey : ''));
       expect(remaining).toEqual(['0xbbb']);
       expect(h.fetchEthStakingValidators).not.toHaveBeenCalled();
     });

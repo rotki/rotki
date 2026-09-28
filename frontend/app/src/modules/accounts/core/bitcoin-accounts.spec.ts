@@ -1,8 +1,8 @@
 import type { BitcoinAccounts } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify } from '@rotki/common';
-import { describe, expect, it } from 'vitest';
-import { hasAccountAddress } from '@/modules/accounts/account-utils';
+import { assert, describe, expect, it } from 'vitest';
+import { getAccountGroupId, isAddressAccount, isXpubAccount } from '@/modules/accounts/account-utils';
 import { convertBtcAccounts, convertBtcBalances } from './bitcoin-accounts';
 
 function bal(amount: number, value: number): Balance {
@@ -21,32 +21,33 @@ describe('convertBtcAccounts', () => {
     }],
   };
 
-  it('should upper-case the native asset from the resolver', () => {
-    const result = convertBtcAccounts(() => 'btc', 'btc', accounts);
-    expect(result.every(acc => acc.nativeAsset === 'BTC')).toBe(true);
+  it('should keep each xpub as an account of its own', () => {
+    const xpub = convertBtcAccounts('btc', accounts).find(isXpubAccount);
+    expect(xpub).toEqual({ chain: 'btc', derivationPath: 'm/0', kind: 'xpub', label: 'My Xpub', tags: ['savings'], xpub: 'xpub123' });
   });
 
-  it('should build a group header for each xpub', () => {
-    const result = convertBtcAccounts(() => 'btc', 'btc', accounts);
-    const group = result.find(acc => acc.groupHeader);
-    expect(group?.data).toMatchObject({ derivationPath: 'm/0', type: 'xpub', xpub: 'xpub123' });
-    expect(group?.groupId).toBe('xpub123#m/0#btc');
+  it('should link each derived address to its xpub and leave standalone addresses unlinked', () => {
+    const addresses = convertBtcAccounts('btc', accounts).filter(isAddressAccount);
+    expect(addresses.map(({ address, xpubParent }) => ({ address, xpubParent }))).toEqual([
+      { address: 'bc1child', xpubParent: { derivationPath: 'm/0', xpub: 'xpub123' } },
+      { address: 'bc1standalone', xpubParent: undefined },
+    ]);
   });
 
-  it('should include the xpub child addresses and standalone accounts', () => {
-    const result = convertBtcAccounts(() => 'btc', 'btc', accounts);
-    const addresses = result.filter(acc => acc.data.type === 'address').map(acc => hasAccountAddress(acc) ? acc.data.address : '');
-    expect(addresses).toContain('bc1child');
-    expect(addresses).toContain('bc1standalone');
+  it('should group a derived address under its xpub and a standalone one under itself', () => {
+    const [child, standalone] = convertBtcAccounts('btc', accounts).filter(isAddressAccount);
+    expect(getAccountGroupId(child)).toBe('xpub123#m/0#btc');
+    expect(getAccountGroupId(standalone)).toBe('bc1standalone');
   });
 
   it('should omit the derivation path from the group id when absent', () => {
     const noPath: BitcoinAccounts = {
       standalone: [],
-      xpubs: [{ addresses: null, derivationPath: null, label: null, tags: null, xpub: 'xpubNoPath' }],
+      xpubs: [{ addresses: [{ address: 'bc1orphan', label: null, tags: null }], derivationPath: null, label: null, tags: null, xpub: 'xpubNoPath' }],
     };
-    const result = convertBtcAccounts(() => 'btc', 'btc', noPath);
-    expect(result[0].groupId).toBe('xpubNoPath#btc');
+    const child = convertBtcAccounts('btc', noPath).find(isAddressAccount);
+    assert(child);
+    expect(getAccountGroupId(child)).toBe('xpubNoPath#btc');
   });
 });
 

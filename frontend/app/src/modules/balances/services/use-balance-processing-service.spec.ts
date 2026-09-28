@@ -103,7 +103,7 @@ describe('useBalanceProcessingService', () => {
 
     const { updateAccounts } = useBlockchainAccountsStore();
     updateAccounts(Blockchain.ETH, [
-      createAccount({ address: '0x1', label: null, tags: null }, { chain: Blockchain.ETH, nativeAsset: 'ETH' }),
+      createAccount({ address: '0x1', label: null, tags: null }, Blockchain.ETH),
     ]);
   });
 
@@ -126,7 +126,7 @@ describe('useBalanceProcessingService', () => {
 
     it('should ignore a payload older than the chain already holds', async () => {
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
-        createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+        createAccount({ address: '0x9', label: null, tags: null }, CHAIN),
       ]);
       const { updateBalances } = useBalancesStore();
 
@@ -140,7 +140,7 @@ describe('useBalanceProcessingService', () => {
 
     it('should accept a payload newer than the chain holds', async () => {
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
-        createAccount({ address: '0x9', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+        createAccount({ address: '0x9', label: null, tags: null }, CHAIN),
       ]);
       const { updateBalances } = useBalancesStore();
 
@@ -298,7 +298,7 @@ describe('useBalanceProcessingService', () => {
     const CHAIN = 'base';
     mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
     useBlockchainAccountsStore().updateAccounts(CHAIN, [
-      createAccount({ address: '0x2', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+      createAccount({ address: '0x2', label: null, tags: null }, CHAIN),
     ]);
 
     const service = useBalanceProcessingService();

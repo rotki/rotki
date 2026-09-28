@@ -1,5 +1,5 @@
 import type { StubInstance } from '@test/utils/component-vm';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,11 +34,11 @@ function inputStub(name: string): Record<string, unknown> {
 
 const ADDRESS = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 
-function account(address = ADDRESS): BlockchainAccount<AddressData> {
+function account(address = ADDRESS): AddressAccount {
   return {
+    address,
     chain: Blockchain.ETH,
-    data: { address, type: 'address' },
-    nativeAsset: 'ETH',
+    kind: 'address',
   };
 }
 
@@ -100,7 +100,7 @@ describe('lidoCsmAddDialog', () => {
     return wrapper.findComponent<StubInstance>('[data-testid=lido-csm-submit]').props('disabled');
   }
 
-  async function selectAccount(accounts: BlockchainAccount<AddressData>[] = [account()]): Promise<void> {
+  async function selectAccount(accounts: AddressAccount[] = [account()]): Promise<void> {
     const input = field('lido-csm-address');
     input.vm.$emit('update:modelValue', accounts);
     input.vm.$emit('blur');

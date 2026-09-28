@@ -8,7 +8,6 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { isSessionExpired } from '@/modules/core/api/response-handlers';
 import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseAccountFetchingReturn {
@@ -21,7 +20,6 @@ export function useAccountFetching(): UseAccountFetchingReturn {
   const { revisionOf, updateAccounts } = useBlockchainAccountsStore();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-  const { getNativeAsset } = useSupportedChains();
 
   /**
    * Reports a chain's fetch failure, unless it is one the user should not be told about.
@@ -55,12 +53,7 @@ export function useAccountFetching(): UseAccountFetchingReturn {
       if (revisionOf(chain) !== revision)
         return;
 
-      const chainInfo = {
-        chain,
-        nativeAsset: getNativeAsset(chain),
-      };
-
-      updateAccounts(chain, accounts.map(account => createAccount(account, chainInfo)));
+      updateAccounts(chain, accounts.map(account => createAccount(account, chain)));
     }
     catch (error: unknown) {
       notifyFetchFailure(chain, error);
@@ -74,7 +67,7 @@ export function useAccountFetching(): UseAccountFetchingReturn {
       if (revisionOf(chain) !== revision)
         return;
 
-      updateAccounts(chain, convertBtcAccounts(getNativeAsset, chain, accounts));
+      updateAccounts(chain, convertBtcAccounts(chain, accounts));
     }
     catch (error: unknown) {
       notifyFetchFailure(chain, error);

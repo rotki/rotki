@@ -1,10 +1,16 @@
 import type { Pinia } from 'pinia';
 import type { AccountDataRow } from '../../types';
-import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type {
+  AddressAccount,
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountWithBalance,
+  ValidatorAccount,
+} from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAccountId, getGroupId } from '@/modules/accounts/account-utils';
+import { getAccountGroupId, getAccountId, getGroupId } from '@/modules/accounts/account-utils';
+import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import AccountActions from '@/modules/accounts/table/components/table/AccountActions.vue';
 
 const supportsTransactionsMock = vi.fn();
@@ -19,38 +25,34 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
   let wrapper: VueWrapper;
   let pinia: Pinia;
 
-  const createAccountRow = (chain: string): AccountDataRow<BlockchainAccountWithBalance> => ({
+  const ADDRESS = '0x1234567890abcdef1234567890abcdef12345678';
+
+  const toAccountRow = (account: AddressAccount | ValidatorAccount): AccountDataRow<BlockchainAccountWithBalance> => ({
+    ...account,
     amount: bigNumberify('1'),
-    chain,
-    data: {
-      address: '0x1234567890abcdef1234567890abcdef12345678',
-      type: 'address',
-    },
     expansion: undefined,
-    groupHeader: false,
-    groupId: undefined,
-    id: getAccountId({ chain, data: { address: '0x1234567890abcdef1234567890abcdef12345678', type: 'address' } }),
+    groupId: getAccountGroupId(account),
+    id: getAccountId(account),
     includedValue: undefined,
     label: 'Test Account',
-    nativeAsset: 'ETH',
     tags: [],
     type: 'account',
     value: bigNumberify('1000'),
   });
 
+  const createAccountRow = (chain: string): AccountDataRow<BlockchainAccountWithBalance> =>
+    toAccountRow(createAccount({ address: ADDRESS, label: null, tags: null }, chain));
+
   const createGroupRow = (chains: string[]): AccountDataRow<BlockchainAccountGroupWithBalance> => ({
+    address: ADDRESS,
     allChains: chains,
     category: 'evm',
     chains,
-    data: {
-      address: '0x1234567890abcdef1234567890abcdef12345678',
-      type: 'address',
-    },
     expansion: undefined,
-    id: getGroupId({ chains, data: { address: '0x1234567890abcdef1234567890abcdef12345678', type: 'address' } }),
+    id: getGroupId({ address: ADDRESS, chains, kind: 'address' }),
     includedValue: undefined,
+    kind: 'address',
     label: 'Test Group',
-    nativeAsset: undefined,
     tags: [],
     type: 'group',
     value: bigNumberify('2000'),
@@ -320,15 +322,11 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
     });
 
     it('should hide it for a validator, whose public key no rule matches', () => {
-      const row: AccountDataRow<BlockchainAccountWithBalance> = {
-        ...createAccountRow('eth2'),
-        data: {
-          index: 1,
-          publicKey: '0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c',
-          status: 'active',
-          type: 'validator',
-        },
-      };
+      const row = toAccountRow(createValidatorAccount({
+        index: 1,
+        publicKey: '0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c',
+        status: 'active',
+      }, 'eth2'));
 
       wrapper = createWrapper({
         accountOperation: false,

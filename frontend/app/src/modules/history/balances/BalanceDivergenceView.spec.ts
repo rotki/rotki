@@ -150,12 +150,9 @@ function mountView(): VueWrapper {
   setActivePinia(pinia);
   useHistoryStore().setLocationLabels([]);
   useBlockchainAccountsStore().updateAccounts('eth', [{
+    address: '0xA',
     chain: 'eth',
-    data: {
-      address: '0xA',
-      type: 'address',
-    },
-    nativeAsset: 'ETH',
+    kind: 'address',
   }]);
   mockFindDivergence.mockResolvedValue({ taskId: 1 });
 

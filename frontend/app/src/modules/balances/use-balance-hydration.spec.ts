@@ -84,7 +84,7 @@ function addAccount(chain: string): void {
   useBlockchainAccountsStore().updateAccounts(chain, [
     createAccount(
       { address: '0x49ff149D649769033d43783E7456F626862CD160', label: null, tags: null },
-      { chain, nativeAsset: 'ETH' },
+      chain,
     ),
   ]);
 }

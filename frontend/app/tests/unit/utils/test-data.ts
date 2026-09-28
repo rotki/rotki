@@ -128,21 +128,10 @@ export const testEthereumBalances: BlockchainBalances = {
   },
 };
 
-export const testAccounts: BlockchainAccount[] = [{
-  chain: 'eth',
-  data: {
-    address: '0xaddress1',
-    type: 'address',
-  },
-  nativeAsset: 'ETH',
-}, {
-  chain: 'eth',
-  data: {
-    address: '0xaddress2',
-    type: 'address',
-  },
-  nativeAsset: 'ETH',
-}];
+export const testAccounts: BlockchainAccount[] = [
+  { address: '0xaddress1', chain: 'eth', kind: 'address' },
+  { address: '0xaddress2', chain: 'eth', kind: 'address' },
+];
 
 export function createMockExchangeBalances(): ExchangeData {
   return {

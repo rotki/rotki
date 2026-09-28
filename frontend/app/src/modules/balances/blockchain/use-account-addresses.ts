@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
+import { isAddressAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 
 interface UseAccountAddressesReturn {
@@ -17,7 +17,7 @@ export function useAccountAddresses(): UseAccountAddressesReturn {
 
     return Object.fromEntries(Object.entries(accountData).map(([chain, accounts]) => [
       chain,
-      accounts.filter(hasAccountAddress).map(account => getAccountAddress(account)),
+      accounts.filter(isAddressAccount).map(({ address }) => address),
     ]));
   });
 

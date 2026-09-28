@@ -1,4 +1,4 @@
-import type { ValidatorData } from '@/modules/accounts/blockchain-accounts';
+import type { ValidatorDetails } from '@/modules/accounts/blockchain-accounts';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { Blockchain, type EthStakingCombinedFilter, type EthStakingFilter } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -12,12 +12,11 @@ import PillMenu from '@/modules/core/table/pill/PillMenu.vue';
 import EthStakingFilterBar from './EthStakingFilterBar.vue';
 import '@test/i18n';
 
-const VALIDATOR: ValidatorData = {
+const VALIDATOR: ValidatorDetails = {
   index: 9,
   ownershipPercentage: '100',
   publicKey: '0xabc123',
   status: 'active',
-  type: 'validator',
   withdrawalAddress: '0x347AC2e04dD10cBF70F65c058Ac3a078D4D9E0e5',
 };
 
@@ -41,10 +40,10 @@ function createHarnessWithModelsWrittenBack(): Harness {
   const pinia = createCustomPinia();
   setActivePinia(pinia);
   useBlockchainAccountsStore().accounts[Blockchain.ETH2] = [{
+    ...VALIDATOR,
     chain: Blockchain.ETH2,
-    data: VALIDATOR,
+    kind: 'validator',
     label: 'Validator 9',
-    nativeAsset: 'ETH2',
   }];
 
   const selection = ref<EthStakingFilter>({ validators: [] });

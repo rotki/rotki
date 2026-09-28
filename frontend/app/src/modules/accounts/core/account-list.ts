@@ -138,7 +138,7 @@ function refineGroup<T extends BlockchainAccountBalance>(account: T, refinement:
     return null;
 
   const chains = matches.map(match => match.chain).filter(uniqueStrings);
-  const groupId = getGroupId({ chains, data: account.data });
+  const groupId = getGroupId({ ...account, chains });
   const exclusion = excluded[groupId];
 
   return {

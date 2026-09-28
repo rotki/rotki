@@ -103,7 +103,6 @@ function validator(index: number): EthereumValidator {
     ownershipPercentage: '100',
     publicKey: `0xabc${index}`,
     status: 'active',
-    type: 'validator',
     value: bigNumberify(32),
   };
 }
