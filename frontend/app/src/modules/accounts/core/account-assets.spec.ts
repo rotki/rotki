@@ -2,9 +2,10 @@ import type { BlockchainAccountWithBalance } from '@/modules/accounts/blockchain
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
+import { type AccountGroupId, getXpubGroupId } from '@/modules/accounts/account-utils';
 import { accountAssetBalances, accountsByGroup, topTokens, xpubNativeHolding } from './account-assets';
 
-function account(address: string, groupId: string | undefined): BlockchainAccountWithBalance {
+function account(address: string, groupId: AccountGroupId | undefined): BlockchainAccountWithBalance {
   return {
     amount: bigNumberify(1),
     chain: 'eth',
@@ -41,9 +42,10 @@ describe('accountAssetBalances', () => {
 
 describe('accountsByGroup', () => {
   it('should key accounts by group id and skip accounts outside any group', () => {
-    const groups = accountsByGroup([account('0x1', 'g1'), account('0x2', 'g1'), account('0x3', undefined)]);
-    expect([...groups.keys()]).toEqual(['g1']);
-    expect(groups.get('g1')?.map(member => ('address' in member.data ? member.data.address : ''))).toEqual(['0x1', '0x2']);
+    const g1 = getXpubGroupId({ xpub: 'xpub1' }, 'btc');
+    const groups = accountsByGroup([account('0x1', g1), account('0x2', g1), account('0x3', undefined)]);
+    expect([...groups.keys()]).toEqual([g1]);
+    expect(groups.get(g1)?.map(member => ('address' in member.data ? member.data.address : ''))).toEqual(['0x1', '0x2']);
   });
 });
 

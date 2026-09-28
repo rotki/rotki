@@ -1,4 +1,5 @@
 import type { Balance, BigNumber } from '@rotki/common';
+import type { AccountGroupId } from '@/modules/accounts/account-utils';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { AccountCategory } from '@/modules/core/api/types/chains';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
@@ -36,14 +37,14 @@ export interface BlockchainAccount<T extends BlockchainAccountData = BlockchainA
   readonly label?: string;
   readonly chain: string;
   readonly nativeAsset: string;
-  readonly groupId?: string;
+  readonly groupId?: AccountGroupId;
   readonly groupHeader?: boolean;
 }
 
 export interface AccountExtraParams {
   readonly chain: string;
   readonly nativeAsset: string;
-  readonly groupId?: string;
+  readonly groupId?: AccountGroupId;
   readonly groupHeader?: boolean;
 }
 
@@ -92,7 +93,7 @@ export interface BlockchainAccountRequestPayload extends PaginationRequestPayloa
 }
 
 export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
-  readonly groupId: string;
+  readonly groupId: AccountGroupId;
 }
 
 export interface GeneralAccountData {

@@ -6,11 +6,11 @@ import type {
 import type { Collection } from '@/modules/core/common/collection';
 import { isEmpty } from 'es-toolkit/compat';
 import { isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
-import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
+import { type AccountGroupId, getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { sum } from '@/modules/core/common/display/balances';
 
-type GroupAccountsResolver = (groupId: string) => BlockchainAccountWithBalance[];
+type GroupAccountsResolver = (groupId: AccountGroupId) => BlockchainAccountWithBalance[];
 
 type LabelResolver = (account: BlockchainAccountBalance, chain?: string) => string | undefined;
 

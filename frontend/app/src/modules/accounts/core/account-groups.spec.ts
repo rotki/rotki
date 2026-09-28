@@ -1,6 +1,7 @@
 import type { Accounts, Balances } from '@/modules/accounts/blockchain-accounts';
 import { createTestBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
+import { getXpubGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createValidatorAccount, createXpubAccount } from '@/modules/accounts/create-account';
 import { type AccountGroupPorts, accountGroups } from './account-groups';
 
@@ -9,7 +10,7 @@ const ports: AccountGroupPorts = {
   isAssetIgnored: identifier => identifier === 'SPAM',
 };
 
-const xpubGroup = 'xpub1#btc';
+const xpubGroup = getXpubGroupId({ xpub: 'xpub1' }, 'btc');
 
 const accounts: Accounts = {
   btc: [
@@ -100,7 +101,7 @@ describe('accountGroups', () => {
 
   it('should show an xpub with no derived addresses as an empty, unexpandable row', () => {
     const lone = accountGroups(
-      { btc: [createXpubAccount({ addresses: null, derivationPath: null, label: null, tags: null, xpub: 'xpub2' }, { chain: 'btc', groupHeader: true, groupId: 'xpub2#btc', nativeAsset: 'BTC' })] },
+      { btc: [createXpubAccount({ addresses: null, derivationPath: null, label: null, tags: null, xpub: 'xpub2' }, { chain: 'btc', groupHeader: true, groupId: getXpubGroupId({ xpub: 'xpub2' }, 'btc'), nativeAsset: 'BTC' })] },
       {},
       ports,
     );

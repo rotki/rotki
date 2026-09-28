@@ -10,7 +10,7 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { ok, type Result } from 'plainfp/result';
-import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
+import { type AccountGroupId, getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { accountAssetBalances, type AccountAssetPorts, accountsByGroup } from '@/modules/accounts/core/account-assets';
 import { type AccountGroupPorts, accountGroups } from '@/modules/accounts/core/account-groups';
@@ -125,7 +125,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       accountGroups(accountData, balanceData, groupPorts),
       get(payload),
       {
-        getAccounts(groupId: string) {
+        getAccounts(groupId: AccountGroupId) {
           return members.get(groupId) ?? [];
         },
         getLabel(account, chain) {
