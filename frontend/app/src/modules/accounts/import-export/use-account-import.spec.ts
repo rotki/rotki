@@ -101,6 +101,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
   return {
     useSupportedChains: vi.fn(() => ({
       ...useSupportedChains(),
+      getChainAccountType: vi.fn().mockImplementation((chain: string): string | undefined => (evmCompatibleChains.has(chain) ? 'evm' : undefined)),
       isEvm: vi.fn().mockImplementation((chain: string): boolean => evmCompatibleChains.has(chain)),
       isEvmCompatible: vi.fn().mockImplementation((chain: string): boolean => evmCompatibleChains.has(chain)),
     })),

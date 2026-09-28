@@ -11,6 +11,20 @@ export const ChainType = {
 
 export type ChainType = (typeof ChainType)[keyof typeof ChainType];
 
+/** The chain types that have an accounts page; evm-like chains are listed with evm. */
+export type AccountCategory = Exclude<ChainType, typeof ChainType.EVMLIKE>;
+
+const ACCOUNT_CATEGORIES: ReadonlySet<string> = new Set<AccountCategory>([
+  ChainType.BITCOIN,
+  ChainType.EVM,
+  ChainType.SOLANA,
+  ChainType.SUBSTRATE,
+]);
+
+export function isAccountCategory(value: string | undefined): value is AccountCategory {
+  return value !== undefined && ACCOUNT_CATEGORIES.has(value);
+}
+
 const BasicChainInfo = z.object({
   id: z.string(),
   image: z.string(),

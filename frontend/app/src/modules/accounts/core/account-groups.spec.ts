@@ -118,4 +118,12 @@ describe('accountGroups', () => {
     expect(xpub?.tags).toEqual(['cold']);
     expect(xpub?.category).toBe('bitcoin');
   });
+
+  it('should leave out the groups of a chain without a category, which no accounts page lists', () => {
+    const onlyEvm: AccountGroupPorts = { ...ports, accountType: chain => (chain === 'btc' ? undefined : 'evm') };
+    expect(accountGroups(accounts, balances, onlyEvm).map(keyOf)).toEqual(['0xmulti', '0xsolo']);
+
+    const onlyBitcoin: AccountGroupPorts = { ...ports, accountType: chain => (chain === 'btc' ? 'bitcoin' : undefined) };
+    expect(accountGroups(accounts, balances, onlyBitcoin).map(keyOf)).toEqual(['xpub1']);
+  });
 });

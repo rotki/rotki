@@ -54,7 +54,7 @@ defineExpose({
         :tags="visibleTags"
         :group-id="getGroupId(row)"
         :group="isXpubAccount(row) ? 'xpub' : undefined"
-        :category="row.category || ''"
+        :category="row.category"
         :selection-mode="selectionMode"
         @edit="emit('edit', $event)"
       />

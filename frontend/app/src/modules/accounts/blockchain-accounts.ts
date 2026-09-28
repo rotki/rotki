@@ -1,5 +1,6 @@
 import type { Balance, BigNumber } from '@rotki/common';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
+import type { AccountCategory } from '@/modules/core/api/types/chains';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { Module } from '@/modules/core/common/modules';
 import { z } from 'zod';
@@ -53,7 +54,6 @@ interface AccountExpansion {
 export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = BlockchainAccountData>
   extends BlockchainAccount<T>, AccountExpansion {
   readonly type: 'account';
-  readonly category?: string;
   readonly amount: BigNumber;
   readonly value: BigNumber;
   readonly includedValue?: BigNumber;
@@ -69,7 +69,7 @@ export interface EthereumValidatorRequestPayload extends PaginationRequestPayloa
 
 export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain'>, AccountExpansion {
   readonly type: 'group';
-  readonly category?: string;
+  readonly category: AccountCategory;
   readonly amount?: BigNumber;
   readonly value: BigNumber;
   readonly includedValue?: BigNumber;

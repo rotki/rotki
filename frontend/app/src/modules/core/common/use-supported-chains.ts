@@ -1,11 +1,13 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { Blockchain, getTextToken, toHumanReadable, toSnakeCase } from '@rotki/common';
 import {
+  type AccountCategory,
   type ChainInfo,
   ChainType,
   type EvmChainEntries,
   type EvmChainInfo,
   type EvmLikeChainInfo,
+  isAccountCategory,
   type SupportedChains,
 } from '@/modules/core/api/types/chains';
 import { isBlockchain } from '@/modules/core/common/chains';
@@ -46,7 +48,7 @@ interface UseSupportedChainsReturn {
   evmLikeChainsData: ComputedRef<EvmLikeChainInfo[]>;
   getBlockchainRedirectLink: (blockchain: string) => string;
   getChain: (location: string, defaultValue?: Blockchain) => Blockchain;
-  getChainAccountType: (chain: string) => string | undefined;
+  getChainAccountType: (chain: string) => AccountCategory | undefined;
   getChainImageUrl: (chain: string) => string;
   getChainName: (location: string) => string;
   getEvmChainId: (name: string) => number | undefined;
@@ -257,11 +259,11 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     }),
   );
 
-  const getChainAccountType = (chain: string): string | undefined => {
-    const match = getChainInfoById(chain);
-    if (match?.type === ChainType.EVMLIKE)
+  const getChainAccountType = (chain: string): AccountCategory | undefined => {
+    const type = getChainInfoById(chain)?.type;
+    if (type === ChainType.EVMLIKE)
       return ChainType.EVM;
-    return match?.type;
+    return isAccountCategory(type) ? type : undefined;
   };
 
   const getBlockchainRedirectLink = (blockchain: string): string => {

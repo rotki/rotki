@@ -2,11 +2,13 @@ import type { Ref } from 'vue';
 import type {
   AccountPayload,
   BlockchainAccountBalance,
+  BlockchainAccountGroupWithBalance,
   ValidatorData,
   XpubAccountPayload,
   XpubData,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
+import type { AccountCategory } from '@/modules/core/api/types/chains';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
@@ -59,7 +61,7 @@ interface AccountManageEdit extends AccountManageMode {
 
 export interface AccountAgnosticManage extends AccountManageMode {
   readonly mode: 'edit';
-  category: string;
+  category: AccountCategory;
   type: 'group';
   chain: undefined;
   data: AccountPayload;
@@ -103,8 +105,7 @@ function buildXpubManage(account: BlockchainAccountBalance, data: XpubData): Xpu
   };
 }
 
-function buildGroupManage(account: BlockchainAccountBalance): AccountAgnosticManage {
-  assert(account.category);
+function buildGroupManage(account: BlockchainAccountGroupWithBalance): AccountAgnosticManage {
   const address = getAccountAddress(account);
   return {
     category: account.category,

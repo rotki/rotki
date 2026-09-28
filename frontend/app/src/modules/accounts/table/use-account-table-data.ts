@@ -54,7 +54,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
   });
 
   function getCategoryTotal(category: string): BigNumber {
-    return sum(get(rows).filter(row => row.category === category));
+    return sum(get(rows).filter(row => row.type === 'group' && row.category === category));
   }
 
   function getChains(row: AccountDataRow<T>): string[] {

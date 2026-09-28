@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
@@ -73,6 +74,11 @@ const { confirmDelete, edit } = useAccountOperations<T>({
 const cols = computed(() => createColumns(group, get(anyExpansion)));
 
 initializeTableSorting(sort, cols);
+
+/** The category a table group header stands for; only group rows carry one. */
+function headerCategory(group: Partial<AccountDataRow<T>>): string {
+  return 'category' in group && typeof group.category === 'string' ? group.category : '';
+}
 
 defineExpose({
   confirmDelete,
@@ -181,8 +187,8 @@ defineExpose({
     </template>
     <template #group.header="{ header, isOpen, toggle, colspan }">
       <AccountTableGroupHeader
-        :category="header.group.category || ''"
-        :category-total="getCategoryTotal(header.group.category || '')"
+        :category="headerCategory(header.group)"
+        :category-total="getCategoryTotal(headerCategory(header.group))"
         :colspan="colspan"
         :is-open="isOpen"
         :is-section-loading="isSectionLoading"

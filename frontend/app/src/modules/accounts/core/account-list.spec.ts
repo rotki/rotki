@@ -77,13 +77,6 @@ describe('sortAndFilterAccounts', () => {
     expect(result.data[0].label).toBe('Gamma');
   });
 
-  it('should filter by category', () => {
-    const withCategory = accounts().map((acc, i) => ({ ...acc, category: i === 1 ? 'manual' : 'evm' }));
-    const result = sortAndFilterAccounts(withCategory, payload({ category: 'manual' }), { getLabel: noLabel });
-    expect(result.data).toHaveLength(1);
-    expect(result.data[0].label).toBe('Beta');
-  });
-
   it('should sort ascending by value', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ ascending: [true], orderByAttributes: ['value'] }), { getLabel: noLabel });
     expect(result.data.map(a => a.value.toNumber())).toEqual([100, 200, 300]);
@@ -120,6 +113,7 @@ describe('sortAndFilterAccounts, over groups', () => {
   function group(overrides: Partial<BlockchainAccountGroupWithBalance> = {}): BlockchainAccountGroupWithBalance {
     return {
       amount: bigNumberify(3),
+      category: 'evm',
       chains: ['eth', 'optimism'],
       data: { address: '0xaaa', type: 'address' },
       tags: ['hot'],
@@ -137,6 +131,13 @@ describe('sortAndFilterAccounts, over groups', () => {
     member('eth', 200, ['hot']),
     member('optimism', 100, ['cold']),
   ];
+
+  it('should keep only the groups of the picked category', () => {
+    const bitcoin = group({ category: 'bitcoin', chains: ['btc'], data: { address: 'bc1qaaa', type: 'address' } });
+    const result = sortAndFilterAccounts([group(), bitcoin], payload({ category: 'bitcoin' }), { getLabel: noLabel });
+
+    expect(result.data).toEqual([bitcoin]);
+  });
 
   /** The excluded chains are still part of the group, they just stop counting towards its value. */
   describe('an excluded chain', () => {
