@@ -154,6 +154,11 @@ describe('modules/shell/action-center/use-history-sync-row', () => {
     expect(row.description).toBe('action_center.rows.history.sync.description_never');
   });
 
+  it('should offer only dismiss before history was ever downloaded', () => {
+    set(isNeverQueried, true);
+    expect(onlyRow().options.map(option => option.id)).toEqual(['dismiss']);
+  });
+
   it('should say the app was updated ahead of never downloaded', () => {
     set(isNeverQueried, true);
     set(justUpdated, true);

@@ -10,7 +10,7 @@ import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-
 
 const open = ref<boolean>(false);
 
-const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, refreshAll, refreshing, sections } = useGlobalActionCenter();
+const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, refreshAll, refreshing, sections, urgency } = useGlobalActionCenter();
 const { openTarget } = useOpenActionTarget();
 const { missingPriceIdentifiers } = useMissingPrices();
 const { modelOpen: missingPricesOpen } = useMissingPricesDialog();
@@ -31,6 +31,7 @@ watch(open, (isOpen, wasOpen) => {
     v-model="open"
     :count="count"
     :new-count="newCount"
+    :urgency="urgency"
     :checking="awaitingFirstScan"
     badge
   >

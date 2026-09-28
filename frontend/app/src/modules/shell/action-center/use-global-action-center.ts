@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import { startPromise } from '@shared/utils';
-import { type ActionCenterSection, type ActionItem, type ActionTarget, ActionUrgency } from '@/modules/core/action-center/types';
+import { type ActionCenterSection, type ActionItem, type ActionTarget, type ActionUrgency, URGENCY_RANK } from '@/modules/core/action-center/types';
 import { useActionCenter } from '@/modules/core/action-center/use-action-center';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { toGlobalTarget } from '@/modules/history/events/actions-center/history-issue-routes';
@@ -23,6 +23,8 @@ interface UseGlobalActionCenterReturn {
   cleared: ComputedRef<ActionItem[]>;
   /** How many categories are asking for something. */
   count: ComputedRef<number>;
+  /** The most pressing urgency among them, which sets the trigger's tone; undefined when none are. */
+  urgency: ComputedRef<ActionUrgency | undefined>;
   /** Ids of the categories that are new, or grew, since the user last closed the center. */
   newIds: ComputedRef<string[]>;
   /** How many categories are new, which is what the badge shows. */
@@ -34,12 +36,6 @@ interface UseGlobalActionCenterReturn {
   refreshing: ComputedRef<boolean>;
   refreshAll: () => Promise<void>;
 }
-
-const URGENCY_RANK: Record<ActionUrgency, number> = {
-  [ActionUrgency.DECISION]: 0,
-  [ActionUrgency.TODO]: 1,
-  [ActionUrgency.AUTOMATIC]: 2,
-};
 
 /**
  * Where a raised row sits inside its section: the history sync row, which says how current everything
@@ -147,5 +143,6 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     refreshAll: center.refreshAll,
     refreshing: center.refreshing,
     sections,
+    urgency: center.urgency,
   };
 }

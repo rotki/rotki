@@ -1,3 +1,4 @@
+import type { ActionUrgency } from '@/modules/core/action-center/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -17,6 +18,7 @@ const state = {
   markSeen: vi.fn<() => void>(),
   push: vi.fn<(to: unknown) => Promise<void>>(),
   refreshAll: vi.fn<() => Promise<void>>(),
+  urgency: ref<ActionUrgency>('decision'),
 };
 
 vi.mock('@/modules/assets/prices/missing/use-missing-prices', () => ({
@@ -38,6 +40,7 @@ vi.mock('@/modules/shell/action-center/use-global-action-center', () => ({
     refreshAll: state.refreshAll,
     refreshing: computed(() => false),
     sections: computed(() => []),
+    urgency: state.urgency,
   }),
 }));
 
@@ -67,6 +70,7 @@ describe('modules/shell/action-center/GlobalActionCenter', () => {
     openUrl.mockResolvedValue();
     state.push.mockResolvedValue();
     state.refreshAll.mockResolvedValue();
+    set(state.urgency, 'decision');
   });
 
   it('should be the trigger that carries the badge, numbering only what is new', () => {
@@ -75,6 +79,13 @@ describe('modules/shell/action-center/GlobalActionCenter', () => {
 
     expect(badge.props('modelValue')).toBe(true);
     expect(badge.props('text')).toBe('1');
+  });
+
+  it('should hand the most pressing urgency to the trigger, so a to-do alone is not drawn as a warning', () => {
+    set(state.urgency, 'todo');
+    const wrapper = mountCenter();
+
+    expect(wrapper.findComponent({ name: 'RuiBadge' }).props('color')).toBe('info');
   });
 
   it('should hand the new rows to the panel so it can mark them', async () => {

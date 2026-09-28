@@ -22,9 +22,11 @@ function withoutTimezone(format: string): string {
  * @remarks
  * Its action starts the same user-started sync as the history page's refresh, and the center stays
  * open while it runs. Listed among the passed checks, it links to history events instead, so a
- * label never starts a sync. Dismissing it keeps the row listed but stops it counting, until history
- * moves on from the state it was dismissed in, the session ends, or a major or minor update resets
- * it. A user with no history sources gets no row at all.
+ * label never starts a sync. Before the transactions were ever queried it offers no link to history
+ * events either, since none of what the row reports on is there yet. Dismissing it keeps the row
+ * listed but stops it counting, until history moves on from the state it was dismissed in, the
+ * session ends, or a major or minor update resets it. A user with no history sources gets no row at
+ * all.
  */
 export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -95,7 +97,7 @@ export function useHistorySyncRow(): ComputedRef<ActionItem[]> {
       informational: setAside,
       loading: get(processing),
       options: applicable<ActionItemOption>([
-        some({ icon: 'lu-history', id: 'history-events', label: t('action_center.rows.history.sync.go_to_events'), target: HISTORY_EVENTS }),
+        get(isNeverQueried) ? none : some({ icon: 'lu-arrow-right', id: 'history-events', label: t('action_center.rows.history.sync.go_to_events'), target: HISTORY_EVENTS }),
         setAside ? none : some({ icon: 'lu-x', id: 'dismiss', label: t('action_center.dismiss'), target: { kind: 'run', run: dismiss } }),
       ]),
       urgency: ActionUrgency.TODO,
