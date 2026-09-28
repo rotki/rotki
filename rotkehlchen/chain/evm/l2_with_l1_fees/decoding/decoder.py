@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.interfaces import L2WithL1FeesDecoderInterface
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
-from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx, DBResolvedL1FeeFilter
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import from_wei
+from rotkehlchen.utils.misc import from_wei, ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,10 +22,11 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.filtering import EvmTransactionsNotDecodedFilterQuery
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.premium.premium import Premium
-    from rotkehlchen.types import EvmTransaction
+    from rotkehlchen.types import EvmTransaction, EVMTxHash
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -74,10 +75,15 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
         The fee should always be available, so a missing one comes from a transient
         failure of the RPC nodes and indexers. Decoding anyway would save a gas event
         without the L1 part and mark the transaction as decoded, so it would never be
-        repaired. Nothing is written instead, and the next decoding of undecoded
-        transactions retries it, asking again for the fee.
+        repaired. Nothing is written instead, and the chain's unresolved fees are left out
+        of the periodic decoding for a while before being retried, so an outage is not
+        queried again on every run.
         """
         if isinstance(transaction, L2WithL1FeesTransaction) and transaction.l1_fee is None:
+            self.database.pending_txs_tracker.mark_l1_fee_unresolved(
+                blockchain=self.evm_inquirer.blockchain,
+                now=ts_now(),
+            )
             log.warning(
                 'Not decoding %s transaction %s since its L1 fee could not be resolved. '
                 'It will be decoded once the fee is available.',
@@ -91,6 +97,51 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             tx_receipt=tx_receipt,
             write_buffer=write_buffer,
         )
+
+    def _should_defer_unresolved_l1_fees(self) -> bool:
+        return self.database.pending_txs_tracker.should_defer_unresolved_l1_fees(
+            blockchain=self.evm_inquirer.blockchain,
+            now=ts_now(),
+        )
+
+    def _get_tx_not_decoded_filter_query(
+            self,
+            limit: int | None,
+    ) -> EvmTransactionsNotDecodedFilterQuery:
+        """Leave out the transactions with an unresolved L1 fee while a recent lookup
+        failure defers them. See _decode_transaction."""
+        filter_query = super()._get_tx_not_decoded_filter_query(limit=limit)
+        if self._should_defer_unresolved_l1_fees():
+            filter_query.filters.append(DBResolvedL1FeeFilter(and_op=True))
+        return filter_query
+
+    def _decode_undecoded_transaction_hashes(
+            self,
+            tx_hashes: list[EVMTxHash],
+            send_ws_notifications: bool,
+    ) -> None:
+        """Decode the transactions with an unresolved L1 fee after the rest, and probe with
+        the first of them before the others. The lookups of an outage all fail, so a failed
+        probe defers the remaining ones instead of repeating the lookup for each of them."""
+        unresolved = DBL2WithL1FeesTx(self.database).get_hashes_with_unresolved_l1_fee(
+            chain_id=self.evm_inquirer.chain_id,
+            tx_hashes=tx_hashes,
+        )
+        if len(resolved := [x for x in tx_hashes if x not in unresolved]) != 0:
+            super()._decode_undecoded_transaction_hashes(
+                tx_hashes=resolved,
+                send_ws_notifications=send_ws_notifications,
+            )
+
+        unresolved_hashes = [x for x in tx_hashes if x in unresolved]
+        for batch in (unresolved_hashes[:1], unresolved_hashes[1:]):  # the probe, then the rest
+            if len(batch) == 0 or self._should_defer_unresolved_l1_fees():
+                break
+
+            super()._decode_undecoded_transaction_hashes(
+                tx_hashes=batch,
+                send_ws_notifications=send_ws_notifications,
+            )
 
     def _calculate_fees(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
         return from_wei(FVal(tx.gas_used * tx.gas_price + (tx.l1_fee or 0)))

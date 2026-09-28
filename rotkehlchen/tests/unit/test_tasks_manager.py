@@ -1870,6 +1870,11 @@ def test_graph_query_query_delegations(
             assert cursor.execute("SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'ethereum_GRAPH_DELEGATIONS%'").fetchone() == (2,)  # noqa: E501
 
 
+COUNT_UNDECODED_TXS = (
+    'rotkehlchen.chain.decoding.decoder.TransactionDecoder.count_undecoded_transactions'
+)
+
+
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
@@ -1877,13 +1882,12 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
     task_manager.potential_tasks = [task_manager._maybe_decode_transactions]
 
     # When there are no transactions to decode we expect None
-    with patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx:
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 0
+    with patch(COUNT_UNDECODED_TXS, return_value=0):
         result = task_manager._maybe_decode_transactions()
         assert result is None
 
     with (  # When there are Solana transactions to decode a greenlet should be spawned
-        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+        patch(COUNT_UNDECODED_TXS, return_value=5),
         patch(
             'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
             new=(SupportedBlockchain.SOLANA,),
@@ -1892,7 +1896,6 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
         # the previous block marked solana clean; new work appearing in production always
         # goes through an invalidating DB write, so simulate that here
         task_manager.database.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
 
@@ -1913,11 +1916,12 @@ def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) 
             new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.SOLANA),
         ),
         patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
-        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
-        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+        patch(
+            COUNT_UNDECODED_TXS,
+            autospec=True,  # nothing on ethereum, solana has work
+            side_effect=lambda decoder: 5 if decoder.chain_name == 'solana' else 0,
+        ),
     ):
-        mock_evm_tx.return_value.count_hashes_not_decoded.return_value = 0  # nothing on ethereum
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
 
@@ -1935,10 +1939,8 @@ def test_maybe_decode_transactions_skips_recently_clean_chain(task_manager: Task
             'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
             new=(SupportedBlockchain.ETHEREUM,),
         ),
-        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+        patch(COUNT_UNDECODED_TXS, return_value=0) as count,  # nothing to decode
     ):
-        count = mock_evm_tx.return_value.count_hashes_not_decoded
-        count.return_value = 0  # nothing to decode
 
         assert task_manager._maybe_decode_transactions() is None
         assert count.call_count == 1  # scanned once, then marked clean
