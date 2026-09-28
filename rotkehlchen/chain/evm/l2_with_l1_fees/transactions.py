@@ -3,7 +3,11 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
+    L1_ORIGINATED_TX_TYPE,
+    L2WithL1FeesTransaction,
+    is_l1_originated_tx,
+)
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +22,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,6 +48,11 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
         for receipt in receipts:
             tx_hash = deserialize_evm_tx_hash(receipt['transactionHash'])
             if tx_hash == GENESIS_HASH:
+                continue
+            if is_l1_originated_tx(receipt):
+                # Relayed from L1, so the receipt has no l1Fee field but the fee is zero.
+                # Store that instead of asking indexers. See L1_ORIGINATED_TX_TYPE.
+                receipt['l1Fee'] = 0
                 continue
             try:
                 read_integer(receipt, 'l1Fee')
@@ -75,6 +84,28 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                 missing[tx_hash]['l1Fee'] = fee
             if fee is None:
                 self._fresh_unresolved_fee_hashes.add(tx_hash)
+
+    def add_transaction_by_hash(
+            self,
+            tx_hash: EVMTxHash,
+            associated_address: ChecksumEvmAddress,
+            must_exist: bool = False,
+    ) -> tuple[EvmTransaction, EvmTxReceipt]:
+        """Adds the transaction like the base class does. Fetching it already asked the
+        indexers for a fee missing from the receipt, so an unresolved fee is marked to
+        stop the decode that follows from asking them again.
+
+        May raise the same errors as the base class.
+        """
+        transaction, tx_receipt = super().add_transaction_by_hash(
+            tx_hash=tx_hash,
+            associated_address=associated_address,
+            must_exist=must_exist,
+        )
+        if isinstance(transaction, L2WithL1FeesTransaction) and transaction.l1_fee is None:
+            self._fresh_unresolved_fee_hashes.add(tx_hash)
+
+        return transaction, tx_receipt
 
     def ensure_tx_data_exists(
             self,
@@ -110,7 +141,11 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                 self._fresh_unresolved_fee_hashes.remove(tx_hash)
                 return evm_tx, tx_receipt
 
-            if (l1_fee := self.evm_inquirer.maybe_get_l1_fees(
+            if tx_receipt.tx_type == L1_ORIGINATED_TX_TYPE:
+                # Relayed from L1, so no L1 fee exists and asking indexers can never resolve
+                # it. Covers rows saved before this was detected. See L1_ORIGINATED_TX_TYPE.
+                l1_fee: int | None = 0
+            elif (l1_fee := self.evm_inquirer.maybe_get_l1_fees(
                 account=evm_tx.from_address,
                 tx_hash=tx_hash,
                 block_number=evm_tx.block_number,

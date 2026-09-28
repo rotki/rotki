@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
     L2ChainIdsWithL1FeesType,
     L2WithL1FeesTransaction,
+    is_l1_originated_tx,
 )
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.solana.rpc import Pubkey, Signature
@@ -729,38 +730,53 @@ def deserialize_evm_transaction(
 
         if chain_id in L2_CHAINIDS_WITH_L1_FEES:
             l1_fee: int | None = None
-            try:  # if data is from etherscan's txlist it will already include the L1 fee
-                l1_fee = int(data['L1FeesPaid'])
-            except (KeyError, ValueError):  # data is not from txlist or malformed data from txlist
-                if evm_inquirer is not None:
-                    if raw_receipt_data is None:
-                        raw_receipt_data = _get_transaction_receipt(
-                            tx_hash=tx_hash,
-                            chain_id=chain_id,
-                            timestamp=timestamp,
-                            evm_inquirer=evm_inquirer,
+            if is_l1_originated_tx(data) or is_l1_originated_tx(raw_receipt_data):
+                # Relayed from L1, so no L1 fee exists and nothing reports one to read.
+                # See L1_ORIGINATED_TX_TYPE.
+                l1_fee = 0
+            else:
+                try:  # if data is from etherscan's txlist it will already include the L1 fee
+                    l1_fee = int(data['L1FeesPaid'])
+                except (KeyError, ValueError):  # not from txlist or malformed data from txlist
+                    if evm_inquirer is not None:
+                        if raw_receipt_data is None:
+                            raw_receipt_data = _get_transaction_receipt(
+                                tx_hash=tx_hash,
+                                chain_id=chain_id,
+                                timestamp=timestamp,
+                                evm_inquirer=evm_inquirer,
+                            )
+                        if is_l1_originated_tx(raw_receipt_data):
+                            l1_fee = 0  # see L1_ORIGINATED_TX_TYPE
+                        else:
+                            try:
+                                l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+                            except (DeserializationError, KeyError) as e:  # Fall back to indexers
+                                msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                                log.warning(
+                                    'Failed to get L1 fee from receipt due to %s. '
+                                    'Falling back to indexers.',
+                                    msg,
+                                )
+                                l1_fee = evm_inquirer.maybe_get_l1_fees(
+                                    account=from_address,
+                                    tx_hash=tx_hash,
+                                    block_number=block_number,
+                                )
+                    elif indexer is not None:
+                        # Address queries also collect receipts for decoding. Leave the fee
+                        # pending instead of making one indexer request per transaction
+                        # before that batch.
+                        if raw_receipt_data is not None:
+                            with suppress(DeserializationError, KeyError):
+                                l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+                    else:  # should never happen
+                        log.error(
+                            'Cannot retrieve L1 fee for %s transaction %s. '
+                            'Both evm_inquirer and indexer are None.',
+                            chain_id.to_name(),
+                            tx_hash,
                         )
-                    try:
-                        l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
-                    except (DeserializationError, KeyError) as e:  # Fall back to indexers
-                        msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
-                        log.warning(f'Failed to get L1 fee from receipt due to {msg}. Falling back to indexers.')  # noqa: E501
-                        l1_fee = evm_inquirer.maybe_get_l1_fees(
-                            account=from_address,
-                            tx_hash=tx_hash,
-                            block_number=block_number,
-                        )
-                elif indexer is not None:
-                    # Address queries also collect receipts for decoding. Leave the fee pending
-                    # instead of making one indexer request per transaction before that batch.
-                    if raw_receipt_data is not None:
-                        with suppress(DeserializationError, KeyError):
-                            l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
-                else:  # should never happen
-                    log.error(
-                        f'Cannot retrieve L1 fee for {chain_id.to_name()} transaction {tx_hash!s}. '  # noqa: E501
-                        f'Both evm_inquirer and indexer are None.',
-                    )
 
             return L2WithL1FeesTransaction(
                 timestamp=timestamp,
