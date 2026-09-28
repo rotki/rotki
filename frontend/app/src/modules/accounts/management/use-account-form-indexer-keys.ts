@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { camelCase } from 'es-toolkit';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { keyedPrimaryIndexer } from '@/modules/settings/evm/evm-indexer-utils';
+import { keyedPrimaryIndexer, orderForChain } from '@/modules/settings/evm/evm-indexer-utils';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -28,13 +28,17 @@ export function useAccountFormIndexerKeys(
   const defaultEvmIndexerOrder = useSetting('defaultEvmIndexerOrder');
   const evmIndexersOrder = useSetting('evmIndexersOrder');
 
-  /** The indexer order a chain is queried with: its own override, else the default order. */
+  /**
+   * The indexer order a chain is queried with: its own override, else the default order, minus the
+   * indexers the chain does not support, which the backend skips.
+   */
   function indexerOrderFor(chainId: string): EvmIndexer[] {
     const chainOrders = get(evmIndexersOrder);
     const evmChainName = camelCase(get(txEvmChains).find(c => c.id === chainId)?.evmChainName ?? '');
-    return evmChainName && chainOrders[evmChainName]
+    const order = evmChainName && chainOrders[evmChainName]
       ? chainOrders[evmChainName]
       : get(defaultEvmIndexerOrder);
+    return orderForChain(chainId, order);
   }
 
   /** The EVM chains the selection queries transactions for; 'all' stands for every one of them. */

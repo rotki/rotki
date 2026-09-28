@@ -285,7 +285,7 @@ describe('modules/accounts/management/AccountForm', () => {
      * Optimism, Base and Gnosis lead with Blockscout, and Etherscan's free tier does not serve
      * them, so there a missing Blockscout key is what stops the query, Etherscan key or not.
      */
-    function mountOnOptimism(): void {
+    function mountOnOptimism(order: EvmIndexer[] = [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN]): void {
       useSupportedChainsStore().supportedChains = [optimism];
       wrapper = createWrapper({
         chain: 'optimism',
@@ -295,9 +295,18 @@ describe('modules/accounts/management/AccountForm', () => {
       });
       updateGeneralSettings({
         defaultEvmIndexerOrder: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT],
-        evmIndexersOrder: { optimism: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN] },
+        evmIndexersOrder: { optimism: order },
       });
     }
+
+    // Routescan no longer serves Optimism, so the backend skips it and Blockscout leads in its place.
+    it('should ask for a blockscout key when routescan leads an optimism order', async () => {
+      apiKeys.set('etherscan', 'etherscan-key');
+      mountOnOptimism([EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+      await nextTick();
+
+      expect(wrapper.text()).toContain('external_services.blockscout.api_key_message::Optimism');
+    });
 
     it('should ask for a blockscout key naming the chain when blockscout leads without one', async () => {
       apiKeys.set('etherscan', 'etherscan-key');

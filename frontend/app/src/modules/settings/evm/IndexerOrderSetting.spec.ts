@@ -228,6 +228,15 @@ describe('indexerOrderSetting', () => {
     expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
   });
 
+  it('should leave routescan out of a saved optimism order, since it no longer serves the chain', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], {
+      optimism: [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN],
+    });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
   it('should persist the remaining overrides when a chain is removed', async () => {
     await mountWith([EvmIndexer.ETHERSCAN], {
       gnosis: [EvmIndexer.ETHERSCAN],

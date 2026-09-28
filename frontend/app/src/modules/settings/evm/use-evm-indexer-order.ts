@@ -83,17 +83,20 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
 
   const tabs = computed<TabItem[]>(() => buildTabs(get(configuredChains), getChainName));
 
+  // A saved order can hold an indexer the chain lost since, such as Routescan on Optimism.
+  const chainOrders = computed<Record<string, PrioritizedListId[]>>(() => Object.fromEntries(
+    Object.entries(get(localChainOrders)).map(([chain, order]) => [chain, orderForChain(chain, order)]),
+  ));
+
   const currentOrder = computed<PrioritizedListId[]>(() => {
     const tab = get(modelActiveTab);
     if (tab === DEFAULT_INDEXER_TAB)
       return get(localDefaultOrder);
 
-    return get(localChainOrders)[tab] ?? [];
+    return get(chainOrders)[tab] ?? [];
   });
 
   const defaultOrder = computed<PrioritizedListId[]>(() => get(localDefaultOrder));
-
-  const chainOrders = computed<Record<string, PrioritizedListId[]>>(() => get(localChainOrders));
 
   const chainWarnings = computed<MessageKey[]>(() => getChainIndexerWarnings(get(modelActiveTab), get(currentOrder)));
 

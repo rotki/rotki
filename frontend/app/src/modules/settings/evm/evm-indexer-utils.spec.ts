@@ -37,10 +37,20 @@ describe('evm-indexer-utils', () => {
       expect(available.itemDataForId(EvmIndexer.ROUTESCAN)).toBeDefined();
     });
 
-    it('should offer every indexer for a chain with no restriction', () => {
-      const available = getAvailableIndexersForChain('optimism');
+    it('should offer routescan on ethereum only', () => {
+      expect(getAvailableIndexersForChain('eth').itemDataForId(EvmIndexer.ROUTESCAN)).toBeDefined();
+
+      const optimism = getAvailableIndexersForChain('optimism');
+      expect(optimism.itemDataForId(EvmIndexer.ETHERSCAN)).toBeDefined();
+      expect(optimism.itemDataForId(EvmIndexer.BLOCKSCOUT)).toBeDefined();
+      expect(optimism.itemDataForId(EvmIndexer.ROUTESCAN)).toBeUndefined();
+    });
+
+    it('should offer only blockscout on scroll', () => {
+      const available = getAvailableIndexersForChain('scroll');
 
       expect(available.itemDataForId(EvmIndexer.BLOCKSCOUT)).toBeDefined();
+      expect(available.itemDataForId(EvmIndexer.ETHERSCAN)).toBeUndefined();
     });
 
     it('should restrict a chain that only one indexer serves', () => {
@@ -63,10 +73,16 @@ describe('evm-indexer-utils', () => {
         .toEqual([EvmIndexer.ETHERSCAN]);
     });
 
-    it('should fall back to etherscan rather than leave a chain with no indexer', () => {
+    it('should drop routescan from a saved optimism order', () => {
+      expect(orderForChain('optimism', [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]))
+        .toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    });
+
+    it('should fall back to the first supported indexer rather than leave a chain with none', () => {
       expect(orderForChain('binance_sc', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]))
         .toEqual([EvmIndexer.ETHERSCAN]);
       expect(orderForChain('optimism', [])).toEqual([EvmIndexer.ETHERSCAN]);
+      expect(orderForChain('scroll', [EvmIndexer.ETHERSCAN])).toEqual([EvmIndexer.BLOCKSCOUT]);
     });
   });
 
