@@ -168,7 +168,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterator, Mapping, Sequence
+    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 
     from rotkehlchen.chain.substrate.types import SubstrateAddress
     from rotkehlchen.db.filtering import UserNotesFilterQuery
@@ -2215,6 +2215,23 @@ class DBHandler:
             'INSERT OR REPLACE INTO evm_accounts_details '
             '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
+        )
+
+    def add_tokens_for_address(
+            self,
+            write_cursor: DBCursor,
+            address: ChecksumEvmAddress,
+            blockchain: SupportedBlockchain,
+            tokens: Iterable[Asset],
+    ) -> None:
+        """Adds tokens to the detected tokens of an address keeping the already saved ones.
+        Unlike save_tokens_for_address it doesn't touch the last queried timestamp since
+        this is not a full token detection."""
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            [(address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, x.identifier) for x in tokens],
         )
 
     def _deserialize_account_blockchain_from_db(
