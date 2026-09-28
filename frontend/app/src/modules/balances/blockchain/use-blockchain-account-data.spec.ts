@@ -7,6 +7,7 @@ import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
 import { useBlockchainAccountData } from './use-blockchain-account-data';
 import '@test/i18n';
 
@@ -71,6 +72,10 @@ describe('useBlockchainAccountData', () => {
         liabilities: {},
       };
 
+      set(storeToRefs(useSupportedChainsStore()).supportedChains, [
+        { id: Blockchain.BTC, image: '', name: 'Bitcoin', type: 'bitcoin' },
+      ]);
+
       const { fetchAccounts } = useBlockchainAccountData();
       const { updateAccounts } = useBlockchainAccountsStore();
       const { updateBalances } = useBalancesStore();
@@ -117,6 +122,7 @@ describe('useBlockchainAccountData', () => {
       const chain = Blockchain.BTC.toString();
 
       const expectedGroups: BlockchainAccountGroupWithBalance[] = [{
+        category: 'bitcoin',
         chains: [chain],
         data: {
           address: '123',
@@ -128,6 +134,7 @@ describe('useBlockchainAccountData', () => {
         value: bigNumberify(10),
       }, {
         amount: bigNumberify(10),
+        category: 'bitcoin',
         chains: [chain],
         data: {
           derivationPath: 'm',
@@ -142,6 +149,7 @@ describe('useBlockchainAccountData', () => {
         value: bigNumberify(10),
       }, {
         amount: Zero,
+        category: 'bitcoin',
         chains: [chain],
         data: {
           derivationPath: undefined,

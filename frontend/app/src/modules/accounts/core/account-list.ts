@@ -77,7 +77,7 @@ function filterAccount<T extends BlockchainAccountBalance>(account: T, filters: 
     matchesAddress(),
     matchesChain(),
     matchesTags(),
-    categoryFilter ? account.category === categoryFilter : undefined,
+    categoryFilter ? account.type === 'group' && account.category === categoryFilter : undefined,
   ].filter(result => result !== undefined);
 
   return results.length === 0 || results.every(result => result);

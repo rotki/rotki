@@ -20,7 +20,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
 
   const createAccountRow = (chain: string): AccountDataRow<BlockchainAccountWithBalance> => ({
     amount: bigNumberify('1'),
-    category: undefined,
     chain,
     data: {
       address: '0x1234567890abcdef1234567890abcdef12345678',
@@ -40,7 +39,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
 
   const createGroupRow = (chains: string[]): AccountDataRow<BlockchainAccountGroupWithBalance> => ({
     allChains: chains,
-    category: undefined,
+    category: 'evm',
     chains,
     data: {
       address: '0x1234567890abcdef1234567890abcdef12345678',

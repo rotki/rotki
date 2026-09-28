@@ -98,7 +98,7 @@ function groupShowingSomeChains(chains: string[], allChains: string[]): Blockcha
 
 function xpubGroup(): BlockchainAccountGroupWithBalance<XpubData> {
   return {
-    category: 'btc',
+    category: 'bitcoin',
     chains: ['btc'],
     data: { type: 'xpub', xpub: XPUB },
     type: 'group',
