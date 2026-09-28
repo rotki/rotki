@@ -59,7 +59,6 @@ const {
   getCategoryTotal,
   getChains,
   isExpanded,
-  isVirtual,
   rows,
   totalValue,
 } = useAccountTableData<T>(() => accounts, expandedIds, chainFilter);
@@ -139,7 +138,6 @@ defineExpose({
         :group="group"
         :account-operation="accountOperation"
         :is-section-loading="isSectionLoading"
-        :is-virtual="isVirtual(row)"
         @edit="edit(group, row)"
         @delete="confirmDelete($event)"
       />

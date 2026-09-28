@@ -16,11 +16,10 @@ export interface Props<T extends BlockchainAccountBalance> {
   accountOperation: boolean;
   group?: 'evm' | 'xpub';
   isSectionLoading: boolean;
-  isVirtual: boolean;
   row: AccountDataRow<T>;
 }
 
-const { isVirtual, row } = defineProps<Props<T>>();
+const { row } = defineProps<Props<T>>();
 
 const emit = defineEmits<{
   delete: [row: AccountDataRow<T>];
@@ -54,10 +53,9 @@ const skipChains = computed<string[]>(() => row.type === 'group' ? row.chains : 
  *
  * @remarks
  * A validator row carries a public key and an xpub group its xpub, neither of which the backend
- * matches a rule against. The addresses derived from an xpub are reachable on its virtual rows,
- * which carry no actions at all, for the same reason edit and delete skip them.
+ * matches a rule against.
  */
-const canSkipQueries = computed<boolean>(() => !isVirtual && row.data.type === 'address' && get(skipChains).length > 0);
+const canSkipQueries = computed<boolean>(() => row.data.type === 'address' && get(skipChains).length > 0);
 
 function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
   if (row.type === 'group')
@@ -83,7 +81,6 @@ function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
       :disabled="accountOperation"
     />
     <RowActions
-      v-if="!isVirtual"
       :edit-tooltip="t('account_balances.edit_tooltip')"
       :disabled="accountOperation"
       :no-edit="group !== 'evm'"

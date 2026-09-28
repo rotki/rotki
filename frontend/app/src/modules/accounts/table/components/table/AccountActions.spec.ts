@@ -36,11 +36,9 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
     tags: [],
     type: 'account',
     value: bigNumberify('1000'),
-    virtual: false,
   });
 
   const createGroupRow = (chains: string[]): AccountDataRow<BlockchainAccountGroupWithBalance> => ({
-    aggregatedAssets: [],
     allChains: chains,
     category: undefined,
     chains,
@@ -75,7 +73,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
     accountOperation: boolean;
     group?: 'evm' | 'xpub';
     isSectionLoading: boolean;
-    isVirtual: boolean;
     row: AccountDataRow<BlockchainAccountWithBalance> | AccountDataRow<BlockchainAccountGroupWithBalance>;
   }): VueWrapper {
     return mount(AccountActions, {
@@ -102,7 +99,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -118,7 +114,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -133,7 +128,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('btc'),
       });
 
@@ -147,7 +141,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['eth']),
       });
 
@@ -162,7 +155,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['eth', 'optimism']),
       });
 
@@ -176,41 +168,10 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['btc', 'bch']),
       });
 
       expect(wrapper.findComponent({ name: 'TokenDetection' }).exists()).toBe(false);
-    });
-  });
-
-  describe('rowActions visibility', () => {
-    it('should show RowActions when not virtual', () => {
-      supportsTransactionsMock.mockReturnValue(true);
-
-      wrapper = createWrapper({
-        accountOperation: false,
-        group: 'evm',
-        isSectionLoading: false,
-        isVirtual: false,
-        row: createAccountRow('eth'),
-      });
-
-      expect(wrapper.findComponent({ name: 'RowActions' }).exists()).toBe(true);
-    });
-
-    it('should hide RowActions when isVirtual is true', () => {
-      supportsTransactionsMock.mockReturnValue(true);
-
-      wrapper = createWrapper({
-        accountOperation: false,
-        group: 'evm',
-        isSectionLoading: false,
-        isVirtual: true,
-        row: createAccountRow('eth'),
-      });
-
-      expect(wrapper.findComponent({ name: 'RowActions' }).exists()).toBe(false);
     });
   });
 
@@ -222,7 +183,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -237,7 +197,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'xpub',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('btc'),
       });
 
@@ -252,7 +211,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: undefined,
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -270,7 +228,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row,
       });
 
@@ -291,7 +248,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row,
       });
 
@@ -313,7 +269,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: true,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -328,7 +283,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -347,7 +301,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['eth', 'optimism', 'base']),
       });
 
@@ -360,23 +313,10 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('optimism'),
       });
 
       expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).props('chains')).toEqual(['optimism']);
-    });
-
-    it('should hide it on a virtual row, which carries no actions', () => {
-      wrapper = createWrapper({
-        accountOperation: false,
-        group: 'xpub',
-        isSectionLoading: false,
-        isVirtual: true,
-        row: createAccountRow('btc'),
-      });
-
-      expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).exists()).toBe(false);
     });
 
     it('should hide it for a validator, whose public key no rule matches', () => {
@@ -393,7 +333,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         isSectionLoading: false,
-        isVirtual: false,
         row,
       });
 
@@ -405,7 +344,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: true,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -421,7 +359,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: true,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -438,7 +375,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['optimism']),
       });
 
@@ -453,7 +389,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         accountOperation: false,
         group: 'evm',
         isSectionLoading: false,
-        isVirtual: false,
         row: createGroupRow(['eth', 'optimism', 'btc']),
       });
 
