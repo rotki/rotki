@@ -99,20 +99,15 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             tx_hash=tx_hash,
             relevant_address=relevant_address,
         )
-        tx_id, saved_fee = cursor.execute(
-            'SELECT txs.identifier, fees.l1_fee FROM evm_transactions AS txs '
-            'LEFT JOIN optimism_transactions AS fees ON txs.identifier=fees.tx_id '
-            'WHERE txs.tx_hash=? AND txs.chain_id=?',
-            (tx_hash, self.evm_inquirer.chain_id.serialize_for_db()),
-        ).fetchone()
-        if saved_fee is not None and isinstance(evm_tx, L2WithL1FeesTransaction):
-            return evm_tx, tx_receipt
+        tx_id = evm_tx.db_id
+        if isinstance(evm_tx, L2WithL1FeesTransaction):  # read from the DB with its fee
+            if (l1_fee := evm_tx.l1_fee) is not None:
+                return evm_tx, tx_receipt
 
-        if isinstance(evm_tx, L2WithL1FeesTransaction):
             if tx_receipt.tx_type == L1_ORIGINATED_TX_TYPE:
                 # Relayed from L1, so no L1 fee exists and asking indexers can never resolve
                 # it. Covers rows saved before this was detected. See L1_ORIGINATED_TX_TYPE.
-                l1_fee: int | None = 0
+                l1_fee = 0
             elif (l1_fee := self.evm_inquirer.maybe_get_l1_fees(
                 account=evm_tx.from_address,
                 tx_hash=tx_hash,
@@ -147,7 +142,10 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                     self.evm_inquirer.chain_name,
                 )
         else:  # freshly queried, so the fee was already looked up during this call
-            l1_fee = None if saved_fee is None else int(saved_fee)
+            saved_fee = cursor.execute(
+                'SELECT l1_fee FROM optimism_transactions WHERE tx_id=?', (tx_id,),
+            ).fetchone()
+            l1_fee = None if saved_fee is None or saved_fee[0] is None else int(saved_fee[0])
 
         return L2WithL1FeesTransaction(
             tx_hash=evm_tx.tx_hash,
