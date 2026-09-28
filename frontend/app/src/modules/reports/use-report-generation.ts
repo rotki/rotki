@@ -42,7 +42,14 @@ export function useReportGeneration(): UseReportGenerationReturn {
 
   let activeInterval: NodeJS.Timeout | undefined;
 
-  /** Poll backend report status into the store and mirror the percentage onto the activity. */
+  /**
+   * Poll backend report status into the store and mirror the percentage onto the activity.
+   *
+   * @remarks
+   * Start it only from the spec's `run`, which its `cleanup` pairs with once per run, so a task centre
+   * re-run polls too. A `submitTask` that joins a run already in flight drops its own spec, cleanup
+   * included, so a poll started outside `run` is never stopped.
+   */
   function checkProgress(activityId: ActivityId): NodeJS.Timeout {
     const interval = setInterval(() => {
       getProgress()
@@ -72,7 +79,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
     set(reportError, emptyError());
 
     const id = makeActivityId(ActivityKind.PNL_REPORT);
-    const intervalId = checkProgress(id);
+    let intervalId: NodeJS.Timeout | undefined;
     const outcome = await submitTask<number>({
       cleanup: () => {
         clearInterval(intervalId);
@@ -82,6 +89,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       kind: ActivityKind.PNL_REPORT,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<number, TaskError>> => {
+        intervalId = checkProgress(id);
         const result = await runTask<number>(
           async () => generateReportCaller(period),
         );
@@ -122,7 +130,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
     set(reportError, emptyError());
 
     const id = makeActivityId(ActivityKind.PNL_REPORT, ActivityPart.EXPORT);
-    const intervalId = checkProgress(id);
+    let intervalId: NodeJS.Timeout | undefined;
     const outcome = await submitTask<boolean | object>({
       cleanup: () => {
         clearInterval(intervalId);
@@ -131,9 +139,12 @@ export function useReportGeneration(): UseReportGenerationReturn {
       id,
       kind: ActivityKind.PNL_REPORT,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => runTask<boolean | object>(
-        async () => exportReportDataCaller(payload),
-      ),
+      run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => {
+        intervalId = checkProgress(id);
+        return runTask<boolean | object>(
+          async () => exportReportDataCaller(payload),
+        );
+      },
       subtitle: activityLabel(ActivityKind.PNL_REPORT, ActivityPart.EXPORT),
       title: t('task_center.group.pnl_report'),
     });

@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :bug:`-` Purging data that fails to delete now says so. Before, the purge settings reported "Data was successfully deleted" even though nothing was removed.
+* :bug:`-` The history events table now refreshes after a change made while it was already reloading, such as matching an event. Before, that change was not shown until the next refresh.
+* :bug:`-` The transaction decoding status no longer clears its list of undecoded transactions when a decode finishes, which made it read as though everything had been decoded.
+* :bug:`-` Re-running a profit and loss report from the task centre now shows its progress, and starting a report or a debug export while one is running no longer leaves a progress check running afterwards.
 * :bug:`-` Adding an account on Optimism, Base or Gnosis without a Blockscout or paid Etherscan key now warns that their history cannot be queried, and their indexer settings say they need one of the two keys.
 * :bug:`-` Optimism transaction queries no longer try Routescan after the service dropped support for the chain. When free indexers cannot serve Optimism, Base or Gnosis, rotki now offers a free Blockscout API key before suggesting paid Etherscan access.
 * :bug:`13216` rotki starts again on macOS 12 (Monterey) and 13 (Ventura). Since 1.44.0 the backend failed to start there with a numpy "Symbol not found" error.
