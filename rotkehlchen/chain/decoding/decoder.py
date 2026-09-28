@@ -217,6 +217,12 @@ class TransactionDecoder[
         the specified limit.
         """
 
+    def count_undecoded_transactions(self) -> int:
+        """Count the transactions that get_and_decode_undecoded_transactions would decode."""
+        return self.dbtx.count_hashes_not_decoded(
+            filter_query=self._get_tx_not_decoded_filter_query(limit=None),
+        )
+
     def get_and_decode_undecoded_transactions(
             self,
             limit: int | None = None,
@@ -234,14 +240,26 @@ class TransactionDecoder[
             )
             if len(hashes) != 0:
                 log.debug('Will decode %s transactions for %s', len(hashes), self.chain_name)
-                self.decode_transaction_hashes(
-                    ignore_cache=False,
+                self._decode_undecoded_transaction_hashes(
                     tx_hashes=hashes,
                     send_ws_notifications=send_ws_notifications,
                 )
 
             log.debug(f'Finished task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             return hashes
+
+    def _decode_undecoded_transaction_hashes(
+            self,
+            tx_hashes: list[T_TxHash],
+            send_ws_notifications: bool,
+    ) -> None:
+        """Decode the transactions found by get_and_decode_undecoded_transactions. Chains
+        can override it to change how the batch is decoded."""
+        self.decode_transaction_hashes(
+            ignore_cache=False,
+            tx_hashes=tx_hashes,
+            send_ws_notifications=send_ws_notifications,
+        )
 
     def decode_and_get_transaction_hashes(
             self,

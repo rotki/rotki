@@ -1,8 +1,14 @@
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
+    L1_ORIGINATED_TX_TYPE,
+    L2WithL1FeesTransaction,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import DBFilter
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -16,11 +22,33 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def unresolved_l1_fee_condition(receipts: str) -> str:
+    """SQL condition matching the transactions whose L1 fee still needs a lookup, given the
+    alias of the joined evmtx_receipts. L1 originated transactions are left out since their
+    fee is always zero and is set without asking any remote. Binds L1_ORIGINATED_TX_TYPE."""
+    return (
+        f'{receipts}.type!=? AND {receipts}.tx_id IN '
+        '(SELECT tx_id FROM optimism_transactions WHERE l1_fee IS NULL)'
+    )
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBResolvedL1FeeFilter(DBFilter):
+    """Leaves out the transactions of an undecoded transactions query whose L1 fee is still
+    unresolved. That query joins the receipts as `A`."""
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        condition = unresolved_l1_fee_condition(receipts='A')
+        return [f'NOT ({condition})'], [L1_ORIGINATED_TX_TYPE]
 
 
 class DBL2WithL1FeesTx(DBEvmTx):
@@ -35,6 +63,24 @@ class DBL2WithL1FeesTx(DBEvmTx):
             "WHERE optimism_transactions.l1_fee IS NULL OR excluded.l1_fee!='0'",
             (tx_id, str(l1_fee)),
         )
+
+    def get_hashes_with_unresolved_l1_fee(
+            self,
+            chain_id: ChainID,
+            tx_hashes: Sequence[EVMTxHash],
+    ) -> set[EVMTxHash]:
+        """Return which of the given transactions have an L1 fee that still needs a lookup."""
+        unresolved: set[EVMTxHash] = set()
+        condition = unresolved_l1_fee_condition(receipts='receipts')
+        with self.db.conn.read_ctx() as cursor:
+            for chunk, placeholders in get_query_chunks(data=tx_hashes):
+                unresolved.update(deserialize_evm_tx_hash(row[0]) for row in cursor.execute(
+                    'SELECT txs.tx_hash FROM evm_transactions AS txs INNER JOIN evmtx_receipts '
+                    'AS receipts ON receipts.tx_id=txs.identifier WHERE txs.chain_id=? AND '
+                    f'txs.tx_hash IN ({placeholders}) AND {condition}',
+                    (chain_id.serialize_for_db(), *chunk, L1_ORIGINATED_TX_TYPE),
+                ))
+        return unresolved
 
     def add_transactions(
             self,
