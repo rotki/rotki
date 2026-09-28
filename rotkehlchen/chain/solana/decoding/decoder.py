@@ -187,7 +187,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             delete_customized: bool,
             write_buffer: list[tuple[list[SolanaEvent], str, int]] | None = None,
     ) -> tuple[list[SolanaEvent], bool, set[str] | None]:
-        if (events := self._maybe_load_or_purge_events_from_db(
+        if ignore_cache is False and (events := self._maybe_load_or_purge_events_from_db(
             transaction=context,
             tx_ref=context.signature,
             location=Location.SOLANA,
@@ -196,8 +196,19 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         )) is not None:
             return events, False, None
 
-        # else we should decode now
-        return self._decode_transaction(transaction=context, write_buffer=write_buffer)
+        if ignore_cache:
+            write_buffer = []
+        result = self._decode_transaction(transaction=context, write_buffer=write_buffer)
+        if ignore_cache:
+            assert write_buffer is not None
+            self._replace_transaction_events(
+                transaction=context,
+                tx_ref=context.signature,
+                location=Location.SOLANA,
+                delete_customized=delete_customized,
+                write_buffer=write_buffer,
+            )
+        return result
 
     def _make_event_filter_query(self, tx_ref: Signature) -> SolanaEventFilterQuery:
         return SolanaEventFilterQuery.make(signatures=[tx_ref])

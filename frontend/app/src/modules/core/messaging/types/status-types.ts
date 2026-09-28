@@ -209,6 +209,10 @@ const HistoricalBalanceProcessingDataWithSubtype = HistoricalBalanceProcessingDa
   subtype: z.literal(SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
 });
 
+const DataIssueRemediationDataWithSubtype = z.object({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+});
+
 export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   EvmUnDecodedTransactionsDataWithSubtype,
   ProtocolCacheUpdatesDataWithSubtype,
@@ -218,6 +222,7 @@ export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   LiquityStakingQueryDataWithSubtype,
   StatsPriceQueryDataWithSubtype,
   MultiplePricesQueryStatusWithSubtype,
+  DataIssueRemediationDataWithSubtype,
 ]);
 
 export type ProgressUpdateResultData = z.infer<typeof ProgressUpdateResultData>;

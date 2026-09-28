@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -14,17 +15,25 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import (
+    BaseRemediationStrategy,
+    RemediationOutcome,
+    RemediationPipeline,
+)
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
     RedecodeComparisonResult,
     TransactionDecodingComparison,
 )
-from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import (
@@ -51,6 +60,159 @@ REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
+
+
+def _write_tracked_address_transfer_issues(
+        database: DBHandler,
+        issues_manager: DataIssuesManager,
+) -> None:
+    """Write issues for plain transfers whose sender and receiver are tracked."""
+    chain_locations = tuple(
+        (
+            location.serialize_for_db(),
+            ChainID(location.to_chain_id()).to_blockchain().value,
+            location.to_chain_id(),
+        )
+        for location in EVM_LOCATIONS
+    )
+    with database.conn.read_ctx() as cursor:
+        candidates = cursor.execute(
+            'WITH evm_chain_locations(location, blockchain, chain_id) AS ('
+            f'VALUES {",".join("(?, ?, ?)" for _ in chain_locations)}) '
+            'SELECT H.identifier, C.tx_ref, L.chain_id, H.timestamp, H.location, '
+            'H.location_label, H.asset, EXISTS('
+            'SELECT 1 FROM history_events H2 JOIN history_events_mappings M '
+            'ON M.parent_identifier = H2.identifier '
+            'WHERE H2.group_identifier = H.group_identifier '
+            'AND M.name = ? AND M.value = ?) FROM evm_chain_locations L '
+            'JOIN blockchain_accounts S ON S.blockchain = L.blockchain '
+            'CROSS JOIN history_events H INDEXED BY idx_history_events_location_label '
+            'ON H.location = L.location AND H.location_label = S.account '
+            'JOIN chain_events_info C ON C.identifier = H.identifier '
+            'JOIN blockchain_accounts R ON R.blockchain = L.blockchain AND R.account = C.address '
+            'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = L.chain_id '
+            'WHERE H.type IN (?, ?) AND H.subtype = ?',
+            (
+                *(value for chain_location in chain_locations for value in chain_location),
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        ).fetchall()
+
+    for candidate in candidates:
+        event_id, _tx_hash, _chain_id, timestamp = candidate[:4]
+        location, location_label, asset, _is_customized = candidate[4:]
+        issues_manager.write_issue(
+            kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
+            location=location,
+            location_label=location_label,
+            protocol=None,
+            asset=asset,
+            payload={'event_identifier': event_id},
+            ts_start=timestamp,
+            ts_end=timestamp,
+        )
+
+
+class TrackedAddressTransferStrategy(BaseRemediationStrategy):
+    """Redecode a plain transfer after both counterparties become tracked."""
+
+    name: Final = 'redecode_tracked_address_transfer'
+
+    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+        self.database = database
+        self.chains_aggregator = chains_aggregator
+        self.candidates: dict[
+            int,
+            tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash],
+        ] = {}
+
+    def _get_candidate(
+            self,
+            issue: DataIssue,
+    ) -> tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash] | None:
+        if issue.kind != IssueKind.TRACKED_ADDRESS_TRANSFER:
+            return None
+
+        location = Location.deserialize_from_db(issue.location)
+        if location not in EVM_LOCATIONS:
+            return None
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+
+        with self.database.conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT C.tx_ref, T.chain_id, EXISTS('
+                'SELECT 1 FROM history_events H2 JOIN history_events_mappings M '
+                'ON M.parent_identifier = H2.identifier '
+                'WHERE H2.group_identifier = H.group_identifier '
+                'AND M.name = ? AND M.value = ?) FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier '
+                'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = ? '
+                'WHERE H.identifier = ?',
+                (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    chain_id.serialize_for_db(),
+                    issue.payload['event_identifier'],
+                ),
+            ).fetchone()
+        if row is None or row[2]:
+            return None
+
+        return (
+            chain_id,
+            EVMTxHash(row[0]),
+        )
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        if (candidate := self._get_candidate(issue)) is None:
+            return False
+
+        self.candidates[issue.id] = candidate
+        return True
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        chain_id, tx_hash = self.candidates.pop(issue.id)
+        with self.database.conn.read_ctx() as cursor:
+            original = cursor.execute(
+                'SELECT H.type, H.amount, H.location_label, C.address FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier WHERE H.identifier = ?',
+                (issue.payload['event_identifier'],),
+            ).fetchone()
+        if original is None:
+            return RemediationOutcome(False, 'system', 'Original transfer is no longer available')
+        event_type, amount, sender, receiver = original
+        if event_type == HistoryEventType.RECEIVE.serialize():
+            sender, receiver = receiver, sender
+
+        self.chains_aggregator.get_evm_manager(
+            chain_id,
+        ).transactions_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=[tx_hash],
+        )
+        with self.database.conn.read_ctx() as cursor:
+            resolved = cursor.execute(
+                'SELECT 1 FROM history_events H '
+                'JOIN chain_events_info C ON C.identifier = H.identifier '
+                'WHERE C.tx_ref = ? AND H.location = ? AND H.asset = ? AND H.amount = ? '
+                'AND H.location_label = ? AND C.address = ? AND H.type = ? AND H.subtype = ?',
+                (
+                    tx_hash, issue.location, issue.asset, amount, sender, receiver,
+                    HistoryEventType.TRANSFER.serialize(), HistoryEventSubType.NONE.serialize(),
+                ),
+            ).fetchone() is not None
+        return RemediationOutcome(
+            resolved=resolved,
+            attribution='system',
+            notes=(
+                'Verified internal transfer after redecoding'
+                if resolved else 'Redecoding did not produce the expected internal transfer'
+            ),
+        )
 
 
 def _get_bucket_effects(
@@ -182,14 +344,12 @@ def _check_issue(
         chains_aggregator: ChainsAggregator,
         issues_manager: DataIssuesManager,
         issue: DataIssue,
+        transactions: dict[EVMTxHash, list[EvmEvent]],
         treat_eth2_as_eth: bool,
         preview_cache: PreviewCache,
         reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
-) -> None:
+) -> RemediationOutcome:
     location = Location.deserialize_from_db(issue.location)
-    if location not in EVM_LOCATIONS or issue.location_label == '':
-        return
-
     chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
     bucket = Bucket(
         location=issue.location,
@@ -197,20 +357,9 @@ def _check_issue(
         protocol=issue.protocol or None,
         asset=issue.asset,
     )
-    if len(transactions := _get_customized_transactions_for_issue(
-        database=database,
-        issue=issue,
-        chain_id=chain_id,
-        location=location,
-    )) == 0:
-        return
-
-    try:
-        issues_manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
-    except InputError:
-        return
-
     decoder = chains_aggregator.get_evm_manager(chain_id).transactions_decoder
+    # TODO: Replace preview-only comparison with stale-marked production
+    # reprocessing for the full issue window.
     preview_exceptions: tuple[type[Exception], ...] = (
         RuntimeError,
         *decoder.possible_decoding_exceptions,
@@ -289,7 +438,7 @@ def _check_issue(
         issues_manager.update_state(
             issue_id=issue.id,
             state=IssueState.UNRESOLVED,
-            attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+            attempt=attempt,
         )
         raise
     else:
@@ -304,42 +453,93 @@ def _check_issue(
 
     if comparisons:
         attempt['transactions'] = comparisons
-    issues_manager.update_state(
-        issue_id=issue.id,
-        state=IssueState.UNRESOLVED,
-        attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+    return RemediationOutcome(
+        resolved=False,
+        attribution=attempt['attribution'],
+        notes=attempt.get('reason', attempt.get('result', '')),
+        attempt_data={
+            key: value for key, value in attempt.items()
+            if key not in {'attribution', 'strategy', 'timestamp'}
+        },
     )
+
+
+class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
+    """Compare customized negative-balance transactions with current decoder output."""
+
+    name: Final = REDECODE_CUSTOMIZED_TRANSACTIONS
+
+    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+        self.database = database
+        self.chains_aggregator = chains_aggregator
+        self.issues_manager = DataIssuesManager(database)
+        self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+        self.preview_cache: PreviewCache = {}
+        self.reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+        self.transactions: dict[int, dict[EVMTxHash, list[EvmEvent]]] = {}
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        if issue.kind != IssueKind.NEGATIVE_BALANCE or issue.location_label == '':
+            return False
+        location = Location.deserialize_from_db(issue.location)
+        if location not in EVM_LOCATIONS:
+            return False
+
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+        transactions = _get_customized_transactions_for_issue(
+            database=self.database,
+            issue=issue,
+            chain_id=chain_id,
+            location=location,
+        )
+        if len(transactions) == 0:
+            return False
+
+        self.transactions[issue.id] = transactions
+        return True
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        return _check_issue(
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
+            issues_manager=self.issues_manager,
+            issue=issue,
+            transactions=self.transactions.pop(issue.id),
+            treat_eth2_as_eth=self.treat_eth2_as_eth,
+            preview_cache=self.preview_cache,
+            reloaded_chains=self.reloaded_chains,
+        )
 
 
 def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
-    """Check whether current decoders would change customized negative-balance transactions.
-
-    Saved events are never removed or replaced. Each applicable issue receives a diagnostic
-    timeline entry and remains unresolved for the user to review.
-    """
+    """Run registered remediation strategies for applicable data issues."""
+    database.msg_aggregator.add_message(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION)},
+    )
     issues_manager = DataIssuesManager(database)
-    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
-    preview_cache: PreviewCache = {}
-    reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+    _write_tracked_address_transfer_issues(
+        database=database,
+        issues_manager=issues_manager,
+    )
+    pipeline = RemediationPipeline(
+        manager=issues_manager,
+        strategies=(
+            TrackedAddressTransferStrategy(database, chains_aggregator),
+            RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
+        ),
+    )
     for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-        kinds=[IssueKind.NEGATIVE_BALANCE],
+        kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.TRACKED_ADDRESS_TRANSFER],
         states=[IssueState.OPEN, IssueState.UNRESOLVED],
     )):
         if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
             continue
 
-        _check_issue(
-            database=database,
-            chains_aggregator=chains_aggregator,
-            issues_manager=issues_manager,
-            issue=issue,
-            treat_eth2_as_eth=treat_eth2_as_eth,
-            preview_cache=preview_cache,
-            reloaded_chains=reloaded_chains,
-        )
+        pipeline.run(issue)
         checkpoint()
 
     with database.user_write() as write_cursor:
@@ -351,21 +551,17 @@ def run_data_issue_remediation(
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Return whether a failed comparison should be retried on the next scheduled run."""
+    """Retry operational failures, timeouts, and failed comparisons on the next scheduled run."""
     return (
         issue.state == IssueState.UNRESOLVED and
         len(issue.auto_remediation_attempts) != 0 and
-        issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
-        issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
-    )
-
-
-def _is_repeated_failure(issue: DataIssue, attempt: AutoRemediationAttempt) -> bool:
-    """Return whether the previous timeline entry records the same failure."""
-    return (
-        attempt.get('result') == 'redecoding_failed' and
-        len(issue.auto_remediation_attempts) != 0 and
-        {key: value for key, value in issue.auto_remediation_attempts[-1].items()
-         if key != 'timestamp'} ==
-        {key: value for key, value in attempt.items() if key != 'timestamp'}
+        (
+            (attempt := issue.auto_remediation_attempts[-1]).get('attribution') in {
+                'timeout', 'strategy_failed',
+            } or
+            (
+                attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
+                attempt.get('result') == 'redecoding_failed'
+            )
+        )
     )

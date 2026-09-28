@@ -19,6 +19,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssuePayload,
     NegativeBalanceIssuePayload,
     RebasingTokenIssuePayload,
+    TrackedAddressTransferIssuePayload,
     UnmatchedBridgeIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -170,7 +171,12 @@ class DataIssuesManager:
             ts_end: int,
             severity: IssueSeverity | None = None,
     ) -> tuple[int, str | IssueState]:
-        """Write an issue idempotently and return its id and resulting state."""
+        """Write an issue idempotently and return its id and resulting state.
+
+        A dismissed issue is never revived. A resolved issue keeps a *manual* resolution
+        when the rediscovered candidate is unchanged, while issues resolved automatically
+        or by system cleanup reopen as soon as the candidate is seen again.
+        """
         location_label = '' if location_label is None else location_label
         protocol = '' if protocol is None else protocol
         asset = '' if asset is None else asset
@@ -179,11 +185,12 @@ class DataIssuesManager:
         created_at = ts_now()
         if kind in (
             IssueKind.NEGATIVE_BALANCE,
+            IssueKind.TRACKED_ADDRESS_TRANSFER,
             IssueKind.REBASING_TOKEN,
             IssueKind.UNMATCHED_BRIDGE,
         ):
             event_identifier = cast(
-                'NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
+                'NegativeBalanceIssuePayload | TrackedAddressTransferIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
                 payload,
             )['event_identifier']
         else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
@@ -221,6 +228,14 @@ class DataIssuesManager:
         if existing_state == IssueState.DISMISSED:
             return issue_id, existing_state
 
+        if existing_state == IssueState.RESOLVED and self._keep_manual_resolution(
+            issue_id=issue_id,
+            ts_start=ts_start,
+            ts_end=ts_end,
+            payload=payload,
+        ):
+            return issue_id, existing_state
+
         with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
                 write_cursor.execute(
@@ -238,6 +253,42 @@ class DataIssuesManager:
             IssueState.OPEN if existing_state == IssueState.RESOLVED else existing_state
         )
         return issue_id, resulting_state
+
+    def _keep_manual_resolution(
+            self,
+            issue_id: int,
+            ts_start: int,
+            ts_end: int,
+            payload: DataIssuePayload,
+    ) -> bool:
+        """Whether a resolved issue keeps its manual resolution instead of reopening.
+
+        Only a manual resolution is final: when a scan rediscovers the same unchanged
+        candidate it must keep the user's decision and note. Issues resolved automatically
+        or by system cleanup reopen as soon as the candidate is seen again, even when its
+        content is unchanged. A manual decision is stored in the payload's ``resolution``
+        entry with ``manual: true``; any other value means the user did not resolve it.
+        """
+        with self.db.conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT ts_start, ts_end, payload_json FROM data_issues WHERE id = ?',
+                (issue_id,),
+            ).fetchone()
+        if row is None:
+            return False
+
+        stored_ts_start, stored_ts_end, stored_payload_json = row
+        stored_payload = dict(json.loads(stored_payload_json))
+        resolution = stored_payload.get('resolution')
+        if not isinstance(resolution, dict) or resolution.get('manual') is not True:
+            return False
+
+        stored_payload.pop('resolution')
+        return (
+            stored_ts_start == ts_start and
+            stored_ts_end == ts_end and
+            stored_payload == payload
+        )
 
     def resolve_superseded_negative_balance_issues(self, assets: frozenset[str]) -> None:
         """Resolve negative-balance issues for assets now handled as rebasing tokens."""

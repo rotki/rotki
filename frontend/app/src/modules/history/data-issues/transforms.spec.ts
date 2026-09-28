@@ -184,6 +184,19 @@ describe('data-issues transforms', () => {
       expect(result.asset).toBe('ETH');
     });
 
+    it('should describe a customized transfer between tracked addresses', () => {
+      const issue = createIssue({
+        kind: IssueKind.TRACKED_ADDRESS_TRANSFER,
+        payload: { eventIdentifier: 12 },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.tracked_address_transfer');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.tracked_address_transfer');
+      expect(result.eventIdentifier).toBe(12);
+    });
+
     it('should describe an unmatched bridge withdrawal with the withdrawal message', () => {
       const issue = createIssue({
         kind: IssueKind.UNMATCHED_BRIDGE,
@@ -300,6 +313,26 @@ describe('data-issues transforms', () => {
 
     it('should return an empty array when there are no attempts', () => {
       expect(toTimelineItems(createIssue())).toEqual([]);
+    });
+
+    it('should retain repeated failed attempts', () => {
+      const items = toTimelineItems(createIssue({
+        autoRemediationAttempts: [
+          {
+            result: 'redecoding_failed',
+            strategy: 'redecode_customized_transactions',
+            timestamp: 100,
+          },
+          {
+            result: 'redecoding_failed',
+            strategy: 'redecode_customized_transactions',
+            timestamp: 200,
+          },
+        ],
+      }));
+
+      expect(items).toHaveLength(2);
+      expect(items.map(item => item.timestamp)).toEqual([100, 200]);
     });
   });
 });

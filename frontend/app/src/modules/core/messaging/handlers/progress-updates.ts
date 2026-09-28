@@ -122,6 +122,12 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     );
   }
 
+  function reportHistoricalBalanceProgress(data: { processed: number; total: number }): void {
+    reportProgress(makeActivityId(ActivityKind.HISTORICAL_BALANCES), { current: data.processed, total: data.total });
+    if (data.processed >= data.total)
+      notifyHistoricalBalanceProcessingCompleted();
+  }
+
   return createConditionalHandler<ProgressUpdateResultData>(async (data) => {
     const subtype = data.subtype;
 
@@ -131,6 +137,8 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     }
 
     switch (subtype) {
+      case SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION:
+        return null;
       case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
         setUndecodedTransactionsStatus(data);
         reportDecodeProgress(data);
@@ -161,9 +169,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         reportBatchPriceProgress(data);
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
-        reportProgress(makeActivityId(ActivityKind.HISTORICAL_BALANCES), { current: data.processed, total: data.total });
-        if (data.processed >= data.total)
-          notifyHistoricalBalanceProcessingCompleted();
+        reportHistoricalBalanceProgress(data);
         break;
     }
 

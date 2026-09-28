@@ -313,16 +313,72 @@ def test_write_issue_dismissed_not_reopened(database: DBHandler) -> None:
     assert manager.get_issue(issue_id).state == IssueState.DISMISSED
 
 
-def test_write_issue_resolved_reopened(database: DBHandler) -> None:
+def test_write_issue_unchanged_candidate_keeps_manual_resolution(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
-    manager.resolve_manually(issue_id)
+    manager.resolve_manually(issue_id, note='checked')
+
+    same_id = _write_negative_balance_issue(manager)
+    assert same_id == issue_id
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.RESOLVED
+    assert issue.resolved_at is not None
+    assert issue.payload['resolution'] == {'manual': True, 'note': 'checked'}
+
+
+def test_write_issue_unchanged_candidate_reopens_automatic_resolution(
+        database: DBHandler,
+) -> None:
+    """An automatically resolved issue must reopen when its candidate is rediscovered."""
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(
+        issue_id,
+        IssueState.RESOLVED,
+        resolution={'attribution': 'system', 'strategy': 'redecode', 'notes': 'matched'},
+    )
 
     same_id = _write_negative_balance_issue(manager)
     assert same_id == issue_id
     issue = manager.get_issue(issue_id)
     assert issue.state == IssueState.OPEN
     assert issue.resolved_at is None
+    assert 'resolution' not in issue.payload
+
+
+def test_write_issue_unchanged_candidate_reopens_system_resolution(database: DBHandler) -> None:
+    """A system resolution (no resolution payload) must reopen when rediscovered."""
+    manager = DataIssuesManager(database)
+    location = Location.ETHEREUM.serialize_for_db()
+    issue_id = _write_negative_balance_issue(manager, location=location)
+    manager.resolve_event_issues(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        issues=[(location, '0x0000000000000000000000000000000000000001', None, 'ETH', 1)],
+    )
+    assert manager.get_issue(issue_id).state == IssueState.RESOLVED
+
+    same_id = _write_negative_balance_issue(manager, location=location)
+    assert same_id == issue_id
+    assert manager.get_issue(issue_id).state == IssueState.OPEN
+
+
+def test_write_issue_changed_candidate_reopens_resolved(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    manager.resolve_manually(issue_id, note='checked')
+
+    same_id = _write_negative_balance_issue(
+        manager,
+        balance_before='5',
+        negative_amount='-5',
+    )
+    assert same_id == issue_id
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.resolved_at is None
+    assert issue.payload['in_memory_negative_amount'] == '-5'
+    assert 'resolution' not in issue.payload
 
 
 def test_dismiss_not_found(database: DBHandler) -> None:
