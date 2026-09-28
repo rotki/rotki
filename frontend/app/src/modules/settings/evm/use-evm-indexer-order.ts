@@ -6,7 +6,7 @@ import { NotificationGroup, notificationGroupOf } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';
+import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, initialOrderForChain, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useEvmIndexerSettings } from '@/modules/settings/use-evm-indexer-settings';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -120,7 +120,7 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
   }
 
   async function addChain(chain: ChainItem): Promise<void> {
-    const orders = { ...get(localChainOrders), [chain.id]: orderForChain(chain.id, get(localDefaultOrder)) };
+    const orders = { ...get(localChainOrders), [chain.id]: initialOrderForChain(chain.id, get(localDefaultOrder)) };
     set(localChainOrders, orders);
     set(modelActiveTab, chain.id);
     await persistChainOrders(orders);

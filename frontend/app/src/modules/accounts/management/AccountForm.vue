@@ -307,7 +307,7 @@ defineExpose({
       <ul :class="hasMultipleWarnings ? 'list-disc pl-4 space-y-1' : 'list-none pl-0'">
         <li
           v-for="warning in visibleWarnings"
-          :key="warning.type"
+          :key="`${warning.type}-${warning.service ?? warning.chain ?? ''}`"
         >
           <template v-if="warning.type === 'apiKey' && warning.service">
             <AccountFormApiKeyAlertContent

@@ -71,14 +71,16 @@ export function getAvailableIndexersForChain(chainId: string | null): Prioritize
   return new PrioritizedListData<PrioritizedListId>(supportedIndexerItems(chainId));
 }
 
-/**
- * Restrict an order to the indexers a chain actually supports. An order left empty falls back to
- * the chain's first supported indexer, so the chain always has one.
- */
+/** The indexers of an order the chain supports, which is what the backend can query it with. */
 export function orderForChain(chainId: string, order: PrioritizedListId[]): EvmIndexer[] {
   const supported = supportedIndexerItems(chainId).map(item => item.identifier);
-  const filtered = order.filter(isEvmIndexer).filter(indexer => supported.includes(indexer));
-  return filtered.length > 0 ? filtered : supported.slice(0, 1);
+  return order.filter(isEvmIndexer).filter(indexer => supported.includes(indexer));
+}
+
+/** A new chain override: the default order restricted to the chain, else its first indexer. */
+export function initialOrderForChain(chainId: string, defaultOrder: PrioritizedListId[]): EvmIndexer[] {
+  const order = orderForChain(chainId, defaultOrder);
+  return order.length > 0 ? order : supportedIndexerItems(chainId).slice(0, 1).map(item => item.identifier);
 }
 
 /** Chain-id keyed orders as the backend wants them: keyed by evm chain name, indexers only. */

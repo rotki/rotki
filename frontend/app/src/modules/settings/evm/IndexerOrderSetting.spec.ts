@@ -237,6 +237,14 @@ describe('indexerOrderSetting', () => {
     expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
   });
 
+  it('should show a routescan-only optimism order as empty instead of inventing an indexer', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], { optimism: [EvmIndexer.ROUTESCAN] });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([]);
+    expect(wrapper.text()).toContain('evm_settings.indexer.no_indexers_warning');
+  });
+
   it('should persist the remaining overrides when a chain is removed', async () => {
     await mountWith([EvmIndexer.ETHERSCAN], {
       gnosis: [EvmIndexer.ETHERSCAN],

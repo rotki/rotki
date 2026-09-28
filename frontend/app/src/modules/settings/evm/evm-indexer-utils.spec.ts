@@ -6,6 +6,7 @@ import {
   getAvailableIndexersForChain,
   getChainIndexerWarnings,
   getMissingApiKeyIndexer,
+  initialOrderForChain,
   isEvmIndexer,
   keyedPrimaryIndexer,
   orderForChain,
@@ -78,11 +79,22 @@ describe('evm-indexer-utils', () => {
         .toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
     });
 
-    it('should fall back to the first supported indexer rather than leave a chain with none', () => {
-      expect(orderForChain('binance_sc', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]))
+    it('should leave a saved order empty rather than invent an indexer the backend will not use', () => {
+      expect(orderForChain('optimism', [EvmIndexer.ROUTESCAN])).toEqual([]);
+    });
+  });
+
+  describe('initialOrderForChain', () => {
+    it('should start a new override from the default order the chain supports', () => {
+      expect(initialOrderForChain('optimism', [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]))
+        .toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    });
+
+    it('should fall back to the first supported indexer rather than start a chain with none', () => {
+      expect(initialOrderForChain('binance_sc', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]))
         .toEqual([EvmIndexer.ETHERSCAN]);
-      expect(orderForChain('optimism', [])).toEqual([EvmIndexer.ETHERSCAN]);
-      expect(orderForChain('scroll', [EvmIndexer.ETHERSCAN])).toEqual([EvmIndexer.BLOCKSCOUT]);
+      expect(initialOrderForChain('optimism', [])).toEqual([EvmIndexer.ETHERSCAN]);
+      expect(initialOrderForChain('scroll', [EvmIndexer.ETHERSCAN])).toEqual([EvmIndexer.BLOCKSCOUT]);
     });
   });
 

@@ -1,5 +1,4 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import { camelCase } from 'es-toolkit';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { keyedPrimaryIndexer, orderForChain } from '@/modules/settings/evm/evm-indexer-utils';
@@ -34,7 +33,7 @@ export function useAccountFormIndexerKeys(
    */
   function indexerOrderFor(chainId: string): EvmIndexer[] {
     const chainOrders = get(evmIndexersOrder);
-    const evmChainName = camelCase(get(txEvmChains).find(c => c.id === chainId)?.evmChainName ?? '');
+    const evmChainName = get(txEvmChains).find(c => c.id === chainId)?.evmChainName;
     const order = evmChainName && chainOrders[evmChainName]
       ? chainOrders[evmChainName]
       : get(defaultEvmIndexerOrder);
