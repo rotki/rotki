@@ -1089,6 +1089,67 @@ def test_erc721_token_ownership_verification(
         assert user_tokens[user_address][0] == [A_DAI, token_7776]
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('multicall_mock_kwargs', [
+    {'side_effect': RemoteError('node down')},
+    {'return_value': []},  # fewer results than calls
+    {'return_value': [(False, b''), (True, b'')]},  # failed and empty ownerOf results
+])
+def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
+        multicall_mock_kwargs: dict[str, Any],
+) -> None:
+    """A failed ownerOf check means the ownership is unknown, not that the token was
+    transferred away. The explicit detection replaces the cache, so it must keep the
+    already cached nfts whose check failed instead of dropping them, while not adding
+    the unverified ones that weren't cached."""
+    cached_nft, new_nft = (get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id='1',
+        name=name,
+        symbol=name,
+    ) for name in ('CACHED', 'NEW'))
+    tokens = EthereumTokens(database, ethereum_inquirer)
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[cached_nft],
+        )
+
+    with (
+        patch.object(tokens, '_detect_tokens', return_value=({user_address: [A_DAI]}, set(), {user_address: {A_DAI: ONE}})),  # noqa: E501
+        patch(
+            'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
+            return_value=([], [EvmTokenDetectionData(
+                identifier=nft.identifier,
+                address=nft.evm_address,
+                decimals=0,
+            ) for nft in (cached_nft, new_nft)]),
+        ),
+        patch(
+            'rotkehlchen.chain.evm.tokens.HistoricalBalancesManager.get_erc721_tokens_balances',
+            return_value=[cached_nft, new_nft],
+        ),
+        patch.object(ethereum_inquirer, 'multicall_2', **multicall_mock_kwargs),
+    ):
+        tokens.detect_tokens(only_cache=False, addresses=ethereum_accounts)
+
+    with database.conn.read_ctx() as cursor:
+        assert set(database.get_tokens_for_address(
+            cursor=cursor,
+            address=user_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
+        )[0] or []) == {A_DAI, cached_nft}
+
+
 def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
         blockchain: ChainsAggregator,
         globaldb: GlobalDBHandler,
