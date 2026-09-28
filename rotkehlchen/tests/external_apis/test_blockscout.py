@@ -487,3 +487,37 @@ def test_needs_api_key_for_chain(blockscout: Blockscout, include_blockscout_key:
     assert blockscout.needs_api_key_for_chain(ChainID.BASE) is not include_blockscout_key
     assert blockscout.needs_api_key_for_chain(ChainID.HYPERLIQUID) is False
     assert blockscout.needs_api_key_for_chain(ChainID.BINANCE_SC) is False
+
+
+@pytest.mark.parametrize(('chain_id', 'response', 'expected_fee'), [
+    (ChainID.SCROLL, {'scroll': {'l1_fee': '733780419502', 'l1_gas_used': 0}}, 733780419502),
+    (ChainID.SCROLL, {'scroll': {'l1_fee': '0'}}, 0),
+    (ChainID.SCROLL, {'l1_fee': '733780419502'}, None),  # Scroll never reads the top level
+    (ChainID.SCROLL, {'scroll': None}, None),
+    (ChainID.BASE, {'l1_fee': '2099098769', 'l1_gas_used': '1600'}, 2099098769),
+    (ChainID.OPTIMISM, {'l1_fee': '0'}, 0),
+    (ChainID.OPTIMISM, {'hash': '0x1'}, None),
+])
+def test_get_l1_fee_response_shapes(
+        blockscout: Blockscout,
+        chain_id: ChainID,
+        response: dict,
+        expected_fee: int | None,
+) -> None:
+    """A missing fee must raise instead of being reported as a resolved zero fee."""
+    with patch.object(blockscout, '_query_v2', return_value=response):
+        if expected_fee is None:
+            with pytest.raises(RemoteError, match='Failed to get L1 fee'):
+                blockscout.get_l1_fee(
+                    chain_id=chain_id,  # type: ignore[arg-type]  # parametrized L2 chains
+                    account=make_evm_address(),
+                    tx_hash=make_evm_tx_hash(),
+                    block_number=1,
+                )
+        else:
+            assert blockscout.get_l1_fee(
+                chain_id=chain_id,  # type: ignore[arg-type]  # parametrized L2 chains
+                account=make_evm_address(),
+                tx_hash=make_evm_tx_hash(),
+                block_number=1,
+            ) == expected_fee

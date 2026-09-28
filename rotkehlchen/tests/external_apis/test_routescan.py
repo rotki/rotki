@@ -9,7 +9,7 @@ from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS, Routescan
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 
@@ -206,3 +206,32 @@ def test_routescan_maybe_paginate_uses_request_offset(routescan: Routescan) -> N
 
     assert new_options is not None
     assert new_options['startblock'] == '99'
+
+
+@pytest.mark.parametrize(('receipt', 'expected_fee'), [
+    ({'l1Fee': '0x1c9c380'}, 30000000),
+    ({'l1Fee': '0x0'}, 0),
+    ({'gasUsed': '0x5208'}, None),
+])
+def test_get_l1_fee_missing_key_raises(
+        routescan: Routescan,
+        receipt: dict[str, str],
+        expected_fee: int | None,
+) -> None:
+    """A receipt without l1Fee must raise instead of being reported as a resolved zero fee."""
+    with patch.object(routescan, '_query', return_value=receipt):
+        if expected_fee is None:
+            with pytest.raises(RemoteError, match='Failed to get L1 fee'):
+                routescan.get_l1_fee(
+                    chain_id=ChainID.BASE,
+                    account=make_evm_address(),
+                    tx_hash=make_evm_tx_hash(),
+                    block_number=1,
+                )
+        else:
+            assert routescan.get_l1_fee(
+                chain_id=ChainID.BASE,
+                account=make_evm_address(),
+                tx_hash=make_evm_tx_hash(),
+                block_number=1,
+            ) == expected_fee

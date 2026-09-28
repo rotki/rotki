@@ -814,9 +814,11 @@ def test_existing_receipt_repairs_missing_l1_fee_without_refetch(
     indexer_fee_query.assert_called_once()
 
 
-def test_fresh_transaction_with_unresolved_fee_does_not_repeat_lookup(
+def test_fresh_transaction_unresolved_fee_is_repaired_on_next_call(
         optimism_transactions: OptimismTransactions,
 ) -> None:
+    """A fresh query already tried to resolve the fee, so the call making it does not ask the
+    indexers again. A later call, such as a user-triggered redecode, does try to repair it."""
     tx_hash, _ = _add_pending_transaction(optimism_transactions)
     with optimism_transactions.database.conn.read_ctx() as cursor:
         queried_tx = optimism_transactions.dbevmtx.get_transactions(
@@ -829,7 +831,7 @@ def test_fresh_transaction_with_unresolved_fee_does_not_repeat_lookup(
             queried_tx,
             {'transactionHash': str(tx_hash), 'contractAddress': None, 'status': 1, 'type': 0, 'logs': []},  # noqa: E501
         )) as transaction_query,
-        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as indexer_fee_query,  # noqa: E501
         optimism_transactions.database.conn.read_ctx() as cursor,
     ):
         tx, _ = optimism_transactions.ensure_tx_data_exists(
@@ -838,20 +840,7 @@ def test_fresh_transaction_with_unresolved_fee_does_not_repeat_lookup(
             relevant_address=None,
         )
         assert tx.l1_fee is None
-        tx, _ = optimism_transactions.ensure_tx_data_exists(
-            cursor=cursor,
-            tx_hash=tx_hash,
-            relevant_address=None,
-        )
-
-    assert tx.l1_fee is None
-    transaction_query.assert_called_once_with(tx_hash)
-    indexer_fee_query.assert_not_called()
-
-    with (
-        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as retry_query,  # noqa: E501
-        optimism_transactions.database.conn.read_ctx() as cursor,
-    ):
+        indexer_fee_query.assert_not_called()
         tx, _ = optimism_transactions.ensure_tx_data_exists(
             cursor=cursor,
             tx_hash=tx_hash,
@@ -859,19 +848,26 @@ def test_fresh_transaction_with_unresolved_fee_does_not_repeat_lookup(
         )
 
     assert tx.l1_fee == 321
-    retry_query.assert_called_once()
+    transaction_query.assert_called_once_with(tx_hash)
+    indexer_fee_query.assert_called_once()
 
 
-@pytest.mark.parametrize(('indexer_fee', 'expected_fee', 'expected_rpc_calls'), [
-    (None, 999, 1),
-    (0, 0, 0),
+@pytest.mark.parametrize(('indexer_fee', 'receipt', 'expected_fee', 'receipt_calls', 'indexer_calls'), [  # noqa: E501
+    (None, {'l1Fee': '0x3e7'}, 999, 1, 1),
+    (0, {'l1Fee': '0x3e7'}, 0, 0, 1),  # a zero from the indexers is a resolved fee
+    (None, {}, None, 2, 2),  # still unresolved, so the second call retries
 ])
-def test_existing_receipt_uses_rpc_when_indexers_cannot_repair_fee(
+def test_existing_receipt_repairs_fee_from_receipt_when_indexers_cannot(
         optimism_transactions: OptimismTransactions,
         indexer_fee: int | None,
-        expected_fee: int,
-        expected_rpc_calls: int,
+        receipt: dict[str, Any],
+        expected_fee: int | None,
+        receipt_calls: int,
+        indexer_calls: int,
 ) -> None:
+    """When indexers cannot resolve a fee only the receipt is queried, never the whole
+    transaction, since deserializing it would ask the indexers again. A resolved fee,
+    zero included, is stored so a second call queries nothing."""
     tx_hash, _ = _add_pending_transaction(optimism_transactions)
     with optimism_transactions.database.user_write() as write_cursor:
         optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
@@ -885,33 +881,30 @@ def test_existing_receipt_uses_rpc_when_indexers_cannot_repair_fee(
                 'logs': [],
             },
         )
-    with optimism_transactions.database.conn.read_ctx() as cursor:
-        queried_tx = optimism_transactions.dbevmtx.get_transactions(
-            cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
-        )[0]
-    assert isinstance(queried_tx, L2WithL1FeesTransaction)
-    queried_tx.l1_fee = 999
 
     with (
-        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=indexer_fee),  # noqa: E501
-        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash', return_value=(queried_tx, {})) as transaction_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=indexer_fee) as indexer_fee_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipt', return_value=receipt) as receipt_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
         optimism_transactions.database.conn.read_ctx() as cursor,
     ):
-        tx, _ = optimism_transactions.ensure_tx_data_exists(
-            cursor=cursor,
-            tx_hash=tx_hash,
-            relevant_address=None,
-        )
+        for _ in range(2):
+            tx, _ = optimism_transactions.ensure_tx_data_exists(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+            assert tx.l1_fee == expected_fee
 
-    assert tx.l1_fee == expected_fee
-    assert transaction_query.call_count == expected_rpc_calls
+    transaction_query.assert_not_called()
+    assert receipt_query.call_count == receipt_calls
+    assert indexer_fee_query.call_count == indexer_calls
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
-            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            'SELECT fees.l1_fee FROM evm_transactions AS txs LEFT JOIN optimism_transactions '
+            'AS fees ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
             (tx_hash,),
-        ).fetchone() == (str(expected_fee),)
+        ).fetchone() == (None if expected_fee is None else str(expected_fee),)
 
 
 def test_l1_fee_resolved_after_receipt_batch_failure(
