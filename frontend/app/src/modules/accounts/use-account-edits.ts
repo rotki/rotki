@@ -1,7 +1,7 @@
 import type { AccountPayload, BlockchainAccount, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
-import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
+import { convertBtcAccounts } from '@/modules/accounts/core/bitcoin-accounts';
 import { createAccount } from '@/modules/accounts/create-account';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';

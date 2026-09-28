@@ -1,7 +1,7 @@
 import type { BlockchainAccount, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
-import { getAccountBalance } from '@/modules/accounts/account-helpers';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountBalance } from '@/modules/accounts/core/account-balance';
 import { deduplicateTags } from '@/modules/tags/tag-utils';
 
 export function createAccountWithBalance(

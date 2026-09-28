@@ -1,8 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { startPromise } from '@shared/utils';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';

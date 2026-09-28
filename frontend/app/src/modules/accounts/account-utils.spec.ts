@@ -1,4 +1,5 @@
-import type { AddressData, ValidatorData, XpubData } from './blockchain-accounts';
+import type { AddressData, BlockchainAccountWithBalance, ValidatorData, XpubData } from './blockchain-accounts';
+import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import {
   getAccountAddress,
@@ -7,6 +8,8 @@ import {
   getChain,
   getGroupId,
   getXpubId,
+  hasAccountAddress,
+  isAccountWithBalanceValidator,
   isValidatorAccount,
   isXpubAccount,
 } from './account-utils';
@@ -117,5 +120,29 @@ describe('getChain', () => {
 
   it('should return undefined when chains is empty', () => {
     expect(getChain({ chains: [] })).toBeUndefined();
+  });
+});
+
+describe('hasAccountAddress', () => {
+  it('should return true for an address account', () => {
+    expect(hasAccountAddress({ chain: 'eth', data: addressData, nativeAsset: 'ETH' })).toBe(true);
+  });
+
+  it('should return false for a validator account', () => {
+    expect(hasAccountAddress({ chain: 'eth2', data: validatorData, nativeAsset: 'ETH' })).toBe(false);
+  });
+});
+
+describe('isAccountWithBalanceValidator', () => {
+  function withBalance(data: AddressData | ValidatorData): BlockchainAccountWithBalance {
+    return { amount: bigNumberify(1), chain: 'eth2', data, nativeAsset: 'ETH', type: 'account', value: bigNumberify(1000) };
+  }
+
+  it('should return true when the account data has a public key', () => {
+    expect(isAccountWithBalanceValidator(withBalance(validatorData))).toBe(true);
+  });
+
+  it('should return false for an address account', () => {
+    expect(isAccountWithBalanceValidator(withBalance(addressData))).toBe(false);
   });
 });

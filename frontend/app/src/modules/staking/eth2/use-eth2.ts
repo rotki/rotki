@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import { assert, Blockchain, type EthStakingPayload, type EthStakingPerformance, type EthStakingPerformanceResponse } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { isAccountWithBalanceValidator } from '@/modules/accounts/account-helpers';
+import { isAccountWithBalanceValidator } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';

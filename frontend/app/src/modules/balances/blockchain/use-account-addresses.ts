@@ -1,6 +1,5 @@
 import type { ComputedRef } from 'vue';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 
 interface UseAccountAddressesReturn {

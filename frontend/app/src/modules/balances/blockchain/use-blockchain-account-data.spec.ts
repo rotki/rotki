@@ -3,8 +3,8 @@ import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blo
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainAccountData } from './use-blockchain-account-data';

@@ -4,8 +4,7 @@ import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockcha
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain } from '@rotki/common';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

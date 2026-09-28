@@ -1,4 +1,11 @@
-import type { AddressData, BlockchainAccountData, ValidatorData, XpubData } from '@/modules/accounts/blockchain-accounts';
+import type {
+  AddressData,
+  BlockchainAccount,
+  BlockchainAccountData,
+  BlockchainAccountWithBalance,
+  ValidatorData,
+  XpubData,
+} from '@/modules/accounts/blockchain-accounts';
 
 export function getXpubId(data: Omit<XpubData, 'type'>): string {
   if (!data.derivationPath)
@@ -61,6 +68,16 @@ export function isValidatorAccount<T extends { data: BlockchainAccountData }>(ac
 
 export function isXpubAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: XpubData } {
   return account.data.type === 'xpub';
+}
+
+export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {
+  return 'address' in data.data;
+}
+
+export function isAccountWithBalanceValidator(
+  account: BlockchainAccountWithBalance,
+): account is BlockchainAccountWithBalance<ValidatorData> {
+  return 'publicKey' in account.data;
 }
 
 export function getChain(account: { chain: string } | { chains: string[] }): string | undefined {

@@ -4,8 +4,7 @@ import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockcha
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { useTemplateRef } from 'vue';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, hasAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import CalendarColorInput from '@/modules/calendar/CalendarColorInput.vue';

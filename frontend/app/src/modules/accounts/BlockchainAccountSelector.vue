@@ -2,9 +2,8 @@
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type Account, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
 import { matchesAccountQuery, selectableAccounts } from '@/modules/accounts/account-selection';
-import { getAccountAddress, getAccountId } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getAccountId, hasAccountAddress } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getNonRootAttrs, getRootAttrs } from '@/modules/core/common/helpers/attrs';
