@@ -5,16 +5,29 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useFetchPremiumCapabilities } from '@/modules/premium/use-fetch-premium-capabilities';
 import { usePremiumCredentialsApi } from '@/modules/premium/use-premium-credentials-api';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 interface UsePremiumOperationsReturn {
   deletePremium: () => Promise<ActionStatus>;
   setup: (payload: PremiumCredentialsPayload) => Promise<ActionStatus<string | ValidationErrors>>;
 }
 
+/**
+ * Saving and removing the premium key.
+ *
+ * @remarks
+ * Either one settles the action center's premium row: a saved key is verified when it is saved, and
+ * a removed key is no longer checked.
+ */
 export function usePremiumOperations(): UsePremiumOperationsReturn {
   const api = usePremiumCredentialsApi();
   const { capabilities, premium } = storeToRefs(usePremiumStore());
   const { fetchCapabilities } = useFetchPremiumCapabilities();
+  const { clear } = useRaisedConditionsStore();
+
+  function clearInactiveRow(): void {
+    clear(({ kind }) => kind === RaisedConditionKind.PREMIUM_INACTIVE);
+  }
 
   async function setup({
     apiKey,
@@ -26,6 +39,7 @@ export function usePremiumOperations(): UsePremiumOperationsReturn {
 
       if (success) {
         set(premium, true);
+        clearInactiveRow();
         await fetchCapabilities();
       }
 
@@ -53,6 +67,7 @@ export function usePremiumOperations(): UsePremiumOperationsReturn {
       if (success) {
         set(premium, false);
         set(capabilities, undefined);
+        clearInactiveRow();
       }
 
       return { success };

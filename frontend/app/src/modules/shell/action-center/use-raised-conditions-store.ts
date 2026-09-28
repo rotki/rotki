@@ -1,10 +1,24 @@
 /** What a condition is about. Kebab-case, since each one prefixes the row ids it lands in. */
 export const RaisedConditionKind = {
+  BINANCE_PAIRS_MISSING: 'binance-pairs-missing',
   GNOSIS_PAY_SESSION: 'gnosis-pay-session',
   MISSING_API_KEY: 'missing-api-key',
   MONERIUM_SESSION: 'monerium-session',
   NO_AVAILABLE_INDEXERS: 'no-available-indexers',
+  PREMIUM_INACTIVE: 'premium-inactive',
 } as const;
+
+/** Why a saved premium key does not work, which decides what the row asks of the user. */
+export const PremiumInactiveCause = {
+  /** The subscription ended, or the key was rejected. */
+  EXPIRED: 'expired',
+  /** Every device slot of the subscription is taken. */
+  DEVICE_LIMIT: 'device-limit',
+  /** The premium server could not be reached; rotki checks again every hour. */
+  UNREACHABLE: 'unreachable',
+} as const;
+
+export type PremiumInactiveCause = (typeof PremiumInactiveCause)[keyof typeof PremiumInactiveCause];
 
 export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof RaisedConditionKind];
 
@@ -20,7 +34,9 @@ export type RaisedCondition =
   | { kind: typeof RaisedConditionKind.MISSING_API_KEY; service: string; location?: string }
   | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; paidKeyRequired: boolean }
   | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION }
-  | { kind: typeof RaisedConditionKind.MONERIUM_SESSION };
+  | { kind: typeof RaisedConditionKind.MONERIUM_SESSION }
+  | { kind: typeof RaisedConditionKind.PREMIUM_INACTIVE; cause: PremiumInactiveCause; reason?: string }
+  | { kind: typeof RaisedConditionKind.BINANCE_PAIRS_MISSING; location: string; name: string };
 
 /** The raised condition of one kind, narrowed to that kind's fields. */
 export type RaisedConditionOf<K extends RaisedConditionKind> = Extract<RaisedCondition, { kind: K }>;
@@ -37,8 +53,11 @@ function conditionKey(condition: RaisedCondition): string {
       return `${condition.kind}:${condition.service}`;
     case RaisedConditionKind.NO_AVAILABLE_INDEXERS:
       return `${condition.kind}:${condition.chain}`;
+    case RaisedConditionKind.BINANCE_PAIRS_MISSING:
+      return `${condition.kind}:${condition.location}:${condition.name}`;
     case RaisedConditionKind.GNOSIS_PAY_SESSION:
     case RaisedConditionKind.MONERIUM_SESSION:
+    case RaisedConditionKind.PREMIUM_INACTIVE:
       return condition.kind;
   }
 }

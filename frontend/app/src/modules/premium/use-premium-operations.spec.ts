@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
+import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
@@ -65,5 +66,47 @@ describe('use-premium-operations', () => {
       expect(result.success).toBe(false);
       expect(spies.fetchCapabilities).not.toHaveBeenCalled();
     });
+
+    it('should take down the premium row once a working key is saved', async () => {
+      raiseInactive();
+      spies.setPremiumCredentials.mockResolvedValueOnce(true);
+
+      await usePremiumOperations().setup(payload);
+
+      expect(useRaisedConditionsStore().conditions).toEqual([]);
+    });
+
+    it('should keep the premium row when the new key is rejected', async () => {
+      raiseInactive();
+      spies.setPremiumCredentials.mockRejectedValueOnce(new Error('boom'));
+
+      await usePremiumOperations().setup(payload);
+
+      expect(useRaisedConditionsStore().conditions).toHaveLength(1);
+    });
+  });
+
+  describe('deletePremium', () => {
+    it('should take down the premium row once the key is removed, since nothing checks it any more', async () => {
+      raiseInactive();
+      spies.deletePremiumCredentials.mockResolvedValueOnce(true);
+
+      await usePremiumOperations().deletePremium();
+
+      expect(useRaisedConditionsStore().conditions).toEqual([]);
+    });
+
+    it('should keep the premium row when removing the key fails', async () => {
+      raiseInactive();
+      spies.deletePremiumCredentials.mockRejectedValueOnce(new Error('boom'));
+
+      await usePremiumOperations().deletePremium();
+
+      expect(useRaisedConditionsStore().conditions).toHaveLength(1);
+    });
   });
 });
+
+function raiseInactive(): void {
+  useRaisedConditionsStore().raise({ cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE });
+}

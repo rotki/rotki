@@ -2410,11 +2410,6 @@
       "active": {
         "message": "Votre abonnement premium est détecté.",
         "title": "Fonctionnalités premium activées"
-      },
-      "inactive": {
-        "expired_message": "Votre abonnement premium est expiré. Rendez-vous sur le site web de rotki pour renouveler votre abonnement.",
-        "network_problem_message": "Nous n'avons pas pu vérifier votre abonnement premium en raison de problèmes de réseau.",
-        "title": "Fonctionnalités premium désactivées"
       }
     },
     "snapshot_failed": {

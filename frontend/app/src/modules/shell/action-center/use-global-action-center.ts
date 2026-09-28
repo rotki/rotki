@@ -11,10 +11,12 @@ import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
+import { useBinancePairsRows } from '@/modules/shell/action-center/use-binance-pairs-rows';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
 import { useGnosisPaySafeRows } from '@/modules/shell/action-center/use-gnosis-pay-safe-rows';
 import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-sync-row';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
+import { usePremiumRows } from '@/modules/shell/action-center/use-premium-rows';
 
 interface UseGlobalActionCenterReturn {
   /** Rows asking for something, grouped by module, with empty modules left out. */
@@ -74,6 +76,8 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const history = useHistoryEventIssues();
   const historySyncRow = useHistorySyncRow();
   const integrationRows = useIntegrationRows();
+  const premiumRows = usePremiumRows();
+  const { refresh: refreshBinancePairsRows, rows: binancePairsRows } = useBinancePairsRows();
   const chainRows = useChainRows();
   const { refresh: refreshAssetRows, rows: assetRows } = useAssetRows();
   const { refresh: refreshAccountingRows, rows: accountingRows } = useAccountingRows();
@@ -98,7 +102,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const groups = computed<ActionCenterSection[]>(() => [
     { id: 'history', items: [...get(historySyncRow), ...get(historyRows), ...get(accountingRows)], title: t('action_center.sections.history') },
     { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
-    { id: 'integrations', items: [...get(integrationRows), ...get(gnosisPaySafeRows)], title: t('action_center.sections.integrations') },
+    { id: 'integrations', items: [...get(premiumRows), ...get(integrationRows), ...get(gnosisPaySafeRows), ...get(binancePairsRows)], title: t('action_center.sections.integrations') },
     { id: 'assets', items: get(assetRows), title: t('action_center.sections.assets') },
   ].map(group => ({ ...group, items: group.items.map(withSnooze) })));
 
@@ -109,6 +113,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     sources: [
       { loading: history.refreshing, refresh: history.refreshAll, rescan: history.rescan },
       { refresh: refreshAssetRows },
+      { refresh: refreshBinancePairsRows, rescan: noRescan },
       { refresh: refreshAccountingRows, rescan: noRescan },
       { refresh: refreshGnosisPaySafeRows, rescan: noRescan },
     ],

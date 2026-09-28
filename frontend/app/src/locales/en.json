@@ -376,6 +376,16 @@
         }
       },
       "integrations": {
+        "binance_pairs_missing": {
+          "action": "Select pairs",
+          "description": "No market pairs are selected, so trades are not imported. Choose the pairs you trade on this account.",
+          "do_not_show_again": "Do not show again for this account",
+          "suppress_confirm": {
+            "message": "{name} on {exchange} will no longer be reported for missing market pairs. Its trades stay unimported until you select pairs in its exchange settings.",
+            "title": "Stop reporting {name}?"
+          },
+          "title": "{name} on {exchange} has no market pairs"
+        },
         "gnosis_pay_safe_migration": {
           "do_not_show_again": "Do not show again",
           "suppress_confirm": {
@@ -409,6 +419,19 @@
         "monerium_session": {
           "description": "Sign in again to keep importing Monerium activity.",
           "title": "Monerium session expired"
+        },
+        "premium_inactive": {
+          "description_device_limit": "Premium is off on this device: {reason}",
+          "description_expired": "Your premium key was rejected, usually because the subscription ended. Premium features are off until it is renewed.",
+          "description_unreachable": "The premium server could not be reached, so premium features are off for now. rotki checks again every hour.",
+          "remove_confirm": {
+            "message": "rotki will stop checking the premium key and turn premium features off on this device. You can add a key again in the premium settings.",
+            "title": "Remove the premium key?"
+          },
+          "remove_key": "Remove premium key",
+          "renew": "Renew",
+          "settings": "Premium settings",
+          "title": "Premium inactive"
         }
       }
     },
@@ -5081,11 +5104,6 @@
       "message": "Beaconcha.in is rate limited{until}. The following query failed:\n{endpoints}\nCheck logs for more details.|Beaconcha.in is rate limited{until}. The following {count} queries failed:\n{endpoints}\n\nCheck logs for more details.",
       "title": "Beaconcha.in Rate Limited"
     },
-    "binance_pairs_missing": {
-      "action": "Configure pairs",
-      "message": "Your Binance API key \"{name}\" is missing required market pairs configuration. This may cause rate limiting issues. Please configure the pairs you want to track.",
-      "title": "Binance Market Pairs Required"
-    },
     "csv_import_result": {
       "errors": "The following errors occurred during import:",
       "rows": "(Row: {rows}) | (Rows: {rows})",
@@ -5108,11 +5126,6 @@
       "active": {
         "message": "Your premium subscription is detected.",
         "title": "Premium features activated"
-      },
-      "inactive": {
-        "expired_message": "Your premium subscription is expired. Go to rotki website to renew your subscription.",
-        "network_problem_message": "We couldn't verify your premium subscription due to network problems.",
-        "title": "Premium features deactivated"
       }
     },
     "reminder": {

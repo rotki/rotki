@@ -12,7 +12,9 @@ const state = {
   accountingRows: ref<ActionItem[]>([]),
   assetRows: ref<ActionItem[]>([]),
   chainRows: ref<ActionItem[]>([]),
+  binancePairsRows: ref<ActionItem[]>([]),
   gnosisPaySafeRows: ref<ActionItem[]>([]),
+  premiumRows: ref<ActionItem[]>([]),
   historyChecking: ref<boolean>(false),
   historyIssues: ref<HistoryEventIssue[]>([]),
   historySyncRows: ref<ActionItem[]>([]),
@@ -20,6 +22,7 @@ const state = {
   processing: ref<boolean>(false),
   refreshAccounting: vi.fn<() => Promise<void>>(),
   refreshAssets: vi.fn<() => Promise<void>>(),
+  refreshBinancePairs: vi.fn<() => Promise<void>>(),
   refreshGnosisPaySafe: vi.fn<() => Promise<void>>(),
   refreshHistory: vi.fn<() => Promise<void>>(),
   rescanHistory: vi.fn<() => Promise<void>>(),
@@ -54,6 +57,14 @@ vi.mock('@/modules/shell/action-center/use-asset-rows', () => ({
 
 vi.mock('@/modules/shell/action-center/use-accounting-rows', () => ({
   useAccountingRows: (): object => ({ refresh: state.refreshAccounting, rows: computed(() => get(state.accountingRows)) }),
+}));
+
+vi.mock('@/modules/shell/action-center/use-premium-rows', () => ({
+  usePremiumRows: (): object => computed(() => get(state.premiumRows)),
+}));
+
+vi.mock('@/modules/shell/action-center/use-binance-pairs-rows', () => ({
+  useBinancePairsRows: (): object => ({ refresh: state.refreshBinancePairs, rows: computed(() => get(state.binancePairsRows)) }),
 }));
 
 vi.mock('@/modules/shell/action-center/use-gnosis-pay-safe-rows', () => ({
@@ -115,7 +126,10 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     route.query = {};
     state.refreshAccounting.mockResolvedValue();
     state.refreshAssets.mockResolvedValue();
+    state.refreshBinancePairs.mockResolvedValue();
     state.refreshGnosisPaySafe.mockResolvedValue();
+    set(state.binancePairsRows, []);
+    set(state.premiumRows, []);
     state.refreshHistory.mockResolvedValue();
     state.rescanHistory.mockResolvedValue();
     set(state.accountingRows, []);
@@ -264,6 +278,35 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(state.refreshAssets).toHaveBeenCalledOnce();
     expect(state.refreshAccounting).toHaveBeenCalledOnce();
     expect(state.refreshGnosisPaySafe).toHaveBeenCalledOnce();
+    expect(state.refreshBinancePairs).toHaveBeenCalledOnce();
+  });
+
+  it('should re-check Binance pairs on a re-scan, but not whenever history settles', async () => {
+    const { refreshAll } = center();
+    await flushPromises();
+
+    set(state.processing, true);
+    await flushPromises();
+    set(state.processing, false);
+    await flushPromises();
+
+    expect(state.refreshBinancePairs).toHaveBeenCalledOnce();
+
+    await refreshAll();
+
+    expect(state.refreshBinancePairs).toHaveBeenCalledTimes(2);
+  });
+
+  it('should lead the integrations with premium and end them with Binance accounts', async () => {
+    set(state.premiumRows, [row('premium-inactive')]);
+    set(state.integrationRows, [row('missing-api-key-etherscan')]);
+    set(state.binancePairsRows, [row('binance-pairs-missing-binance-main')]);
+    const { sections } = center();
+    await flushPromises();
+
+    expect(get(sections).map(section => [section.id, section.items.map(item => item.id)])).toEqual([
+      ['integrations', ['premium-inactive', 'missing-api-key-etherscan', 'binance-pairs-missing-binance-main']],
+    ]);
   });
 
   it('should leave accounting conflicts and the Gnosis Pay Safe alone when history settles again, since history work cannot change them', async () => {

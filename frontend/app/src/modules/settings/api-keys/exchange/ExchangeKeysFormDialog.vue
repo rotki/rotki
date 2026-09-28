@@ -2,6 +2,7 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { assert } from '@rotki/common';
+import { useBinancePairsConditions } from '@/modules/balances/exchanges/use-binance-pairs-conditions';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -21,6 +22,7 @@ const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
 const { setupExchange } = useExchanges();
+const { settleSaved } = useBinancePairsConditions();
 const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -50,6 +52,8 @@ async function save(): Promise<void> {
   let success = false;
   try {
     success = await setupExchange(payload);
+    if (success)
+      settleSaved(payload);
   }
   catch (error: unknown) {
     let errors: string | ValidationErrors = getErrorMessage(error);
