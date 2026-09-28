@@ -7,6 +7,7 @@ import {
   getAccountLabel,
   getChain,
   getGroupId,
+  getXpubGroupId,
   getXpubId,
   hasAccountAddress,
   isAccountWithBalanceValidator,
@@ -26,6 +27,18 @@ describe('getXpubId', () => {
 
   it('should append the derivation path when present', () => {
     expect(getXpubId(xpubWithPath)).toBe('xpub123#m/0');
+  });
+});
+
+/** The id lands in URLs, so a change of format would stop old links from expanding their row. */
+describe('getXpubGroupId', () => {
+  it('should key the xpub on its chain, with the derivation path when present', () => {
+    expect(getXpubGroupId(xpubData, 'btc')).toBe('xpub123#btc');
+    expect(getXpubGroupId(xpubWithPath, 'bch')).toBe('xpub123#m/0#bch');
+  });
+
+  it('should match the id of the xpub group row', () => {
+    expect(getGroupId({ chains: ['btc'], data: xpubWithPath })).toBe(getXpubGroupId(xpubWithPath, 'btc'));
   });
 });
 

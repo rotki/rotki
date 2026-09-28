@@ -4,7 +4,7 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { type AccountGroupId, getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountBalanceDetails from '@/modules/accounts/balances/AccountBalanceDetails.vue';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
@@ -18,7 +18,7 @@ const query = defineModel<LocationQuery>('query', { default: () => ({}), require
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
 const { groupId, chains, tags, category, selectionMode } = defineProps<{
-  groupId: string;
+  groupId: AccountGroupId;
   chains: string[];
   tags?: string[];
   category: string;

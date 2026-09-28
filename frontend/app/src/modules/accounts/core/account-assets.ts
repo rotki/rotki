@@ -1,7 +1,7 @@
 import type { BlockchainAccountBalance, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import { type AssetBalance, type Balance, Zero } from '@rotki/common';
-import { isXpubAccount } from '@/modules/accounts/account-utils';
+import { type AccountGroupId, isXpubAccount } from '@/modules/accounts/account-utils';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 
@@ -55,8 +55,8 @@ export function xpubNativeHolding(row: BlockchainAccountBalance): AssetBalance |
 }
 
 /** The accounts behind each group, keyed by group id, so a group's members are found without a scan. */
-export function accountsByGroup(accounts: readonly BlockchainAccountWithBalance[]): Map<string, BlockchainAccountWithBalance[]> {
-  const byGroup = new Map<string, BlockchainAccountWithBalance[]>();
+export function accountsByGroup(accounts: readonly BlockchainAccountWithBalance[]): Map<AccountGroupId, BlockchainAccountWithBalance[]> {
+  const byGroup = new Map<AccountGroupId, BlockchainAccountWithBalance[]>();
   for (const account of accounts) {
     if (!account.groupId)
       continue;

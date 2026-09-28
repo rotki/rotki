@@ -4,6 +4,7 @@ import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } 
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAccountId, getGroupId } from '@/modules/accounts/account-utils';
 import AccountActions from '@/modules/accounts/table/components/table/AccountActions.vue';
 
 const supportsTransactionsMock = vi.fn();
@@ -28,7 +29,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
     expansion: undefined,
     groupHeader: false,
     groupId: undefined,
-    id: `0x1234567890abcdef1234567890abcdef12345678#${chain}`,
+    id: getAccountId({ chain, data: { address: '0x1234567890abcdef1234567890abcdef12345678', type: 'address' } }),
     includedValue: undefined,
     label: 'Test Account',
     nativeAsset: 'ETH',
@@ -46,7 +47,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       type: 'address',
     },
     expansion: undefined,
-    id: '0x1234567890abcdef1234567890abcdef12345678',
+    id: getGroupId({ chains, data: { address: '0x1234567890abcdef1234567890abcdef12345678', type: 'address' } }),
     includedValue: undefined,
     label: 'Test Group',
     nativeAsset: undefined,

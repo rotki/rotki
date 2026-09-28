@@ -6,6 +6,7 @@ import type {
   BtcBalances,
   EthBalance,
 } from '@/modules/balances/types/blockchain-balances';
+import { getXpubGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
 
 export function convertBtcAccounts(
@@ -20,7 +21,7 @@ export function convertBtcAccounts(
 
   const fromXpub = accounts.xpubs.flatMap((xpub) => {
     const extras = {
-      groupId: xpub.derivationPath ? `${xpub.xpub}#${xpub.derivationPath}#${chain}` : `${xpub.xpub}#${chain}`,
+      groupId: getXpubGroupId({ derivationPath: xpub.derivationPath ?? undefined, xpub: xpub.xpub }, chain),
       ...chainInfo,
     };
     const group = createXpubAccount(xpub, { ...extras, groupHeader: true });
