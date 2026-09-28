@@ -15,14 +15,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVMTxHash, deserialize_evm_tx_hash
-from rotkehlchen.utils.data_structures import LRUSetCache
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
-    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -40,7 +39,6 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)
         self.dbevmtx = DBL2WithL1FeesTx(database)
-        self._fresh_unresolved_fee_hashes: LRUSetCache[EVMTxHash] = LRUSetCache(maxsize=512)
 
     def _enrich_receipts(self, receipts: list[dict[str, Any]]) -> None:
         """Fill missing receipt fees from indexers before writing the receipt batch."""
@@ -82,30 +80,6 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
                 block_number=block_number,
             )) is not None:
                 missing[tx_hash]['l1Fee'] = fee
-            if fee is None:
-                self._fresh_unresolved_fee_hashes.add(tx_hash)
-
-    def add_transaction_by_hash(
-            self,
-            tx_hash: EVMTxHash,
-            associated_address: ChecksumEvmAddress,
-            must_exist: bool = False,
-    ) -> tuple[EvmTransaction, EvmTxReceipt]:
-        """Adds the transaction like the base class does. Fetching it already asked the
-        indexers for a fee missing from the receipt, so an unresolved fee is marked to
-        stop the decode that follows from asking them again.
-
-        May raise the same errors as the base class.
-        """
-        transaction, tx_receipt = super().add_transaction_by_hash(
-            tx_hash=tx_hash,
-            associated_address=associated_address,
-            must_exist=must_exist,
-        )
-        if isinstance(transaction, L2WithL1FeesTransaction) and transaction.l1_fee is None:
-            self._fresh_unresolved_fee_hashes.add(tx_hash)
-
-        return transaction, tx_receipt
 
     def ensure_tx_data_exists(
             self,
@@ -134,13 +108,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
         if saved_fee is not None and isinstance(evm_tx, L2WithL1FeesTransaction):
             return evm_tx, tx_receipt
 
-        # The receipt batch already asked the indexers for this fee. Reuse that result for
-        # the decode that follows it, then allow later attempts to repair the missing fee.
         if isinstance(evm_tx, L2WithL1FeesTransaction):
-            if tx_hash in self._fresh_unresolved_fee_hashes:
-                self._fresh_unresolved_fee_hashes.remove(tx_hash)
-                return evm_tx, tx_receipt
-
             if tx_receipt.tx_type == L1_ORIGINATED_TX_TYPE:
                 # Relayed from L1, so no L1 fee exists and asking indexers can never resolve
                 # it. Covers rows saved before this was detected. See L1_ORIGINATED_TX_TYPE.

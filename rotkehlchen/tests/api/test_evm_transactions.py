@@ -586,12 +586,12 @@ def test_force_refetch_transactions_without_chain(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-def test_force_redecode_retries_marked_unresolved_l1_fee(
+def test_force_redecode_repairs_unresolved_l1_fee(
         rotkehlchen_api_server: APIServer,
         optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """A marker left by an earlier unresolved fee lookup must not stop a user-triggered
-    redecode of the whole chain from trying to repair the fee."""
+    """A user-triggered redecode of the whole chain asks again for an unresolved fee and
+    repairs it."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     transactions = rotki.chains_aggregator.optimism.transactions
     assert isinstance(transactions, L2WithL1FeesTransactions)
@@ -631,7 +631,6 @@ def test_force_redecode_retries_marked_unresolved_l1_fee(
             (tx_id, TX_INTERNALS_QUERIED),
         )
 
-    transactions._fresh_unresolved_fee_hashes.add(tx_hash)  # left by an earlier lookup
     with patch.object(
         transactions.evm_inquirer,
         'maybe_get_l1_fees',

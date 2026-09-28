@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.interfaces import L2WithL1FeesDecoderInterface
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -18,11 +19,13 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
     from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
-    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,6 +61,35 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             premium=premium,
             dbevmtx_class=dbevmtx_class,
             monerium=monerium,
+        )
+
+    def _decode_transaction(
+            self,
+            transaction: EvmTransaction,
+            tx_receipt: EvmTxReceipt,
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
+        """Leave the transaction undecoded while its L1 fee is unresolved.
+
+        The fee should always be available, so a missing one comes from a transient
+        failure of the RPC nodes and indexers. Decoding anyway would save a gas event
+        without the L1 part and mark the transaction as decoded, so it would never be
+        repaired. Nothing is written instead, and the next decoding of undecoded
+        transactions retries it, asking again for the fee.
+        """
+        if isinstance(transaction, L2WithL1FeesTransaction) and transaction.l1_fee is None:
+            log.warning(
+                'Not decoding %s transaction %s since its L1 fee could not be resolved. '
+                'It will be decoded once the fee is available.',
+                self.evm_inquirer.chain_name,
+                transaction.tx_hash,
+            )
+            return [], False, None
+
+        return super()._decode_transaction(
+            transaction=transaction,
+            tx_receipt=tx_receipt,
+            write_buffer=write_buffer,
         )
 
     def _calculate_fees(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
