@@ -125,8 +125,3 @@ class LRUSetCache[VT]:
         with self.lock:
             if key in self.cache:
                 self.cache.pop(key)
-
-    def clear(self) -> None:
-        """Remove all items from the cache"""
-        with self.lock:
-            self.cache.clear()
