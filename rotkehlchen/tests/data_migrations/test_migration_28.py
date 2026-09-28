@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L1_ORIGINATED_TX_TYPE,
     L2WithL1FeesTransaction,
 )
-from rotkehlchen.db.constants import TX_DECODED
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
@@ -25,7 +25,9 @@ if TYPE_CHECKING:
 def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
     """Decoded transactions with a legacy zero L1 fee get their fee marked unresolved and
     their decoded events reset so they are redecoded. Resolved nonzero fees and L1
-    originated transactions, whose fee is always zero, are left decoded."""
+    originated transactions, whose fee is always zero, are left decoded. Transactions with
+    customized events get their fee marked unresolved but keep their events and stay
+    decoded, since redecoding them on top of the preserved events would not repair them."""
     transactions = [
         L2WithL1FeesTransaction(
             tx_hash=make_evm_tx_hash(),
@@ -47,6 +49,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
             (ChainID.OPTIMISM, 123),  # resolved, kept
             (ChainID.SCROLL, 0),  # L1 originated, kept
             (ChainID.OPTIMISM, None),  # unresolved and not decoded, untouched
+            (ChainID.OPTIMISM, 0),  # legacy zero with a customized event, stays decoded
         )
     ]
     dbevents = DBHistoryEvents(database)
@@ -64,9 +67,12 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
             'INSERT INTO evmtx_receipts(tx_id, contract_address, status, type) VALUES(?, ?, ?, ?)',
             [(tx_id, None, 1, L1_ORIGINATED_TX_TYPE if idx == 3 else 2) for idx, tx_id in enumerate(tx_ids)],  # noqa: E501
         )
-        for tx, tx_id, location in zip(transactions[:4], tx_ids[:4], (
-            Location.OPTIMISM, Location.BASE, Location.OPTIMISM, Location.SCROLL,
-        ), strict=True):
+        for tx, tx_id, location in zip(
+                transactions[:4] + transactions[5:],
+                tx_ids[:4] + tx_ids[5:],
+                (Location.OPTIMISM, Location.BASE, Location.OPTIMISM, Location.SCROLL, Location.OPTIMISM),  # noqa: E501
+                strict=True,
+        ):
             dbevents.add_history_event(
                 write_cursor=write_cursor,
                 event=EvmEvent(
@@ -80,6 +86,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
                     amount=FVal('0.000021'),
                     location_label=tx.from_address,
                 ),
+                mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED} if tx_id == tx_ids[5] else None,  # noqa: E501
             )
             write_cursor.execute(
                 'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
@@ -95,6 +102,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
             ('123', True),
             ('0', True),
             (None, False),
+            (None, True),
         ), strict=True):
             assert cursor.execute(
                 'SELECT l1_fee FROM optimism_transactions WHERE tx_id=?', (tx_id,),
