@@ -11,6 +11,7 @@ from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_crea
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.tokens import (
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     EvmTokensWithProxies,
@@ -1138,6 +1139,11 @@ def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
             return_value=[cached_nft, new_nft],
         ),
         patch.object(ethereum_inquirer, 'multicall_2', **multicall_mock_kwargs),
+        patch.object(
+            tokens.evm_inquirer.proxies_inquirer,
+            'get_accounts_having_proxy',
+            return_value={proxy_type: {} for proxy_type in ProxyType},
+        ),
     ):
         tokens.detect_tokens(only_cache=False, addresses=ethereum_accounts)
 
