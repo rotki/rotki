@@ -1,18 +1,26 @@
 import type {
   BlockchainAccountBalance,
+  BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
+import { camelCase } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
+import { pipe } from 'plainfp';
+import { filter, flatMap, unique } from 'plainfp/arrays';
+import { fromArray, head, type NonEmptyArray } from 'plainfp/non-empty-array';
+import { map as mapOption, match as matchOption, type Option, some } from 'plainfp/option';
+import { and, isDefined, type Predicate } from 'plainfp/predicates';
 import { isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
 import { type AccountGroupId, getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { sum } from '@/modules/core/common/display/balances';
 
 type GroupAccountsResolver = (groupId: AccountGroupId) => BlockchainAccountWithBalance[];
 
 type LabelResolver = (account: BlockchainAccountBalance, chain?: string) => string | undefined;
+
+type AccountPredicate = Predicate<BlockchainAccountBalance>;
 
 interface AccountFilters {
   tags?: string[];
@@ -21,161 +29,168 @@ interface AccountFilters {
   category?: string;
 }
 
-interface GroupRefinement {
+interface RowShaping {
   tags?: string[];
   chain?: string[];
   excluded: Record<string, string[]>;
   getAccounts?: GroupAccountsResolver;
 }
 
-interface AccountOrder {
-  orderByAttributes: string[];
-  ascending: boolean[];
-  getLabel: LabelResolver;
+interface SortColumn {
+  /** Whether the row has the attribute; a row without it defers to the next attribute. */
+  readonly present: boolean;
+  readonly value: unknown;
 }
 
-/**
- * Reports whether an account satisfies every filter that is currently active.
- *
- * @remarks
- * An unset filter contributes `undefined` rather than `false`, so an account passes trivially when
- * nothing is filtered. Addresses inside the address filter are alternatives rather than joint
- * requirements, because an account carries exactly one address.
- */
-function filterAccount<T extends BlockchainAccountBalance>(account: T, filters: AccountFilters): boolean {
-  const chains = account.type === 'group' ? account.chains : [account.chain];
-  const {
-    addresses: addressFilter,
-    category: categoryFilter,
-    chain: chainFilter,
-    tags: tagFilter,
-  } = filters;
-
-  function matchesAddress(): boolean | undefined {
-    if (!addressFilter?.length)
-      return undefined;
-
-    const address = getAccountAddress(account).toLowerCase();
-    return addressFilter.some(picked => picked.toLowerCase() === address);
-  }
-
-  function matchesChain(): boolean | undefined {
-    if (!chainFilter?.length)
-      return undefined;
-
-    return chains.some(chain => chainFilter.includes(chain));
-  }
-
-  function matchesTags(): boolean | undefined {
-    if (!tagFilter?.length)
-      return undefined;
-
-    return tagFilter.every(tag => account.tags?.includes(tag) ?? false);
-  }
-
-  const results = [
-    matchesAddress(),
-    matchesChain(),
-    matchesTags(),
-    categoryFilter ? account.type === 'group' && account.category === categoryFilter : undefined,
-  ].filter(result => result !== undefined);
-
-  return results.length === 0 || results.every(result => result);
+interface DecoratedRow<T> {
+  readonly row: T;
+  readonly columns: SortColumn[];
 }
 
-function applyExclusionFilter<T extends BlockchainAccountBalance>(
-  account: T,
+/** Narrows to a group while keeping the caller's row type, which a `type` check alone widens away. */
+function isGroup<T extends BlockchainAccountBalance>(account: T): account is T & BlockchainAccountGroupWithBalance {
+  return account.type === 'group';
+}
+
+function chainsOf(account: BlockchainAccountBalance): string[] {
+  return account.type === 'group' ? account.chains : [account.chain];
+}
+
+/** Picked addresses are alternatives rather than joint requirements, since an account carries exactly one address. */
+function byAddress(addresses: string[]): AccountPredicate {
+  const picked = new Set(addresses.map(address => address.toLowerCase()));
+  return account => picked.has(getAccountAddress(account).toLowerCase());
+}
+
+function byChain(chains: string[]): AccountPredicate {
+  return account => chainsOf(account).some(chain => chains.includes(chain));
+}
+
+function byTags(tags: string[]): AccountPredicate {
+  return account => tags.every(tag => account.tags?.includes(tag) ?? false);
+}
+
+function byCategory(category: string): AccountPredicate {
+  return account => account.type === 'group' && account.category === category;
+}
+
+/** Holds when every active filter does, so an account passes trivially when nothing is filtered. */
+function matchesFilters({ addresses, category, chain, tags }: AccountFilters): AccountPredicate {
+  return and(...[
+    addresses?.length ? byAddress(addresses) : undefined,
+    chain?.length ? byChain(chain) : undefined,
+    tags?.length ? byTags(tags) : undefined,
+    category ? byCategory(category) : undefined,
+  ].filter(isDefined));
+}
+
+function applyExclusion<G extends BlockchainAccountGroupWithBalance>(
+  group: G,
   excluded: Record<string, string[]>,
-  getGroupAccounts: GroupAccountsResolver,
-): T {
-  if (isEmpty(excluded) || account.type !== 'group' || account.chains.length === 1)
-    return account;
+  getAccounts?: GroupAccountsResolver,
+): G {
+  if (isEmpty(excluded) || group.chains.length === 1)
+    return group;
 
-  const groupId = getGroupId(account);
+  const groupId = getGroupId(group);
   const exclusion = excluded[groupId];
   if (!exclusion)
-    return account;
+    return group;
 
-  const selectedAccounts = getGroupAccounts(groupId).filter(account => !exclusion.includes(account.chain));
+  const selectedAccounts = (getAccounts?.(groupId) ?? []).filter(account => !exclusion.includes(account.chain));
 
   return {
-    ...account,
+    ...group,
     includedValue: sum(selectedAccounts),
   };
 }
 
-/**
- * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
- * on an account that is on optimism. If I filter by `chain=optimism` and `tag=Public` only this
- * account will appear. If the group includes another account with `tag=Public` and a different one
- * with `chain=optimism` this will skipped (see return)
- *
- * @remarks
- * Only a tag or chain filter can match on different member accounts and so misrepresent a group;
- * the others apply to the group itself.
- *
- * @returns undefined when the group does not need refining, so the caller falls back to the plain
- * exclusion path, and null when no member survives and the group should be dropped.
- */
-function refineGroup<T extends BlockchainAccountBalance>(account: T, refinement: GroupRefinement): T | null | undefined {
-  const { chain, excluded, getAccounts, tags } = refinement;
-  const hasGroupSensitiveFilter = isFilterEnabled(tags) || isFilterEnabled(chain);
-  if (account.type !== 'group' || !hasGroupSensitiveFilter)
-    return undefined;
-
-  const groupAccounts = getAccounts?.(getGroupId(account));
-  if (!groupAccounts)
-    return undefined;
-
-  const addressAppliesToTheGroupNotItsMembers = undefined;
-  const matchesWithoutChains = groupAccounts.filter(item => filterAccount(item, {
-    addresses: addressAppliesToTheGroupNotItsMembers,
-    tags,
-  }));
-
-  const matches = matchesWithoutChains.filter(item => filterAccount(item, { chain }));
-  if (matches.length === 0)
-    return null;
-
-  const chains = matches.map(match => match.chain).filter(uniqueStrings);
-  const groupId = getGroupId({ ...account, chains });
-  const exclusion = excluded[groupId];
+/** Rebuilds a group from the members that matched, keeping every chain it spans in `allChains`. */
+function narrowGroup<G extends BlockchainAccountGroupWithBalance>(
+  group: G,
+  members: BlockchainAccountWithBalance[],
+  matches: NonEmptyArray<BlockchainAccountWithBalance>,
+  excluded: Record<string, string[]>,
+): G {
+  const chains = unique(matches.map(match => match.chain));
+  const exclusion = excluded[getGroupId({ ...group, chains })];
 
   return {
-    ...account,
-    allChains: groupAccounts.map(item => item.chain),
+    ...group,
+    allChains: members.map(member => member.chain),
     chains,
-    expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
+    expansion: matches.length === 1 ? head(matches).expansion : 'accounts',
     includedValue: exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined,
-    tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
+    tags: unique(matches.flatMap(match => match.tags ?? [])),
     value: sum(matches),
   };
 }
 
-function getSortElement<T extends BlockchainAccountBalance>(key: keyof T, item: T, getLabel: LabelResolver): string | T[keyof T] {
-  if (key === 'label')
-    return getLabel(item, getChain(item)) ?? item[key] ?? getAccountAddress(item);
+/**
+ * The row an account that passed the filters is shown as, or none when it should be dropped.
+ *
+ * @remarks
+ * Only a tag or chain filter can match on different member accounts and so misrepresent a group,
+ * since the others apply to the group itself. Under one of those a group is rebuilt from the
+ * members that satisfy both on their own, and dropped when none does: a tag on the optimism
+ * member and a chain filter for mainnet do not make the group match. Every other row keeps its
+ * shape, with the chain exclusion applied.
+ */
+function shapeRow<T extends BlockchainAccountBalance>(account: T, shaping: RowShaping): Option<T> {
+  if (!isGroup(account))
+    return some(account);
 
-  return item[key];
+  const { chain, excluded, getAccounts, tags } = shaping;
+  const matchesOnMembers = isFilterEnabled(tags) || isFilterEnabled(chain);
+  const members = matchesOnMembers ? getAccounts?.(getGroupId(account)) : undefined;
+  if (!members)
+    return some(applyExclusion(account, excluded, getAccounts));
+
+  return pipe(
+    members.filter(matchesFilters({ chain, tags })),
+    fromArray,
+    mapOption(matches => narrowGroup(account, members, matches, excluded)),
+  );
+}
+
+function sortColumn<T extends BlockchainAccountBalance>(row: T, attribute: string, getLabel: LabelResolver): SortColumn {
+  const key = sortKeyOf(row, attribute);
+  const stored = key ? row[key] : undefined;
+  const isLabel = camelCase(attribute) === 'label';
+
+  return {
+    present: key !== undefined,
+    value: isLabel ? getLabel(row, getChain(row)) ?? stored ?? getAccountAddress(row) : stored,
+  };
 }
 
 /** Compares by each requested attribute in turn, so a tie on one falls through to the next. */
-function compareAccounts<T extends BlockchainAccountBalance>(a: T, b: T, order: AccountOrder): number {
-  const { ascending, getLabel, orderByAttributes } = order;
-  for (const [i, attr] of orderByAttributes.entries()) {
-    const key = sortKeyOf(a, attr);
-    if (!key)
+function compareRows<T>(a: DecoratedRow<T>, b: DecoratedRow<T>, ascending: boolean[]): number {
+  for (const [i, column] of a.columns.entries()) {
+    if (!column.present)
       continue;
 
-    const result = sortBy(getSortElement(key, a, getLabel), getSortElement(key, b, getLabel), ascending[i]);
+    const result = sortBy(column.value, b.columns[i].value, ascending[i]);
     if (result)
       return result;
   }
   return 0;
 }
 
-function nonNull<T extends BlockchainAccountBalance>(account: T | null): account is T {
-  return account !== null;
+/** Resolves each row's sort values once up front, so a label lookup is not repeated per comparison. */
+function sortRows<T extends BlockchainAccountBalance>(
+  rows: T[],
+  orderByAttributes: string[],
+  ascending: boolean[],
+  getLabel: LabelResolver,
+): T[] {
+  if (orderByAttributes.length === 0)
+    return rows;
+
+  return rows
+    .map(row => ({ columns: orderByAttributes.map(attribute => sortColumn(row, attribute, getLabel)), row }))
+    .sort((a, b) => compareRows(a, b, ascending))
+    .map(({ row }) => row);
 }
 
 export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
@@ -202,32 +217,22 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     tags,
   } = params;
 
-  const hasFilter = isFilterEnabled(tags)
-    || isFilterEnabled(addresses)
-    || isFilterEnabled(chain)
-    || isFilterEnabled(category);
+  const rows = pipe(
+    accounts,
+    filter<T>(matchesFilters({ addresses, category, chain, tags })),
+    flatMap<T, T>(account => matchOption(shapeRow(account, { chain, excluded, getAccounts, tags }), {
+      none: () => [],
+      some: row => [row],
+    })),
+  );
 
-  const getGroupAccounts: GroupAccountsResolver = groupId => getAccounts?.(groupId) ?? [];
-
-  const filtered = !hasFilter
-    ? accounts.map(account => applyExclusionFilter(account, excluded, getGroupAccounts))
-    : accounts
-        .filter(account => filterAccount(account, { addresses, category, chain, tags }))
-        .map((account) => {
-          const refined = refineGroup(account, { chain, excluded, getAccounts, tags });
-          return refined === undefined ? applyExclusionFilter(account, excluded, getGroupAccounts) : refined;
-        })
-        .filter(nonNull);
-
-  const sorted = orderByAttributes.length === 0
-    ? filtered
-    : filtered.sort((a, b) => compareAccounts(a, b, { ascending, getLabel, orderByAttributes }));
+  const sorted = sortRows(rows, orderByAttributes, ascending, getLabel);
 
   return {
     data: sorted.slice(offset, offset + limit),
     found: sorted.length,
     limit: -1,
     total: accounts.length,
-    totalValue: sum(filtered),
+    totalValue: sum(rows),
   };
 }
