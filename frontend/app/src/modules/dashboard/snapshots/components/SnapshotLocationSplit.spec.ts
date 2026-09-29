@@ -51,6 +51,16 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     return wrapper.emitted<[LocationSplit[]]>('update:modelValue')!.at(-1)![0];
   }
 
+  it('should show the balance-split hint unless the caller gives its own', async () => {
+    const wrapper = mountSplit();
+    expect(wrapper.text()).toContain('dashboard.snapshot.detail.split.hint');
+
+    await wrapper.setProps({ hint: 'Enter each location' });
+
+    expect(wrapper.text()).toContain('Enter each location');
+    expect(wrapper.text()).not.toContain('dashboard.snapshot.detail.split.hint');
+  });
+
   it('should start invalid with empty rows', () => {
     const wrapper = mountSplit();
     expect(isValid(wrapper)).toBe(false);

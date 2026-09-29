@@ -2507,8 +2507,9 @@
           "empty": "No locations in this snapshot",
           "net_worth": "Net worth",
           "reconcile": {
-            "description": "Locations are off by {amount} from the stored net worth. Distribute the difference across your locations to realign the allocation.",
+            "description": "Locations are off by {amount} from the net worth. Distribute the net worth across your locations to realign the allocation.",
             "distribute": "Distribute across locations",
+            "split_hint": "Enter the full value each location should hold, not the difference. Together they must add up to the net worth.",
             "title": "Allocation doesn't match net worth"
           },
           "share": "% net worth",

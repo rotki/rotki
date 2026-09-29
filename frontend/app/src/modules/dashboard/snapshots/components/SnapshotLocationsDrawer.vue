@@ -293,6 +293,7 @@ function applyDistribute(): void {
           <SnapshotLocationSplit
             v-model="splits"
             v-model:valid="splitValid"
+            :hint="t('dashboard.snapshot.detail.locations.reconcile.split_hint')"
             :total="storedTotal"
             :timestamp="timestamp"
             :locations="locationNames"

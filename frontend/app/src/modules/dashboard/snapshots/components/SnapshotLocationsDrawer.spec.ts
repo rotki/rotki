@@ -116,6 +116,7 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationsDrawer', () =>
       { location: 'binance', usdValue: bigNumberify(30) },
     ];
     const splitComponent = wrapper.findComponent(SnapshotLocationSplit);
+    expect(splitComponent.props('hint')).toBe('dashboard.snapshot.detail.locations.reconcile.split_hint');
     splitComponent.vm.$emit('update:modelValue', split);
     splitComponent.vm.$emit('update:valid', true);
     await nextTick();
