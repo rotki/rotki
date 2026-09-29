@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A failed purge, image cache clear or protocol data refresh in the data management settings now shows why it failed. Before, the error stopped at "failed:".
 * :bug:`-` Refreshing protocol data that fails now says so in the settings. Before, the data management settings reported the refresh as successful.
 * :bug:`-` A snapshot's change since the previous one, and the warning about a large change, now compare both snapshots the same way. Before, an ignored spam token could turn a small change into a warning of over 1,900%.
 * :bug:`-` The snapshot editor's net worth now matches the snapshot list and the graph, which leave out ignored assets, and says how much it excludes. Before, a snapshot with an ignored spam token could read 60,000 in the list and 1,313,200 once opened.
