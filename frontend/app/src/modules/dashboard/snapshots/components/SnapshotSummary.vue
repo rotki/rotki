@@ -50,23 +50,13 @@ const existingLocations = computed<string[]>(() =>
   snapshot.locationDataSnapshot.filter(item => item.location !== TOTAL_LOCATION).map(item => item.location),
 );
 
-/** The biggest location by value — pre-selected to absorb the reconcile difference. */
-const largestLocation = computed<string>(() => {
-  const rows = snapshot.locationDataSnapshot.filter(item => item.location !== TOTAL_LOCATION);
-  if (rows.length === 0)
-    return '';
-  return rows.reduce((max, item) => (item.usdValue.gt(max.usdValue) ? item : max)).location;
-});
-
-/** The location the user picked to absorb the difference, cleared per snapshot. */
-const chosenReconcileLocation = ref<string>();
-watch(() => timestamp, () => set(chosenReconcileLocation, undefined));
-
-/** Which location absorbs the difference; defaults to the largest, user can switch. */
-const reconcileLocation = computed<string>({
-  get: () => get(chosenReconcileLocation) ?? get(largestLocation),
-  set: location => set(chosenReconcileLocation, location),
-});
+/**
+ * The location the user picked to absorb the difference, cleared per snapshot. Nothing is
+ * preselected: no balance says which location it sits in, and the largest one is often where a
+ * high-value spam token inflates the balances rather than where the gap belongs.
+ */
+const reconcileLocation = ref<string>('');
+watch(() => timestamp, () => set(reconcileLocation, ''));
 const warnings = computed<SnapshotWarning[]>(() =>
   getSnapshotWarnings(snapshot, { isSpam: isSpamAsset, previousTotal: previous?.value }),
 );

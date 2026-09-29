@@ -123,9 +123,12 @@ export class SnapshotEditorPage {
       .locator('[data-testid=row-edit]');
   }
 
-  /** Reconcile a sum-mismatch into the pre-selected (largest) location. */
-  async reconcile(): Promise<void> {
-    await this.page.locator('[data-testid=snapshot-summary-reconcile-apply]').click();
+  /** Reconcile a sum-mismatch into `location`; nothing is preselected, so it must be picked first. */
+  async reconcile(location: string): Promise<void> {
+    const apply = this.page.locator('[data-testid=snapshot-summary-reconcile-apply]');
+    await expect(apply).toBeDisabled();
+    await this.selectLocation(this.mismatchBanner, location);
+    await apply.click();
     await this.mismatchBanner.waitFor({ state: 'hidden' });
   }
 

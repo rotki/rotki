@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The snapshot editor no longer preselects the largest location to absorb a totals difference, and asks you to pick one. With a high-value spam token the largest location is the one where the difference certainly does not belong.
 * :bug:`-` The snapshot editor's "Totals do not match" warning no longer suggests setting the total to the balances sum, an action it does not offer.
 * :bug:`-` Moving to another snapshot in the editor no longer keeps the location picked on the previous one to absorb a totals difference.
 * :bug:`-` A snapshot whose stored total no longer matches its balances now opens with the corrected total as an unsaved change, so it can be saved. Before, the editor showed the corrected value with Save disabled, and the snapshot list, the graph and the next snapshot's change kept the old total.
