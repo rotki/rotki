@@ -112,6 +112,17 @@ describe('snapshotSummary', () => {
     expect(wrapper.find('[data-testid=snapshot-summary-excluded-ignored]').exists()).toBe(false);
   });
 
+  it('should measure the delta between the values the snapshot list shows', () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({
+      previous: { timestamp: TIMESTAMP - 86400, value: bigNumberify(80) },
+      snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1000)], [location('total', 1100)]),
+    });
+
+    expect(fiatValue(wrapper, 'snapshot-summary-delta-value')).toBe(20);
+    expect(wrapper.find('[data-testid=snapshot-summary-warnings]').exists()).toBe(false);
+  });
+
   it('should show the delta only with a previous snapshot', () => {
     expect(mountSummary().find('[data-testid=snapshot-summary-delta]').exists()).toBe(false);
     const wrapper = mountSummary({ previous: { timestamp: TIMESTAMP - 86400, value: bigNumberify(80) } });

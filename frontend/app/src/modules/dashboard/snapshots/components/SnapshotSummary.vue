@@ -8,7 +8,6 @@ import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/Snapsh
 import SnapshotFxOverrideControl from '@/modules/dashboard/snapshots/components/SnapshotFxOverrideControl.vue';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
 import {
-  getTotalValue,
   type ListedNetWorth,
   listedNetWorth,
   locationsTotal,
@@ -32,7 +31,7 @@ const {
   timestamp: number;
   /** The draft's NFT-aware sum mismatch, surfaced as the reconcile banner. */
   mismatch?: SnapshotSumMismatch | null;
-  /** Previous snapshot's stored total (USD) and timestamp, for the delta line. */
+  /** Previous snapshot's value in the net-value series (USD) and timestamp, for the delta line. */
   previous?: { value: BigNumber; timestamp: number };
 }>();
 
@@ -54,7 +53,6 @@ const nftsInNetValue = useSetting('nftsInNetValue');
 const listed = computed<ListedNetWorth>(() =>
   listedNetWorth(snapshot, { includeNfts: get(nftsInNetValue), isIgnored: isIgnoredAsset }),
 );
-const netWorth = computed<BigNumber>(() => getTotalValue(snapshot.locationDataSnapshot));
 const hasNfts = computed<boolean>(() => snapshot.balancesSnapshot.some(item => isNft(item.assetIdentifier)));
 
 /** Real (non-`total`) location rows, the candidates for absorbing a reconcile. */
@@ -70,13 +68,14 @@ const existingLocations = computed<string[]>(() =>
 const reconcileLocation = ref<string>('');
 watch(() => timestamp, () => set(reconcileLocation, ''));
 const warnings = computed<SnapshotWarning[]>(() =>
-  getSnapshotWarnings(snapshot, { isSpam: isSpamAsset, previousTotal: previous?.value }),
+  getSnapshotWarnings(snapshot, { currentTotal: get(listed).value, isSpam: isSpamAsset, previousTotal: previous?.value }),
 );
 
+/** Compares like with like: `previous` comes from the net-value series, which is what `listed` mirrors. */
 const delta = computed<BigNumber | undefined>(() => {
   if (previous === undefined)
     return undefined;
-  return get(netWorth).minus(previous.value);
+  return get(listed).value.minus(previous.value);
 });
 
 const deltaPercent = computed<string | undefined>(() => {
@@ -225,6 +224,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           <SnapshotFiatDisplay
             :value="delta"
             :timestamp="timestamp"
+            data-testid="snapshot-summary-delta-value"
           />
           <span v-if="deltaPercent">{{ t('dashboard.snapshot.detail.summary.delta_percent', { percent: deltaPercent }) }}</span>
           <span class="text-rui-text-secondary">

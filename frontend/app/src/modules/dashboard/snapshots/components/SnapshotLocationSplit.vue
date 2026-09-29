@@ -14,7 +14,9 @@ const splits = defineModel<LocationSplit[]>({ required: true });
 /** Whether the split is complete (every row filled, no dupes, sums to `total`). */
 const valid = defineModel<boolean>('valid', { default: false });
 
-const { locations, maxPerLocation = {}, timestamp, total } = defineProps<{
+const { hint, locations, maxPerLocation = {}, timestamp, total } = defineProps<{
+  /** Replaces the default hint, which describes splitting one balance. */
+  hint?: string;
   /** The balance's full USD value that the split must add up to. */
   total: BigNumber;
   timestamp: number;
@@ -142,7 +144,7 @@ watch([result, isValid], () => {
     </div>
 
     <p class="text-caption text-rui-text-secondary">
-      {{ t('dashboard.snapshot.detail.split.hint') }}
+      {{ hint ?? t('dashboard.snapshot.detail.split.hint') }}
     </p>
 
     <div

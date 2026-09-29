@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A snapshot's change since the previous one, and the warning about a large change, now compare both snapshots the same way. Before, an ignored spam token could turn a small change into a warning of over 1,900%.
 * :bug:`-` The snapshot editor's net worth now matches the snapshot list and the graph, which leave out ignored assets, and says how much it excludes. Before, a snapshot with an ignored spam token could read 60,000 in the list and 1,313,200 once opened.
 * :bug:`-` In the snapshot editor, "Show spam" alone now reveals spam balances. Before, they also needed "Show ignored". The hidden-rows chip now says why rows are hidden and reveals them when clicked, and the balances total says when it includes hidden rows.
 * :bug:`-` The snapshot editor no longer preselects the largest location to absorb a totals difference, and asks you to pick one. With a high-value spam token the largest location is the one where the difference certainly does not belong.
