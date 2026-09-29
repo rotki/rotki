@@ -266,6 +266,23 @@ describe('useAccountDelete against the real removal wiring', () => {
     expect(accounts.accounts.btc).toStrictEqual([xpubAccount]);
   });
 
+  it('should drop only the xpub with the deleted derivation path and its derived addresses', async () => {
+    const { accounts, confirmRemoval } = await setup();
+    const kept: XpubAccount = { chain: 'btc', derivationPath: 'm/1', kind: 'xpub', xpub: XPUB };
+    const keptChild: AddressAccount = { address: 'bc1kept', chain: 'btc', kind: 'address', xpubParent: { derivationPath: 'm/1', xpub: XPUB } };
+    accounts.updateAccounts('btc', [
+      { chain: 'btc', derivationPath: 'm/0', kind: 'xpub', xpub: XPUB },
+      { address: 'bc1gone', chain: 'btc', kind: 'address', xpubParent: { derivationPath: 'm/0', xpub: XPUB } },
+      kept,
+      keptChild,
+    ]);
+
+    await confirmRemoval({ ...xpubGroup(), derivationPath: 'm/0' });
+
+    expect(mocks.deleteXpub).toHaveBeenCalledExactlyOnceWith({ chain: 'btc', derivationPath: 'm/0', xpub: XPUB });
+    expect(accounts.accounts.btc).toStrictEqual([kept, keptChild]);
+  });
+
   describe('validators', () => {
     const validator = { index: 1, publicKey: '0xvalidator', status: 'active' };
     const stored: ValidatorAccount = { ...validator, chain: 'eth2', kind: 'validator' };

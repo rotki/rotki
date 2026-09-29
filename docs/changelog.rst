@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Deleting an xpub now only removes that xpub from the accounts table. Before, the same xpub added with another derivation path, and the addresses derived from it, also disappeared until the next reload.
 * :bug:`-` Deleting a Bitcoin address tracked on both Bitcoin and Bitcoin Cash from every chain at once now works. Before, the delete failed and the address stayed on both chains.
 * :bug:`-` Deleting an ETH staking validator that the backend fails to remove now keeps it in the table. Before, it disappeared until the next reload although it was still tracked.
 * :feature:`-` Detecting EVM accounts no longer raises a notification for every chain an address was added on. The accounts table instead rings the chains detection added and marks the row "New", with a tooltip naming those chains; clicking the mark dismisses it, and it also clears when you log out. After a run, the Detect EVM accounts button briefly says how many chains it added, or that it found none.
