@@ -1,6 +1,7 @@
 import type {
   AddressAccount,
   AddressGroupWithBalance,
+  ValidatorAccount,
   XpubAccount,
   XpubGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
@@ -263,6 +264,42 @@ describe('useAccountDelete against the real removal wiring', () => {
 
     expect(mocks.deleteXpub).toHaveBeenCalledOnce();
     expect(accounts.accounts.btc).toStrictEqual([xpubAccount]);
+  });
+
+  describe('validators', () => {
+    const validator = { index: 1, publicKey: '0xvalidator', status: 'active' };
+    const stored: ValidatorAccount = { ...validator, chain: 'eth2', kind: 'validator' };
+
+    async function confirmValidatorRemoval(): Promise<void> {
+      const { useAccountDelete } = await import('@/modules/accounts/blockchain/use-account-delete');
+      const { useConfirmStore } = await import('@/modules/core/common/use-confirm-store');
+      useAccountDelete().showConfirmation({
+        data: [{ ...validator, amount: bigNumberify(32), value: bigNumberify(32) }],
+        type: 'validator',
+      });
+      await useConfirmStore().confirm();
+    }
+
+    it('should drop the validator when the backend deletes it', async () => {
+      const { accounts } = await setup();
+      accounts.updateAccounts('eth2', [stored]);
+      mocks.deleteEth2Validators.mockResolvedValue(true);
+
+      await confirmValidatorRemoval();
+
+      expect(mocks.deleteEth2Validators).toHaveBeenCalledExactlyOnceWith([validator.publicKey]);
+      expect(accounts.accounts.eth2).toStrictEqual([]);
+    });
+
+    it('should keep the validator when the backend delete fails', async () => {
+      const { accounts } = await setup();
+      accounts.updateAccounts('eth2', [stored]);
+      mocks.deleteEth2Validators.mockResolvedValue(false);
+
+      await confirmValidatorRemoval();
+
+      expect(accounts.accounts.eth2).toStrictEqual([stored]);
+    });
   });
 
   it('should not let a chain read that started before the delete resurrect the account', async () => {
