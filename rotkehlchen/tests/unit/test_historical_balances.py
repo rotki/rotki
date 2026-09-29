@@ -438,8 +438,9 @@ def test_has_unprocessed_events(
     """Test _has_unprocessed_events correctly uses stale marker to determine processing state.
 
     Conditions tested:
-    - stale_value=None: False (all events evaluated, including negative balance skips)
-    - stale_value exists + last_processing=None: query result (never processed)
+    - stale_value=None + last_processing exists: False (all events evaluated, including
+      negative balance skips)
+    - last_processing=None (with or without stale_value): query result (never processed)
     - stale_value exists + last_processing exists: filtered query (>= stale_event_ts)
     """
     manager = HistoricalBalancesManager(database)
@@ -516,6 +517,10 @@ def test_has_unprocessed_events(
 
     # 5. Events added, never processed, no match (wrong asset) -> False
     assert manager._has_unprocessed_events('asset = ?', ['BTC']) is False
+
+    # 5b. Events exist, never processed and no stale marker -> True
+    clear_stale_marker()
+    assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
 
     # 6. New events after processing, matches new events -> True
     time.sleep(0.01)
