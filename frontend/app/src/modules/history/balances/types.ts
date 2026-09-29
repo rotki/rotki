@@ -14,6 +14,23 @@ export const HistoricalBalancesAtEventsResponse = z.object({
 
 export type HistoricalBalancesAtEventsResponse = z.infer<typeof HistoricalBalancesAtEventsResponse>;
 
+const HistoricalBalanceEntry = z.object({
+  location: z.string(),
+  locationLabel: z.string().nullish(),
+  protocol: z.string().nullish(),
+  asset: z.string(),
+  amount: NumericString,
+});
+
+export type HistoricalBalanceEntry = z.infer<typeof HistoricalBalanceEntry>;
+
+export const HistoricalBalancesResponse = z.object({
+  processingRequired: z.boolean(),
+  entries: z.array(HistoricalBalanceEntry).optional().default([]),
+});
+
+export type HistoricalBalancesResponse = z.infer<typeof HistoricalBalancesResponse>;
+
 const HistoricalBalanceSeriesEntry = z.object({
   location: z.string(),
   locationLabel: z.string(),

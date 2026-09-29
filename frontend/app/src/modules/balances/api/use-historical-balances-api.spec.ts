@@ -14,6 +14,59 @@ describe('composables/api/balances/historical-balances', () => {
     return useHistoricalBalancesApi();
   }
 
+  describe('fetchHistoricalBalances', () => {
+    it('should request per-account balances at the timestamp and parse every bucket', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: {
+              entries: [
+                { amount: '1.5', asset: 'ETH', location: 'ethereum', location_label: '0xABC', protocol: null },
+                { amount: '100', asset: 'USDC', location: 'kraken', location_label: 'main', protocol: 'aave' },
+              ],
+              processing_required: true,
+            },
+          });
+        }),
+      );
+
+      const { fetchHistoricalBalances } = await getApi();
+      const result = await fetchHistoricalBalances(1700000000);
+
+      expect(capturedBody).toEqual({ group_by_account: true, timestamp: 1700000000 });
+      expect(result.processingRequired).toBe(true);
+      expect(result.entries.map(({ amount, ...rest }) => ({ amount: amount.toString(), ...rest }))).toEqual([
+        { amount: '1.5', asset: 'ETH', location: 'ethereum', locationLabel: '0xABC', protocol: null },
+        { amount: '100', asset: 'USDC', location: 'kraken', locationLabel: 'main', protocol: 'aave' },
+      ]);
+    });
+
+    it('should read a 404 as a date with no holdings', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical`, () =>
+          HttpResponse.json({ message: 'No historical data found', result: null }, { status: 404 })),
+      );
+
+      const { fetchHistoricalBalances } = await getApi();
+
+      await expect(fetchHistoricalBalances(1)).resolves.toEqual({ entries: [], processingRequired: false });
+    });
+
+    it('should reject on any other failure', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical`, () =>
+          HttpResponse.json({ message: 'boom', result: null }, { status: 500 })),
+      );
+
+      const { fetchHistoricalBalances } = await getApi();
+
+      await expect(fetchHistoricalBalances(1)).rejects.toThrow();
+    });
+  });
+
   describe('findHistoricalBalanceDivergence', () => {
     it('should request the divergence search as an async task with required fields', async () => {
       let capturedBody: DefaultBodyType = null;
