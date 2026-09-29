@@ -1,5 +1,6 @@
 import time
 from http import HTTPStatus
+from threading import Event
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -15,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
+from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
 from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
@@ -23,21 +24,25 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
-    """Test that querying the outcomes of async tasks works as expected
-
-    We don't mock price queries in this test only because that cause the tasks
-    list test below to fail since due to the mocking the tasks returns immediately and
-    does not wait on a gevent context switching. So if we mock we don't get to
-    test the task is still pending functionality.
-    """
-
-    # async query balances of one specific exchange
+def test_query_async_tasks(
+        rotkehlchen_api_server_with_exchanges: APIServer,
+        request: pytest.FixtureRequest,
+) -> None:
+    """Test that querying the outcomes of async tasks works as expected."""
     server = rotkehlchen_api_server_with_exchanges
-    binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
-    assert binance is not None
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_balance_response)
+    entered, release, written = Event(), Event(), Event()
+    rest_api = server.rest_api
+    write_task_result = rest_api._write_task_result
+    request.addfinalizer(release.set)  # never leave the task blocked if an assertion fails
+
+    def blocked_query(**_kwargs: Any) -> dict[str, Any]:
+        entered.set()
+        assert release.wait(timeout=10)
+        return {'result': {}, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def signal_result_written(task_id: int, result: Any) -> None:
+        write_task_result(task_id, result)
+        written.set()
 
     # Check querying the async task resource when no async task is scheduled
     response = requests.get(api_url_for(server, 'asynctasksresource'))
@@ -45,13 +50,17 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: APIServer) -> 
     assert result == {'completed': [], 'pending': []}
 
     # Create an async task
-    with binance_patch:
+    with (
+        patch.object(rest_api.exchanges_service, 'query_exchange_balances', side_effect=blocked_query),  # noqa: E501
+        patch.object(rest_api, '_write_task_result', side_effect=signal_result_written),
+    ):
         response = requests.get(api_url_for(
             server,
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'async_query': True})
         task_id = assert_ok_async_response(response)
+        assert entered.wait(timeout=10)
 
         # now check that there is a task
         response = requests.get(api_url_for(server, 'asynctasksresource'))
@@ -66,21 +75,15 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: APIServer) -> 
         json_data = response.json()
         assert json_data['message'] == 'The task with id 0 is still pending'
         assert json_data['result'] == {'status': 'pending', 'outcome': None}
+        release.set()
+        assert written.wait(timeout=10)
 
-        while True:
-            # and now query for the task result and assert on it
-            response = requests.get(
-                api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
-            )
-            assert_proper_response(response)
-            json_data = response.json()
-            if json_data['result']['status'] == 'pending':
-                # context switch so that the greenlet to query balances can operate
-                time.sleep(1)
-            elif json_data['result']['status'] == 'completed':
-                break
-            else:
-                raise AssertionError(f"Unexpected status: {json_data['result']['status']}")
+        # and now query for the task result and assert on it
+        response = requests.get(
+            api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
+        )
+        assert_proper_response(response)
+        json_data = response.json()
 
     assert json_data['message'] == ''
     assert json_data['result']['status'] == 'completed'
