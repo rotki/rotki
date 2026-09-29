@@ -2511,7 +2511,7 @@
         },
         "mismatch": {
           "balances_sum": "Sum of balances",
-          "description": "The balances, locations and stored total don't agree. The balances are the source of truth — reconcile to the balances sum by absorbing the difference into a location, or just set the total to the balances sum.",
+          "description": "The balances, locations and stored total don't agree. The balances are the source of truth, so the total already follows them. Reconcile the locations by absorbing the difference into one of them, or edit the locations yourself.",
           "locations_sum": "Sum of locations",
           "reconcile_apply": "Reconcile locations",
           "reconcile_into": "Absorb difference into",
