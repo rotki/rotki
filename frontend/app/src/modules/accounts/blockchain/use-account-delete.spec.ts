@@ -128,6 +128,18 @@ describe('useAccountDelete', () => {
       expect(useBlockchainAccountsStore().accounts).toMatchObject({ eth: [], optimism: [] });
     });
 
+    it('should remove a group agnostically under its own category, not always as evm', async () => {
+      const accountStore = useBlockchainAccountsStore();
+      const legacyAddress = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2';
+      for (const chain of ['btc', 'bch'])
+        accountStore.updateAccounts(chain, [{ address: legacyAddress, chain, kind: 'address' }]);
+
+      await confirmRemoval({ ...groupAccount(['btc', 'bch']), address: legacyAddress, category: 'bitcoin' });
+
+      expect(mocks.removeAgnosticAccount).toHaveBeenCalledExactlyOnceWith('bitcoin', legacyAddress);
+      expect(useBlockchainAccountsStore().accounts).toMatchObject({ bch: [], btc: [] });
+    });
+
     it('should remove a partially shown group chain by chain and leave the chains it did not show', async () => {
       seedChains(['eth', 'optimism', 'base']);
 
