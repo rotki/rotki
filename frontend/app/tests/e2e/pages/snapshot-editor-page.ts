@@ -106,6 +106,11 @@ export class SnapshotEditorPage {
     await this.locationsDrawer.waitFor({ state: 'hidden' });
   }
 
+  /** The summary's headline net worth, as rendered. */
+  get netWorth() {
+    return this.page.locator('[data-testid=snapshot-summary-net-worth]');
+  }
+
   get dirtyBadge() {
     return this.page.locator('[data-testid=snapshot-dirty-badge]');
   }

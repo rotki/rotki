@@ -24,6 +24,11 @@ export class SnapshotListPage {
     await this.table.waitFor({ state: 'visible' });
   }
 
+  /** The net worth the list shows for a snapshot, as rendered. */
+  netWorth(timestamp: number) {
+    return this.row(timestamp).locator('[data-testid=snapshot-list-value]');
+  }
+
   async hasSnapshot(timestamp: number): Promise<boolean> {
     return this.row(timestamp).isVisible();
   }

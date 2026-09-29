@@ -7,9 +7,16 @@ import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotFxOverrideControl from '@/modules/dashboard/snapshots/components/SnapshotFxOverrideControl.vue';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
-import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
+import {
+  getTotalValue,
+  type ListedNetWorth,
+  listedNetWorth,
+  locationsTotal,
+  TOTAL_LOCATION,
+} from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import { getSnapshotWarnings, type SnapshotWarning } from '@/modules/dashboard/snapshots/utils/snapshot-warnings';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const excludeNfts = defineModel<boolean>('excludeNfts', { default: false });
@@ -40,8 +47,13 @@ const ALLOCATION_LIMIT = 4;
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isSpamAsset } = useSnapshotAssetFilters();
+const { isIgnoredAsset, isSpamAsset } = useSnapshotAssetFilters();
+const nftsInNetValue = useSetting('nftsInNetValue');
 
+/** Headlines what the snapshot list and graph show, and says what that leaves out of the stored total. */
+const listed = computed<ListedNetWorth>(() =>
+  listedNetWorth(snapshot, { includeNfts: get(nftsInNetValue), isIgnored: isIgnoredAsset }),
+);
 const netWorth = computed<BigNumber>(() => getTotalValue(snapshot.locationDataSnapshot));
 const hasNfts = computed<boolean>(() => snapshot.balancesSnapshot.some(item => isNft(item.assetIdentifier)));
 
@@ -165,11 +177,41 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         <div class="min-h-[2.625rem] flex items-center">
           <SnapshotFiatDisplay
             class="text-h4"
-            :value="netWorth"
+            :value="listed.value"
             :timestamp="timestamp"
             data-testid="snapshot-summary-net-worth"
           />
         </div>
+        <i18n-t
+          v-if="!listed.ignored.isZero()"
+          scope="global"
+          keypath="dashboard.snapshot.detail.summary.excludes_ignored"
+          tag="div"
+          class="text-caption text-rui-text-secondary"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              :value="listed.ignored"
+              :timestamp="timestamp"
+              data-testid="snapshot-summary-excluded-ignored"
+            />
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-if="!listed.nfts.isZero()"
+          scope="global"
+          keypath="dashboard.snapshot.detail.summary.excludes_nfts"
+          tag="div"
+          class="text-caption text-rui-text-secondary"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              :value="listed.nfts"
+              :timestamp="timestamp"
+              data-testid="snapshot-summary-excluded-nfts"
+            />
+          </template>
+        </i18n-t>
         <div
           v-if="delta && previous"
           class="text-body-2 mt-1 flex items-center gap-1"
