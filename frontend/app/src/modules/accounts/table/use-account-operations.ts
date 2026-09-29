@@ -1,9 +1,10 @@
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import type { ShowConfirmationParams } from '@/modules/accounts/core/account-deletion';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
 import { useAddressBookForm } from '@/modules/accounts/address-book/use-address-book-form';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
-import { type ShowConfirmationParams, useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
+import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { type AccountManageState, editBlockchainAccount } from '@/modules/accounts/blockchain/use-account-manage';
 
 interface AccountOperationCallbacks {
