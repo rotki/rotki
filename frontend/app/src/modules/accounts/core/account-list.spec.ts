@@ -1,11 +1,12 @@
 import type {
   AddressAccount,
   AddressGroupWithBalance,
+  BlockchainAccountBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getAccountAddress, getAccountGroupId } from '@/modules/accounts/account-utils';
 import { sortAndFilterAccounts } from './account-list';
 
@@ -31,6 +32,8 @@ function payload(overrides: Partial<BlockchainAccountRequestPayload> = {}): Bloc
     ...overrides,
   };
 }
+
+type LabelResolver = (account: BlockchainAccountBalance, chain?: string) => string | undefined;
 
 const noLabel = (): undefined => undefined;
 
@@ -93,6 +96,66 @@ describe('sortAndFilterAccounts', () => {
   it('should sort by label using the resolver', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ ascending: [false], orderByAttributes: ['label'] }), { getLabel: noLabel });
     expect(result.data.map(a => a.label)).toEqual(['Gamma', 'Beta', 'Alpha']);
+  });
+
+  it('should sort by the resolved label ahead of the stored one', () => {
+    const getLabel = (row: BlockchainAccountBalance): string | undefined => (getAccountAddress(row) === '0xaaa' ? 'Zulu' : undefined);
+    const result = sortAndFilterAccounts(accounts(), payload({ ascending: [true], orderByAttributes: ['label'] }), { getLabel });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xbbb', '0xccc', '0xaaa']);
+  });
+
+  it('should sort an account whose label is unset by its address', () => {
+    const rows = [
+      account({ address: '0xccc', label: 'Beta' }),
+      account({ address: '0xaaa', label: undefined }),
+      account({ address: '0xbbb', label: 'Alpha' }),
+    ];
+    const result = sortAndFilterAccounts(rows, payload({ ascending: [true], orderByAttributes: ['label'] }), { getLabel: noLabel });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xaaa', '0xbbb', '0xccc']);
+  });
+
+  it('should break a tie on the first attribute with the next one', () => {
+    const rows = [
+      account({ address: '0xaaa', label: 'Gamma', value: bigNumberify(100) }),
+      account({ address: '0xbbb', label: 'Alpha', value: bigNumberify(100) }),
+      account({ address: '0xccc', label: 'Beta', value: bigNumberify(300) }),
+    ];
+    const result = sortAndFilterAccounts(rows, payload({
+      ascending: [false, true],
+      orderByAttributes: ['value', 'label'],
+    }), { getLabel: noLabel });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xccc', '0xbbb', '0xaaa']);
+  });
+
+  it('should skip an attribute the rows do not have and sort by the next one', () => {
+    const result = sortAndFilterAccounts(accounts(), payload({
+      ascending: [true, true],
+      orderByAttributes: ['included_value', 'value'],
+    }), { getLabel: noLabel });
+    expect(result.data.map(a => a.value.toNumber())).toEqual([100, 200, 300]);
+  });
+
+  it('should keep the input order of rows that tie on every attribute', () => {
+    const rows = [
+      account({ address: '0xccc', value: bigNumberify(100) }),
+      account({ address: '0xaaa', value: bigNumberify(100) }),
+      account({ address: '0xbbb', value: bigNumberify(100) }),
+    ];
+    const result = sortAndFilterAccounts(rows, payload({ ascending: [true], orderByAttributes: ['value'] }), { getLabel: noLabel });
+    expect(result.data.map(getAccountAddress)).toEqual(['0xccc', '0xaaa', '0xbbb']);
+  });
+
+  it('should resolve each row\'s label once, not once per comparison', () => {
+    const rows = Array.from({ length: 20 }, (_, i) => account({ address: `0x${i.toString().padStart(3, '0')}`, label: undefined }));
+    const getLabel = vi.fn<LabelResolver>(() => undefined);
+    sortAndFilterAccounts(rows, payload({ ascending: [true], orderByAttributes: ['label'] }), { getLabel });
+    expect(getLabel).toHaveBeenCalledTimes(rows.length);
+  });
+
+  it('should not resolve labels when not sorting by label', () => {
+    const getLabel = vi.fn<LabelResolver>(() => undefined);
+    sortAndFilterAccounts(accounts(), payload({ ascending: [true], orderByAttributes: ['value'] }), { getLabel });
+    expect(getLabel).not.toHaveBeenCalled();
   });
 
   it('should paginate using offset and limit', () => {
@@ -162,6 +225,38 @@ describe('sortAndFilterAccounts, over groups', () => {
       );
 
       expect(result.data[0].includedValue).toBeUndefined();
+    });
+
+    it('should still apply when only a filter that ignores members is active', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ addresses: ['0xaaa'], category: 'evm', excluded: { '0xaaa': ['optimism'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].includedValue?.toNumber()).toBe(200);
+      expect(result.data[0].value.toNumber()).toBe(300);
+    });
+
+    it('should apply to a group narrowed by a chain filter', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth', 'optimism'], excluded: { '0xaaa': ['optimism'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].includedValue?.toNumber()).toBe(200);
+      expect(result.data[0].value.toNumber()).toBe(300);
+    });
+
+    it('should count every group in the total, excluded chains included', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ excluded: { '0xaaa': ['optimism'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.totalValue?.toNumber()).toBe(300);
     });
 
     /** A group on one chain cannot have that chain excluded and still be a group worth showing. */
@@ -242,6 +337,29 @@ describe('sortAndFilterAccounts, over groups', () => {
       );
 
       expect(result.data).toHaveLength(0);
+    });
+
+    it('should drop a group none of whose members carries the tag', () => {
+      const result = sortAndFilterAccounts(
+        [group({ tags: ['hot', 'cold'] })],
+        payload({ tags: ['hot', 'cold'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data).toHaveLength(0);
+      expect(result.found).toBe(0);
+      expect(result.total).toBe(1);
+    });
+
+    it('should not refine a group when only the address is filtered', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ addresses: ['0xAAA'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].chains).toEqual(['eth', 'optimism']);
+      expect(result.data[0].allChains).toBeUndefined();
     });
 
     it('should keep a group whose member matches both', () => {

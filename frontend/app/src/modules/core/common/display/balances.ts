@@ -30,7 +30,7 @@ export function groupAssetBreakdown(
   return Object.values(grouped).sort((a, b) => sortDesc(a.value, b.value));
 }
 
-export function sum(balances: { value: BigNumber }[]): BigNumber {
+export function sum(balances: readonly { value: BigNumber }[]): BigNumber {
   return bigNumberSum(balances.map(account => account.value));
 }
 
