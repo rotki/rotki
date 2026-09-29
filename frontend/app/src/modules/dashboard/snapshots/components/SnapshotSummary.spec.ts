@@ -1,15 +1,26 @@
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
-import { type BigNumber, bigNumberify, One } from '@rotki/common';
+import { BigNumber, bigNumberify, One } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const TIMESTAMP = 1_600_000_000;
+
+let pinia: Pinia;
+let ignoredIds: string[] = [];
+vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({
+  useSnapshotAssetFilters: (): { isSpamAsset: (id: string) => boolean; isIgnoredAsset: (id: string) => boolean } => ({
+    isIgnoredAsset: (id: string): boolean => ignoredIds.includes(id),
+    isSpamAsset: (): boolean => false,
+  }),
+}));
 
 vi.mock('@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion', () => ({
   useHistoricFiatConversion: (): { isUsd: Ref<boolean>; rate: Ref<BigNumber> } => ({
@@ -30,14 +41,22 @@ function snapshot(balances: BalanceSnapshot[], locations: LocationDataSnapshot[]
   return { balancesSnapshot: balances, locationDataSnapshot: locations };
 }
 
+/** The USD value handed to the (stubbed) fiat display carrying `testId`. */
+function fiatValue(wrapper: VueWrapper, testId: string): number | undefined {
+  const display = wrapper.findAllComponents(SnapshotFiatDisplay).find(item => item.attributes('data-testid') === testId);
+  const value: unknown = display?.props('value');
+  return value instanceof BigNumber ? value.toNumber() : undefined;
+}
+
 function mountSummary(props: Record<string, unknown> = {}): VueWrapper {
   return mount(SnapshotSummary, {
     global: {
-      plugins: [createPinia()],
+      plugins: [pinia],
       provide: libraryDefaults,
       stubs: {
         AmountInput: { emits: ['update:modelValue'], props: ['modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
         DateDisplay: true,
+        I18nT: { template: '<div><slot name="amount" /></div>' },
         LocationDisplay: true,
         LocationSelector: true,
         SnapshotFiatDisplay: true,
@@ -54,11 +73,43 @@ function mountSummary(props: Record<string, unknown> = {}): VueWrapper {
 
 describe('snapshotSummary', () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    pinia = createPinia();
+    setActivePinia(pinia);
+    ignoredIds = [];
   });
 
   it('should derive and show the net worth from the snapshot', () => {
     expect(mountSummary().find('[data-testid=snapshot-summary-net-worth]').exists()).toBe(true);
+  });
+
+  it('should headline the net worth the snapshot list shows, without ignored assets', () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1000)], [location('total', 1100)]) });
+
+    expect(fiatValue(wrapper, 'snapshot-summary-net-worth')).toBe(100);
+    expect(fiatValue(wrapper, 'snapshot-summary-excluded-ignored')).toBe(1000);
+  });
+
+  it('should leave NFTs out of the headline when net value excludes them', () => {
+    useSettingsRepo().updateFrontend({ nftsInNetValue: false });
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 100), balance('_nft_0xabc_1', 40)], [location('total', 140)]) });
+
+    expect(fiatValue(wrapper, 'snapshot-summary-net-worth')).toBe(100);
+    expect(fiatValue(wrapper, 'snapshot-summary-excluded-nfts')).toBe(40);
+  });
+
+  it('should count NFTs in the headline by default', () => {
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 100), balance('_nft_0xabc_1', 40)], [location('total', 140)]) });
+
+    expect(fiatValue(wrapper, 'snapshot-summary-net-worth')).toBe(140);
+    expect(wrapper.find('[data-testid=snapshot-summary-excluded-nfts]').exists()).toBe(false);
+  });
+
+  it('should not mention ignored assets when the snapshot has none', () => {
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 100)], [location('total', 100)]) });
+
+    expect(fiatValue(wrapper, 'snapshot-summary-net-worth')).toBe(100);
+    expect(wrapper.find('[data-testid=snapshot-summary-excluded-ignored]').exists()).toBe(false);
   });
 
   it('should show the delta only with a previous snapshot', () => {

@@ -2548,6 +2548,8 @@
           "delta_percent": "({percent}%)",
           "edit_locations": "Edit locations",
           "exclude_nfts": "Exclude NFTs from net worth",
+          "excludes_ignored": "Excludes {amount} in ignored assets",
+          "excludes_nfts": "Excludes {amount} in NFTs, per your NFT settings",
           "net_worth": "Net worth",
           "since": "since"
         },

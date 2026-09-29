@@ -21,6 +21,16 @@ export interface ApiSnapshot {
 }
 
 /**
+ * Adds assets to the user's ignored list. The app loads that list at login, so call it before a
+ * (re)login for the UI to see it.
+ */
+export async function apiIgnoreAssets(request: APIRequestContext, assets: string[]): Promise<void> {
+  const response = await request.put(`${backendUrl}/api/1/assets/ignored`, { data: { assets } });
+  if (!response.ok())
+    throw new Error(`Failed to ignore ${assets.join(', ')}: ${response.status()} ${await response.text()}`);
+}
+
+/**
  * Reads a snapshot directly from the backend for assertion purposes. Keys are
  * snake_case (the raw backend shape) — the frontend's camelCase is applied by
  * its own API wrapper, which we deliberately bypass here.
