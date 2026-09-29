@@ -58,11 +58,14 @@ const largestLocation = computed<string>(() => {
   return rows.reduce((max, item) => (item.usdValue.gt(max.usdValue) ? item : max)).location;
 });
 
+/** The location the user picked to absorb the difference, cleared per snapshot. */
+const chosenReconcileLocation = ref<string>();
+watch(() => timestamp, () => set(chosenReconcileLocation, undefined));
+
 /** Which location absorbs the difference; defaults to the largest, user can switch. */
-const reconcileLocation = ref<string>('');
-watchImmediate(largestLocation, (location) => {
-  if (!get(reconcileLocation))
-    set(reconcileLocation, location);
+const reconcileLocation = computed<string>({
+  get: () => get(chosenReconcileLocation) ?? get(largestLocation),
+  set: location => set(chosenReconcileLocation, location),
 });
 const warnings = computed<SnapshotWarning[]>(() =>
   getSnapshotWarnings(snapshot, { isSpam: isSpamAsset, previousTotal: previous?.value }),

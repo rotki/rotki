@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Moving to another snapshot in the editor no longer keeps the location picked on the previous one to absorb a totals difference.
 * :bug:`-` A snapshot whose stored total no longer matches its balances now opens with the corrected total as an unsaved change, so it can be saved. Before, the editor showed the corrected value with Save disabled, and the snapshot list, the graph and the next snapshot's change kept the old total.
 * :bug:`-` Purging data that fails to delete now says so. Before, the purge settings reported "Data was successfully deleted" even though nothing was removed.
 * :bug:`-` The history events table now refreshes after a change made while it was already reloading, such as matching an event. Before, that change was not shown until the next refresh.
