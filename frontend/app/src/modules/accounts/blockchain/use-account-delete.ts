@@ -185,7 +185,10 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   };
 
   async function removeValidator(publicKeys: string[]): Promise<void> {
-    await deleteEth2Validators(publicKeys);
+    const deleted = await deleteEth2Validators(publicKeys);
+    if (!deleted)
+      return;
+
     removeAccounts({ addresses: publicKeys, chains: [Blockchain.ETH2] });
   }
 
