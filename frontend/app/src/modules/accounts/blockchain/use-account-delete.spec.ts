@@ -50,52 +50,26 @@ describe('useAccountDelete', () => {
     vi.clearAllMocks();
   });
 
-  it('should remove any accounts and balances from state', () => {
+  it('should remove the account and its balances from the stores once the backend deletes it', async () => {
     const accountStore = useBlockchainAccountsStore();
     const store = useBalancesStore();
-    const { removeAccounts } = useAccountDelete();
-
-    const account: AddressAccount = {
-      address: '0x123',
-      chain: 'eth',
-      kind: 'address',
-    };
-
+    const account: AddressAccount = { address: '0x123', chain: 'eth', kind: 'address' };
     const balances = {
       '0x123': {
-        assets: {
-          ETH: {
-            address: {
-              amount: bigNumberify(1),
-              value: bigNumberify(2501),
-            },
-          },
-        },
+        assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(2501) } } },
         liabilities: {},
       },
     };
-
     accountStore.updateAccounts('eth', [account]);
-
     store.updateBalances('eth', {
-      perAccount: {
-        eth: balances,
-      },
-      totals: {
-        assets: {
-          ETH: {
-            address: {
-              amount: bigNumberify(1),
-              value: bigNumberify(2501),
-            },
-          },
-        },
-        liabilities: {},
-      },
+      perAccount: { eth: balances },
+      totals: { assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(2501) } } }, liabilities: {} },
     });
-    expect(accountStore.accounts).toMatchObject({ eth: [account] });
-    expect(store.balances).toMatchObject({ eth: balances });
-    removeAccounts({ addresses: ['0x123'], chains: ['eth'] });
+
+    useAccountDelete().showConfirmation({ data: { ...groupAccount(['eth']) }, type: 'account' });
+    await useConfirmStore().confirm();
+
+    expect(mocks.removeAccount).toHaveBeenCalledExactlyOnceWith({ accounts: ['0x123'], chain: 'eth' });
     expect(accountStore.accounts).toMatchObject({ eth: [] });
     expect(store.balances).toMatchObject({ eth: {} });
   });
