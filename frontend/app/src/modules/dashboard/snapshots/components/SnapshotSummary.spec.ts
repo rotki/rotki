@@ -4,7 +4,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Ref, ref } from 'vue';
+import { nextTick, type Ref, ref } from 'vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
@@ -85,17 +85,24 @@ describe('snapshotSummary', () => {
     expect(wrapper.find('[data-testid=snapshot-summary-use-locations]').exists()).toBe(false);
   });
 
-  it('should pre-select the largest location and emit it on reconcile', async () => {
+  it('should preselect no reconcile location and apply only once one is picked', async () => {
     const wrapper = mountSummary({
-      snapshot: snapshot([balance('ETH', 100)], [location('kraken', 60), location('ledger', 20), location('total', 80)]),
+      snapshot: snapshot([balance('ETH', 100)], [location('blockchain', 60), location('kraken', 20), location('total', 80)]),
       mismatch: { balancesSum: bigNumberify(100), locationsSum: bigNumberify(80), storedTotal: bigNumberify(80) },
     });
-    // kraken (60) is the largest, so it is the default absorbing location.
-    await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
+    const apply = wrapper.find('[data-testid=snapshot-summary-reconcile-apply]');
+
+    expect(wrapper.findComponent(LocationSelector).props('modelValue')).toBe('');
+    expect(apply.attributes('disabled')).toBeDefined();
+
+    wrapper.findComponent(LocationSelector).vm.$emit('update:modelValue', 'kraken');
+    await nextTick();
+    await apply.trigger('click');
+
     expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('kraken');
   });
 
-  it('should re-evaluate the reconcile location when navigating to another snapshot', async () => {
+  it('should clear the reconcile location when navigating to another snapshot', async () => {
     const wrapper = mountSummary({
       snapshot: snapshot([balance('ETH', 100)], [location('kraken', 60), location('ledger', 20), location('total', 80)]),
       mismatch: { balancesSum: bigNumberify(100), locationsSum: bigNumberify(80), storedTotal: bigNumberify(80) },
@@ -108,9 +115,9 @@ describe('snapshotSummary', () => {
       snapshot: snapshot([balance('BTC', 500)], [location('binance', 300), location('coinbase', 100), location('total', 400)]),
       mismatch: { balancesSum: bigNumberify(500), locationsSum: bigNumberify(400), storedTotal: bigNumberify(400) },
     });
-    await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
 
-    expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('binance');
+    expect(wrapper.findComponent(LocationSelector).props('modelValue')).toBe('');
+    expect(wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').attributes('disabled')).toBeDefined();
   });
 
   it('should keep the chosen reconcile location while the same snapshot is edited', async () => {
