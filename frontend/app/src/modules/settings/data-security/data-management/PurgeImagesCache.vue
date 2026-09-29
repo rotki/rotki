@@ -53,14 +53,15 @@ async function purgeSource(source: PurgeableImageCache) {
 const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>(
   purgeable,
   purgeSource,
-  (source: string) => ({
-    error: t('data_management.purge_images_cache.error', {
+  {
+    error: (source: string, message: string) => t('data_management.purge_images_cache.error', {
+      message,
       source,
     }),
-    success: t('data_management.purge_images_cache.success', {
+    success: (source: string) => t('data_management.purge_images_cache.success', {
       source,
     }),
-  }),
+  },
   (source: string) => ({
     message: t('data_management.purge_images_cache.confirm.message', {
       source,

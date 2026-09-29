@@ -32,14 +32,15 @@ const refreshable = computed(() => get(generalCaches).map(id => ({
 const { pending, showConfirmation, status } = useCacheClear<string>(
   refreshable,
   refreshGeneralCache,
-  (source: string) => ({
-    error: t('data_management.refresh_cache.error', {
+  {
+    error: (source: string, message: string) => t('data_management.refresh_cache.error', {
+      message,
       source,
     }),
-    success: t('data_management.refresh_cache.success', {
+    success: (source: string) => t('data_management.refresh_cache.success', {
       source,
     }),
-  }),
+  },
   (source: string) => ({
     message: t('data_management.refresh_cache.confirm.message', {
       source,

@@ -113,8 +113,7 @@ async function purgeSource(source: Purgeable) {
   const valueRef = purgeable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
 
-  // Purgeable-only modules have no derived cache, so they need no activity for anything to hang a
-  // `staleAfter` edge off — delete them directly.
+  // Purgeable-only modules have no derived cache for a `staleAfter` edge, so delete them directly.
   if (Array.prototype.includes.call(purgeableOnlyModules, value)) {
     await deleteSourceData(source, value);
     return;
@@ -126,14 +125,15 @@ async function purgeSource(source: Purgeable) {
 const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
   purgeable,
   purgeSource,
-  (source: string) => ({
-    error: t('data_management.purge_data.error', {
+  {
+    error: (source: string, message: string) => t('data_management.purge_data.error', {
+      message,
       source,
     }),
-    success: t('data_management.purge_data.success', {
+    success: (source: string) => t('data_management.purge_data.success', {
       source,
     }),
-  }),
+  },
   (textSource, source) => {
     const valueRef = purgeable.find(({ id }) => id === source)?.value;
     const value = valueRef ? get(valueRef) : '';

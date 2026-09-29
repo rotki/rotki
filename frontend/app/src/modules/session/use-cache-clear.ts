@@ -1,5 +1,6 @@
 import type { DeepReadonly, MaybeRef, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface UseCacheClearReturn<T> {
@@ -10,13 +11,16 @@ interface UseCacheClearReturn<T> {
 
 interface Clearable<T> { id: T; text: string }
 
+interface ClearMessages {
+  success: (source: string) => string;
+  /** `message` is the rejection's own text, which the screen shows after the failure. */
+  error: (source: string, message: string) => string;
+}
+
 export function useCacheClear<T>(
   clearable: MaybeRef<Clearable<T>[]>,
   clearHandle: (source: T) => Promise<void>,
-  message: (source: string) => {
-    success: string;
-    error: string;
-  },
+  message: ClearMessages,
   confirmText: (
     textSource: string,
     source: T,
@@ -31,9 +35,14 @@ export function useCacheClear<T>(
 
   const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text ?? '';
 
-  // Drops the success message a few seconds after a purge. useTimeoutFn ties the timer to the
-  // composable's scope, so a pending reset cannot write to `status` once the owner is gone, and a
-  // second purge restarts the window instead of stacking timers.
+  /**
+   * Drops the success message a few seconds after a purge.
+   *
+   * @remarks
+   * `useTimeoutFn` ties the timer to this composable's scope, so a pending reset cannot write to
+   * `status` once the owner is gone, and a second purge restarts the window rather than stacking
+   * a second timer on top of the first.
+   */
   const { start: scheduleStatusReset } = useTimeoutFn(() => {
     set(status, null);
   }, 5000, { immediate: false });
@@ -45,13 +54,13 @@ export function useCacheClear<T>(
       await clearHandle(source);
       set(status, {
         error: '',
-        success: message(text(source)).success,
+        success: message.success(text(source)),
       });
       scheduleStatusReset();
     }
-    catch {
+    catch (error: unknown) {
       set(status, {
-        error: message(text(source)).error,
+        error: message.error(text(source), getErrorMessage(error)),
         success: '',
       });
     }
