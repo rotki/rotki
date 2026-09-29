@@ -80,3 +80,13 @@ export function readSnapshotFilters(filters: Filters): SnapshotFilterState {
 export function isolateZeroValue(filters: Filters): Filters {
   return { ...filters, [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ONLY };
 }
+
+/** Lifts every hide-default, which is what the hidden-count chip does when clicked. */
+export function revealHidden(filters: Filters): Filters {
+  return {
+    ...filters,
+    [SnapshotBalanceFilterKeys.SHOW_IGNORED]: true,
+    [SnapshotBalanceFilterKeys.SHOW_SPAM]: true,
+    [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ALL,
+  };
+}

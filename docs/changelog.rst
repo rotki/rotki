@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` In the snapshot editor, "Show spam" alone now reveals spam balances. Before, they also needed "Show ignored". The hidden-rows chip now says why rows are hidden and reveals them when clicked, and the balances total says when it includes hidden rows.
 * :bug:`-` The snapshot editor no longer preselects the largest location to absorb a totals difference, and asks you to pick one. With a high-value spam token the largest location is the one where the difference certainly does not belong.
 * :bug:`-` The snapshot editor's "Totals do not match" warning no longer suggests setting the total to the balances sum, an action it does not offer.
 * :bug:`-` Moving to another snapshot in the editor no longer keeps the location picked on the previous one to absorb a totals difference.
