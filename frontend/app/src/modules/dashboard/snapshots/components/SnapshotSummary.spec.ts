@@ -5,6 +5,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
 
@@ -92,6 +93,39 @@ describe('snapshotSummary', () => {
     // kraken (60) is the largest, so it is the default absorbing location.
     await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
     expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('kraken');
+  });
+
+  it('should re-evaluate the reconcile location when navigating to another snapshot', async () => {
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100)], [location('kraken', 60), location('ledger', 20), location('total', 80)]),
+      mismatch: { balancesSum: bigNumberify(100), locationsSum: bigNumberify(80), storedTotal: bigNumberify(80) },
+    });
+    wrapper.findComponent(LocationSelector).vm.$emit('update:modelValue', 'ledger');
+
+    // The page changes the route timestamp first and swaps the draft once the next snapshot loads.
+    await wrapper.setProps({ timestamp: TIMESTAMP + 86400 });
+    await wrapper.setProps({
+      snapshot: snapshot([balance('BTC', 500)], [location('binance', 300), location('coinbase', 100), location('total', 400)]),
+      mismatch: { balancesSum: bigNumberify(500), locationsSum: bigNumberify(400), storedTotal: bigNumberify(400) },
+    });
+    await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
+
+    expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('binance');
+  });
+
+  it('should keep the chosen reconcile location while the same snapshot is edited', async () => {
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100)], [location('kraken', 60), location('ledger', 20), location('total', 80)]),
+      mismatch: { balancesSum: bigNumberify(100), locationsSum: bigNumberify(80), storedTotal: bigNumberify(80) },
+    });
+    wrapper.findComponent(LocationSelector).vm.$emit('update:modelValue', 'ledger');
+
+    await wrapper.setProps({
+      snapshot: snapshot([balance('ETH', 100)], [location('kraken', 70), location('ledger', 20), location('total', 90)]),
+    });
+    await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
+
+    expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('ledger');
   });
 
   it('should collapse zero-value rows into a single summary line', () => {
