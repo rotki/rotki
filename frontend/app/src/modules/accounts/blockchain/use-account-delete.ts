@@ -4,6 +4,7 @@ import type {
   DeleteXpubParams,
   EthereumValidator,
 } from '@/modules/accounts/blockchain-accounts';
+import type { AccountCategory } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { isErr } from 'plainfp/result';
 import { getAccountAddress, getXpubGroupId, isAddressAccount, isXpubAccount } from '@/modules/accounts/account-utils';
@@ -26,6 +27,7 @@ export type ShowConfirmationParams = {
 
 interface EvmPayloadData {
   address: string;
+  category: AccountCategory;
   chains: string[];
   includeAllChains: boolean;
 }
@@ -101,6 +103,7 @@ function toPayload(params: ShowConfirmationParams): Payload {
       return {
         data: {
           address,
+          category: account.category,
           chains: filteredChains,
           includeAllChains: false,
         },
@@ -111,6 +114,7 @@ function toPayload(params: ShowConfirmationParams): Payload {
     return {
       data: {
         address,
+        category: account.category,
         chains: filteredChains,
         includeAllChains: true,
       },
@@ -192,10 +196,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     removeAccounts({ addresses: publicKeys, chains: [Blockchain.ETH2] });
   }
 
-  async function removeGroupAccounts(
-    category: string,
-    { address, chains, includeAllChains }: EvmPayloadData,
-  ): Promise<void> {
+  async function removeGroupAccounts({ address, category, chains, includeAllChains }: EvmPayloadData): Promise<void> {
     if (includeAllChains) {
       const outcome = await removeAgnosticAccount(category, address);
       if (isErr(outcome))
@@ -301,7 +302,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       else if (payload.type === 'xpub')
         await removeXpub(payload.data);
       else if (payload.type === 'evm')
-        await removeGroupAccounts(payload.type, payload.data);
+        await removeGroupAccounts(payload.data);
 
       onComplete?.();
     });

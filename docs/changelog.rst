@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Deleting a Bitcoin address tracked on both Bitcoin and Bitcoin Cash from every chain at once now works. Before, the delete failed and the address stayed on both chains.
 * :bug:`-` Deleting an ETH staking validator that the backend fails to remove now keeps it in the table. Before, it disappeared until the next reload although it was still tracked.
 * :feature:`-` Detecting EVM accounts no longer raises a notification for every chain an address was added on. The accounts table instead rings the chains detection added and marks the row "New", with a tooltip naming those chains; clicking the mark dismisses it, and it also clears when you log out. After a run, the Detect EVM accounts button briefly says how many chains it added, or that it found none.
 * :bug:`-` Looking up a historic or daily price no longer disables the price refresh buttons and puts every price on the balances pages and the dashboard in a loading state. Only an actual refresh of current prices does that now.
