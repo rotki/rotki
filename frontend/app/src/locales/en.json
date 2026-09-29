@@ -909,14 +909,6 @@
           "title": "Periodic client query"
         }
       },
-      "refresh_general_cache": {
-        "error": {
-          "message": "Failed to refresh protocol data {name}: {message}"
-        },
-        "task": {
-          "title": "Refresh protocol data ({name})"
-        }
-      },
       "tag_add": {
         "error": {
           "title": "Adding tag"
