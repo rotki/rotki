@@ -2449,7 +2449,12 @@
             "nft_amount": "NFT amount isn't 1"
           },
           "flagged": "This entry may need attention",
-          "hidden": "no rows hidden | {count} hidden | {count} hidden",
+          "hidden": "{reasons} hidden",
+          "hidden_reason": {
+            "ignored": "{count} ignored",
+            "spam": "{count} spam",
+            "zero_value": "{count} zero-value"
+          },
           "liability": "Liabilities",
           "locked": "This snapshot's totals don't reconcile. Use the reconcile options above to align them before editing balances.",
           "nft": "NFTs",
@@ -2458,6 +2463,7 @@
           "show_ignored": "Show ignored | Show ignored ({count}) | Show ignored ({count})",
           "show_spam": "Show spam | Show spam ({count}) | Show spam ({count})",
           "title": "Balances",
+          "total_with_hidden": "Total | Total, including {count} hidden | Total, including {count} hidden",
           "zero_value": {
             "label": "Zero-value | Zero-value ({count}) | Zero-value ({count})",
             "only": "Only",

@@ -118,6 +118,38 @@ describe('useSnapshotBalanceRows', () => {
     expect(get(hiddenCount)).toBe(0);
   });
 
+  it('should reveal an auto-ignored spam row with the show-spam pill alone', () => {
+    ignoredIds = ['SAITAMA'];
+    expect(identifiersFor({ [SnapshotBalanceFilterKeys.SHOW_SPAM]: true })).toContain('SAITAMA');
+  });
+
+  it('should keep an auto-ignored spam row hidden with the show-ignored pill alone', () => {
+    ignoredIds = ['SAITAMA', 'DAI'];
+    const shown = identifiersFor({ [SnapshotBalanceFilterKeys.SHOW_IGNORED]: true });
+    expect(shown).toContain('DAI');
+    expect(shown).not.toContain('SAITAMA');
+  });
+
+  it('should attribute each hidden row to one reason', () => {
+    ignoredIds = ['SAITAMA', 'DAI'];
+    const { hidden, hiddenCount } = useSnapshotBalanceRows(rows, {});
+    expect(get(hidden)).toStrictEqual({ ignored: 1, spam: 1, zeroValue: 1 });
+    expect(get(hiddenCount)).toBe(3);
+  });
+
+  it('should not count a revealed spam row as hidden-by-ignored', () => {
+    ignoredIds = ['SAITAMA', 'DAI'];
+    const { hidden } = useSnapshotBalanceRows(rows, { [SnapshotBalanceFilterKeys.SHOW_SPAM]: true });
+    expect(get(hidden)).toStrictEqual({ ignored: 1, spam: 0, zeroValue: 1 });
+  });
+
+  it('should offer only non-spam ignored rows under the show-ignored pill', () => {
+    ignoredIds = ['SAITAMA', 'DAI'];
+    const { fields } = useSnapshotBalanceRows(rows, {});
+    const label = get(fields).find(field => field.key === SnapshotBalanceFilterKeys.SHOW_IGNORED)?.label;
+    expect(typeof label === 'function' ? label() : label).toContain('::1');
+  });
+
   it('should count the zero-value rows the bulk delete would sweep', () => {
     const { zeroValueCount } = useSnapshotBalanceRows(rows, {});
     expect(get(zeroValueCount)).toBe(1);
