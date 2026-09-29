@@ -544,14 +544,6 @@
           "title": "Requête périodique client"
         }
       },
-      "refresh_general_cache": {
-        "error": {
-          "message": "Échec de l'actualisation des données du protocole {name}: {message}"
-        },
-        "task": {
-          "title": "Actualisation des données du protocole ({name})"
-        }
-      },
       "tag_add": {
         "error": {
           "title": "Ajout d'étiquette"

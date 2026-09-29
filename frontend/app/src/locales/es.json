@@ -266,16 +266,6 @@
         }
       }
     },
-    "session": {
-      "refresh_general_cache": {
-        "error": {
-          "message": "Error al actualizar los datos del protocolo {name}: {message}"
-        },
-        "task": {
-          "title": "Actualizar datos del protocolo ({name})"
-        }
-      }
-    },
     "transactions_redecode": {
       "error": {
         "description": "Fallo al decodificar eventos de transacciones: {error}",
