@@ -353,6 +353,19 @@ If at some point backend detects that balances need to be refreshed, it will sen
 - ``blockchain``: Returned only for section: ``blockchain_balances``. The blockchain for which balances need to be refreshed. Valid values are: ``optimism``, ``eth``.
 
 
+Historical balance processing completed
+=======================================
+
+When a historical balance processing run finishes, the backend sends this message so the frontend can reload anything derived from the historical balances, such as the balance overlay on the history events page and the data issues list. It is sent after the run's bridge issue detection and cache finalization, and also when the run had no events to process. It is not sent when a run is skipped because another one is already in progress.
+
+::
+
+    {
+        "type": "historical_balance_processing_completed",
+        "data": {}
+    }
+
+
 Premium Database Upload Progress
 ========================================
 
