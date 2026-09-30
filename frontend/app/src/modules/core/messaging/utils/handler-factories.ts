@@ -1,5 +1,5 @@
 import type { Notification } from '@rotki/common';
-import type { MessageHandler, NotificationHandler, StateHandler } from '../interfaces';
+import { LIVE_DELIVERY, type MessageDelivery, type MessageHandler, type NotificationHandler, type StateHandler } from '../interfaces';
 import { logHandlerError } from './error-handling';
 
 /**
@@ -7,9 +7,12 @@ import { logHandlerError } from './error-handling';
  */
 type StateUpdateFn<T> = (data: T) => void | Promise<void>;
 
-type NotificationFn<T> = (data: T) => Notification | Promise<Notification>;
+type NotificationFn<T> = (data: T, delivery: MessageDelivery) => Notification | Promise<Notification>;
 
-type ConditionalHandlerFn<T> = (data: T) => Notification | null | void | Promise<Notification | null | void>;
+type ConditionalHandlerFn<T> = (
+  data: T,
+  delivery: MessageDelivery,
+) => Notification | null | void | Promise<Notification | null | void>;
 
 type StateWithResultFn<T, R> = (data: T) => R | Promise<R>;
 
@@ -44,9 +47,9 @@ export function createNotificationHandler<T>(
   notificationFn: NotificationFn<T>,
 ): NotificationHandler<T> {
   return {
-    handle: async (data: T): Promise<Notification> => {
+    handle: async (data: T, delivery: MessageDelivery = LIVE_DELIVERY): Promise<Notification> => {
       try {
-        return await notificationFn(data);
+        return await notificationFn(data, delivery);
       }
       catch (error: unknown) {
         logHandlerError(error, 'Notification handler execution failed');
@@ -65,9 +68,9 @@ export function createConditionalHandler<T>(
   handlerFn: ConditionalHandlerFn<T>,
 ): MessageHandler<T> {
   return {
-    handle: async (data: T): Promise<Notification | null | void> => {
+    handle: async (data: T, delivery: MessageDelivery = LIVE_DELIVERY): Promise<Notification | null | void> => {
       try {
-        return await handlerFn(data);
+        return await handlerFn(data, delivery);
       }
       catch (error: unknown) {
         logHandlerError(error, 'Conditional handler execution failed');

@@ -31,6 +31,7 @@ from rotkehlchen.history.events.utils import create_group_identifier_from_unique
 from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.factories import make_random_bytes
+from rotkehlchen.tests.utils.messages import consume_errors_and_unknown_assets
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp, TimestampMS
 
@@ -270,6 +271,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             expected_errors_num,
             expected_balances_for_no_warnings=1,
             contains_expected_msg=None,
+            unknown_assets=(),
     ):
         def mock_coinbase_accounts(url, timeout, **_kwargs):  # pylint: disable=unused-argument
             return MockResponse(200, response_str)
@@ -278,7 +280,8 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             balances, msg = coinbase.query_balances()
 
         warnings = coinbase.msg_aggregator.consume_warnings()
-        errors = coinbase.msg_aggregator.consume_errors()
+        errors, unknown = consume_errors_and_unknown_assets(coinbase.msg_aggregator)
+        assert unknown == list(unknown_assets)
         if contains_expected_msg:
             assert balances is None
             assert contains_expected_msg in msg
@@ -321,7 +324,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
     # account entry with unknown asset
     input_data = data.replace('"BTC"', '"DDSADSAD"')
-    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
+    query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0, unknown_assets=['DDSADSAD'])  # noqa: E501
     # account entry with invalid asset
     input_data = data.replace('"BTC"', 'null')
     query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501

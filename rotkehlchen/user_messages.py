@@ -1,10 +1,13 @@
 import json
 import logging
-from collections import deque
+import threading
+from collections import OrderedDict, deque
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Final
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, ClassVar, Final, assert_never
 
 from rotkehlchen.api.websockets.typedefs import (
+    ProgressUpdateSubType,
     UserMessageEntry,
     UserMessageFeature,
     UserMessageKey,
@@ -14,32 +17,149 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
-    from rotkehlchen.types import ExternalService, Location
+    from rotkehlchen.types import ExternalService, Location, Timestamp
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-ERROR_MESSAGE_TYPES = {WSMessageType.USER_MESSAGE, WSMessageType.BALANCE_SNAPSHOT_ERROR}
+# How many undelivered messages each store holds. Nothing drains them until a client
+# connects or polls, and a logged in backend can run its periodic tasks for days with no
+# browser open. A full store drops its oldest entry and counts the drop. The sum bounds
+# what one poll hands the frontend to parse, and the frontend keeps 200 notifications,
+# so more reports than that could not be shown anyway.
+MAX_HELD_EVENTS: Final = 500
+MAX_HELD_STATES: Final = 200
+MAX_HELD_REPORTS: Final = 200
+MAX_HELD_USER_MESSAGES: Final = 200
 # The interpolated values of a user message, unrendered. Kept to primitives because the
-# payload goes through process_result and then json.dumps: a value neither can handle makes
-# broadcast log and fall back to polling instead of raising, so it would fail silently.
+# payload goes through process_result and then json.dumps: a value neither can handle is
+# logged and the message dropped rather than raised to the emitter, so it fails silently.
 UserMessageField = str | int | float | bool | None
 
 
-@dataclass(frozen=True)
-class PolledMessage:
-    """A message held for the polling fallback, in both forms it is read in.
+class DeliveryPolicy(Enum):
+    """What happens to a message no client received, decided by what losing it costs."""
+    LIVE = auto()  # progress of work in flight, meaningless once it is over: dropped
+    EVENT = auto()  # something that happened once: every one is held, in order
+    STATE = auto()  # how things are now: only the latest per key is held
+    REPORT = auto()  # a failure that tends to repeat: held once per key, with a count
+    # a free-text user message: held like a REPORT, but in a store of its own, since text
+    # that varies with every occurrence would otherwise push the structured reports out
+    MESSAGE = auto()
 
-    `text` is what tests, tools and logout read: the rendered sentence of a user message, or
-    the serialized envelope of a structured one. `payload` is what the messages endpoint
-    returns, the same `{type, data}` object the websocket sends, and the only form in which a
-    user message keeps its classification once the socket is gone.
+
+@dataclass(frozen=True)
+class Delivery:
+    """How an undelivered message of one type is held.
+
+    `key_fields` are the data fields that tell two STATE or REPORT messages of one type
+    apart, and none means one entry for the whole type. `whole_payload` keys on every
+    field instead, so only exact repeats collapse: a report whose text varies is still
+    held once per distinct text, and never replaced by a different one.
     """
-    text: str
+    policy: DeliveryPolicy
+    key_fields: tuple[str, ...] = ()
+    whole_payload: bool = False
+
+
+LIVE: Final = Delivery(DeliveryPolicy.LIVE)
+EVENT: Final = Delivery(DeliveryPolicy.EVENT)
+LATEST: Final = Delivery(DeliveryPolicy.STATE)
+EXACT_REPEATS: Final = Delivery(DeliveryPolicy.REPORT, whole_payload=True)
+
+
+def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -> Delivery:
+    """Decide how an undelivered message is held until a client connects or polls.
+
+    Every message type needs an answer, and assert_never makes a new one without an
+    answer a type error rather than a message that silently falls back to a default.
+    """
+    match message_type:
+        case (
+            WSMessageType.TRANSACTION_STATUS |
+            WSMessageType.DB_UPGRADE_STATUS |
+            WSMessageType.DATA_MIGRATION_STATUS |
+            WSMessageType.HISTORY_EVENTS_STATUS |
+            WSMessageType.DATABASE_UPLOAD_PROGRESS
+        ):
+            return LIVE
+        case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
+            is_import_result = (
+                isinstance(data, dict) and
+                data.get('subtype') == ProgressUpdateSubType.CSV_IMPORT_RESULT
+            )
+            return EVENT if is_import_result else LIVE
+        case WSMessageType.NEW_TOKEN_DETECTED | WSMessageType.EVMLIKE_ACCOUNTS_DETECTION:
+            return EVENT
+        case (
+            WSMessageType.PREMIUM_STATUS_UPDATE |
+            WSMessageType.DATABASE_UPLOAD_RESULT |
+            WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED |
+            WSMessageType.MONERIUM_SESSIONKEY_EXPIRED |
+            WSMessageType.ACCOUNTING_RULE_CONFLICT |
+            WSMessageType.UNMATCHED_ASSET_MOVEMENTS |
+            WSMessageType.UNMATCHED_BRIDGE_TRANSACTIONS |
+            WSMessageType.INTERNAL_TX_FIXED |
+            WSMessageType.SOLANA_TOKENS_MIGRATION |
+            WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED
+        ):
+            return LATEST
+        case WSMessageType.REFRESH_BALANCES:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('blockchain',))
+        case WSMessageType.NO_AVAILABLE_INDEXERS:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('chain',))
+        case WSMessageType.MISSING_API_KEY:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('service', 'location'))
+        case WSMessageType.CALENDAR_REMINDER:  # re-sent every few minutes until acknowledged
+            return Delivery(DeliveryPolicy.STATE, key_fields=('identifier',))
+        case WSMessageType.NEGATIVE_BALANCE_DETECTED:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('event_identifier',))
+        case WSMessageType.USER_MESSAGE:
+            # rejected credentials are the one family only the user can fix, and there
+            # is one per account, so they are kept as state no storm of other text can evict
+            is_auth = isinstance(data, dict) and data.get('key') == UserMessageKey.AUTH
+            return Delivery(
+                DeliveryPolicy.STATE if is_auth else DeliveryPolicy.MESSAGE,
+                whole_payload=True,
+            )
+        case WSMessageType.BALANCE_SNAPSHOT_ERROR:
+            return EXACT_REPEATS
+        case WSMessageType.BINANCE_PAIRS_MISSING:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name'))
+        case WSMessageType.ORACLE_PENALIZED:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('oracle',))
+        case WSMessageType.EXCHANGE_UNKNOWN_ASSET:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name', 'identifier'))
+        case _:
+            assert_never(message_type)
+
+
+@dataclass(frozen=True)
+class HeldMessage:
+    """A message no client received, held until one connects or polls.
+
+    `payload` is the `{type, data}` object the websocket sends. `text` is what tests and
+    tools read: the rendered sentence of a user message, or the serialized payload. `count`
+    is how many times it was sent while held and `last_sent` when it was last sent, since a
+    client that reads it hours later cannot tell otherwise. For a message handed back by a
+    client that disconnected before reading it, `last_sent` is when it was handed back,
+    later than the send by at most that client's backlog. `seq` orders messages across
+    the stores.
+    """
     payload: dict[str, Any]
+    text: str
+    count: int
+    last_sent: Timestamp
+    seq: int
+
+    def serialize(self) -> dict[str, Any]:
+        return self.payload | {'count': self.count, 'last_sent': self.last_sent}
 
 
 @dataclass(frozen=True)
@@ -161,8 +281,14 @@ class MessagesAggregator:
     """
 
     def __init__(self) -> None:
-        self.warnings: deque[PolledMessage] = deque()
-        self.errors: deque[PolledMessage] = deque()
+        # Messages are added from any worker thread and drained by the api or at logout
+        self._lock = threading.Lock()
+        self._seq = 0
+        self._events: deque[HeldMessage] = deque()
+        self._states: OrderedDict[str, HeldMessage] = OrderedDict()
+        self._reports: OrderedDict[str, HeldMessage] = OrderedDict()
+        self._user_messages: OrderedDict[str, HeldMessage] = OrderedDict()
+        self._dropped = 0
         self.rotki_notifier: RotkiNotifier | None = None
 
     @staticmethod
@@ -199,21 +325,123 @@ class MessagesAggregator:
         from rotkehlchen.serialization.serialize import process_result
         return process_result({'type': message_type, 'data': data})
 
-    @classmethod
-    def _user_message_polled(cls, msg: str, data: dict[str, Any]) -> PolledMessage:
-        return PolledMessage(text=msg, payload=cls._envelope(WSMessageType.USER_MESSAGE, data))
+    def _hold(self, envelope: dict[str, Any], delivery: Delivery) -> None:
+        """Keep a message no client received, as its delivery policy says.
+
+        A full store drops its oldest entry, so one kind of message can only ever crowd out
+        its own kind: a storm of repeating failures cannot push out an event. A dropped
+        message is logged in full, since the client is only told how many there were.
+        """
+        is_user_message = envelope['type'] == WSMessageType.USER_MESSAGE
+        is_event = delivery.policy == DeliveryPolicy.EVENT
+        try:
+            text = envelope['data']['value'] if is_user_message else json.dumps(envelope)
+            key = None if is_event else self._key(envelope, delivery)
+        except TypeError as e:  # a bad value is the emitter's bug, not a reason to fail it
+            log.error(
+                'Could not hold a %s message that does not serialize: %s',
+                envelope['type'],
+                e,
+            )
+            return
+
+        now = ts_now()
+        dropped: HeldMessage | None = None
+        with self._lock:
+            self._seq += 1
+            if delivery.policy == DeliveryPolicy.EVENT:
+                self._events.append(HeldMessage(
+                    payload=envelope,
+                    text=text,
+                    count=1,
+                    last_sent=now,
+                    seq=self._seq,
+                ))
+                if len(self._events) > MAX_HELD_EVENTS:
+                    dropped = self._events.popleft()
+                    self._dropped += 1
+            else:
+                assert key is not None, 'only an EVENT is held without a key'
+                dropped = self._hold_keyed(
+                    envelope=envelope,
+                    text=text,
+                    key=key,
+                    policy=delivery.policy,
+                    now=now,
+                )
+
+        if dropped is not None:
+            log.warning(
+                'Dropped a held %s message sent %d time(s), last at %d, to stay within '
+                'the held message limits: %s',
+                dropped.payload['type'],
+                dropped.count,
+                dropped.last_sent,
+                dropped.text,
+            )
 
     @staticmethod
-    def _drain(messages: deque[PolledMessage]) -> list[PolledMessage]:
-        result = []
-        while True:
-            try:
-                result.append(messages.pop())
-            except IndexError:  # a concurrent consumer (api call/logout) drained it
-                return result
+    def _key(envelope: dict[str, Any], delivery: Delivery) -> str:
+        """The key two messages share when the later one replaces or repeats the earlier."""
+        data = envelope['data']
+        identity = data if delivery.whole_payload else [
+            data.get(field) for field in delivery.key_fields
+        ]
+        return json.dumps([envelope['type'], identity], sort_keys=True)
 
-    def _append_warning(self, msg: str, data: dict[str, Any]) -> None:
-        self.warnings.appendleft(self._user_message_polled(msg=msg, data=data))
+    def _store_of(self, policy: DeliveryPolicy) -> tuple[OrderedDict[str, HeldMessage], int]:
+        if policy == DeliveryPolicy.STATE:
+            return self._states, MAX_HELD_STATES
+        if policy == DeliveryPolicy.REPORT:
+            return self._reports, MAX_HELD_REPORTS
+        return self._user_messages, MAX_HELD_USER_MESSAGES
+
+    def _hold_keyed(
+            self,
+            envelope: dict[str, Any],
+            text: str,
+            key: str,
+            policy: DeliveryPolicy,
+            now: Timestamp,
+    ) -> HeldMessage | None:
+        """Keep a keyed message, replacing an earlier one with the same key.
+
+        Must be called with the lock held. Returns the entry dropped to make room, if any.
+        """
+        store, limit = self._store_of(policy)
+        previous = store.pop(key, None)
+        store[key] = HeldMessage(
+            payload=envelope,
+            text=text,
+            count=1 if previous is None else previous.count + 1,
+            last_sent=now,
+            seq=self._seq,
+        )
+        if len(store) <= limit:
+            return None
+
+        self._dropped += 1
+        return store.popitem(last=False)[1]
+
+    def _hold_message(
+            self,
+            message_type: WSMessageType,
+            data: dict[str, Any] | list[Any],
+    ) -> None:
+        if (delivery := delivery_of(message_type, data)).policy != DeliveryPolicy.LIVE:
+            self._hold(envelope=self._envelope(message_type, data), delivery=delivery)
+
+    def _drain(self, select: Callable[[HeldMessage], bool]) -> list[HeldMessage]:
+        """Remove the held messages `select` picks and return them in the order they were
+        last sent."""
+        with self._lock:
+            drained = [message for message in self._events if select(message)]
+            self._events = deque(message for message in self._events if not select(message))
+            for store in (self._states, self._reports, self._user_messages):
+                selected = [key for key, message in store.items() if select(message)]
+                drained.extend(store.pop(key) for key in selected)
+
+        return sorted(drained, key=lambda message: message.seq)
 
     def add_warning(
             self,
@@ -223,36 +451,15 @@ class MessagesAggregator:
             subject: Location | None = None,
     ) -> None:
         log.warning(msg)
-        data = self._user_message_data(
-            verbosity='warning',
-            msg=msg,
-            classification=classification,
-            subject=subject,
+        self.add_message(
+            message_type=WSMessageType.USER_MESSAGE,
+            data=self._user_message_data(
+                verbosity='warning',
+                msg=msg,
+                classification=classification,
+                subject=subject,
+            ),
         )
-        if self.rotki_notifier is not None:
-            self.rotki_notifier.broadcast(
-                message_type=WSMessageType.USER_MESSAGE,
-                to_send_data=data,
-                failure_callback=self._append_warning,
-                failure_callback_args={'msg': msg, 'data': data},
-            )
-            return
-        # else
-        self._append_warning(msg=msg, data=data)
-
-    def consume_warnings(self) -> list[str]:
-        """Drain the pending warnings as rendered text."""
-        return [message.text for message in self._drain(self.warnings)]
-
-    def consume_warning_payloads(self) -> list[dict[str, Any]]:
-        """Drain the pending warnings as the `{type, data}` objects the websocket sends."""
-        return [message.payload for message in self._drain(self.warnings)]
-
-    def _append_error(self, msg: str, data: dict[str, Any]) -> None:
-        self.errors.appendleft(self._user_message_polled(msg=msg, data=data))
-
-    def _append_structured_error(self, envelope: dict[str, Any]) -> None:
-        self.errors.appendleft(PolledMessage(text=json.dumps(envelope), payload=envelope))
 
     def add_error(
             self,
@@ -262,73 +469,76 @@ class MessagesAggregator:
             subject: Location | None = None,
     ) -> None:
         log.error(msg)
-        data = self._user_message_data(
-            verbosity='error',
-            msg=msg,
-            classification=classification,
-            subject=subject,
+        self.add_message(
+            message_type=WSMessageType.USER_MESSAGE,
+            data=self._user_message_data(
+                verbosity='error',
+                msg=msg,
+                classification=classification,
+                subject=subject,
+            ),
         )
-        if self.rotki_notifier is not None:
-            self.rotki_notifier.broadcast(
-                message_type=WSMessageType.USER_MESSAGE,
-                to_send_data=data,
-                failure_callback=self._append_error,
-                failure_callback_args={'msg': msg, 'data': data},
-            )
-            return
-        self._append_error(msg=msg, data=data)
 
     def add_message(
             self,
             message_type: WSMessageType,
             data: dict[str, Any] | list[Any],
     ) -> None:
-        """Sends a websocket message
+        """Send a websocket message, or hold it for the next client if none receives it."""
+        if self.rotki_notifier is None:
+            self._hold_message(message_type=message_type, data=data)
+            return
 
-        Specify its type and data.
-
-        `wait_on_send` is used to determine if the message should be sent asynchronously
-        by spawning a greenlet or if it should just do it synchronously.
-        """
-        envelope = self._envelope(message_type, data)
-        # Only error-class messages fall back to polling, whichever way delivery failed
-        is_error = message_type in ERROR_MESSAGE_TYPES
-
-        if self.rotki_notifier is not None:
-            self.rotki_notifier.broadcast(
-                message_type=message_type,
-                to_send_data=data,
-                failure_callback=self._append_structured_error if is_error else None,
-                failure_callback_args={'envelope': envelope},
-            )
-
-        elif is_error:
-            self._append_structured_error(envelope)
+        self.rotki_notifier.broadcast(
+            message_type=message_type,
+            to_send_data=data,
+            failure_callback=self._hold_message,
+            failure_callback_args={'message_type': message_type, 'data': data},
+        )
 
     def requeue_undelivered(self, raw_message: str) -> None:
-        """Callback for a message that was queued to a websocket client which
-        disconnected before receiving it. Re-queues error-class messages into
-        the polling fallback deques, mirroring what the failure callbacks of
-        add_warning/add_error/add_message do when a send fails outright.
-        Everything else (progress updates etc.) is dropped, as it is only
-        meaningful to a connected client."""
+        """Hold a message that was queued to a websocket client which disconnected before
+        receiving it, as if its send had failed outright."""
         try:
             message = json.loads(raw_message)
-        except json.JSONDecodeError:
+            message_type = WSMessageType(message['type'])
+        except (json.JSONDecodeError, KeyError, ValueError):
             log.error('Could not parse undelivered websocket message %s', raw_message)
             return
 
-        if (msg_type := message.get('type')) == WSMessageType.USER_MESSAGE:
-            data = message.get('data', {})
-            if (value := data.get('value')) is None:
-                return
-            polled = PolledMessage(text=value, payload=message)
-            if data.get('verbosity') == 'warning':
-                self.warnings.appendleft(polled)
-            else:
-                self.errors.appendleft(polled)
-        elif msg_type in ERROR_MESSAGE_TYPES:
-            self._append_structured_error(message)
+        if (delivery := delivery_of(message_type, message['data'])).policy != DeliveryPolicy.LIVE:
+            self._hold(envelope=message, delivery=delivery)
+
+    def consume_held(self) -> tuple[list[dict[str, Any]], int]:
+        """Drain every held message for a client, with how many were dropped for room.
+
+        Each message is the `{type, data}` object the websocket sends plus its `count`.
+        """
+        messages = [message.serialize() for message in self._drain(lambda _: True)]
+        with self._lock:
+            dropped, self._dropped = self._dropped, 0
+        return messages, dropped
+
+    def clear(self) -> None:
+        """Drop every held message, so none leaks into the next user's session."""
+        self._drain(lambda _: True)
+        with self._lock:
+            self._dropped = 0
+
+    @staticmethod
+    def _is_user_warning(message: HeldMessage) -> bool:
+        return (
+            message.payload['type'] == WSMessageType.USER_MESSAGE and
+            message.payload['data']['verbosity'] == 'warning'
+        )
+
+    def consume_warnings(self) -> list[str]:
+        """Drain the held user warnings as rendered text, once per time each was sent."""
+        return [
+            message.text
+            for message in self._drain(self._is_user_warning)
+            for _ in range(message.count)
+        ]
 
     def add_missing_key_message(
             self,
@@ -348,12 +558,20 @@ class MessagesAggregator:
         self.add_message(message_type=WSMessageType.MISSING_API_KEY, data=data)
 
     def consume_errors(self) -> list[str]:
-        """Drain the pending errors as rendered text."""
-        return [message.text for message in self._drain(self.errors)]
+        """Drain every held message but the user warnings as text, once per time each was
+        sent: the rendered sentence of a user error, the serialized payload of the rest."""
+        return [message.text for message in self._consume_non_warnings()]
 
     def consume_error_payloads(self) -> list[dict[str, Any]]:
-        """Drain the pending errors as the `{type, data}` objects the websocket sends."""
-        return [message.payload for message in self._drain(self.errors)]
+        """Like consume_errors, as the `{type, data}` objects the websocket sends."""
+        return [message.payload for message in self._consume_non_warnings()]
+
+    def _consume_non_warnings(self) -> list[HeldMessage]:
+        return [
+            message
+            for message in self._drain(lambda message: not self._is_user_warning(message))
+            for _ in range(message.count)
+        ]
 
     @staticmethod
     def how_many_events_per_ws(total_events: int) -> int:
