@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -13,6 +14,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import LocalDbProblem, UnknownAssetSeen
 from rotkehlchen.utils.snapshots import get_main_currency_price
 
 if TYPE_CHECKING:
@@ -55,11 +57,13 @@ class DBSnapshot:
                 self.msg_aggregator.add_error(
                     f'Failed to include balance for asset {data[2]}. Verify that the '
                     f'asset is in your list of known assets. Skipping this entry. {e!s}',
+                    classification=UnknownAssetSeen(identifier=e.identifier),
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Failed to read location {data[0]} during balances retrieval.'
                     f'Skipping. {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.BALANCE_SNAPSHOT),
                 )
         return balances_data
 

@@ -144,7 +144,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
     # the assets that can't be mapped to a known asset
     websocket_connection.wait_until_messages_num(num=20, timeout=10)
     non_status_messages = [msg for msg in websocket_connection.messages if msg['type'] != 'history_events_status']  # noqa: E501
-    # poloniex assets that can't be mapped produce unknown-asset messages
+    # poloniex and kraken assets that can't be mapped produce unknown-asset messages
     assert sorted(
         (msg['data']['identifier'], msg['data']['details'])
         for msg in non_status_messages if msg['type'] == 'exchange_unknown_asset'
@@ -155,14 +155,10 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
         ('IDONTEXIST', 'asset movement'),
         ('NOTAREALASSET', 'asset movement'),
         ('IDONTEXIST', 'asset movement'),
+        ('IDONTEXISTEITHER', 'ledger event'),
+        ('IDONTEXISTEITHER', 'ledger event'),
     ])
-    # kraken ledger entries with unknown assets remain legacy error messages
-    assert sorted(
-        msg['data']['value'] for msg in non_status_messages if msg['type'] == 'legacy'
-    ) == sorted([
-        "Failed to read ledger event from kraken {'refid': 'D3', 'time': 1408994442, 'type': 'deposit', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '10', 'fee': '0', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided.",  # noqa: E501
-        "Failed to read ledger event from kraken {'refid': 'W3', 'time': 1408994442, 'type': 'withdrawal', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '-10', 'fee': '0.11', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided.",  # noqa: E501
-    ])
+    assert [msg for msg in non_status_messages if msg['type'] == 'user_message'] == []
 
     response = requests.get(
         api_url_for(

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, get_args
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
@@ -60,6 +61,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -361,6 +363,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing evm transaction from the DB. '
                     f'Skipping it. Error was: {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.TRANSACTION),
                 )
                 continue
 

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
@@ -10,6 +11,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
 from rotkehlchen.types import Location
+from rotkehlchen.user_messages import BadData
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -63,3 +65,29 @@ def test_query_messages(
     data = response.json()
     assert data['message'] == ''
     assert websocket_connection.messages_num() == 9  # no more than the messages found above.
+
+
+def test_polled_user_message_keeps_its_classification(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Without a socket, a user message reaches the messages endpoint as the same object the
+    websocket sends, so the frontend can still group it by key and subject."""
+    rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.add_error(
+        msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
+        classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
+        subject=Location.KUCOIN,
+    )
+    result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'messagesresource'),
+    ))
+    assert result['warnings'] == []
+    assert result['errors'] == [{
+        'type': 'user_message',
+        'data': {
+            'verbosity': 'error',
+            'value': msg,
+            'key': 'bad_data',
+            'subject': 'kucoin',
+            'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+        },
+    }]

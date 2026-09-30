@@ -1,9 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.exchanges.coinbase import ECDSA_KEY_RE
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import Location
+from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
 if TYPE_CHECKING:
@@ -45,7 +47,10 @@ def data_migration_22(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 log.error(f'Failed to remove legacy coinbase credentials for {cred.name}: {msg}')
 
         if not success:
-            rotki.msg_aggregator.add_error('Failed to remove legacy coinbase credentials. See logs for details.')  # noqa: E501
+            rotki.msg_aggregator.add_error(
+                'Failed to remove legacy coinbase credentials. See logs for details.',
+                classification=LocalDbProblem(entry=UserMessageEntry.EXCHANGE_CREDENTIALS),
+            )
 
     @progress_step(description='Purging eth validators data cache')
     def _purge_eth_validators_data_cache(rotki: Rotkehlchen) -> None:

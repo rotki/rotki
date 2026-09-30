@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
@@ -30,6 +31,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, ExchangeAuthCredentials, Timestamp
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -202,9 +204,10 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 amount = deserialize_fval(balance['total_amount'])
             except DeserializationError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Error processing Bitcoin.de {asset} balance entry due to inability to '
                     f'deserialize the amount due to {e!s}. Skipping balance entry',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
 
@@ -279,9 +282,10 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
                     )
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Error processing a Bitcoin.de trade. '
                         'Check logs for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.TRADE, error=msg),
                     )
                     log.error('Error processing a Bitcoin.de trade', trade=tx, error=msg)
 
