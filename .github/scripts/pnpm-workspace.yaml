@@ -6,3 +6,6 @@ minimumReleaseAge: 10080
 saveExact: true
 strictDepBuilds: true
 trustPolicy: no-downgrade
+minimumReleaseAgeExclude:
+  # Renovate security update: js-yaml@5.4.1
+  - js-yaml@5.4.1

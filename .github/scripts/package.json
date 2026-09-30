@@ -8,6 +8,6 @@
   "packageManager": "pnpm@12.2.1+sha512.f55ca68aacb9eb5ab69c66f828a98af89a32286703aef1f8da131ca7eab4d677f34bfa85e186467a919c0799df8b6f4aa240f7dc2919b33b3273190104162616",
   "dependencies": {
     "consola": "3.4.2",
-    "js-yaml": "5.3.0"
+    "js-yaml": "5.4.1"
   }
 }
