@@ -24,6 +24,7 @@ export const SocketMessageType = {
   EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
   EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
   GNOSISPAY_SESSIONKEY_EXPIRED: 'gnosispay_sessionkey_expired',
+  HISTORICAL_BALANCE_PROCESSING_COMPLETED: 'historical_balance_processing_completed',
   HISTORY_EVENTS_STATUS: 'history_events_status',
   INTERNAL_TX_FIXED: 'internal_tx_fixed',
   LEGACY: 'legacy',

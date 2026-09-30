@@ -25,7 +25,6 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   const baselineTotal = ref<number>(0);
   /** The last summary refresh failed, so the counts are the previous ones and a 0 is not all clear. */
   const summaryFailed = ref<boolean>(false);
-  const historicalBalanceProcessingCompleted = ref<number>(0);
 
   /** Issues awaiting the user: open + needs-attention. Auto-remediating issues
    * are in progress and need no action, so they are intentionally excluded. */
@@ -42,10 +41,6 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     set(summaryFailed, true);
   }
 
-  function notifyHistoricalBalanceProcessingCompleted(): void {
-    set(historicalBalanceProcessingCompleted, get(historicalBalanceProcessingCompleted) + 1);
-  }
-
   /** Removes the pinned-rail copy of the inbox. Called when the dedicated
    * data-issues page is shown, so the same list is not displayed twice.
    * Only the data-issues tab is removed; unrelated pinned panels are left alone. */
@@ -58,9 +53,7 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     baselineTotal,
     counts,
     dismissInlinePanels,
-    historicalBalanceProcessingCompleted,
     markSummaryFailed,
-    notifyHistoricalBalanceProcessingCompleted,
     setSummary,
     summaryFailed,
   };

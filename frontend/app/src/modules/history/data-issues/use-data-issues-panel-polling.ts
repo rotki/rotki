@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue';
 import { startPromise } from '@shared/utils';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 /** How often the panel re-reads the list while auto-remediation is running. */
@@ -22,7 +22,7 @@ export function useDataIssuesPanelPolling(
   reload: () => Promise<void>,
 ): void {
   const { syncCompleted } = useSyncCompleted();
-  const { historicalBalanceProcessingCompleted } = storeToRefs(useDataIssuesInboxStore());
+  const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { pause, resume } = useIntervalFn(() => {
     startPromise(reload());
   }, POLL_INTERVAL, { immediate: false });

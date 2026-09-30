@@ -278,7 +278,13 @@ def test_process_historical_balances_clears_stale_marker(
         ).fetchone() is not None
 
     time.sleep(0.01)
-    process_historical_balances(database, messages_aggregator)
+    with patch.object(messages_aggregator, 'add_message') as add_message:
+        process_historical_balances(database, messages_aggregator)
+
+    add_message.assert_any_call(
+        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+        data={},
+    )
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -2728,3 +2734,16 @@ def test_bitcoin_transfer_updates_sender_and_receiver_buckets(
             (2000, A_BTC.identifier, change, '3'),  # credited, not lost
             (2000, A_BTC.identifier, sender, '7'),
         ]
+
+
+def test_empty_historical_balance_processing_notifies_completion(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    with patch.object(messages_aggregator, 'add_message') as add_message:
+        assert process_historical_balances(database, messages_aggregator) is True
+
+    add_message.assert_called_once_with(
+        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+        data={},
+    )
