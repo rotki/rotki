@@ -118,7 +118,6 @@ class QueryEnd(NamedTuple):
     """Where a transaction sync stops, resolved once so every address and query kind in
     it resolves its range to the same final block instead of each asking the indexers
     again and possibly getting a different answer."""
-    chain_id: ChainID
     timestamp: Timestamp  # the end every range of the sync is queried up to
     block: int
     failed: frozenset[EvmIndexer]  # indexers that could not resolve the block
@@ -1607,7 +1606,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 f'{from_block} - {to_block}. An indexer is behind on the chain.',
             )
 
-        if query_end is not None:  # who could not resolve the end cannot serve the range
+        # Who could not resolve the end cannot serve a range ending there. This only skips
+        # them for the ranges of this one sync that end on its end block. Earlier chunks and
+        # later syncs, which end at a different timestamp, ask them again.
+        if query_end is not None:
             failed |= query_end.failed
 
         return from_block, to_block, failed
@@ -1624,7 +1626,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """
         block, _, failed = self._resolve_timestamp_range(from_ts=end_ts, to_ts=end_ts)
         log.debug('%s transaction queries up to %s end at block %s', self.chain_name, end_ts, block)  # noqa: E501
-        return QueryEnd(chain_id=self.chain_id, timestamp=end_ts, block=block, failed=failed)
+        return QueryEnd(timestamp=end_ts, block=block, failed=failed)
 
     @contextmanager
     def block_range_skipping_stale_indexers(

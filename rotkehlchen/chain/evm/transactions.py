@@ -79,7 +79,7 @@ MIN_SPLITTABLE_QUERY_RANGE: Final = 3600
 RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
 # Seconds the end of a transaction sync is kept behind now. The newest blocks may not be
 # indexed yet, and a range reaching into them would get them recorded as queried.
-DEFAULT_CHAIN_TOP_LAG: Final = 15
+CHAIN_TOP_LAG: Final = 15
 
 
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
@@ -130,11 +130,9 @@ class EvmTransactions(ABC):  # noqa: B024
             self,
             evm_inquirer: EvmNodeInquirer,
             database: DBHandler,
-            chain_top_lag: int = DEFAULT_CHAIN_TOP_LAG,
     ) -> None:
         super().__init__()
         self.evm_inquirer = evm_inquirer
-        self.chain_top_lag = chain_top_lag
         self.database = database
         self.dbranges = DBQueryRanges(self.database)
         self.address_tx_locks: dict[ChecksumEvmAddress, Lock] = defaultdict(Lock)
@@ -314,14 +312,14 @@ class EvmTransactions(ABC):  # noqa: B024
     def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd | None:
         """Return where a sync asked to end at end_ts stops, or None if it cannot tell.
 
-        The end is kept chain_top_lag seconds behind now and resolved to a block once, so
+        The end is kept CHAIN_TOP_LAG seconds behind now and resolved to a block once, so
         every address and query kind of the sync stops at the same block.
 
         With no block for the end nothing is queried, since none of the ranges could be.
         """
         try:
             return self.evm_inquirer.resolve_query_end(
-                end_ts=Timestamp(min(end_ts, ts_now() - self.chain_top_lag)),
+                end_ts=Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG)),
             )
         except RemoteError as e:  # includes NoAvailableIndexers
             log.warning(
