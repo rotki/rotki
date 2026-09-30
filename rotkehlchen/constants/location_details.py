@@ -99,6 +99,7 @@ LOCATION_DETAILS: dict = {
         'label': 'CoinEx',
         'image': 'coinex.svg',
     },
+    Location.BITVAVO: {'image': 'bitvavo.svg'},
     Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
     Location.BITCOIN: {'image': 'bitcoin.svg'},
     Location.BITCOIN_CASH: {
