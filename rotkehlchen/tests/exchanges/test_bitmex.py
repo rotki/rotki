@@ -13,6 +13,7 @@ from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.tests.utils.messages import consume_errors_and_unknown_assets
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -139,6 +140,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) 
             input_str: str,
             expected_warnings_num: int,
             expected_errors_num: int,
+            unknown_assets: tuple[str, ...] = (),
     ) -> None:
         def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
@@ -149,12 +151,13 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) 
                 end_ts=now,
             )
 
+        errors, unknown = consume_errors_and_unknown_assets(sandbox_bitmex.msg_aggregator)
+        warnings = sandbox_bitmex.msg_aggregator.consume_warnings()
+        assert unknown == list(unknown_assets)
         if expected_warnings_num == 0 and expected_errors_num == 0:
             assert len(movements) == 1 if '"fee": null' in input_str else 2
         else:
             assert len(movements) == 0
-            errors = sandbox_bitmex.msg_aggregator.consume_errors()
-            warnings = sandbox_bitmex.msg_aggregator.consume_warnings()
             assert len(errors) == expected_errors_num
             assert len(warnings) == expected_warnings_num
 
@@ -168,7 +171,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) 
 
     # invalid asset
     given_input = original_input.replace('"XBt"', '"XYX"')
-    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=0)
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=0, unknown_assets=('XYX',))  # noqa: E501
 
     # invalid amount
     given_input = original_input.replace('16960386', 'null')

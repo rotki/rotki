@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -47,6 +48,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -280,8 +282,9 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             )
         except RemoteError as e:
             log.error(f'Failed to query HTX api for deposits and withdrawals due to {e!s}')
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Failed to query {self.name} {query_for}s. Check the logs for details.',
+                NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
             )
             raise
 

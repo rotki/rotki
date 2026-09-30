@@ -24,23 +24,19 @@ def _ws_send_impl(
         to_send_msg: str,
         success_callback: Callable | None = None,
         success_callback_args: dict[str, Any] | None = None,
-        failure_callback: Callable | None = None,
-        failure_callback_args: dict[str, Any] | None = None,
-) -> None:
+) -> bool:
+    """Send a message to one client. Returns whether that client accepted it."""
     try:
         with lock:
             websocket.send(to_send_msg)
     except WebsocketSendError as e:
         log.error(f'Websocket send with message {to_send_msg} failed due to {e!s}')
-
-        if failure_callback:
-            failure_callback_args = {} if failure_callback_args is None else failure_callback_args
-            failure_callback(**failure_callback_args)
-        return
+        return False
 
     if success_callback:  # send success
         success_callback_args = {} if success_callback_args is None else success_callback_args
         success_callback(**success_callback_args)
+    return True
 
 
 class RotkiNotifier:
@@ -121,7 +117,9 @@ class RotkiNotifier:
         """Broadcasts a websocket message
 
         A callback to run on message success and a callback to run on message
-        failure can be optionally provided.
+        failure can be optionally provided. The failure callback runs at most once, and
+        only when no client accepted the message: a client that did would otherwise see
+        it a second time from the polling fallback.
         """
         message_data = process_result({'type': message_type, 'data': to_send_data})
         try:
@@ -141,22 +139,19 @@ class RotkiNotifier:
             ]
 
         to_remove = []
-        spawned_one_broadcast = False
+        delivered = False
         for websocket, ws_lock in subscribers_with_locks:
             if websocket.closed is True:
                 to_remove.append(websocket)
                 continue
 
-            _ws_send_impl(
+            delivered |= _ws_send_impl(
                 websocket=websocket,
                 lock=ws_lock,
                 to_send_msg=message,
                 success_callback=success_callback,
                 success_callback_args=success_callback_args,
-                failure_callback=failure_callback,
-                failure_callback_args=failure_callback_args,
             )
-            spawned_one_broadcast = True
 
         if len(to_remove) != 0:  # remove closed websockets from the list, by identity
             with self.subscribers_lock:  # since a concurrent broadcast/unsubscribe shifts indices
@@ -164,6 +159,6 @@ class RotkiNotifier:
                     self.locks.pop(websocket, None)
                     with suppress(ValueError):  # may have been removed concurrently
                         self.subscribers.remove(websocket)
-        if spawned_one_broadcast is False and failure_callback is not None:
+        if delivered is False and failure_callback is not None:
             failure_callback_args = {} if failure_callback_args is None else failure_callback_args
             failure_callback(**failure_callback_args)

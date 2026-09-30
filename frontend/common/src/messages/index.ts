@@ -17,9 +17,9 @@ export enum Priority {
 export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
   BEACONCHAIN_RATE_LIMITED = 'BEACONCHAIN_RATE_LIMITED',
-  DESERIALIZATION_ERROR = 'DESERIALIZATION_ERROR',
   MONERIUM_AUTH = 'MONERIUM_AUTH',
   ORACLE_PENALIZED = 'ORACLE_PENALIZED',
+  USER_MESSAGE = 'USER_MESSAGE',
 }
 
 /**
@@ -89,6 +89,8 @@ export interface NotificationPayload extends NotificationBase {
    */
   readonly display?: false;
   readonly duration?: number;
+  /** When it happened, for a notification about something that happened before it arrived. */
+  readonly date?: Date;
 }
 
 export interface NotificationData extends NotificationBase {

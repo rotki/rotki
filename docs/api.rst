@@ -7651,7 +7651,9 @@ Querying messages to show to the user
 
 .. http:get:: /api/(version)/messages
 
-   Doing a GET on the messages endpoint will pop all errors and warnings from the message queue and return them. The message queue is a queue where all errors and warnings that are supposed to be see by the user are saved and are supposed to be popped and read regularly.
+   Doing a GET on the messages endpoint pops and returns every message the backend held because no websocket client received it: the send failed, no client was connected, or the client disconnected before receiving it. A client should read it whenever it connects and while it is disconnected.
+
+   How a message is held depends on its type. Progress and status messages are dropped, since they only mean something to a connected client. A message that reports something that happened once, such as ``new_token_detected``, is held in order. A message that reports a state, such as ``premium_status_update`` or ``refresh_balances`` for one chain, is held only in its latest form. A failure that tends to repeat, such as ``oracle_penalized`` or a ``user_message``, is held once per distinct message, with a count of how many times it was sent. User messages are held apart from the other repeating failures, since their text varies, except for rejected credentials (``key`` ``auth``), which are held like a state. Each of these four stores is bounded (500 events, 200 states, 200 repeating failures and 200 user messages) and drops its oldest entry when full.
 
 
    **Example Request**:
@@ -7670,14 +7672,36 @@ Querying messages to show to the user
 
       {
           "result": {
-              "errors": ["Something bad happened", "Another bad thing happened"],
-              "warnings": ["An asset could not be queried", "Can not reach kraken"]
+              "messages": [
+                  {
+                      "type": "user_message",
+                      "data": {
+                          "verbosity": "error",
+                          "value": "Failed to deserialize a kucoin balance. Ignoring it.",
+                          "key": "bad_data",
+                          "subject": "kucoin",
+                          "fields": {"record": "balance", "error": "Missing key: amount"}
+                      },
+                      "count": 3,
+                      "last_sent": 1790773550
+                  },
+                  {"type": "balance_snapshot_error", "data": {"location": "kraken", "error": "Could not reach kraken"}, "count": 1, "last_sent": 1790773560},
+                  {
+                      "type": "user_message",
+                      "data": {"verbosity": "warning", "value": "Tag foo with invalid color code found in the DB. Skipping tag", "key": "local_db", "subject": null, "fields": {"entry": "tag"}},
+                      "count": 1,
+                      "last_sent": 1790773570
+                  }
+              ],
+              "dropped": 0
           },
           "message": ""
       }
 
-   :resjson list[string] errors: A list of strings denoting errors that need to be shown to the user.
-   :resjson list[string] warnings: A list of strings denoting warnings that need to be shown to the user.
+   :resjson list[object] messages: The held messages, ordered by when each was last sent. Each entry is a message in the same ``{"type": ..., "data": ...}`` shape the websocket sends, plus ``count``, how many times it was sent while held, and ``last_sent``, the timestamp in seconds of the last time it was sent.
+   :resjson int dropped: How many messages were dropped to keep the stores within their bounds since the last read. Each dropped message is written to the backend log.
+
+   A ``user_message`` message carries ``verbosity`` (``"error"`` or ``"warning"``) and ``value``, the rendered text. It also carries ``key`` (why it happened, e.g. ``"bad_data"``, ``"network"``) and ``fields`` (the data specific to that key), which every message has, and ``subject`` (the location it happened to, e.g. ``"kucoin"``), which is ``null`` for a message about no single location.
 
    :statuscode 200: Messages popped and read successfully.
    :statuscode 500: Internal rotki error.

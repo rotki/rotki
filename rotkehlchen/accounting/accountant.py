@@ -8,6 +8,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry, UserMessageRecord
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.reports import DBAccountingReports
@@ -18,6 +19,12 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
+from rotkehlchen.user_messages import (
+    LocalDbProblem,
+    MissingPrice as MissingPriceMessage,
+    NetworkFailure,
+    UnknownAssetSeen,
+)
 from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
 
 if TYPE_CHECKING:
@@ -29,7 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.premium.premium import Premium
-    from rotkehlchen.user_messages import MessagesAggregator
+    from rotkehlchen.user_messages import MessageClassification, MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -96,6 +103,7 @@ class Accountant:
             events: Sequence[AccountingEventMixin],
             count: int,
             reason: str,
+            classification: MessageClassification,
     ) -> int:
         event = events[count]
         ts = event.get_timestamp()
@@ -105,6 +113,7 @@ class Accountant:
             f'{self.csvexporter.timestamp_to_date(ts)} '
             f'during history processing due to {reason}: '
             f'{exception!s}. Check the logs for more details',
+            classification=classification,
         )
         log.error(
             f'Skipping event with id {identifier}  during history processing due to '
@@ -186,6 +195,10 @@ class Accountant:
                     events=events,
                     count=count,
                     reason='not being able to find price for an unsupported asset',
+                    classification=MissingPriceMessage(
+                        asset=e.asset_name,
+                        timestamp=events[count].get_timestamp(),
+                    ),
                 )
                 continue
             except NoPriceForGivenTimestamp as e:
@@ -204,6 +217,10 @@ class Accountant:
                     events=events,
                     count=count,
                     reason='inability to reach an external service at that point in time',
+                    classification=NetworkFailure(
+                        record=UserMessageRecord.HISTORY_EVENT,
+                        error=str(e),
+                    ),
                 )
                 continue
             except AccountingError as e:
@@ -295,12 +312,14 @@ class Accountant:
             self.msg_aggregator.add_warning(
                 f'At history processing found event with unknown asset {e.identifier}. '
                 f'Ignoring the event.',
+                classification=UnknownAssetSeen(identifier=e.identifier),
             )
             return 1, prev_time
         except UnprocessableTradePair as e:
             self.msg_aggregator.add_error(
                 f'At history processing found event with unprocessable trade pair {e!s} '
                 f'Ignoring the event.',
+                classification=LocalDbProblem(entry=UserMessageEntry.HISTORY_EVENT),
             )
             return 1, prev_time
 

@@ -1,9 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.errors.misc import AddressNotSupported
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import AddressbookEntry
+from rotkehlchen.user_messages import LocalDbProblem
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBConnection
@@ -35,7 +37,11 @@ def migrate_addressbook_none_to_ecosystem_key(
             except AddressNotSupported as e:
                 log.critical(e)  # log critical so it is kept in the log file
                 if msg_aggregator is not None:
-                    msg_aggregator.add_error(f"Address {address} with name {name} could not be moved while updating the addressbook. Please save it if it's important for you.")  # noqa: E501
+                    msg_aggregator.add_error(
+                        f'Address {address} with name {name} could not be moved while updating '
+                        f"the addressbook. Please save it if it's important for you.",
+                        classification=LocalDbProblem(entry=UserMessageEntry.ADDRESSBOOK_ENTRY),
+                    )
 
     if len(inserts) == 0:
         return

@@ -7,6 +7,25 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Classified User Messages
+------------------------
+
+* **Renamed Message**: ``legacy`` is now ``user_message``. Consumers matching the old type name must migrate.
+* **Changed Message**: ``user_message``
+
+  - Besides ``verbosity`` and ``value``, ``data`` now always carries ``key`` and ``fields``, and carries ``subject``, which is ``null`` for a message about no single location.
+  - ``key`` is why the message happened, one of ``bad_data``, ``network``, ``auth``, ``unknown_asset``, ``local_db``, ``price``, ``unsupported`` or ``internal``.
+  - ``fields`` holds the unrendered data of that family, e.g. ``record`` and ``error`` for ``bad_data``. ``value`` keeps the rendered sentence.
+
+* **Changed Endpoint**: ``GET /api/(version)/messages``
+
+  - The response is now ``{"messages": [...], "dropped": int}`` instead of ``{"errors": [...], "warnings": [...]}``. Each entry of ``messages`` is the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string, plus ``count``, how many times it was sent while held, and ``last_sent``, the timestamp of its last send. ``dropped`` counts the messages discarded to stay within bounds, each of which is written to the backend log.
+  - Every message type that could not be delivered over a websocket is now held here, whether the send failed, no client was connected, or the client disconnected before receiving it. Previously each of those three paths applied a different policy. Progress and status types are dropped, except a ``progress_updates`` message carrying a CSV import result. A state message is held only in its latest form per key (e.g. ``refresh_balances`` per chain), and a repeating failure once per distinct message with a count.
+
+* **Changed Message**: ``exchange_unknown_asset``
+
+  - Now also sent for unknown assets in bit2me balances, deposits/withdrawals and trades, cryptocom deposits/withdrawals and trades, and kraken ledger events. These previously arrived as ``user_message`` errors.
+
 No Available Indexers Websocket Message
 ---------------------------------------
 

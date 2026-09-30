@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :feature:`-` Backend errors and warnings are now grouped in the notification area by what went wrong and where, for example every unreadable kucoin balance in one entry with a count, and titled accordingly. Rejected API keys now pop up with a link to the keys that need replacing, and rejected premium keys raise the premium row in the action center.
+* :bug:`-` rotki now reconnects to the backend after the backend closes a connection that fell too far behind. Before, the window stayed disconnected for the rest of the session and missed live progress.
+* :feature:`-` Messages the backend sends while no rotki window is connected, such as the result of a CSV import or a newly detected token, now show up once a window connects, dated when they happened. Before, most of them were lost. A failure that keeps repeating is kept once with a count, so it can no longer push out the rest.
 * :bug:`-` Deleting an xpub now only removes that xpub from the accounts table. Before, the same xpub added with another derivation path, and the addresses derived from it, also disappeared until the next reload.
 * :bug:`-` Deleting a Bitcoin address tracked on both Bitcoin and Bitcoin Cash from every chain at once now works. Before, the delete failed and the address stayed on both chains.
 * :bug:`-` Deleting an ETH staking validator that the backend fails to remove now keeps it in the table. Before, it disappeared until the next reload although it was still tracked.

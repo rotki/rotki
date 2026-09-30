@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 import requests
 from requests import Response
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
@@ -42,6 +43,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -681,7 +683,11 @@ class EtherscanLikeApi(ABC):
                         parent_tx_hash if parent_tx_hash is not None
                         else entry.get('hash') or entry.get('transactionHash')
                     )
-                    self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction {tx_hash} on {chain_id.to_name()} for {account}')  # noqa: E501
+                    self.msg_aggregator.add_warning(
+                        f'{e!s}. Skipping transaction {tx_hash} on {chain_id.to_name()} for {account}',  # noqa: E501
+                        classification=BadData(record=UserMessageRecord.TRANSACTION, error=str(e)),
+                        subject=Location.from_chain_id(chain_id),
+                    )
                     continue
 
                 timestamp = deserialize_timestamp(entry['timeStamp'])

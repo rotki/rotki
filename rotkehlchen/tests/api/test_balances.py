@@ -237,8 +237,15 @@ def test_query_all_balances(
             async_query=async_query,
         )
 
-    errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 0
+    # the mocked exchange balances hold assets rotki can't map, and nothing else goes wrong
+    assert sorted(
+        (error['type'], error['data'].get('location'), error['data'].get('identifier'))
+        for error in rotki.msg_aggregator.consume_error_payloads()
+    ) == [
+        ('exchange_unknown_asset', 'binance', 'IDONTEXIST'),
+        ('exchange_unknown_asset', 'poloniex', 'CNOTE'),
+        ('exchange_unknown_asset', 'poloniex', 'IDONTEXIST'),
+    ]
     assert_all_balances(
         result=outcome,
         db=rotki.data.db,
@@ -729,10 +736,13 @@ def test_balance_snapshot_error_message(
     assert websocket_connection.messages_num() == 2
     msg = websocket_connection.pop_message()
     assert msg == {
-        'type': 'legacy',
+        'type': 'user_message',
         'data': {
             'value': 'binance account API request failed. Could not reach binance due to Made a booboo',  # noqa: E501
             'verbosity': 'error',
+            'key': 'network',
+            'subject': 'binance',
+            'fields': {'record': 'balance', 'error': 'Made a booboo'},
         },
     }
     assert websocket_connection.messages_num() == 1

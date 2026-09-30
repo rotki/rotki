@@ -87,6 +87,8 @@ class AsgiWebsocketSubscriber:
         self.sid = sid
         self.queue: asyncio.Queue[str] = asyncio.Queue(maxsize=WS_QUEUE_MAXSIZE)
         self.closed = False
+        # closed because the session it was accepted under ended, see take_undelivered
+        self.revoked = False
         # set by _serve_websocket; invoked on the event-loop thread with a close code,
         # to tear this connection down
         self.close_callback: Callable[[int], None] | None = None
@@ -119,6 +121,7 @@ class AsgiWebsocketSubscriber:
         event loop gets to the close, so a revoked client sees nothing more from the
         moment the caller returns.
         """
+        self.revoked = code == WS_CLOSE_POLICY_VIOLATION
         self.closed = True
         if self.close_callback is None:
             return
@@ -152,6 +155,19 @@ class AsgiWebsocketSubscriber:
                 pending.extend(self._overflowed)
                 self._overflowed.clear()
                 return pending
+
+    def take_undelivered(self) -> list[str]:
+        """Drain the messages this client never received, for the notifier to hold.
+
+        A connection revoked because its session ended gives nothing back: its messages
+        belong to that session, and logout clears what is held before the revoked socket
+        finishes tearing down, so handing them back would show them to the next session.
+        """
+        pending = self.drain_pending()
+        if self.revoked:
+            log.debug('Dropping %d undelivered messages of a revoked websocket', len(pending))
+            return []
+        return pending
 
 
 async def _serve_websocket(
@@ -207,10 +223,9 @@ async def _serve_websocket(
         sender_task.cancel()
         with suppress(BaseException):  # swallow CancelledError and any send failure
             await sender_task
-        # give messages the client never received back to the notifier, so
-        # error-class ones reach the /messages polling fallback instead of
-        # vanishing with the queue
-        notifier.requeue_undelivered(subscriber.drain_pending())
+        # give messages the client never received back to the notifier, so they
+        # reach the /messages polling fallback instead of vanishing with the queue
+        notifier.requeue_undelivered(subscriber.take_undelivered())
 
 
 async def _handle_lifespan(receive: Receive, send: Send) -> None:

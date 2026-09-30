@@ -1,5 +1,6 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import { createMock } from '@test/utils/create-mock';
+import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -14,6 +15,7 @@ import '@test/i18n';
 const { mockServerUrl } = vi.hoisted(() => ({ mockServerUrl: { value: 'http://localhost:4242' } }));
 
 const mockHandleMessage = vi.fn();
+const mockConsume = vi.fn<() => Promise<void>>();
 const mockDelay = vi.fn();
 const mockLoggerDebug = vi.fn();
 const mockLoggerError = vi.fn();
@@ -27,7 +29,8 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
 }));
 
 vi.mock('@/modules/core/messaging', () => ({
-  useMessageHandling: vi.fn((): { handleMessage: typeof mockHandleMessage } => ({
+  useMessageHandling: vi.fn((): { consume: typeof mockConsume; handleMessage: typeof mockHandleMessage } => ({
+    consume: mockConsume,
     handleMessage: mockHandleMessage,
   })),
 }));
@@ -52,7 +55,7 @@ interface MockWebSocketInstance {
   listeners: Record<string, EventHandler[]>;
   onerror: (() => void) | null;
   onmessage: ((event: { data: string }) => void) | null;
-  triggerClose: (wasClean: boolean) => void;
+  triggerClose: (wasClean: boolean, code?: number) => void;
   triggerError: () => void;
   triggerOpen: () => void;
 }
@@ -72,9 +75,9 @@ function createMockWebSocket(): MockWebSocketInstance {
     listeners,
     onerror: null,
     onmessage: null,
-    triggerClose(wasClean: boolean): void {
+    triggerClose(wasClean: boolean, code = 1000): void {
       for (const handler of listeners.close ?? [])
-        handler({ wasClean });
+        handler({ code, wasClean });
     },
     triggerError(): void {
       if (ws.onerror)
@@ -119,6 +122,7 @@ describe('useWebsocketConnection', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     mockDelay.mockResolvedValue(undefined);
+    mockConsume.mockResolvedValue(undefined);
     latestMockWs = null;
     latestWsUrl = undefined;
     mockServerUrl.value = 'http://localhost:4242';
@@ -347,6 +351,59 @@ describe('useWebsocketConnection', () => {
       latestMockWs?.triggerClose(true);
 
       expect(mockDelay).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should reconnect after a clean close that asks the client to try again later', async () => {
+    const { useWebsocketConnection } = await loadComposable();
+
+    await scope.run(async () => {
+      const { connect } = useWebsocketConnection();
+
+      const connectPromise = connect();
+      latestMockWs?.triggerOpen();
+      await connectPromise;
+
+      latestMockWs?.triggerClose(true, 1013);
+
+      expect(mockDelay).toHaveBeenCalledWith(2000);
+    });
+  });
+
+  it('should not reconnect after a clean close for a session that is no longer valid', async () => {
+    const { useWebsocketConnection } = await loadComposable();
+
+    await scope.run(async () => {
+      const { connect } = useWebsocketConnection();
+
+      const connectPromise = connect();
+      latestMockWs?.triggerOpen();
+      await connectPromise;
+
+      latestMockWs?.triggerClose(true, 1008);
+
+      expect(mockDelay).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should drain the held messages every time the socket opens', async () => {
+    const { useWebsocketConnection } = await loadComposable();
+
+    await scope.run(async () => {
+      const { connect } = useWebsocketConnection();
+
+      const firstConnect = connect();
+      expect(mockConsume).not.toHaveBeenCalled();
+      latestMockWs?.triggerOpen();
+      await firstConnect;
+      expect(mockConsume).toHaveBeenCalledTimes(1);
+
+      latestMockWs?.triggerClose(false);
+      await flushPromises();
+      latestMockWs?.triggerOpen();
+      await flushPromises();
+
+      expect(mockConsume).toHaveBeenCalledTimes(2);
     });
   });
 });

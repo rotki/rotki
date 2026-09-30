@@ -8,6 +8,21 @@ import { useMessageHandling } from '@/modules/core/messaging';
 /** Delay in milliseconds before attempting to reconnect to websocket */
 const RECONNECT_DELAY_MS = 2000;
 
+/**
+ * The code the backend closes with when this client fell too far behind to keep up.
+ *
+ * @remarks
+ * The close is clean, since the backend completes the closing handshake, but it asks the client to
+ * come back rather than to stay away, unlike the policy-violation close sent to a logged out
+ * session.
+ */
+const CLOSE_TRY_AGAIN_LATER = 1013;
+
+/** Whether a closed connection should be reopened. */
+function shouldReconnect(event: CloseEvent): boolean {
+  return !event.wasClean || event.code === CLOSE_TRY_AGAIN_LATER;
+}
+
 interface UseWebsocketConnectionInternalReturn {
   connect: () => Promise<boolean>;
   connected: Readonly<Ref<boolean>>;
@@ -59,14 +74,14 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
   /** When false, connection attempts are blocked (e.g., backend failed to start) */
   const connectionEnabled = shallowRef<boolean>(true);
 
-  const { handleMessage } = useMessageHandling();
+  const { consume, handleMessage } = useMessageHandling();
 
   const reconnect = async (): Promise<void> => {
     if (!get(connectionEnabled)) {
       logger.debug('Websocket reconnection skipped - connection disabled');
       return;
     }
-    logger.debug(`Close was not clean, waiting ${RECONNECT_DELAY_MS}ms before reconnect`);
+    logger.debug(`Waiting ${RECONNECT_DELAY_MS}ms before reconnect`);
     await delay(RECONNECT_DELAY_MS);
     try {
       await connect();
@@ -77,6 +92,14 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
     }
   };
 
+  /**
+   * Open the websocket, unless it is already open or connections are disabled.
+   *
+   * @remarks
+   * Every open also drains what the backend held while no client was listening. The periodic
+   * poll only runs while the socket is down, so without this a backlog built up in that window
+   * would wait for the next disconnect.
+   */
   async function connect(): Promise<boolean> {
     if (!get(connectionEnabled)) {
       logger.debug('Websocket connection skipped - connection disabled');
@@ -99,7 +122,7 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
         onClose(event: CloseEvent): void {
           logger.debug('websocket connection closed');
           set(connected, false);
-          if (!event.wasClean)
+          if (shouldReconnect(event))
             startPromise(reconnect());
         },
         onError(): void {
@@ -114,6 +137,7 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
           logger.debug('websocket connected');
           set(connected, true);
           resolve(true);
+          startPromise(consume());
         },
       });
       set(connection, ws);

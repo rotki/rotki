@@ -12,6 +12,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.user_messages import MissingPrice
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
@@ -145,5 +146,6 @@ def get_main_currency_price(
             f'Could not find {main_currency.symbol} price for date {timestamp_to_date(timestamp)}. '  # noqa: E501
             f'Using USD for export. Please add manual price '
             f'from USD to your main currency {main_currency}',
+            classification=MissingPrice(asset=main_currency.identifier, timestamp=timestamp),
         )
     return main_currency, main_currency_price

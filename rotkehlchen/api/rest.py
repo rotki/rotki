@@ -1823,9 +1823,8 @@ class RestAPI:
         )
 
     def get_messages(self) -> Response:
-        warnings = self.rotkehlchen.msg_aggregator.consume_warnings()
-        errors = self.rotkehlchen.msg_aggregator.consume_errors()
-        result = {'warnings': warnings, 'errors': errors}
+        messages, dropped = self.rotkehlchen.msg_aggregator.consume_held()
+        result = {'messages': messages, 'dropped': dropped}
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @async_api_call()

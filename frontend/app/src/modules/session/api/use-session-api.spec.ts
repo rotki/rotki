@@ -11,13 +11,16 @@ describe('composables/api/session/index', () => {
   });
 
   describe('consumeMessages', () => {
-    it('should fetch and returns messages', async () => {
+    it('should fetch the held messages as camelCased websocket-shaped objects with their count', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
             result: {
-              errors: ['Error 1', 'Error 2'],
-              warnings: ['Warning 1'],
+              dropped: 2,
+              messages: [
+                { type: 'user_message', data: { verbosity: 'error', value: 'Error 1', key: 'local_db', subject: null, fields: { entry: 'tag' } }, count: 3, last_sent: 1790773550 },
+                { type: 'balance_snapshot_error', data: { location: 'kraken', error_message: 'oops' }, count: 1, last_sent: 1790773560 },
+              ],
             },
             message: '',
           })),
@@ -26,8 +29,13 @@ describe('composables/api/session/index', () => {
       const { consumeMessages } = useSessionApi();
       const result = await consumeMessages();
 
-      expect(result.errors).toEqual(['Error 1', 'Error 2']);
-      expect(result.warnings).toEqual(['Warning 1']);
+      expect(result).toEqual({
+        dropped: 2,
+        messages: [
+          { type: 'user_message', data: { verbosity: 'error', value: 'Error 1', key: 'local_db', subject: null, fields: { entry: 'tag' } }, count: 3, lastSent: 1790773550 },
+          { type: 'balance_snapshot_error', data: { location: 'kraken', errorMessage: 'oops' }, count: 1, lastSent: 1790773560 },
+        ],
+      });
     });
 
     it('should handle empty messages', async () => {
@@ -35,8 +43,8 @@ describe('composables/api/session/index', () => {
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
             result: {
-              errors: [],
-              warnings: [],
+              dropped: 0,
+              messages: [],
             },
             message: '',
           })),
@@ -45,8 +53,7 @@ describe('composables/api/session/index', () => {
       const { consumeMessages } = useSessionApi();
       const result = await consumeMessages();
 
-      expect(result.errors).toEqual([]);
-      expect(result.warnings).toEqual([]);
+      expect(result).toEqual({ dropped: 0, messages: [] });
     });
 
     it('should throw error on failure', async () => {
