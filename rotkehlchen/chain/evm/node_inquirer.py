@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar, overload
 
 import requests
 from eth_utils.abi import get_abi_output_types
@@ -113,6 +113,17 @@ DEGRADED_INDEXERS: Final[ContextVar[frozenset[EvmIndexer]]] = ContextVar(
     'evm_degraded_indexers',
     default=frozenset(),
 )
+
+
+class QueryEnd(NamedTuple):
+    """Where a transaction sync stops, resolved once so every address and query kind in
+    it resolves its range to the same final block instead of each asking the indexers
+    again and possibly getting a different answer."""
+    chain_id: ChainID
+    timestamp: Timestamp  # the end every range of the sync is queried up to
+    block: int
+    failed: frozenset[EvmIndexer]  # indexers that could not resolve the block
+
 
 T = TypeVar('T')
 
@@ -1549,10 +1560,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self,
             from_ts: Timestamp,
             to_ts: Timestamp,
+            query_end: QueryEnd | None = None,
     ) -> tuple[int, int, frozenset[EvmIndexer]]:
-        """Like timestamp_range_to_block_range, also reporting who could not resolve it."""
+        """Like timestamp_range_to_block_range, also reporting who could not resolve it.
+
+        A range ending at the end of the sync query_end belongs to takes its block from it.
+        """
         cache = self.timestamp_to_block_cache[self.chain_id]
-        cached_from, cached_to = cache.get(from_ts), cache.get(to_ts)
+        if query_end is not None and query_end.timestamp != to_ts:
+            query_end = None  # the sync's end only applies to the range that ends on it
+
+        cached_from = cache.get(from_ts)
+        cached_to = query_end.block if query_end is not None else cache.get(to_ts)
         # The block range is cached, so only the first of the three queries an address makes
         # over a range actually resolves it. Remember who failed alongside it, or the
         # internal transaction and token transfer queries would go straight back to the
@@ -1589,12 +1608,30 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 f'{from_block} - {to_block}. An indexer is behind on the chain.',
             )
 
+        if query_end is not None:  # who could not resolve the end cannot serve the range
+            failed |= query_end.failed
+
         return from_block, to_block, failed
+
+    def resolve_query_end(self, end_ts: Timestamp) -> QueryEnd:
+        """Resolve the block a transaction sync ending at end_ts stops at.
+
+        Resolved as a one element range so the block and the indexers that could not
+        resolve it are cached, and syncs ending at the same time do not ask again.
+
+        May raise:
+        - RemoteError if no indexer can resolve the block
+        - NoAvailableIndexers if there are no indexers available
+        """
+        block, _, failed = self._resolve_timestamp_range(from_ts=end_ts, to_ts=end_ts)
+        log.debug('%s transaction queries up to %s end at block %s', self.chain_name, end_ts, block)  # noqa: E501
+        return QueryEnd(chain_id=self.chain_id, timestamp=end_ts, block=block, failed=failed)
 
     @contextmanager
     def block_range_skipping_stale_indexers(
             self,
             period: TimestampOrBlockRange,
+            query_end: QueryEnd | None = None,
     ) -> Iterator[TimestampOrBlockRange]:
         """Convert period to blocks, and inside the body skip indexers that could not.
 
@@ -1612,6 +1649,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         from_block, to_block, failed = self._resolve_timestamp_range(
             from_ts=Timestamp(period.from_value),
             to_ts=Timestamp(period.to_value),
+            query_end=query_end,
         )
         if len(failed) != 0:
             log.debug(

@@ -57,7 +57,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, QueryEnd
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -77,6 +77,9 @@ MIN_SPLITTABLE_QUERY_RANGE: Final = 3600
 # indexers actually cover. An index that lags does so at the head of the chain, so a range
 # ending further back than this is served in full by any indexer that is up at all.
 RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
+# Seconds the end of a transaction sync is kept behind now. The newest blocks may not be
+# indexed yet, and a range reaching into them would get them recorded as queried.
+DEFAULT_CHAIN_TOP_LAG: Final = 15
 
 
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
@@ -127,9 +130,11 @@ class EvmTransactions(ABC):  # noqa: B024
             self,
             evm_inquirer: EvmNodeInquirer,
             database: DBHandler,
+            chain_top_lag: int = DEFAULT_CHAIN_TOP_LAG,
     ) -> None:
         super().__init__()
         self.evm_inquirer = evm_inquirer
+        self.chain_top_lag = chain_top_lag
         self.database = database
         self.dbranges = DBQueryRanges(self.database)
         self.address_tx_locks: dict[ChecksumEvmAddress, Lock] = defaultdict(Lock)
@@ -268,8 +273,12 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            query_end: QueryEnd | None = None,
     ) -> None:
         """Only queries new transactions and adds them to the DB
+
+        query_end is the end of a sync over several addresses this query is part of, so
+        they all stop at the same block. Without it the end is resolved from end_ts.
 
         This is our attempt to identify as many transactions related to the address
         as possible. This unfortunately at the moment depends on etherscan as it's
@@ -277,17 +286,50 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
-        self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
+        if query_end is None and (query_end := self._resolve_query_end(end_ts)) is None:
+            return
+
+        if query_end.timestamp < start_ts:
+            return  # the whole range is too recent to be indexed yet
+
+        self._get_transactions_for_range(
+            address=address,
+            start_ts=start_ts,
+            end_ts=query_end.timestamp,
+            query_end=query_end,
+        )
         self._get_internal_transactions_for_ranges(
             address=address,
             start_ts=start_ts,
-            end_ts=end_ts,
+            end_ts=query_end.timestamp,
+            query_end=query_end,
         )
         self._get_erc20_transfers_for_ranges(
             address=address,
             start_ts=start_ts,
-            end_ts=end_ts,
+            end_ts=query_end.timestamp,
+            query_end=query_end,
         )
+
+    def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd | None:
+        """Return where a sync asked to end at end_ts stops, or None if it cannot tell.
+
+        The end is kept chain_top_lag seconds behind now and resolved to a block once, so
+        every address and query kind of the sync stops at the same block.
+
+        With no block for the end nothing is queried, since none of the ranges could be.
+        """
+        try:
+            return self.evm_inquirer.resolve_query_end(
+                end_ts=Timestamp(min(end_ts, ts_now() - self.chain_top_lag)),
+            )
+        except RemoteError as e:  # includes NoAvailableIndexers
+            log.warning(
+                'Skipping %s transactions query up to %s: could not resolve its end block '
+                'due to %s',
+                self.evm_inquirer.chain_name, end_ts, e,
+            )
+            return None
 
     def query_chain(
             self,
@@ -307,12 +349,15 @@ class EvmTransactions(ABC):  # noqa: B024
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
-        for address in addresses:
-            self.single_address_query_transactions(
-                address=address,
-                start_ts=from_timestamp,
-                end_ts=to_timestamp,
-            )
+        if (query_end := self._resolve_query_end(to_timestamp)) is not None:
+            for address in addresses:
+                self.single_address_query_transactions(
+                    address=address,
+                    start_ts=from_timestamp,
+                    end_ts=query_end.timestamp,
+                    query_end=query_end,
+                )
+
         self.get_chain_specific_multiaddress_data(addresses)
 
     @overload
@@ -323,6 +368,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -335,6 +381,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -347,6 +394,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -358,6 +406,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Helper function to abstract tx querying functionality for different range types
@@ -369,7 +418,10 @@ class EvmTransactions(ABC):  # noqa: B024
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
         # Include a completed earlier split in the first saved batch of this one.
         queried_from_ts = progress_start_ts if progress_start_ts is not None else Timestamp(period.from_value)  # noqa: E501
-        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
+        with self.evm_inquirer.block_range_skipping_stale_indexers(
+                period=period,
+                query_end=query_end,
+        ) as period_as_blocks:
             for new_transactions in self.evm_inquirer.get_transactions(
                     account=address,
                     action='txlist',
@@ -459,6 +511,7 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             replace_existing: bool = False,
+            query_end: QueryEnd | None = None,
     ) -> None:
         """Record the range as queried, clamped to what the indexers were actually asked.
 
@@ -479,11 +532,17 @@ class EvmTransactions(ABC):  # noqa: B024
 
         replace_existing is used when the new covered range cannot join an older saved fragment.
         The replacement happens only after the covered end has been established.
+
+        query_end is the end of the sync the range was queried in. A range ending on it was
+        queried up to its block, so that is the block its coverage is read from.
         """
         covered_end_ts = end_ts
         if end_ts >= ts_now() - RECENT_RANGE_MARGIN:
             try:
-                to_block = self.evm_inquirer.get_blocknumber_by_time(ts=end_ts, closest='before')
+                if query_end is not None and query_end.timestamp == end_ts:
+                    to_block = query_end.block
+                else:
+                    to_block = self.evm_inquirer.get_blocknumber_by_time(ts=end_ts, closest='before')  # noqa: E501
                 covered_end_ts = min(end_ts, self.evm_inquirer.get_block_timestamp(
                     block_number=to_block,
                     full_transactions=False,  # only the timestamp is needed here
@@ -528,6 +587,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            query_end: QueryEnd | None = None,
     ) -> None:
         """Queries etherscan for all evm transactions of address in the given ranges.
 
@@ -554,6 +614,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         ),
                         location_string=location_string,
                         progress_start_ts=progress_start,
+                        query_end=query_end,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -579,6 +640,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
+            query_end=query_end,
         )
 
     @overload
@@ -589,6 +651,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -601,6 +664,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -613,6 +677,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -624,6 +689,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str | None = None,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Query internal txs for a time/block range and persist them incrementally."""
@@ -637,7 +703,10 @@ class EvmTransactions(ABC):  # noqa: B024
         else:
             queried_from_ts = None
 
-        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as period_as_blocks:
+        with self.evm_inquirer.block_range_skipping_stale_indexers(
+                period=period,
+                query_end=query_end,
+        ) as period_as_blocks:
             internal_txs_iterator, indexer_source = self.evm_inquirer.get_transactions_with_source(
                     account=address,
                     period_or_hash=period_as_blocks,
@@ -986,6 +1055,7 @@ class EvmTransactions(ABC):  # noqa: B024
             record_range: bool = True,
             update_ranges: bool | None = None,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
     ) -> bool:
         """Query internal transactions, controlling batch progress and the final mark separately."""  # noqa: E501
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
@@ -1013,6 +1083,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         location_string=location_string,
                         update_ranges=record_range if update_ranges is None else update_ranges,
                         progress_start_ts=progress_start_ts if progress_start_ts is not None else progress_start,  # noqa: E501
+                        query_end=query_end,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -1039,6 +1110,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 location_string=location_string,
                 start_ts=start_ts,
                 end_ts=end_ts,
+                query_end=query_end,
             )
         return True
 
@@ -1047,6 +1119,7 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            query_end: QueryEnd | None = None,
     ) -> None:
         """Queries etherscan for all erc20 transfers of address in the given ranges.
 
@@ -1074,6 +1147,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         ),
                         location_string=location_string,
                         progress_start_ts=progress_start,
+                        query_end=query_end,
                     ),
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
@@ -1099,6 +1173,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
+            query_end=query_end,
         )
 
     @overload
@@ -1109,6 +1184,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[True] = True,
     ) -> list[EVMTxHash]:
         ...
@@ -1121,6 +1197,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: Literal[False] = False,
     ) -> None:
         ...
@@ -1133,6 +1210,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         ...
@@ -1144,6 +1222,7 @@ class EvmTransactions(ABC):  # noqa: B024
             location_string: str,
             update_ranges: bool = True,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
         """Helper function to abstract ERC20 transfer querying functionality for different range types
@@ -1151,7 +1230,10 @@ class EvmTransactions(ABC):  # noqa: B024
         If update_ranges is True, updates the database tracking for this query range.
         Otherwise, data is fetched without updating the query range.
         """  # noqa: E501
-        with self.evm_inquirer.block_range_skipping_stale_indexers(period) as blocks:
+        with self.evm_inquirer.block_range_skipping_stale_indexers(
+                period=period,
+                query_end=query_end,
+        ) as blocks:
             from_block, to_block = blocks.from_value, blocks.to_value
 
             log.debug('Querying erc20 transfers of %s from %s to %s in %s', address, period.from_value, period.to_value, self.evm_inquirer.chain_name)  # noqa: E501
