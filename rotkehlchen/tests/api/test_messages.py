@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import ANY
 
 import pytest
 import requests
@@ -80,14 +81,18 @@ def test_polled_user_message_keeps_its_classification(
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'messagesresource'),
     ))
-    assert result['warnings'] == []
-    assert result['errors'] == [{
-        'type': 'user_message',
-        'data': {
-            'verbosity': 'error',
-            'value': msg,
-            'key': 'bad_data',
-            'subject': 'kucoin',
-            'fields': {'record': 'balance', 'error': 'Missing key: amount'},
-        },
-    }]
+    assert result == {
+        'messages': [{
+            'type': 'user_message',
+            'data': {
+                'verbosity': 'error',
+                'value': msg,
+                'key': 'bad_data',
+                'subject': 'kucoin',
+                'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+            },
+            'count': 1,
+            'last_sent': ANY,
+        }],
+        'dropped': 0,
+    }

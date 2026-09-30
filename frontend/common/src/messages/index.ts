@@ -89,6 +89,8 @@ export interface NotificationPayload extends NotificationBase {
    */
   readonly display?: false;
   readonly duration?: number;
+  /** When it happened, for a notification about something that happened before it arrived. */
+  readonly date?: Date;
 }
 
 export interface NotificationData extends NotificationBase {

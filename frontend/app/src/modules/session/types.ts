@@ -14,16 +14,20 @@ export const PeriodicClientQueryResultSchema = z.object({
 export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResultSchema>;
 
 /**
- * The polling fallback's queue, drained by `GET /messages`.
+ * The messages the backend held while no client received them, drained by `GET /messages`.
  *
  * @remarks
- * Each entry is a `{ type, data }` message in the websocket's shape. Entries are validated one by
- * one where they are dispatched, so a message this build does not know drops alone instead of
- * failing the whole batch.
+ * Each entry is a `{ type, data }` message in the websocket's shape plus `count`, how many times
+ * it was sent while held, and `lastSent`, when it was last sent in seconds. The message itself is
+ * validated where it is dispatched, so one this build does not know drops alone instead of
+ * failing the whole batch. `dropped` is how many the backend discarded to stay within its limits.
  */
 export const MessagesSchema = z.object({
-  errors: z.array(z.unknown()),
-  warnings: z.array(z.unknown()),
+  dropped: z.number().int().nonnegative(),
+  messages: z.array(z.looseObject({
+    count: z.number().int().positive(),
+    lastSent: z.number().int().nonnegative(),
+  })),
 });
 
 export type Messages = z.infer<typeof MessagesSchema>;

@@ -20,15 +20,16 @@ export function createNotification(
   {
     action,
     category = NotificationCategory.DEFAULT,
+    date = new Date(),
     display,
     duration,
     extras,
     group,
     groupCount,
-    message = '',
+    message,
     priority = DEFAULT_PRIORITY,
     severity = Severity.INFO,
-    title = '',
+    title,
   }: SemiPartial<NotificationPayload, 'title' | 'message'> = {
     category: NotificationCategory.DEFAULT,
     display: false,
@@ -40,7 +41,7 @@ export function createNotification(
   return {
     action,
     category,
-    date: new Date(),
+    date,
     display: display ?? displaysFor(priority),
     duration: duration ?? 5000,
     extras,

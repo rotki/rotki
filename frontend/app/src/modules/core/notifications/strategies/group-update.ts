@@ -3,6 +3,12 @@ import type { NotificationStrategy } from './types';
 import { DEFAULT_PRIORITY, displaysFor } from '@/modules/core/notifications/notification-display-policy';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
+/** The later of a row's date and an update's, where an undated update happened now. */
+function laterDate(current: Date, update: Date | undefined): Date {
+  const happened = update ?? new Date();
+  return happened > current ? happened : current;
+}
+
 /**
  * Collapses repeat notifications sharing a group into one row, updated in place.
  *
@@ -10,6 +16,9 @@ import { createNotification } from '@/modules/core/notifications/notification-ut
  * Whether a notification interrupts is the cooldown's decision, never the absence of an existing
  * entry. The notification list starts empty on every login, so a group with no entry yet is not
  * thereby new to the user, and treating it as new would re-interrupt on each login.
+ *
+ * A row never moves back in time: an update dated before the row, such as a repeat the backend
+ * held while no client was connected, keeps the row's date.
  */
 export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownReturn): NotificationStrategy {
   return {
@@ -36,7 +45,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
       }
 
       const existing = notifications[existingIndex];
-      let date = new Date();
+      let date = laterDate(existing.date, payload.date);
       let display = payload.display ?? displaysFor(payload.priority);
 
       if (suppressed) {
@@ -49,6 +58,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
         action: payload.action,
         date,
         display,
+        extras: payload.extras ?? existing.extras,
         groupCount: payload.groupCount,
         message: payload.message,
         priority: payload.priority ?? DEFAULT_PRIORITY,

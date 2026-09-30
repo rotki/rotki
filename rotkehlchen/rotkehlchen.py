@@ -802,9 +802,7 @@ class Rotkehlchen:
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 
-        # Make sure no messages leak to other user sessions
-        self.msg_aggregator.consume_errors()
-        self.msg_aggregator.consume_warnings()
+        self.msg_aggregator.clear()
         PriceHistorian._PriceHistorian__instance = None  # type: ignore  #  has no attribute "_PriceHistorian__instance" but is the name used by python
         Inquirer.clear()
 

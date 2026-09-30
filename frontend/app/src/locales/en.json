@@ -753,6 +753,7 @@
     },
     "notifications": {
       "consume": {
+        "dropped": "While no window was connected, {count} older backend messages were discarded to make room for newer ones. Check the logs for the full record.",
         "message_title": "Backend messages"
       }
     },
@@ -5064,6 +5065,7 @@
     "reminder": {
       "open_calendar": "Open Calendar"
     },
+    "repeated": "{message} (seen {count} times)",
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
