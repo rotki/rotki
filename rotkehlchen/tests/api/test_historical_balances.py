@@ -1534,7 +1534,7 @@ def test_get_historical_asset_amounts_processing_required(
         ),
         json={'async_query': False, 'task': TaskName.HISTORICAL_BALANCE_PROCESSING.serialize()},
     )
-    assert_proper_sync_response_with_result(response)
+    assert assert_proper_sync_response_with_result(response) is True
 
     # The trigger acknowledges scheduling, not completion of the background processing.
     supervisor = rotkehlchen_api_server.rest_api.rotkehlchen.task_supervisor
