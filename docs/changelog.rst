@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12596` Bitvavo is now a supported exchange. Balances can be tracked by adding an API key under API Keys -> Exchanges.
 * :bug:`-` Hide small balances no longer hides large blockchain balances when no historical price is cached for them, and a threshold change now applies at once.
 * :bug:`-` Hide small balances now keeps applying to blockchain balances after they are refreshed, instead of showing the hidden balances again.
 * :bug:`-` A slow read of saved blockchain balances that overlaps a balance refresh can no longer replace the refreshed balances with older ones.

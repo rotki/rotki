@@ -354,6 +354,12 @@
     "image": "coinex.svg"
   },
   {
+    "identifier": "bitvavo",
+    "name": "Bitvavo",
+    "parent_identifier": "exchanges",
+    "image": "bitvavo.svg"
+  },
+  {
     "identifier": "banks",
     "name": "Banks",
     "parent_identifier": "total",
