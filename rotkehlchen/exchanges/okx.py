@@ -8,6 +8,7 @@ from urllib.parse import urlencode, urljoin
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -48,6 +49,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
@@ -310,9 +312,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 amount = deserialize_fval(currency_data['availBal']) + deserialize_fval(currency_data['frozenBal'])  # noqa: E501
             except DeserializationError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
                     f'to deserialize asset amount due to {e!s}. Skipping balance result.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
 
@@ -439,9 +442,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 details='trade',
             )
         except (DeserializationError, KeyError) as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Unexpected data encountered during deserialization of {self.name}'
                 'trade. Check logs for details and open a bug report.',
+                BadData(record=UserMessageRecord.TRADE, error=str(e)),
             )
             msg = str(e)
             if isinstance(e, KeyError):
@@ -499,9 +503,10 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 details='deposit/withdrawal',
             )
         except (DeserializationError, KeyError) as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Unexpected data encountered during deserialization of {self.name} '
                 'asset movement. Check logs for details and open a bug report.',
+                BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
             )
             msg = str(e)
             if isinstance(e, KeyError):

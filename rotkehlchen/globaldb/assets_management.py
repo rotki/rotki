@@ -6,6 +6,7 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -13,6 +14,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.schemas import ExportedAssetsSchema
+from rotkehlchen.user_messages import LocalDbProblem
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -81,6 +83,7 @@ def import_assets_from_file(
             msg_aggregator.add_error(
                 f'Failed to import asset with identifier '
                 f'{asset.identifier}. Check logs for more details',
+                classification=LocalDbProblem(entry=UserMessageEntry.ASSET),
             )
             continue
         identifiers.append(asset.identifier)

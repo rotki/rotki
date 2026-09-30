@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageFeature, UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
@@ -30,6 +31,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
+from rotkehlchen.user_messages import BadData, MissingPrice, Unsupported
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -183,8 +185,9 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
+                    self.add_classified_warning(
                         f'Skipping iconomi balance entry {balance_info} due to {msg}',
+                        BadData(record=UserMessageRecord.BALANCE, error=msg),
                     )
                     continue
 
@@ -206,16 +209,18 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 try:
                     aust_usd_price = Inquirer.find_usd_price(asset=A_AUST)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Error processing ICONOMI balance entry due to inability to '
                         f'query USD price: {e!s}. Skipping balance entry',
+                        MissingPrice(asset=A_AUST.identifier, timestamp=None),
                     )
                     continue
 
                 if aust_usd_price == ZERO:
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Error processing ICONOMI balance entry because the USD price '
                         'for AUST was reported as 0. Skipping balance entry',
+                        MissingPrice(asset=A_AUST.identifier, timestamp=None),
                     )
                     continue
 
@@ -225,16 +230,18 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
+                    self.add_classified_warning(
                         f'Skipping iconomi balance entry {balance_info} due to {msg}',
+                        BadData(record=UserMessageRecord.BALANCE, error=msg),
                     )
                     continue
 
                 amounts[self.aust] += usd_value / aust_usd_price
             else:
-                self.msg_aggregator.add_warning(
+                self.add_classified_warning(
                     f'Found unsupported ICONOMI strategy {ticker}. '
                     f' Ignoring its balance query.',
+                    Unsupported(feature=UserMessageFeature.EXCHANGE_STRATEGY),
                 )
 
         return dict(self.balances_from_amounts(amounts)), ''
@@ -289,9 +296,10 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     )
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key entry for {e}.' if isinstance(e, KeyError) else str(e)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         'Error processing an iconomi transaction. Check logs '
                         'for details. Ignoring it.',
+                        BadData(record=UserMessageRecord.TRADE, error=str(e)),
                     )
                     log.error(msg='Error processing an iconomi transaction', error=msg, trade=tx)
 

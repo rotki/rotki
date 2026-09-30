@@ -2,8 +2,10 @@ import logging
 import traceback
 from typing import TYPE_CHECKING, Any, overload
 
+from rotkehlchen.api.websockets.typedefs import UserMessageOperation
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import Internal
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Sequence
@@ -110,7 +112,10 @@ def decode_safely(
             f'{error_prefix} failed due to {e} '
             f'when calling {func.__name__} with {args=} {kwargs=}',
         )
-        msg_aggregator.add_error(f'{error_prefix} failed. Check logs for more details')
+        msg_aggregator.add_error(
+            f'{error_prefix} failed. Check logs for more details',
+            classification=Internal(operation=UserMessageOperation.TRANSACTION_DECODING),
+        )
 
     return None, True
 
