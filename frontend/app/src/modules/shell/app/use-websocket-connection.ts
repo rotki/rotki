@@ -59,7 +59,7 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
   /** When false, connection attempts are blocked (e.g., backend failed to start) */
   const connectionEnabled = shallowRef<boolean>(true);
 
-  const { handleMessage } = useMessageHandling();
+  const { consume, handleMessage } = useMessageHandling();
 
   const reconnect = async (): Promise<void> => {
     if (!get(connectionEnabled)) {
@@ -77,6 +77,14 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
     }
   };
 
+  /**
+   * Open the websocket, unless it is already open or connections are disabled.
+   *
+   * @remarks
+   * Every open also drains what the backend held while no client was listening. The periodic
+   * poll only runs while the socket is down, so without this a backlog built up in that window
+   * would wait for the next disconnect.
+   */
   async function connect(): Promise<boolean> {
     if (!get(connectionEnabled)) {
       logger.debug('Websocket connection skipped - connection disabled');
@@ -114,6 +122,7 @@ function useWebsocketConnectionInternal(): UseWebsocketConnectionInternalReturn 
           logger.debug('websocket connected');
           set(connected, true);
           resolve(true);
+          startPromise(consume());
         },
       });
       set(connection, ws);
