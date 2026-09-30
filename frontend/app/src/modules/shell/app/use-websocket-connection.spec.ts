@@ -55,7 +55,7 @@ interface MockWebSocketInstance {
   listeners: Record<string, EventHandler[]>;
   onerror: (() => void) | null;
   onmessage: ((event: { data: string }) => void) | null;
-  triggerClose: (wasClean: boolean) => void;
+  triggerClose: (wasClean: boolean, code?: number) => void;
   triggerError: () => void;
   triggerOpen: () => void;
 }
@@ -75,9 +75,9 @@ function createMockWebSocket(): MockWebSocketInstance {
     listeners,
     onerror: null,
     onmessage: null,
-    triggerClose(wasClean: boolean): void {
+    triggerClose(wasClean: boolean, code = 1000): void {
       for (const handler of listeners.close ?? [])
-        handler({ wasClean });
+        handler({ code, wasClean });
     },
     triggerError(): void {
       if (ws.onerror)
@@ -349,6 +349,38 @@ describe('useWebsocketConnection', () => {
       await connectPromise;
 
       latestMockWs?.triggerClose(true);
+
+      expect(mockDelay).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should reconnect after a clean close that asks the client to try again later', async () => {
+    const { useWebsocketConnection } = await loadComposable();
+
+    await scope.run(async () => {
+      const { connect } = useWebsocketConnection();
+
+      const connectPromise = connect();
+      latestMockWs?.triggerOpen();
+      await connectPromise;
+
+      latestMockWs?.triggerClose(true, 1013);
+
+      expect(mockDelay).toHaveBeenCalledWith(2000);
+    });
+  });
+
+  it('should not reconnect after a clean close for a session that is no longer valid', async () => {
+    const { useWebsocketConnection } = await loadComposable();
+
+    await scope.run(async () => {
+      const { connect } = useWebsocketConnection();
+
+      const connectPromise = connect();
+      latestMockWs?.triggerOpen();
+      await connectPromise;
+
+      latestMockWs?.triggerClose(true, 1008);
 
       expect(mockDelay).not.toHaveBeenCalled();
     });
