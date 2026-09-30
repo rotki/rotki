@@ -7,7 +7,6 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { SocketMessageType } from '@/modules/core/messaging/types';
-import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 
@@ -29,6 +28,13 @@ vi.mock('@shared/utils', async (importOriginal): Promise<typeof import('@shared/
     backoff: (async (_retries: number, call: () => Promise<unknown>) => call()) as typeof actual.backoff,
   };
 });
+
+/** A user message as `GET /messages` returns it: the websocket shape plus its count. */
+const LAST_SENT = 1790773550;
+
+function held(data: Record<string, unknown>, count = 1): Record<string, unknown> {
+  return { count, data, lastSent: LAST_SENT, type: SocketMessageType.USER_MESSAGE };
+}
 
 function setup(): ReturnType<typeof useMessageHandling> {
   let messageHandling: ReturnType<typeof useMessageHandling> | undefined;
@@ -167,37 +173,13 @@ describe('useMessageHandling', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('should notify once for a user message polled twice, then for the warning', async () => {
-    const userError = {
-      type: SocketMessageType.USER_MESSAGE,
-      data: { verbosity: 'error', value: 'an error', key: 'local_db', subject: null, fields: { entry: 'tag' } },
-    };
+  it('should route each held message once, in the order the backend returned them', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [userError, userError],
-      warnings: [{
-        type: SocketMessageType.USER_MESSAGE,
-        data: { verbosity: 'warning', value: 'a warning', key: 'local_db', subject: null, fields: { entry: 'tag' } },
-      }],
-    });
-
-    const { consume } = setup();
-    const { notify } = useNotificationDispatcher();
-
-    await consume();
-
-    expect(vi.mocked(notify).mock.calls.map(([n]) => n.message)).toEqual(['an error', 'a warning']);
-  });
-
-  it('should show a polled warning that has the same text as a polled error', async () => {
-    mockConsumeMessages.mockResolvedValue({
-      errors: [{
-        type: SocketMessageType.USER_MESSAGE,
-        data: { verbosity: 'error', value: 'same text', key: 'local_db', subject: null, fields: { entry: 'tag' } },
-      }],
-      warnings: [{
-        type: SocketMessageType.USER_MESSAGE,
-        data: { verbosity: 'warning', value: 'same text', key: 'local_db', subject: null, fields: { entry: 'tag' } },
-      }],
+      dropped: 0,
+      messages: [
+        held({ verbosity: 'error', value: 'an error', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
+        held({ verbosity: 'warning', value: 'a warning', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
+      ],
     });
 
     const { consume } = setup();
@@ -208,13 +190,30 @@ describe('useMessageHandling', () => {
     expect(vi.mocked(notify).mock.calls.map(([n]) => n.severity)).toEqual([Severity.ERROR, Severity.WARNING]);
   });
 
+  it('should tell the user how many messages the backend dropped to stay within its limits', async () => {
+    mockConsumeMessages.mockResolvedValue({ dropped: 12, messages: [] });
+
+    const { consume } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await consume();
+
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({
+      message: 'actions.notifications.consume.dropped::12',
+      severity: Severity.WARNING,
+    });
+  });
+
   it('should route a valid typed polling message to its handler', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [{
+      dropped: 0,
+      messages: [{
         type: SocketMessageType.EVM_ACCOUNTS_DETECTION,
         data: [{ address: '0xdead', chain: 'optimism' }],
+        count: 1,
+        lastSent: LAST_SENT,
       }],
-      warnings: [],
     });
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
@@ -235,11 +234,11 @@ describe('useMessageHandling', () => {
 
   it('should drop a polled message that fails the schema and still show the rest', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [
-        { unexpected: true },
-        { type: SocketMessageType.USER_MESSAGE, data: { verbosity: 'error', value: 'valid', key: 'local_db', subject: null, fields: { entry: 'tag' } } },
+      dropped: 0,
+      messages: [
+        { unexpected: true, count: 1, lastSent: LAST_SENT },
+        held({ verbosity: 'error', value: 'valid', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
       ],
-      warnings: [],
     });
 
     const { consume } = setup();
@@ -252,17 +251,14 @@ describe('useMessageHandling', () => {
 
   it('should render a polled classified user message as its value', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [{
-        type: SocketMessageType.USER_MESSAGE,
-        data: {
-          verbosity: 'error',
-          value: 'Failed to deserialize a kucoin balance. Ignoring it.',
-          key: 'bad_data',
-          subject: 'kucoin',
-          fields: { record: 'balance', error: 'Missing key: amount' },
-        },
-      }],
-      warnings: [],
+      dropped: 0,
+      messages: [held({
+        verbosity: 'error',
+        value: 'Failed to deserialize a kucoin balance. Ignoring it.',
+        key: 'bad_data',
+        subject: 'kucoin',
+        fields: { record: 'balance', error: 'Missing key: amount' },
+      })],
     });
 
     const { consume } = setup();
@@ -274,14 +270,10 @@ describe('useMessageHandling', () => {
     expect(vi.mocked(notify).mock.calls[0][0].message).toBe('Failed to deserialize a kucoin balance. Ignoring it.');
   });
 
-  it('should skip a polled user message whose text is already a notification', async () => {
-    set(storeToRefs(useNotificationsStore()).data, [createNotification(1, { message: 'already shown', title: 'backend' })]);
+  it('should date a held message by when the backend last sent it, not when it was read', async () => {
     mockConsumeMessages.mockResolvedValue({
-      errors: [{
-        type: SocketMessageType.USER_MESSAGE,
-        data: { verbosity: 'error', value: 'already shown', key: 'local_db', subject: null, fields: { entry: 'tag' } },
-      }],
-      warnings: [],
+      dropped: 0,
+      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' } })],
     });
 
     const { consume } = setup();
@@ -289,7 +281,19 @@ describe('useMessageHandling', () => {
 
     await consume();
 
-    expect(notify).not.toHaveBeenCalled();
+    expect(vi.mocked(notify).mock.calls[0][0].date).toEqual(new Date(LAST_SENT * 1000));
+  });
+
+  it('should leave a websocket message to be dated when it arrives', async () => {
+    const { handleMessage } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await handleMessage(JSON.stringify({
+      type: SocketMessageType.USER_MESSAGE,
+      data: { verbosity: 'error', value: 'live', key: 'local_db', subject: null, fields: { entry: 'tag' } },
+    }));
+
+    expect(vi.mocked(notify).mock.calls[0][0].date).toBeUndefined();
   });
 
   it('should notify when message consumption fails', async () => {

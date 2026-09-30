@@ -238,8 +238,15 @@ def test_query_all_balances(
             async_query=async_query,
         )
 
-    errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 0
+    # the mocked exchange balances hold assets rotki can't map, and nothing else goes wrong
+    assert sorted(
+        (error['type'], error['data'].get('location'), error['data'].get('identifier'))
+        for error in rotki.msg_aggregator.consume_error_payloads()
+    ) == [
+        ('exchange_unknown_asset', 'binance', 'IDONTEXIST'),
+        ('exchange_unknown_asset', 'poloniex', 'CNOTE'),
+        ('exchange_unknown_asset', 'poloniex', 'IDONTEXIST'),
+    ]
     assert_all_balances(
         result=outcome,
         db=rotki.data.db,

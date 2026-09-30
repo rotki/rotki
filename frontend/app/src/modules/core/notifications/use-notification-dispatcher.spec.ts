@@ -119,6 +119,45 @@ describe('useNotificationDispatcher', () => {
     });
   });
 
+  it('should keep the date a notification says it happened, new or updating its group', () => {
+    const { notify } = useNotificationDispatcher();
+    const { data } = storeToRefs(useNotificationsStore());
+    const earlier = new Date('2026-09-30T08:00:00Z');
+    const later = new Date('2026-09-30T09:00:00Z');
+
+    notify({ date: earlier, message: 'plain', title: 'plain' });
+    notify({ date: earlier, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'grouped' });
+    vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
+    notify({ date: later, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'grouped' });
+
+    expect(get(data).map(({ date, message }) => [message, date])).toEqual(expect.arrayContaining([
+      ['plain', earlier],
+      ['second', later],
+    ]));
+  });
+
+  it('should not move a grouped row back in time for an update dated before it', () => {
+    const { notify } = useNotificationDispatcher();
+    const { data } = storeToRefs(useNotificationsStore());
+    const recent = new Date('2026-09-30T09:00:00Z');
+
+    notify({ date: recent, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'recent', title: 'grouped' });
+    vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
+    notify({ date: new Date('2026-09-30T07:00:00Z'), group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'older', title: 'grouped' });
+
+    expect(get(data)[0].date).toEqual(recent);
+  });
+
+  it('should carry the extras of an update into its grouped row', () => {
+    const { notify } = useNotificationDispatcher();
+    const { data } = storeToRefs(useNotificationsStore());
+
+    notify({ extras: { sentence: 'first' }, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'grouped' });
+    notify({ extras: { sentence: 'second' }, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'grouped' });
+
+    expect(get(data)[0].extras).toEqual({ sentence: 'second' });
+  });
+
   it('should group beaconchain rate limit notifications and list endpoints', () => {
     const { notify } = useNotificationDispatcher();
     const store = useNotificationsStore();

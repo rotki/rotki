@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Messages the backend sends while no rotki window is connected, such as the result of a CSV import or a newly detected token, now show up once a window connects, dated when they happened. Before, most of them were lost. A failure that keeps repeating is kept once with a count, so it can no longer push out the rest.
 * :feature:`7719` rotki can now log you out after a period of inactivity, so your data is not left open on an unattended machine. Turn it on and pick the number of minutes under Settings > Account > Security. It is off by default. Logging out stops everything rotki runs in the background until you log in again, and a password saved for auto-login is removed so that rotki cannot unlock the profile again by itself.
 * :feature:`-` A failed balance, price, staking, history or account query is now reported only by its row in the task centre, which already says what went wrong and offers to retry. It no longer also raises a popup or a notification in the drawer.
 * :feature:`-` On all desktop platforms, the tray menu now shows the rotki version, adds links to sponsor rotki, join Discord and follow rotki on X, and labels the quit action "Quit rotki".

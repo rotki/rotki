@@ -1,15 +1,14 @@
-import { Priority } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { createHandlerRegistry } from './handler-registry';
+import { LIVE_DELIVERY, type MessageDelivery } from './interfaces';
 import { WebsocketMessage } from './messages';
-import { SocketMessageType } from './types/base';
 import { handleMessageError } from './utils/error-handling';
 
 /**
@@ -29,17 +28,6 @@ function parseMessage(raw: unknown): WebsocketMessage | undefined {
   return parseResult.data;
 }
 
-/**
- * What makes two polled messages the same notification.
- *
- * @remarks
- * A user message is identified by the text it renders, so it also matches a notification the
- * websocket already delivered. Any other message is identified by its whole content.
- */
-function pollingKey(message: WebsocketMessage): string {
-  return message.type === SocketMessageType.USER_MESSAGE ? message.data.value : JSON.stringify(message);
-}
-
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
   consume: () => Promise<void>;
@@ -49,14 +37,13 @@ export function useMessageHandling(): UseMessageHandling {
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
   const { consumeMessages } = useSessionApi();
-  const { data: notifications } = storeToRefs(useNotificationsStore());
   const { notify } = useNotificationDispatcher();
 
   const registry = createHandlerRegistry(t, router);
 
   let isRunning = false;
 
-  const route = async (message: WebsocketMessage): Promise<void> => {
+  const route = async (message: WebsocketMessage, delivery: MessageDelivery = LIVE_DELIVERY): Promise<void> => {
     const handler = registry[message.type];
 
     if (!handler) {
@@ -64,10 +51,10 @@ export function useMessageHandling(): UseMessageHandling {
       return;
     }
 
-    const result = await handler.handle(message.data);
+    const result = await handler.handle(message.data, delivery);
     // Handler can return Notification, null, or void - only notify if we get a Notification
     if (result) {
-      notify(result);
+      notify(delivery.lastSent ? { ...result, date: delivery.lastSent } : result);
     }
   };
 
@@ -85,19 +72,21 @@ export function useMessageHandling(): UseMessageHandling {
     const title = t('actions.notifications.consume.message_title');
 
     try {
-      const { errors, warnings } = await backoff(3, async () => consumeMessages(), 10000, sessionWorkSignal());
-      const existing = get(notifications).map(({ message }) => message);
+      const { dropped, messages } = await backoff(3, async () => consumeMessages(), 10000, sessionWorkSignal());
 
-      for (const polled of [errors, warnings]) {
-        const shown = new Set<string>(existing);
-        for (const raw of polled) {
-          const message = parseMessage(raw);
-          if (!message || shown.has(pollingKey(message)))
-            continue;
+      for (const { count, lastSent, ...raw } of messages) {
+        const message = parseMessage(raw);
+        if (message)
+          await route(message, { count, lastSent: new Date(lastSent * 1000) });
+      }
 
-          shown.add(pollingKey(message));
-          await route(message);
-        }
+      if (dropped > 0) {
+        notify({
+          message: t('actions.notifications.consume.dropped', { count: dropped }),
+          priority: Priority.NORMAL,
+          severity: Severity.WARNING,
+          title,
+        });
       }
     }
     catch (error: unknown) {

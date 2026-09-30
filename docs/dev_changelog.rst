@@ -19,7 +19,8 @@ Classified User Messages
 
 * **Changed Endpoint**: ``GET /api/(version)/messages``
 
-  - Each entry of ``errors`` and ``warnings`` is now the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string. This applies to every queued type, ``balance_snapshot_error`` included.
+  - The response is now ``{"messages": [...], "dropped": int}`` instead of ``{"errors": [...], "warnings": [...]}``. Each entry of ``messages`` is the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string, plus ``count``, how many times it was sent while held, and ``last_sent``, the timestamp of its last send. ``dropped`` counts the messages discarded to stay within bounds, each of which is written to the backend log.
+  - Every message type that could not be delivered over a websocket is now held here, whether the send failed, no client was connected, or the client disconnected before receiving it. Previously each of those three paths applied a different policy. Progress and status types are dropped, except a ``progress_updates`` message carrying a CSV import result. A state message is held only in its latest form per key (e.g. ``refresh_balances`` per chain), and a repeating failure once per distinct message with a count.
 
 * **Changed Message**: ``exchange_unknown_asset``
 

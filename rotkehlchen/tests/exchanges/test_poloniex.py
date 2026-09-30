@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
     POLONIEX_TRADES_RESPONSE,
 )
+from rotkehlchen.tests.utils.messages import consume_errors_and_unknown_assets
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -311,7 +312,7 @@ def test_query_trade_history_unexpected_data(poloniex):
     """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
     poloniex.cache_ttl_secs = 0
 
-    def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num, expected_trades_len=0):  # noqa: E501
+    def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num, expected_trades_len=0, unknown_assets=()):  # noqa: E501
 
         def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
             if '/trades' in url:
@@ -328,8 +329,9 @@ def test_query_trade_history_unexpected_data(poloniex):
         assert len(events) == expected_trades_len
         warnings = poloniex.msg_aggregator.consume_warnings()
         assert len(warnings) == expected_warnings_num
-        errors = poloniex.msg_aggregator.consume_errors()
+        errors, unknown = consume_errors_and_unknown_assets(poloniex.msg_aggregator)
         assert len(errors) == expected_errors_num
+        assert unknown == list(unknown_assets)
 
     input_trades = """[{
     "symbol": "ETH_BTC",
@@ -357,7 +359,7 @@ def test_query_trade_history_unexpected_data(poloniex):
 
     # symbol with an asset that can't be mapped to a known asset
     given_input = input_trades.replace('"ETH_BTC"', '"ETH_NOTAREALASSET"')
-    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0, unknown_assets=['NOTAREALASSET'])  # noqa: E501
 
     # invalid price
     given_input = input_trades.replace('"0.00003432"', 'null')
