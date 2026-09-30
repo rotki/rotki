@@ -23,7 +23,7 @@ import {
   type SnapshotSumMismatch,
 } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { applyBalanceBulkDelete, applyReconcileLocations } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
-import { assetsTotal, getTotalValue, nftsTotal } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
+import { assetsTotal, getTotalValue, locationsTotal, nftsTotal } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 /** Maximum depth of the undo history (full draft states). */
 const UNDO_LIMIT = 50;
@@ -117,10 +117,18 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
    * against the untouched `original`, which is what lets the user save it.
    * Drift within the reconciliation epsilon is kept as stored, so rounding
    * noise never reads as a change.
+   *
+   * A total is only stale when the locations agree with the balances. When they
+   * do not, the total is one side of a mismatch the banner resolves, and
+   * correcting it on load would make an untouched snapshot read as edited and
+   * let a plain save write the unresolved balances sum.
    */
   function seedDraft(snapshot: Snapshot): Snapshot {
     const copy = cloneSnapshot(snapshot);
-    if (approxEqualUsd(getTotalValue(copy.locationDataSnapshot), trackedTotal(copy)))
+    const tracked = trackedTotal(copy);
+    if (approxEqualUsd(getTotalValue(copy.locationDataSnapshot), tracked))
+      return copy;
+    if (!approxEqualUsd(locationsTotal(copy.locationDataSnapshot), tracked))
       return copy;
     return retrackTotal(copy);
   }

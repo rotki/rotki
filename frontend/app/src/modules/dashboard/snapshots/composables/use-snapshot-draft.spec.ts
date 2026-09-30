@@ -123,9 +123,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     expect(get(mismatch)?.locationsSum.toNumber()).toBe(1049);
   });
 
-  it('should reconcile off locations by absorbing the difference', () => {
-    // B = 100; locations 60 + 20 = 80. The total is corrected to 100 on load, but
-    // the locations still sum to 80, so the snapshot reads as mismatched.
+  it('should reconcile locations that fall short of the balances by absorbing the difference', () => {
     const base: Snapshot = {
       balancesSnapshot: [balance('BTC', 100)],
       locationDataSnapshot: [location('kraken', 60), location('ledger', 20), location('total', 80)],
@@ -242,6 +240,32 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     discard();
 
     expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(150);
+    expect(get(isDirty)).toBe(true);
+  });
+
+  it('should open a snapshot whose locations disagree with its balances unchanged', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('SPAM', 1e30)],
+      locationDataSnapshot: [location('kraken', 100), location('total', 100)],
+    };
+    const { draft, isDirty, mismatch } = useSnapshotDraft(snap);
+
+    expect(get(isDirty)).toBe(false);
+    expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(100);
+    expect(get(mismatch)).not.toBeNull();
+  });
+
+  it('should settle the total once the rows behind a mismatch are removed', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('SPAM', 1e30)],
+      locationDataSnapshot: [location('kraken', 100), location('total', 100)],
+    };
+    const { deleteBalances, draft, isDirty, mismatch } = useSnapshotDraft(snap);
+
+    deleteBalances([1]);
+
+    expect(get(mismatch)).toBeNull();
+    expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(100);
     expect(get(isDirty)).toBe(true);
   });
 

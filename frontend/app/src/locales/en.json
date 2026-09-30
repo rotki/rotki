@@ -2509,11 +2509,18 @@
           "title": "Locations"
         },
         "mismatch": {
+          "assets_more": "{assets} and {count} more",
           "balances_sum": "Sum of balances",
           "description": "The balances, locations and stored total don't agree. The balances are the source of truth, so the total already follows them. Reconcile the locations by absorbing the difference into one of them, or edit the locations yourself.",
+          "excluded_gap": "The difference is the {amount} held in {assets}, which is marked as spam or ignored. The locations already leave it out, so removing the balance makes the totals agree. | The difference is the {amount} held in {assets}, which are marked as spam or ignored. The locations already leave them out, so removing the balances makes the totals agree.",
+          "excluded_gap_partial": "Most of the difference is the {amount} held in {assets}, which is marked as spam or ignored. The locations leave it out, so removing the balance leaves {rest} to reconcile. | Most of the difference is the {amount} held in {assets}, which are marked as spam or ignored. The locations leave them out, so removing the balances leaves {rest} to reconcile.",
+          "gap_alternative": "To keep it, absorb the difference into a location instead.",
           "locations_sum": "Sum of locations",
+          "no_reconcile_target": "No single location holds enough to absorb the difference. Edit the locations to lower them instead.",
           "reconcile_apply": "Reconcile locations",
           "reconcile_into": "Absorb difference into",
+          "remove_rows": "Remove {assets}",
+          "row_gap": "The difference is the {amount} held in {assets}. If the locations leave it out on purpose, removing the balance makes the totals agree.",
           "title": "Totals do not match"
         },
         "navigation": {
@@ -2529,6 +2536,7 @@
           "add_row": "Add location",
           "available": "Available:",
           "distribute": "Distribute evenly",
+          "fill_available": "Fill",
           "hint": "Distribute this balance's value across locations. The split must add up to the full value.",
           "location_after": "After:",
           "remaining": "Remaining",
@@ -2544,6 +2552,7 @@
           "excludes_ignored": "Excludes {amount} in ignored assets",
           "excludes_nfts": "Excludes {amount} in NFTs, per your NFT settings",
           "net_worth": "Net worth",
+          "show_excluded": "Show them",
           "since": "since"
         },
         "unsaved_changes": "{count} unsaved change | {count} unsaved changes",

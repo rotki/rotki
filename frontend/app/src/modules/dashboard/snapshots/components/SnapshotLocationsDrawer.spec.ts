@@ -92,6 +92,15 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationsDrawer', () =>
     expect(wrapper.find('[data-testid=snapshot-locations-reconcile]').exists()).toBe(false);
   });
 
+  it('should leave a gap between the balances and the locations to the summary', () => {
+    const snapshot = createSnapshot();
+    snapshot.balancesSnapshot[0] = { ...snapshot.balancesSnapshot[0], usdValue: bigNumberify(1e30) };
+    wrapper = createWrapper(snapshot);
+
+    expect(wrapper.find('[data-testid=snapshot-locations-reconcile]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=snapshot-locations-balanced]').exists()).toBe(true);
+  });
+
   it('should confirm a balanced allocation when the sums match', () => {
     wrapper = createWrapper();
 
