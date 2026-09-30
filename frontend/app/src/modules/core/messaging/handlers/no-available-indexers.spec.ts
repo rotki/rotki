@@ -126,6 +126,12 @@ describe('createNoAvailableIndexersHandler', () => {
     const actions = Array.isArray(result.action) ? result.action : [result.action];
     expect(actions.find(a => a?.label.includes('enter_'))).toBeUndefined();
     expect(actions.find(a => a?.label.endsWith('.action'))).toBeDefined();
+    expect(actions.find(a => a?.label.includes('do_not_show_again'))).toBeUndefined();
+
+    const keyFailure = await handler.handle({ chain: 'optimism', reason: 'etherscan_paid_key_required' });
+    assert(keyFailure);
+    expect(keyFailure.title).toContain('paid_key_required.title');
+    expect(keyFailure.group).toBe(result.group);
   });
 
   it('should return null when the chain is in the suppression list', async () => {

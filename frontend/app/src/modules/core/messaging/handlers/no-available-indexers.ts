@@ -94,13 +94,13 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
     const keyAction = getKeyAction(t, router, reason);
     if (keyAction)
       actions.push(keyAction);
-    actions.push(
-      {
-        action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
-        label: t('notification_messages.no_available_indexers.action'),
-        persist: true,
-      },
-      {
+    actions.push({
+      action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
+      label: t('notification_messages.no_available_indexers.action'),
+      persist: true,
+    });
+    if (reason !== BLOCKSCOUT_INCOMPLETE_RESPONSE) {
+      actions.push({
         action: async (): Promise<void> => {
           show(
             {
@@ -117,8 +117,8 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
         danger: true,
         icon: 'lu-bell-off',
         label: t('notification_messages.no_available_indexers.do_not_show_again'),
-      },
-    );
+      });
+    }
 
     return {
       action: actions,

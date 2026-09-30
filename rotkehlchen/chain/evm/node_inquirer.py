@@ -291,7 +291,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         # tracks the request length that failed to proactively use smaller chunks per node type
         self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
-        self._no_indexer_notified: bool = False
+        self._notified_indexer_reasons: set[str | None] = set()
         # Set once etherscan refuses this chain for the configured key, which happens on the
         # chains its free tier does not cover. Used to tell the user a paid key is needed.
         self._etherscan_refused_chain: bool = False
@@ -2078,7 +2078,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             else:
                 return result, indexer_name, frozenset(failed)
 
-        if blockscout_incomplete_response or len(self._get_indexers_in_order()) == 0 or (
+        if len(self._get_indexers_in_order()) == 0 or (
                 self._etherscan_refused_chain and
                 not any(isinstance(error, IndexerRangeNotCovered) for _, error in errors)
         ):
@@ -2090,14 +2090,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         )
 
     def _maybe_notify_no_indexers(self, blockscout_incomplete_response: bool = False) -> None:
-        """Tell the user once that no indexer can serve this chain. If etherscan refused the
-        chain for the configured key, explain which API key can restore transaction queries,
-        unless Blockscout returned incomplete data for this query.
-        """
-        if self._no_indexer_notified:
-            return
+        """Tell the user once per reason that no indexer can serve this chain.
 
-        self._no_indexer_notified = True
+        If etherscan refused the chain for the configured key, explain which API key can restore
+        transaction queries, unless Blockscout returned incomplete data for this query.
+        """
         data: dict[str, str] = {'chain': self.blockchain.value}
         if blockscout_incomplete_response:
             data['reason'] = 'blockscout_incomplete_response'
@@ -2109,6 +2106,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 self.blockscout.needs_api_key_for_chain(chain_id=self.chain_id)
                 else 'etherscan_paid_key_required'
             )
+        if (reason := data.get('reason')) in self._notified_indexer_reasons:
+            return
+
+        self._notified_indexer_reasons.add(reason)
         self.database.msg_aggregator.add_message(
             message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
             data=data,
