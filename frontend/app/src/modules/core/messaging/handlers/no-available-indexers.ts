@@ -126,7 +126,9 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       display: true,
       // Per chain: each chain has its own missing indexers and its own suppression entry, so they
       // must not collapse into one notification that only ever shows the chain that arrived last.
-      group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
+      group: reason === BLOCKSCOUT_INCOMPLETE_RESPONSE
+        ? `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}:incomplete`
+        : `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
       message,
       priority: Priority.ACTION,
       severity: Severity.WARNING,

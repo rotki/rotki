@@ -152,6 +152,24 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(other)).toBe(false);
   });
 
+  it('should keep key notices available when incomplete-response popups exhaust their schedule', async () => {
+    const incomplete = `${scheduled}:incomplete`;
+    cooldown.recordDisplay(incomplete);
+    vi.setSystemTime(START + 30_000);
+
+    expect(cooldown.shouldSuppress(scheduled)).toBe(false);
+    await flush();
+    expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
+      notificationSchedule: { [incomplete]: { lastShown: START, shownCount: 1 } },
+    });
+
+    set(mockSchedule, { [incomplete]: { lastShown: START, shownCount: 4 } });
+    vi.setSystemTime(START + DAY);
+
+    expect(cooldown.shouldSuppress(incomplete)).toBe(true);
+    expect(cooldown.shouldSuppress(scheduled)).toBe(false);
+  });
+
   it('should leave unscheduled groups on the burst cooldown alone', () => {
     cooldown.recordDisplay(unscheduled);
 
