@@ -29,7 +29,7 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
         with:
           package_json_file: frontend/package.json
 
@@ -88,7 +88,7 @@ jobs:
 
       - name: Setup Rust
         if: steps.rust-cache.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30  # stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87  # stable
         with:
           toolchain: 1.91
 
@@ -142,9 +142,10 @@ jobs:
 
       - name: Install uv
         if: steps.core-cache.outputs.cache-hit != 'true'
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
         with:
           enable-cache: true
+          prune-cache: true
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
@@ -199,7 +200,7 @@ jobs:
           cache: 'pip'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
         with:
           package_json_file: frontend/package.json
 
@@ -219,9 +220,10 @@ jobs:
           key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
         with:
           enable-cache: true
+          prune-cache: true
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
@@ -288,7 +290,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: success()
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
