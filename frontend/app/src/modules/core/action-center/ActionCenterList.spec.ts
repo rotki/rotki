@@ -36,6 +36,7 @@ interface ListProps {
   count: number;
   checking?: boolean;
   refreshing?: boolean;
+  previousCounts?: Record<string, number>;
 }
 
 /**
@@ -56,6 +57,35 @@ function mountList(props: Partial<ListProps> = {}): VueWrapper {
 }
 
 describe('modules/core/action-center/ActionCenterList', () => {
+  describe('progress since the last visit', () => {
+    const cleared = [
+      createItem({ count: 0, id: 'undecoded', title: 'Undecoded transactions' }),
+      createItem({ count: 0, id: 'conflicts', title: 'Accounting rule conflicts' }),
+    ];
+
+    it('should tell a row how much it had, so it can say what it is down from', () => {
+      const wrapper = mountList({ previousCounts: { 'unmatched-bridges': 40 } });
+
+      expect(wrapper.find('[data-testid=actions-center-row-down-from]').text()).toContain('action_center.down_from::40');
+    });
+
+    it('should open the passed checks and list the ones cleared since the last visit first, tagged', () => {
+      const wrapper = mountList({ cleared, previousCounts: { conflicts: 2 } });
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-toggle]').attributes('aria-expanded')).toBe('true');
+      const rows = wrapper.findAll('[data-testid=actions-center-cleared-row]');
+      expect(rows.map(row => row.attributes('data-key'))).toEqual(['conflicts', 'undecoded']);
+      expect(rows[0].find('[data-testid=actions-center-cleared-since]').exists()).toBe(true);
+      expect(rows[1].find('[data-testid=actions-center-cleared-since]').exists()).toBe(false);
+    });
+
+    it('should keep the passed checks folded next to pending rows when nothing cleared since the last visit', () => {
+      const wrapper = mountList({ cleared, previousCounts: {} });
+
+      expect(wrapper.find('[data-testid=actions-center-cleared-toggle]').attributes('aria-expanded')).toBe('false');
+    });
+  });
+
   it('should render a row per item', () => {
     const wrapper = mountList();
 

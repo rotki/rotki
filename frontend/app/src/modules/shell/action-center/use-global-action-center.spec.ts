@@ -399,6 +399,18 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(get(newIds)).toEqual(['snoozed']);
   });
 
+  it('should show what went down since the center was last closed, and compare with that close', async () => {
+    set(state.integrationRows, [row('keys', { count: 5 }), row('sessions', { count: 2 })]);
+    const { markSeen, previousCounts } = center();
+    await flushPromises();
+    markSeen();
+    await nextTick();
+
+    set(state.integrationRows, [row('keys', { count: 3 }), row('sessions', { count: 0 })]);
+
+    expect(get(previousCounts)).toEqual({ keys: 5, sessions: 2 });
+  });
+
   it('should await the first scan while the history counts are still pending', async () => {
     const { awaitingFirstScan, refreshAll, refreshing } = center();
     await flushPromises();

@@ -10,7 +10,7 @@ import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-
 
 const open = ref<boolean>(false);
 
-const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, refreshAll, refreshing, sections, urgency } = useGlobalActionCenter();
+const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, previousCounts, refreshAll, refreshing, sections, urgency } = useGlobalActionCenter();
 const { openTarget } = useOpenActionTarget();
 const { missingPriceIdentifiers } = useMissingPrices();
 const { modelOpen: missingPricesOpen } = useMissingPricesDialog();
@@ -40,6 +40,7 @@ watch(open, (isOpen, wasOpen) => {
       :cleared="cleared"
       :count="count"
       :new-ids="newIds"
+      :previous-counts="previousCounts"
       :checking="awaitingFirstScan"
       :refreshing="refreshing"
       @open="openTarget($event, close)"

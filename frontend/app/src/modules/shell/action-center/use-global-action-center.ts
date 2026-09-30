@@ -8,6 +8,7 @@ import { toGlobalTarget } from '@/modules/history/events/actions-center/history-
 import { useHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
 import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-rows';
+import { useActionCenterProgress } from '@/modules/shell/action-center/use-action-center-progress';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
@@ -31,7 +32,9 @@ interface UseGlobalActionCenterReturn {
   newIds: ComputedRef<string[]>;
   /** How many categories are new, which is what the badge shows. */
   newCount: ComputedRef<number>;
-  /** Records the current counts as seen, called when the center closes. */
+  /** The count each lower or cleared category had when the user last closed the center. */
+  previousCounts: ComputedRef<Record<string, number>>;
+  /** Records the current counts as seen, and as what the next visit's progress compares with; called when the center closes. */
   markSeen: () => void;
   /** No scan has finished yet this session; later re-scans only show as {@link UseGlobalActionCenterReturn.refreshing}. */
   awaitingFirstScan: ComputedRef<boolean>;
@@ -129,6 +132,11 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     items: () => get(groups).flatMap(group => group.items),
   });
 
+  const { markClosed, previousCounts } = useActionCenterProgress({
+    checking: center.awaitingFirstScan,
+    items: () => get(groups).flatMap(group => group.items).map(center.present),
+  });
+
   onSnoozeChange(forget);
 
   const settled = useRefWithDebounce(history.busy, 200);
@@ -142,9 +150,13 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     awaitingFirstScan: center.awaitingFirstScan,
     cleared: center.clearedItems,
     count: center.categoryCount,
-    markSeen,
+    markSeen: (): void => {
+      markSeen();
+      markClosed();
+    },
     newCount: computed<number>(() => get(newIds).length),
     newIds,
+    previousCounts,
     refreshAll: center.refreshAll,
     refreshing: center.refreshing,
     sections,

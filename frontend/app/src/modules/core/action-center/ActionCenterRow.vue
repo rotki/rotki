@@ -4,10 +4,12 @@ import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowA
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
-const { isNew = false, item } = defineProps<{
+const { isNew = false, item, previousCount } = defineProps<{
   item: ActionItem<TTarget>;
   /** appeared, or grew, since the user last looked */
   isNew?: boolean;
+  /** the count the row had when the user last looked, when it is lower now */
+  previousCount?: number;
 }>();
 
 const emit = defineEmits<{
@@ -49,8 +51,13 @@ const lockedHint = computed<string>(() => item.minimumTier
   ? t('action_center.locked_hint', { tier: item.minimumTier })
   : t('action_center.locked_hint_generic'));
 
-/** A row that can only mean one thing already says it in its title, so its count is not shown until it is more than one. */
-const showCount = computed<boolean>(() => item.count > 1);
+const wentDown = computed<boolean>(() => previousCount !== undefined && previousCount > item.count);
+
+/**
+ * A row that can only mean one thing already says it in its title, so its count is not shown until it is more
+ * than one, or until it went down, where "down from 5" needs the 1 beside it.
+ */
+const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
 </script>
 
 <template>
@@ -90,6 +97,17 @@ const showCount = computed<boolean>(() => item.count > 1);
           >
             {{ item.count }}
           </RuiChip>
+          <span
+            v-if="wentDown"
+            class="inline-flex items-center gap-1 self-center rounded-full bg-rui-success/10 px-1.5 text-caption font-medium text-rui-success"
+            data-testid="actions-center-row-down-from"
+          >
+            <RuiIcon
+              name="lu-trending-down"
+              size="12"
+            />
+            {{ t('action_center.down_from', { count: previousCount }) }}
+          </span>
           <span
             v-if="isNew"
             class="text-caption font-medium text-rui-primary"
