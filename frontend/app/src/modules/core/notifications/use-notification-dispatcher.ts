@@ -5,8 +5,6 @@ import { createNotification } from '@/modules/core/notifications/notification-ut
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { createBeaconchainRateLimitStrategy } from './strategies/beaconchain-rate-limit';
-import { bulkDuplicateStrategy } from './strategies/bulk-duplicate';
-import { createDeserializationErrorStrategy } from './strategies/deserialization-error';
 import { createGroupUpdateStrategy } from './strategies/group-update';
 import { useNotificationCooldown } from './use-notification-cooldown';
 import { useSilentNotifications } from './use-silent-notifications';
@@ -22,8 +20,6 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   const { silent } = useSilentNotifications();
 
   const strategies: NotificationStrategy[] = [
-    bulkDuplicateStrategy,
-    createDeserializationErrorStrategy(t),
     createBeaconchainRateLimitStrategy(t),
     createGroupUpdateStrategy(cooldown),
   ];

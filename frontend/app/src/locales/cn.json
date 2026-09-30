@@ -4919,10 +4919,6 @@
     "tooltip_unread": "通知，有新消息"
   },
   "notification_messages": {
-    "backend": {
-      "title": "后端",
-      "warning_title": "处理过程中跳过了部分数据"
-    },
     "beaconchain_rate_limited": {
       "message": "Beaconcha.in 受到速率限制{until}。以下查询失败：\n{endpoints}\n详情请查看日志。|Beaconcha.in 受到速率限制{until}。以下 {count} 个查询失败：\n{endpoints}\n\n详情请查看日志。",
       "title": "Beaconcha.in 速率受限"
@@ -4933,7 +4929,6 @@
       "summary": "成功导入 {imported}/{total} 条记录。",
       "title": "CSV 导入结果：{sourceName}"
     },
-    "deserialization_error": "无法反序列化你账户中的 {count} 个资产，请查看应用日志了解详情。",
     "new_detected_token": {
       "action": "查看更多",
       "message": "从事件处理和查询中检测到标识符为 {identifier} 的新代币。|从事件处理和查询中检测到 {count} 个新代币。",

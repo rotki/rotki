@@ -5030,10 +5030,6 @@
     "tooltip_unread": "Notifications, something new arrived"
   },
   "notification_messages": {
-    "backend": {
-      "title": "Backend",
-      "warning_title": "Some data was skipped during processing"
-    },
     "beaconchain_rate_limited": {
       "message": "Beaconcha.in is rate limited{until}. The following query failed:\n{endpoints}\nCheck logs for more details.|Beaconcha.in is rate limited{until}. The following {count} queries failed:\n{endpoints}\n\nCheck logs for more details.",
       "title": "Beaconcha.in Rate Limited"
@@ -5044,7 +5040,6 @@
       "summary": "Imported {imported}/{total} entries successfully.",
       "title": "CSV Import Result: {sourceName}"
     },
-    "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
     "new_detected_token": {
       "action": "See more",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
@@ -5069,6 +5064,20 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "user_message": {
+      "auth_action": "Update credentials",
+      "title": {
+        "auth": "Credentials rejected",
+        "bad_data": "Unreadable data",
+        "internal": "Internal error",
+        "local_db": "Database problem",
+        "network": "Connection problem",
+        "price": "Missing price",
+        "unknown_asset": "Unknown asset",
+        "unsupported": "Not supported yet"
+      },
+      "with_subject": "{subject}: {title}"
     }
   },
   "notification_popup": {
