@@ -37,6 +37,7 @@ interface ListProps {
   checking?: boolean;
   refreshing?: boolean;
   previousCounts?: Record<string, number>;
+  folded?: string[];
 }
 
 /**
@@ -57,6 +58,37 @@ function mountList(props: Partial<ListProps> = {}): VueWrapper {
 }
 
 describe('modules/core/action-center/ActionCenterList', () => {
+  describe('folded sections', () => {
+    const sections: ActionCenterSection[] = [
+      { id: 'integrations', items: [createItem({ id: 'missing-key' })], title: 'Integrations' },
+      { id: 'history', items: [createItem()], title: 'History' },
+    ];
+
+    const toggleOf = (wrapper: VueWrapper, id: string): ReturnType<VueWrapper['find']> =>
+      wrapper.find(`[data-testid=actions-center-section][data-key=${id}] [data-testid=actions-center-section-toggle]`);
+
+    it('should fold only the sections it is told to', () => {
+      const wrapper = mountList({ folded: ['history'], sections });
+
+      expect(toggleOf(wrapper, 'history').attributes('aria-expanded')).toBe('false');
+      expect(toggleOf(wrapper, 'integrations').attributes('aria-expanded')).toBe('true');
+    });
+
+    it('should add a section to the folded ones, keeping the others', async () => {
+      const wrapper = mountList({ folded: ['history'], sections });
+      await toggleOf(wrapper, 'integrations').trigger('click');
+
+      expect(wrapper.emitted('update:folded')).toEqual([[['history', 'integrations']]]);
+    });
+
+    it('should take an unfolded section out of the folded ones', async () => {
+      const wrapper = mountList({ folded: ['history', 'integrations'], sections });
+      await toggleOf(wrapper, 'history').trigger('click');
+
+      expect(wrapper.emitted('update:folded')).toEqual([[['integrations']]]);
+    });
+  });
+
   describe('progress since the last visit', () => {
     const cleared = [
       createItem({ count: 0, id: 'undecoded', title: 'Undecoded transactions' }),

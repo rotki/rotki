@@ -6,11 +6,13 @@ import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-miss
 import ActionCenterList from '@/modules/core/action-center/ActionCenterList.vue';
 import ActionCenterMenu from '@/modules/core/action-center/ActionCenterMenu.vue';
 import { useOpenActionTarget } from '@/modules/core/action-center/use-open-action-target';
+import { useActionCenterFolds } from '@/modules/shell/action-center/use-action-center-folds';
 import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 
 const open = ref<boolean>(false);
 
 const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, previousCounts, refreshAll, refreshing, sections, urgency } = useGlobalActionCenter();
+const { modelFolded } = useActionCenterFolds();
 const { openTarget } = useOpenActionTarget();
 const { missingPriceIdentifiers } = useMissingPrices();
 const { modelOpen: missingPricesOpen } = useMissingPricesDialog();
@@ -36,6 +38,7 @@ watch(open, (isOpen, wasOpen) => {
     badge
   >
     <ActionCenterList
+      v-model:folded="modelFolded"
       :sections="sections"
       :cleared="cleared"
       :count="count"

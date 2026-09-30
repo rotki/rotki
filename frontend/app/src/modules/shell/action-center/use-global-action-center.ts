@@ -68,6 +68,10 @@ async function noRescan(): Promise<void> {}
  * The action center for the whole app: every module's rows in one panel, grouped by module.
  *
  * @remarks
+ * The sections come in the order their fixes depend on each other: a missing key or indexer leaves the
+ * chains and the history behind it incomplete, so keys come first, then chains, then history, then
+ * assets. The order is fixed rather than sorted by urgency, so a section never moves while it is read.
+ *
  * It owns the scan. The history rows are re-read whenever the history work settles, including
  * immediately on a session that is already synced, and the history events page shows the same rows
  * without scanning them a second time. Settled means after the auto-matching that follows a sync
@@ -103,9 +107,9 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
   const { onSnoozeChange, withSnooze } = useActionCenterSnooze();
 
   const groups = computed<ActionCenterSection[]>(() => [
-    { id: 'history', items: [...get(historySyncRow), ...get(historyRows), ...get(accountingRows)], title: t('action_center.sections.history') },
-    { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
     { id: 'integrations', items: [...get(premiumRows), ...get(integrationRows), ...get(gnosisPaySafeRows), ...get(binancePairsRows)], title: t('action_center.sections.integrations') },
+    { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
+    { id: 'history', items: [...get(historySyncRow), ...get(historyRows), ...get(accountingRows)], title: t('action_center.sections.history') },
     { id: 'assets', items: get(assetRows), title: t('action_center.sections.assets') },
   ].map(group => ({ ...group, items: group.items.map(withSnooze) })));
 

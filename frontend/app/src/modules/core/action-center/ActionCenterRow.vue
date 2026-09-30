@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
 import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowAction.vue';
-import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
+import { type ActionItem, ActionUrgency, URGENCY_COLORS } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
 const { isNew = false, item, previousCount } = defineProps<{
@@ -16,12 +16,6 @@ const emit = defineEmits<{
   action: [item: ActionItem<TTarget>];
   option: [target: TTarget];
 }>();
-
-const URGENCY_COLORS: Record<ActionUrgency, ContextColorsType | undefined> = {
-  [ActionUrgency.AUTOMATIC]: undefined,
-  [ActionUrgency.DECISION]: 'warning',
-  [ActionUrgency.TODO]: 'info',
-};
 
 const URGENCY_ICON_CLASSES: Record<ActionUrgency, string> = {
   [ActionUrgency.AUTOMATIC]: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
