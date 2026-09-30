@@ -117,6 +117,17 @@ describe('createNoAvailableIndexersHandler', () => {
     expect(actions.find(a => a?.label.includes('enter_'))).toBeUndefined();
   });
 
+  it('should explain incomplete Blockscout data without suggesting a missing API key', async () => {
+    const handler = createNoAvailableIndexersHandler(mockT, router);
+    const result = await handler.handle({ chain: 'optimism', reason: 'blockscout_incomplete_response' });
+    assert(result);
+    expect(result.title).toContain('blockscout_incomplete_response.title');
+    expect(result.message).toContain('blockscout_incomplete_response.message');
+    const actions = Array.isArray(result.action) ? result.action : [result.action];
+    expect(actions.find(a => a?.label.includes('enter_'))).toBeUndefined();
+    expect(actions.find(a => a?.label.endsWith('.action'))).toBeDefined();
+  });
+
   it('should return null when the chain is in the suppression list', async () => {
     const handler = createNoAvailableIndexersHandler(mockT, router);
     const store = useSettingsRepo();

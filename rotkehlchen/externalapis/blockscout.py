@@ -11,7 +11,12 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeNotCovered, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockscoutIncompleteResponse,
+    ChainNotSupported,
+    IndexerRangeNotCovered,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
@@ -326,7 +331,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             timeout=timeout,
         )
         if str(response.get('status')) == '2':  # Missing data, fall back to other indexers
-            raise RemoteError(f'Blockscout is missing data for {query_args}: {response}')
+            raise BlockscoutIncompleteResponse(f'Blockscout is missing data for {query_args}: {response}')  # noqa: E501
 
         if (
             (message := response.get('message')) is not None and

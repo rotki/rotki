@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -8,14 +8,18 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
+    BlockscoutIncompleteResponse,
     ChainNotSupported,
     IndexerRangeNotCovered,
     NoAvailableIndexers,
     RemoteError,
 )
+from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain
 
 if TYPE_CHECKING:
@@ -35,7 +39,7 @@ class DummyIndexer:
 
 
 class DummyEvmNodeInquirer(EvmNodeInquirer):
-    def __init__(self) -> None:  # pylint: disable=super-init-not-called
+    def __init__(self, missing_blockscout_key: bool = True) -> None:  # pylint: disable=super-init-not-called
         # skip parent init to avoid heavy wiring; set only attributes needed for _try_indexers
         self.chain_id = ChainID.ETHEREUM
         self.blockchain = SupportedBlockchain.ETHEREUM
@@ -44,7 +48,7 @@ class DummyEvmNodeInquirer(EvmNodeInquirer):
         self._no_indexer_notified = False
         self._etherscan_refused_chain = False
         self.etherscan = cast('Any', DummyIndexer('Etherscan'))
-        self.blockscout = cast('Any', DummyIndexer('Blockscout'))
+        self.blockscout = cast('Any', DummyIndexer('Blockscout', missing_api_key=missing_blockscout_key))  # noqa: E501
         self.routescan = cast('Any', DummyIndexer('Routescan'))
         self.available_indexers = {
             EvmIndexer.ETHERSCAN: self.etherscan,
@@ -259,6 +263,100 @@ def test_try_indexers_notifies_paid_key_needed_when_none_remain() -> None:
     inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
         message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
         data={'chain': SupportedBlockchain.BASE.value, 'reason': 'etherscan_paid_key_required'},
+    )
+
+
+@pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.GNOSIS])
+@pytest.mark.parametrize('etherscan_first', [False, True])
+@pytest.mark.parametrize('fallback_error', [ChainNotSupported, RemoteError, None])
+def test_incomplete_blockscout_response_notification(
+        chain_id: SUPPORTED_CHAIN_IDS,
+        etherscan_first: bool,
+        fallback_error: type[RemoteError] | None,
+) -> None:
+    """Preserve Blockscout's incomplete response through iterator fallback, in either order."""
+    fallback_succeeds = fallback_error is None
+    inquirer = DummyEvmNodeInquirer(missing_blockscout_key=False)
+    inquirer.chain_id = chain_id
+    inquirer.blockchain = chain_id.to_blockchain()  # type: ignore[assignment]
+    blockscout = Blockscout(
+        database=inquirer.database,
+        msg_aggregator=inquirer.database.msg_aggregator,
+    )
+    inquirer.available_indexers = {
+        EvmIndexer.ETHERSCAN: inquirer.etherscan,
+        EvmIndexer.BLOCKSCOUT: blockscout,
+    }
+    order = (EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN)
+    token = CachedSettings.evm_indexers_order_override_var.set(order[::-1] if etherscan_first else order)  # noqa: E501
+    try:
+        with (
+            patch.object(blockscout, '_get_api_key_for_chain', return_value=None),
+            patch.object(blockscout, '_get_url', return_value='https://example.com/api'),
+            patch.object(blockscout, '_query_and_process', return_value={
+                'status': '2',
+                'message': 'Some internal transactions within this block range have not yet been processed',  # noqa: E501
+                'result': [],
+            }),
+            patch.object(
+                inquirer.etherscan,
+                'get_transactions',
+                create=True,
+                return_value=iter([[]]),
+                side_effect=fallback_error('Etherscan query failed') if fallback_error is not None else None,  # noqa: E501
+            ),
+        ):
+            for _ in range(1 if fallback_succeeds else 3):
+                query = inquirer._try_indexers_iterable(func=lambda indexer: indexer.get_transactions(  # noqa: E501
+                    chain_id=chain_id,
+                    account=ZERO_ADDRESS,
+                    action='txlistinternal',
+                    period_or_hash=TimestampOrBlockRange(
+                        range_type='blocks',
+                        from_value=OP_BEDROCK_BLOCK,
+                        to_value=OP_BEDROCK_BLOCK + 1,
+                    ),
+                ))
+                if fallback_succeeds:
+                    assert list(query) == [[]]
+                else:
+                    with pytest.raises(RemoteError, match='Failed to query any indexer'):
+                        list(query)
+    finally:
+        CachedSettings.evm_indexers_order_override_var.reset(token)
+
+    if fallback_succeeds:
+        inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
+    else:
+        assert EvmIndexer.BLOCKSCOUT in inquirer.available_indexers
+        inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
+            message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+            data={'chain': inquirer.blockchain.value, 'reason': 'blockscout_incomplete_response'},
+        )
+
+
+def test_incomplete_blockscout_context_does_not_leak_into_next_query() -> None:
+    """An incomplete response followed by successful fallback does not taint later failures."""
+    inquirer = DummyEvmNodeInquirer(missing_blockscout_key=False)
+    token = CachedSettings.evm_indexers_order_override_var.set((
+        EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN,
+    ))
+    try:
+        assert inquirer._try_indexers(func=MagicMock(side_effect=[
+            BlockscoutIncompleteResponse('Blockscout is missing data'),
+            ChainNotSupported('Free API access is not supported for this chain'),
+            'ok',
+        ])) == 'ok'
+        inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
+
+        with pytest.raises(RemoteError, match='Failed to query any indexer'):
+            inquirer._try_indexers(func=MagicMock(side_effect=RemoteError('down')))
+    finally:
+        CachedSettings.evm_indexers_order_override_var.reset(token)
+
+    inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
+        message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+        data={'chain': inquirer.blockchain.value, 'reason': 'etherscan_paid_key_required'},
     )
 
 

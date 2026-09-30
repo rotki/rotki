@@ -11,7 +11,11 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import IndexerRangeNotCovered, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockscoutIncompleteResponse,
+    IndexerRangeNotCovered,
+    RemoteError,
+)
 from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
@@ -253,14 +257,13 @@ def test_live_query_transactions_and_rpc(blockscout: Blockscout) -> None:
     assert int(block_number, 16) > 0x1f6e0f7
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_missing_data_error(blockscout: Blockscout) -> None:
     """Test that we properly handle the custom status 2 missing data error from blockscout
     when querying internal transactions. Should raise a remote error so that we fall back to
     a different indexer.
     """
     with (
-        pytest.raises(RemoteError, match='Blockscout is missing data'),
+        pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'),
         patch.object(blockscout.session, 'request', return_value=MockResponse(
             status_code=HTTPStatus.OK,
             text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501

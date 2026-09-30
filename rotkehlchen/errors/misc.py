@@ -55,6 +55,10 @@ class IndexerRangeNotCovered(RemoteError):
     """Raised when an indexer cannot serve the requested chain history range."""
 
 
+class BlockscoutIncompleteResponse(RemoteError):
+    """Raised when Blockscout reports that the requested data is not fully indexed."""
+
+
 class RequestTooLargeError(RemoteError):
     """Raised when a request fails due to size limits (gas limit, URL too long)."""
 
