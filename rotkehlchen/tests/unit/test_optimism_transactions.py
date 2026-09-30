@@ -279,8 +279,9 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
         {
             'from_ts': Timestamp(start_ts + 11) if partial_pre_coverage else start_ts,
             'to_ts': Timestamp(OP_BEDROCK_UPGRADE - 1),
+            'query_end': None,
         },
-        {'from_ts': OP_BEDROCK_UPGRADE, 'to_ts': end_ts},
+        {'from_ts': OP_BEDROCK_UPGRADE, 'to_ts': end_ts, 'query_end': None},
     ]
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert optimism_transactions.database.get_used_query_range(
@@ -548,6 +549,7 @@ def test_successful_bedrock_split_marks_combined_range_once(
         'start_ts': start_ts,
         'end_ts': end_ts,
         'replace_existing': False,
+        'query_end': None,
     }
     end_block_probe.assert_called_once_with(ts=end_ts, closest='before')
     assert end_timestamp_probe.call_count == 1

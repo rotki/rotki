@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import patch
 
 import pytest
@@ -1371,7 +1371,7 @@ def test_split_range_keeps_progress_of_later_chunks(
         yield [tx_hash]
 
     with (
-        patch.object(inquirer, '_resolve_timestamp_range', side_effect=lambda from_ts, to_ts: (from_ts, to_ts, frozenset())),  # noqa: E501
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=lambda from_ts, to_ts, query_end: (from_ts, to_ts, frozenset())),  # noqa: E501
         patch.object(inquirer, 'get_transactions', side_effect=lambda account, action, period_or_hash: iter([[SimpleNamespace(timestamp=serve(period_or_hash.from_value, period_or_hash.to_value))]])),  # noqa: E501
         patch.object(transactions.dbevmtx, 'add_transactions', return_value=[]),
         patch.object(inquirer, 'get_transactions_with_source', side_effect=lambda account, period_or_hash, action: (iter([[serve(period_or_hash.from_value, period_or_hash.to_value)]]), EvmIndexer.ETHERSCAN)),  # noqa: E501
@@ -1571,3 +1571,131 @@ def test_query_range_unrecorded_when_coverage_is_unknown(
 
     with database.conn.read_ctx() as cursor:
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
+
+
+QUERY_KINDS: Final[tuple[Literal['txs', 'internaltxs', 'tokentxs'], ...]] = ('txs', 'internaltxs', 'tokentxs')  # noqa: E501
+
+
+def test_nothing_queried_when_query_end_is_unknown(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """If we cannot tell how far the indexers reach, nothing is queried nor recorded."""
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    with ExitStack() as stack:
+        for _, indexer in inquirer._get_indexers_in_order():
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=RemoteError('FAIL'),
+            ))
+        get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
+        get_token_hashes = stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_token_transaction_hashes',
+        ))
+        transactions.single_address_query_transactions(
+            address=(address := make_evm_address()),
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
+
+    assert get_transactions.call_count == 0
+    assert get_token_hashes.call_count == 0
+    with database.conn.read_ctx() as cursor:
+        assert all(database.get_used_query_range(
+            cursor=cursor,
+            name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+        ) is None for prefix in QUERY_KINDS)
+
+
+def test_sync_resolves_its_end_once(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """Every address and query kind of a sync must stop at one block, resolved once.
+
+    The end is kept chain_top_lag seconds behind now, since the newest blocks may not be
+    indexed yet. An indexer that could not resolve it must not serve any range ending there.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    resolved_ts: list[Timestamp] = []
+    end_blocks: list[int] = []
+    failing_indexer, *_ = indexers = inquirer._get_indexers_in_order()
+    now = ts_now()
+    assert len(indexers) >= 2, 'need an indexer to fall back to'
+
+    def blocknumber_by_time(chain_id: ChainID, ts: Timestamp, closest: str = 'before') -> int:
+        resolved_ts.append(ts)
+        return ts // 10
+
+    def lagging_blocknumber_by_time(
+            chain_id: ChainID,
+            ts: Timestamp,
+            closest: str = 'before',
+    ) -> int:
+        """Resolves the start of the range fine, only its index does not reach the end"""
+        if ts == now - transactions.chain_top_lag:
+            raise RemoteError('FAIL')
+        return ts // 10
+
+    def get_transactions(
+            account: ChecksumEvmAddress,
+            action: str,
+            period_or_hash: TimestampOrBlockRange,
+    ) -> Iterator[list[Any]]:
+        end_blocks.append(period_or_hash.to_value)
+        assert DEGRADED_INDEXERS.get() == {failing_indexer[0]}
+        yield []
+
+    def get_token_transaction_hashes(
+            account: ChecksumEvmAddress,
+            from_block: int,
+            to_block: int,
+    ) -> Iterator[list[EVMTxHash]]:
+        end_blocks.append(to_block)
+        assert DEGRADED_INDEXERS.get() == {failing_indexer[0]}
+        yield []
+
+    with ExitStack() as stack:
+        for name, indexer in indexers:
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=lagging_blocknumber_by_time if name == failing_indexer[0] else blocknumber_by_time,  # noqa: E501
+            ))
+        block_timestamp = stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_block_timestamp',
+            return_value=(end_ts := Timestamp(now - transactions.chain_top_lag - 2)),
+        ))
+        stack.enter_context(patch('rotkehlchen.chain.evm.transactions.ts_now', return_value=now))
+        stack.enter_context(patch.object(inquirer, 'get_transactions', side_effect=get_transactions))  # noqa: E501
+        stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_transactions_with_source',
+            side_effect=lambda account, period_or_hash, action: (get_transactions(account, action, period_or_hash), EvmIndexer.BLOCKSCOUT),  # noqa: E501
+        ))
+        stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_token_transaction_hashes',
+            side_effect=get_token_transaction_hashes,
+        ))
+        transactions.query_chain(
+            from_timestamp=(start_ts := Timestamp(now - DAY_IN_SECONDS)),
+            to_timestamp=now,
+            addresses=(addresses := [make_evm_address(), make_evm_address()]),
+        )
+
+    end_ts_lookups = [ts for ts in resolved_ts if ts == now - transactions.chain_top_lag]
+    assert len(end_ts_lookups) == 1, 'the end of the sync must be resolved once'
+    assert end_blocks == [end_block := (now - transactions.chain_top_lag) // 10] * 6, 'two addresses x three query kinds'  # noqa: E501
+    # recording the ranges clamps them to how far the indexers reach, read off the same block
+    assert {x.kwargs['block_number'] for x in block_timestamp.call_args_list} == {end_block}
+    with database.conn.read_ctx() as cursor:
+        for address in addresses:
+            for prefix in QUERY_KINDS:
+                assert database.get_used_query_range(
+                    cursor=cursor,
+                    name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+                ) == (start_ts, end_ts)

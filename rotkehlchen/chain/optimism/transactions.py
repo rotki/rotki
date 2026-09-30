@@ -7,6 +7,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.node_inquirer import QueryEnd
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -32,6 +33,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
             record_range: bool = True,
             update_ranges: bool | None = None,
             progress_start_ts: Timestamp | None = None,
+            query_end: QueryEnd | None = None,
     ) -> bool:
         """Query both sides of Bedrock while keeping saved coverage contiguous."""
         if start_ts >= OP_BEDROCK_UPGRADE or end_ts < OP_BEDROCK_UPGRADE:
@@ -42,6 +44,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
                 record_range=record_range,
                 update_ranges=update_ranges,
                 progress_start_ts=progress_start_ts,
+                query_end=query_end,
             )
 
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
@@ -85,6 +88,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
             record_range=False,
             update_ranges=update_post_batches,
             progress_start_ts=post_progress_start_ts if update_post_batches else None,
+            query_end=query_end,
         )
 
         if not record_range:
@@ -117,5 +121,6 @@ class OptimismTransactions(L2WithL1FeesTransactions):
                 start_ts=mark_start,
                 end_ts=mark_end,
                 replace_existing=replace_partial_pre_range,
+                query_end=query_end,
             )
         return pre_bedrock_ok and post_bedrock_ok
