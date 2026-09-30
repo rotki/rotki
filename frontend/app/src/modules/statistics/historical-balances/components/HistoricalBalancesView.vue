@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
-import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import HistoricalBalancesAsOf from '@/modules/statistics/historical-balances/components/HistoricalBalancesAsOf.vue';
@@ -9,44 +7,24 @@ import HistoricalBalancesTable from '@/modules/statistics/historical-balances/co
 import { useAsOfDate } from '@/modules/statistics/historical-balances/use-as-of-date';
 import { useHistoricalBalanceValues } from '@/modules/statistics/historical-balances/use-historical-balance-values';
 import { useHistoricalBalancesAt } from '@/modules/statistics/historical-balances/use-historical-balances-at';
+import { ProcessingState, useHistoricalBalancesProcessing } from '@/modules/statistics/historical-balances/use-historical-balances-processing';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const processing = ref<boolean>(false);
-
 const { modelDay, restamp, timestamp } = useAsOfDate();
-const { empty, error, groups, loading, processingRequired, refresh } = useHistoricalBalancesAt(timestamp);
-const { missingCount, pendingCount, rows, spamCount, total } = useHistoricalBalanceValues(groups, timestamp);
-const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
-const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
+const { empty, error, groups, loadedAt, loading, processingRequired, refresh } = useHistoricalBalancesAt(timestamp);
+const shownAt = computed<number>(() => get(loadedAt) ?? get(timestamp));
+const { missingCount, pendingCount, rows, spamCount, total } = useHistoricalBalanceValues(groups, shownAt);
+const { failure, processNow, state: processingState } = useHistoricalBalancesProcessing();
+
+/** A day came back empty after events were processed, so there is nothing left to offer. */
+const emptyAfterProcessing = computed<boolean>(() => !get(processingRequired) && get(processingState) === ProcessingState.DONE);
 
 /** Today's as-of time is now, so a refresh first moves it forward; that change reloads on its own. */
 async function reload(): Promise<void> {
   if (!restamp())
     await refresh();
 }
-
-/**
- * Starts processing and stays busy until the backend reports it finished.
- *
- * @remarks
- * The trigger returns once processing is scheduled, long before it is done, so the busy state ends
- * on the completion signal instead; the balances reload on that same signal.
- */
-async function processNow(): Promise<void> {
-  set(processing, true);
-  try {
-    await triggerHistoricalBalancesProcessing();
-  }
-  catch (error_: unknown) {
-    set(processing, false);
-    throw error_;
-  }
-}
-
-watch(historicalBalanceProcessingCompleted, () => {
-  set(processing, false);
-});
 </script>
 
 <template>
@@ -76,15 +54,32 @@ watch(historicalBalanceProcessingCompleted, () => {
       >
         <div class="flex flex-wrap items-center justify-between gap-3">
           <span v-if="processingRequired">{{ t('historical_balances.processing.message') }}</span>
+          <span v-else-if="emptyAfterProcessing">{{ t('historical_balances.processing.done_empty') }}</span>
           <span v-else>{{ t('historical_balances.processing.empty_message') }}</span>
           <RuiButton
+            v-if="!emptyAfterProcessing"
             size="sm"
             color="primary"
-            :loading="processing"
+            :loading="processingState === ProcessingState.RUNNING"
+            data-testid="historical-balances-process"
             @click="processNow()"
           >
             {{ t('historical_balances.processing.action') }}
           </RuiButton>
+        </div>
+        <div
+          v-if="processingState === ProcessingState.NOT_STARTED"
+          class="mt-2 text-body-2"
+          data-testid="historical-balances-process-not-started"
+        >
+          {{ t('historical_balances.processing.not_started') }}
+        </div>
+        <div
+          v-else-if="processingState === ProcessingState.FAILED"
+          class="mt-2 text-body-2"
+          data-testid="historical-balances-process-failed"
+        >
+          {{ t('historical_balances.processing.failed', { message: failure }) }}
         </div>
       </RuiAlert>
 
@@ -107,7 +102,7 @@ watch(historicalBalanceProcessingCompleted, () => {
           >
             <template #date>
               <DateDisplay
-                :timestamp="timestamp"
+                :timestamp="shownAt"
                 no-time
               />
             </template>
@@ -134,6 +129,7 @@ watch(historicalBalanceProcessingCompleted, () => {
       </div>
 
       <HistoricalBalancesTable
+        v-if="!error"
         :rows="rows"
         :loading="loading"
       />

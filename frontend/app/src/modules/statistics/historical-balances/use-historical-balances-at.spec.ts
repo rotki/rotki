@@ -121,6 +121,24 @@ describe('useHistoricalBalancesAt', () => {
     expect(get(groups).map(({ asset }) => asset)).toEqual(['DAI']);
   });
 
+  it('should keep the loaded timestamp on the shown balances until the next date arrives', async () => {
+    const next = deferred();
+    const timestamp = ref<number>(100);
+    const { groups, loadedAt } = create(timestamp);
+    await flushPromises();
+
+    fetchHistoricalBalances.mockReturnValueOnce(next.promise);
+    set(timestamp, 200);
+    await flushPromises();
+    expect(get(loadedAt)).toBe(100);
+    expect(get(groups).map(({ asset }) => asset)).toEqual(['ETH']);
+
+    next.resolve(response('DAI'));
+    await flushPromises();
+    expect(get(loadedAt)).toBe(200);
+    expect(get(groups).map(({ asset }) => asset)).toEqual(['DAI']);
+  });
+
   it('should show a failure and clear the previous date\'s balances', async () => {
     const timestamp = ref<number>(100);
     const { empty, error, groups } = create(timestamp);

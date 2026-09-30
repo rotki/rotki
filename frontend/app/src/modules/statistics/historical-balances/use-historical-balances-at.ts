@@ -7,6 +7,11 @@ import { groupByAsset, type HistoricalAssetGroup } from '@/modules/statistics/hi
 
 interface UseHistoricalBalancesAtReturn {
   groups: ComputedRef<HistoricalAssetGroup[]>;
+  /**
+   * The timestamp `groups` were loaded for, in unix seconds. It trails the requested one while a
+   * load is in flight, so the rows shown are always labelled and priced for their own day.
+   */
+  loadedAt: DeepReadonly<Ref<number | undefined>>;
   loading: DeepReadonly<Ref<boolean>>;
   /** The last load failed; the reason, for display. */
   error: DeepReadonly<Ref<string | undefined>>;
@@ -29,6 +34,7 @@ interface UseHistoricalBalancesAtReturn {
  */
 export function useHistoricalBalancesAt(timestamp: MaybeRefOrGetter<number>): UseHistoricalBalancesAtReturn {
   const loaded = shallowRef<HistoricalAssetGroup[]>([]);
+  const loadedAt = shallowRef<number>();
   const loading = shallowRef<boolean>(false);
   const error = ref<string>();
   const processingRequired = shallowRef<boolean>(false);
@@ -46,13 +52,15 @@ export function useHistoricalBalancesAt(timestamp: MaybeRefOrGetter<number>): Us
 
   async function refresh(): Promise<void> {
     const request = ++latestRequest;
+    const at = toValue(timestamp);
     set(loading, true);
     set(error, undefined);
     try {
-      const response = await fetchHistoricalBalances(toValue(timestamp));
+      const response = await fetchHistoricalBalances(at);
       if (request !== latestRequest)
         return;
       set(loaded, groupByAsset(response.entries));
+      set(loadedAt, at);
       set(processingRequired, response.processingRequired);
     }
     catch (error_: unknown) {
@@ -60,6 +68,7 @@ export function useHistoricalBalancesAt(timestamp: MaybeRefOrGetter<number>): Us
         return;
       logger.error(error_);
       set(loaded, []);
+      set(loadedAt, at);
       set(processingRequired, false);
       set(error, error_ instanceof Error ? error_.message : String(error_));
     }
@@ -77,6 +86,7 @@ export function useHistoricalBalancesAt(timestamp: MaybeRefOrGetter<number>): Us
     empty,
     error: readonly(error),
     groups,
+    loadedAt: readonly(loadedAt),
     loading: readonly(loading),
     processingRequired: readonly(processingRequired),
     refresh,

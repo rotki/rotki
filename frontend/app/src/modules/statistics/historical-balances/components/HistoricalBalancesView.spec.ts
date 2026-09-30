@@ -3,20 +3,24 @@ import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/tes
 import { set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import HistoricalBalancesView from '@/modules/statistics/historical-balances/components/HistoricalBalancesView.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { empty, error, processingRequired, refresh, restamp, rows, triggerProcessing } = await vi.hoisted(async () => {
+const { empty, error, loadedAt, processingRequired, refresh, restamp, rows, triggerProcessing, valuedAt } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
+  const valuedAt: { current?: MaybeRefOrGetter<number> } = {};
   return {
     empty: ref<boolean>(false),
     error: ref<string>(),
+    loadedAt: ref<number>(),
     processingRequired: ref<boolean>(false),
     refresh: vi.fn<() => Promise<void>>(),
     restamp: vi.fn<() => boolean>(),
     rows: ref<unknown[]>([]),
-    triggerProcessing: vi.fn<() => Promise<void>>(),
+    triggerProcessing: vi.fn<() => Promise<boolean>>(),
+    valuedAt,
   };
 });
 
@@ -27,19 +31,22 @@ vi.mock('@/modules/statistics/historical-balances/use-as-of-date', async () => {
 vi.mock('@/modules/statistics/historical-balances/use-historical-balances-at', async () => {
   const { ref } = await import('vue');
   return {
-    useHistoricalBalancesAt: (): Record<string, unknown> => ({ empty, error, groups: ref([]), loading: ref(false), processingRequired, refresh }),
+    useHistoricalBalancesAt: (): Record<string, unknown> => ({ empty, error, groups: ref([]), loadedAt, loading: ref(false), processingRequired, refresh }),
   };
 });
 vi.mock('@/modules/statistics/historical-balances/use-historical-balance-values', async () => {
   const { computed, ref } = await import('vue');
   const { bigNumberify: toBigNumber } = await import('@rotki/common');
   return {
-    useHistoricalBalanceValues: (): Record<string, unknown> => ({
-      missingCount: ref(0),
-      pendingCount: ref(0),
-      rows,
-      total: computed(() => toBigNumber('100')),
-    }),
+    useHistoricalBalanceValues: (_groups: unknown, at: MaybeRefOrGetter<number>): Record<string, unknown> => {
+      valuedAt.current = at;
+      return {
+        missingCount: ref(0),
+        pendingCount: ref(0),
+        rows,
+        total: computed(() => toBigNumber('100')),
+      };
+    },
   };
 });
 vi.mock('@/modules/history/balances/use-historical-balances', () => ({
@@ -62,11 +69,12 @@ describe('historical balances view', () => {
     setActivePinia(createPinia());
     set(empty, false);
     set(error, undefined);
+    set(loadedAt, undefined);
     set(processingRequired, false);
     set(rows, [{ amount: bigNumberify('1'), asset: 'ETH' }]);
     refresh.mockReset().mockResolvedValue();
     restamp.mockReset().mockReturnValue(false);
-    triggerProcessing.mockReset().mockResolvedValue();
+    triggerProcessing.mockReset().mockResolvedValue(true);
   });
 
   it('should offer to process events only while some are unprocessed', async () => {
@@ -105,6 +113,64 @@ describe('historical balances view', () => {
     expect(wrapper.find('[data-testid=historical-balances-processing]').text()).toContain('historical_balances.processing.empty_message');
   });
 
+  it('should stop offering processing once a run finished and the day is still empty', async () => {
+    set(empty, true);
+    const wrapper = createWrapper();
+
+    useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingCompleted();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=historical-balances-processing]').text()).toContain('historical_balances.processing.done_empty');
+    expect(wrapper.find('[data-testid=historical-balances-process]').exists()).toBe(false);
+  });
+
+  it('should still offer processing after a run when events are unprocessed again', async () => {
+    const wrapper = createWrapper();
+    useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingCompleted();
+    await flushPromises();
+
+    set(processingRequired, true);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=historical-balances-process]').exists()).toBe(true);
+  });
+
+  it('should say so when the backend could not start processing', async () => {
+    set(empty, true);
+    triggerProcessing.mockResolvedValue(false);
+    const wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=historical-balances-process]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=historical-balances-process-not-started]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=historical-balances-process]').attributes('disabled')).toBeUndefined();
+  });
+
+  it('should show why starting processing failed', async () => {
+    set(empty, true);
+    triggerProcessing.mockRejectedValue(new Error('backend down'));
+    const wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=historical-balances-process]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=historical-balances-process-failed]').text()).toContain('historical_balances.processing.failed');
+  });
+
+  it('should price the shown balances at the day they were loaded for, not the one being loaded', () => {
+    set(loadedAt, 1704067199);
+    createWrapper();
+
+    expect(toValue(valuedAt.current)).toBe(1704067199);
+  });
+
+  it('should price at the requested day before any balances have loaded', () => {
+    createWrapper();
+
+    expect(toValue(valuedAt.current)).toBe(1735689599);
+  });
+
   it('should leave the reload to the timestamp when refresh moves today\'s as-of time', async () => {
     restamp.mockReturnValue(true);
     const wrapper = createWrapper();
@@ -132,5 +198,6 @@ describe('historical balances view', () => {
 
     expect(wrapper.find('[data-testid=historical-balances-error]').text()).toContain('backend down');
     expect(wrapper.find('[data-testid=historical-balances-total]').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'HistoricalBalancesTable' }).exists()).toBe(false);
   });
 });

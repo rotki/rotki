@@ -4272,8 +4272,11 @@
     },
     "processing": {
       "action": "Process now",
+      "done_empty": "Your history events are processed, and there were no balances on this day.",
       "empty_message": "If you expected balances on this day, your history events may not have been processed yet.",
-      "message": "Some history events have not been processed yet, so these balances may be out of date."
+      "failed": "Could not start processing: {message}",
+      "message": "Some history events have not been processed yet, so these balances may be out of date.",
+      "not_started": "Processing can't start while a profit and loss report is being generated. Try again once the report finishes."
     },
     "table": {
       "locations": "Locations"
