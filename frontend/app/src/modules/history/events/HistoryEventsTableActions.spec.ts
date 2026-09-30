@@ -3,7 +3,7 @@ import type { UseHistoryEventsPillBarOptions } from '@/modules/history/events/us
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { type DefineComponent, defineComponent, h } from 'vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
 
 const pillBar = {
@@ -23,7 +23,7 @@ vi.mock('@/modules/history/events/use-history-events-pill-bar', () => ({
   },
 }));
 
-function passthrough(name: string, slots: string[] = []): ReturnType<typeof defineComponent> {
+function passthrough(name: string, slots: string[] = []): DefineComponent {
   return defineComponent({
     name,
     setup: (_props, context) => (): unknown => h('div', { 'data-testid': name }, [
@@ -33,7 +33,7 @@ function passthrough(name: string, slots: string[] = []): ReturnType<typeof defi
   });
 }
 
-function leaf(name: string): ReturnType<typeof defineComponent> {
+function leaf(name: string): DefineComponent {
   return defineComponent({
     name,
     setup: () => (): unknown => h('div', { 'data-testid': name }),
