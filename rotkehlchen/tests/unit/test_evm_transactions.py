@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from itertools import count
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import patch
@@ -8,7 +9,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS
-from rotkehlchen.chain.evm.transactions import MIN_SPLITTABLE_QUERY_RANGE
+from rotkehlchen.chain.evm.transactions import CHAIN_TOP_LAG, MIN_SPLITTABLE_QUERY_RANGE
 from rotkehlchen.chain.evm.types import (
     EvmAccount,
     EvmIndexer,
@@ -52,6 +53,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -1583,12 +1585,11 @@ def test_nothing_queried_when_query_end_is_unknown(
     """If we cannot tell how far the indexers reach, nothing is queried nor recorded."""
     inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
     with ExitStack() as stack:
-        for _, indexer in inquirer._get_indexers_in_order():
-            stack.enter_context(patch.object(
-                target=indexer,
-                attribute='get_blocknumber_by_time',
-                side_effect=RemoteError('FAIL'),
-            ))
+        blocknumber_lookups = [stack.enter_context(patch.object(
+            target=indexer,
+            attribute='get_blocknumber_by_time',
+            side_effect=RemoteError('FAIL'),
+        )) for _, indexer in inquirer._get_indexers_in_order()]
         get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
         get_token_hashes = stack.enter_context(patch.object(
             target=inquirer,
@@ -1600,6 +1601,8 @@ def test_nothing_queried_when_query_end_is_unknown(
             end_ts=ts_now(),
         )
 
+    # only the end is looked up. Each query kind would otherwise try its own range again.
+    assert [x.call_count for x in blocknumber_lookups] == [1] * len(blocknumber_lookups)
     assert get_transactions.call_count == 0
     assert get_token_hashes.call_count == 0
     with database.conn.read_ctx() as cursor:
@@ -1615,19 +1618,25 @@ def test_sync_resolves_its_end_once(
 ) -> None:
     """Every address and query kind of a sync must stop at one block, resolved once.
 
-    The end is kept chain_top_lag seconds behind now, since the newest blocks may not be
+    The end is kept CHAIN_TOP_LAG seconds behind now, since the newest blocks may not be
     indexed yet. An indexer that could not resolve it must not serve any range ending there.
+
+    The chain head moves on while the sync runs, so every lookup of the end timestamp
+    returns a later block, and nothing stays cached, as if the end had been evicted by
+    the lookups of other ranges. Looking the end up again anywhere in the sync then shows
+    as a different end block.
     """
     inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
     resolved_ts: list[Timestamp] = []
     end_blocks: list[int] = []
     failing_indexer, *_ = indexers = inquirer._get_indexers_in_order()
-    now = ts_now()
+    sync_end_ts = Timestamp((now := ts_now()) - CHAIN_TOP_LAG)
+    head_blocks = count(end_block := sync_end_ts // 10)
     assert len(indexers) >= 2, 'need an indexer to fall back to'
 
     def blocknumber_by_time(chain_id: ChainID, ts: Timestamp, closest: str = 'before') -> int:
         resolved_ts.append(ts)
-        return ts // 10
+        return next(head_blocks) if ts == sync_end_ts else ts // 10
 
     def lagging_blocknumber_by_time(
             chain_id: ChainID,
@@ -1635,7 +1644,7 @@ def test_sync_resolves_its_end_once(
             closest: str = 'before',
     ) -> int:
         """Resolves the start of the range fine, only its index does not reach the end"""
-        if ts == now - transactions.chain_top_lag:
+        if ts == sync_end_ts:
             raise RemoteError('FAIL')
         return ts // 10
 
@@ -1664,10 +1673,14 @@ def test_sync_resolves_its_end_once(
                 attribute='get_blocknumber_by_time',
                 side_effect=lagging_blocknumber_by_time if name == failing_indexer[0] else blocknumber_by_time,  # noqa: E501
             ))
+        stack.enter_context(patch.dict(
+            in_dict=inquirer.timestamp_to_block_cache,
+            values={inquirer.chain_id: LRUCacheWithRemove(maxsize=0)},
+        ))
         block_timestamp = stack.enter_context(patch.object(
             target=inquirer,
             attribute='get_block_timestamp',
-            return_value=(end_ts := Timestamp(now - transactions.chain_top_lag - 2)),
+            return_value=(end_ts := Timestamp(sync_end_ts - 2)),
         ))
         stack.enter_context(patch('rotkehlchen.chain.evm.transactions.ts_now', return_value=now))
         stack.enter_context(patch.object(inquirer, 'get_transactions', side_effect=get_transactions))  # noqa: E501
@@ -1687,11 +1700,10 @@ def test_sync_resolves_its_end_once(
             addresses=(addresses := [make_evm_address(), make_evm_address()]),
         )
 
-    end_ts_lookups = [ts for ts in resolved_ts if ts == now - transactions.chain_top_lag]
-    assert len(end_ts_lookups) == 1, 'the end of the sync must be resolved once'
-    assert end_blocks == [end_block := (now - transactions.chain_top_lag) // 10] * 6, 'two addresses x three query kinds'  # noqa: E501
+    assert resolved_ts.count(sync_end_ts) == 1, 'the end of the sync must be resolved once'
+    assert end_blocks == [end_block] * 6, 'two addresses x three query kinds'
     # recording the ranges clamps them to how far the indexers reach, read off the same block
-    assert {x.kwargs['block_number'] for x in block_timestamp.call_args_list} == {end_block}
+    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block] * 6
     with database.conn.read_ctx() as cursor:
         for address in addresses:
             for prefix in QUERY_KINDS:
