@@ -63,7 +63,6 @@
     "lint-staged": "catalog:",
     "npm-run-all2": "catalog:",
     "rimraf": "catalog:",
-    "semver": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
