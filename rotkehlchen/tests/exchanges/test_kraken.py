@@ -557,10 +557,11 @@ def test_kraken_query_balances_unknown_asset(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     """Test that if a kraken deposits_withdrawals query returns unknown asset
-    no exception is raised and a warning is generated and the deposits/withdrawals
-    with valid assets are still returned"""
+    no exception is raised, an unknown asset message is sent for it and the
+    deposits/withdrawals with valid assets are still returned"""
     input_ledger = """
     {
     "ledger": {
@@ -634,8 +635,15 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[2].amount == FVal('4000000')
     assert movements[2].event_type == HistoryEventType.EXCHANGE_TRANSFER
     assert movements[3].event_subtype == HistoryEventSubType.FEE
-    errors = kraken.msg_aggregator.consume_errors()
-    assert len(errors) == 1
+    assert [
+        message.data['identifier']
+        for message in kraken.msg_aggregator.rotki_notifier.messages
+        if message.message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
+    ] == ['YYYYYYYYYYYY']
+    assert not any(
+        message.message_type == WSMessageType.USER_MESSAGE
+        for message in kraken.msg_aggregator.rotki_notifier.messages
+    )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1410,7 +1418,12 @@ def test_trade_from_kraken_unexpected_data(kraken):
     "count": 2
 }"""
 
-    def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
+    def query_kraken_and_test(
+            input_trades,
+            expected_warnings_num,
+            expected_errors_num,
+            expected_unknown_assets=0,
+    ):
         # delete kraken history entries so they get requeried
         with kraken.history_events_db.db.user_write() as cursor:
             location = Location.KRAKEN
@@ -1423,7 +1436,10 @@ def test_trade_from_kraken_unexpected_data(kraken):
                 (f'{location}_history_events_%',),
             )
 
-        with _patch_ledger(kraken, input_trades):
+        with (
+            _patch_ledger(kraken, input_trades),
+            patch.object(kraken, 'send_unknown_asset_message') as unknown_asset_message,
+        ):
             kraken.query_history_events()
 
         with kraken.db.conn.read_ctx() as cursor:
@@ -1432,7 +1448,8 @@ def test_trade_from_kraken_unexpected_data(kraken):
                 filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
             )
 
-        if expected_warnings_num == 0 and expected_errors_num == 0:
+        assert unknown_asset_message.call_count == expected_unknown_assets
+        if expected_warnings_num == expected_errors_num == expected_unknown_assets == 0:
             assert len(events) == 3
             assert events[0].asset == A_EUR
             assert events[1].asset == A_BTC
@@ -1455,7 +1472,12 @@ def test_trade_from_kraken_unexpected_data(kraken):
     # From here and on let's check trades with unexpected data
     input_trades = test_trades
     input_trades = input_trades.replace('"asset": "XXBT"', '"asset": "lefty"')
-    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(
+        input_trades,
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        expected_unknown_assets=1,
+    )
 
     input_trades = test_trades
     input_trades = input_trades.replace('"time": 1458994442.063', '"time": "dsdsad"')

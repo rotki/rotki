@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.migration_utils import (
@@ -18,6 +19,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, FVal, Location, Price
+from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -164,6 +166,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                         rotki.msg_aggregator.add_error(
                             f'Failed to fix swap with group identifier {update[0]}. '
                             'Skipping it, check logs for more details',
+                            classification=LocalDbProblem(entry=UserMessageEntry.HISTORY_EVENT),
                         )
                         log.error(f'During _fix_swap_event_identifiers found a conflict while applying update {update}. error: {e}. Skipping')  # noqa: E501
 

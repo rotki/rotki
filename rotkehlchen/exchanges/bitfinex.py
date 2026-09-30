@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.concurrency import cancellable_sleep
@@ -57,6 +58,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -98,6 +100,10 @@ API_TRADES_SORTING_MODE = 1  # ascending
 API_WALLET_MIN_RESULT_LENGTH = 3
 API_TRADES_MIN_RESULT_LENGTH = 11
 API_MOVEMENTS_MIN_RESULT_LENGTH = 22
+CASE_TO_RECORD: Final = {
+    'trades': UserMessageRecord.TRADE,
+    'asset_movements': UserMessageRecord.ASSET_MOVEMENT,
+}
 
 DeserializationMethod = Callable[..., list[SwapEvent] | list[AssetMovement]]  # ... due to keyword args  # noqa: E501
 
@@ -273,8 +279,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 except JSONDecodeError:
                     msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
                     log.error(msg, options=call_options)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Got remote error while querying {self.name} {case}: {msg}',
+                        NetworkFailure(record=CASE_TO_RECORD[case], error=msg),
                     )
                     return results, True
 
@@ -286,8 +293,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                                 f'{self.name} {case} request failed after retrying '
                                 f'{API_REQUEST_RETRY_TIMES} times.'
                             )
-                            self.msg_aggregator.add_error(
+                            self.add_classified_error(
                                 f'Got remote error while querying {self.name} {case}: {msg}',
+                                NetworkFailure(record=CASE_TO_RECORD[case], error=msg),
                             )
                             return results, True
 
@@ -304,8 +312,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     # Unexpected JSON dict case, better to log it
                     msg = f'Unexpected {self.name} {case} unsuccessful response JSON'
                     log.error(msg, error_response=error_response)
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Got remote error while querying {self.name} {case}: {msg}',
+                        NetworkFailure(record=CASE_TO_RECORD[case], error=msg),
                     )
                     return results, True
 
@@ -319,8 +328,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError:
                 msg = f'{self.name} {case} returned invalid JSON response: {response.text}.'
                 log.error(msg)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
+                    BadData(record=CASE_TO_RECORD[case], error=msg),
                 )
                 return results, True
 
@@ -378,9 +388,10 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Found less items than expected',
                     raw_result=raw_result,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to deserialize a {self.name} {case} result. '
                     f'Check logs for details. Ignoring it.',
+                    BadData(record=CASE_TO_RECORD[case], error='Found less items than expected'),
                 )
                 continue
 
@@ -418,9 +429,10 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     raw_result=raw_result,
                     error=msg,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to deserialize a {self.name} {case} result. '
                     f'Check logs for details. Ignoring it.',
+                    BadData(record=CASE_TO_RECORD[case], error=msg),
                 )
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
@@ -738,8 +750,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             if case in {'validate_api_key', 'balances'}:
                 return False, msg
             if case in {'trades', 'asset_movements'}:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
+                    NetworkFailure(record=CASE_TO_RECORD[case], error=msg),
                 )
                 return [], True
 
@@ -763,8 +776,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         if case in {'validate_api_key', 'balances'}:
             return False, message
         if case in {'trades', 'asset_movements'}:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Got remote error while querying {self.name} {case}: {message}',
+                NetworkFailure(record=CASE_TO_RECORD[case], error=message),
             )
             return [], True
 
@@ -862,9 +876,13 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Found less items than expected',
                     wallet=wallet,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Failed to deserialize a {self.name} balance result. '
                     f'Check logs for details. Ignoring it.',
+                    BadData(
+                        record=UserMessageRecord.BALANCE,
+                        error='Found less items than expected',
+                    ),
                 )
                 continue
 
@@ -883,9 +901,10 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 amount = deserialize_fval(wallet[balance_index])
             except DeserializationError as e:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
                     f'to deserialize asset amount due to {e!s}. Skipping balance result.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
 

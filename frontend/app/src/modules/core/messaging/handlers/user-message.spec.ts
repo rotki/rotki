@@ -1,14 +1,16 @@
 import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { describe, expect, it } from 'vitest';
-import { createLegacyHandler } from '@/modules/core/messaging/handlers/legacy';
+import { createUserMessageHandler } from '@/modules/core/messaging/handlers/user-message';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
-describe('createLegacyHandler', () => {
-  it('should map an error to a bulk error notification with the backend title', async () => {
-    const handler = createLegacyHandler(mockT);
+const classified = { fields: { entry: 'tag' }, key: 'local_db', subject: null };
 
-    const result = await handler.handle({ value: 'Failed to query kraken balances', verbosity: 'error' });
+describe('createUserMessageHandler', () => {
+  it('should map an error to a bulk error notification with the backend title', async () => {
+    const handler = createUserMessageHandler(mockT);
+
+    const result = await handler.handle({ ...classified, value: 'Failed to query kraken balances', verbosity: 'error' });
 
     expect(result).toMatchObject({
       category: NotificationCategory.DEFAULT,
@@ -20,9 +22,9 @@ describe('createLegacyHandler', () => {
   });
 
   it('should map a warning to its own severity and title', async () => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
-    const result = await handler.handle({ value: 'Ignoring it.', verbosity: 'warning' });
+    const result = await handler.handle({ ...classified, value: 'Ignoring it.', verbosity: 'warning' });
 
     expect(result).toMatchObject({
       priority: Priority.BULK,
@@ -32,17 +34,17 @@ describe('createLegacyHandler', () => {
   });
 
   it.each(['error', 'warning'] as const)('should leave display unset for a %s', async (verbosity) => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
-    const result = await handler.handle({ value: 'Skipping balance result.', verbosity });
+    const result = await handler.handle({ ...classified, value: 'Skipping balance result.', verbosity });
 
     expect(result.display).toBeUndefined();
   });
 
   it.each(['error', 'warning'] as const)('should not reach the popup queue for a %s', async (verbosity) => {
-    const handler = createLegacyHandler(mockT);
+    const handler = createUserMessageHandler(mockT);
 
-    const result = await handler.handle({ value: 'Check logs for details.', verbosity });
+    const result = await handler.handle({ ...classified, value: 'Check logs for details.', verbosity });
 
     expect(createNotification(1, result).display).toBe(false);
   });

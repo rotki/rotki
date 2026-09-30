@@ -16,6 +16,7 @@ import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -62,6 +63,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import combine_dicts, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -752,9 +754,10 @@ class Coinbase(ExchangeInterface):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Error processing a coinbase conversion. Check logs '
                     'for details. Ignoring it.',
+                    BadData(record=UserMessageRecord.TRADE, error=str(e)),
                 )
                 log.error(
                     'Error processing a coinbase conversion',
@@ -881,9 +884,10 @@ class Coinbase(ExchangeInterface):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 'Error processing a coinbase trade. Check logs '
                 'for details. Ignoring it.',
+                BadData(record=UserMessageRecord.TRADE, error=str(e)),
             )
             log.error(
                 'Error processing a coinbase trade',
@@ -1115,9 +1119,10 @@ class Coinbase(ExchangeInterface):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 'Unexpected data encountered during deserialization of a coinbase '
                 'asset movement. Check logs for details and open a bug report.',
+                BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '
@@ -1254,9 +1259,10 @@ class Coinbase(ExchangeInterface):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 'Unexpected data encountered during deserialization of a coinbase '
                 'history event. Check logs for details and open a bug report.',
+                BadData(record=UserMessageRecord.HISTORY_EVENT, error=str(e)),
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '

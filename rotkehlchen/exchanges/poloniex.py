@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
@@ -61,6 +62,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -336,8 +338,9 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     trade_id = trade['id']
                 except KeyError:
                     log.error('Skipping poloniex trade without an id', trade=trade)
-                    self.msg_aggregator.add_warning(
+                    self.add_classified_warning(
                         'Error deserializing a poloniex trade. Check the logs for details',
+                        BadData(record=UserMessageRecord.TRADE, error='Missing key entry for id.'),
                     )
                     continue
 
@@ -376,8 +379,9 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
+                    self.add_classified_warning(
                         'Error deserializing a poloniex trade. Check the logs for details',
+                        BadData(record=UserMessageRecord.TRADE, error=msg),
                     )
                     log.error(
                         'Error deserializing poloniex trade',
@@ -412,8 +416,11 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         for account_info in resp:
             try:
                 balances = account_info['balances']
-            except KeyError:
-                self.msg_aggregator.add_error('Could not find balances key in the balances response')  # noqa: E501
+            except KeyError as e:
+                self.add_classified_error(
+                    'Could not find balances key in the balances response',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
+                )
                 continue
 
             for balance_entry in balances:
@@ -425,9 +432,10 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Could not deserialize amount from poloniex due to '
                         f'{msg}. Ignoring its balance query.',
+                        BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                     )
                     continue
 
@@ -440,14 +448,15 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                             details='balance query',
                         )
                         continue
-                    except DeserializationError:
+                    except DeserializationError as e:
                         log.error(
                             f'Unexpected poloniex asset type. Expected string '
                             f' but got {type(poloniex_asset)}',
                         )
-                        self.msg_aggregator.add_error(
+                        self.add_classified_error(
                             'Found poloniex asset entry with non-string type. '
                             'Ignoring its balance query.',
+                            BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                         )
                         continue
 
@@ -481,9 +490,10 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         except UnknownAsset as e:
             self.send_unknown_asset_message(asset_identifier=e.identifier, details='trade')
         except (UnprocessableTradePair, DeserializationError, KeyError) as e:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 'Error deserializing a poloniex trade. Check the logs '
                 'and open a bug report.',
+                BadData(record=UserMessageRecord.TRADE, error=str(e)),
             )
             log.error(
                 'Error deserializing poloniex trade',
@@ -520,7 +530,10 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 if amount <= 0:
                     msg = 'Found a poloniex withdrawal with fee > amount.'
                     log.error(f'{msg} Data: {movement_data}')
-                    self.msg_aggregator.add_error(f'{msg} Ignoring. Check logs for more details')
+                    self.add_classified_error(
+                        f'{msg} Ignoring. Check logs for more details',
+                        BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=msg),
+                    )
                     return []
 
                 uid_key = 'withdrawalRequestsId'
@@ -555,9 +568,10 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 'Unexpected data encountered during deserialization of a poloniex '
                 'asset movement. Check logs for details and open a bug report.',
+                BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
             )
             log.error(
                 f'Unexpected data encountered during deserialization of poloniex '

@@ -37,6 +37,7 @@ from rotkehlchen.api.session_token import (
     read_session_token,
     verify_session_token,
 )
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.constants.misc import GLOBALDIR_NAME
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -44,6 +45,7 @@ from rotkehlchen.tests.utils.api import (
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.user_messages import LocalDbProblem
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -937,7 +939,10 @@ def test_websocket_is_dropped_when_its_session_stops_being_active(
         timeout=10,
     )
     try:
-        msg_aggregator.add_error('while the session is live')
+        msg_aggregator.add_error(
+            'while the session is live',
+            classification=(tag_problem := LocalDbProblem(entry=UserMessageEntry.TAG)),
+        )
         assert 'while the session is live' in websocket.recv()
 
         store.login(f'{username}_next')  # a different user takes the session over
@@ -946,7 +951,7 @@ def test_websocket_is_dropped_when_its_session_stops_being_active(
             _read_until_closed(websocket)
 
         # and nothing broadcast afterwards was written to it
-        msg_aggregator.add_error('after the takeover')
+        msg_aggregator.add_error('after the takeover', classification=tag_problem)
         assert websocket.connected is False
     finally:
         with suppress(WebSocketConnectionClosedException, OSError):

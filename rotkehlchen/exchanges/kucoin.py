@@ -5,11 +5,12 @@ from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
@@ -55,6 +56,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -122,6 +124,12 @@ class KucoinCase(Enum):
 
 
 PAGINATED_CASES = (KucoinCase.OLD_TRADES, KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS)  # noqa: E501
+PAGINATED_CASE_RECORDS: Final = {
+    KucoinCase.TRADES: UserMessageRecord.TRADE,
+    KucoinCase.OLD_TRADES: UserMessageRecord.TRADE,
+    KucoinCase.DEPOSITS: UserMessageRecord.ASSET_MOVEMENT,
+    KucoinCase.WITHDRAWALS: UserMessageRecord.ASSET_MOVEMENT,
+}
 
 
 def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
@@ -259,8 +267,12 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         f'Kucoin {case} request failed after retrying '
                         f'{API_REQUEST_RETRY_TIMES} times.'
                     )
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Got remote error while querying kucoin {case}: {msg}',
+                        NetworkFailure(
+                            record=UserMessageRecord.BALANCE if case == KucoinCase.BALANCES else PAGINATED_CASE_RECORDS[case],  # noqa: E501
+                            error=msg,
+                        ),
                     )
                     return response
 
@@ -374,8 +386,9 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError as e:
                 msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
                 log.error(msg)
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying kucoin {case}: {msg}',
+                    BadData(record=PAGINATED_CASE_RECORDS[case], error=msg),
                 )
                 raise RemoteError(msg) from e
 
@@ -417,9 +430,11 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         error=error_msg,
                         raw_result=raw_result,
                     )
-                    self.msg_aggregator.add_error(
+                    self.add_classified_error(
                         f'Failed to deserialize a kucoin {case} result. {error_msg}. Ignoring it. '
-                        f'Check logs for more details')
+                        f'Check logs for more details',
+                        BadData(record=PAGINATED_CASE_RECORDS[case], error=str(e)),
+                    )
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -479,8 +494,9 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     error=msg,
                     raw_result=raw_result,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Failed to deserialize a kucoin balance. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
 
@@ -492,8 +508,9 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     error=str(e),
                     raw_result=raw_result,
                 )
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     'Failed to deserialize a kucoin balance. Ignoring it.',
+                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
                 )
                 continue
             except UnknownAsset as e:
@@ -669,8 +686,9 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             if case in (KucoinCase.API_KEY, KucoinCase.BALANCES):
                 return False, msg
             if case in PAGINATED_CASES:
-                self.msg_aggregator.add_error(
+                self.add_classified_error(
                     f'Got remote error while querying Kucoin {case}: {msg}',
+                    NetworkFailure(record=PAGINATED_CASE_RECORDS[case], error=msg),
                 )
                 return []
 
@@ -696,8 +714,9 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         if case in (KucoinCase.BALANCES, KucoinCase.API_KEY):
             return False, msg
         if case in PAGINATED_CASES:
-            self.msg_aggregator.add_error(
+            self.add_classified_error(
                 f'Got remote error while querying Kucoin {case}: {msg}',
+                NetworkFailure(record=PAGINATED_CASE_RECORDS[case], error=msg),
             )
             return []
 

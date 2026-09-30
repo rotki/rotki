@@ -11,7 +11,7 @@ from packaging import version as pversion
 from packaging.version import InvalidVersion, Version
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -42,6 +42,7 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     SupportedBlockchain,
 )
+from rotkehlchen.user_messages import BadData, NetworkFailure
 from rotkehlchen.utils.misc import is_production, ts_now
 from rotkehlchen.utils.network import query_file
 from rotkehlchen.utils.version_check import get_current_version
@@ -496,6 +497,10 @@ class RotkiDataUpdater:
                 self.msg_aggregator.add_error(
                     f'ABI with id {single_contract_data["abi"]} was missing in a contracts '
                     f'update. Please report it to the rotki team.',
+                    classification=BadData(
+                        record=UserMessageRecord.DATA_UPDATE,
+                        error='Contract ABI missing',
+                    ),
                 )
                 continue
             new_contracts_data.append((
@@ -525,6 +530,7 @@ class RotkiDataUpdater:
                     f'Could not deserialize address {raw_entry["address"]} or blockchain '
                     f'{raw_entry["blockchain"]} that was seen in a global addressbook update. '
                     f'Please report it to the rotki team. {e!s}',
+                    classification=BadData(record=UserMessageRecord.DATA_UPDATE, error=str(e)),
                 )
                 continue
 
@@ -675,8 +681,12 @@ class RotkiDataUpdater:
                         if warn_on_failure:
                             self.msg_aggregator.add_warning(
                                 f'Failed to update {update_type.value.replace("_", " ")}. It will be retried later.',  # noqa: E501
+                                classification=NetworkFailure(
+                                    record=UserMessageRecord.DATA_UPDATE,
+                                    error=f'{update_type.value} update not applied',
+                                ),
                             )
-                except REMOTE_UPDATE_ERRORS:
+                except REMOTE_UPDATE_ERRORS as e:
                     failed = True
                     log.exception(
                         'Failed to update %s. Continuing with the rest of the updates',
@@ -685,6 +695,10 @@ class RotkiDataUpdater:
                     if warn_on_failure:
                         self.msg_aggregator.add_warning(
                             f'Failed to update {update_type.value.replace("_", " ")}. It will be retried later.',  # noqa: E501
+                            classification=NetworkFailure(
+                                record=UserMessageRecord.DATA_UPDATE,
+                                error=str(e),
+                            ),
                         )
 
         if set(updates) != set(UpdateType):

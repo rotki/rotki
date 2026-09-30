@@ -5,6 +5,7 @@ from contextvars import ContextVar
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, NamedTuple
 
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.evm.types import (
     DEFAULT_EVM_INDEXER_ORDER,
@@ -474,10 +475,13 @@ def db_settings_from_dict(
             else:
                 int_value = int(value)
                 if int_value <= 0:
+                    # user_messages imports this module at load time, so it cannot be imported back
+                    from rotkehlchen.user_messages import LocalDbProblem
                     msg_aggregator.add_warning(
                         f'A negative or zero value ({int_value}) for taxfree_after_period '
                         f'ended up in the DB. Setting it to None. Please open an issue in '
                         f'Github: https://github.com/rotki/rotki/issues/new/choose',
+                        classification=LocalDbProblem(entry=UserMessageEntry.SETTING),
                     )
                     int_value = None  # type: ignore[assignment]  # we do it on purpose
                 specified_args[key] = int_value

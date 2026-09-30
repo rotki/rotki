@@ -1,12 +1,14 @@
 import threading
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+from rotkehlchen.user_messages import BadData
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -304,3 +306,28 @@ def test_bitpanda_credentials_in_db(database: DBHandler) -> None:
         )
 
     assert len(credentials[Location.BITPANDA]) == 1
+
+
+def test_classified_error_subject_is_the_location_not_the_instance(
+        database: DBHandler,
+        function_scope_messages_aggregator: MessagesAggregator,
+) -> None:
+    """Two instances of one exchange report the same failure under the same subject, so
+    the frontend folds them into one row instead of one per instance."""
+    function_scope_messages_aggregator.rotki_notifier = (notifier := Mock())
+    for name in ('mockkraken_1', 'mockkraken_2'):
+        MockKraken(
+            name=name,
+            api_key=make_api_key(),
+            secret=make_api_secret(),
+            database=database,
+            msg_aggregator=function_scope_messages_aggregator,
+        ).add_classified_error(
+            f'Failed to read a {name} trade.',
+            BadData(record=UserMessageRecord.TRADE, error='Missing key: fee'),
+        )
+
+    assert [
+        (call.kwargs['to_send_data']['key'], call.kwargs['to_send_data']['subject'])
+        for call in notifier.broadcast.call_args_list
+    ] == [('bad_data', 'kraken'), ('bad_data', 'kraken')]

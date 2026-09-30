@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -343,6 +345,7 @@ class DBAccountingReports:
                     self.db.msg_aggregator.add_error(
                         f'Error deserializing AccountingEvent from the DB. Skipping it.'
                         f'Error was: {e!s}',
+                        classification=LocalDbProblem(entry=UserMessageEntry.ACCOUNTING_EVENT),
                     )
                     continue
 

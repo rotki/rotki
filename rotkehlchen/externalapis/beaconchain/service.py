@@ -37,6 +37,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.user_messages import AuthFailure
 from rotkehlchen.utils.misc import (
     convert_to_int,
     from_gwei,
@@ -144,6 +145,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     self.last_ts = Timestamp(0)
                     self.msg_aggregator.add_warning(
                         'The beaconcha.in API key is no longer active and was removed.',
+                        classification=AuthFailure(
+                            service=ExternalService.BEACONCHAIN.serialize(),
+                            account=None,
+                        ),
                     )
                     raise APIKeyNotAvailable('Beaconcha.in API key is no longer active')
 

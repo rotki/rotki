@@ -5,6 +5,7 @@ from threading import Semaphore
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import UserMessageFeature
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -17,6 +18,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import Location
+from rotkehlchen.user_messages import Unsupported
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import (
     ts_now,
@@ -178,6 +181,8 @@ class MakerdaoVaults(EthereumModule):
             self.msg_aggregator.add_warning(
                 f'Detected vault with collateral_type {collateral_type}. That '
                 f'is not yet supported by rotki. Skipping...',
+                classification=Unsupported(feature=UserMessageFeature.VAULT_COLLATERAL_TYPE),
+                subject=Location.ETHEREUM,
             )
             return None
 

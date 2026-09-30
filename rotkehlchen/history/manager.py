@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -10,6 +11,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -99,22 +101,15 @@ class HistoryQueryingManager:
         """
         if only_cache is False:
             exchanges_list = self.exchange_manager.connected_exchanges.get(location, [])
-            exchange_names = []
             for exchange_instance in exchanges_list:
                 if location == Location.KRAKEN:
                     exchange_instance.query_history_events()
-                elif exchange_instance.query_lending_interests_history(  # type: ignore
-                    cursor=cursor,
-                    start_ts=filter_query.from_ts,
-                    end_ts=filter_query.to_ts,
-                ) is True:  # has errors
-                    exchange_names.append(exchange_instance.name)
-
-            if len(exchange_names) != 0:
-                self.msg_aggregator.add_error(
-                    f'Failed to query some events from {location.name} exchanges '
-                    f'{",".join(exchange_names)}',
-                )
+                else:  # a failure is reported, already classified, by the exchange itself
+                    exchange_instance.query_lending_interests_history(  # type: ignore
+                        cursor=cursor,
+                        start_ts=filter_query.from_ts,
+                        end_ts=filter_query.to_ts,
+                    )
 
         db = DBHistoryEvents(self.db)
         history_events_limit, _ = get_user_limit(
@@ -227,6 +222,8 @@ class HistoryQueryingManager:
                 self.msg_aggregator.add_error(
                     f'There was an error when querying {str_blockchain} etherscan for transactions: {msg}'  # noqa: E501
                     f'The final history result will not include {str_blockchain} transactions',
+                    classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error=msg),
+                    subject=Location.from_chain(blockchain),
                 )
                 empty_or_error += '\n' + msg
 
@@ -245,7 +242,13 @@ class HistoryQueryingManager:
                 'final history result may be missing some of them. They will be retried by '
                 'the next sync.'
             )
-            self.msg_aggregator.add_error(msg)
+            self.msg_aggregator.add_error(
+                msg,
+                classification=NetworkFailure(
+                    record=UserMessageRecord.TRANSACTION,
+                    error='Incomplete transactions query',
+                ),
+            )
             empty_or_error += '\n' + msg
 
         # include eth2 staking events
