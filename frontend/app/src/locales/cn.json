@@ -2204,9 +2204,6 @@
     "tooltip": "通知"
   },
   "notification_messages": {
-    "backend": {
-      "title": "后端"
-    },
     "new_detected_token": {
       "action": "查看更多",
       "message": "从事件处理和查询中检测到标识符为 {identifier} 的新令牌。|从事件处理和查询中检测到 {count} 个新令牌。",

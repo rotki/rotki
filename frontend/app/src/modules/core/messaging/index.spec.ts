@@ -110,6 +110,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
       getChainName: () => Blockchain.OPTIMISM,
       getNativeAsset: (chain: Blockchain) => chain,
       isEvm: (_chain: Blockchain) => true,
+      matchChain: () => undefined,
     }),
   };
 });
@@ -267,6 +268,23 @@ describe('useMessageHandling', () => {
 
     expect(notify).toHaveBeenCalledTimes(1);
     expect(vi.mocked(notify).mock.calls[0][0].message).toBe('Failed to deserialize a kucoin balance. Ignoring it.');
+  });
+
+  it('should count a held user message as every time the backend sent it', async () => {
+    mockConsumeMessages.mockResolvedValue({
+      dropped: 0,
+      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' } }, 4)],
+    });
+
+    const { consume } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await consume();
+
+    expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({
+      groupCount: 4,
+      message: 'notification_messages.repeated::4, kucoin is down',
+    });
   });
 
   it('should date a held message by when the backend last sent it, not when it was read', async () => {

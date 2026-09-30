@@ -5,21 +5,72 @@ const MESSAGE_ERROR = 'error';
 
 const MessageVerbosity = z.enum([MESSAGE_WARNING, MESSAGE_ERROR]);
 
-/**
- * An `add_error` / `add_warning` from the backend.
- *
- * @remarks
- * Every emitter declares `key` (why it happened) and `fields` (the family's unrendered data).
- * `subject` (the location it happened to) is null for a message about no single location. They
- * are validated here and not yet read.
- */
-export const UserMessageData = z.object({
-  fields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
-  key: z.string(),
+/** Why a backend user message happened: its family, one per cause. */
+export const UserMessageKey = {
+  AUTH: 'auth',
+  BAD_DATA: 'bad_data',
+  INTERNAL: 'internal',
+  LOCAL_DB: 'local_db',
+  NETWORK: 'network',
+  PRICE: 'price',
+  UNKNOWN_ASSET: 'unknown_asset',
+  UNSUPPORTED: 'unsupported',
+} as const;
+
+export type UserMessageKey = (typeof UserMessageKey)[keyof typeof UserMessageKey];
+
+const UserMessageBase = z.object({
   subject: z.string().nullable(),
   value: z.string(),
   verbosity: MessageVerbosity,
 });
+
+/**
+ * An `add_error` / `add_warning` from the backend.
+ *
+ * @remarks
+ * Every emitter declares `key` (why it happened) and `fields` (the unrendered data its family
+ * requires). `subject` (the location it happened to) is null for a message about no single
+ * location. `value` is the rendered English sentence.
+ *
+ * The family fields are read as plain strings rather than as the backend's enums: they are only
+ * compared for grouping, and an enum would drop the whole message the day the backend adds a
+ * value. An unknown `key` still fails, since nothing could be said about its family.
+ */
+export const UserMessageData = z.discriminatedUnion('key', [
+  UserMessageBase.extend({
+    fields: z.object({ account: z.string().nullable(), service: z.string() }),
+    key: z.literal(UserMessageKey.AUTH),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ error: z.string(), record: z.string() }),
+    key: z.literal(UserMessageKey.BAD_DATA),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ operation: z.string() }),
+    key: z.literal(UserMessageKey.INTERNAL),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ entry: z.string() }),
+    key: z.literal(UserMessageKey.LOCAL_DB),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ error: z.string(), record: z.string() }),
+    key: z.literal(UserMessageKey.NETWORK),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ asset: z.string().nullable(), timestamp: z.number().nullable() }),
+    key: z.literal(UserMessageKey.PRICE),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ identifier: z.string() }),
+    key: z.literal(UserMessageKey.UNKNOWN_ASSET),
+  }),
+  UserMessageBase.extend({
+    fields: z.object({ feature: z.string() }),
+    key: z.literal(UserMessageKey.UNSUPPORTED),
+  }),
+]);
 
 export type UserMessageData = z.infer<typeof UserMessageData>;
 
