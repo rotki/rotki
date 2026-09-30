@@ -43,6 +43,6 @@ export function createNotificationRegistry(
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(),
     [SocketMessageType.UNMATCHED_BRIDGE_TRANSACTIONS]: createUnmatchedBridgeTransactionsHandler(),
-    [SocketMessageType.USER_MESSAGE]: createUserMessageHandler(t),
+    [SocketMessageType.USER_MESSAGE]: createUserMessageHandler(t, router),
   };
 }

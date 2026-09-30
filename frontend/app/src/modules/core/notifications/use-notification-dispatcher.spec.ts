@@ -78,47 +78,6 @@ describe('useNotificationDispatcher', () => {
     expect(get(data)[0]).toMatchObject({ display: true, groupCount: 3, message: 'message-3' });
   });
 
-  it('should not duplicate bulk notifications with the same message', () => {
-    const { notify } = useNotificationDispatcher();
-    const store = useNotificationsStore();
-    const { data } = storeToRefs(store);
-
-    const payload: NotificationPayload = {
-      category: NotificationCategory.DEFAULT,
-      message: 'there was a problem',
-      priority: Priority.BULK,
-      severity: Severity.WARNING,
-      title: 'backend',
-    };
-
-    notify(payload);
-    notify(payload);
-
-    expect(get(data)).toHaveLength(1);
-  });
-
-  it('should group deserialization errors into a single notification', () => {
-    const { notify } = useNotificationDispatcher();
-    const store = useNotificationsStore();
-    const { data } = storeToRefs(store);
-
-    for (let i = 0; i < 10; i++) {
-      notify({
-        category: NotificationCategory.DEFAULT,
-        message: `Could not deserialize asset ${i}`,
-        priority: Priority.BULK,
-        severity: Severity.WARNING,
-        title: 'backend',
-      });
-    }
-
-    expect(get(data)).toHaveLength(1);
-    expect(get(data)[0]).toMatchObject({
-      group: NotificationGroup.DESERIALIZATION_ERROR,
-      groupCount: 10,
-    });
-  });
-
   it('should keep the date a notification says it happened, new or updating its group', () => {
     const { notify } = useNotificationDispatcher();
     const { data } = storeToRefs(useNotificationsStore());

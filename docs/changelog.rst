@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Backend errors and warnings are now grouped in the notification area by what went wrong and where, for example every unreadable kucoin balance in one entry with a count, and titled accordingly. Rejected API keys now pop up with a link to the keys that need replacing, and rejected premium keys raise the premium row in the action center.
 * :bug:`-` rotki now reconnects to the backend after the backend closes a connection that fell too far behind. Before, the window stayed disconnected for the rest of the session and missed live progress.
 * :feature:`-` Messages the backend sends while no rotki window is connected, such as the result of a CSV import or a newly detected token, now show up once a window connects, dated when they happened. Before, most of them were lost. A failure that keeps repeating is kept once with a count, so it can no longer push out the rest.
 * :feature:`7719` rotki can now log you out after a period of inactivity, so your data is not left open on an unattended machine. Turn it on and pick the number of minutes under Settings > Account > Security. It is off by default. Logging out stops everything rotki runs in the background until you log in again, and a password saved for auto-login is removed so that rotki cannot unlock the profile again by itself.
