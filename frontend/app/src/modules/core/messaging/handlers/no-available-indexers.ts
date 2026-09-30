@@ -17,6 +17,7 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
  */
 const BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED = 'blockscout_or_paid_etherscan_key_required';
 const ETHERSCAN_PAID_KEY_REQUIRED = 'etherscan_paid_key_required';
+const BLOCKSCOUT_INCOMPLETE_RESPONSE = 'blockscout_incomplete_response';
 
 function getKeyAction(
   t: ReturnType<typeof useI18n>['t'],
@@ -49,6 +50,13 @@ function getNotificationContent(
   chainName: string,
   reason?: string,
 ): { message: string; title: string } {
+  if (reason === BLOCKSCOUT_INCOMPLETE_RESPONSE) {
+    return {
+      message: t('notification_messages.no_available_indexers.blockscout_incomplete_response.message', { chain: chainName }),
+      title: t('notification_messages.no_available_indexers.blockscout_incomplete_response.title', { chain: chainName }),
+    };
+  }
+
   if (reason === BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY_REQUIRED) {
     return {
       message: t('notification_messages.no_available_indexers.blockscout_or_paid_etherscan_key_required.message', { chain: chainName }),

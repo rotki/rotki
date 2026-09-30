@@ -4916,6 +4916,10 @@
     },
     "no_available_indexers": {
       "action": "Configure indexers",
+      "blockscout_incomplete_response": {
+        "message": "rotki could not query {chain} transactions from any indexer. Blockscout returned incomplete transaction data because some internal transactions have not yet been processed. Its response could not be trusted. Retry the query later or configure another indexer.",
+        "title": "{chain} transaction query failed"
+      },
       "blockscout_or_paid_etherscan_key_required": {
         "message": "rotki could not query {chain} transactions from any indexer. Add a free Blockscout API key to resume queries, or use a paid Etherscan API key.",
         "title": "{chain} transactions need an API key"

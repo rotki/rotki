@@ -53,6 +53,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    BlockscoutIncompleteResponse,
     ChainNotSupported,
     EventNotInABI,
     IndexerRangeNotCovered,
@@ -2049,6 +2050,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         errors: list[tuple[str, Exception]] = []
         failed: set[EvmIndexer] = set()
+        blockscout_incomplete_response = False
         for indexer_name, indexer in ordered_indexers:
             if indexer_name not in self.available_indexers:
                 continue  # was removed while looping
@@ -2069,31 +2071,37 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 raise  # Let RequestTooLargeError bubble up for retry logic in callers
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
+                if isinstance(e, BlockscoutIncompleteResponse):
+                    blockscout_incomplete_response = True
                 errors.append((indexer.name, e))
                 failed.add(indexer_name)
             else:
                 return result, indexer_name, frozenset(failed)
 
-        if len(self._get_indexers_in_order()) == 0 or (
+        if blockscout_incomplete_response or len(self._get_indexers_in_order()) == 0 or (
                 self._etherscan_refused_chain and
                 not any(isinstance(error, IndexerRangeNotCovered) for _, error in errors)
         ):
-            self._maybe_notify_no_indexers()
+            self._maybe_notify_no_indexers(blockscout_incomplete_response=blockscout_incomplete_response)
 
         raise RemoteError(
             f'Failed to query any indexer. '
             f"Errors: {', '.join(f'{name}: {e!s}' for name, e in errors)}",
         )
 
-    def _maybe_notify_no_indexers(self) -> None:
+    def _maybe_notify_no_indexers(self, blockscout_incomplete_response: bool = False) -> None:
         """Tell the user once that no indexer can serve this chain. If etherscan refused the
-        chain for the configured key, explain which API key can restore transaction queries."""
+        chain for the configured key, explain which API key can restore transaction queries,
+        unless Blockscout returned incomplete data for this query.
+        """
         if self._no_indexer_notified:
             return
 
         self._no_indexer_notified = True
         data: dict[str, str] = {'chain': self.blockchain.value}
-        if self._etherscan_refused_chain:
+        if blockscout_incomplete_response:
+            data['reason'] = 'blockscout_incomplete_response'
+        elif self._etherscan_refused_chain:
             data['reason'] = (  # offer a blockscout key only if it is used and still missing
                 'blockscout_or_paid_etherscan_key_required'
                 if EvmIndexer.BLOCKSCOUT in self.available_indexers and
