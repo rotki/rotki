@@ -1,5 +1,6 @@
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/modules/dashboard/snapshots';
-import { BigNumber, bigNumberify } from '@rotki/common';
+import { BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import {
   locationBalanceAfterDelete,
   locationBalanceAfterEdit,
@@ -10,6 +11,7 @@ import {
   getTotalEntry,
   getTotalValue,
   locationsTotal,
+  signedUsdValue,
   TOTAL_LOCATION,
 } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
@@ -273,6 +275,75 @@ export function findSumMismatch(snapshot: Snapshot, epsilon?: BigNumber, balance
 export function approxEqualUsd(a: BigNumber, b: BigNumber, epsilon?: BigNumber): boolean {
   const eps = epsilon ?? defaultEpsilon(BigNumber.max(a.abs(), b.abs()));
   return a.minus(b).abs().lte(eps);
+}
+
+/** Balance rows whose combined value accounts for a sum mismatch. */
+export interface MismatchRows {
+  indices: number[];
+  /** Net USD of those rows. */
+  value: BigNumber;
+  /** Whether they are the spam and ignored rows, rather than one row that happens to match. */
+  excluded: boolean;
+  /** What is left of the gap once the rows are gone: zero for an exact match, the typing error otherwise. */
+  rest: BigNumber;
+}
+
+/** How far spam and ignored rows may sit from the gap and still be offered, as a share of the gap. */
+const EXCLUDED_GAP_TOLERANCE = 0.1;
+
+/**
+ * The rows a mismatch comes down to, when their value is the amount the balances exceed the
+ * locations by. That is what a user leaves behind by lowering the locations and the total to the
+ * real holdings while keeping a mispriced row: removing the rows, with no location touched, makes
+ * the totals agree again, up to whatever the user got wrong typing the lowered totals, which is
+ * left for a reconcile. `null` when nothing accounts for the gap.
+ *
+ * Any row matches when its value is the gap within the reconciliation epsilon, and only when no
+ * other row has the same value, since the offer names one asset. Spam and ignored rows also match
+ * within 10% of the gap, since they are what users lower the totals around and those totals are
+ * typed by hand; a real asset near a typo gap is too likely to be a coincidence for that.
+ *
+ * A single spam or ignored row is tried before the whole set, for several spam tokens left out at
+ * once. Trying the set first would sweep in a small ignored row the locations do hold.
+ */
+export function rowsBehindMismatch(
+  snapshot: Snapshot,
+  mismatch: SnapshotSumMismatch,
+  isExcluded: (assetIdentifier: string) => boolean,
+): MismatchRows | null {
+  const balances = snapshot.balancesSnapshot;
+  const gap = mismatch.balancesSum.minus(mismatch.locationsSum);
+  const matchesGap = (value: BigNumber): boolean => !value.isZero() && approxEqualUsd(gap, value);
+  const nearGap = (value: BigNumber): boolean =>
+    !value.isZero() && value.isNegative() === gap.isNegative()
+    && gap.minus(value).abs().isLessThanOrEqualTo(gap.abs().multipliedBy(EXCLUDED_GAP_TOLERANCE));
+
+  // Whether removal settles the totals is judged on the sums left afterwards, at their own scale:
+  // next to an absurd value the gap's tolerance would swallow a real remainder.
+  const found = (indices: number[], value: BigNumber, excluded: boolean): MismatchRows => ({
+    excluded,
+    indices,
+    rest: approxEqualUsd(mismatch.balancesSum.minus(value), mismatch.locationsSum) ? Zero : gap.minus(value),
+    value,
+  });
+
+  const single = balances.flatMap((item, index) => matchesGap(signedUsdValue(item)) ? [index] : []);
+  if (single.length === 1) {
+    const row = balances[single[0]];
+    return found(single, signedUsdValue(row), isExcluded(row.assetIdentifier));
+  }
+  if (single.length > 1)
+    return null;
+
+  const excluded = balances.flatMap((item, index) => isExcluded(item.assetIdentifier) ? [index] : []);
+  const nearSingle = excluded.filter(index => nearGap(signedUsdValue(balances[index])));
+  if (nearSingle.length === 1)
+    return found(nearSingle, signedUsdValue(balances[nearSingle[0]]), true);
+
+  const excludedValue = bigNumberSum(excluded.map(index => signedUsdValue(balances[index])));
+  if (nearSingle.length === 0 && excluded.length > 0 && nearGap(excludedValue))
+    return found(excluded, excludedValue, true);
+  return null;
 }
 
 export type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-changes';

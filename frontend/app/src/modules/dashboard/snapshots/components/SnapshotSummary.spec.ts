@@ -22,6 +22,12 @@ vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', 
   }),
 }));
 
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: (): { getAssetField: (id: string) => string } => ({
+    getAssetField: (id: string): string => `${id}-symbol`,
+  }),
+}));
+
 vi.mock('@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion', () => ({
   useHistoricFiatConversion: (): { isUsd: Ref<boolean>; rate: Ref<BigNumber> } => ({
     isUsd: ref(true),
@@ -56,7 +62,7 @@ function mountSummary(props: Record<string, unknown> = {}): VueWrapper {
       stubs: {
         AmountInput: { emits: ['update:modelValue'], props: ['modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
         DateDisplay: true,
-        I18nT: { template: '<div><slot name="amount" /></div>' },
+        I18nT: { template: '<div><slot name="amount" /><slot name="assets" /></div>' },
         LocationDisplay: true,
         LocationSelector: true,
         SnapshotFiatDisplay: true,
@@ -195,6 +201,96 @@ describe('snapshotSummary', () => {
     await wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').trigger('click');
 
     expect(wrapper.emitted<[string]>('reconcile-locations')![0][0]).toBe('ledger');
+  });
+
+  it('should offer to remove the ignored rows when the locations were lowered to leave only their value out', async () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1e30), balance('BTC', 50)], [location('blockchain', 150), location('total', 1e30)]),
+      mismatch: { balancesSum: bigNumberify(1e30).plus(150), locationsSum: bigNumberify(150), storedTotal: bigNumberify(1e30).plus(150) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-gap-assets]').text()).toBe('SPAM-symbol');
+    await wrapper.find('[data-testid=snapshot-summary-remove-gap-rows]').trigger('click');
+
+    expect(wrapper.emitted<[number[]]>('remove-balances')![0][0]).toEqual([1]);
+  });
+
+  it('should offer to remove the one row that makes up the whole mismatch when it is not spam', async () => {
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100), balance('SHIB', 1e30)], [location('blockchain', 100), location('total', 100)]),
+      mismatch: { balancesSum: bigNumberify(1e30).plus(100), locationsSum: bigNumberify(100), storedTotal: bigNumberify(1e30).plus(100) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-gap-assets]').text()).toBe('SHIB-symbol');
+    await wrapper.find('[data-testid=snapshot-summary-remove-gap-rows]').trigger('click');
+
+    expect(wrapper.emitted<[number[]]>('remove-balances')![0][0]).toEqual([1]);
+  });
+
+  it('should say what a spam removal leaves to reconcile when the typed totals are a little off', () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1000)], [location('blockchain', 90), location('total', 90)]),
+      mismatch: { balancesSum: bigNumberify(1100), locationsSum: bigNumberify(90), storedTotal: bigNumberify(90) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-gap-partial]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=snapshot-summary-remove-gap-rows]').exists()).toBe(true);
+  });
+
+  it('should not offer the removal when no row explains the mismatch', () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1000)], [location('blockchain', 1050), location('total', 1100)]),
+      mismatch: { balancesSum: bigNumberify(1100), locationsSum: bigNumberify(1050), storedTotal: bigNumberify(1100) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-reconcile]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=snapshot-summary-gap-rows]').exists()).toBe(false);
+  });
+
+  it('should not reconcile into a location the difference would push below zero', async () => {
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 50)], [location('kraken', 60), location('ledger', 20), location('total', 80)]),
+      mismatch: { balancesSum: bigNumberify(50), locationsSum: bigNumberify(80), storedTotal: bigNumberify(80) },
+    });
+
+    wrapper.findComponent(LocationSelector).vm.$emit('update:modelValue', 'ledger');
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=snapshot-summary-reconcile-apply]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=snapshot-summary-no-reconcile-target]').exists()).toBe(false);
+  });
+
+  it('should point to the locations when no location can absorb the difference', () => {
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 10)], [location('kraken', 60), location('ledger', 40), location('total', 100)]),
+      mismatch: { balancesSum: bigNumberify(10), locationsSum: bigNumberify(100), storedTotal: bigNumberify(100) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-no-reconcile-target]').exists()).toBe(true);
+  });
+
+  it('should offer to remove a spam liability instead of pointing to the locations', () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({
+      snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1e30, BalanceType.LIABILITY)], [location('blockchain', 100), location('total', 100)]),
+      mismatch: { balancesSum: bigNumberify(100).minus(1e30), locationsSum: bigNumberify(100), storedTotal: bigNumberify(100) },
+    });
+
+    expect(wrapper.find('[data-testid=snapshot-summary-remove-gap-rows]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=snapshot-summary-no-reconcile-target]').exists()).toBe(false);
+    expect(fiatValue(wrapper, 'snapshot-summary-gap-value')).toBe(1e30);
+  });
+
+  it('should offer an action that shows the ignored rows it excludes', async () => {
+    ignoredIds = ['SPAM'];
+    const wrapper = mountSummary({ snapshot: snapshot([balance('ETH', 100), balance('SPAM', 1000)], [location('total', 1100)]) });
+
+    await wrapper.find('[data-testid=snapshot-summary-show-excluded]').trigger('click');
+
+    expect(wrapper.emitted('show-excluded')).toHaveLength(1);
   });
 
   it('should collapse zero-value rows into a single summary line', () => {

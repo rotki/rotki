@@ -15,6 +15,7 @@ import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composa
 import {
   type Filters,
   isolateZeroValue,
+  revealExcluded,
 } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import { useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
@@ -344,6 +345,8 @@ useEventListener(window, 'beforeunload', (event: BeforeUnloadEvent) => {
         :previous="previous"
         @edit-locations="locationsDrawer = true"
         @reconcile-locations="reconcileLocations($event)"
+        @remove-balances="deleteBalances($event)"
+        @show-excluded="balanceFilters = revealExcluded(balanceFilters)"
         @show-zero-value="balanceFilters = isolateZeroValue(balanceFilters)"
       />
 

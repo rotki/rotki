@@ -14,8 +14,10 @@ import {
   countSnapshotChanges,
   distributeToLocations,
   findSumMismatch,
+  rowsBehindMismatch,
   snapshotsEqual,
 } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { applyBalanceBulkDelete } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
 import { getTotalValue, locationsTotal } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 const TS = 1_600_000_000;
@@ -215,6 +217,128 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
       base.locationDataSnapshot = [location('kraken', 100), location('ledger', 55), location('total', 150)];
       expect(findSumMismatch(base, bigNumberify(10))).toBeNull();
       expect(findSumMismatch(base, bigNumberify(1))).not.toBeNull();
+    });
+  });
+
+  describe('rowsBehindMismatch', () => {
+    const isSpam = (identifier: string): boolean => identifier === 'SPAM';
+    const nothingExcluded = (): boolean => false;
+
+    /** The user lowered the locations and the total to the real holdings but kept the spam row. */
+    function loweredAroundSpam(): Snapshot {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('SPAM', 1e30));
+      return base;
+    }
+
+    it('should return the spam rows when their value is the whole gap', () => {
+      const base = loweredAroundSpam();
+      const mismatch = findSumMismatch(base);
+      expect(mismatch).not.toBeNull();
+
+      const rows = rowsBehindMismatch(base, mismatch!, isSpam);
+      expect(rows?.indices).toEqual([2]);
+      expect(rows?.value.toNumber()).toBe(1e30);
+      expect(rows?.excluded).toBe(true);
+      expect(rows?.rest.isZero()).toBe(true);
+    });
+
+    it('should settle the mismatch once those rows are removed', () => {
+      const base = loweredAroundSpam();
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, isSpam);
+
+      expect(findSumMismatch(applyBalanceBulkDelete(base, rows!.indices))).toBeNull();
+    });
+
+    it('should return the one row that matches the gap when it is not spam', () => {
+      const base = loweredAroundSpam();
+
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, nothingExcluded);
+      expect(rows?.indices).toEqual([2]);
+      expect(rows?.excluded).toBe(false);
+    });
+
+    it('should leave a small ignored row the locations hold out of the removal', () => {
+      const base = loweredAroundSpam();
+      base.balancesSnapshot.push(balance('AIRDROP', 50));
+      base.locationDataSnapshot = [location('kraken', 150), location('ledger', 50), location('total', 200)];
+      const isIgnored = (identifier: string): boolean => identifier === 'SPAM' || identifier === 'AIRDROP';
+
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, isIgnored);
+      expect(rows?.indices).toEqual([2]);
+      expect(findSumMismatch(applyBalanceBulkDelete(base, rows!.indices))).toBeNull();
+    });
+
+    it('should return every spam row when they are left out together', () => {
+      const base = loweredAroundSpam();
+      base.balancesSnapshot.push(balance('SPAM', 2e30));
+      const isSpamRow = (identifier: string): boolean => identifier === 'SPAM';
+
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, isSpamRow);
+      expect(rows?.indices).toEqual([2, 3]);
+      expect(rows?.excluded).toBe(true);
+    });
+
+    it('should return null when several rows match the gap alike', () => {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('DAI', 50));
+      base.locationDataSnapshot = [location('kraken', 100), location('ledger', 50), location('total', 150)];
+
+      expect(rowsBehindMismatch(base, findSumMismatch(base)!, nothingExcluded)).toBeNull();
+    });
+
+    it('should offer a small spam row when the typed totals are a little off', () => {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('SPAM', 1000));
+      base.locationDataSnapshot = [location('kraken', 90), location('ledger', 50), location('total', 140)];
+
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, isSpam);
+      expect(rows?.indices).toEqual([2]);
+      expect(rows?.rest.toNumber()).toBe(10);
+      // The 10 the user got wrong is left for a reconcile.
+      expect(findSumMismatch(applyBalanceBulkDelete(base, rows!.indices))?.locationsSum.toNumber()).toBe(140);
+    });
+
+    it('should not stretch the match for a row that is not spam', () => {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('SHIB', 1000));
+      base.locationDataSnapshot = [location('kraken', 90), location('ledger', 50), location('total', 140)];
+
+      expect(rowsBehindMismatch(base, findSumMismatch(base)!, isSpam)).toBeNull();
+    });
+
+    it('should return null when the gap has another cause', () => {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('SPAM', 1000));
+      base.locationDataSnapshot = [location('kraken', 500), location('ledger', 100), location('total', 600)];
+
+      expect(rowsBehindMismatch(base, findSumMismatch(base)!, isSpam)).toBeNull();
+    });
+
+    it('should still offer a spam value that dwarfs a hand-typed remainder', () => {
+      const base = loweredAroundSpam();
+      base.locationDataSnapshot = [location('kraken', 90), location('ledger', 50), location('total', 140)];
+
+      const rows = rowsBehindMismatch(base, findSumMismatch(base)!, isSpam);
+      expect(rows?.indices).toEqual([2]);
+      expect(rows?.rest.toNumber()).toBe(10);
+      // The remainder is left for the reconcile the banner still offers.
+      expect(findSumMismatch(applyBalanceBulkDelete(base, rows!.indices))?.locationsSum.toNumber()).toBe(140);
+    });
+
+    it('should return null when the locations still hold the spam value', () => {
+      const base = snapshot();
+      base.balancesSnapshot.push(balance('SPAM', 1_000_000));
+      base.locationDataSnapshot = [location('kraken', 1_000_100), location('ledger', 40), location('total', 1_000_150)];
+
+      expect(rowsBehindMismatch(base, findSumMismatch(base)!, isSpam)).toBeNull();
+    });
+
+    it('should return null when no row matches the gap', () => {
+      const base = snapshot();
+      base.locationDataSnapshot = [location('kraken', 90), location('ledger', 50), location('total', 150)];
+
+      expect(rowsBehindMismatch(base, findSumMismatch(base)!, isSpam)).toBeNull();
     });
   });
 

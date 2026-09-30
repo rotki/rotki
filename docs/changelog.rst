@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` A snapshot whose locations and net value were lowered by hand while a mispriced token stayed in its balances can now be fixed in one step: the "Totals do not match" warning names the token and offers to remove it. Before, every balance stayed locked until the value was put back into a location, and for a spam token the graph plotted that snapshot far below zero. The snapshot editor's line about excluded ignored assets can now also show them.
+* :bug:`-` Opening a snapshot whose totals do not match no longer counts as an unsaved change, so leaving it no longer asks to discard changes and saving it untouched can no longer write the unresolved balances sum. Percentages in the snapshot editor now stop at 1,000,000% instead of printing thirty digits or exponent notation.
+* :bug:`-` Splitting a balance's removal across locations in the snapshot editor now offers a Fill action per location, so a mispriced value spread over several locations no longer has to be typed out digit by digit. Reconciling a snapshot's totals no longer offers a location the difference would push below zero.
 * :bug:`-` A failed purge, image cache clear or protocol data refresh in the data management settings now shows why it failed. Before, the error stopped at "failed:".
 * :bug:`-` Refreshing protocol data that fails now says so in the settings. Before, the data management settings reported the refresh as successful.
 * :bug:`-` A snapshot's change since the previous one, and the warning about a large change, now compare both snapshots the same way. Before, an ignored spam token could turn a small change into a warning of over 1,900%.

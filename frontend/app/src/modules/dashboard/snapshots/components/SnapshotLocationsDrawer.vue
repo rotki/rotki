@@ -7,7 +7,8 @@ import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remem
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotLocationEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotLocationEntryDialog.vue';
 import SnapshotLocationSplit from '@/modules/dashboard/snapshots/components/SnapshotLocationSplit.vue';
-import { findSumMismatch, type LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { approxEqualUsd, type LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -53,14 +54,18 @@ const data = computed<IndexedLocationDataSnapshot[]>(() =>
 
 const storedTotal = computed<BigNumber>(() => getTotalValue(snapshot.locationDataSnapshot));
 const allocated = computed<BigNumber>(() => locationsTotal(snapshot.locationDataSnapshot));
-const mismatch = computed(() => findSumMismatch(snapshot));
+/**
+ * Whether the locations disagree with the stored net worth, which is all this drawer's alert and its
+ * redistribution address. A gap between the balances and the locations is for the summary to resolve.
+ */
+const mismatch = computed<boolean>(() => !approxEqualUsd(get(storedTotal), get(allocated)));
 const difference = computed<BigNumber>(() => get(storedTotal).minus(get(allocated)));
 const locationNames = computed<string[]>(() => get(data).map(item => item.location));
 
 /** A location's share of net worth; empty when net worth is not positive. */
 function sharePercent(value: BigNumber): string {
   const net = get(storedTotal);
-  return net.isPositive() ? value.dividedBy(net).multipliedBy(100).toFormat(2) : '';
+  return net.isPositive() ? formatPercent(value.dividedBy(net).multipliedBy(100), 2) : '';
 }
 
 const allocatedShare = computed<string>(() => sharePercent(get(allocated)));

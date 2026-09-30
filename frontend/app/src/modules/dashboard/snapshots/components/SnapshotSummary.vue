@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
-import type { SnapshotSumMismatch } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { isNft } from '@/modules/assets/nft-utils';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotFxOverrideControl from '@/modules/dashboard/snapshots/components/SnapshotFxOverrideControl.vue';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
+import { type MismatchRows, rowsBehindMismatch, type SnapshotSumMismatch } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { reconcileOverdrawnLocations } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
+import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import {
   type ListedNetWorth,
   listedNetWorth,
@@ -38,13 +41,20 @@ const {
 const emit = defineEmits<{
   'edit-locations': [];
   'reconcile-locations': [location: string];
+  'remove-balances': [indices: number[]];
+  'show-excluded': [];
   'show-zero-value': [];
 }>();
 
 /** Number of location rows shown in the allocation glance before "+N more". */
 const ALLOCATION_LIMIT = 4;
 
+/** Number of asset symbols the mismatch banner names before "and N more". */
+const GAP_ASSETS_LIMIT = 3;
+
 const { t } = useI18n({ useScope: 'global' });
+
+const { getAssetField } = useAssetInfoRetrieval();
 
 const { isIgnoredAsset, isSpamAsset } = useSnapshotAssetFilters();
 const nftsInNetValue = useSetting('nftsInNetValue');
@@ -67,6 +77,44 @@ const existingLocations = computed<string[]>(() =>
  */
 const reconcileLocation = ref<string>('');
 watch(() => timestamp, () => set(reconcileLocation, ''));
+
+/**
+ * Rows whose value is the whole gap: the locations already leave them out, so removing them settles
+ * the mismatch, where reconciling would put their value back into a location.
+ */
+const gapRows = computed<MismatchRows | null>(() => {
+  if (!mismatch)
+    return null;
+  return rowsBehindMismatch(snapshot, mismatch, identifier => isIgnoredAsset(identifier) || isSpamAsset(identifier));
+});
+
+/** Reconcile targets that would go negative, unselectable so a reconcile can't leave one overdrawn. */
+const overdrawnTargets = computed<string[]>(() =>
+  mismatch ? reconcileOverdrawnLocations(snapshot, mismatch.balancesSum) : [],
+);
+
+const noReconcileTarget = computed<boolean>(() => {
+  const targets = get(existingLocations);
+  return targets.length > 0 && targets.every(location => get(overdrawnTargets).includes(location));
+});
+
+function isOverdrawnTarget(item: { identifier: string }): boolean {
+  return get(overdrawnTargets).includes(item.identifier);
+}
+
+/** The symbols of the gap rows, since the spam and ignored ones are hidden from the table. */
+const gapAssets = computed<string>(() => {
+  const rows = get(gapRows);
+  if (!rows)
+    return '';
+  const symbols = rows.indices.map((index) => {
+    const identifier = snapshot.balancesSnapshot[index].assetIdentifier;
+    return getAssetField(identifier, 'symbol') || identifier;
+  });
+  const shown = symbols.slice(0, GAP_ASSETS_LIMIT).join(', ');
+  const more = symbols.length - GAP_ASSETS_LIMIT;
+  return more > 0 ? t('dashboard.snapshot.detail.mismatch.assets_more', { assets: shown, count: more }) : shown;
+});
 const warnings = computed<SnapshotWarning[]>(() =>
   getSnapshotWarnings(snapshot, { currentTotal: get(listed).value, isSpam: isSpamAsset, previousTotal: previous?.value }),
 );
@@ -82,7 +130,7 @@ const deltaPercent = computed<string | undefined>(() => {
   const diff = get(delta);
   if (diff === undefined || previous === undefined || previous.value.isZero())
     return undefined;
-  return diff.dividedBy(previous.value).multipliedBy(100).toFormat(2);
+  return formatPercent(diff.dividedBy(previous.value).multipliedBy(100), 2);
 });
 
 interface AllocationSegment {
@@ -131,7 +179,7 @@ function warningMessage(warning: SnapshotWarning): string {
     case 'nft-amount':
       return t('dashboard.snapshot.detail.warnings.nft_amount', { asset });
     case 'net-worth-swing':
-      return t('dashboard.snapshot.detail.warnings.net_worth_swing', { percent: (warning.swingPercent ?? 0).toFixed(0) });
+      return t('dashboard.snapshot.detail.warnings.net_worth_swing', { percent: formatPercent(warning.swingPercent ?? 0, 0) });
   }
   return '';
 }
@@ -181,21 +229,35 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
             data-testid="snapshot-summary-net-worth"
           />
         </div>
-        <i18n-t
+        <div
           v-if="!listed.ignored.isZero()"
-          scope="global"
-          keypath="dashboard.snapshot.detail.summary.excludes_ignored"
-          tag="div"
-          class="text-caption text-rui-text-secondary"
+          class="flex items-center gap-1"
         >
-          <template #amount>
-            <SnapshotFiatDisplay
-              :value="listed.ignored"
-              :timestamp="timestamp"
-              data-testid="snapshot-summary-excluded-ignored"
-            />
-          </template>
-        </i18n-t>
+          <i18n-t
+            scope="global"
+            keypath="dashboard.snapshot.detail.summary.excludes_ignored"
+            tag="span"
+            class="text-caption text-rui-text-secondary"
+          >
+            <template #amount>
+              <SnapshotFiatDisplay
+                :value="listed.ignored"
+                :timestamp="timestamp"
+                data-testid="snapshot-summary-excluded-ignored"
+              />
+            </template>
+          </i18n-t>
+          <RuiButton
+            variant="text"
+            size="sm"
+            color="primary"
+            class="!py-0"
+            data-testid="snapshot-summary-show-excluded"
+            @click="emit('show-excluded')"
+          >
+            {{ t('dashboard.snapshot.detail.summary.show_excluded') }}
+          </RuiButton>
+        </div>
         <i18n-t
           v-if="!listed.nfts.isZero()"
           scope="global"
@@ -325,7 +387,10 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
       <template #title>
         {{ t('dashboard.snapshot.detail.mismatch.title') }}
       </template>
-      <p class="text-body-2 mb-2">
+      <p
+        v-if="!gapRows"
+        class="text-body-2 mb-2"
+      >
         {{ t('dashboard.snapshot.detail.mismatch.description') }}
       </p>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-body-2">
@@ -347,6 +412,105 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         </span>
       </div>
       <div
+        v-if="gapRows"
+        class="mb-3"
+        data-testid="snapshot-summary-gap-rows"
+      >
+        <i18n-t
+          v-if="gapRows.excluded && !gapRows.rest.isZero()"
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.excluded_gap_partial"
+          :plural="gapRows.indices.length"
+          tag="p"
+          class="text-body-2 mb-2"
+          data-testid="snapshot-summary-gap-partial"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+          <template #rest>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.rest.abs()"
+              :timestamp="timestamp"
+            />
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else-if="gapRows.excluded"
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.excluded_gap"
+          :plural="gapRows.indices.length"
+          tag="p"
+          class="text-body-2 mb-2"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.row_gap"
+          tag="p"
+          class="text-body-2 mb-2"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+        </i18n-t>
+        <RuiButton
+          size="sm"
+          color="warning"
+          data-testid="snapshot-summary-remove-gap-rows"
+          @click="emit('remove-balances', gapRows.indices)"
+        >
+          {{ t('dashboard.snapshot.detail.mismatch.remove_rows', { assets: gapAssets }) }}
+        </RuiButton>
+        <p class="text-body-2 mt-3 mb-0">
+          {{ t('dashboard.snapshot.detail.mismatch.gap_alternative') }}
+        </p>
+      </div>
+      <div
         v-if="existingLocations.length > 0"
         class="flex flex-wrap items-end gap-2 mb-3"
       >
@@ -354,6 +518,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           v-model="reconcileLocation"
           class="w-60"
           :items="existingLocations"
+          :item-disabled="isOverdrawnTarget"
           dense
           hide-details
           :label="t('dashboard.snapshot.detail.mismatch.reconcile_into')"
@@ -361,13 +526,20 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         <RuiButton
           size="sm"
           color="warning"
-          :disabled="!reconcileLocation"
+          :disabled="!reconcileLocation || overdrawnTargets.includes(reconcileLocation)"
           data-testid="snapshot-summary-reconcile-apply"
           @click="emit('reconcile-locations', reconcileLocation)"
         >
           {{ t('dashboard.snapshot.detail.mismatch.reconcile_apply') }}
         </RuiButton>
       </div>
+      <p
+        v-if="noReconcileTarget && !gapRows"
+        class="text-body-2 mb-3"
+        data-testid="snapshot-summary-no-reconcile-target"
+      >
+        {{ t('dashboard.snapshot.detail.mismatch.no_reconcile_target') }}
+      </p>
 
       <div class="flex flex-wrap gap-2">
         <RuiButton

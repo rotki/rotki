@@ -2,7 +2,7 @@ import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { type BalanceSnapshot, BalanceSnapshotSchema, type LocationDataSnapshot, LocationDataSnapshotSchema, type Snapshot } from '@/modules/dashboard/snapshots';
-import { applyBalanceBulkDelete, applyReconcileLocations, rebuildSnapshotAfterBalanceChange } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
+import { applyBalanceBulkDelete, applyReconcileLocations, rebuildSnapshotAfterBalanceChange, reconcileOverdrawnLocations } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
 import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 function balance(usdValue: string, category: BalanceType = BalanceType.ASSET): BalanceSnapshot {
@@ -147,6 +147,32 @@ describe('modules/dashboard/snapshots/utils/snapshot-mutations', () => {
       const result = applyReconcileLocations(snap, 'ledger', bigNumberify('100'));
       expect(result.locationDataSnapshot.find(i => i.location === 'ledger')?.usdValue.toNumber()).toBe(20); // 0 + 20
       expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(100);
+    });
+  });
+
+  describe('reconcileOverdrawnLocations', () => {
+    it('should list the locations a negative difference would push below zero', () => {
+      const snap = snapshot(
+        [balance('50')],
+        [location('kraken', '60'), location('ledger', '20'), location('total', '80')],
+      );
+      expect(reconcileOverdrawnLocations(snap, bigNumberify('50'))).toEqual(['ledger']);
+    });
+
+    it('should list every location when none holds the whole difference', () => {
+      const snap = snapshot(
+        [balance('10')],
+        [location('kraken', '60'), location('ledger', '40'), location('total', '100')],
+      );
+      expect(reconcileOverdrawnLocations(snap, bigNumberify('10'))).toEqual(['kraken', 'ledger']);
+    });
+
+    it('should list nothing when the difference adds value', () => {
+      const snap = snapshot(
+        [balance('100')],
+        [location('kraken', '60'), location('ledger', '0'), location('total', '60')],
+      );
+      expect(reconcileOverdrawnLocations(snap, bigNumberify('100'))).toEqual([]);
     });
   });
 });
