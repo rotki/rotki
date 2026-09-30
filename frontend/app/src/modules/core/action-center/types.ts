@@ -1,4 +1,4 @@
-import type { RuiIcons } from '@rotki/ui-library';
+import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Pinned } from '@/modules/session/types';
 import type { SettingsCategoryId, SettingsHighlightId } from '@/modules/settings/setting-highlight-ids';
@@ -26,6 +26,13 @@ export const URGENCY_RANK: Record<ActionUrgency, number> = {
   [ActionUrgency.DECISION]: 0,
   [ActionUrgency.TODO]: 1,
   [ActionUrgency.AUTOMATIC]: 2,
+};
+
+/** The colour each urgency is drawn in; `AUTOMATIC` stays neutral, since rotki handles it. */
+export const URGENCY_COLORS: Record<ActionUrgency, ContextColorsType | undefined> = {
+  [ActionUrgency.AUTOMATIC]: undefined,
+  [ActionUrgency.DECISION]: 'warning',
+  [ActionUrgency.TODO]: 'info',
 };
 
 /**

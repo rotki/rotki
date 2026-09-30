@@ -1,6 +1,9 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ActionCenterSection, ActionItem } from '@/modules/core/action-center/types';
-import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
+import ActionCenterGroup from '@/modules/core/action-center/ActionCenterGroup.vue';
+
+/** ids of the sections the user folded */
+const folded = defineModel<string[]>('folded', { default: () => [] });
 
 const {
   checking = false,
@@ -76,6 +79,11 @@ const clearedExpanded = computed<boolean>(() => get(clearedToggled) ?? (count ==
 function toggleCleared(): void {
   set(clearedToggled, !get(clearedExpanded));
 }
+
+function setFolded(id: string, fold: boolean): void {
+  const others = get(folded).filter(foldedId => foldedId !== id);
+  set(folded, fold ? [...others, id] : others);
+}
 </script>
 
 <template>
@@ -122,28 +130,16 @@ function toggleCleared(): void {
       class="flex-1 min-h-0 overflow-y-auto"
       data-testid="actions-center-body"
     >
-      <section
+      <ActionCenterGroup
         v-for="section in sections"
         :key="section.id"
-        class="border-t border-default first-of-type:border-t-0"
-        data-testid="actions-center-section"
-        :data-key="section.id"
-      >
-        <h6 class="px-4 pt-3 text-caption font-medium uppercase tracking-wide text-rui-text-secondary">
-          {{ section.title }}
-        </h6>
-        <div class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
-          <ActionCenterRow
-            v-for="item in section.items"
-            :key="item.id"
-            :item="item"
-            :is-new="newIds.includes(item.id)"
-            :previous-count="previousCounts[item.id]"
-            @action="emit('open', $event.target)"
-            @option="emit('open', $event)"
-          />
-        </div>
-      </section>
+        :section="section"
+        :new-ids="newIds"
+        :previous-counts="previousCounts"
+        :folded="folded.includes(section.id)"
+        @update:folded="setFolded(section.id, $event)"
+        @open="emit('open', $event)"
+      />
 
       <div
         v-if="!checking && cleared.length > 0"

@@ -147,15 +147,26 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     scope?.stop();
   });
 
-  it('should group raised rows by module in module order, leaving out a module with nothing raised', async () => {
+  it('should group raised rows by module, leaving out a module with nothing raised', async () => {
     set(state.integrationRows, [row('missing-api-key-etherscan')]);
     set(state.assetRows, [row('missing-exchange-mappings', { count: 0 })]);
     set(state.chainRows, [row('no-available-indexers-base')]);
     const { sections } = center();
     await flushPromises();
 
-    expect(get(sections).map(section => section.id)).toEqual(['chains', 'integrations']);
-    expect(get(sections)[0].title).toBe('action_center.sections.chains');
+    expect(get(sections).map(section => section.id)).toEqual(['integrations', 'chains']);
+    expect(get(sections)[0].title).toBe('action_center.sections.integrations');
+  });
+
+  it('should put keys and chains before the history they feed, and assets last', async () => {
+    set(state.historySyncRows, [row('history-sync', { urgency: ActionUrgency.TODO })]);
+    set(state.assetRows, [row('missing-exchange-mappings')]);
+    set(state.chainRows, [row('no-available-indexers-base')]);
+    set(state.integrationRows, [row('missing-api-key-etherscan')]);
+    const { sections } = center();
+    await flushPromises();
+
+    expect(get(sections).map(section => section.id)).toEqual(['integrations', 'chains', 'history', 'assets']);
   });
 
   it('should list a checked category with nothing pending as cleared', async () => {
@@ -340,8 +351,8 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     await flushPromises();
 
     expect(get(sections).map(section => [section.id, section.items.map(item => item.id)])).toEqual([
-      ['history', ['accounting-rule-conflicts']],
       ['integrations', ['gnosis-pay-safe-migration']],
+      ['history', ['accounting-rule-conflicts']],
     ]);
   });
 
