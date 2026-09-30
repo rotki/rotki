@@ -15,6 +15,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_BITPANDA,
     LOCATION_BITSTAMP,
     LOCATION_BITTREX,
+    LOCATION_BITVAVO,
     LOCATION_BLOCKFI,
     LOCATION_BYBIT,
     LOCATION_COINBASE,
@@ -501,6 +502,23 @@ def asset_from_coinex(coinex_name: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_bitvavo(bitvavo_symbol: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
+    if not isinstance(bitvavo_symbol, str):
+        raise DeserializationError(
+            f'Got non-string type {type(bitvavo_symbol)} for Bitvavo asset',
+        )
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=LOCATION_BITVAVO,
+        symbol=bitvavo_symbol,
+        default=bitvavo_symbol,
+    ))
+
+
 def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -573,6 +591,7 @@ LOCATION_TO_ASSET_MAPPING: dict[LocationIdentifier, Callable[[str], AssetWithOra
     LOCATION_WOO: asset_from_woo,
     LOCATION_HTX: asset_from_htx,
     LOCATION_COINEX: asset_from_coinex,
+    LOCATION_BITVAVO: asset_from_bitvavo,
     LOCATION_BITCOINDE: asset_from_bitcoinde,
     LOCATION_GATE: asset_from_gate,
     LOCATION_EXTERNAL: asset_from_common_identifier,
