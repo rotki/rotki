@@ -131,7 +131,8 @@ describe('createNoAvailableIndexersHandler', () => {
     const keyFailure = await handler.handle({ chain: 'optimism', reason: 'etherscan_paid_key_required' });
     assert(keyFailure);
     expect(keyFailure.title).toContain('paid_key_required.title');
-    expect(keyFailure.group).toBe(result.group);
+    expect(result.group).toBe(`${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism:incomplete`);
+    expect(keyFailure.group).toBe(`${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`);
   });
 
   it('should return null when the chain is in the suppression list', async () => {
