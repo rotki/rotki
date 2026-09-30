@@ -7,11 +7,14 @@ const {
   cleared,
   count,
   newIds = [],
+  previousCounts = {},
   refreshing = false,
   sections,
 } = defineProps<{
   /** ids of the rows that appeared or grew since the user last looked, marked as new */
   newIds?: string[];
+  /** the count each row that went down, or cleared, had when the user last looked, by row id */
+  previousCounts?: Record<string, number>;
   /** the rows worth showing, grouped under headings in the order they should appear */
   sections: ActionCenterSection<TTarget>[];
   /** categories with nothing pending, rendered as the checked strip */
@@ -47,15 +50,28 @@ const subtitle = computed<string>(() => {
 
 const clearedToggled = ref<boolean>();
 
+function clearedSinceLastVisit(item: ActionItem<TTarget>): boolean {
+  return (previousCounts[item.id] ?? 0) > 0;
+}
+
+/** The checked categories, the ones cleared since the user last looked first. */
+const clearedRows = computed<ActionItem<TTarget>[]>(() => [
+  ...cleared.filter(clearedSinceLastVisit),
+  ...cleared.filter(item => !clearedSinceLastVisit(item)),
+]);
+
+const anyClearedSinceLastVisit = computed<boolean>(() => cleared.some(clearedSinceLastVisit));
+
 /**
  * Whether the checked categories are listed, not just counted.
  *
  * @remarks
  * With nothing asking for attention the list is the evidence that everything was checked, so it
- * opens; next to rows that need something it is background, so it stays folded. The default follows
- * the count until the user toggles it.
+ * opens, and so it does when something cleared since the user last looked; otherwise, next to rows
+ * that need something, it is background and stays folded. The default follows these until the user
+ * toggles it.
  */
-const clearedExpanded = computed<boolean>(() => get(clearedToggled) ?? count === 0);
+const clearedExpanded = computed<boolean>(() => get(clearedToggled) ?? (count === 0 || get(anyClearedSinceLastVisit)));
 
 function toggleCleared(): void {
   set(clearedToggled, !get(clearedExpanded));
@@ -122,6 +138,7 @@ function toggleCleared(): void {
             :key="item.id"
             :item="item"
             :is-new="newIds.includes(item.id)"
+            :previous-count="previousCounts[item.id]"
             @action="emit('open', $event.target)"
             @option="emit('open', $event)"
           />
@@ -156,7 +173,7 @@ function toggleCleared(): void {
           class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 pl-5"
         >
           <button
-            v-for="item in cleared"
+            v-for="item in clearedRows"
             :key="item.id"
             type="button"
             class="text-caption text-rui-text-secondary hover:text-rui-text hover:underline"
@@ -165,6 +182,13 @@ function toggleCleared(): void {
             @click="emit('open', item.checkTarget)"
           >
             {{ item.title }}
+            <span
+              v-if="clearedSinceLastVisit(item)"
+              class="ml-1 text-rui-success"
+              data-testid="actions-center-cleared-since"
+            >
+              {{ t('action_center.cleared_since_last_visit') }}
+            </span>
           </button>
         </div>
       </div>

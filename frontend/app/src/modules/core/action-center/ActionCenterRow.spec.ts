@@ -25,11 +25,38 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
-function mountRow(item: ActionItem): VueWrapper {
-  return mount(ActionCenterRow, { props: { item } });
+function mountRow(item: ActionItem, previousCount?: number): VueWrapper {
+  return mount(ActionCenterRow, { props: { item, previousCount } });
 }
 
 describe('modules/core/action-center/ActionCenterRow', () => {
+  describe('progress since the last visit', () => {
+    const downFrom = (wrapper: VueWrapper): string | undefined =>
+      wrapper.find('[data-testid=actions-center-row-down-from]').exists()
+        ? wrapper.find('[data-testid=actions-center-row-down-from]').text()
+        : undefined;
+
+    it('should say what the row was down from, beside its current count', () => {
+      const wrapper = mountRow(createItem({ count: 12 }), 40);
+
+      expect(wrapper.find('[data-testid=actions-center-row-count]').text()).toBe('12');
+      expect(downFrom(wrapper)).toContain('action_center.down_from::40');
+    });
+
+    it('should show the count of a row down to one, which is otherwise hidden', () => {
+      const wrapper = mountRow(createItem({ count: 1 }), 5);
+
+      expect(wrapper.find('[data-testid=actions-center-row-count]').text()).toBe('1');
+      expect(downFrom(wrapper)).toContain('action_center.down_from::5');
+    });
+
+    it('should say nothing when the row is unchanged, grew, or has nothing to compare with', () => {
+      expect(downFrom(mountRow(createItem({ count: 12 }), 12))).toBeUndefined();
+      expect(downFrom(mountRow(createItem({ count: 12 }), 3))).toBeUndefined();
+      expect(downFrom(mountRow(createItem({ count: 12 })))).toBeUndefined();
+    });
+  });
+
   it('should render the count, the description and the action', async () => {
     const item = createItem();
     const wrapper = mountRow(item);
