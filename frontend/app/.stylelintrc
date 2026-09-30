@@ -23,6 +23,12 @@
         "ignoreAtRules": ["tailwind", "apply", "layer", "config", "variants", "responsive", "screen"]
       }
     ],
+    "at-rule-prelude-no-invalid": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "apply", "layer", "config", "variants", "responsive", "screen"]
+      }
+    ],
     "rule-empty-line-before": [
       "always",
       {

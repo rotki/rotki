@@ -3,7 +3,7 @@ import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { type DefineComponent, defineComponent, h } from 'vue';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 
 const groups = ref<Collection<HistoryEventRow>>(
@@ -112,7 +112,7 @@ vi.mock('@/modules/history/events/composables', () => ({
   }),
 }));
 
-function stub(name: string, emits: string[] = [], props: string[] = []): ReturnType<typeof defineComponent> {
+function stub(name: string, emits: string[] = [], props: string[] = []): DefineComponent<Record<string, unknown>> {
   return defineComponent({
     emits,
     name,
