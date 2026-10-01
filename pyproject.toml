@@ -65,7 +65,7 @@ dependencies = [
     "tzdata==2025.2 ; sys_platform == 'win32'",
     # enfore transitive deps versions
     "aiohttp==3.14.3",  # dependency of web3.py that has security issues before this version
-    "urllib3==2.7.0",  # enforced due to dependabot reports
+    "urllib3==2.8.0",  # enforced due to dependabot reports
     "idna==3.18",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
     "protobuf==6.33.6",  # enforced due to dependabot reports
