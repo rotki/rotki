@@ -277,7 +277,7 @@
         "count_cost_basis_pnl": "计算成本基础盈亏",
         "count_cost_basis_pnl_subtitle": "是否计算该资产相对于获得时可能产生的盈亏。",
         "count_entire_amount_spend": "全额计为支出",
-        "count_entire_amount_spend_subtitle": "是否将全部金额计为支出，即一项费用（负盈亏）",
+        "count_entire_amount_spend_subtitle": "是否将全部数量计为支出，即一项费用（负盈亏）",
         "event_ids": "事件 ID",
         "event_subtype": "事件子类型",
         "event_type": "事件类型",
@@ -316,7 +316,7 @@
     "button_checking": "正在检查待办事项",
     "button_clear": "一切正常",
     "checks_passed": "{count} 项检查通过 | {count} 项检查通过",
-    "dismiss": "忽略",
+    "dismiss": "关闭",
     "locked": "高级版",
     "locked_hint": "此功能需要 {tier} 等级。",
     "locked_hint_generic": "此功能需要高级版订阅。",
@@ -1356,7 +1356,7 @@
   "asset_movement_matching": {
     "actions": {
       "auto_match": "触发自动匹配",
-      "auto_match_tooltip": "根据金额、资产和时间戳，自动将资产转移与对应事件匹配。",
+      "auto_match_tooltip": "根据数量、资产和时间戳，自动将资产转移与对应事件匹配。",
       "ignore_fiat": "忽略所有法币",
       "ignore_fiat_confirm": "确定要忽略全部 {count} 笔法币转移吗？法币转移通常没有对应的事件。",
       "ignore_fiat_tooltip": "忽略所有法币转移（如 USD、EUR）。它们通常没有对应的事件。",
@@ -1366,7 +1366,7 @@
       "restore_selected_confirm": "确定要将所选的 {count} 笔资产转移恢复到未匹配列表吗？"
     },
     "actions_pin": {
-      "pin_section": "固定区块"
+      "pin_section": "固定版块"
     },
     "auto_match": {
       "error": "自动匹配运行失败：{error}",
@@ -1389,7 +1389,7 @@
       "confirm_match": "确认匹配",
       "description": "选择一笔未匹配的资产转移，查找与之匹配的区块链交易并将其关联。",
       "empty": {
-        "hint": "扩大时间范围或金额容差，或以其他方式处理此行。",
+        "hint": "扩大时间范围或数量容差，或以其他方式处理此行。",
         "title": "在 ±{hours} 小时 / {tolerance}% 范围内没有候选",
         "widen": "扩大搜索"
       },
@@ -1401,8 +1401,8 @@
       "ignored_description": "这些资产转移不参与自动匹配，原因是它们被标记为没有对应事件，或已被你取消关联。你可以随时手动匹配，或将其恢复以重新参与自动匹配。",
       "manual_action": "手动操作",
       "mark_external": "标记为外部",
-      "mark_external_in_tooltip": "将此充值处理为来自未追踪来源的收入，从而计入全部金额，而不仅是手续费。",
-      "mark_external_tooltip": "将此提现处理为向未追踪地址的付款，从而计入全部金额，而不仅是手续费。",
+      "mark_external_in_tooltip": "将此充值处理为来自未追踪来源的收入，从而计入全部数量，而不仅是手续费。",
+      "mark_external_tooltip": "将此提现处理为向未追踪地址的付款，从而计入全部数量，而不仅是手续费。",
       "matching_for": "正在为以下资产转移查找匹配。",
       "matching_hint": "你可以选择一个或多个事件进行关联。",
       "no_ignored": "没有已忽略的资产转移。",
@@ -1410,7 +1410,7 @@
       "no_matches_found": "未找到可能的匹配。请尝试调整时间范围。",
       "no_unmatched": "所有资产转移均已匹配。",
       "only_expected_assets": "仅显示\n相同资产",
-      "only_expected_assets_hint": "启用后，仅显示与你所追踪账户地址相关、且金额和时间戳匹配的事件。",
+      "only_expected_assets_hint": "启用后，仅显示与你所追踪账户地址相关、且数量和时间戳匹配的事件。",
       "recommended": "推荐",
       "resolved_income": "已处理为收入",
       "resolved_payment": "已处理为付款",
@@ -1446,8 +1446,8 @@
     },
     "settings": {
       "amount_tolerance": {
-        "hint": "自动匹配时，资产转移金额与链上事件金额之间允许的最大百分比差异。例如，对 0.1 BTC 的转移设置 1% 容差，可匹配 0.099 至 0.101 BTC 之间的事件。",
-        "label": "金额容差（%）",
+        "hint": "自动匹配时，资产转移数量与链上事件数量之间允许的最大百分比差异。例如，对 0.1 BTC 的转移设置 1% 容差，可匹配 0.099 至 0.101 BTC 之间的事件。",
+        "label": "数量容差（%）",
         "validations": {
           "max": "值不能大于 100",
           "min": "值不能小于 0.0001"
@@ -1635,7 +1635,7 @@
         "defi_borrow_repay": "DeFi 借款与还款",
         "defi_deposit_withdraw": "DeFi 存入与提取",
         "donation": "捐赠",
-        "expense": "支出",
+        "expense": "费用",
         "governance": "治理",
         "income": "收入",
         "loss": "损失",
@@ -1665,7 +1665,7 @@
         "remove_asset": "移除资产",
         "return_wrapped": "归还包装资产",
         "reward": "奖励",
-        "spam": "垃圾",
+        "spam": "垃圾交易",
         "spend": "支出"
       },
       "history_event_type": {
@@ -1746,8 +1746,8 @@
       "margin_position": "杠杆仓位",
       "prefork_acquisition": "分叉前获得",
       "staking": "质押",
-      "trade": "交易",
-      "transaction_event": "交易事件"
+      "trade": "买卖",
+      "transaction_event": "链上交易事件"
     },
     "trade_location": {
       "banks": "银行",
@@ -1855,7 +1855,7 @@
             "title": "原始模式会原样发送地址、交易哈希、账户名称和备注。"
           },
           "strict": {
-            "description": "遮蔽地址、哈希、账户名称和所有自由文本。保留金额、资产、日期、交易对手和位置。",
+            "description": "遮蔽地址、哈希、账户名称和所有自由文本。保留数量、资产、日期、交易对手和位置。",
             "title": "严格"
           },
           "success": "MCP 隐私模式已更新"
@@ -2049,12 +2049,12 @@
   },
   "bridge_matching": {
     "actions": {
-      "auto_match_tooltip": "根据金额、资产和时间戳，自动将跨链桥交易与另一条链上的对应事件匹配。",
+      "auto_match_tooltip": "根据数量、资产和时间戳，自动将跨链桥交易与另一条链上的对应事件匹配。",
       "create_counterpart": "创建对应事件",
-      "create_counterpart_confirm_in": "确定要为此跨链桥提取创建缺失的源事件吗？将在源链上创建一个镜像它（相同资产、金额和时间）的合成事件并关联，使该转账作为你自有资金的转移来计算。请在源链已无法查询时使用。该合成事件会被明确标记，取消关联后会被删除。",
-      "create_counterpart_confirm_in_chain": "确定要在 {chain} 上为此跨链桥提取创建缺失的源事件吗？将在该链上创建一个镜像它（相同资产、金额和时间）的合成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该合成事件会被明确标记，取消关联后会被删除。",
-      "create_counterpart_confirm_out": "确定要为此跨链桥存入创建缺失的目标事件吗？将在目标链上创建一个镜像它（相同资产、金额和时间）的合成事件并关联，使该转账作为你自有资金的转移来计算。请在目标链已无法查询时使用。该合成事件会被明确标记，取消关联后会被删除。",
-      "create_counterpart_confirm_out_chain": "确定要在 {chain} 上为此跨链桥存入创建缺失的目标事件吗？将在该链上创建一个镜像它（相同资产、金额和时间）的合成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该合成事件会被明确标记，取消关联后会被删除。",
+      "create_counterpart_confirm_in": "确定要为此跨链桥提取创建缺失的源事件吗？将在源链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在源链已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
+      "create_counterpart_confirm_in_chain": "确定要在 {chain} 上为此跨链桥提取创建缺失的源事件吗？将在该链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
+      "create_counterpart_confirm_out": "确定要为此跨链桥存入创建缺失的目标事件吗？将在目标链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在目标链已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
+      "create_counterpart_confirm_out_chain": "确定要在 {chain} 上为此跨链桥存入创建缺失的目标事件吗？将在该链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
       "ignore_selected": "忽略所选",
       "ignore_selected_confirm": "确定要忽略所选的 {count} 笔跨链桥交易吗？此操作会将其标记为没有对应事件。",
       "restore_selected": "恢复所选",
@@ -2259,7 +2259,7 @@
     },
     "actions_text": "操作",
     "address": "地址",
-    "amount": "金额",
+    "amount": "数量",
     "asset": "资产",
     "assets": "资产",
     "balance": "余额",
@@ -2370,7 +2370,7 @@
     }
   },
   "cost_basis_table": {
-    "complete": "完成",
+    "complete": "完整",
     "cost_basis": "成本基础",
     "headers": {
       "amount": "卖出数量",
@@ -2392,17 +2392,17 @@
       "label_password": "密码",
       "label_password_backup_reminder": "rotki 将所有用户数据保存在本地。我了解如果丢失密码，将无法访问我的数据。我已备份密码。",
       "label_password_repeat": "重复密码",
-      "label_username": "配置文件名称",
+      "label_username": "用户名",
       "password_sync_requirement": "请使用与你最初备份的数据库相同的密码。如果输入不同的密码，将无法访问该数据库。",
-      "restore_description": "设置配置文件名称以及你所备份数据库的{password}。配置文件将在本地创建，并将同步的数据库下载到其中。",
+      "restore_description": "设置用户名以及你所备份数据库的{password}。用户将在本地创建，并将同步的数据库下载到其中。",
       "restore_highlight": "密码",
       "validation": {
         "check_prompt": "请确认你已阅读并完成备份",
         "non_empty_password": "请输入密码",
         "non_empty_password_confirmation": "请再次输入密码进行确认",
-        "non_empty_username": "请输入配置文件名称",
+        "non_empty_username": "请输入用户名",
         "password_confirmation_mismatch": "两次输入的密码不一致",
-        "valid_username": "配置文件名称只能包含字母和数字，且不能包含空格"
+        "valid_username": "用户名只能包含字母和数字，且不能包含空格"
       }
     },
     "error": {
@@ -2414,7 +2414,7 @@
     },
     "introduction": {
       "create": {
-        "description": "从全新的本地 rotki 配置文件开始。",
+        "description": "从全新的本地 rotki 用户开始。",
         "title": "创建新账户"
       },
       "description": "rotki 是一款尊重你隐私的本地应用。\n\nrotki 账户使用你的密码加密，并{highlight}。\n\n你在此创建的账户仅用于本应用，网页端使用的是不同的数据库。",
@@ -2534,9 +2534,7 @@
     }
   },
   "dashboard": {
-    "bank_balances": {
-
-    },
+    "bank_balances": {},
     "blockchain_balances": {
       "behaviour": {
         "only_refresh_balances": "仅刷新余额",
@@ -2579,9 +2577,7 @@
     "liabilities": {
       "title": "负债"
     },
-    "manual_balances": {
-
-    },
+    "manual_balances": {},
     "refresh": {
       "balances": "刷新余额",
       "balances_hint": "查询你的账户、交易所和银行，重新加载手动余额，然后刷新价格",
@@ -2844,11 +2840,11 @@
     "action": {
       "dismiss": {
         "confirm": {
-          "message": "这会将该问题从收件箱中隐藏，并停止对其自动修复。你仍可通过筛选已忽略的问题找到它。",
-          "title": "忽略此数据问题？"
+          "message": "这会将该问题从收件箱中隐藏，并停止对其自动修复。你仍可通过筛选已隐藏的问题找到它。",
+          "title": "隐藏此数据问题？"
         },
-        "error": "无法忽略问题",
-        "label": "忽略"
+        "error": "无法隐藏问题",
+        "label": "隐藏"
       },
       "resolve": {
         "error": "无法解决问题",
@@ -2969,7 +2965,7 @@
     },
     "state": {
       "auto_remediating": "自动修复中",
-      "dismissed": "已忽略",
+      "dismissed": "已隐藏",
       "open": "待处理",
       "resolved": "已解决",
       "unresolved": "需要关注"
@@ -3248,7 +3244,7 @@
       "title": "删除 {chain} RPC 节点"
     },
     "connect_error": {
-      "title": "无法连接所有 {chain} RPC 节点"
+      "title": "部分 {chain} RPC 节点无法连接"
     },
     "connected": {
       "cooling_down": "速率受限",
@@ -3699,10 +3695,10 @@
         }
       },
       "reset_dismissal_status": {
-        "button": "重置忽略状态",
-        "subtitle": "点击按钮重置忽略状态。已忽略的历史同步项会立即重新计入操作中心。",
-        "success": "忽略状态已成功重置",
-        "title": "重置忽略状态"
+        "button": "重置隐藏状态",
+        "subtitle": "点击按钮重置隐藏状态。已隐藏的历史同步项会立即重新计入操作中心。",
+        "success": "隐藏状态已成功重置",
+        "title": "重置隐藏状态"
       },
       "title": "历史同步提醒"
     },
@@ -3780,7 +3776,7 @@
       "graph_settings": "图表设置",
       "graph_settings_hint": "管理你的图表设置。"
     },
-    "title": "界面设置",
+    "title": "仅界面设置",
     "validation": {
       "timeframe": {
         "error": "设置默认时间范围失败",
@@ -3796,7 +3792,7 @@
       },
       "label": {
         "abbreviation": "缩写",
-        "amount": "金额",
+        "amount": "数值",
         "currency_location": "货币符号位置",
         "decimal_separator": "小数分隔符",
         "location_after": "之后",
@@ -3809,8 +3805,8 @@
         "main_currency": "主货币",
         "main_currency_subtitle": "设为主货币"
       },
-      "subtitle": "管理你的金额设置。",
-      "title": "金额设置"
+      "subtitle": "管理数值显示设置。",
+      "title": "数值设置"
     },
     "auto_detect_tokens": {
       "label": "通过定期检查历史事件，自动检测代币并刷新余额。",
@@ -4470,7 +4466,7 @@
       "import": "从 BitMEX 导入 {0}",
       "import_types": "钱包历史",
       "line_one": "[实验性] 如果你发现导入的数据有问题，请告诉我们，以便我们相应调整代码。",
-      "line_two": "钱包历史文件中的金额默认为比特币。如果你希望支持其他币种，请联系我们。",
+      "line_two": "钱包历史文件中的数量默认为比特币。如果你希望支持其他币种，请联系我们。",
       "name": "BitMEX"
     },
     "bitstamp": {
@@ -4486,8 +4482,8 @@
     },
     "blockfi": {
       "import": "从 BlockFi 导入 {0}",
-      "import_trade": "交易",
-      "import_transactions": "交易",
+      "import_trade": "买卖记录",
+      "import_transactions": "账户流水",
       "line_one": "[实验性] 如果你发现导入的数据有问题，请告诉我们，以便我们相应调整代码。",
       "line_two": "BlockFi 可导出两种不同的文件。交易将从仅包含交易的文件中导入。",
       "name": "BlockFi"
@@ -4511,7 +4507,7 @@
       "line_four": "此处仅导入交易（用于税务报告）。如果你希望这些资产显示在 rotki 余额中，需要将其手动添加为手动余额：{0}",
       "line_one": "[早期阶段] 此导入脚本可能遗漏部分交易类型，例如提现。由于我们无法获得所有类型的完整列表，只能根据当前已知信息开发。如果你认为导入脚本可以改进，并能帮助提供更多数据类型，{0}。",
       "line_one_link": "请告诉我们",
-      "line_three": "crypto.com 的交易/充值/提现不包含手续费明细。目前（2020 年 8 月）这些手续费已被免除，或已计入交易金额。",
+      "line_three": "crypto.com 的交易/充值/提现不包含手续费明细。目前（2020 年 8 月）这些手续费已被免除，或已计入交易数量。",
       "line_two": "{0} 如果你想连接 Crypto.com Exchange 账户，请等待我们支持后再作为交易所连接。",
       "line_two_warning": "这仅涉及 Crypto.com 移动应用。",
       "name": "Crypto.com",
@@ -4680,7 +4676,7 @@
     "has_proxy_addresses": "有 {length} 个代理地址：",
     "query_historical_price": "正在查询 Liquity 历史价格（{processed}/{total}）",
     "query_staking_data": "正在查询 Liquity 质押数据（{processed}/{total}）",
-    "refresh_tooltip": "刷新质押金额和价格",
+    "refresh_tooltip": "刷新质押数量和价格",
     "select_account": "选择账户"
   },
   "liquity_staking_events": {
@@ -4719,7 +4715,7 @@
   "login": {
     "button_create_account": "创建账户",
     "button_no_account": "还没有账户？",
-    "button_refresh_profiles": "刷新配置文件",
+    "button_refresh_profiles": "刷新用户列表",
     "credential_error": {
       "description": "如果你尚未创建应用账户，需要先创建才能解锁账户。",
       "support": "如需帮助，请在我们的 Discord 支持频道联系我们。",
@@ -4748,18 +4744,18 @@
       "title": "需要用户操作才能继续登录"
     },
     "label_password": "密码",
-    "label_username": "配置文件名称",
+    "label_username": "用户名",
     "logout": "退出登录",
     "migrating_data": {
       "current": "正在执行数据迁移 {currentVersion} 的第 {currentStep}/{totalSteps} 步。",
       "title": "数据迁移",
       "warning": "数据迁移 {currentVersion} 正在进行，完成前请不要关闭应用。"
     },
-    "no_profiles_found": "在此设备上未找到任何配置文件。",
+    "no_profiles_found": "在此设备上未找到任何用户。",
     "no_profiles_found_action": "{refresh_profiles}或{create_account} ",
     "remember_password": "记住密码",
     "remember_password_tooltip": "密码将保存在本机的密码管理工具中（例如 macOS 的钥匙串）",
-    "remember_username": "记住配置文件名称",
+    "remember_username": "记住用户名",
     "sync_error": {
       "local_modified": "本地最后修改时间：{0}",
       "question": "是否替换本地数据库？",
@@ -4774,8 +4770,8 @@
     },
     "validation": {
       "non_empty_password": "请输入密码",
-      "non_empty_username": "请输入配置文件名称",
-      "valid_username": "配置文件名称只能包含字母和数字，且不能包含空格"
+      "non_empty_username": "请输入用户名",
+      "valid_username": "用户名只能包含字母和数字，且不能包含空格"
     },
     "welcome_description": "欢迎使用保护你隐私的开源投资组合管理工具。",
     "welcome_title": "欢迎使用 rotki"
@@ -5002,7 +4998,7 @@
       "chains": "链",
       "database": "数据库",
       "general": "通用",
-      "interface": "界面",
+      "interface": "仅界面",
       "mcp": "MCP",
       "modules": "模块",
       "oracles": "预言机",
@@ -5023,7 +5019,7 @@
   "nft_balance_table": {
     "column": {
       "percentage": "占净值 %",
-      "price_in_asset": "以资产计价"
+      "price_in_asset": "以资产计的价格"
     },
     "hidden_hint": "出于安全考虑，图片已隐藏，可在 NFT 设置中管理。",
     "open_page": "打开 NFT 余额页面",
@@ -5053,7 +5049,7 @@
   "non_fungible_balances": {
     "column": {
       "custom_price": "自定义价格",
-      "price_in_asset": "以资产计价"
+      "price_in_asset": "以资产计的价格"
     },
     "ignore": "忽略 NFT",
     "refresh": "刷新余额"
@@ -5070,7 +5066,7 @@
       "title": "标题"
     },
     "last_updated": "最后更新时间：{datetime}",
-    "limit_warning": "免费版最多可保存 {limit} 条笔记。要保存更多笔记，可升级到{link}",
+    "limit_warning": "已达到免费版 {limit} 条笔记的上限。要保存更多笔记，可升级到{link}",
     "rules": {
       "content": {
         "non_empty": "请填写笔记内容"
@@ -5286,7 +5282,7 @@
   },
   "pending_task": {
     "collapse": "收起",
-    "dismiss": "忽略",
+    "dismiss": "关闭",
     "expand": "展开",
     "retry": "重试",
     "status": {
@@ -5305,7 +5301,7 @@
     "value": "{value}%"
   },
   "pinned": {
-    "tooltip": "已固定区块"
+    "tooltip": "已固定版块"
   },
   "poap_delivery_airdrops": {
     "title": "可领取的 POAP Delivery NFT"
@@ -5330,7 +5326,7 @@
         "all": "全部时间",
         "custom": "自定义",
         "one_day": "1天",
-        "one_month": "1月",
+        "one_month": "1个月",
         "one_week": "1周",
         "one_year": "1年"
       },
@@ -5670,7 +5666,7 @@
   "profit_loss_report": {
     "actionable": {
       "actions": {
-        "pin_section": "固定区块",
+        "pin_section": "固定版块",
         "regenerate_report": "重新生成报告"
       },
       "issues_found": "生成的报告中发现 {total} 个问题",
@@ -5817,11 +5813,11 @@
     "amount_rounding": "数量舍入",
     "amount_rounding_hint": "指定数量（例如持有资产的数量）的舍入方式。",
     "round": {
-      "down": "向下取整",
+      "down": "向下舍入",
       "down_description": "向零方向舍入",
       "half_even": "银行家舍入",
       "half_even_description": "舍入到最接近的值；若距离相等，则舍入到偶数",
-      "up": "向上取整",
+      "up": "向上舍入",
       "up_description": "远离零方向舍入"
     },
     "subscript": {
@@ -5831,8 +5827,8 @@
       "title": "下标格式",
       "toggle_label": "前导零使用下标"
     },
-    "subtitle": "设置前端显示金额的舍入方式",
-    "title": "金额舍入",
+    "subtitle": "设置前端显示数值的舍入方式",
+    "title": "数值舍入",
     "value_rounding": "价值舍入",
     "value_rounding_hint": "指定价值（例如持有资产的法币价值）的舍入方式。"
   },
@@ -5868,7 +5864,7 @@
         "rejected": "密钥被拒绝",
         "unknown": "未添加",
         "unreachable": "无响应",
-        "wrong_network": "网络错误"
+        "wrong_network": "网络不匹配"
       },
       "summary_archive": "其中 {archive} 个提供归档数据。",
       "unknown_error": "无法验证该节点，因此未保留。"
@@ -6073,9 +6069,7 @@
     },
     "tooltip": "资产图表设置"
   },
-  "summary_card": {
-
-  },
+  "summary_card": {},
   "swap_event_form": {
     "add_asset": "添加资产",
     "fee_notes": "手续费备注",
@@ -6699,7 +6693,7 @@
         "imported_from_csv": "从 CSV 导入",
         "matched": "已匹配",
         "profit_adjustment": "盈利调整",
-        "synthetic": "合成"
+        "synthetic": "系统生成"
       },
       "export": {
         "confirmation_message": "确定要导出应用了所选筛选条件的事件列表吗？"
@@ -6975,7 +6969,7 @@
       "account": "账户",
       "action": "操作",
       "address": "地址",
-      "amount": "金额",
+      "amount": "数量",
       "asset": "资产",
       "entry_type": "条目类型",
       "event_subtype": "子类型",
@@ -7106,18 +7100,18 @@
     "change_privacy_mode": {
       "label": "更改隐私模式",
       "normal_mode": {
-        "description": "同时显示金额和百分比",
+        "description": "同时显示数值和百分比",
         "label": "正常"
       },
       "private_mode": {
-        "description": "隐藏金额和百分比",
+        "description": "隐藏数值和百分比",
         "label": "隐私"
       },
       "scramble": {
-        "label": "混淆金额"
+        "label": "混淆数值"
       },
       "semi_private_mode": {
-        "description": "隐藏金额，显示百分比",
+        "description": "隐藏数值，显示百分比",
         "label": "半隐私"
       }
     },
