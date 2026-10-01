@@ -10,22 +10,28 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L1_ORIGINATED_TX_TYPE,
     L2WithL1FeesTransaction,
 )
+from rotkehlchen.data_migrations.manager import MIGRATION_LIST, DataMigrationManager
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 
 @pytest.mark.parametrize('data_migration_version', [27])
@@ -251,3 +257,32 @@ def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
             'SELECT COUNT(*) FROM history_events WHERE location=?', (bitmex,),
         ).fetchone()[0] == 1
         assert database.get_margin_positions(cursor=cursor) == [margin_position]
+
+
+@pytest.mark.parametrize('data_migration_version', [27])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_migration_28_removes_empty_icons(
+        database: DBHandler,
+        data_dir: Path,
+        task_supervisor: TaskSupervisor,
+) -> None:
+    """The empty files colibri used as not found markers are removed, including one that
+    hides an icon of the same asset, while the icons are kept. The .notfound markers are
+    kept since another user's login may have run the migration after colibri wrote them."""
+    (rotki := MockRotkiForMigrations(database)).icon_manager = IconManager(
+        data_dir=data_dir,
+        coingecko=Coingecko(None),
+        task_supervisor=task_supervisor,
+    )
+    (icons_dir := rotki.icon_manager.icons_dir).joinpath('MON_small.png').write_bytes(b'icon')
+    for name in ('MON_small.svg', 'DOGE_small.notfound', 'BTC_small.svg', 'eip155%3A1%2Ferc20%3A0x6B175474E89094C44Da98b954EedeAC495271d0F_small.svg'):  # noqa: E501
+        icons_dir.joinpath(name).touch()
+
+    with patch(
+        target='rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[next(x for x in MIGRATION_LIST if x.version == 28)],
+    ):
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    assert sorted(x.name for x in icons_dir.iterdir()) == ['DOGE_small.notfound', 'MON_small.png']
+    assert icons_dir.joinpath('MON_small.png').read_bytes() == b'icon'

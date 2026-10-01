@@ -15,6 +15,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.icons import NOT_FOUND_ICON_MARKER_SUFFIX
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import ChainID, EVMTxHash, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import from_wei
@@ -43,6 +44,13 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
     Also removes the API keys, query ranges and non syncing setting entries of BitMEX,
     whose API integration was removed after the exchange shut down.
+
+    Also removes the empty files of the cached asset icons. Colibri used to mark an icon
+    as not found with an empty .svg, which could hide an icon found later and was also
+    written when the icon could not be queried due to rate limiting. Colibri now uses a
+    .notfound marker instead. The removed icons are queried again when next shown. The
+    icons directory is shared by all users while this runs once per user, so the .notfound
+    markers written since another user ran it are kept.
     """
     customized_txs: list[tuple[EVMTxHash, L2ChainIdsWithL1FeesType]] = []  # filled by 1st step
 
@@ -195,5 +203,18 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
                 (json.dumps([x for x in exchanges if x['location'] != Location.BITMEX.serialize()]),),  # noqa: E501
             )
+
+    @progress_step(description='Removing empty asset icon files')
+    def _remove_empty_icons(rotki: Rotkehlchen) -> None:
+        for entry in rotki.icon_manager.icons_dir.iterdir():
+            try:
+                if (
+                    entry.suffix != NOT_FOUND_ICON_MARKER_SUFFIX and
+                    entry.is_file() and
+                    entry.stat().st_size == 0
+                ):
+                    entry.unlink()
+            except OSError as e:
+                log.error('Failed to remove empty icon file %s due to %s', entry, e)
 
     perform_userdb_migration_steps(rotki, progress_handler)
