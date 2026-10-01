@@ -300,8 +300,19 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
-        if query_end is None and (query_end := self._resolve_query_end(end_ts)) is None:
-            return
+        if query_end is None:
+            try:
+                query_end = self._resolve_query_end(end_ts)
+            except RemoteError as e:
+                # Only the periodic task queries an address without a sync end. Nothing is
+                # waiting on its result and its next run retries, so failing it would only
+                # report the same error on every run.
+                log.warning(
+                    'Skipping %s transactions query of %s up to %s: could not resolve its '
+                    'end block due to %s',
+                    self.evm_inquirer.chain_name, address, end_ts, e,
+                )
+                return
 
         if query_end.timestamp < start_ts:
             return  # the whole range is too recent to be indexed yet
@@ -325,25 +336,33 @@ class EvmTransactions(ABC):  # noqa: B024
             query_end=query_end,
         )
 
-    def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd | None:
-        """Return where a sync asked to end at end_ts stops, or None if it cannot tell.
+    def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd:
+        """Return where a sync asked to end at end_ts stops.
 
         The end is kept CHAIN_TOP_LAG seconds behind now and resolved to a block once, so
         every address and query kind of the sync stops at the same block.
 
-        With no block for the end nothing is queried, since none of the ranges could be.
+        May raise:
+        - RemoteError if the end block cannot be resolved, including NoAvailableIndexers.
+        With no block for the end nothing can be queried, since none of the ranges could be.
         """
-        try:
-            return self.evm_inquirer.resolve_query_end(
-                end_ts=Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG)),
-            )
-        except RemoteError as e:  # includes NoAvailableIndexers
-            log.warning(
-                'Skipping %s transactions query up to %s: could not resolve its end block '
-                'due to %s',
-                self.evm_inquirer.chain_name, end_ts, e,
-            )
-            return None
+        return self.evm_inquirer.resolve_query_end(
+            end_ts=Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG)),
+        )
+
+    @with_tx_status_messaging
+    def _settle_unqueried_address(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Report the transactions query of an address as ended without querying anything.
+
+        For a sync that fails before querying any address. The frontend keeps every address
+        of a sync pending until its query ends, and the failed sync task then marks it failed.
+        """
+        return None  # the decorator sends the messages
 
     def query_chain(
             self,
@@ -358,31 +377,34 @@ class EvmTransactions(ABC):  # noqa: B024
         Saves the results in the database.
 
         May raise:
-        - RemoteError if etherscan is used and there is a problem with reaching it or
-        with parsing the response.
+        - RemoteError if the end block of the sync cannot be resolved. Each address is
+        still reported to the frontend as ended first, so none is left pending.
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
-        if (query_end := self._resolve_query_end(to_timestamp)) is not None:
-            for address in addresses:
-                self.single_address_query_transactions(
+        try:
+            query_end = self._resolve_query_end(to_timestamp)
+        except RemoteError as e:
+            log.warning(
+                'Failing %s transactions query up to %s: could not resolve its end block '
+                'due to %s',
+                self.evm_inquirer.chain_name, to_timestamp, e,
+            )
+            for address in addresses:  # settle each address before failing the sync
+                self._settle_unqueried_address(
                     address=address,
                     start_ts=from_timestamp,
-                    end_ts=query_end.timestamp,
-                    query_end=query_end,
+                    end_ts=to_timestamp,
                 )
-        else:  # nothing gets queried, but each address still has to report it is done
-            for address in addresses:  # or the frontend keeps waiting for it
-                for status in (
-                    TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
-                    TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
-                ):
-                    self._notify_tx_query_status(
-                        address=address,
-                        start_ts=from_timestamp,
-                        end_ts=to_timestamp,
-                        status=status,
-                    )
+            raise
+
+        for address in addresses:
+            self.single_address_query_transactions(
+                address=address,
+                start_ts=from_timestamp,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            )
 
         self.get_chain_specific_multiaddress_data(addresses)
 

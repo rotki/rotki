@@ -1,3 +1,4 @@
+import time
 from contextlib import ExitStack
 from itertools import count
 from types import SimpleNamespace
@@ -20,6 +21,7 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
@@ -1718,16 +1720,27 @@ def test_sync_resolves_its_end_once(
 def test_sync_settles_every_address_when_query_end_is_unknown(
         ethereum_manager: EthereumManager,
 ) -> None:
-    """A sync whose end block cannot be resolved must still settle each of its addresses.
+    """A sync whose end block cannot be resolved must settle each of its addresses and fail.
 
     The frontend seeds every address of a sync as pending and only moves it on when the
     address reports QUERYING_TRANSACTIONS_FINISHED or the sync task fails. query_chain used
     to swallow the failed end lookup and return without querying any address, so neither
     happened and the addresses stayed pending forever. This is what the history page showed
-    for base once every indexer refused the chain.
+    for base once every indexer refused the chain. The error has to reach the task too, or the
+    frontend renders addresses nothing was queried for as complete.
+
+    The messages of an address are sent under its query lock, so they cannot interleave with
+    those of another query of that address that is already running.
     """
     inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
     notifier = MockRotkiNotifier()
+
+    def status_messages() -> list[dict[str, Any] | list[Any]]:
+        return [
+            msg.data for msg in notifier.messages
+            if msg.message_type == WSMessageType.TRANSACTION_STATUS
+        ]
+
     with ExitStack() as stack:
         for _, indexer in inquirer._get_indexers_in_order():
             stack.enter_context(patch.object(
@@ -1737,17 +1750,22 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
             ))
         get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
         stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
-        transactions.query_chain(
-            from_timestamp=(start_ts := Timestamp(0)),
-            to_timestamp=(end_ts := ts_now()),
-            addresses=(addresses := [make_evm_address(), make_evm_address()]),
-        )
+        addresses = [make_evm_address(), make_evm_address()]
+        with transactions.address_tx_locks[addresses[0]]:  # as if a query of it is running
+            task = spawn(
+                transactions.query_chain,
+                from_timestamp=(start_ts := Timestamp(0)),
+                to_timestamp=(end_ts := ts_now()),
+                addresses=addresses,
+            )
+            time.sleep(0.5)
+            assert status_messages() == []
 
+        wait([task], timeout=10)
+
+    assert isinstance(exception_of(task), RemoteError)
     assert get_transactions.call_count == 0
-    assert [
-        msg.data for msg in notifier.messages
-        if msg.message_type == WSMessageType.TRANSACTION_STATUS
-    ] == [{
+    assert status_messages() == [{
         'address': address,
         'chain': inquirer.blockchain.value,
         'subtype': 'evm',
