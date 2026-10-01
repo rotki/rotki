@@ -119,6 +119,15 @@ interface UseNativeTaskReturn {
    */
   readonly reset: () => void;
   /**
+   * Which session this is, bumped by every {@link reset}.
+   *
+   * @remarks
+   * {@link reset} settles what is in flight but cannot stop a body still running outside it. A
+   * producer that awaits and then submits reads this before and after the await, and drops the
+   * submit when it changed.
+   */
+  readonly sessionEpoch: () => number;
+  /**
    * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
    * activity terminal *immediately* (so awaiting readers and `useWorkStatus` spinners unblock even
@@ -191,6 +200,8 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    */
   const inflightCancel = new Map<ActivityId, () => void>();
 
+  let epoch = 0;
+
   /**
    * Drop every in-flight submission, settling its callers first.
    *
@@ -215,6 +226,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     inflight.clear();
     inflightFinish.clear();
     inflightCancel.clear();
+    epoch++;
   }
 
   /**
@@ -354,6 +366,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     reportProgress,
     statusOf,
     reset,
+    sessionEpoch: () => epoch,
     submitTask,
     supersedeTask,
     useIsActive,

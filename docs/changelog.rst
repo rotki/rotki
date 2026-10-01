@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.44.1 <2026-10-01>`
+* :bug:`-` Logging out while balances are still loading after login, then logging back in, no longer leaves "All balances" running with no end. Before, the new session never queried all balances, so that day's balance snapshot was not saved.
 * :bug:`-` A snapshot whose locations and net value were lowered by hand while a mispriced token stayed in its balances can now be fixed in one step: the "Totals do not match" warning names the token and offers to remove it. Before, every balance stayed locked until the value was put back into a location, and for a spam token the graph plotted that snapshot far below zero. The snapshot editor's line about excluded ignored assets can now also show them.
 * :bug:`-` Percentages in the snapshot editor now stop at 1,000,000% instead of printing thirty digits or exponent notation.
 * :bug:`-` Splitting a balance's removal across locations in the snapshot editor now offers a Fill action per location, so a mispriced value spread over several locations no longer has to be typed out digit by digit. Reconciling a snapshot's totals no longer offers a location the difference would push below zero.
