@@ -189,8 +189,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         )
 
     def on_api_key_changed(self) -> None:
-        self.api_key = None
-        self.last_ts = Timestamp(0)
+        self.reset_api_key_state()
         self._delete_cached_api_key_tier()
         super().on_api_key_changed()
         self.detect_api_key_tier()
@@ -234,20 +233,23 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             return {'page': '1', 'offset': str(self.pagination_limit)}
         return None
 
-    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
-        """Turn etherscan's oversized-range response into a request to query less.
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> bool:
+        """Handle Etherscan's null-result timeout and temporary overload responses.
 
         Etherscan answers a range whose result set it cannot assemble in time with a null
         result and a message asking for a smaller dataset. That is not a malformed response,
         it is an instruction to split the range, so raise the error callers already retry on.
 
-        May raise RequestTooLargeError if the range needs to be split.
+        Returns True for a temporary server failure so the caller retries with backoff.
+        May raise RequestTooLargeError if the queried range needs to be split.
         """
-        if str(json_ret.get('message', '')).startswith('Query Timeout'):
+        if (message := str(json_ret.get('message', ''))).startswith('Query Timeout'):
             raise RequestTooLargeError(
                 f'{self.name} could not serve the requested {chain_id.to_name()} range: '
-                f'{json_ret["message"]}',
+                f'{message}',
             )
+
+        return message.startswith('Unexpected error, timeout or server too busy')
 
     def _additional_json_response_handling(
             self,

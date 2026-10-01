@@ -1,8 +1,11 @@
+import datetime
+import threading
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import ANY, patch
 
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -16,14 +19,27 @@ from rotkehlchen.errors.misc import (
     IndexerRangeNotCovered,
     RemoteError,
 )
-from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
+from rotkehlchen.externalapis.blockscout import (
+    BLOCKSCOUT_PAGINATION_LIMIT,
+    KEY_REJECTED_SKIP_SECONDS,
+    Blockscout,
+)
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.database import maybe_include_blockscout_key
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ApiKey,
+    ChainID,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Timestamp,
+    TimestampMS,
+)
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -417,6 +433,91 @@ def test_missing_api_key_warns_once(blockscout: Blockscout) -> None:
     assert notifier.pop_message() is None
 
 
+@pytest.mark.parametrize('status_code', [HTTPStatus.UNAUTHORIZED, HTTPStatus.PAYMENT_REQUIRED])
+def test_rejected_api_key_reports_usable_key_problem(
+        blockscout: Blockscout,
+        status_code: HTTPStatus,
+) -> None:
+    """A PRO response can reject an existing key because it is invalid or lacks chain access.
+
+    This is not a missing-key problem, so the websocket message must let the frontend explain
+    that the configured key or plan needs attention and identify the affected chain.
+    """
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is not None
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(
+            blockscout.session,
+            'request',
+            return_value=MockResponse(status_code, '{"error":"API key is not authorized"}'),
+        ),
+        pytest.raises(RemoteError, match='could not authorize the configured API key for Base'),
+    ):
+        blockscout._query_and_process(
+            chain_id=ChainID.BASE,
+            endpoint='account.tokentx',
+            query_str='https://api.blockscout.com/8453/api',
+        )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.message_type == WSMessageType.MISSING_API_KEY
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_rejected_key_warning_after_missing_key_warning(blockscout: Blockscout) -> None:
+    """A missing key warning must not hide the warning about a key added later being rejected.
+
+    Each reason is reported once per configured key, so repeated rejections do not spam the
+    user, while changing the key lets its own problems be reported again.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is None
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {'service': ExternalService.BLOCKSCOUT.serialize()}
+
+    # the key is read from the DB on the next query, as no key was cached while missing
+    maybe_include_blockscout_key(db=blockscout.db, include_blockscout_key=True)
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+    with patch.object(
+        blockscout.session,
+        'request',
+        return_value=MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}'),
+    ):
+        for _ in range(2):
+            with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+                blockscout._query_and_process(
+                    chain_id=ChainID.BASE,
+                    endpoint='account.tokentx',
+                    query_str='https://api.blockscout.com/8453/api',
+                )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+    assert notifier.pop_message() is None  # the second rejection is not reported again
+
+    with blockscout.db.user_write() as write_cursor:
+        blockscout.db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BLOCKSCOUT,
+                api_key=(new_key := ApiKey('new_key')),
+            )],
+        )
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == old_key  # still cached
+    blockscout.on_api_key_changed()
+    assert blockscout.warned_reasons == set()
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == new_key
+
+
 @pytest.mark.parametrize('include_blockscout_key', [False])
 def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) -> None:
     """The PRO endpoints reject keyless queries, so we must not spend a request on one.
@@ -435,6 +536,114 @@ def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) 
 
     # the self-hosted instances need no key, so they must stay queryable
     assert blockscout._get_url(chain_id=ChainID.HYPERLIQUID) == 'https://www.hyperscan.com/api'
+
+
+def test_rejected_chain_is_skipped_for_a_while(blockscout: Blockscout) -> None:
+    """A chain the configured key was rejected for is skipped without spending a request.
+
+    Each query would otherwise make a request bound to fail before falling back to the next
+    indexer. The skip only applies to the rejected chain, expires so a key that regains access
+    recovers, and is dropped when the key changes.
+    """
+    with (
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.PAYMENT_REQUIRED,
+            '{"error":"plan does not cover this chain"}',
+        )) as request_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        with pytest.raises(RemoteError, match='recently rejected the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        assert blockscout._get_url(chain_id=ChainID.GNOSIS) == 'https://api.blockscout.com/100/api'
+
+        frozen.move_to(start + datetime.timedelta(seconds=KEY_REJECTED_SKIP_SECONDS))
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+        blockscout.key_rejected_chains[ChainID.BASE] = ts_now()
+        blockscout.on_api_key_changed()
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_rejection_of_a_replaced_key_is_ignored(blockscout: Blockscout) -> None:
+    """A request sent with the old key that is rejected after the key changed blames nothing.
+
+    It must neither skip the chain for the new key nor warn that the new key is unusable.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+
+    def replace_key_then_reject(**kwargs: Any) -> MockResponse:
+        assert kwargs['params']['apikey'] == old_key  # the request went out with the old key
+        with blockscout.db.user_write() as write_cursor:
+            blockscout.db.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=[ExternalServiceApiCredentials(
+                    service=ExternalService.BLOCKSCOUT,
+                    api_key=ApiKey('new_key'),
+                )],
+            )
+        blockscout.on_api_key_changed()
+        return MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}')
+
+    with (
+        patch.object(blockscout.session, 'request', side_effect=replace_key_then_reject),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    assert blockscout.key_rejected_chains == {}
+    assert notifier.pop_message() is None
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_key_change_racing_the_rejection_check_is_not_lost(blockscout: Blockscout) -> None:
+    """A key change landing between the rejection check and its recording wins.
+
+    The check still sees the old key, so the rejection is recorded, but the concurrent key
+    change must not complete in between and then have its reset overwritten by the stale
+    rejection, which would skip the chain for the new key.
+    """
+    get_key = blockscout._get_api_key_for_chain
+    calls: list[ChainID] = []
+    changer = threading.Thread(target=blockscout.on_api_key_changed)
+
+    def change_key_in_check(chain_id: ChainID) -> ApiKey | None:
+        calls.append(chain_id)
+        key = get_key(chain_id)
+        if len(calls) == 2:  # the first call attaches the key, the second checks the rejection
+            with blockscout.db.user_write() as write_cursor:
+                blockscout.db.add_external_service_credentials(
+                    write_cursor=write_cursor,
+                    credentials=[ExternalServiceApiCredentials(
+                        service=ExternalService.BLOCKSCOUT,
+                        api_key=ApiKey('new_key'),
+                    )],
+                )
+            changer.start()
+            changer.join(timeout=0.5)  # finishes here unless the check holds it off
+
+        return key
+
+    with (
+        patch.object(blockscout, '_get_api_key_for_chain', side_effect=change_key_in_check),
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.UNAUTHORIZED,
+            '{"error":"not authorized"}',
+        )),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    changer.join(timeout=10)
+    assert not changer.is_alive()
+    assert blockscout.key_rejected_chains == {}
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
 
 
 def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:

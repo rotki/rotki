@@ -4891,6 +4891,8 @@
       },
       "blockscout": {
         "message": "rotki is using {service} as a transaction indexer but it requires an API key, so its queries are being skipped. Add an API key for {service}, or adjust the indexer order to prioritize a different service.",
+        "rejected_message": "The configured {service} API key cannot query {location}. It may be invalid, expired, out of quota, or missing the required plan. Update the key or your Blockscout plan, or change the indexer order.",
+        "rejected_title": "{service} API access unavailable for {location}",
         "title": "{service} API key"
       },
       "change_indexer_order": "Change indexer order",

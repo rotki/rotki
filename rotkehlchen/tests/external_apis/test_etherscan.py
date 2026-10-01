@@ -1,9 +1,11 @@
+import datetime
 import os
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 from eth_utils import to_checksum_address
+from freezegun import freeze_time
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
@@ -20,7 +22,7 @@ from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
     Etherscan,
 )
-from rotkehlchen.externalapis.etherscan_like import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import OVERLOADED_FAIL_FAST_SECONDS, HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -157,7 +159,11 @@ def test_detect_api_key_tier_does_not_warn_for_missing_key(
         etherscan = Etherscan(database=database, msg_aggregator=database.msg_aggregator)
         warning_mock.assert_not_called()
         assert etherscan._get_api_key_for_chain(ChainID.ETHEREUM) is None
-        warning_mock.assert_called_once_with(ExternalService.ETHERSCAN)
+        warning_mock.assert_called_once_with(
+            service=ExternalService.ETHERSCAN,
+            location=None,
+            reason=None,
+        )
 
 
 def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> None:
@@ -511,6 +517,108 @@ def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> No
             action='tokentx',
             options={'address': make_evm_address()},
         )
+
+
+def test_transient_server_busy_response_is_retried(temp_etherscan: Etherscan) -> None:
+    """Etherscan occasionally returns an HTTP 200 with a null result while overloaded.
+
+    Treating this as malformed immediately moves to a less preferred indexer. Retry it with the
+    existing bounded backoff first. This is especially important when using a paid Etherscan key.
+    """
+    with (
+        patch.object(temp_etherscan.session, 'get', side_effect=[
+            MockResponse(
+                HTTPStatus.OK,
+                '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+            ),
+            MockResponse(HTTPStatus.OK, '{"status":"1","message":"OK","result":[]}'),
+        ]) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+    ):
+        assert temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        ) == []
+
+    assert get_mock.call_count == 2
+    sleep_mock.assert_called_once_with(1)
+
+
+def test_persistent_server_busy_response_fails_without_a_trailing_sleep(
+        temp_etherscan: Etherscan,
+) -> None:
+    """When etherscan stays overloaded, give up once the backoff limit is reached.
+
+    The query should fail so the next indexer is tried, without sleeping after the last attempt.
+    """
+    with (
+        patch.object(temp_etherscan.session, 'get', return_value=MockResponse(
+            HTTPStatus.OK,
+            '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+        )) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+        pytest.raises(RemoteError, match='backing off longer than the max backoff'),
+    ):
+        temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )
+
+    assert get_mock.call_count == 3
+    assert [x.args for x in sleep_mock.call_args_list] == [(1,), (2,)]
+
+
+def test_overloaded_etherscan_fails_fast_until_it_recovers(temp_etherscan: Etherscan) -> None:
+    """Once a query used up its retries on an overloaded response, later ones do not back off.
+
+    Otherwise a lasting outage adds the full backoff to every query of a sync. A real response
+    ends the fail-fast window, as does its expiry, after which busy responses are retried again.
+    """
+    busy, ok = (
+        MockResponse(
+            HTTPStatus.OK,
+            '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+        ),
+        MockResponse(HTTPStatus.OK, '{"status":"1","message":"OK","result":[]}'),
+    )
+
+    def query() -> list:
+        return temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )
+
+    with (
+        patch.object(temp_etherscan.session, 'get', return_value=busy) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(RemoteError, match='backing off longer than the max backoff'):
+            query()
+
+        assert (get_mock.call_count, sleep_mock.call_count) == (3, 2)
+        with pytest.raises(RemoteError, match='still overloaded'):
+            query()
+
+        assert (get_mock.call_count, sleep_mock.call_count) == (4, 2)  # one request, no sleep
+        get_mock.side_effect = [ok, busy, ok]
+        assert query() == []  # a real response ends the fail-fast window
+        assert query() == []  # so a busy response is retried again
+        assert sleep_mock.call_count == 3
+
+        get_mock.side_effect = None
+        with pytest.raises(RemoteError, match='backing off longer than the max backoff'):
+            query()
+
+        frozen.move_to(start + datetime.timedelta(seconds=OVERLOADED_FAIL_FAST_SECONDS))
+        get_mock.side_effect = [busy, ok]
+        assert query() == []  # the window expired, so the busy response is retried
 
 
 @pytest.mark.parametrize(('extra_fields', 'expected_fee'), [

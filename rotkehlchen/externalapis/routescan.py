@@ -80,10 +80,12 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
         return self._get_api_key()
 
     @staticmethod
-    def _handle_missing_result(chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+    def _handle_missing_result(chain_id: ChainID, json_ret: dict[str, Any]) -> bool:
         """Turn Routescan's unsupported-chain response into a permanent indexer failure."""
         if json_ret.get('message') == 'chain not supported':
             raise ChainNotSupported(f'Routescan does not support {chain_id.name}')
+
+        return False
 
     @staticmethod
     def _build_query_params(

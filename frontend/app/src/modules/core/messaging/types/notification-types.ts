@@ -38,6 +38,7 @@ export type OraclePenalizedData = z.infer<typeof OraclePenalizedData>;
 export const MissingApiKey = z.object({
   service: z.string(),
   location: z.string().optional(),
+  reason: z.enum(['key_not_usable']).optional(),
 });
 
 export type MissingApiKey = z.infer<typeof MissingApiKey>;

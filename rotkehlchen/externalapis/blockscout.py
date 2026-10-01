@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
@@ -34,7 +35,13 @@ from rotkehlchen.types import (
     ExternalService,
     Timestamp,
 )
-from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.misc import (
+    from_wei,
+    iso8601ts_to_timestamp,
+    set_user_agent,
+    ts_now,
+    ts_sec_to_ms,
+)
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -57,9 +64,13 @@ BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # DoS our own backend.
 BLOCKSCOUT_RATE_LIMIT_RPS: Final = 10.0
 BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
-# The PRO endpoints reject keyless queries with 401, or with 402 asking for a key or an
-# x402 payment. Both mean the same thing for us: no usable API key.
-KEY_REQUIRED_STATUS_CODES: Final = (401, 402)
+# The PRO endpoints reject an invalid key with 401, or a key whose plan does not cover the
+# requested chain with 402. Keyless queries are rejected locally before making a request.
+KEY_REJECTED_STATUS_CODES: Final = (401, 402)
+# How long to skip a chain whose requests were rejected for the configured key. Every query
+# on it would only spend a request before falling back to the next indexer. Not skipped for
+# good, since a key that ran out of quota or had its plan upgraded recovers on its own.
+KEY_REJECTED_SKIP_SECONDS: Final = 600
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -105,6 +116,11 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         set_user_agent(self.session)
         self.api_urls: dict[ChainID, str] = {}
         self.rpc_urls: dict[ChainID, str] = {}
+        # Chains whose requests were rejected for the configured key, and when that happened
+        self.key_rejected_chains: dict[ChainID, Timestamp] = {}
+        # Makes checking a rejection against the configured key and recording it atomic with
+        # respect to a key change, so a stale rejection cannot be recorded after the reset.
+        self._key_change_lock = threading.Lock()
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
             if chain_id in AUTOSCOUT_INSTANCES:
                 self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
@@ -112,6 +128,13 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             else:
                 self.api_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'  # noqa: E501
                 self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
+
+    def on_api_key_changed(self) -> None:
+        with self._key_change_lock:
+            self.reset_api_key_state()
+            self.key_rejected_chains.clear()
+
+        super().on_api_key_changed()
 
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
         url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
@@ -126,6 +149,15 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             raise RemoteError(
                 f'Blockscout has no API key configured, which its endpoint for '
                 f'{chain_id.name} requires. Skipping it.',
+            )
+
+        if (
+                (rejected_ts := self.key_rejected_chains.get(chain_id)) is not None and
+                ts_now() - rejected_ts < KEY_REJECTED_SKIP_SECONDS
+        ):
+            raise RemoteError(
+                f'Blockscout recently rejected the configured API key for {chain_id.name}. '
+                f'Skipping it.',
             )
 
         return url
@@ -187,7 +219,16 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             timeout: tuple[int, int] | None = None,
             http_method: Literal['get', 'post'] = 'get',
     ) -> dict[str, Any]:
-        """Shared logic between v1 and v2 for querying blockscout api"""
+        """Shared logic between v1 and v2 for querying blockscout api
+
+        Attaches the API key itself, so a rejection can be checked against the key it sent.
+        """
+        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
+            if http_method == 'get':
+                params = (params or {}) | {'apikey': api_key}
+            else:  # the json body of a post is the rpc payload, so the key goes in the url
+                query_params = (query_params or {}) | {'apikey': api_key}
+
         times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
         timeout = timeout or cached_settings.get_timeout_tuple()
@@ -236,17 +277,28 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 cancellable_sleep(sleep_seconds)
                 continue
 
-            if response.status_code in KEY_REQUIRED_STATUS_CODES:
+            if (
+                response.status_code in KEY_REJECTED_STATUS_CODES and
+                chain_id not in AUTOSCOUT_INSTANCES
+            ):
                 # Keyless queries never get this far (_get_url bails out first), so reaching
                 # here means the configured key was rejected as invalid, expired or out of
-                # quota. Flag it as a key problem rather than a generic request failure, since
-                # on a chain where blockscout leads it is otherwise unqueryable with no
-                # explanation of why.
-                self.maybe_warn_missing_key()
+                # quota, or its plan does not cover this chain. Distinguish that from a missing
+                # key so the UI does not tell the user to add a credential that already exists.
+                # Only blame the key if it is still the configured one. A request in flight
+                # while the user changed the key must not skip the chain for the new key.
+                with self._key_change_lock:
+                    if api_key == self._get_api_key_for_chain(chain_id):
+                        self.key_rejected_chains[chain_id] = ts_now()
+                        self.maybe_warn_missing_key(
+                            location=chain_id.label(),
+                            reason='key_not_usable',
+                        )
+
                 raise RemoteError(
-                    f'Blockscout API request {response.url} requires an API key. '
-                    f'It failed with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
+                    f'Blockscout API request {response.url} could not authorize the configured '
+                    f'API key for {chain_id.label()}. It failed with HTTP status code '
+                    f'{response.status_code} and text {response.text}',
                 )
 
             if response.status_code != 200:
@@ -321,8 +373,6 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         query_args = {} if options is None else options
         query_args |= {'module': module, 'action': action}
-        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
-            query_args['apikey'] = api_key
         response = self._query_and_process(
             chain_id=chain_id,
             endpoint=f'{module}.{action}',
@@ -414,8 +464,6 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         query_str = f"{self._get_url(chain_id=chain_id, endpoint='api')}/v2/{module}/{encoded_args}"  # noqa: E501
         if endpoint is not None:
             query_str += f'/{endpoint}'
-        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
-            extra_args['apikey'] = api_key
 
         return self._query_and_process(
             chain_id=chain_id,
@@ -486,7 +534,6 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 'method': method,
                 'params': params,
             },
-            query_params={'apikey': api_key} if (api_key := self._get_api_key_for_chain(chain_id)) is not None else None,  # noqa: E501
             http_method='post',
         )):
             raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
