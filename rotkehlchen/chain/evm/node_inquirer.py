@@ -2063,6 +2063,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
         May raise:
+        - IndexerRangeNotCovered if every indexer that serves the chain cannot serve the range
         - RemoteError if all indexers fail
         - NoAvailableIndexers if there are no indexers available
         - RequestTooLargeError to allow callers to retry with smaller chunks
@@ -2118,16 +2119,25 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             else:
                 return result, indexer_name, frozenset(failed)
 
+        range_not_covered = any(isinstance(e, IndexerRangeNotCovered) for _, e in errors)
         if len(self._get_indexers_in_order()) == 0 or (
-                self._etherscan_refused_chain and
-                not any(isinstance(error, IndexerRangeNotCovered) for _, error in errors)
+                self._etherscan_refused_chain and not range_not_covered
         ):
             self._maybe_notify_no_indexers(blockscout_incomplete_response=blockscout_incomplete_response)
 
-        raise RemoteError(
-            f'Failed to query any indexer. '
-            f"Errors: {', '.join(f'{name}: {e!s}' for name, e in errors)}",
+        message = (
+            'Failed to query any indexer. '
+            f"Errors: {', '.join(f'{name}: {e!s}' for name, e in errors)}"
         )
+        # An indexer that refuses the chain could not have served the range either, so the
+        # range is out of reach of the configured indexers rather than failed. Retrying it
+        # cannot help, only an indexer that covers it, such as a paid etherscan key.
+        if range_not_covered and all(
+                isinstance(e, (IndexerRangeNotCovered, ChainNotSupported)) for _, e in errors
+        ):
+            raise IndexerRangeNotCovered(message)
+
+        raise RemoteError(message)
 
     def _maybe_notify_no_indexers(self, blockscout_incomplete_response: bool = False) -> None:
         """Tell the user once per reason that no indexer can serve this chain.

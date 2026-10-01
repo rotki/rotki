@@ -1,10 +1,12 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
@@ -17,10 +19,12 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.pending_transactions import UNRESOLVED_L1_FEE_RETRY_AFTER
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, NoAvailableIndexers, RemoteError
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.types import (
@@ -270,7 +274,7 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             end_ts=end_ts,
         )
 
-    assert result is False
+    assert result is RangeQueryOutcome.FAILED
     assert [call.kwargs['update_ranges'] for call in query_range.call_args_list] == [
         True,
         not partial_pre_coverage,
@@ -307,7 +311,7 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
                 address=address,
                 start_ts=start_ts,
                 end_ts=end_ts,
-            ) is (not partial_pre_coverage)
+            ) is (RangeQueryOutcome.FAILED if partial_pre_coverage else RangeQueryOutcome.QUERIED)
 
         resolve_retry.assert_called_once()
         query_retry.assert_called_once()
@@ -354,7 +358,7 @@ def test_post_bedrock_replacement_keeps_pre_coverage_if_probe_fails(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is False
+        ) is RangeQueryOutcome.FAILED
 
     end_probe.assert_called_once_with(ts=end_ts, closest='before')
     with optimism_transactions.database.conn.read_ctx() as cursor:
@@ -398,7 +402,7 @@ def test_pre_bedrock_success_is_kept_when_post_fails(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is False
+        ) is RangeQueryOutcome.FAILED
 
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert optimism_transactions.database.get_used_query_range(
@@ -421,7 +425,7 @@ def test_pre_bedrock_success_is_kept_when_post_fails(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is True
+        ) is RangeQueryOutcome.QUERIED
 
     resolve_retry.assert_called_once()
     query_retry.assert_called_once()
@@ -483,7 +487,7 @@ def test_pre_bedrock_interruption_keeps_batch_progress(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is False
+        ) is RangeQueryOutcome.FAILED
 
     assert query_indexers.call_count == 2
     save_batch.assert_called_once()
@@ -541,7 +545,7 @@ def test_successful_bedrock_split_marks_combined_range_once(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is True
+        ) is RangeQueryOutcome.QUERIED
 
     assert mark_range.call_count == 1
     assert mark_range.call_args.kwargs == {
@@ -616,7 +620,7 @@ def test_post_bedrock_interruption_keeps_batch_progress(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-        ) is False
+        ) is RangeQueryOutcome.FAILED
 
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert optimism_transactions.database.get_used_query_range(
@@ -1148,3 +1152,117 @@ def test_unresolved_l1_fee_leaves_transaction_undecoded(
     assert optimism_transaction_decoder.dbtx.count_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM),
     ) == 1  # only the one that never resolves is left
+
+
+@pytest.mark.parametrize('pre_bedrock_end', [False, True])
+@pytest.mark.parametrize('free_etherscan', [False, True])
+def test_pre_bedrock_not_covered_does_not_fail_sync(
+        optimism_transactions: OptimismTransactions,
+        free_etherscan: bool,
+        pre_bedrock_end: bool,
+) -> None:
+    """Blockscout cannot serve pre-Bedrock internal transactions or resolve pre-Bedrock
+    blocks, and with a free etherscan key nothing else can either. That is the steady state
+    of the default setup, so a sync from the start of the chain, or one ending before
+    Bedrock like a PnL report of 2022, must not fail every address on every sync because of it.
+
+    What is not covered is left unrecorded so a paid etherscan key can fill it later, while
+    the newer coverage is kept so the next sync does not download it again.
+    """
+    inquirer = optimism_transactions.evm_inquirer
+    blockscout, notifier = inquirer.blockscout, MockRotkiNotifier()
+    indexers: dict[EvmIndexer, Any] = {EvmIndexer.BLOCKSCOUT: blockscout}
+    with ExitStack() as stack:
+        if free_etherscan:  # tried after blockscout fails, and refuses the chain
+            indexers[EvmIndexer.ETHERSCAN] = (etherscan := inquirer.etherscan)
+            for attribute in ('get_blocknumber_by_time', 'get_transactions', 'get_token_transaction_data'):  # noqa: E501
+                stack.enter_context(patch.object(etherscan, attribute, side_effect=ChainNotSupported('free key')))  # noqa: E501
+
+        stack.enter_context(patch.dict(inquirer.available_indexers, indexers, clear=True))
+        stack.enter_context(patch.object(  # one block per second from Bedrock on
+            target=blockscout,
+            attribute='_query',
+            side_effect=lambda options, **kwargs: OP_BEDROCK_BLOCK + options['timestamp'] - OP_BEDROCK_UPGRADE,  # noqa: E501
+        ))
+        indexer_queries = stack.enter_context(patch.object(  # what blockscout's override calls
+            target=EtherscanLikeApi,
+            attribute='get_transactions',
+            side_effect=lambda **kwargs: iter([[]]),
+        ))
+        stack.enter_context(patch.object(blockscout, 'get_token_transaction_data', side_effect=lambda **kwargs: iter([[]])))  # noqa: E501
+        stack.enter_context(patch.object(optimism_transactions.msg_aggregator, 'rotki_notifier', notifier))  # noqa: E501
+        for sync in range(2):
+            optimism_transactions.query_chain(
+                from_timestamp=Timestamp(0),
+                to_timestamp=(end_ts := Timestamp(OP_BEDROCK_UPGRADE + (-1000 if pre_bedrock_end else 1_000_000))),  # noqa: E501
+                addresses=[address := make_evm_address()] if sync == 0 else [address],
+            )
+            if sync == 0:  # with a pre-Bedrock end not even the end block can be resolved
+                assert (indexer_queries.call_count == 0) is pre_bedrock_end
+                indexer_queries.reset_mock()
+
+    assert indexer_queries.call_count == 0  # the second sync had nothing left to download
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS and msg.data['status'] != str(TransactionStatusStep.QUERYING_TRANSACTIONS)  # type: ignore[call-overload]  # noqa: E501
+    ] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+    ] * 2
+    prefixes: tuple[Literal['txs', 'internaltxs', 'tokentxs'], ...] = ('txs', 'internaltxs', 'tokentxs')  # noqa: E501
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert [optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+        ) for prefix in prefixes] == ([None] * 3 if pre_bedrock_end else [
+            (0, end_ts),
+            (OP_BEDROCK_UPGRADE, end_ts),
+            (0, end_ts),
+        ])
+
+
+def test_not_covered_older_range_does_not_skip_newer_range(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """A range no indexer covers is not a failure, so it must not hide a newer range either.
+
+    The ranges are queried oldest first. Stopping at an uncovered pre-Bedrock gap would
+    report the address as complete while the newer gap after the saved coverage was never
+    queried.
+    """
+    inquirer = optimism_transactions.evm_inquirer
+    blockscout, address = inquirer.blockscout, make_evm_address()
+    location_string = f'{inquirer.blockchain.to_range_prefix("txs")}_{address}'
+    saved_range = (Timestamp(OP_BEDROCK_UPGRADE + 10), Timestamp(OP_BEDROCK_UPGRADE + 100))
+    with optimism_transactions.database.conn.write_ctx() as cursor:
+        DBQueryRanges(optimism_transactions.database).update_used_query_range(
+            write_cursor=cursor,
+            location_string=location_string,
+            queried_ranges=[saved_range],
+        )
+
+    with (
+        patch.dict(inquirer.available_indexers, {EvmIndexer.BLOCKSCOUT: blockscout}, clear=True),
+        patch.object(  # one block per second from Bedrock on
+            target=blockscout,
+            attribute='_query',
+            side_effect=lambda options, **kwargs: OP_BEDROCK_BLOCK + options['timestamp'] - OP_BEDROCK_UPGRADE,  # noqa: E501
+        ),
+        patch.object(
+            target=EtherscanLikeApi,
+            attribute='get_transactions',
+            side_effect=lambda **kwargs: iter([[]]),
+        ) as indexer_queries,
+    ):
+        assert optimism_transactions._get_transactions_for_range(
+            address=address,
+            start_ts=Timestamp(OP_BEDROCK_UPGRADE - 1000),  # after genesis, so not block 0
+            end_ts=Timestamp(OP_BEDROCK_UPGRADE + 1000),
+        ) is RangeQueryOutcome.NOT_COVERED
+
+    assert [
+        (call.kwargs['period_or_hash'].from_value, call.kwargs['period_or_hash'].to_value)
+        for call in indexer_queries.call_args_list
+    ] == [(OP_BEDROCK_BLOCK + 101, OP_BEDROCK_BLOCK + 1000)]
+    with optimism_transactions.database.conn.read_ctx() as cursor:  # older gap not recorded
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == saved_range  # noqa: E501

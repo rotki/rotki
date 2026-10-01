@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -8,7 +10,7 @@ from rotkehlchen.chain.hyperliquid.manager import (
     HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX,
     HyperliquidManager,
 )
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
 from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 
@@ -200,3 +202,34 @@ def test_query_transactions_also_queries_proprietary_history() -> None:
         from_timestamp=Timestamp(1),
         to_timestamp=Timestamp(2),
     )
+
+
+def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
+    """An incomplete EVM query must reach the task even if the core history fails too.
+
+    The core history is still queried, and its RemoteError is reported to the user by
+    query_proprietary_history rather than replacing the incomplete query error, which the
+    frontend uses to mark the addresses failed.
+    """
+    manager = HyperliquidManager.__new__(HyperliquidManager)
+    db = MagicMock()
+    db.conn.read_ctx.side_effect = _dummy_ctx
+    manager.node_inquirer = MagicMock(database=db)
+    manager.transactions = MagicMock()
+    (ranges := MagicMock()).get_location_query_ranges.return_value = [(Timestamp(1), Timestamp(2))]
+    (hyperliquid := MagicMock()).query_history_events.side_effect = RemoteError('core history down')  # noqa: E501
+    with (
+        patch.object(EvmManager, 'query_transactions', side_effect=IncompleteTransactionsQuery('incomplete')),  # noqa: E501
+        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
+        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents'),
+        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
+        pytest.raises(IncompleteTransactionsQuery),
+    ):
+        manager.query_transactions(
+            addresses=[string_to_evm_address('0x000000000000000000000000000000000000dEaD')],
+            from_timestamp=Timestamp(1),
+            to_timestamp=Timestamp(2),
+        )
+
+    hyperliquid.query_history_events.assert_called_once()
+    manager.transactions.msg_aggregator.add_error.assert_called_once()

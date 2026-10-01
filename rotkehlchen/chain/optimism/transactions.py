@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
+from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
@@ -34,8 +35,13 @@ class OptimismTransactions(L2WithL1FeesTransactions):
             update_ranges: bool | None = None,
             progress_start_ts: Timestamp | None = None,
             query_end: QueryEnd | None = None,
-    ) -> bool:
-        """Query both sides of Bedrock while keeping saved coverage contiguous."""
+    ) -> RangeQueryOutcome:
+        """Query both sides of Bedrock while keeping saved coverage contiguous.
+
+        Without a paid etherscan key no indexer covers the older side, so it ends up
+        NOT_COVERED on every query. The newer side is recorded on its own then, the same as
+        when the older side fails.
+        """
         if start_ts >= OP_BEDROCK_UPGRADE or end_ts < OP_BEDROCK_UPGRADE:
             return super()._get_internal_transactions_for_ranges(
                 address=address,
@@ -53,7 +59,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
         if record_range and saved_range is not None and (
                 saved_range[0] <= start_ts and saved_range[1] >= end_ts
         ):
-            return True
+            return RangeQueryOutcome.QUERIED
 
         pre_end = Timestamp(OP_BEDROCK_UPGRADE - 1)
         # Batch updates must join the one contiguous range stored under this key.
@@ -61,13 +67,14 @@ class OptimismTransactions(L2WithL1FeesTransactions):
         update_pre_batches = update_batches and (
             saved_range is None or saved_range[0] <= start_ts <= saved_range[1] + 1
         )
-        pre_bedrock_ok = super()._get_internal_transactions_for_ranges(
+        pre_bedrock = super()._get_internal_transactions_for_ranges(
             address=address,
             start_ts=start_ts,
             end_ts=pre_end,
             record_range=False,
             update_ranges=update_pre_batches,
         )
+        pre_bedrock_ok = pre_bedrock is RangeQueryOutcome.QUERIED
         with self.database.conn.read_ctx() as cursor:
             saved_range = self.database.get_used_query_range(cursor, location_string)
 
@@ -81,7 +88,7 @@ class OptimismTransactions(L2WithL1FeesTransactions):
                 saved_range[1] >= post_progress_start_ts - 1
             )
         )
-        post_bedrock_ok = super()._get_internal_transactions_for_ranges(
+        post_bedrock = super()._get_internal_transactions_for_ranges(
             address=address,
             start_ts=OP_BEDROCK_UPGRADE,
             end_ts=end_ts,
@@ -90,9 +97,10 @@ class OptimismTransactions(L2WithL1FeesTransactions):
             progress_start_ts=post_progress_start_ts if update_post_batches else None,
             query_end=query_end,
         )
-
+        post_bedrock_ok = post_bedrock is RangeQueryOutcome.QUERIED
+        outcome = max(pre_bedrock, post_bedrock)  # the worst of the two halves
         if not record_range:
-            return pre_bedrock_ok and post_bedrock_ok
+            return outcome
 
         if pre_bedrock_ok and post_bedrock_ok:
             mark_start, mark_end = start_ts, end_ts
@@ -101,12 +109,13 @@ class OptimismTransactions(L2WithL1FeesTransactions):
         elif post_bedrock_ok:
             mark_start, mark_end = OP_BEDROCK_UPGRADE, end_ts
         else:
-            return False
+            return outcome
 
         with self.database.conn.read_ctx() as cursor:
             saved_range = self.database.get_used_query_range(cursor, location_string)
         # An incomplete older fragment cannot join the newer half. Keep the newer coverage so
-        # repeated failures of the older half do not download the newer history on every sync.
+        # repeated failures of the older half, or an older half no indexer covers, do not
+        # download the newer history on every sync.
         replace_partial_pre_range = (
             not pre_bedrock_ok and post_bedrock_ok and
             saved_range is not None and saved_range[1] < pre_end
@@ -123,4 +132,4 @@ class OptimismTransactions(L2WithL1FeesTransactions):
                 replace_existing=replace_partial_pre_range,
                 query_end=query_end,
             )
-        return pre_bedrock_ok and post_bedrock_ok
+        return outcome

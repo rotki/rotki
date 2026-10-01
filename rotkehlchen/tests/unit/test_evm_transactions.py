@@ -11,7 +11,11 @@ from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessage
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS, QueryEnd
-from rotkehlchen.chain.evm.transactions import CHAIN_TOP_LAG, MIN_SPLITTABLE_QUERY_RANGE
+from rotkehlchen.chain.evm.transactions import (
+    CHAIN_TOP_LAG,
+    MIN_SPLITTABLE_QUERY_RANGE,
+    RangeQueryOutcome,
+)
 from rotkehlchen.chain.evm.types import (
     EvmAccount,
     EvmIndexer,
@@ -162,11 +166,11 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: DBHandler, 
                 side_effect=RemoteError('FAIL')),
             )
 
-        ethereum_manager.transactions._get_erc20_transfers_for_ranges(
+        assert ethereum_manager.transactions._get_erc20_transfers_for_ranges(
             address=address,
             start_ts=Timestamp(0),
             end_ts=Timestamp(1762453737),
-        )
+        ) is RangeQueryOutcome.FAILED
 
     with database.conn.read_ctx() as cursor:  # ensure the range was not marked as pulled
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
@@ -1818,10 +1822,10 @@ def test_sync_raises_after_querying_every_address_when_one_fails(
         stack.enter_context(patch.object(
             target=transactions,
             attribute='_get_transactions_for_range',
-            side_effect=lambda address, **kwargs: address != failing_address,
+            side_effect=lambda address, **kwargs: RangeQueryOutcome.FAILED if address == failing_address else RangeQueryOutcome.QUERIED,  # noqa: E501
         ))
         for attribute in ('_get_internal_transactions_for_ranges', '_get_erc20_transfers_for_ranges'):  # noqa: E501
-            stack.enter_context(patch.object(transactions, attribute, return_value=True))
+            stack.enter_context(patch.object(transactions, attribute, return_value=RangeQueryOutcome.QUERIED))  # noqa: E501
         multiaddress_data = stack.enter_context(patch.object(
             target=transactions,
             attribute='get_chain_specific_multiaddress_data',
