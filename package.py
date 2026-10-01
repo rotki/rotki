@@ -585,6 +585,13 @@ class MacPackaging:
 
         # Create a keychain
         subprocess.call(f'security create-keychain -p actions {keychain}', shell=True)
+        # A new keychain auto-locks 300 s after it is unlocked, and unlocking it again does not
+        # reset that. PyInstaller re-signs rotki-core long after colibri and starling were
+        # signed, so on a slow runner its codesign waited forever on a password prompt.
+        # Allow 6 hours.
+        subprocess.call(f'security set-keychain-settings -lut 21600 {keychain}', shell=True)
+        # Logs "timeout=21600s", so a build log shows the setting took
+        subprocess.call(f'security show-keychain-info {keychain}', shell=True)
         # Make the keychain the default so identities are found
         subprocess.call(f'security default-keychain -s {keychain}', shell=True)
         # Unlock the keychains
