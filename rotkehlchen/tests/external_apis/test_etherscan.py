@@ -1,9 +1,11 @@
+import datetime
 import os
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 from eth_utils import to_checksum_address
+from freezegun import freeze_time
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
@@ -20,7 +22,7 @@ from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
     Etherscan,
 )
-from rotkehlchen.externalapis.etherscan_like import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import OVERLOADED_FAIL_FAST_SECONDS, HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -568,6 +570,55 @@ def test_persistent_server_busy_response_fails_without_a_trailing_sleep(
 
     assert get_mock.call_count == 3
     assert [x.args for x in sleep_mock.call_args_list] == [(1,), (2,)]
+
+
+def test_overloaded_etherscan_fails_fast_until_it_recovers(temp_etherscan: Etherscan) -> None:
+    """Once a query used up its retries on an overloaded response, later ones do not back off.
+
+    Otherwise a lasting outage adds the full backoff to every query of a sync. A real response
+    ends the fail-fast window, as does its expiry, after which busy responses are retried again.
+    """
+    busy, ok = (
+        MockResponse(
+            HTTPStatus.OK,
+            '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+        ),
+        MockResponse(HTTPStatus.OK, '{"status":"1","message":"OK","result":[]}'),
+    )
+
+    def query() -> list:
+        return temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )
+
+    with (
+        patch.object(temp_etherscan.session, 'get', return_value=busy) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(RemoteError, match='backing off longer than the max backoff'):
+            query()
+
+        assert (get_mock.call_count, sleep_mock.call_count) == (3, 2)
+        with pytest.raises(RemoteError, match='still overloaded'):
+            query()
+
+        assert (get_mock.call_count, sleep_mock.call_count) == (4, 2)  # one request, no sleep
+        get_mock.side_effect = [ok, busy, ok]
+        assert query() == []  # a real response ends the fail-fast window
+        assert query() == []  # so a busy response is retried again
+        assert sleep_mock.call_count == 3
+
+        get_mock.side_effect = None
+        with pytest.raises(RemoteError, match='backing off longer than the max backoff'):
+            query()
+
+        frozen.move_to(start + datetime.timedelta(seconds=OVERLOADED_FAIL_FAST_SECONDS))
+        get_mock.side_effect = [busy, ok]
+        assert query() == []  # the window expired, so the busy response is retried
 
 
 @pytest.mark.parametrize(('extra_fields', 'expected_fee'), [

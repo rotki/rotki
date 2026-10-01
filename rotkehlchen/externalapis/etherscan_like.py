@@ -42,7 +42,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
+from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -58,6 +58,9 @@ if TYPE_CHECKING:
     from rotkehlchen.utils.rate_limiter import TokenBucket
 
 TRANSACTIONS_BATCH_NUM: Final = 10
+# After a query used up its retries on a transient overload response, fail later overloaded
+# responses fast for this long instead of backing off on each query.
+OVERLOADED_FAIL_FAST_SECONDS: Final = 60
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -118,6 +121,8 @@ class EtherscanLikeApi(ABC):
         self._default_rps = rate_limiter.rps
         self._default_capacity = int(rate_limiter.capacity)
         self._default_minimum_rps = rate_limiter.minimum_rps
+        # Until when overloaded responses fail without retrying. See OVERLOADED_FAIL_FAST_SECONDS
+        self.overloaded_until = Timestamp(0)
 
     def _record_request(self, chain_id: ChainID, endpoint: str) -> None:
         if self.indexer_stats is not None:
@@ -410,22 +415,38 @@ class EtherscanLikeApi(ABC):
                 ) from e
 
             try:
-                if (result := json_ret.get('result')) is None:
-                    if self._handle_missing_result(chain_id=chain_id, json_ret=json_ret):
-                        if backoff * 2 >= backoff_limit:
-                            break  # no retry would follow, so do not sleep before failing
+                if (
+                        (result := json_ret.get('result')) is None and
+                        self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
+                ):
+                    if (
+                            (still_overloaded := ts_now() < self.overloaded_until) or
+                            backoff * 2 >= backoff_limit
+                    ):
+                        self.overloaded_until = Timestamp(ts_now() + OVERLOADED_FAIL_FAST_SECONDS)
+                        if still_overloaded:
+                            # A previous query already used up its retries on this. Fail fast
+                            # so an outage does not add a backoff to every query.
+                            raise RemoteError(
+                                f'{self.name} is still overloaded while querying {chain_id}. '
+                                f'Not retrying. Response was: {response.text}',
+                            )
 
-                        log.debug(
-                            'Got a transient missing-result response from %s while querying %s. '
-                            'Will backoff for %s seconds.',
-                            self.name,
-                            chain_id,
-                            backoff,
-                        )
-                        cancellable_sleep(backoff)
-                        backoff *= 2
-                        continue
+                        break  # no retry would follow, so do not sleep before failing
 
+                    log.debug(
+                        'Got a transient missing-result response from %s while querying %s. '
+                        'Will backoff for %s seconds.',
+                        self.name,
+                        chain_id,
+                        backoff,
+                    )
+                    cancellable_sleep(backoff)
+                    backoff *= 2
+                    continue
+
+                self.overloaded_until = Timestamp(0)  # any other response means it serves again
+                if result is None:
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
