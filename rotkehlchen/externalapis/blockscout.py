@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
@@ -117,6 +118,9 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         self.rpc_urls: dict[ChainID, str] = {}
         # Chains whose requests were rejected for the configured key, and when that happened
         self.key_rejected_chains: dict[ChainID, Timestamp] = {}
+        # Makes checking a rejection against the configured key and recording it atomic with
+        # respect to a key change, so a stale rejection cannot be recorded after the reset.
+        self._key_change_lock = threading.Lock()
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
             if chain_id in AUTOSCOUT_INSTANCES:
                 self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
@@ -126,8 +130,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
 
     def on_api_key_changed(self) -> None:
-        self.reset_api_key_state()
-        self.key_rejected_chains.clear()
+        with self._key_change_lock:
+            self.reset_api_key_state()
+            self.key_rejected_chains.clear()
+
         super().on_api_key_changed()
 
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
@@ -281,12 +287,13 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 # key so the UI does not tell the user to add a credential that already exists.
                 # Only blame the key if it is still the configured one. A request in flight
                 # while the user changed the key must not skip the chain for the new key.
-                if api_key == self._get_api_key_for_chain(chain_id):
-                    self.key_rejected_chains[chain_id] = ts_now()
-                    self.maybe_warn_missing_key(
-                        location=chain_id.label(),
-                        reason='key_not_usable',
-                    )
+                with self._key_change_lock:
+                    if api_key == self._get_api_key_for_chain(chain_id):
+                        self.key_rejected_chains[chain_id] = ts_now()
+                        self.maybe_warn_missing_key(
+                            location=chain_id.label(),
+                            reason='key_not_usable',
+                        )
 
                 raise RemoteError(
                     f'Blockscout API request {response.url} could not authorize the configured '

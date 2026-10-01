@@ -1,4 +1,5 @@
 import datetime
+import threading
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import ANY, patch
@@ -598,6 +599,50 @@ def test_rejection_of_a_replaced_key_is_ignored(blockscout: Blockscout) -> None:
 
     assert blockscout.key_rejected_chains == {}
     assert notifier.pop_message() is None
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_key_change_racing_the_rejection_check_is_not_lost(blockscout: Blockscout) -> None:
+    """A key change landing between the rejection check and its recording wins.
+
+    The check still sees the old key, so the rejection is recorded, but the concurrent key
+    change must not complete in between and then have its reset overwritten by the stale
+    rejection, which would skip the chain for the new key.
+    """
+    get_key = blockscout._get_api_key_for_chain
+    calls: list[ChainID] = []
+    changer = threading.Thread(target=blockscout.on_api_key_changed)
+
+    def change_key_in_check(chain_id: ChainID) -> ApiKey | None:
+        calls.append(chain_id)
+        key = get_key(chain_id)
+        if len(calls) == 2:  # the first call attaches the key, the second checks the rejection
+            with blockscout.db.user_write() as write_cursor:
+                blockscout.db.add_external_service_credentials(
+                    write_cursor=write_cursor,
+                    credentials=[ExternalServiceApiCredentials(
+                        service=ExternalService.BLOCKSCOUT,
+                        api_key=ApiKey('new_key'),
+                    )],
+                )
+            changer.start()
+            changer.join(timeout=0.5)  # finishes here unless the check holds it off
+
+        return key
+
+    with (
+        patch.object(blockscout, '_get_api_key_for_chain', side_effect=change_key_in_check),
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.UNAUTHORIZED,
+            '{"error":"not authorized"}',
+        )),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    changer.join(timeout=10)
+    assert not changer.is_alive()
+    assert blockscout.key_rejected_chains == {}
     assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
 
 
