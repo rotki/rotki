@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +14,9 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, Hist
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
@@ -173,3 +176,78 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
                 gas_amount,
                 f"Burn {gas_amount} ETH for gas{' of a failed transaction' if failed else ''}",
             ))
+
+
+@pytest.mark.parametrize('data_migration_version', [27])
+def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
+    """BitMEX API keys, their mappings, query ranges and non syncing setting entries are
+    removed while the BitMEX history events, margin positions and the data of other
+    exchanges are kept."""
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
+            [
+                ('bitmex1', (bitmex := Location.BITMEX.serialize_for_db()), 'key', 'secret'),
+                ('bitmex2', bitmex, 'key', 'secret'),
+                ('kraken1', (kraken := Location.KRAKEN.serialize_for_db()), 'key', 'secret'),
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO user_credentials_mappings VALUES (?, ?, ?, ?)',
+            [('bitmex1', bitmex, 'setting', 'value'), ('kraken1', kraken, 'setting', 'value')],
+        )
+        write_cursor.executemany(
+            'INSERT INTO used_query_ranges VALUES (?, ?, ?)',
+            [
+                ('bitmex_history_events_bitmex1', 0, 1),
+                ('bitmex_margins_bitmex2', 0, 1),
+                ('kraken_history_events_kraken1', 0, 1),
+            ],
+        )
+        write_cursor.execute(
+            "INSERT OR REPLACE INTO settings(name, value) VALUES ('non_syncing_exchanges', ?)",
+            (json.dumps([
+                {'name': 'bitmex1', 'location': 'bitmex'},
+                {'name': 'kraken1', 'location': 'kraken'},
+            ]),),
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='bitmex_event',
+                sequence_index=0,
+                timestamp=TimestampMS(1),
+                location=Location.BITMEX,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=Asset('BTC'),
+                amount=FVal(1),
+            ),
+        )
+        database.add_margin_positions(
+            write_cursor=write_cursor,
+            margin_positions=[margin_position := MarginPosition(
+                location=Location.BITMEX,
+                open_time=None,
+                close_time=Timestamp(1),
+                profit_loss=FVal('0.5'),
+                pl_currency=Asset('BTC'),
+                fee=FVal('0.01'),
+                fee_currency=Asset('BTC'),
+                link='bitmex_margin',
+            )],
+        )
+
+    run_single_migration(database=database, migration=28)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT name, location FROM user_credentials').fetchall() == [('kraken1', kraken)]  # noqa: E501
+        assert cursor.execute('SELECT credential_name FROM user_credentials_mappings').fetchall() == [('kraken1',)]  # noqa: E501
+        assert cursor.execute('SELECT name FROM used_query_ranges').fetchall() == [('kraken_history_events_kraken1',)]  # noqa: E501
+        assert json.loads(cursor.execute(
+            "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
+        ).fetchone()[0]) == [{'name': 'kraken1', 'location': 'kraken'}]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE location=?', (bitmex,),
+        ).fetchone()[0] == 1
+        assert database.get_margin_positions(cursor=cursor) == [margin_position]

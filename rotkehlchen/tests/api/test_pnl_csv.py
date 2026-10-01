@@ -51,7 +51,7 @@ def assert_csv_export_response(
         response: requests.Response,
         csv_dir: Path,
         is_download: bool = False,
-        expected_num_of_events: int = 37,
+        expected_num_of_events: int = 29,
     ) -> list[dict]:
     if is_download:
         assert response.status_code == HTTPStatus.OK
@@ -76,7 +76,6 @@ def assert_csv_export_response(
                 'binance',
                 'poloniex',
                 'ethereum',
-                'bitmex',
                 'zksync lite',
             }
             assert row['type'] in (
@@ -109,7 +108,7 @@ def assert_csv_export_response(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -431,7 +430,7 @@ def test_encoding(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])

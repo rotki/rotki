@@ -48,7 +48,7 @@ MarginPositionDBTuple = tuple[
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class MarginPosition(AccountingEventMixin):
-    """We only support margin positions on poloniex and bitmex at the moment"""
+    """A closed margin position as returned by an exchange that supports margin trading"""
     location: Location
     open_time: Timestamp | None
     close_time: Timestamp

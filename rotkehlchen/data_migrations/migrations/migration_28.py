@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -39,6 +40,9 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
     redecoding them on top of the preserved events would not repair the fee and could add
     duplicates. Instead their fee is resolved and their gas event amount updated in place,
     unless the gas event itself is customized or matched, in which case it is left as is.
+
+    Also removes the API keys, query ranges and non syncing setting entries of BitMEX,
+    whose API integration was removed after the exchange shut down.
     """
     customized_txs: list[tuple[EVMTxHash, L2ChainIdsWithL1FeesType]] = []  # filled by 1st step
 
@@ -161,5 +165,35 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                         tx_hash,
                         tx.l1_fee,
                     )
+
+    @progress_step(description='Removing BitMEX API data')
+    def _remove_bitmex_data(rotki: Rotkehlchen) -> None:
+        """BitMEX shut down and its API integration was removed. Its API keys can no longer
+        be used, or removed through the API, so delete them along with their query ranges
+        and non syncing setting. The BitMEX history events are kept."""
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute(  # cascades to user_credentials_mappings
+                'DELETE FROM user_credentials WHERE location=?',
+                (Location.BITMEX.serialize_for_db(),),
+            )
+            write_cursor.execute(
+                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+                (f'{Location.BITMEX!s}\\_%', '\\'),
+            )
+            if (non_syncing_exchanges := write_cursor.execute(
+                "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
+            ).fetchone()) is None:
+                return
+
+            try:
+                exchanges = json.loads(non_syncing_exchanges[0])
+            except json.JSONDecodeError as e:
+                log.error('Failed to read setting non_syncing_exchanges due to %s', e)
+                return
+
+            write_cursor.execute(
+                "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
+                (json.dumps([x for x in exchanges if x['location'] != Location.BITMEX.serialize()]),),  # noqa: E501
+            )
 
     perform_userdb_migration_steps(rotki, progress_handler)

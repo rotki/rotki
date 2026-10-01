@@ -44,7 +44,6 @@ def added_exchanges() -> Sequence[Location]:
         Location.KRAKEN,
         Location.POLONIEX,
         Location.BINANCE,
-        Location.BITMEX,
         Location.COINBASE,
         Location.GEMINI,
         Location.BITSTAMP,

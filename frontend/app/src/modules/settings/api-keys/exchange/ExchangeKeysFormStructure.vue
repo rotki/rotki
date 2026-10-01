@@ -24,14 +24,6 @@ type LocationConfig = Partial<Record<LocationKey, SlotProps>>;
 const { t } = useI18n({ useScope: 'global' });
 
 const customLabel: Record<string, LocationConfig> = {
-  bitmex: {
-    apiKey: {
-      label: t('exchange_settings.inputs.id'),
-    },
-    apiSecret: {
-      label: t('exchange_settings.inputs.secret'),
-    },
-  },
   coinbase: {
     apiKey: {
       label: t('exchange_settings.inputs.api_key_name'),
