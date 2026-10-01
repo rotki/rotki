@@ -1,6 +1,6 @@
 import datetime
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import ANY, patch
 
 import pytest
@@ -567,6 +567,38 @@ def test_rejected_chain_is_skipped_for_a_while(blockscout: Blockscout) -> None:
         blockscout.key_rejected_chains[ChainID.BASE] = ts_now()
         blockscout.on_api_key_changed()
         assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_rejection_of_a_replaced_key_is_ignored(blockscout: Blockscout) -> None:
+    """A request sent with the old key that is rejected after the key changed blames nothing.
+
+    It must neither skip the chain for the new key nor warn that the new key is unusable.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+
+    def replace_key_then_reject(**kwargs: Any) -> MockResponse:
+        assert kwargs['params']['apikey'] == old_key  # the request went out with the old key
+        with blockscout.db.user_write() as write_cursor:
+            blockscout.db.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=[ExternalServiceApiCredentials(
+                    service=ExternalService.BLOCKSCOUT,
+                    api_key=ApiKey('new_key'),
+                )],
+            )
+        blockscout.on_api_key_changed()
+        return MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}')
+
+    with (
+        patch.object(blockscout.session, 'request', side_effect=replace_key_then_reject),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    assert blockscout.key_rejected_chains == {}
+    assert notifier.pop_message() is None
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
 
 
 def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:
