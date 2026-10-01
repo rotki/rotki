@@ -38,7 +38,13 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
-from rotkehlchen.errors.misc import AlreadyExists, DataIntegrityError, InputError, RemoteError
+from rotkehlchen.errors.misc import (
+    AlreadyExists,
+    DataIntegrityError,
+    IncompleteTransactionsQuery,
+    InputError,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
@@ -550,6 +556,10 @@ class TransactionsService:
                 result = False
                 message = f'Transaction querying for {blockchain} is not implemented.'
                 status_code = HTTPStatus.BAD_REQUEST
+            elif isinstance(chain_exception, IncompleteTransactionsQuery):
+                # a status of its own, so the frontend can tell it from an unreachable backend
+                result, message = False, str(chain_exception)
+                status_code = HTTPStatus.SERVICE_UNAVAILABLE
             elif isinstance(chain_exception, RemoteError):
                 result, message, status_code = False, str(chain_exception), HTTPStatus.BAD_GATEWAY
             elif isinstance(chain_exception, sqlcipher.OperationalError):  # pylint: disable=no-member

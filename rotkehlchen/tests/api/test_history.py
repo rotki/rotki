@@ -215,8 +215,10 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: APIS
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 1
+    assert len(errors) == 2
     assert 'kraken' in errors[0]
+    # etherscan returns invalid JSON too, which leaves the transactions of the addresses unqueried
+    assert errors[1].startswith('Could not query all ethereum transactions of ')
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
     # For history processing tests look at test_accounting.py and

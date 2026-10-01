@@ -59,6 +59,14 @@ class BlockscoutIncompleteResponse(RemoteError):
     """Raised when Blockscout reports that the requested data is not fully indexed."""
 
 
+class IncompleteTransactionsQuery(RemoteError):
+    """Raised when the transactions of some addresses could not be fully queried.
+
+    Its message is shown to the user, so it must not carry the underlying indexer error,
+    which can include request URLs with API keys and raw response bodies.
+    """
+
+
 class RequestTooLargeError(RemoteError):
     """Raised when a request fails due to size limits (gas limit, URL too long)."""
 

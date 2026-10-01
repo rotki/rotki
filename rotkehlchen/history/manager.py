@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -213,6 +213,13 @@ class HistoryQueryingManager:
                     to_timestamp=end_ts,
                     addresses=list(active_addresses),  # EVM chains => ChecksumEvmAddress tuple
                 )
+            except IncompleteTransactionsQuery as e:
+                msg = str(e)
+                self.msg_aggregator.add_error(
+                    f'{msg} The final history result may be missing some {str_blockchain} '
+                    'transactions',
+                )
+                empty_or_error += '\n' + msg
             except RemoteError as e:
                 msg = str(e)
                 self.msg_aggregator.add_error(

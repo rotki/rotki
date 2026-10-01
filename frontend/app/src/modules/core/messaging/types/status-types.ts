@@ -80,7 +80,7 @@ const QUERYING_TRANSACTIONS_FAILED = 'querying_transactions_failed';
 
 /**
  * The backend ends a query it could not complete, such as one every indexer refused, with
- * `querying_transactions_failed` instead of `querying_transactions_finished`, without failing the
+ * `querying_transactions_failed` instead of `querying_transactions_finished`, and then fails the
  * task. That is the same terminal state as a failed task, so it is folded into `FAILED` here and
  * nothing downstream has a second failure status to handle.
  */

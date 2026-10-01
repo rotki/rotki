@@ -31,6 +31,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     AlreadyExists,
     DataIntegrityError,
+    IncompleteTransactionsQuery,
     InputError,
     NoAvailableIndexers,
     RemoteError,
@@ -305,9 +306,9 @@ class EvmTransactions(ABC):  # noqa: B024
         query_end is the end of a sync over several addresses this query is part of, so
         they all stop at the same block. Without it the end is resolved from end_ts.
 
-        Indexer failures are not raised, since the ranges they leave unqueried are retried
-        by the next query. False is returned instead, which reports the address to the
-        frontend as failed.
+        Indexer failures are not raised, so the other kinds of the query still run. False is
+        returned instead, which reports the address to the frontend as failed. The ranges
+        left unqueried are retried by the next query.
 
         This is our attempt to identify as many transactions related to the address
         as possible. This unfortunately at the moment depends on etherscan as it's
@@ -390,9 +391,13 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Saves the results in the database.
 
+        Every address is queried and reported to the frontend before an incomplete query of
+        any of them is raised, so the caller's task fails rather than claiming the history
+        of those addresses as loaded.
+
         May raise:
-        - RemoteError if etherscan is used and there is a problem with reaching it or
-        with parsing the response.
+        - IncompleteTransactionsQuery if the transactions of any address could not be fully
+        queried. The ranges left unqueried are retried by the next query.
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
@@ -410,16 +415,24 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=from_timestamp,
                     end_ts=to_timestamp,
                 )
+            failed_addresses = addresses
         else:
-            for address in addresses:
-                self.single_address_query_transactions(
+            failed_addresses = [
+                address for address in addresses
+                if self.single_address_query_transactions(
                     address=address,
                     start_ts=from_timestamp,
                     end_ts=query_end.timestamp,
                     query_end=query_end,
-                )
+                ) is False
+            ]
 
         self.get_chain_specific_multiaddress_data(addresses)
+        if len(failed_addresses) != 0:  # the indexer errors were logged, not passed on
+            raise IncompleteTransactionsQuery(
+                f'Could not query all {self.evm_inquirer.chain_name} transactions of '
+                f'{", ".join(failed_addresses)}. They will be retried by the next sync.',
+            )
 
     @overload
     def _query_and_save_transactions_for_range(

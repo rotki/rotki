@@ -2,6 +2,7 @@ import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
+import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -66,6 +67,11 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * with its own denominator and a run with three failed gnosis addresses read "11/11 chains
    * complete". `type` rides along so a synthesized entry carries the right subtype; defaulting to
    * evm would wrongly describe an evmlike or bitcoin address.
+   *
+   * An incomplete query is marked without a notification. It fails every address an indexer
+   * refused, so a chain no indexer serves would raise one per address. The failure still shows on
+   * the address's task-center row and in the sync panel, and the missing ranges are retried by the
+   * next sync.
    */
   const recordQueryFailure = (
     error: TaskError,
@@ -78,7 +84,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
 
     markAddressFailed(account, type);
 
-    if (isActionable(error)) {
+    if (isActionable(error) && !(error.cause instanceof IncompleteQueryError)) {
       notifyError(
         t('actions.transactions.error.title'),
         t('actions.transactions.error.description', {

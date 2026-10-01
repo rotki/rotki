@@ -34,7 +34,12 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import (
+    DataIntegrityError,
+    IncompleteTransactionsQuery,
+    RemoteError,
+    RequestTooLargeError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -1741,7 +1746,9 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
     addresses nothing was queried for as complete.
 
     The messages of an address are sent under its query lock, so they cannot interleave with
-    those of another query of that address that is already running.
+    those of another query of that address that is already running. Once every address is
+    settled the sync raises, so its task does not claim their history as loaded, and the
+    error it raises does not carry the indexer's own, which can include API keys.
     """
     inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
     notifier = MockRotkiNotifier()
@@ -1757,7 +1764,7 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
             stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_blocknumber_by_time',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('https://indexer.example/api?apikey=SECRET'),
             ))
         get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
         stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
@@ -1774,7 +1781,9 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
 
         wait([task], timeout=10)
 
-    assert exception_of(task) is None
+    assert isinstance(error := exception_of(task), IncompleteTransactionsQuery)
+    assert all(address in str(error) for address in addresses)
+    assert 'SECRET' not in str(error)
     assert get_transactions.call_count == 0
     assert status_messages() == [{
         'address': address,
@@ -1785,6 +1794,63 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
     } for address in addresses for status in (
         TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
         TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED,
+    )]
+
+
+def test_sync_raises_after_querying_every_address_when_one_fails(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A sync where the query of one address fails must still query and settle the others.
+
+    The failure is raised only once every address is queried and reported, and the chain
+    data of the addresses is still queried, so it fails the sync task without cutting the
+    sync short. Only the address that failed is named in the error.
+    """
+    transactions = ethereum_manager.transactions
+    notifier = MockRotkiNotifier()
+    failing_address, *addresses = [make_evm_address() for _ in range(3)]
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            target=transactions,
+            attribute='_resolve_query_end',
+            return_value=QueryEnd(timestamp=(end_ts := ts_now()), block=100, failed=frozenset()),
+        ))
+        stack.enter_context(patch.object(
+            target=transactions,
+            attribute='_get_transactions_for_range',
+            side_effect=lambda address, **kwargs: address != failing_address,
+        ))
+        for attribute in ('_get_internal_transactions_for_ranges', '_get_erc20_transfers_for_ranges'):  # noqa: E501
+            stack.enter_context(patch.object(transactions, attribute, return_value=True))
+        multiaddress_data = stack.enter_context(patch.object(
+            target=transactions,
+            attribute='get_chain_specific_multiaddress_data',
+        ))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        with pytest.raises(IncompleteTransactionsQuery) as error:
+            transactions.query_chain(
+                from_timestamp=(start_ts := Timestamp(0)),
+                to_timestamp=end_ts,
+                addresses=(all_addresses := [addresses[0], failing_address, addresses[1]]),
+            )
+
+    assert failing_address in str(error.value)
+    assert all(address not in str(error.value) for address in addresses)
+    multiaddress_data.assert_called_once_with(all_addresses)
+    assert [
+        msg.data for msg in notifier.messages
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ] == [{
+        'address': address,
+        'chain': transactions.evm_inquirer.blockchain.value,
+        'subtype': 'evm',
+        'period': [start_ts, end_ts],
+        'status': str(status),
+    } for address in all_addresses for status in (
+        TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED
+        if address == failing_address else
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
     )]
 
 

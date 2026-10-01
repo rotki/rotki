@@ -2853,6 +2853,7 @@ Get latest raw blockchain transaction timestamps
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+   :statuscode 503: The transactions of some accounts could not be fully queried, for example because every indexer failed. The rest of the query completed, and the missing ranges are retried by the next query.
 
 
 Decode transactions that haven't been decoded yet
