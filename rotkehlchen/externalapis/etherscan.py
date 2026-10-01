@@ -189,8 +189,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         )
 
     def on_api_key_changed(self) -> None:
-        self.api_key = None
-        self.last_ts = Timestamp(0)
+        self.reset_api_key_state()
         self._delete_cached_api_key_tier()
         super().on_api_key_changed()
         self.detect_api_key_tier()

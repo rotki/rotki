@@ -63,7 +63,9 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
     """
     def __init__(self, database: DBHandler, service_name: ExternalService) -> None:
         ExternalServiceWithApiKey.__init__(self, database=database, service_name=service_name)
-        self.warning_given = False
+        # Reasons already reported to the user. None stands for a missing key. Tracked per
+        # reason so a missing key warning does not hide a later warning about a rejected key.
+        self.warned_reasons: set[str | None] = set()
 
     def _get_api_key(self) -> ApiKey | None:
         if (api_key := ExternalServiceWithApiKey._get_api_key(self)) is not None:
@@ -77,14 +79,23 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
             location: str | None = None,
             reason: str | None = None,
     ) -> None:
-        """Warn the user once if the service has no usable API key."""
-        if not self.warning_given:
-            if location is None and reason is None:
-                self.db.msg_aggregator.add_missing_key_message(self.service_name)
-            else:
-                self.db.msg_aggregator.add_missing_key_message(
-                    service=self.service_name,
-                    location=location,
-                    reason=reason,
-                )
-            self.warning_given = True
+        """Warn the user once per reason if the service has no usable API key."""
+        if reason in self.warned_reasons:
+            return
+
+        self.db.msg_aggregator.add_missing_key_message(
+            service=self.service_name,
+            location=location,
+            reason=reason,
+        )
+        self.warned_reasons.add(reason)
+
+    def reset_api_key_state(self) -> None:
+        """Forget the cached key and the warnings given for it, after the key changed.
+
+        Without dropping the cache, the previous key keeps being used for up to two minutes,
+        and a rejection of that old key would be reported as a problem with the new one.
+        """
+        self.api_key = None
+        self.last_ts = Timestamp(0)
+        self.warned_reasons.clear()

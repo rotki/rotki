@@ -157,7 +157,11 @@ def test_detect_api_key_tier_does_not_warn_for_missing_key(
         etherscan = Etherscan(database=database, msg_aggregator=database.msg_aggregator)
         warning_mock.assert_not_called()
         assert etherscan._get_api_key_for_chain(ChainID.ETHEREUM) is None
-        warning_mock.assert_called_once_with(ExternalService.ETHERSCAN)
+        warning_mock.assert_called_once_with(
+            service=ExternalService.ETHERSCAN,
+            location=None,
+            reason=None,
+        )
 
 
 def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> None:
@@ -538,6 +542,32 @@ def test_transient_server_busy_response_is_retried(temp_etherscan: Etherscan) ->
 
     assert get_mock.call_count == 2
     sleep_mock.assert_called_once_with(1)
+
+
+def test_persistent_server_busy_response_fails_without_a_trailing_sleep(
+        temp_etherscan: Etherscan,
+) -> None:
+    """When etherscan stays overloaded, give up once the backoff limit is reached.
+
+    The query should fail so the next indexer is tried, without sleeping after the last attempt.
+    """
+    with (
+        patch.object(temp_etherscan.session, 'get', return_value=MockResponse(
+            HTTPStatus.OK,
+            '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+        )) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+        pytest.raises(RemoteError, match='backing off longer than the max backoff'),
+    ):
+        temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        )
+
+    assert get_mock.call_count == 3
+    assert [x.args for x in sleep_mock.call_args_list] == [(1,), (2,)]
 
 
 @pytest.mark.parametrize(('extra_fields', 'expected_fee'), [

@@ -412,6 +412,9 @@ class EtherscanLikeApi(ABC):
             try:
                 if (result := json_ret.get('result')) is None:
                     if self._handle_missing_result(chain_id=chain_id, json_ret=json_ret):
+                        if backoff * 2 >= backoff_limit:
+                            break  # no retry would follow, so do not sleep before failing
+
                         log.debug(
                             'Got a transient missing-result response from %s while querying %s. '
                             'Will backoff for %s seconds.',

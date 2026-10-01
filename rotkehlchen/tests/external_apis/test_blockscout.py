@@ -21,9 +21,17 @@ from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.database import maybe_include_blockscout_key
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ApiKey,
+    ChainID,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Timestamp,
+    TimestampMS,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -450,6 +458,56 @@ def test_rejected_api_key_reports_usable_key_problem(
         'reason': 'key_not_usable',
         'service': ExternalService.BLOCKSCOUT.serialize(),
     }
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_rejected_key_warning_after_missing_key_warning(blockscout: Blockscout) -> None:
+    """A missing key warning must not hide the warning about a key added later being rejected.
+
+    Each reason is reported once per configured key, so repeated rejections do not spam the
+    user, while changing the key lets its own problems be reported again.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is None
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {'service': ExternalService.BLOCKSCOUT.serialize()}
+
+    # the key is read from the DB on the next query, as no key was cached while missing
+    maybe_include_blockscout_key(db=blockscout.db, include_blockscout_key=True)
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+    with patch.object(
+        blockscout.session,
+        'request',
+        return_value=MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}'),
+    ):
+        for _ in range(2):
+            with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+                blockscout._query_and_process(
+                    chain_id=ChainID.BASE,
+                    endpoint='account.tokentx',
+                    query_str='https://api.blockscout.com/8453/api',
+                )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+    assert notifier.pop_message() is None  # the second rejection is not reported again
+
+    with blockscout.db.user_write() as write_cursor:
+        blockscout.db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BLOCKSCOUT,
+                api_key=(new_key := ApiKey('new_key')),
+            )],
+        )
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == old_key  # still cached
+    blockscout.on_api_key_changed()
+    assert blockscout.warned_reasons == set()
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == new_key
 
 
 @pytest.mark.parametrize('include_blockscout_key', [False])

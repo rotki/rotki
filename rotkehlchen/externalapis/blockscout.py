@@ -113,6 +113,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 self.api_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'  # noqa: E501
                 self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
 
+    def on_api_key_changed(self) -> None:
+        self.reset_api_key_state()
+        super().on_api_key_changed()
+
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
         url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
         if (url := url_map.get(chain_id)) is None:
