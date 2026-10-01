@@ -89,12 +89,11 @@ pub async fn get_icon(
 
 /// The handler for the HEAD icon endpoint
 ///
-/// First check if the file exists locally. If the file is not empty it means
-/// that we have the image locally and we can serve it. Otherwise if the file
-/// has 0 size it means that the last time it was queried the icon couldn't be
-/// found remotely. Additionally if that query was more than MAX_ICON_RECHECK_PERIOD
-/// hours ago we will retry. If on the other hand we queried it less than
-/// MAX_ICON_RECHECK_PERIOD hours ago then we treat it as if the icon doesn't exist.
+/// First check if the icon exists locally, in which case we can serve it. Otherwise if
+/// there is a not found marker it means that the last time it was queried the icon
+/// couldn't be found remotely. Additionally if that query was more than
+/// MAX_ICON_RECHECK_PERIOD hours ago we will retry. If on the other hand we queried it
+/// less than MAX_ICON_RECHECK_PERIOD hours ago then we treat it as if the icon doesn't exist.
 ///
 /// If force_refresh is set to true then we ignore the local file and force a query
 /// of the icon.
@@ -111,8 +110,10 @@ pub async fn check_icon(
     )
     .await;
 
-    if let Some(found_path) = find_usable_icon(&state, &own_path, &payload.asset_id).await {
-        return handle_non_empty_icon(
+    if let Some(found_path) =
+        icons::find_icon(state.data_dir.as_path(), &own_path, &payload.asset_id).await
+    {
+        return handle_found_icon(
             state,
             payload.asset_id,
             own_path,
@@ -123,19 +124,20 @@ pub async fn check_icon(
         .into_response();
     }
 
-    // Asset's own icon not usable, try the collection icon as fallback.
-    let collection_path = icons::get_asset_path(
-        &payload.asset_id,
-        state.data_dir.as_path(),
-        true,
-        state.globaldb.as_ref(),
-    )
-    .await;
-
-    if collection_path != own_path {
+    // Asset's own icon not usable, try the icon of its collection's main asset as fallback.
+    let collection_asset_id =
+        icons::get_collection_main_asset(&payload.asset_id, state.globaldb.as_ref()).await;
+    if collection_asset_id != payload.asset_id {
+        let collection_path = icons::get_asset_path(
+            &collection_asset_id,
+            state.data_dir.as_path(),
+            false,
+            state.globaldb.as_ref(),
+        )
+        .await;
         let status = check_icon_for_asset_id(
             state.clone(),
-            payload.asset_id.clone(),
+            collection_asset_id,
             collection_path,
             payload.force_refresh,
         )
@@ -163,11 +165,20 @@ pub async fn check_icon(
         .into_response();
     }
 
-    // There is no local reference to the file, query it. Ensure that if it is requested
-    // again only one task handles it.
-    query_icon_from_payload(state, payload, own_path)
-        .await
-        .into_response()
+    match icons::find_not_found_marker(&own_path).await {
+        // The icon was not found the last time it was queried. Respect the recheck period
+        // unless a refresh is forced.
+        Some((marker_path, metadata)) if payload.force_refresh != Some(true) => {
+            handle_not_found_marker(state, payload.asset_id, own_path, marker_path, metadata)
+                .await
+                .into_response()
+        }
+        // There is no local reference to the file, query it. Ensure that if it is
+        // requested again only one task handles it.
+        _ => query_icon_from_payload(state, payload, own_path)
+            .await
+            .into_response(),
+    }
 }
 
 /// Helper function to update the status of the query in the shared state
@@ -209,7 +220,7 @@ async fn query_icon(
     StatusCode::ACCEPTED
 }
 
-async fn handle_non_empty_icon(
+async fn handle_found_icon(
     state: Arc<AppState>,
     asset_id: String,
     path: std::path::PathBuf,
@@ -232,11 +243,11 @@ async fn handle_non_empty_icon(
     query_icon(state, asset_id, path).await
 }
 
-async fn handle_empty_icon(
+async fn handle_not_found_marker(
     state: Arc<AppState>,
     asset_id: String,
     path: std::path::PathBuf,
-    found_path: std::path::PathBuf,
+    marker_path: std::path::PathBuf,
     metadata: std::fs::Metadata,
 ) -> StatusCode {
     let Ok(time) = metadata.modified() else {
@@ -256,29 +267,8 @@ async fn handle_empty_icon(
     }
 
     // Since we tried long ago enough retry again
-    let _ = fs::remove_file(found_path).await;
-    tokio::spawn(icons::query_icon_remotely(
-        asset_id,
-        path,
-        state.coingecko.clone(),
-        state.evm_manager.clone(),
-    ));
-    StatusCode::ACCEPTED
-}
-
-/// Finds a non-empty icon file at the given path.
-async fn find_usable_icon(
-    state: &AppState,
-    path: &std::path::Path,
-    asset_id: &str,
-) -> Option<std::path::PathBuf> {
-    let found = icons::find_icon(state.data_dir.as_path(), path, asset_id).await?;
-    let meta = fs::metadata(&found).await.ok()?;
-    if meta.len() > 0 {
-        Some(found)
-    } else {
-        None
-    }
+    let _ = fs::remove_file(marker_path).await;
+    query_icon(state, asset_id, path).await
 }
 
 async fn check_icon_for_asset_id(
@@ -287,21 +277,14 @@ async fn check_icon_for_asset_id(
     path: std::path::PathBuf,
     force_refresh: Option<bool>,
 ) -> StatusCode {
-    let Some(found_path) = icons::find_icon(state.data_dir.as_path(), &path, &asset_id).await
-    else {
-        return query_icon(state, asset_id, path).await;
-    };
-    let metadata = match fs::metadata(found_path.clone()).await {
-        Ok(m) => m,
-        Err(e) => {
-            error!("Failed to query icon for {} due to {}", asset_id, e);
-            return StatusCode::NOT_FOUND;
+    if let Some(found_path) = icons::find_icon(state.data_dir.as_path(), &path, &asset_id).await {
+        return handle_found_icon(state, asset_id, path, found_path, force_refresh).await;
+    }
+    match icons::find_not_found_marker(&path).await {
+        Some((marker_path, metadata)) => {
+            handle_not_found_marker(state, asset_id, path, marker_path, metadata).await
         }
-    };
-    if metadata.len() > 0 {
-        handle_non_empty_icon(state, asset_id, path, found_path, force_refresh).await
-    } else {
-        handle_empty_icon(state, asset_id, path, found_path, metadata).await
+        None => query_icon(state, asset_id, path).await,
     }
 }
 
@@ -523,5 +506,65 @@ mod tests {
         .into_response();
 
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    /// A not found marker or an empty file next to the asset's icon must not hide it
+    #[tokio::test]
+    async fn test_get_own_with_stale_marker() {
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
+        let own_data = b"own_icon_data";
+        fs::write(icons_dir(&data_dir).join("XDAI_small.notfound"), b"")
+            .await
+            .unwrap();
+        fs::write(icons_dir(&data_dir).join("XDAI_small.svg"), b"")
+            .await
+            .unwrap();
+        fs::write(icons_dir(&data_dir).join(OWN_ICON_FILENAME), own_data)
+            .await
+            .unwrap();
+
+        let response = get_icon(
+            State(state.clone()),
+            Query(AssetIconRequest {
+                asset_id: TEST_ASSET.to_string(),
+                match_header: Some(md5_hash(own_data)),
+            }),
+        )
+        .await
+        .into_response();
+        assert_eq!(response.status(), StatusCode::NOT_MODIFIED);
+
+        let response = check_icon(
+            State(state),
+            Query(AssetIconCheck {
+                asset_id: TEST_ASSET.to_string(),
+                force_refresh: None,
+            }),
+        )
+        .await
+        .into_response();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    /// An icon that was recently not found is not queried again before the recheck period
+    #[tokio::test]
+    async fn test_check_own_recent_marker() {
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
+        let marker_path = icons_dir(&data_dir).join("NOT_EXISTING_ASSET_small.notfound");
+        fs::write(&marker_path, b"").await.unwrap();
+
+        let response = check_icon(
+            State(state.clone()),
+            Query(AssetIconCheck {
+                asset_id: "NOT_EXISTING_ASSET".to_string(),
+                force_refresh: None,
+            }),
+        )
+        .await
+        .into_response();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert!(marker_path.exists());
+        assert!(state.active_tasks.lock().await.is_empty());
     }
 }

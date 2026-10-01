@@ -37,11 +37,37 @@ fn get_headers(extension: &str) -> Result<[(&'static str, &'static str); 2], Fil
     Ok([("Content-Type", content_type), ("mimetype", content_type)])
 }
 
-async fn smoldapp_image_query(
-    client: &Client,
-    url: &str,
-    extension: &'static str,
-) -> Option<(Bytes, &'static str)> {
+/// The extensions an icon file can have, in the order they are looked up
+const ICON_EXTENSIONS: [&str; 6] = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
+
+/// Extension of the empty file marking that no source had an icon for the asset. It is a
+/// negative cache that stops assets without an icon from being queried remotely each time
+/// they are shown. Its modification time is when the icon was last queried.
+const NOT_FOUND_MARKER_EXTENSION: &str = "notfound";
+
+/// The result of querying a remote source for an icon
+#[derive(Debug, PartialEq)]
+pub enum IconQuery {
+    Found(Bytes, &'static str),
+    /// The source answered that it has no icon for the asset
+    NotFound,
+    /// The source could not answer, e.g. due to rate limiting, a server error or a timeout.
+    /// It is not known whether the icon exists, so it is not marked as missing.
+    Failed,
+}
+
+impl IconQuery {
+    /// An empty body is no icon, and writing it would turn it into a not found marker
+    pub fn from_bytes(bytes: Bytes, extension: &'static str) -> Self {
+        if bytes.is_empty() {
+            IconQuery::NotFound
+        } else {
+            IconQuery::Found(bytes, extension)
+        }
+    }
+}
+
+async fn smoldapp_image_query(client: &Client, url: &str, extension: &'static str) -> IconQuery {
     debug!("Querying {}", url);
     match client
         .get(url)
@@ -52,11 +78,13 @@ async fn smoldapp_image_query(
         Ok(response) => {
             let status = response.status();
             if status.is_success() {
-                if let Ok(bytes) = response.bytes().await {
-                    return Some((bytes, extension));
+                match response.bytes().await {
+                    Ok(bytes) => return IconQuery::from_bytes(bytes, extension),
+                    Err(e) => error!("Failed to read the response of {} due to {}", url, e),
                 }
             } else if status == StatusCode::NOT_FOUND {
                 debug!("No SmolDapp icon found at {}", url);
+                return IconQuery::NotFound;
             } else if let Ok(text) = response.text().await {
                 error!(
                     "Got non success response status when querying SmolDapp for {}. {} - {}",
@@ -71,21 +99,14 @@ async fn smoldapp_image_query(
         }
     }
 
-    None
-}
-
-// extract the bytes for an image from the provided CDN
-async fn query_image_from_cdn(url: &str) -> Option<Bytes> {
-    smoldapp_image_query(&crate::http::client(), url, "")
-        .await
-        .map(|(bytes, _)| bytes)
+    IconQuery::Failed
 }
 
 async fn query_token_icon_and_extension(
     chain_id: u64,
     address: AssetAddress,
     base_url: &str,
-) -> Option<(Bytes, &'static str)> {
+) -> IconQuery {
     let client = crate::http::client();
     let address_str = address.as_str();
 
@@ -100,13 +121,16 @@ async fn query_token_icon_and_extension(
         ),
     ];
 
+    let mut result = IconQuery::NotFound;
     for (url, extension) in urls {
-        if let Some(response) = smoldapp_image_query(&client, &url, extension).await {
-            return Some(response);
+        match smoldapp_image_query(&client, &url, extension).await {
+            found @ IconQuery::Found(..) => return found,
+            IconQuery::Failed => result = IconQuery::Failed,
+            IconQuery::NotFound => {}
         }
     }
 
-    None
+    result
 }
 
 /// Build the calldata for a tokenURI(uint256) call.
@@ -326,18 +350,35 @@ pub async fn find_icon(datadir: &Path, normalpath: &Path, asset_id: &str) -> Opt
     search_icon_in_path(normalpath).await
 }
 
-// Find the icon in the path and if existing return its path
+/// Path of the icon file with the given extension. The extension is appended to the path,
+/// which has none, instead of being set with `with_extension` since an identifier may
+/// contain dots.
+fn icon_file_path(path: &Path, extension: &str) -> PathBuf {
+    let mut file_path = path.as_os_str().to_owned();
+    file_path.push(".");
+    file_path.push(extension);
+    PathBuf::from(file_path)
+}
+
+/// Find the icon file of the extensionless path. Empty files are not icons and are skipped.
 async fn search_icon_in_path(path: &Path) -> Option<PathBuf> {
-    if let Ok(mut entries) = tokio::fs::read_dir(path.parent().unwrap_or(Path::new("."))).await {
-        while let Some(entry) = entries.next_entry().await.transpose() {
-            if let Ok(entry) = entry {
-                if entry.path().file_stem() == path.file_stem() {
-                    return Some(entry.path());
-                }
-            }
+    for extension in ICON_EXTENSIONS {
+        let icon_path = icon_file_path(path, extension);
+        if tokio::fs::metadata(&icon_path)
+            .await
+            .is_ok_and(|m| m.is_file() && m.len() > 0)
+        {
+            return Some(icon_path);
         }
     }
     None
+}
+
+/// Returns the not found marker of the extensionless icon path and its metadata if it exists
+pub async fn find_not_found_marker(path: &Path) -> Option<(PathBuf, std::fs::Metadata)> {
+    let marker_path = icon_file_path(path, NOT_FOUND_MARKER_EXTENSION);
+    let metadata = tokio::fs::metadata(&marker_path).await.ok()?;
+    Some((marker_path, metadata))
 }
 
 /// Given the path for an icon return its bytes and the extension of the file
@@ -353,6 +394,20 @@ async fn retrieve_icon_bytes(path: PathBuf) -> Option<(Bytes, String)> {
     None
 }
 
+/// Returns the main asset of the collection the asset belongs to, or the asset itself
+pub async fn get_collection_main_asset(asset_id: &str, globaldb: &globaldb::GlobalDB) -> String {
+    match globaldb.get_collection_main_asset(asset_id).await {
+        Err(e) => {
+            error!(
+                "Failed to get collection main asset id for {} due to {}",
+                asset_id, e
+            );
+            asset_id.to_string()
+        }
+        Ok(result) => result.unwrap_or_else(|| asset_id.to_string()),
+    }
+}
+
 pub async fn get_asset_path(
     asset_id: &str,
     data_dir: &Path,
@@ -360,16 +415,7 @@ pub async fn get_asset_path(
     globaldb: &globaldb::GlobalDB,
 ) -> PathBuf {
     let new_asset_id: String = if resolve_collection {
-        match globaldb.get_collection_main_asset(asset_id).await {
-            Err(e) => {
-                error!(
-                    "Failed to get collection main asset id for {} due to {}",
-                    asset_id, e
-                );
-                asset_id.to_string()
-            }
-            Ok(result) => result.unwrap_or_else(|| asset_id.to_string()),
-        }
+        get_collection_main_asset(asset_id, globaldb).await
     } else {
         asset_id.to_string()
     };
@@ -450,31 +496,62 @@ async fn read_icon_bytes(
     retrieve_icon_bytes(found_path).await
 }
 
-/// Writes icon bytes to a file with the specified extension and logs any errors.
+/// Writes the icon with the given extension and removes the files of the icon with any
+/// other extension and its not found marker. The icon is written to a temporary file first
+/// so that a lookup never sees it partially written.
 async fn write_icon_to_file(path: &Path, extension: &str, icon_bytes: &[u8]) {
-    let _ = tokio::fs::write(path.with_extension(extension), icon_bytes)
-        .await
-        .map_err(|e| {
-            error!(
-                "Unable to write {} to the file system due to {}",
-                path.display(),
-                e
-            );
-        });
-}
-
-// Writes a zero bytes file to mark that we already tried to query this icon
-// and that it was not possible to find it in our sources for icons.
-async fn write_zero_bytes_file(path: &Path) {
-    let marker_path = path.with_extension("svg");
-    let _ = tokio::fs::write(&marker_path, []).await.map_err(|e| {
+    let icon_path = icon_file_path(path, extension);
+    let tmp_path = icon_file_path(path, &format!("{extension}.tmp"));
+    if let Err(e) = async {
+        tokio::fs::write(&tmp_path, icon_bytes).await?;
+        tokio::fs::rename(&tmp_path, &icon_path).await
+    }
+    .await
+    {
         error!(
-            "Unable to write zero bytes file {} due to {}",
-            marker_path.display(),
+            "Unable to write {} to the file system due to {}",
+            icon_path.display(),
             e
         );
-    });
-    debug!("Wrote zero bytes file {}", marker_path.display());
+        let _ = tokio::fs::remove_file(&tmp_path).await;
+        return;
+    }
+
+    for other_extension in ICON_EXTENSIONS
+        .iter()
+        .chain([&NOT_FOUND_MARKER_EXTENSION])
+        .filter(|x| **x != extension)
+    {
+        let other_path = icon_file_path(path, other_extension);
+        if let Err(e) = tokio::fs::remove_file(&other_path).await {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                error!("Unable to remove {} due to {}", other_path.display(), e);
+            }
+        }
+    }
+}
+
+/// Writes the not found marker to record that no source had the icon, unless an icon
+/// exists, which can happen if another query found it in the meantime.
+async fn write_not_found_marker(path: &Path) {
+    if let Some(existing_path) = search_icon_in_path(path).await {
+        debug!(
+            "Not writing not found marker for {} since {} exists",
+            path.display(),
+            existing_path.display()
+        );
+        return;
+    }
+
+    let marker_path = icon_file_path(path, NOT_FOUND_MARKER_EXTENSION);
+    match tokio::fs::write(&marker_path, []).await {
+        Ok(()) => debug!("Wrote not found marker {}", marker_path.display()),
+        Err(e) => error!(
+            "Unable to write not found marker {} due to {}",
+            marker_path.display(),
+            e
+        ),
+    }
 }
 
 /// Query icon remotely from various sources in order of preference.
@@ -484,6 +561,7 @@ pub async fn query_icon_remotely(
     coingecko: Arc<coingecko::Coingecko>,
     evm_inquirer_manager: Arc<EvmInquirerManager>,
 ) {
+    let mut source_failed = false;
     // 1. First check for well-known tokens with hardcoded URLs
     if let Some((url, extension)) = match asset_id.as_str() {
         "ETH" | "ETH2" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/eth.png", "png")),
@@ -495,8 +573,12 @@ pub async fn query_icon_remotely(
         "eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6" => Some(("https://raw.githubusercontent.com/SmolDapp/tokenAssets/refs/heads/main/chains/1101/logo.svg", "svg")),  // polygon
         _ => None
     } {
-        if let Some(icon_bytes) = query_image_from_cdn(url).await {
-            return write_icon_to_file(&path, extension, &icon_bytes).await;
+        match smoldapp_image_query(&crate::http::client(), url, extension).await {
+            IconQuery::Found(icon_bytes, extension) => {
+                return write_icon_to_file(&path, extension, &icon_bytes).await;
+            }
+            IconQuery::Failed => source_failed = true,
+            IconQuery::NotFound => {}
         }
     }
 
@@ -538,28 +620,40 @@ pub async fn query_icon_remotely(
         }
 
         // For all token types, try SmolDapp
-        if let Some((icon_bytes, extension)) = query_token_icon_and_extension(
+        match query_token_icon_and_extension(
             asset_info.chain_id,
             asset_info.contract_address,
             SMOLDAPP_BASE_URL,
         )
         .await
         {
-            return write_icon_to_file(&path, extension, &icon_bytes).await;
+            IconQuery::Found(icon_bytes, extension) => {
+                return write_icon_to_file(&path, extension, &icon_bytes).await;
+            }
+            IconQuery::Failed => source_failed = true,
+            IconQuery::NotFound => {}
         }
     }
 
     // As a last resort, try coingecko
-    if let Some(icon_bytes) = coingecko.query_asset_image(&asset_id).await {
-        return write_icon_to_file(&path, "png", &icon_bytes).await;
+    match coingecko.query_asset_image(&asset_id).await {
+        IconQuery::Found(icon_bytes, extension) => {
+            return write_icon_to_file(&path, extension, &icon_bytes).await;
+        }
+        IconQuery::Failed => source_failed = true,
+        IconQuery::NotFound => {}
     }
 
-    // If all attempts failed, write a zero-byte file to mark that we tried
-    debug!(
-        "Icon not found for asset {}. Writing zero bytes file",
-        asset_id
-    );
-    write_zero_bytes_file(path.as_path()).await;
+    if source_failed {
+        debug!(
+            "Icon not found for asset {} but a source failed. Not writing not found marker so it is queried again",
+            asset_id
+        );
+        return;
+    }
+
+    debug!("Icon not found for asset {}", asset_id);
+    write_not_found_marker(path.as_path()).await;
 }
 
 #[cfg(test)]
@@ -567,8 +661,9 @@ mod tests {
     use crate::blockchain::{AssetAddress, EvmAddress, EvmNodeInquirer, SupportedBlockchain};
     use crate::create_globaldb;
     use crate::icons::{
-        build_token_uri_calldata, decode_abi_string, get_asset_path,
-        query_token_icon_and_extension, query_uniswap_position_icon, TOKENURI_SELECTOR,
+        build_token_uri_calldata, decode_abi_string, find_not_found_marker, get_asset_path,
+        query_token_icon_and_extension, query_uniswap_position_icon, search_icon_in_path,
+        write_icon_to_file, write_not_found_marker, IconQuery, TOKENURI_SELECTOR,
     };
     use axum::body::Bytes;
     use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -647,17 +742,81 @@ mod tests {
             server.url().as_str(),
         )
         .await;
-        assert_eq!(r, Some((Bytes::from_static(data), "svg")));
+        assert_eq!(r, IconQuery::Found(Bytes::from_static(data), "svg"));
 
         // mock bad query
-        server
-            .mock("GET", format!("/{}/{}/logo.svg", 10, address).as_str())
-            .with_status(404)
-            .create();
+        for file in ["logo.svg", "logo-32.png"] {
+            server
+                .mock("GET", format!("/{}/{}/{}", 10, address, file).as_str())
+                .with_status(404)
+                .create();
+        }
         let r =
             query_token_icon_and_extension(10, AssetAddress::Evm(address), server.url().as_str())
                 .await;
-        assert_eq!(r, None);
+        assert_eq!(r, IconQuery::NotFound);
+
+        // a rate limited query is a failure, not a missing icon
+        server
+            .mock("GET", format!("/{}/{}/logo.svg", 42, address).as_str())
+            .with_status(429)
+            .create();
+        let r =
+            query_token_icon_and_extension(42, AssetAddress::Evm(address), server.url().as_str())
+                .await;
+        assert_eq!(r, IconQuery::Failed);
+    }
+
+    /// Empty files are not icons, so one left next to an icon must not hide it
+    #[tokio::test]
+    async fn test_search_icon_skips_empty_files() {
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let path = tmp_dir.path().join("MON_small");
+        // png is looked up before svg, so an empty png checks that it is skipped
+        tokio::fs::write(tmp_dir.path().join("MON_small.png"), [])
+            .await
+            .unwrap();
+        assert_eq!(search_icon_in_path(&path).await, None);
+
+        tokio::fs::write(tmp_dir.path().join("MON_small.svg"), b"icon")
+            .await
+            .unwrap();
+        assert_eq!(
+            search_icon_in_path(&path).await,
+            Some(tmp_dir.path().join("MON_small.svg")),
+        );
+        assert_eq!(
+            search_icon_in_path(&tmp_dir.path().join("BTC_small")).await,
+            None
+        );
+    }
+
+    /// Writing an icon removes the not found marker, and a marker is never
+    /// written next to an existing icon
+    #[tokio::test]
+    async fn test_write_icon_and_marker() {
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let path = tmp_dir.path().join("USDC.e_small");
+        let (png_path, marker_path) = (
+            tmp_dir.path().join("USDC.e_small.png"),
+            tmp_dir.path().join("USDC.e_small.notfound"),
+        );
+        write_not_found_marker(&path).await;
+        assert_eq!(tokio::fs::read(&marker_path).await.unwrap(), b"");
+        assert_eq!(
+            find_not_found_marker(&path).await.map(|(x, _)| x),
+            Some(marker_path.clone()),
+        );
+        assert_eq!(search_icon_in_path(&path).await, None);
+
+        write_icon_to_file(&path, "png", b"icon").await;
+        assert_eq!(tokio::fs::read(&png_path).await.unwrap(), b"icon");
+        assert!(!marker_path.exists());
+
+        write_not_found_marker(&path).await;
+        assert!(!marker_path.exists());
+        assert_eq!(tokio::fs::read(&png_path).await.unwrap(), b"icon");
+        assert_eq!(std::fs::read_dir(tmp_dir.path()).unwrap().count(), 1);
     }
 
     #[tokio::test]
