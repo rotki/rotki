@@ -417,6 +417,41 @@ def test_missing_api_key_warns_once(blockscout: Blockscout) -> None:
     assert notifier.pop_message() is None
 
 
+@pytest.mark.parametrize('status_code', [HTTPStatus.UNAUTHORIZED, HTTPStatus.PAYMENT_REQUIRED])
+def test_rejected_api_key_reports_usable_key_problem(
+        blockscout: Blockscout,
+        status_code: HTTPStatus,
+) -> None:
+    """A PRO response can reject an existing key because it is invalid or lacks chain access.
+
+    This is not a missing-key problem, so the websocket message must let the frontend explain
+    that the configured key or plan needs attention and identify the affected chain.
+    """
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is not None
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(
+            blockscout.session,
+            'request',
+            return_value=MockResponse(status_code, '{"error":"API key is not authorized"}'),
+        ),
+        pytest.raises(RemoteError, match='could not authorize the configured API key for Base'),
+    ):
+        blockscout._query_and_process(
+            chain_id=ChainID.BASE,
+            endpoint='account.tokentx',
+            query_str='https://api.blockscout.com/8453/api',
+        )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.message_type == WSMessageType.MISSING_API_KEY
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+
+
 @pytest.mark.parametrize('include_blockscout_key', [False])
 def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) -> None:
     """The PRO endpoints reject keyless queries, so we must not spend a request on one.

@@ -106,6 +106,24 @@ describe('createMissingApiKeyHandler', () => {
     expect(mockOpenUrl).toHaveBeenCalledOnce();
   });
 
+  it('should distinguish an unusable blockscout key from a missing key', async () => {
+    const handler = createMissingApiKeyHandler(mockT, router);
+    const result = await handler.handle({
+      location: 'Base',
+      reason: 'key_not_usable',
+      service: 'blockscout',
+    });
+
+    assert(result);
+    expect(result.i18nParam?.message).toBe('notification_messages.missing_api_key.blockscout.rejected_message');
+    expect(result.i18nParam?.props).toMatchObject({
+      location: 'Base',
+      reason: 'key_not_usable',
+      service: 'Blockscout',
+    });
+    expect(result.title).toContain('notification_messages.missing_api_key.blockscout.rejected_title');
+  });
+
   it('should not offer a get-key action for etherscan', async () => {
     const handler = createMissingApiKeyHandler(mockT, router);
     const result = await handler.handle({ service: 'etherscan' });

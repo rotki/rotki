@@ -72,8 +72,19 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
         self.maybe_warn_missing_key()
         return None
 
-    def maybe_warn_missing_key(self) -> None:
-        """Warns the user once if the Helius api key is missing."""
+    def maybe_warn_missing_key(
+            self,
+            location: str | None = None,
+            reason: str | None = None,
+    ) -> None:
+        """Warn the user once if the service has no usable API key."""
         if not self.warning_given:
-            self.db.msg_aggregator.add_missing_key_message(self.service_name)
+            if location is None and reason is None:
+                self.db.msg_aggregator.add_missing_key_message(self.service_name)
+            else:
+                self.db.msg_aggregator.add_missing_key_message(
+                    service=self.service_name,
+                    location=location,
+                    reason=reason,
+                )
             self.warning_given = True

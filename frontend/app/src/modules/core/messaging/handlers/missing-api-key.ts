@@ -92,6 +92,8 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
   return createNotificationHandler<MissingApiKey>((data) => {
     const { service } = data;
     const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
+    const blockscoutKeyNotUsable = service === SuppressibleMissingKeyService.BLOCKSCOUT
+      && data.reason === 'key_not_usable';
 
     const actions = buildActions(service, route, external);
 
@@ -112,8 +114,12 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       },
       [SuppressibleMissingKeyService.BLOCKSCOUT]: {
         category: NotificationCategory.BLOCKSCOUT,
-        messageKey: msg.$t('notification_messages.missing_api_key.blockscout.message'),
-        titleKey: msg.$t('notification_messages.missing_api_key.blockscout.title'),
+        messageKey: blockscoutKeyNotUsable
+          ? msg.$t('notification_messages.missing_api_key.blockscout.rejected_message')
+          : msg.$t('notification_messages.missing_api_key.blockscout.message'),
+        titleKey: blockscoutKeyNotUsable
+          ? msg.$t('notification_messages.missing_api_key.blockscout.rejected_title')
+          : msg.$t('notification_messages.missing_api_key.blockscout.title'),
       },
       [SuppressibleMissingKeyService.ETHERSCAN]: {
         category: NotificationCategory.ETHERSCAN,

@@ -513,6 +513,33 @@ def test_query_timeout_asks_for_a_smaller_range(temp_etherscan: Etherscan) -> No
         )
 
 
+def test_transient_server_busy_response_is_retried(temp_etherscan: Etherscan) -> None:
+    """Etherscan occasionally returns an HTTP 200 with a null result while overloaded.
+
+    Treating this as malformed immediately moves to a less preferred indexer. Retry it with the
+    existing bounded backoff first. This is especially important when using a paid Etherscan key.
+    """
+    with (
+        patch.object(temp_etherscan.session, 'get', side_effect=[
+            MockResponse(
+                HTTPStatus.OK,
+                '{"status":"0","message":"Unexpected error, timeout or server too busy. Please try again later","result":null}',  # noqa: E501
+            ),
+            MockResponse(HTTPStatus.OK, '{"status":"1","message":"OK","result":[]}'),
+        ]) as get_mock,
+        patch('rotkehlchen.externalapis.etherscan_like.cancellable_sleep') as sleep_mock,
+    ):
+        assert temp_etherscan._query(
+            chain_id=ChainID.BASE,
+            module='account',
+            action='tokentx',
+            options={'address': make_evm_address()},
+        ) == []
+
+    assert get_mock.call_count == 2
+    sleep_mock.assert_called_once_with(1)
+
+
 @pytest.mark.parametrize(('extra_fields', 'expected_fee'), [
     ({'L1FeesPaid': '12345'}, 12345),
     ({'L1FeesPaid': '0'}, 0),

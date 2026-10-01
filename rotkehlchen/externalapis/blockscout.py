@@ -57,9 +57,9 @@ BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # DoS our own backend.
 BLOCKSCOUT_RATE_LIMIT_RPS: Final = 10.0
 BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
-# The PRO endpoints reject keyless queries with 401, or with 402 asking for a key or an
-# x402 payment. Both mean the same thing for us: no usable API key.
-KEY_REQUIRED_STATUS_CODES: Final = (401, 402)
+# The PRO endpoints reject an invalid key with 401, or a key whose plan does not cover the
+# requested chain with 402. Keyless queries are rejected locally before making a request.
+KEY_REJECTED_STATUS_CODES: Final = (401, 402)
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -236,17 +236,22 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 cancellable_sleep(sleep_seconds)
                 continue
 
-            if response.status_code in KEY_REQUIRED_STATUS_CODES:
+            if (
+                response.status_code in KEY_REJECTED_STATUS_CODES and
+                chain_id not in AUTOSCOUT_INSTANCES
+            ):
                 # Keyless queries never get this far (_get_url bails out first), so reaching
                 # here means the configured key was rejected as invalid, expired or out of
-                # quota. Flag it as a key problem rather than a generic request failure, since
-                # on a chain where blockscout leads it is otherwise unqueryable with no
-                # explanation of why.
-                self.maybe_warn_missing_key()
+                # quota, or its plan does not cover this chain. Distinguish that from a missing
+                # key so the UI does not tell the user to add a credential that already exists.
+                self.maybe_warn_missing_key(
+                    location=chain_id.label(),
+                    reason='key_not_usable',
+                )
                 raise RemoteError(
-                    f'Blockscout API request {response.url} requires an API key. '
-                    f'It failed with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
+                    f'Blockscout API request {response.url} could not authorize the configured '
+                    f'API key for {chain_id.label()}. It failed with HTTP status code '
+                    f'{response.status_code} and text {response.text}',
                 )
 
             if response.status_code != 200:

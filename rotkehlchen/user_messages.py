@@ -122,9 +122,12 @@ class MessagesAggregator:
             self,
             service: ExternalService,
             location: str | None = None,
+            reason: str | None = None,
     ) -> None:
-        """Send a missing key message for the specified service unless this service is marked
-        to have its missing key messages suppressed.
+        """Send an API key problem for the specified service unless its messages are suppressed.
+
+        ``reason`` distinguishes a missing credential from a configured credential that the
+        service rejected, while keeping both cases on the existing websocket message type.
         """
         if service in CachedSettings().get_settings().suppress_missing_key_msg_services:
             return
@@ -132,6 +135,8 @@ class MessagesAggregator:
         data = {'service': service.serialize()}
         if location is not None:
             data['location'] = location
+        if reason is not None:
+            data['reason'] = reason
 
         self.add_message(message_type=WSMessageType.MISSING_API_KEY, data=data)
 

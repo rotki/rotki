@@ -233,16 +233,17 @@ class EtherscanLikeApi(ABC):
         """Return optional account endpoint pagination params for an indexer."""
         return None
 
-    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> bool:
         """Hook for subclasses to map a response carrying no result to a specific error.
 
         Called just before the generic "missing a result" RemoteError is raised, so an
         indexer that answers an oversized query with a distinguishable message can turn it
         into something callers are able to act on instead of a malformed-response error.
 
+        Returns True when the response is transient and the query should be retried.
         May raise RemoteError or any of its subclasses.
         """
-        return  # no-op by default, the generic error is raised right after
+        return False  # no-op by default, the generic error is raised right after
 
     @overload
     def _query(
@@ -410,7 +411,18 @@ class EtherscanLikeApi(ABC):
 
             try:
                 if (result := json_ret.get('result')) is None:
-                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
+                    if self._handle_missing_result(chain_id=chain_id, json_ret=json_ret):
+                        log.debug(
+                            'Got a transient missing-result response from %s while querying %s. '
+                            'Will backoff for %s seconds.',
+                            self.name,
+                            chain_id,
+                            backoff,
+                        )
+                        cancellable_sleep(backoff)
+                        backoff *= 2
+                        continue
+
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
