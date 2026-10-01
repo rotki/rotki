@@ -108,8 +108,9 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
     runs-on: ${{ matrix.os.runner }}
-    # observed max: arm64 18m, x86_64 29m. x86_64 intermittently hangs forever in
-    # PyInstaller's codesign --timestamp (network call, no subprocess timeout).
+    # observed max: arm64 18m, x86_64 29m. x86_64 used to hang forever in
+    # PyInstaller's codesign when the build keychain auto-locked after 300 s;
+    # package.py now raises that limit.
     timeout-minutes: 45
     permissions:
       contents: read
