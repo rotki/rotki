@@ -121,6 +121,43 @@ def binaries_above_macos(
     return offenders
 
 
+WINDOWS_PUBLISHER = 'Rotki Solutions GmbH'
+
+
+def missing_windows_resources(path: Path) -> tuple[list[str], dict[str, str]]:
+    """
+    Which of the version info, icon and manifest the Windows executable at ``path``
+    lacks, and its version strings. The version info only counts when it names
+    rotki's publisher, so a default resource from a toolchain does not pass.
+    """
+    import pefile  # installed with PyInstaller, which needs it on Windows
+
+    pe = pefile.PE(str(path), fast_load=True)
+    try:
+        pe.parse_data_directories(
+            directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']],
+        )
+        resources = getattr(pe, 'DIRECTORY_ENTRY_RESOURCE', None)
+        resource_types = set() if resources is None else {entry.id for entry in resources.entries}
+        strings = {
+            key.decode(): value.decode()
+            for file_info in getattr(pe, 'FileInfo', [])
+            for entry in file_info
+            for table in getattr(entry, 'StringTable', [])
+            for key, value in table.entries.items()
+        }
+    finally:
+        pe.close()
+
+    missing = [
+        name for name, resource_type in (('icon', 'RT_GROUP_ICON'), ('manifest', 'RT_MANIFEST'))
+        if pefile.RESOURCE_TYPE[resource_type] not in resource_types
+    ]
+    if strings.get('CompanyName') != WINDOWS_PUBLISHER:
+        missing.append('version info')
+    return missing, strings
+
+
 def env_var_to_bool(value: str | None) -> bool:
     if value is None:
         return False
@@ -786,6 +823,9 @@ class BackendBuilder:
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))
 
+        if win is not None:
+            self.__check_windows_resources()
+
         self.__move_to_dist()
         self._move_colibri_to_dist()
         self._move_starling_to_dist()
@@ -969,6 +1009,29 @@ class BackendBuilder:
         if len(offenders) != 0:
             sys.exit(1)
         logger.info('every bundled binary runs on macOS %d.%d %s', *target, arch)
+
+    @log_group('Windows resources')
+    def __check_windows_resources(self) -> None:
+        """
+        Fails the build when one of the executables rotki builds lacks its version
+        info, icon or manifest, and logs the version strings each one carries
+        """
+        storage = self.__storage
+        core_pattern = f'**/{BACKEND_PREFIX}-*-{self.__env.backend_suffix()}'
+        executables = [
+            storage.colibri_directory / 'bin' / 'colibri.exe',
+            storage.starling_directory / 'bin' / 'starling.exe',
+            next(storage.backend_directory.glob(core_pattern)),
+        ]
+        failed = False
+        for executable in executables:
+            missing, strings = missing_windows_resources(executable)
+            logger.info('%s: %s', executable.name, strings)
+            if len(missing) != 0:
+                logger.error('%s has no %s', executable, ', '.join(missing))
+                failed = True
+        if failed:
+            sys.exit(1)
 
     @log_group('Pyinstaller')
     def __install_pyinstaller(self) -> None:
