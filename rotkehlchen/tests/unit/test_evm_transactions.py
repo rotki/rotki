@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS
@@ -35,6 +36,7 @@ from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import (
@@ -1711,3 +1713,47 @@ def test_sync_resolves_its_end_once(
                     cursor=cursor,
                     name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
                 ) == (start_ts, end_ts)
+
+
+def test_sync_settles_every_address_when_query_end_is_unknown(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A sync whose end block cannot be resolved must still settle each of its addresses.
+
+    The frontend seeds every address of a sync as pending and only moves it on when the
+    address reports QUERYING_TRANSACTIONS_FINISHED or the sync task fails. query_chain used
+    to swallow the failed end lookup and return without querying any address, so neither
+    happened and the addresses stayed pending forever. This is what the history page showed
+    for base once every indexer refused the chain.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    notifier = MockRotkiNotifier()
+    with ExitStack() as stack:
+        for _, indexer in inquirer._get_indexers_in_order():
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=RemoteError('FAIL'),
+            ))
+        get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        transactions.query_chain(
+            from_timestamp=(start_ts := Timestamp(0)),
+            to_timestamp=(end_ts := ts_now()),
+            addresses=(addresses := [make_evm_address(), make_evm_address()]),
+        )
+
+    assert get_transactions.call_count == 0
+    assert [
+        msg.data for msg in notifier.messages
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ] == [{
+        'address': address,
+        'chain': inquirer.blockchain.value,
+        'subtype': 'evm',
+        'period': [start_ts, end_ts],
+        'status': str(status),
+    } for address in addresses for status in (
+        TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+    )]

@@ -95,28 +95,20 @@ def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
             **kwargs: Any,
     ) -> Any:
         with self.address_tx_locks[address]:
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [start_ts, end_ts],
-                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
-                },
+            self._notify_tx_query_status(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
             )
             try:
                 result = func(self, address, start_ts, end_ts, *args, **kwargs)
             finally:  # always send completion status to prevent inconclusive frontend state
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.TRANSACTION_STATUS,
-                    data={
-                        'address': address,
-                        'chain': self.evm_inquirer.blockchain.value,
-                        'subtype': str(TransactionStatusSubType.EVM),
-                        'period': [start_ts, end_ts],
-                        'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
-                    },
+                self._notify_tx_query_status(
+                    address=address,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
                 )
 
             return result
@@ -139,6 +131,30 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
+
+    def _notify_tx_query_status(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            status: TransactionStatusStep,
+    ) -> None:
+        """Tell the frontend which step the transactions query of an address is at.
+
+        The frontend tracks each address of a sync from these messages and keeps it pending
+        until it gets QUERYING_TRANSACTIONS_FINISHED, so every query that sends a start must
+        also send a finish, even if it fails or ends up querying nothing.
+        """
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'chain': self.evm_inquirer.blockchain.value,
+                'subtype': str(TransactionStatusSubType.EVM),
+                'period': [start_ts, end_ts],
+                'status': str(status),
+            },
+        )
 
     def _batch_ensure_evm_txns_in_db(
             self,
@@ -355,6 +371,18 @@ class EvmTransactions(ABC):  # noqa: B024
                     end_ts=query_end.timestamp,
                     query_end=query_end,
                 )
+        else:  # nothing gets queried, but each address still has to report it is done
+            for address in addresses:  # or the frontend keeps waiting for it
+                for status in (
+                    TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+                    TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+                ):
+                    self._notify_tx_query_status(
+                        address=address,
+                        start_ts=from_timestamp,
+                        end_ts=to_timestamp,
+                        status=status,
+                    )
 
         self.get_chain_specific_multiaddress_data(addresses)
 
