@@ -9,10 +9,12 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface PriceRefreshTask {
   ignoreCache: boolean;
   selectedAssets: string[];
+  queuedInSession: number;
   resolve: () => void;
   reject: (error: any) => void;
 }
@@ -29,6 +31,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const isProcessingQueue = ref<boolean>(false);
 
   const { updatePrices } = useBalancesStore();
+  const { sessionEpoch } = useNativeTask();
   const { prices } = storeToRefs(useBalancePricesStore());
   const { collectionMainAssets } = storeToRefs(useCollectionMappingStore());
   const { missingCustomAssets } = useManualBalanceData();
@@ -56,7 +59,10 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     // Loading status is owned by the native PRICES activity (see use-fetch-prices); no manual
     // setStatus here. Read it via `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`.
     if (ignoreCache) {
+      const session = sessionEpoch();
       await fetchExchangeRates();
+      if (sessionEpoch() !== session)
+        return;
     }
 
     await fetchPrices({
@@ -81,7 +87,8 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
           break;
 
         try {
-          await performPriceFetch(task.ignoreCache, task.selectedAssets);
+          if (task.queuedInSession === sessionEpoch())
+            await performPriceFetch(task.ignoreCache, task.selectedAssets);
           task.resolve();
         }
         catch (error) {
@@ -99,6 +106,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     new Promise<void>((resolve, reject) => {
       const task: PriceRefreshTask = {
         ignoreCache,
+        queuedInSession: sessionEpoch(),
         reject,
         resolve,
         selectedAssets,
