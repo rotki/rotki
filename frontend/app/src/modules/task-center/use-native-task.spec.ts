@@ -316,5 +316,16 @@ describe('useNativeTask', () => {
       expect(raced).toBe('settled');
       expect(run).toHaveBeenCalledOnce();
     });
+
+    it('should move the session epoch on reset and only then', () => {
+      const { reset, sessionEpoch } = useNativeTask();
+      const before = sessionEpoch();
+
+      expect(sessionEpoch()).toBe(before);
+
+      reset();
+
+      expect(sessionEpoch()).not.toBe(before);
+    });
   });
 });
