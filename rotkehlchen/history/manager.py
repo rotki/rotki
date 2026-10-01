@@ -196,6 +196,7 @@ class HistoryQueryingManager:
 
         step = self._increase_progress(step, total_steps)
 
+        incomplete_chains: list[str] = []  # reported once after the loop, not once per chain
         for blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
             str_blockchain = str(blockchain)
             self.processing_state_name = f'Querying {str_blockchain} transactions history'
@@ -213,13 +214,8 @@ class HistoryQueryingManager:
                     to_timestamp=end_ts,
                     addresses=list(active_addresses),  # EVM chains => ChecksumEvmAddress tuple
                 )
-            except IncompleteTransactionsQuery as e:
-                msg = str(e)
-                self.msg_aggregator.add_error(
-                    f'{msg} The final history result may be missing some {str_blockchain} '
-                    'transactions',
-                )
-                empty_or_error += '\n' + msg
+            except IncompleteTransactionsQuery:
+                incomplete_chains.append(str_blockchain)
             except RemoteError as e:
                 msg = str(e)
                 self.msg_aggregator.add_error(
@@ -236,6 +232,15 @@ class HistoryQueryingManager:
             self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
             evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
             step = self._increase_progress(step, total_steps)
+
+        if len(incomplete_chains) != 0:
+            msg = (
+                f'Could not query all {", ".join(incomplete_chains)} transactions. The '
+                'final history result may be missing some of them. They will be retried by '
+                'the next sync.'
+            )
+            self.msg_aggregator.add_error(msg)
+            empty_or_error += '\n' + msg
 
         # include eth2 staking events
         eth2 = self.chains_aggregator.get_module('eth2')
