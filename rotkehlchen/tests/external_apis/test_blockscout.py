@@ -1,8 +1,10 @@
+import datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import ANY, patch
 
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -16,7 +18,11 @@ from rotkehlchen.errors.misc import (
     IndexerRangeNotCovered,
     RemoteError,
 )
-from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
+from rotkehlchen.externalapis.blockscout import (
+    BLOCKSCOUT_PAGINATION_LIMIT,
+    KEY_REJECTED_SKIP_SECONDS,
+    Blockscout,
+)
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
@@ -32,6 +38,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -528,6 +535,38 @@ def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) 
 
     # the self-hosted instances need no key, so they must stay queryable
     assert blockscout._get_url(chain_id=ChainID.HYPERLIQUID) == 'https://www.hyperscan.com/api'
+
+
+def test_rejected_chain_is_skipped_for_a_while(blockscout: Blockscout) -> None:
+    """A chain the configured key was rejected for is skipped without spending a request.
+
+    Each query would otherwise make a request bound to fail before falling back to the next
+    indexer. The skip only applies to the rejected chain, expires so a key that regains access
+    recovers, and is dropped when the key changes.
+    """
+    with (
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.PAYMENT_REQUIRED,
+            '{"error":"plan does not cover this chain"}',
+        )) as request_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        with pytest.raises(RemoteError, match='recently rejected the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        assert blockscout._get_url(chain_id=ChainID.GNOSIS) == 'https://api.blockscout.com/100/api'
+
+        frozen.move_to(start + datetime.timedelta(seconds=KEY_REJECTED_SKIP_SECONDS))
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+        blockscout.key_rejected_chains[ChainID.BASE] = ts_now()
+        blockscout.on_api_key_changed()
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
 
 
 def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:

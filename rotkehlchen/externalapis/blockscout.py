@@ -34,7 +34,13 @@ from rotkehlchen.types import (
     ExternalService,
     Timestamp,
 )
-from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.misc import (
+    from_wei,
+    iso8601ts_to_timestamp,
+    set_user_agent,
+    ts_now,
+    ts_sec_to_ms,
+)
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -60,6 +66,10 @@ BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
 # The PRO endpoints reject an invalid key with 401, or a key whose plan does not cover the
 # requested chain with 402. Keyless queries are rejected locally before making a request.
 KEY_REJECTED_STATUS_CODES: Final = (401, 402)
+# How long to skip a chain whose requests were rejected for the configured key. Every query
+# on it would only spend a request before falling back to the next indexer. Not skipped for
+# good, since a key that ran out of quota or had its plan upgraded recovers on its own.
+KEY_REJECTED_SKIP_SECONDS: Final = 600
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -105,6 +115,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         set_user_agent(self.session)
         self.api_urls: dict[ChainID, str] = {}
         self.rpc_urls: dict[ChainID, str] = {}
+        # Chains whose requests were rejected for the configured key, and when that happened
+        self.key_rejected_chains: dict[ChainID, Timestamp] = {}
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
             if chain_id in AUTOSCOUT_INSTANCES:
                 self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
@@ -115,6 +127,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
     def on_api_key_changed(self) -> None:
         self.reset_api_key_state()
+        self.key_rejected_chains.clear()
         super().on_api_key_changed()
 
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
@@ -130,6 +143,15 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             raise RemoteError(
                 f'Blockscout has no API key configured, which its endpoint for '
                 f'{chain_id.name} requires. Skipping it.',
+            )
+
+        if (
+                (rejected_ts := self.key_rejected_chains.get(chain_id)) is not None and
+                ts_now() - rejected_ts < KEY_REJECTED_SKIP_SECONDS
+        ):
+            raise RemoteError(
+                f'Blockscout recently rejected the configured API key for {chain_id.name}. '
+                f'Skipping it.',
             )
 
         return url
@@ -248,6 +270,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 # here means the configured key was rejected as invalid, expired or out of
                 # quota, or its plan does not cover this chain. Distinguish that from a missing
                 # key so the UI does not tell the user to add a credential that already exists.
+                self.key_rejected_chains[chain_id] = ts_now()
                 self.maybe_warn_missing_key(
                     location=chain_id.label(),
                     reason='key_not_usable',
