@@ -67,7 +67,6 @@ describe('shouldShowDateRangePicker', () => {
     expect(shouldShowDateRangePicker(false, { location: 'coinbase' })).toBe(false);
     expect(shouldShowDateRangePicker(false, { location: 'binance' })).toBe(false);
     expect(shouldShowDateRangePicker(false, { location: 'binanceus' })).toBe(false);
-    expect(shouldShowDateRangePicker(false, { location: 'bitmex' })).toBe(false);
   });
 
   it('should return true for exchanges with date range filter', () => {

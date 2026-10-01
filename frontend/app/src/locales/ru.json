@@ -2218,7 +2218,6 @@
       "kraken_futures_keys": "Ключи для фьючерсов",
       "passphrase": "Парольная фраза",
       "private_key": "Приватный ключ",
-      "secret": "Секрет",
       "signing_key": "Ключ подписи"
     },
     "keys": "Ключи",

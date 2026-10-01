@@ -18,7 +18,6 @@ const EXCHANGES_WITHOUT_DATE_RANGE_FILTER: string[] = [
   'coinbase',
   'binance',
   'binanceus',
-  'bitmex',
 ];
 
 export function shouldShowDateRangePicker(

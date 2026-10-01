@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -106,11 +106,14 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
 
     overview = report['overview']
     if start_ts == 0:
-        assert len(overview) == 5
         assert overview[str(AccountingEventType.ASSET_MOVEMENT)] is not None
-        assert overview[str(AccountingEventType.MARGIN_POSITION)] is not None
         assert overview[str(AccountingEventType.TRANSACTION_EVENT)] is not None
-        assert overview[str(AccountingEventType.FEE)] is not None
+        if fees_in_cost_basis is True:
+            assert len(overview) == 3
+            assert str(AccountingEventType.FEE) not in overview
+        else:
+            assert len(overview) == 4
+            assert overview[str(AccountingEventType.FEE)] is not None
     elif fees_in_cost_basis is True:  # start_ts is 1539713237
         assert len(overview) == 1
         # Fees events are not taxable in this case, so they should not be included in total pnls.
@@ -132,7 +135,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
     assert settings['include_fees_in_cost_basis'] == fees_in_cost_basis
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
-    entries_length = 37 if start_ts == 0 else 34
+    entries_length = 29
     assert events_result['entries_found'] == entries_length
     assert isinstance(events_result['entries'], list)
     # TODO: These events are not actually checked anywhere for correctness
@@ -181,7 +184,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -206,7 +209,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: APIS
         response=response,
         status_code=HTTPStatus.OK,
         contained_in_msg=[
-            'invalid JSON', 'binance', 'Bittrex', 'Bitmex', 'Kraken', 'Poloniex',
+            'invalid JSON', 'binance', 'Bittrex', 'Kraken', 'Poloniex',
         ],
     )
     warnings = rotki.msg_aggregator.consume_warnings()
@@ -321,7 +324,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server: APIServer) -> 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITMEX, Location.KRAKEN)],
+    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -381,7 +384,7 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x in reverse_master
             reverse_master.remove(x)
 
-    assert len(events) == 37
+    assert len(events) == 29
     for idx, x in enumerate(events):
         if idx == len(events) - 1:
             break

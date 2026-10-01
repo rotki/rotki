@@ -3165,12 +3165,10 @@
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
       "futures_api_key": "Futures API Key",
       "futures_api_secret": "Futures API Secret",
-      "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
       "kraken_futures_keys": "Futures Keys",
       "passphrase": "Passphrase",
       "private_key": "Private Key",
-      "secret": "Secret",
       "signing_key": "Signing Key"
     },
     "keys": "Keys",

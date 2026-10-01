@@ -10,11 +10,11 @@ import '@test/i18n';
 
 const KRAKEN: Exchange = { location: 'kraken', name: 'my kraken' };
 /** One of the exchanges that reports no date range, so the picker is hidden for it. */
-const BITMEX: Exchange = { location: 'bitmex', name: 'my bitmex' };
+const COINBASE: Exchange = { location: 'coinbase', name: 'my coinbase' };
 
 vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: (): Record<string, unknown> => ({
-    syncingExchanges: computed<Exchange[]>(() => [KRAKEN, BITMEX]),
+    syncingExchanges: computed<Exchange[]>(() => [KRAKEN, COINBASE]),
   }),
 }));
 
@@ -105,13 +105,13 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     expect(await harness.validate()).toBe(false);
   });
 
-  // Bitmex is one of the exchanges that reports no date range, so the picker is hidden for it and
+  // Coinbase is one of the exchanges that reports no date range, so the picker is hidden for it and
   // its rules go with it. Kraken, used everywhere else here, is not.
   it('should accept a missing range for an exchange that has no picker', async () => {
     harness = createWrapper({ ...basePayload(), fromTimestamp: undefined, toTimestamp: undefined });
     await vi.advanceTimersToNextTimerAsync();
 
-    await chooseExchange(BITMEX);
+    await chooseExchange(COINBASE);
 
     expect(await harness.validate()).toBe(true);
   });
@@ -120,7 +120,7 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     harness = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await chooseExchange(BITMEX);
+    await chooseExchange(COINBASE);
 
     expect(harness.model().fromTimestamp).toBeUndefined();
     expect(harness.model().toTimestamp).toBeUndefined();
