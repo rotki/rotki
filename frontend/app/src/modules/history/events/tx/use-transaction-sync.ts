@@ -55,8 +55,9 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * A failed query leaves its address claiming to be querying unless something says otherwise.
    *
    * A skipped task is not a failure: it never ran, so a chain with no API key reports "skipped" and
-   * must keep its own status. For a genuine failure, nothing else moves the address on: the backend
-   * emits `QUERYING_TRANSACTIONS_FINISHED` only on the success path, and evmlike chains send no
+   * must keep its own status. For a genuine failure, nothing else may move the address on: an EVM
+   * query that started ends with `querying_transactions_failed`, but a task can fail before it
+   * reaches the address, its messages can be lost with the socket, and evmlike chains send no
    * websocket messages at all. Network failing after retries is an ordinary outcome, not an
    * exception, so the status entry has to say so.
    *

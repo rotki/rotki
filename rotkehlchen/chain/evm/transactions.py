@@ -83,7 +83,12 @@ CHAIN_TOP_LAG: Final = 15
 
 
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
-    """Decorator to handle transaction query locking and status messaging."""
+    """Decorator to handle transaction query locking and status messaging.
+
+    The query ends with QUERYING_TRANSACTIONS_FAILED if it raised or returned False, which is
+    how a query reports failures it handles without raising, and with
+    QUERYING_TRANSACTIONS_FINISHED otherwise.
+    """
 
     @wraps(func)
     def wrapper(
@@ -94,6 +99,7 @@ def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
             *args: Any,
             **kwargs: Any,
     ) -> Any:
+        failed = True
         with self.address_tx_locks[address]:
             self._notify_tx_query_status(
                 address=address,
@@ -103,12 +109,17 @@ def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
             )
             try:
                 result = func(self, address, start_ts, end_ts, *args, **kwargs)
+                failed = result is False
             finally:  # always send completion status to prevent inconclusive frontend state
                 self._notify_tx_query_status(
                     address=address,
                     start_ts=start_ts,
                     end_ts=end_ts,
-                    status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+                    status=(
+                        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED
+                        if failed else
+                        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED
+                    ),
                 )
 
             return result
@@ -142,8 +153,8 @@ class EvmTransactions(ABC):  # noqa: B024
         """Tell the frontend which step the transactions query of an address is at.
 
         The frontend tracks each address of a sync from these messages and keeps it pending
-        until it gets QUERYING_TRANSACTIONS_FINISHED, so every query that sends a start must
-        also send a finish, even if it fails or ends up querying nothing.
+        until it gets QUERYING_TRANSACTIONS_FINISHED or QUERYING_TRANSACTIONS_FAILED, so every
+        query that sends a start must also send one of them, even if it ends up querying nothing.
         """
         self.msg_aggregator.add_message(
             message_type=WSMessageType.TRANSACTION_STATUS,
@@ -288,11 +299,15 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> bool:
         """Only queries new transactions and adds them to the DB
 
         query_end is the end of a sync over several addresses this query is part of, so
         they all stop at the same block. Without it the end is resolved from end_ts.
+
+        Indexer failures are not raised, since the ranges they leave unqueried are retried
+        by the next query. False is returned instead, which reports the address to the
+        frontend as failed.
 
         This is our attempt to identify as many transactions related to the address
         as possible. This unfortunately at the moment depends on etherscan as it's
@@ -304,37 +319,36 @@ class EvmTransactions(ABC):  # noqa: B024
             try:
                 query_end = self._resolve_query_end(end_ts)
             except RemoteError as e:
-                # Only the periodic task queries an address without a sync end. Nothing is
-                # waiting on its result and its next run retries, so failing it would only
-                # report the same error on every run.
                 log.warning(
                     'Skipping %s transactions query of %s up to %s: could not resolve its '
                     'end block due to %s',
                     self.evm_inquirer.chain_name, address, end_ts, e,
                 )
-                return
+                return False
 
         if query_end.timestamp < start_ts:
-            return  # the whole range is too recent to be indexed yet
+            return True  # the whole range is too recent to be indexed yet
 
-        self._get_transactions_for_range(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
-        self._get_internal_transactions_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
-        self._get_erc20_transfers_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
+        return all([  # a list, so every kind is queried even if one failed
+            self._get_transactions_for_range(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+            self._get_internal_transactions_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+            self._get_erc20_transfers_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+        ])
 
     def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd:
         """Return where a sync asked to end at end_ts stops.
@@ -351,18 +365,18 @@ class EvmTransactions(ABC):  # noqa: B024
         )
 
     @with_tx_status_messaging
-    def _settle_unqueried_address(
+    def _skip_address_query(
             self,
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> None:
-        """Report the transactions query of an address as ended without querying anything.
+    ) -> Literal[False]:
+        """Report the transactions query of an address as failed without querying anything.
 
-        For a sync that fails before querying any address. The frontend keeps every address
-        of a sync pending until its query ends, and the failed sync task then marks it failed.
+        For a sync that cannot query any address, so the frontend does not keep waiting on
+        them and does not show them as complete either.
         """
-        return None  # the decorator sends the messages
+        return False
 
     def query_chain(
             self,
@@ -377,8 +391,8 @@ class EvmTransactions(ABC):  # noqa: B024
         Saves the results in the database.
 
         May raise:
-        - RemoteError if the end block of the sync cannot be resolved. Each address is
-        still reported to the frontend as ended first, so none is left pending.
+        - RemoteError if etherscan is used and there is a problem with reaching it or
+        with parsing the response.
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
@@ -386,25 +400,24 @@ class EvmTransactions(ABC):  # noqa: B024
             query_end = self._resolve_query_end(to_timestamp)
         except RemoteError as e:
             log.warning(
-                'Failing %s transactions query up to %s: could not resolve its end block '
+                'Skipping %s transactions query up to %s: could not resolve its end block '
                 'due to %s',
                 self.evm_inquirer.chain_name, to_timestamp, e,
             )
-            for address in addresses:  # settle each address before failing the sync
-                self._settle_unqueried_address(
+            for address in addresses:
+                self._skip_address_query(
                     address=address,
                     start_ts=from_timestamp,
                     end_ts=to_timestamp,
                 )
-            raise
-
-        for address in addresses:
-            self.single_address_query_transactions(
-                address=address,
-                start_ts=from_timestamp,
-                end_ts=query_end.timestamp,
-                query_end=query_end,
-            )
+        else:
+            for address in addresses:
+                self.single_address_query_transactions(
+                    address=address,
+                    start_ts=from_timestamp,
+                    end_ts=query_end.timestamp,
+                    query_end=query_end,
+                )
 
         self.get_chain_specific_multiaddress_data(addresses)
 
@@ -636,10 +649,11 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> bool:
         """Queries etherscan for all evm transactions of address in the given ranges.
 
-        If any transactions are found, they are added in the DB
+        If any transactions are found, they are added in the DB. Returns False if a range
+        could not be queried.
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("txs")}_{address}'
         with self.database.conn.read_ctx() as cursor:
@@ -672,7 +686,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'Skipping {self.evm_inquirer.chain_name} transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return
+                return False
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
@@ -681,7 +695,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return
+                return False
 
         log.debug('%s transactions done for %s', self.evm_inquirer.chain_name, address)
         self._mark_range_as_queried(
@@ -690,6 +704,7 @@ class EvmTransactions(ABC):  # noqa: B024
             end_ts=end_ts,
             query_end=query_end,
         )
+        return True
 
     @overload
     def _query_and_save_internal_transactions_for_range(
@@ -1168,10 +1183,11 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> bool:
         """Queries etherscan for all erc20 transfers of address in the given ranges.
 
-        If any transfers are found, they are added in the DB
+        If any transfers are found, they are added in the DB. Returns False if a range
+        could not be queried.
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
         with self.database.conn.read_ctx() as cursor:
@@ -1205,7 +1221,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'Skipping {self.evm_inquirer.chain_name} token transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return
+                return False
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
@@ -1214,7 +1230,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return
+                return False
 
         log.debug('%s ERC20 Transfers done for address %s', self.evm_inquirer.chain_name, address)
         self._mark_range_as_queried(
@@ -1223,6 +1239,7 @@ class EvmTransactions(ABC):  # noqa: B024
             end_ts=end_ts,
             query_end=query_end,
         )
+        return True
 
     @overload
     def _query_and_save_erc20_transfers_for_range(

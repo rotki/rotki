@@ -623,27 +623,6 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(status.subtype).toBe('evm');
     });
 
-    it('should replace a FINISHED entry when the task fails after settling the address', () => {
-      // The backend settles every address of a chain whose end block it cannot resolve with
-      // STARTED and FINISHED, and then fails the task. FINISHED lands first, so the failure has to
-      // overwrite it or an address nothing was queried for reads as complete.
-      const store = useTxQueryStatusStore();
-      store.syncing = true;
-
-      store.setUnifiedTxQueryStatus({
-        address: '0x123',
-        chain: 'BASE',
-        period: [0, 1000],
-        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
-        subtype: 'evm',
-      });
-
-      store.markAddressFailed({ address: '0x123', chain: 'base' });
-
-      expect(get(store.queryStatus)['0x123base'].status).toBe(TransactionsQueryStatus.FAILED);
-      expect(get(store.isAllFinished)).toBe(true);
-    });
-
     it('should create the entry when the query failed before announcing itself', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;

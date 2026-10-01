@@ -10,7 +10,7 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS
+from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS, QueryEnd
 from rotkehlchen.chain.evm.transactions import CHAIN_TOP_LAG, MIN_SPLITTABLE_QUERY_RANGE
 from rotkehlchen.chain.evm.types import (
     EvmAccount,
@@ -1133,7 +1133,13 @@ def test_indexers_fall_back_properly(
     assert optimism_manager.node_inquirer.blockscout is not None
     txs_mocks, hashes_mocks, unused_mocks, have_reached_tested_indexer = [], [], [], False
     degraded_mocks: list[Any] = []
+    notifier = MockRotkiNotifier()
     with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            target=optimism_manager.transactions.msg_aggregator,
+            attribute='rotki_notifier',
+            new=notifier,
+        ))
         for indexer, name in (
             (optimism_manager.node_inquirer.etherscan, 'etherscan'),
             (optimism_manager.node_inquirer.blockscout, 'blockscout'),
@@ -1200,6 +1206,11 @@ def test_indexers_fall_back_properly(
     assert all(hashes_mock.call_args_list == hashes_mocks[0].call_args_list for hashes_mock in hashes_mocks)  # noqa: E501
     # Check that all unused indexers were not called
     assert all(unused_mock.call_count == 0 for unused_mock in unused_mocks)
+    # The indexers that failed before the tested one do not make the address fail
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ][-1] == str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED)
 
     # Check that the actual tx data is present in the DB
     dbevmtx = DBEvmTx(database)
@@ -1720,14 +1731,14 @@ def test_sync_resolves_its_end_once(
 def test_sync_settles_every_address_when_query_end_is_unknown(
         ethereum_manager: EthereumManager,
 ) -> None:
-    """A sync whose end block cannot be resolved must settle each of its addresses and fail.
+    """A sync whose end block cannot be resolved must settle each of its addresses as failed.
 
     The frontend seeds every address of a sync as pending and only moves it on when the
-    address reports QUERYING_TRANSACTIONS_FINISHED or the sync task fails. query_chain used
-    to swallow the failed end lookup and return without querying any address, so neither
-    happened and the addresses stayed pending forever. This is what the history page showed
-    for base once every indexer refused the chain. The error has to reach the task too, or the
-    frontend renders addresses nothing was queried for as complete.
+    address reports the end of its query or the sync task fails. query_chain used to swallow
+    the failed end lookup and return without querying any address, so neither happened and
+    the addresses stayed pending forever. This is what the history page showed for base once
+    every indexer refused the chain. Reporting them as finished instead would render
+    addresses nothing was queried for as complete.
 
     The messages of an address are sent under its query lock, so they cannot interleave with
     those of another query of that address that is already running.
@@ -1763,7 +1774,7 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
 
         wait([task], timeout=10)
 
-    assert isinstance(exception_of(task), RemoteError)
+    assert exception_of(task) is None
     assert get_transactions.call_count == 0
     assert status_messages() == [{
         'address': address,
@@ -1773,5 +1784,53 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
         'status': str(status),
     } for address in addresses for status in (
         TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
-        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED,
     )]
+
+
+def test_address_fails_when_every_indexer_fails_its_query(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """An address whose transactions no indexer could serve must be reported as failed.
+
+    The query does not raise, since the ranges left unqueried are retried by the next sync,
+    but the frontend has to show the address as failed rather than complete. It is only
+    reported once every indexer was tried for the query.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    notifier = MockRotkiNotifier()
+    with ExitStack() as stack:
+        indexers_get_transactions = []
+        for _, indexer in inquirer._get_indexers_in_order():
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                return_value=100,
+            ))
+            indexers_get_transactions.append(stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_transactions',
+                side_effect=RemoteError('FAIL'),
+            )))
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_token_transaction_data',
+                side_effect=RemoteError('FAIL'),
+            ))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        transactions.single_address_query_transactions(
+            address=make_evm_address(),
+            start_ts=Timestamp(0),
+            end_ts=(end_ts := Timestamp(1700000000)),
+            query_end=QueryEnd(timestamp=end_ts, block=100, failed=frozenset()),
+        )
+
+    assert len(indexers_get_transactions) > 1
+    assert all(mock.call_count != 0 for mock in indexers_get_transactions)
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED),
+    ]
