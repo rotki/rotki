@@ -15,9 +15,15 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.routescan import Routescan
-from rotkehlchen.sigil import create_sigil_events_batch, submit_sigil_batch
+from rotkehlchen.sigil import (
+    SIGIL_USER_AGENT,
+    create_sigil_events_batch,
+    create_sigil_user_agent,
+    submit_sigil_batch,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID
+from rotkehlchen.utils.misc import ROTKI_USER_AGENT
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -474,9 +480,23 @@ def test_sigil_batch_submission_checks_http_result(monkeypatch) -> None:
     monkeypatch.setattr(requests, 'post', post_mock)
     assert submit_sigil_batch(batch, timeout=5) is False
     assert post_mock.call_args.kwargs['json'] == batch
+    assert post_mock.call_args.kwargs['headers']['User-Agent'] == SIGIL_USER_AGENT
 
     post_mock.side_effect = requests.ConnectionError()
     assert submit_sigil_batch(batch, timeout=5) is False
+
+
+@pytest.mark.parametrize(('system', 'machine', 'expected_comment'), [
+    ('Linux', 'x86_64', '(Linux; x86_64)'),
+    ('Darwin', 'arm64', '(Macintosh; Mac OS X; arm64)'),
+    ('Windows', 'AMD64', '(Windows NT 10.0; AMD64)'),
+    ('FreeBSD', 'amd64', '(FreeBSD; amd64)'),
+])
+def test_sigil_user_agent_names_the_os(system: str, machine: str, expected_comment: str) -> None:
+    """A bare rotki/<version> is dropped by Umami's bot check on every release build."""
+    assert create_sigil_user_agent(system=system, machine=machine) == (
+        f'{ROTKI_USER_AGENT} {expected_comment}'
+    )
 
 
 def test_indexer_http_attempts_include_retries_and_normalize_blockscout_paths(
