@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
-import type { Filters } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import type { BalanceMutation, LocationAttribution } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { toSentenceCase } from '@rotki/common';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
@@ -14,6 +13,7 @@ import SnapshotBalanceDeleteDialog from '@/modules/dashboard/snapshots/component
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { useSnapshotBalanceDisplay } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-display';
+import { type Filters, revealHidden } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import {
   type IndexedBalanceSnapshot,
   useSnapshotBalanceRows,
@@ -64,7 +64,16 @@ const {
   warningsByIndex,
 } = useSnapshotBalanceDisplay(() => snapshot);
 
-const { fields, filteredData, hiddenCount, zeroValueCount } = useSnapshotBalanceRows(data, filters);
+const { fields, filteredData, hidden, hiddenCount, zeroValueCount } = useSnapshotBalanceRows(data, filters);
+
+const hiddenReasons = computed<string>(() => {
+  const { ignored, spam, zeroValue } = get(hidden);
+  return [
+    spam > 0 ? t('dashboard.snapshot.detail.balances.hidden_reason.spam', { count: spam }) : '',
+    ignored > 0 ? t('dashboard.snapshot.detail.balances.hidden_reason.ignored', { count: ignored }) : '',
+    zeroValue > 0 ? t('dashboard.snapshot.detail.balances.hidden_reason.zero_value', { count: zeroValue }) : '',
+  ].filter(Boolean).join(', ');
+});
 
 const emptyDescription = computed<string>(() =>
   get(data).length > 0 && get(filteredData).length === 0
@@ -168,10 +177,12 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
             <RuiChip
               v-if="hiddenCount > 0"
               size="sm"
+              clickable
               class="whitespace-nowrap"
               data-testid="snapshot-balances-hidden-count"
+              @click="filters = revealHidden(filters)"
             >
-              {{ t('dashboard.snapshot.detail.balances.hidden', { count: hiddenCount }, hiddenCount) }}
+              {{ t('dashboard.snapshot.detail.balances.hidden', { reasons: hiddenReasons }) }}
             </RuiChip>
             <!-- An action, not a filter: it used to sit inside the filter menu, where a destructive
                  sweep is not what a user opens a filter list expecting to find. -->
@@ -325,7 +336,7 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
             colspan="3"
             class="font-medium p-4"
           >
-            {{ t('common.total') }}
+            {{ t('dashboard.snapshot.detail.balances.total_with_hidden', { count: hiddenCount }, hiddenCount) }}
           </td>
           <td class="text-right font-bold p-4">
             <SnapshotFiatDisplay

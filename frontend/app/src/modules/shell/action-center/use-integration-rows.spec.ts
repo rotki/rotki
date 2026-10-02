@@ -5,7 +5,7 @@ import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const savedKeys = ref<Record<string, string>>({});
 const moneriumAuthenticated = ref<boolean>(false);
@@ -90,6 +90,16 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       set(savedKeys, { etherscan: 'a-key' });
 
       expect(get(result)).toEqual([]);
+    });
+
+    it('should keep a refused key\'s row while that key is saved, and say the key was refused', () => {
+      set(savedKeys, { blockscout: 'refused-key' });
+      useRaisedConditionsStore().raise({ keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'base', service: 'blockscout' });
+
+      const row = onlyRow();
+
+      expect(row.title).toBe('action_center.rows.integrations.missing_api_key.title_rejected::Base, Blockscout');
+      expect(row.description).toBe('action_center.rows.integrations.missing_api_key.description_blockscout_rejected::Base, Blockscout');
     });
 
     it('should take a row down once its service is suppressed, even one raised before', () => {
@@ -218,7 +228,7 @@ describe('modules/shell/action-center/use-integration-rows', () => {
   });
 
   it('should leave conditions of other modules to their own rows', () => {
-    useRaisedConditionsStore().raise({ chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
+    useRaisedConditionsStore().raise({ cause: NoIndexersCause.UNAVAILABLE, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
 
     expect(get(rows())).toEqual([]);
   });

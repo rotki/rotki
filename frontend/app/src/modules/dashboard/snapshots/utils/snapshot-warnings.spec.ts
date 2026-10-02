@@ -108,6 +108,11 @@ describe('modules/dashboard/snapshots/utils/snapshot-warnings', () => {
     expect(getSnapshotWarnings(current, { previousTotal: bigNumberify('0') })).toEqual([]);
   });
 
+  it('should measure the swing from the given current total instead of the stored one', () => {
+    const current = snapshot([balance({ usdValue: '1100' })], [location(TOTAL_LOCATION, '1100')]);
+    expect(getSnapshotWarnings(current, { currentTotal: bigNumberify('120'), previousTotal: bigNumberify('100') })).toEqual([]);
+  });
+
   it('should honour a custom swing threshold', () => {
     const current = snapshot([balance({ usdValue: '130' })], [location(TOTAL_LOCATION, '130')]);
     expect(getSnapshotWarnings(current, { previousTotal: bigNumberify('100'), swingThreshold: 0.2 }))

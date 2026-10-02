@@ -426,7 +426,7 @@ def test_airdrop_claim_calendar_reminders_remote_error(database: DBHandler, capl
 @pytest.mark.parametrize('base_accounts', [[
     '0x6730b1Df17E50217777EeE475E34815964e3BFb2',
 ]])
-def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer, optimism_accounts, optimism_inquirer, base_accounts, base_inquirer, database):  # noqa: E501
+def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer, optimism_accounts, optimism_inquirer, base_accounts, base_inquirer, database, allow_optimism_routescan):  # noqa: E501
     parameters = [
         (optimism_accounts, optimism_inquirer, '0xe2111cddcd42c8214770c7a3270490c31663cd8b4b20b3fc27018ca3ce7a3979', '2023-01-09 08:34:00 GMT'),  # noqa: E501
         (arbitrum_one_accounts, arbitrum_one_inquirer, '0xdb8e29f27a7b7b416f168e8135347703268a142b6776503e26419dbfc43bcabf', '2023-06-30 15:45:00 GMT'),  # noqa: E501

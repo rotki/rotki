@@ -30,6 +30,7 @@ const {
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): Record<string, unknown> => ({
+    getChainName: (chain: string): string => chain.toUpperCase(),
     isEarlyIntegrationChain,
     isEvm,
     isSolanaChains,
@@ -100,30 +101,21 @@ describe('useAccountFormWarnings', () => {
       expect(get(warnings)).toEqual([{ service: 'etherscan', type: 'apiKey' }]);
     });
 
-    /** With etherscan keyed, the fallback indexer is the one that would be queried keyless. */
-    it('should name blockscout once etherscan is keyed', () => {
+    it('should stay quiet once the leading indexer is keyed', () => {
       set(apiKeys, { etherscan: 'key' });
 
       const { warnings } = useAccountFormWarnings(adding(Blockchain.ETH));
 
-      expect(get(warnings)).toEqual([{ service: 'blockscout', type: 'apiKey' }]);
-    });
-
-    it('should stay quiet once both are keyed', () => {
-      set(apiKeys, { blockscout: 'key', etherscan: 'key' });
-
-      const { warnings } = useAccountFormWarnings(adding(Blockchain.ETH));
-
       expect(get(warnings)).toEqual([]);
     });
 
-    /** A chain that does not put etherscan first never queries it, so a missing key costs nothing. */
-    it('should stay quiet when etherscan does not lead for that chain', () => {
+    it('should name blockscout and the chain when blockscout leads that chain without a key', () => {
       set(evmIndexersOrder, { ethereum: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN] });
 
-      const { warnings } = useAccountFormWarnings(adding(Blockchain.ETH));
+      const { blockscoutKeyChainNames, warnings } = useAccountFormWarnings(adding(Blockchain.ETH));
 
-      expect(get(warnings)).toEqual([]);
+      expect(get(warnings)).toEqual([{ service: 'blockscout', type: 'apiKey' }]);
+      expect(get(blockscoutKeyChainNames)).toEqual(['ETH']);
     });
 
     it('should fall back to the default order for a chain with no order of its own', () => {
@@ -131,7 +123,16 @@ describe('useAccountFormWarnings', () => {
 
       const { warnings } = useAccountFormWarnings(adding(Blockchain.ETH));
 
-      expect(get(warnings)).toEqual([]);
+      expect(get(warnings)).toEqual([{ service: 'blockscout', type: 'apiKey' }]);
+    });
+
+    it('should read the order of a chain whose evm name is snake case', () => {
+      set(txEvmChains, [{ evmChainName: 'polygon_pos', id: 'polygon_pos' }]);
+      set(evmIndexersOrder, { polygon_pos: [EvmIndexer.BLOCKSCOUT] });
+
+      const { warnings } = useAccountFormWarnings(adding('polygon_pos'));
+
+      expect(get(warnings)).toEqual([{ service: 'blockscout', type: 'apiKey' }]);
     });
 
     it('should stay quiet on a chain that is not evm', () => {

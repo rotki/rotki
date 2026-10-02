@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createNoAvailableIndexersHandler } from '@/modules/core/messaging/handlers/no-available-indexers';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 describe('createNoAvailableIndexersHandler', () => {
   beforeEach(() => {
@@ -14,27 +14,30 @@ describe('createNoAvailableIndexersHandler', () => {
 
     expect(result).toBeNull();
     expect(useRaisedConditionsStore().conditions).toEqual([
-      { chain: 'optimism', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false },
+      { cause: NoIndexersCause.UNAVAILABLE, chain: 'optimism', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS },
     ]);
   });
 
-  it('should record a paid etherscan key as the way out when that is the reason given', async () => {
+  it.each([
+    ['etherscan_paid_key_required', NoIndexersCause.PAID_ETHERSCAN_KEY],
+    ['blockscout_or_paid_etherscan_key_required', NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY],
+  ])('should record the cause of reason %s', async (reason, cause) => {
     const handler = createNoAvailableIndexersHandler();
 
-    await handler.handle({ chain: 'base', reason: 'etherscan_paid_key_required' });
+    await handler.handle({ chain: 'base', reason });
 
     expect(useRaisedConditionsStore().conditions).toEqual([
-      { chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: true },
+      { cause, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS },
     ]);
   });
 
-  it('should not read an unrecognised reason as a paid key requirement', async () => {
+  it('should not read an unrecognised reason as a key requirement', async () => {
     const handler = createNoAvailableIndexersHandler();
 
     await handler.handle({ chain: 'base', reason: 'rate_limited' });
 
     expect(useRaisedConditionsStore().conditions).toEqual([
-      { chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false },
+      { cause: NoIndexersCause.UNAVAILABLE, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS },
     ]);
   });
 
@@ -45,5 +48,25 @@ describe('createNoAvailableIndexersHandler', () => {
     await handler.handle({ chain: 'binance_sc' });
 
     expect(useRaisedConditionsStore().conditions).toHaveLength(2);
+  });
+
+  it('should raise nothing for an incomplete blockscout response, since the failed sync shows in the dock', async () => {
+    const handler = createNoAvailableIndexersHandler();
+
+    const result = await handler.handle({ chain: 'optimism', reason: 'blockscout_incomplete_response' });
+
+    expect(result).toBeNull();
+    expect(useRaisedConditionsStore().conditions).toEqual([]);
+  });
+
+  it('should leave the key requirement of a chain in place when an incomplete response follows it', async () => {
+    const handler = createNoAvailableIndexersHandler();
+
+    await handler.handle({ chain: 'optimism', reason: 'etherscan_paid_key_required' });
+    await handler.handle({ chain: 'optimism', reason: 'blockscout_incomplete_response' });
+
+    expect(useRaisedConditionsStore().conditions).toEqual([
+      { cause: NoIndexersCause.PAID_ETHERSCAN_KEY, chain: 'optimism', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS },
+    ]);
   });
 });

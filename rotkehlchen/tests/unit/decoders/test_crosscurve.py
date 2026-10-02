@@ -38,7 +38,11 @@ OPTIMISM_INDEXER_ORDER = [{
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', OPTIMISM_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_crosscurve_bridge_send(optimism_inquirer: OptimismInquirer, optimism_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_send(
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+        allow_optimism_routescan: None,
+) -> None:
     """Data taken from
     https://optimistic.etherscan.io/tx/0xa2f971ba5af848948e0930ab0f86b70751d595e7c79111aa863681a117924e71
     """

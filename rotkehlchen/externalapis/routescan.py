@@ -6,7 +6,7 @@ from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.externalapis.utils import maybe_read_integer
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -32,9 +33,9 @@ log = RotkehlchenLogsAdapter(logger)
 # follows: `Result window is too large, PageNo x Offset size must be less than or equal to 10000`
 ROUTESCAN_PAGINATION_LIMIT: Final = 10000
 ROUTESCAN_BASE_URL: Final = 'https://api.routescan.io/v2/network/mainnet/evm/{chain_id}/etherscan/api'
-# Arbitrum One and Base are also partially supported, but currently (2026-02-13) have a status
-# of `Not fully indexed` so may be missing data. See https://docs.routescan.io/indexing-status
-ROUTESCAN_SUPPORTED_CHAINS: Final = (ChainID.ETHEREUM, ChainID.OPTIMISM)
+# Routescan stopped serving Optimism in September 2026. Arbitrum One and Base are also only
+# partially supported and may be missing data. See https://docs.routescan.io/indexing-status
+ROUTESCAN_SUPPORTED_CHAINS: Final = (ChainID.ETHEREUM,)
 # Routescan free tier uses a placeholder key and publishes no hard rate limit.
 # Stay conservative; can be raised if we observe headroom.
 ROUTESCAN_RATE_LIMIT_RPS: Final = 10.0
@@ -46,6 +47,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         ExternalServiceWithApiKey.__init__(
             self,
@@ -63,6 +65,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                 rps=ROUTESCAN_RATE_LIMIT_RPS,
                 capacity=ROUTESCAN_RATE_LIMIT_BURST,
             ),
+            indexer_stats=indexer_stats,
         )
 
     @staticmethod
@@ -75,6 +78,14 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
     def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
         """Routescan uses the same api key for all chains."""
         return self._get_api_key()
+
+    @staticmethod
+    def _handle_missing_result(chain_id: ChainID, json_ret: dict[str, Any]) -> bool:
+        """Turn Routescan's unsupported-chain response into a permanent indexer failure."""
+        if json_ret.get('message') == 'chain not supported':
+            raise ChainNotSupported(f'Routescan does not support {chain_id.name}')
+
+        return False
 
     @staticmethod
     def _build_query_params(
@@ -162,6 +173,6 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Failed to get receipt data from {self.name} for tx {tx_hash!s}')
 
         try:
-            return maybe_read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
-        except DeserializationError as e:
-            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e
+            return read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
+        except (KeyError, DeserializationError) as e:
+            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501

@@ -36,10 +36,29 @@ const ALL_INDEXER_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
   ROUTESCAN_PRIO_LIST_ITEM,
 ];
 
-/** Chains that only a subset of the indexers can serve. Anything absent supports all of them. */
+/** Indexers of a chain absent from `CHAIN_SUPPORTED_INDEXERS`. */
+const ETHERSCAN_AND_BLOCKSCOUT_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
+  ETHERSCAN_PRIO_LIST_ITEM,
+  BLOCKSCOUT_PRIO_LIST_ITEM,
+];
+
+/**
+ * Chains served by other indexers than Etherscan and Blockscout. Mirrors the backend's
+ * `ROUTESCAN_SUPPORTED_CHAINS`, `BLOCKSCOUT_SUPPORTED_CHAINS` and `DEFAULT_INDEXERS_ORDER`.
+ */
 const CHAIN_SUPPORTED_INDEXERS = new Map<string, Array<PrioritizedListItemData<EvmIndexer>>>([
   ['binance_sc', [ETHERSCAN_PRIO_LIST_ITEM]],
+  ['eth', ALL_INDEXER_ITEMS],
+  ['monad', [ETHERSCAN_PRIO_LIST_ITEM]],
+  ['scroll', [BLOCKSCOUT_PRIO_LIST_ITEM]],
 ]);
+
+function supportedIndexerItems(chainId: string | null): Array<PrioritizedListItemData<EvmIndexer>> {
+  if (chainId === null)
+    return ALL_INDEXER_ITEMS;
+
+  return CHAIN_SUPPORTED_INDEXERS.get(chainId) ?? ETHERSCAN_AND_BLOCKSCOUT_ITEMS;
+}
 
 const evmIndexerValues: string[] = Object.values(EvmIndexer);
 
@@ -49,15 +68,19 @@ export function isEvmIndexer(value: PrioritizedListId): value is EvmIndexer {
 
 /** Indexers selectable for a chain; `null` asks for the default tab's full set. */
 export function getAvailableIndexersForChain(chainId: string | null): PrioritizedListData<PrioritizedListId> {
-  const items = (chainId === null ? undefined : CHAIN_SUPPORTED_INDEXERS.get(chainId)) ?? ALL_INDEXER_ITEMS;
-  return new PrioritizedListData<PrioritizedListId>(items);
+  return new PrioritizedListData<PrioritizedListId>(supportedIndexerItems(chainId));
 }
 
-/** Restrict an order to the indexers a chain actually supports, never leaving it empty. */
+/** The indexers of an order the chain supports, which is what the backend can query it with. */
 export function orderForChain(chainId: string, order: PrioritizedListId[]): EvmIndexer[] {
-  const available = getAvailableIndexersForChain(chainId);
-  const filtered = order.filter(indexer => available.itemDataForId(indexer) !== undefined).filter(isEvmIndexer);
-  return filtered.length > 0 ? filtered : [EvmIndexer.ETHERSCAN];
+  const supported = supportedIndexerItems(chainId).map(item => item.identifier);
+  return order.filter(isEvmIndexer).filter(indexer => supported.includes(indexer));
+}
+
+/** A new chain override: the default order restricted to the chain, else its first indexer. */
+export function initialOrderForChain(chainId: string, defaultOrder: PrioritizedListId[]): EvmIndexer[] {
+  const order = orderForChain(chainId, defaultOrder);
+  return order.length > 0 ? order : supportedIndexerItems(chainId).slice(0, 1).map(item => item.identifier);
 }
 
 /** Chain-id keyed orders as the backend wants them: keyed by evm chain name, indexers only. */
@@ -107,6 +130,12 @@ export function getAvailableChainItems(chains: ChainItem[], configuredChains: st
     .map(({ id, name }) => ({ id, name }));
 }
 
+/**
+ * Chains no indexer serves without a key: Etherscan's free tier skips them, Blockscout needs a key
+ * on them, and Routescan does not cover them (it dropped Optimism).
+ */
+const KEY_REQUIRED_CHAINS: string[] = ['base', 'gnosis', 'optimism'];
+
 /** Chain-specific caveats about the selected order. Keys are resolved by the caller. */
 export function getChainIndexerWarnings(tab: string, order: PrioritizedListId[]): MessageKey[] {
   if (tab === DEFAULT_INDEXER_TAB)
@@ -114,14 +143,11 @@ export function getChainIndexerWarnings(tab: string, order: PrioritizedListId[])
 
   const warnings: MessageKey[] = [];
 
+  if (KEY_REQUIRED_CHAINS.includes(tab))
+    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.key_required'));
+
   if (tab === 'optimism' && order.includes(EvmIndexer.BLOCKSCOUT))
     warnings.push(msg.$t('evm_settings.indexer.chain_warnings.optimism_blockscout'));
-
-  if (tab === 'base' && (order.length === 0 || order[0] !== EvmIndexer.BLOCKSCOUT))
-    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.base_limited_indexers'));
-
-  if (tab === 'gnosis')
-    warnings.push(msg.$t('evm_settings.indexer.chain_warnings.gnosis_key_required'));
 
   return warnings;
 }

@@ -287,15 +287,31 @@ describe('useAccountDelete against the real removal wiring', () => {
     const validator = { index: 1, publicKey: '0xvalidator', status: 'active' };
     const stored: ValidatorAccount = { ...validator, chain: 'eth2', kind: 'validator' };
 
-    async function confirmValidatorRemoval(): Promise<void> {
+    function storedAt(index: number): ValidatorAccount {
+      return { chain: 'eth2', index, kind: 'validator', publicKey: `0xpubkey${index}`, status: 'active' };
+    }
+
+    /** Confirms the delete of the validators table rows, which is what the table hands over. */
+    async function confirmValidatorRemoval(rows: ValidatorAccount[] = [stored]): Promise<void> {
       const { useAccountDelete } = await import('@/modules/accounts/blockchain/use-account-delete');
       const { useConfirmStore } = await import('@/modules/core/common/use-confirm-store');
       useAccountDelete().showConfirmation({
-        data: [{ ...validator, amount: bigNumberify(32), value: bigNumberify(32) }],
+        data: rows.map(({ index, publicKey, status }) => ({ amount: bigNumberify(32), index, publicKey, status, value: bigNumberify(32) })),
         type: 'validator',
       });
       await useConfirmStore().confirm();
     }
+
+    it('should drop exactly the deleted page of validators and keep the rest', async () => {
+      const { accounts } = await setup();
+      accounts.updateAccounts('eth2', [1, 2, 3, 4].map(storedAt));
+      mocks.deleteEth2Validators.mockResolvedValue(true);
+
+      await confirmValidatorRemoval([storedAt(3), storedAt(4)]);
+
+      expect(mocks.deleteEth2Validators).toHaveBeenCalledExactlyOnceWith(['0xpubkey3', '0xpubkey4']);
+      expect(accounts.accounts.eth2).toStrictEqual([storedAt(1), storedAt(2)]);
+    });
 
     it('should drop the validator when the backend deletes it', async () => {
       const { accounts } = await setup();

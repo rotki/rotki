@@ -57,6 +57,17 @@ export class ApiKeyMissingError extends Error {
   }
 }
 
+/**
+ * The backend could not query everything the task asked for. The rest of the query completed, and
+ * the parts it missed are retried by a later query.
+ */
+export class IncompleteQueryError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'IncompleteQueryError';
+  }
+}
+
 export class ApiValidationError extends Error {
   readonly errors: ValidationErrors;
   constructor(message: string, options?: ErrorOptions) {

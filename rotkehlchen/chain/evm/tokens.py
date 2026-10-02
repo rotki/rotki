@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
@@ -105,6 +105,9 @@ OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
+# max number of ownerOf calls batched in a single multicall
+ERC721_OWNERSHIP_CHUNK_SIZE: Final = 100
+
 
 def generate_multicall_chunks[T](
         chunk_length: int,
@@ -154,6 +157,95 @@ def get_rpc_first_chunk_size_call_order(
         return evm_inquirer.INDEXER_CHUNK_SIZE, [evm_inquirer.indexers_node]
 
     return web3_node_chunk_size, [*rpc_call_order, evm_inquirer.indexers_node]
+
+
+@dataclass
+class ERC721OwnershipResult:
+    """Result of checking the current owner of (address, erc721 token) pairs via ownerOf.
+
+    Attributes:
+    - owned: pairs whose ownerOf call returned the paired address.
+    - failed: pairs whose ownership could not be determined, because the query raised,
+      the multicall returned fewer results than calls, or the ownerOf result was failed,
+      empty or undecodable. They are neither owned nor not owned, so callers must not
+      drop previously cached entries for them.
+    """
+    owned: set[tuple[ChecksumEvmAddress, EvmToken]]
+    failed: set[tuple[ChecksumEvmAddress, EvmToken]]
+
+
+def query_owned_erc721_tokens(
+        evm_inquirer: EvmNodeInquirer,
+        candidates: Sequence[tuple[ChecksumEvmAddress, EvmToken]],
+) -> ERC721OwnershipResult:
+    """Check via ownerOf which of the given (address, erc721 token) pairs are currently owned.
+
+    A positive collection-level balance does not prove ownership of a specific NFT, so each
+    token id is checked individually. Tokens without a collectible id can't be checked and
+    are in neither of the returned sets.
+    """
+    erc721_contract = EvmContract(address=ZERO_ADDRESS, abi=evm_inquirer.contracts.erc721_abi)
+    checkable = [
+        (address, token, int(raw_collectible_id))
+        for address, token in candidates
+        if (raw_collectible_id := tokenid_to_collectible_id(token.identifier)) is not None
+    ]
+    result = ERC721OwnershipResult(owned=set(), failed=set())
+    for chunk in get_chunks(checkable, n=ERC721_OWNERSHIP_CHUNK_SIZE):
+        try:
+            outputs = evm_inquirer.multicall_2(
+                calls=[
+                    (token.evm_address, erc721_contract.encode('ownerOf', arguments=[collectible_id]))  # noqa: E501
+                    for _, token, collectible_id in chunk
+                ],
+                require_success=False,
+            )
+        except RemoteError as e:
+            log.error(
+                'Failed to query the owner of %s erc721 tokens due to %s',
+                len(chunk),
+                e,
+            )
+            result.failed.update((address, token) for address, token, _ in chunk)
+            continue
+
+        if len(outputs) < len(chunk):
+            log.error(
+                'Multicall returned %s ownerOf results for %s calls. '
+                'Treating the ones without a result as failed',
+                len(outputs),
+                len(chunk),
+            )
+            result.failed.update((address, token) for address, token, _ in chunk[len(outputs):])
+
+        for (address, token, collectible_id), (status, output) in zip(chunk, outputs, strict=False):  # noqa: E501
+            if status is False or len(output) == 0:  # multicall can return success but with empty data when contract call fails  # noqa: E501
+                log.error(
+                    'Failed ownerOf call for token %s and address %s',
+                    token,
+                    address,
+                )
+                result.failed.add((address, token))
+                continue
+
+            try:
+                owner = erc721_contract.decode(
+                    result=output,
+                    method_name='ownerOf',
+                    arguments=[collectible_id],
+                )[0]
+            except DeserializationError as e:
+                log.error('Failed to read the owner of erc721 token %s due to %s', token, e)
+                result.failed.add((address, token))
+                continue
+
+            if owner != address:
+                log.debug('Address %s no longer owns erc721 token %s', address, token)
+                continue
+
+            result.owned.add((address, token))
+
+    return result
 
 
 class EvmTokens(ABC):  # noqa: B024
@@ -437,10 +529,6 @@ class EvmTokens(ABC):  # noqa: B024
             return detected_tokens
 
         historical_balance_manager = HistoricalBalancesManager(self.db)
-        erc721_contract = EvmContract(
-            address=ZERO_ADDRESS,
-            abi=self.evm_inquirer.contracts.erc721_abi,
-        )
         for address in addresses:
             try:
                 token_balances = historical_balance_manager.get_erc721_tokens_balances(
@@ -451,42 +539,36 @@ class EvmTokens(ABC):  # noqa: B024
                 log.error(f'Failed to get erc721 token balances for {address} due to {e}. Skipping.')  # noqa: E501
                 continue
 
-            filtered_tokens, calls = [], []
-            for token in token_balances:
-                if (collectible_id := tokenid_to_collectible_id(token.identifier)) is not None:
-                    calls.append((
-                        token.evm_address,
-                        erc721_contract.encode('ownerOf', arguments=[int(collectible_id)]),
-                    ))
-                    filtered_tokens.append(token)
-
-            valid_tokens, outputs = [], self.evm_inquirer.multicall_2(calls=calls, require_success=False)  # noqa: E501
-            for token, (status, result) in zip(filtered_tokens, outputs, strict=False):
-                if status is False or len(result) == 0:  # multicall can return success but with empty data when contract call fails  # noqa: E501
-                    log.error(f'Skipping token {token} for address {address} due to failed ownerOf call')  # noqa: E501
-                    continue
-
-                try:
-                    owner = erc721_contract.decode(
-                        result=result,
-                        method_name='ownerOf',
-                        arguments=[int(tokenid_to_collectible_id(token.identifier))],  # type: ignore[arg-type]  # will always be available
-                    )[0]
-                except DeserializationError as e:
-                    log.error('Failed to read the owner of erc721 token %s due to %s', token, e)
-                    continue
-
-                if owner != address:
-                    log.debug(
-                        'Address %s no longer owns erc721 token %s. Skipping...',
-                        address,
-                        token,
+            ownership = query_owned_erc721_tokens(
+                evm_inquirer=self.evm_inquirer,
+                candidates=[(address, token) for token in token_balances],
+            )
+            if len(failed := [token for _, token in ownership.failed]) != 0:
+                # the cache gets replaced with the detected tokens, so keep the cached nfts
+                # whose ownership is unknown instead of dropping them
+                with self.db.conn.read_ctx() as cursor:
+                    cached_ids = self.db.get_cached_token_ids(
+                        cursor=cursor,
+                        address=address,
+                        chain_id=self.evm_inquirer.chain_id,
+                        token_ids=[token.identifier for token in failed],
                     )
-                    continue
+                log.warning(
+                    'Could not check the ownership of %s erc721 tokens of '
+                    '%s in %s. '
+                    'Keeping the %s of them that were already detected.',
+                    len(failed),
+                    address,
+                    self.evm_inquirer.chain_name,
+                    len(cached_ids),
+                )
+                ownership.owned.update(
+                    (address, token) for token in failed if token.identifier in cached_ids
+                )
 
-                valid_tokens.append(token)
-
-            detected_tokens[address].extend(valid_tokens)
+            detected_tokens[address].extend(
+                token for token in token_balances if (address, token) in ownership.owned
+            )
 
         return detected_tokens
 

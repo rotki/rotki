@@ -2,6 +2,7 @@
 from __future__ import print_function  # isort:skip
 import os
 import platform
+import re
 import sys
 from pathlib import Path
 
@@ -52,10 +53,57 @@ sys.modules['FixTk'] = None
 if (platform_name := platform.system().lower()) == 'darwin':
     platform_name = f"macos-{'arm64' if platform.machine() == 'arm64' else 'x64'}"
 
-executable_name = 'rotki-core-{}-{}'.format(
-    get_system_spec()['rotkehlchen'],
-    platform_name,
-)
+rotki_version = get_system_spec()['rotkehlchen']
+executable_name = f'rotki-core-{rotki_version}-{platform_name}'
+
+
+def windows_version_info(version, original_filename):
+    """Version resource for the Windows executable.
+
+    An unsigned executable with no publisher metadata scores worse with
+    antivirus machine-learning heuristics. Keep the strings in line with
+    crates/build-support/windows_resource.rs, which does the same for colibri
+    and starling.
+    """
+    from PyInstaller.utils.win32.versioninfo import (
+        FixedFileInfo,
+        StringFileInfo,
+        StringStruct,
+        StringTable,
+        VarFileInfo,
+        VarStruct,
+        VSVersionInfo,
+    )
+
+    # setuptools_scm gives e.g. 1.44.1 or 1.44.2.dev3+g1234abc; the numeric
+    # version fields only take the release part.
+    release = re.match(r'(\d+)\.(\d+)\.(\d+)', version).groups()
+    numeric = (*(int(part) for part in release), 0)
+    return VSVersionInfo(
+        ffi=FixedFileInfo(filevers=numeric, prodvers=numeric),
+        kids=[
+            # en-US (0x0409), Unicode (0x04b0), as electron-builder sets for rotki.exe
+            StringFileInfo([StringTable('040904b0', [
+                StringStruct('CompanyName', 'Rotki Solutions GmbH'),
+                StringStruct('FileDescription', 'rotki core'),
+                StringStruct('FileVersion', version),
+                StringStruct('InternalName', original_filename),
+                StringStruct('LegalCopyright', 'Copyright © Rotki Solutions GmbH'),
+                StringStruct('OriginalFilename', original_filename),
+                StringStruct('ProductName', 'rotki'),
+                StringStruct('ProductVersion', version),
+            ])]),
+            VarFileInfo([VarStruct('Translation', [0x0409, 0x04b0])]),
+        ],
+    )
+
+
+windows_version = None
+windows_icon = None
+if platform.system() == 'Windows':
+    windows_version = windows_version_info(rotki_version, f'{executable_name}.exe')
+    # Without an icon PyInstaller embeds its own default one.
+    windows_icon = 'frontend/app/public/assets/images/rotki.ico'
 
 hiddenimports = []
 # The MCP server is a separate module entrypoint and its tools are discovered dynamically.
@@ -145,6 +193,8 @@ exe = EXE(
     strip=STRIP_BINARIES,
     upx=False,
     console=True,
+    version=windows_version,
+    icon=windows_icon,
     codesign_identity=identity,
     entitlements_file=entitlements,
 )

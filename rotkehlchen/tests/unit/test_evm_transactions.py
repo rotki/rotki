@@ -1,13 +1,21 @@
+import time
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, cast
+from itertools import count
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS
-from rotkehlchen.chain.evm.transactions import MIN_SPLITTABLE_QUERY_RANGE
+from rotkehlchen.chain.evm.node_inquirer import DEGRADED_INDEXERS, QueryEnd
+from rotkehlchen.chain.evm.transactions import (
+    CHAIN_TOP_LAG,
+    MIN_SPLITTABLE_QUERY_RANGE,
+    RangeQueryOutcome,
+)
 from rotkehlchen.chain.evm.types import (
     EvmAccount,
     EvmIndexer,
@@ -17,6 +25,7 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
@@ -29,13 +38,23 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import (
+    DataIntegrityError,
+    IncompleteTransactionsQuery,
+    RemoteError,
+    RequestTooLargeError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
+from rotkehlchen.tests.utils.factories import (
+    make_ethereum_transaction,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -47,9 +66,12 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -144,11 +166,11 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: DBHandler, 
                 side_effect=RemoteError('FAIL')),
             )
 
-        ethereum_manager.transactions._get_erc20_transfers_for_ranges(
+        assert ethereum_manager.transactions._get_erc20_transfers_for_ranges(
             address=address,
             start_ts=Timestamp(0),
             end_ts=Timestamp(1762453737),
-        )
+        ) is RangeQueryOutcome.FAILED
 
     with database.conn.read_ctx() as cursor:  # ensure the range was not marked as pulled
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
@@ -1112,6 +1134,7 @@ def test_indexers_fall_back_properly(
         optimism_manager: OptimismManager,
         optimism_accounts: list[ChecksumEvmAddress],
         tested_indexer: str,
+        allow_optimism_routescan: None,
 ) -> None:
     """Test that queries such as txlist, txlistinteral, etc which rely on indexers such as
     etherscan, blockscout, and routescan properly fall back to the next indexer on failure.
@@ -1119,7 +1142,13 @@ def test_indexers_fall_back_properly(
     assert optimism_manager.node_inquirer.blockscout is not None
     txs_mocks, hashes_mocks, unused_mocks, have_reached_tested_indexer = [], [], [], False
     degraded_mocks: list[Any] = []
+    notifier = MockRotkiNotifier()
     with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            target=optimism_manager.transactions.msg_aggregator,
+            attribute='rotki_notifier',
+            new=notifier,
+        ))
         for indexer, name in (
             (optimism_manager.node_inquirer.etherscan, 'etherscan'),
             (optimism_manager.node_inquirer.blockscout, 'blockscout'),
@@ -1186,6 +1215,11 @@ def test_indexers_fall_back_properly(
     assert all(hashes_mock.call_args_list == hashes_mocks[0].call_args_list for hashes_mock in hashes_mocks)  # noqa: E501
     # Check that all unused indexers were not called
     assert all(unused_mock.call_count == 0 for unused_mock in unused_mocks)
+    # The indexers that failed before the tested one do not make the address fail
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ][-1] == str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED)
 
     # Check that the actual tx data is present in the DB
     dbevmtx = DBEvmTx(database)
@@ -1296,7 +1330,8 @@ def test_too_large_range_is_split_and_retried(ethereum_manager: EthereumManager)
     """
     served: list[tuple[Timestamp, Timestamp]] = []
 
-    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+    def query(chunk_start: Timestamp, chunk_end: Timestamp, progress_start: Timestamp) -> None:
+        assert progress_start == 0, 'progress of every chunk must start at the outer range start'
         served.append((chunk_start, chunk_end))
         if chunk_end - chunk_start > 20000:
             raise RequestTooLargeError('Query Timeout occurred')
@@ -1316,7 +1351,7 @@ def test_too_large_range_stops_splitting_at_the_floor(ethereum_manager: Ethereum
     """Halving forever would spin, so below the floor the error surfaces to the caller."""
     attempts = 0
 
-    def query(chunk_start: Timestamp, chunk_end: Timestamp) -> None:
+    def query(chunk_start: Timestamp, chunk_end: Timestamp, progress_start: Timestamp) -> None:
         nonlocal attempts
         attempts += 1
         raise RequestTooLargeError('Query Timeout occurred')
@@ -1329,6 +1364,63 @@ def test_too_large_range_stops_splitting_at_the_floor(ethereum_manager: Ethereum
         )
 
     assert attempts == 1, 'a range already at the floor must not be split'
+
+
+@pytest.mark.parametrize('prefix', ['txs', 'internaltxs', 'tokentxs'])
+def test_split_range_keeps_progress_of_later_chunks(
+        ethereum_manager: EthereumManager,
+        prefix: Literal['txs', 'internaltxs', 'tokentxs'],
+) -> None:
+    """Chunks after the first one of a split range must save their progress too.
+
+    Each chunk only records progress up to its last returned item, so a later chunk saving
+    from its own start left a gap that the saved query range rejected. Its progress was
+    then lost if the query stopped before the whole range completed.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    token_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
+
+    def serve(from_value: int, to_value: int) -> Timestamp:
+        """Split the outer range and its newer half, then fail the newest chunk"""
+        if (from_value, to_value) in {(1_000_000, 101_000_000), (51_000_001, 101_000_000)}:
+            raise RequestTooLargeError('Query Timeout occurred')
+        if from_value == 76_000_001:
+            raise RemoteError('rate limited')
+        return Timestamp(from_value + 1000)
+
+    def get_token_transaction_hashes(
+            account: ChecksumEvmAddress,
+            from_block: int,
+            to_block: int,
+    ) -> Iterator[list[EVMTxHash]]:
+        token_tx_timestamps[tx_hash := make_evm_tx_hash()] = serve(from_block, to_block)
+        yield [tx_hash]
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=lambda from_ts, to_ts, query_end: (from_ts, to_ts, frozenset())),  # noqa: E501
+        patch.object(inquirer, 'get_transactions', side_effect=lambda account, action, period_or_hash: iter([[SimpleNamespace(timestamp=serve(period_or_hash.from_value, period_or_hash.to_value))]])),  # noqa: E501
+        patch.object(transactions.dbevmtx, 'add_transactions', return_value=[]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=lambda account, period_or_hash, action: (iter([[serve(period_or_hash.from_value, period_or_hash.to_value)]]), EvmIndexer.ETHERSCAN)),  # noqa: E501
+        patch.object(transactions, '_process_internal_transactions_batch', side_effect=lambda new_internal_txs, **kwargs: [(SimpleNamespace(parent_tx_hash=make_evm_tx_hash()), new_internal_txs[0])]),  # noqa: E501
+        patch.object(transactions.dbevmtx, 'add_evm_internal_transactions'),
+        patch.object(inquirer, 'get_token_transaction_hashes', side_effect=get_token_transaction_hashes),  # noqa: E501
+        patch.object(transactions, '_batch_ensure_evm_txns_in_db', side_effect=lambda tx_hashes, relevant_address: ({tx_hashes[0]: token_tx_timestamps[tx_hashes[0]]}, [])),  # noqa: E501
+    ):
+        getattr(transactions, {
+            'txs': '_get_transactions_for_range',
+            'internaltxs': '_get_internal_transactions_for_ranges',
+            'tokentxs': '_get_erc20_transfers_for_ranges',
+        }[prefix])(
+            address=(address := make_evm_address()),
+            start_ts=Timestamp(1_000_000),
+            end_ts=Timestamp(101_000_000),
+        )
+
+    with (database := transactions.database).conn.read_ctx() as cursor:
+        assert database.get_used_query_range(
+            cursor=cursor,
+            name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+        ) == (1_000_000, 51_001_001)
 
 
 def test_inverted_block_range_is_rejected(ethereum_inquirer: EthereumInquirer) -> None:
@@ -1505,3 +1597,310 @@ def test_query_range_unrecorded_when_coverage_is_unknown(
 
     with database.conn.read_ctx() as cursor:
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
+
+
+QUERY_KINDS: Final[tuple[Literal['txs', 'internaltxs', 'tokentxs'], ...]] = ('txs', 'internaltxs', 'tokentxs')  # noqa: E501
+
+
+def test_nothing_queried_when_query_end_is_unknown(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """If we cannot tell how far the indexers reach, nothing is queried nor recorded."""
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    with ExitStack() as stack:
+        blocknumber_lookups = [stack.enter_context(patch.object(
+            target=indexer,
+            attribute='get_blocknumber_by_time',
+            side_effect=RemoteError('FAIL'),
+        )) for _, indexer in inquirer._get_indexers_in_order()]
+        get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
+        get_token_hashes = stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_token_transaction_hashes',
+        ))
+        transactions.single_address_query_transactions(
+            address=(address := make_evm_address()),
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
+
+    # only the end is looked up. Each query kind would otherwise try its own range again.
+    assert [x.call_count for x in blocknumber_lookups] == [1] * len(blocknumber_lookups)
+    assert get_transactions.call_count == 0
+    assert get_token_hashes.call_count == 0
+    with database.conn.read_ctx() as cursor:
+        assert all(database.get_used_query_range(
+            cursor=cursor,
+            name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+        ) is None for prefix in QUERY_KINDS)
+
+
+def test_sync_resolves_its_end_once(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """Every address and query kind of a sync must stop at one block, resolved once.
+
+    The end is kept CHAIN_TOP_LAG seconds behind now, since the newest blocks may not be
+    indexed yet. An indexer that could not resolve it must not serve any range ending there.
+
+    The chain head moves on while the sync runs, so every lookup of the end timestamp
+    returns a later block, and nothing stays cached, as if the end had been evicted by
+    the lookups of other ranges. Looking the end up again anywhere in the sync then shows
+    as a different end block.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    resolved_ts: list[Timestamp] = []
+    end_blocks: list[int] = []
+    failing_indexer, *_ = indexers = inquirer._get_indexers_in_order()
+    sync_end_ts = Timestamp((now := ts_now()) - CHAIN_TOP_LAG)
+    head_blocks = count(end_block := sync_end_ts // 10)
+    assert len(indexers) >= 2, 'need an indexer to fall back to'
+
+    def blocknumber_by_time(chain_id: ChainID, ts: Timestamp, closest: str = 'before') -> int:
+        resolved_ts.append(ts)
+        return next(head_blocks) if ts == sync_end_ts else ts // 10
+
+    def lagging_blocknumber_by_time(
+            chain_id: ChainID,
+            ts: Timestamp,
+            closest: str = 'before',
+    ) -> int:
+        """Resolves the start of the range fine, only its index does not reach the end"""
+        if ts == sync_end_ts:
+            raise RemoteError('FAIL')
+        return ts // 10
+
+    def get_transactions(
+            account: ChecksumEvmAddress,
+            action: str,
+            period_or_hash: TimestampOrBlockRange,
+    ) -> Iterator[list[Any]]:
+        end_blocks.append(period_or_hash.to_value)
+        assert DEGRADED_INDEXERS.get() == {failing_indexer[0]}
+        yield []
+
+    def get_token_transaction_hashes(
+            account: ChecksumEvmAddress,
+            from_block: int,
+            to_block: int,
+    ) -> Iterator[list[EVMTxHash]]:
+        end_blocks.append(to_block)
+        assert DEGRADED_INDEXERS.get() == {failing_indexer[0]}
+        yield []
+
+    with ExitStack() as stack:
+        for name, indexer in indexers:
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=lagging_blocknumber_by_time if name == failing_indexer[0] else blocknumber_by_time,  # noqa: E501
+            ))
+        stack.enter_context(patch.dict(
+            in_dict=inquirer.timestamp_to_block_cache,
+            values={inquirer.chain_id: LRUCacheWithRemove(maxsize=0)},
+        ))
+        block_timestamp = stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_block_timestamp',
+            return_value=(end_ts := Timestamp(sync_end_ts - 2)),
+        ))
+        stack.enter_context(patch('rotkehlchen.chain.evm.transactions.ts_now', return_value=now))
+        stack.enter_context(patch.object(inquirer, 'get_transactions', side_effect=get_transactions))  # noqa: E501
+        stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_transactions_with_source',
+            side_effect=lambda account, period_or_hash, action: (get_transactions(account, action, period_or_hash), EvmIndexer.BLOCKSCOUT),  # noqa: E501
+        ))
+        stack.enter_context(patch.object(
+            target=inquirer,
+            attribute='get_token_transaction_hashes',
+            side_effect=get_token_transaction_hashes,
+        ))
+        transactions.query_chain(
+            from_timestamp=(start_ts := Timestamp(now - DAY_IN_SECONDS)),
+            to_timestamp=now,
+            addresses=(addresses := [make_evm_address(), make_evm_address()]),
+        )
+
+    assert resolved_ts.count(sync_end_ts) == 1, 'the end of the sync must be resolved once'
+    assert end_blocks == [end_block] * 6, 'two addresses x three query kinds'
+    # recording the ranges clamps them to how far the indexers reach, read off the same block
+    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block] * 6
+    with database.conn.read_ctx() as cursor:
+        for address in addresses:
+            for prefix in QUERY_KINDS:
+                assert database.get_used_query_range(
+                    cursor=cursor,
+                    name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+                ) == (start_ts, end_ts)
+
+
+def test_sync_settles_every_address_when_query_end_is_unknown(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A sync whose end block cannot be resolved must settle each of its addresses as failed.
+
+    The frontend seeds every address of a sync as pending and only moves it on when the
+    address reports the end of its query or the sync task fails. query_chain used to swallow
+    the failed end lookup and return without querying any address, so neither happened and
+    the addresses stayed pending forever. This is what the history page showed for base once
+    every indexer refused the chain. Reporting them as finished instead would render
+    addresses nothing was queried for as complete.
+
+    The messages of an address are sent under its query lock, so they cannot interleave with
+    those of another query of that address that is already running. Once every address is
+    settled the sync raises, so its task does not claim their history as loaded, and the
+    error it raises does not carry the indexer's own, which can include API keys.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    notifier = MockRotkiNotifier()
+
+    def status_messages() -> list[dict[str, Any] | list[Any]]:
+        return [
+            msg.data for msg in notifier.messages
+            if msg.message_type == WSMessageType.TRANSACTION_STATUS
+        ]
+
+    with ExitStack() as stack:
+        for _, indexer in inquirer._get_indexers_in_order():
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=RemoteError('https://indexer.example/api?apikey=SECRET'),
+            ))
+        get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        addresses = [make_evm_address(), make_evm_address()]
+        with transactions.address_tx_locks[addresses[0]]:  # as if a query of it is running
+            task = spawn(
+                transactions.query_chain,
+                from_timestamp=(start_ts := Timestamp(0)),
+                to_timestamp=(end_ts := ts_now()),
+                addresses=addresses,
+            )
+            time.sleep(0.5)
+            assert status_messages() == []
+
+        wait([task], timeout=10)
+
+    assert isinstance(error := exception_of(task), IncompleteTransactionsQuery)
+    assert all(address in str(error) for address in addresses)
+    assert 'SECRET' not in str(error)
+    assert get_transactions.call_count == 0
+    assert status_messages() == [{
+        'address': address,
+        'chain': inquirer.blockchain.value,
+        'subtype': 'evm',
+        'period': [start_ts, end_ts],
+        'status': str(status),
+    } for address in addresses for status in (
+        TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED,
+    )]
+
+
+def test_sync_raises_after_querying_every_address_when_one_fails(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A sync where the query of one address fails must still query and settle the others.
+
+    The failure is raised only once every address is queried and reported, and the chain
+    data of the addresses is still queried, so it fails the sync task without cutting the
+    sync short. Only the address that failed is named in the error.
+    """
+    transactions = ethereum_manager.transactions
+    notifier = MockRotkiNotifier()
+    failing_address, *addresses = [make_evm_address() for _ in range(3)]
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            target=transactions,
+            attribute='_resolve_query_end',
+            return_value=QueryEnd(timestamp=(end_ts := ts_now()), block=100, failed=frozenset()),
+        ))
+        stack.enter_context(patch.object(
+            target=transactions,
+            attribute='_get_transactions_for_range',
+            side_effect=lambda address, **kwargs: RangeQueryOutcome.FAILED if address == failing_address else RangeQueryOutcome.QUERIED,  # noqa: E501
+        ))
+        for attribute in ('_get_internal_transactions_for_ranges', '_get_erc20_transfers_for_ranges'):  # noqa: E501
+            stack.enter_context(patch.object(transactions, attribute, return_value=RangeQueryOutcome.QUERIED))  # noqa: E501
+        multiaddress_data = stack.enter_context(patch.object(
+            target=transactions,
+            attribute='get_chain_specific_multiaddress_data',
+        ))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        with pytest.raises(IncompleteTransactionsQuery) as error:
+            transactions.query_chain(
+                from_timestamp=(start_ts := Timestamp(0)),
+                to_timestamp=end_ts,
+                addresses=(all_addresses := [addresses[0], failing_address, addresses[1]]),
+            )
+
+    assert failing_address in str(error.value)
+    assert all(address not in str(error.value) for address in addresses)
+    multiaddress_data.assert_called_once_with(all_addresses)
+    assert [
+        msg.data for msg in notifier.messages
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ] == [{
+        'address': address,
+        'chain': transactions.evm_inquirer.blockchain.value,
+        'subtype': 'evm',
+        'period': [start_ts, end_ts],
+        'status': str(status),
+    } for address in all_addresses for status in (
+        TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED
+        if address == failing_address else
+        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+    )]
+
+
+def test_address_fails_when_every_indexer_fails_its_query(
+        ethereum_manager: EthereumManager,
+) -> None:
+    """An address whose transactions no indexer could serve must be reported as failed.
+
+    The query does not raise, since the ranges left unqueried are retried by the next sync,
+    but the frontend has to show the address as failed rather than complete. It is only
+    reported once every indexer was tried for the query.
+    """
+    inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
+    notifier = MockRotkiNotifier()
+    with ExitStack() as stack:
+        indexers_get_transactions = []
+        for _, indexer in inquirer._get_indexers_in_order():
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                return_value=100,
+            ))
+            indexers_get_transactions.append(stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_transactions',
+                side_effect=RemoteError('FAIL'),
+            )))
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_token_transaction_data',
+                side_effect=RemoteError('FAIL'),
+            ))
+        stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
+        transactions.single_address_query_transactions(
+            address=make_evm_address(),
+            start_ts=Timestamp(0),
+            end_ts=(end_ts := Timestamp(1700000000)),
+            query_end=QueryEnd(timestamp=end_ts, block=100, failed=frozenset()),
+        )
+
+    assert len(indexers_get_transactions) > 1
+    assert all(mock.call_count != 0 for mock in indexers_get_transactions)
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS
+    ] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED),
+    ]

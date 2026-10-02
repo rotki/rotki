@@ -223,10 +223,10 @@ export function usePurgeData(): UsePurgeDataReturn {
   const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
     purgeable,
     purgeSource,
-    (source: string) => ({
-      error: t('data_management.purge_data.error', { source }),
-      success: t('data_management.purge_data.success', { source }),
-    }),
+    {
+      error: (source: string, message: string) => t('data_management.purge_data.error', { message, source }),
+      success: (source: string) => t('data_management.purge_data.success', { source }),
+    },
     confirmText,
   );
 

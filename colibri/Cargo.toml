@@ -57,6 +57,10 @@ sha3 = "=0.10.9"
 # constant-time comparison for the session-cookie signature check
 subtle = "=2.6.1"
 
+# Version resource and icon for colibri.exe, see crates/build-support/windows_resource.rs
+[target.'cfg(windows)'.build-dependencies]
+winresource = { version = "=0.1.31", default-features = false }
+
 [dev-dependencies]
 mockito = "=1.7.2"
 tokio = { workspace = true, features = ["test-util"] }

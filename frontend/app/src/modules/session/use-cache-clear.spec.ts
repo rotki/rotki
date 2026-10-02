@@ -14,12 +14,10 @@ const clearable: { id: Source; text: string }[] = [
   { id: 'b', text: 'Cache B' },
 ];
 
-function message(source: string): { success: string; error: string } {
-  return {
-    success: `cleared ${source}`,
-    error: `failed ${source}`,
-  };
-}
+const message = {
+  error: (source: string, reason: string): string => `failed ${source}: ${reason}`,
+  success: (source: string): string => `cleared ${source}`,
+};
 
 function confirmText(text: string): { title: string; message: string } {
   return {
@@ -68,12 +66,21 @@ describe('useCacheClear', () => {
     expect(get(status)).toBeNull();
   });
 
-  it('should set an error status when the handle rejects', async () => {
+  it('should set an error status carrying the rejection message when the handle rejects', async () => {
     const clearHandle = vi.fn().mockRejectedValue(new Error('boom'));
     const { pending, showConfirmation, status } = useCacheClear<Source>(clearable, clearHandle, message, confirmText);
     showConfirmation('b');
     await show.mock.calls[0][1]();
-    expect(get(status)).toEqual({ error: 'failed Cache B', success: '' });
+    expect(get(status)).toEqual({ error: 'failed Cache B: boom', success: '' });
     expect(get(pending)).toBe(false);
+  });
+
+  it('should keep the error status instead of clearing it after five seconds', async () => {
+    const clearHandle = vi.fn().mockRejectedValue(new Error('boom'));
+    const { showConfirmation, status } = useCacheClear<Source>(clearable, clearHandle, message, confirmText);
+    showConfirmation('b');
+    await show.mock.calls[0][1]();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(get(status)).toEqual({ error: 'failed Cache B: boom', success: '' });
   });
 });

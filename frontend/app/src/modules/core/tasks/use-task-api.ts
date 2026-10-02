@@ -5,7 +5,7 @@ import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '
 import { CHAIN_KEYED_SETTINGS, DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
-import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
 import { type CompletedTaskOutcome, type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
@@ -51,6 +51,9 @@ function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: Actio
 
   if (statusCode === HTTPStatus.BAD_GATEWAY)
     throw new Error(message);
+
+  if (statusCode === HTTPStatus.SERVICE_UNAVAILABLE)
+    throw new IncompleteQueryError(message);
 }
 
 export function useTaskApi(): UseTaskApiReturn {
@@ -72,6 +75,7 @@ export function useTaskApi(): UseTaskApiReturn {
    * @throws IncompleteUpgradeError on 300 with an empty result
    * @throws SyncConflictError on 300 carrying conflict data
    * @throws ApiValidationError on 400
+   * @throws IncompleteQueryError on 503
    * @returns the outcome with the status code beside it, for the handler's failure checks
    */
   const queryTaskResult = async <T>(id: number): Promise<CompletedTaskOutcome<T>> => {

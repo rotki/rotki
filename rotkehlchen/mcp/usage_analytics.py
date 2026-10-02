@@ -1,40 +1,25 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Final, Literal, TypedDict
+from typing import TYPE_CHECKING, Final
 from weakref import WeakKeyDictionary
 
-import requests
-
 from rotkehlchen.mcp.backend import BackendQueryError, get_backend_config, query_settings
-from rotkehlchen.utils.misc import ROTKI_USER_AGENT, is_production
+from rotkehlchen.sigil import (
+    SIGIL_DEVELOPMENT_WEBSITE_ID,
+    SIGIL_PRODUCTION_WEBSITE_ID,
+    SigilBatchEntry,
+    create_sigil_events_batch,
+    submit_sigil_batch,
+)
+from rotkehlchen.utils.misc import is_production
 
 if TYPE_CHECKING:
     from mcp.server.session import ServerSession
     from mcp.types import InitializeRequestParams, RequestParams
     from pydantic import BaseModel
 
-SIGIL_BATCH_ENDPOINT: Final = 'https://sigil.rotki.com/api/batch'
-SIGIL_DEVELOPMENT_WEBSITE_ID: Final = 'a3d69a71-060f-4397-afc5-e2ea1b6d389e'
-SIGIL_PRODUCTION_WEBSITE_ID: Final = '4c195fc3-2beb-4492-a4f5-4c0f860bfbee'
 MODEL_METADATA_KEYS: Final = ('model', 'modelId', 'model_id')
-
-
-class SigilEventPayload(TypedDict):
-    website: str
-    hostname: str
-    screen: str
-    language: str
-    title: str
-    url: str
-    referrer: str
-    name: str
-    data: dict[str, str]
-
-
-class SigilBatchEntry(TypedDict):
-    type: Literal['event']
-    payload: SigilEventPayload
 
 
 def _model_from_metadata(metadata: BaseModel | None) -> str | None:
@@ -93,20 +78,10 @@ def create_sigil_batch(
         website_id: str,
 ) -> list[SigilBatchEntry]:
     """Create the same batch-entry schema used by the frontend Sigil queue."""
-    return [{
-        'type': 'event',
-        'payload': {
-            'website': website_id,
-            'hostname': '',
-            'screen': '',
-            'language': '',
-            'title': '',
-            'url': '/mcp',
-            'referrer': '',
-            'name': 'mcp_usage',
-            'data': data,
-        },
-    }]
+    return create_sigil_events_batch(
+        events=[('mcp_usage', '/mcp', data)],
+        website_id=website_id,
+    )
 
 
 def maybe_submit_mcp_usage_analytics(data: dict[str, str]) -> None:
@@ -122,18 +97,7 @@ def maybe_submit_mcp_usage_analytics(data: dict[str, str]) -> None:
         website_id=SIGIL_PRODUCTION_WEBSITE_ID
         if is_production() else SIGIL_DEVELOPMENT_WEBSITE_ID,
     )
-    try:
-        requests.post(
-            url=SIGIL_BATCH_ENDPOINT,
-            json=batch,
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': ROTKI_USER_AGENT,
-            },
-            timeout=get_backend_config().timeout,
-        )
-    except requests.exceptions.RequestException:
-        return
+    submit_sigil_batch(batch=batch, timeout=get_backend_config().timeout)
 
 
 class McpUsageAnalyticsTracker:

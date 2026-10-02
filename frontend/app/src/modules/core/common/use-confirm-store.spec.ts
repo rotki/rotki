@@ -95,4 +95,26 @@ describe('useConfirmStore', () => {
     await dismiss();
     expect(onDismiss).toBeCalledTimes(1);
   });
+
+  it('should keep the alternative apart from backing out, so dismissing never takes it', async () => {
+    const { alternative, dismiss, show } = store;
+    const onDismiss = vi.fn();
+    const onAlternative = vi.fn();
+
+    show({ alternativeAction: 'Exclude', message, title }, () => {}, onDismiss, onAlternative);
+    await dismiss();
+
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(onAlternative).not.toHaveBeenCalled();
+
+    show({ alternativeAction: 'Exclude', message, title }, () => {}, onDismiss, onAlternative);
+    await alternative();
+
+    expect(onAlternative).toHaveBeenCalledOnce();
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(get(storeToRefs(store).visible)).toBe(false);
+
+    await alternative();
+    expect(onAlternative).toHaveBeenCalledOnce();
+  });
 });

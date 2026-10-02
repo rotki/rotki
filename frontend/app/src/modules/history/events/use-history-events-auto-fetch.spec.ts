@@ -224,4 +224,50 @@ describe('useHistoryEventsAutoFetch', () => {
 
     expect(onProgress).toHaveBeenCalledTimes(1);
   });
+
+  it('should read again after a slow read when the events changed while it ran', async () => {
+    let finishRead: () => void = () => {};
+    const onProgress = vi.fn()
+      .mockImplementationOnce(async () => new Promise<void>((resolve) => {
+        finishRead = resolve;
+      }))
+      .mockResolvedValue(undefined);
+    const { markStale } = mountAutoFetch(ref(true), onProgress);
+
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+    expect(onProgress).toHaveBeenCalledTimes(1);
+
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+    expect(onProgress).toHaveBeenCalledTimes(1);
+
+    finishRead();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+  });
+
+  it('should read only once more for several changes made during one slow read', async () => {
+    let finishRead: () => void = () => {};
+    const onProgress = vi.fn()
+      .mockImplementationOnce(async () => new Promise<void>((resolve) => {
+        finishRead = resolve;
+      }))
+      .mockResolvedValue(undefined);
+    const { markStale } = mountAutoFetch(ref(true), onProgress);
+
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+    markStale();
+    await vi.advanceTimersByTimeAsync(SETTLE_QUIET + 100);
+
+    finishRead();
+    await vi.advanceTimersByTimeAsync(SUSTAINED_MAX_WAIT);
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+  });
 });

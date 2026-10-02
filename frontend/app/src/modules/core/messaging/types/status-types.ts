@@ -63,8 +63,8 @@ export const TransactionsQueryStatus = {
   DECODING_TRANSACTIONS_FINISHED: 'decoding_transactions_finished',
   DECODING_TRANSACTIONS_STARTED: 'decoding_transactions_started',
   /**
-   * The query failed. Frontend-assigned: a failed query never sends
-   * `QUERYING_TRANSACTIONS_FINISHED`, since the backend only emits that on the success path.
+   * The query failed. Assigned by the frontend when the query task fails, and folded in from the
+   * backend's `querying_transactions_failed` (see {@link TransactionStatus}).
    */
   FAILED: 'failed',
   QUERYING_EVM_TOKENS_TRANSACTIONS: 'querying_evm_tokens_transactions',
@@ -76,11 +76,23 @@ export const TransactionsQueryStatus = {
 
 export type TransactionsQueryStatus = (typeof TransactionsQueryStatus)[keyof typeof TransactionsQueryStatus];
 
+const QUERYING_TRANSACTIONS_FAILED = 'querying_transactions_failed';
+
+/**
+ * The backend ends a query it could not complete, such as one every indexer refused, with
+ * `querying_transactions_failed` instead of `querying_transactions_finished`, and then fails the
+ * task. That is the same terminal state as a failed task, so it is folded into `FAILED` here and
+ * nothing downstream has a second failure status to handle.
+ */
+const TransactionStatus = z
+  .enum([...Object.values(TransactionsQueryStatus), QUERYING_TRANSACTIONS_FAILED])
+  .transform(status => (status === QUERYING_TRANSACTIONS_FAILED ? TransactionsQueryStatus.FAILED : status));
+
 const EvmTransactionStatusData = z.object({
   address: z.string(),
   chain: z.string(),
   period: z.tuple([z.number(), z.number()]),
-  status: z.enum(TransactionsQueryStatus),
+  status: TransactionStatus,
   subtype: z.literal('evm').or(z.literal('evmlike')),
 });
 
@@ -92,7 +104,7 @@ const BitcoinTransactionStatusData = z.object({
   addresses: z.array(z.string()),
   chain: z.string(),
   period: z.tuple([z.number(), z.number()]).optional(),
-  status: z.enum(TransactionsQueryStatus),
+  status: TransactionStatus,
   subtype: z.literal('bitcoin'),
 });
 
@@ -100,7 +112,7 @@ const SolanaTransactionStatusData = z.object({
   address: z.string(),
   chain: z.string(),
   period: z.tuple([z.number(), z.number()]),
-  status: z.enum(TransactionsQueryStatus),
+  status: TransactionStatus,
   subtype: z.literal('solana'),
 });
 

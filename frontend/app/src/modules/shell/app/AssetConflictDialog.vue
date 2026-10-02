@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/assets/types';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import AssetConflictRow from '@/modules/shell/app/AssetConflictRow.vue';
 import {
   getConflictFields,
@@ -81,7 +82,7 @@ onMounted(() => {
       primary: !manualResolution ? t('conflict_dialog.keep_remote') : undefined,
       secondary: !manualResolution ? t('conflict_dialog.keep_local') : undefined,
     }"
-    :layout="{ autoHeight: !manualResolution, divide: true, maxWidth: '75rem' }"
+    :layout="{ autoHeight: !manualResolution, divide: true, fill: manualResolution, maxWidth: '75rem' }"
     :persistent="hasResolution"
     display
     @confirm="resolve()"
@@ -104,7 +105,7 @@ onMounted(() => {
     <template #default>
       <RuiAlert
         v-if="warnDuplicate"
-        class="my-2"
+        class="my-2 shrink-0"
         type="warning"
       >
         <i18n-t
@@ -138,45 +139,50 @@ onMounted(() => {
           {{ t('conflict_dialog.action_hint.bottom') }}
         </p>
       </div>
-      <template v-else>
-        <div class="flex mt-4 mb-6">
-          <RuiTooltip
-            :options="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                :active="activeStrategyForAll.local"
-                :variant="activeStrategyForAll.local ? 'default' : 'outlined'"
-                value="local"
-                color="primary"
-                class="!rounded-r-none"
-                @click="setResolution('local')"
-              >
-                {{ t('conflict_dialog.keep_local') }}
-              </RuiButton>
-            </template>
-            {{ t('conflict_dialog.keep_local_tooltip') }}
-          </RuiTooltip>
-          <RuiTooltip
-            :options="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                :active="activeStrategyForAll.remote"
-                :variant="activeStrategyForAll.remote ? 'default' : 'outlined'"
-                color="primary"
-                value="remote"
-                class="!rounded-l-none"
-                @click="setResolution('remote')"
-              >
-                {{ t('conflict_dialog.keep_remote') }}
-              </RuiButton>
-            </template>
-            {{ t('conflict_dialog.keep_remote_tooltip') }}
-          </RuiTooltip>
-        </div>
+      <ScrollableDialogContent
+        v-else
+        fill
+      >
+        <template #header>
+          <div class="flex mt-4 mb-6">
+            <RuiTooltip
+              :options="{ placement: 'top' }"
+              :open-delay="400"
+            >
+              <template #activator>
+                <RuiButton
+                  :active="activeStrategyForAll.local"
+                  :variant="activeStrategyForAll.local ? 'default' : 'outlined'"
+                  value="local"
+                  color="primary"
+                  class="!rounded-r-none"
+                  @click="setResolution('local')"
+                >
+                  {{ t('conflict_dialog.keep_local') }}
+                </RuiButton>
+              </template>
+              {{ t('conflict_dialog.keep_local_tooltip') }}
+            </RuiTooltip>
+            <RuiTooltip
+              :options="{ placement: 'top' }"
+              :open-delay="400"
+            >
+              <template #activator>
+                <RuiButton
+                  :active="activeStrategyForAll.remote"
+                  :variant="activeStrategyForAll.remote ? 'default' : 'outlined'"
+                  color="primary"
+                  value="remote"
+                  class="!rounded-l-none"
+                  @click="setResolution('remote')"
+                >
+                  {{ t('conflict_dialog.keep_remote') }}
+                </RuiButton>
+              </template>
+              {{ t('conflict_dialog.keep_remote_tooltip') }}
+            </RuiTooltip>
+          </div>
+        </template>
 
         <RuiDataTable
           :rows="conflicts"
@@ -219,7 +225,7 @@ onMounted(() => {
             </RuiButtonGroup>
           </template>
         </RuiDataTable>
-      </template>
+      </ScrollableDialogContent>
     </template>
     <template
       v-if="!manualResolution"

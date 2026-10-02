@@ -791,7 +791,7 @@ def test_no_etherscan_is_detected(
         ([ExternalService.ETHERSCAN], 0),
         ([], 1),
     ):
-        rotki.chains_aggregator.ethereum.node_inquirer.etherscan.warning_given = False
+        rotki.chains_aggregator.ethereum.node_inquirer.etherscan.warned_reasons.clear()
         with rotki.data.db.conn.write_ctx() as write_cursor:
             rotki.data.db.set_settings(
                 write_cursor=write_cursor,

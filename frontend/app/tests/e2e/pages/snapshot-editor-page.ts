@@ -59,6 +59,23 @@ export class SnapshotEditorPage {
     await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });
   }
 
+  /** Deletes a balance row split across `locations`, filling each row with what its location holds. */
+  async deleteBalanceRowFillingSplit(asset: string, locations: string[]): Promise<void> {
+    await this.balanceDeleteButton(asset).click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
+
+    await this.page.locator('[data-testid=snapshot-balances-delete-split-toggle] input').check();
+    const rows = this.page.locator('[data-testid=snapshot-location-split-row]');
+    for (const [index, location] of locations.entries()) {
+      const splitRow = rows.nth(index);
+      await this.selectLocation(splitRow.locator('[data-testid=snapshot-location-split-location]'), location);
+      await splitRow.locator('[data-testid=snapshot-location-split-fill]').click();
+    }
+
+    await this.page.locator('[data-testid=button-confirm]').click();
+    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });
+  }
+
   /**
    * Adds a new balance row. The asset's historic USD price must be seeded
    * (see `seedHistoricPrices`) so the value field auto-fills and the form's
@@ -110,6 +127,11 @@ export class SnapshotEditorPage {
     await this.locationsDrawer.waitFor({ state: 'hidden' });
   }
 
+  /** The summary's headline net worth, as rendered. */
+  get netWorth() {
+    return this.page.locator('[data-testid=snapshot-summary-net-worth]');
+  }
+
   get dirtyBadge() {
     return this.page.locator('[data-testid=snapshot-dirty-badge]');
   }
@@ -127,9 +149,52 @@ export class SnapshotEditorPage {
       .locator('[data-testid=row-edit]');
   }
 
-  /** Reconcile a sum-mismatch into the pre-selected (largest) location. */
-  async reconcile(): Promise<void> {
-    await this.page.locator('[data-testid=snapshot-summary-reconcile-apply]').click();
+  /** The delete button of a balance data row. */
+  balanceDeleteButton(asset: string) {
+    return this.balancesTable
+      .locator('tr', { hasText: asset })
+      .filter({ has: this.page.locator('[data-testid=row-delete]') })
+      .first()
+      .locator('[data-testid=row-delete]');
+  }
+
+  /** The chip counting rows the default filters hide (spam, ignored). */
+  get hiddenRowsChip() {
+    return this.page.locator('[data-testid=snapshot-balances-hidden-count]');
+  }
+
+  /** Clears the filters that hide spam and ignored rows. */
+  async revealHiddenRows(): Promise<void> {
+    await this.hiddenRowsChip.click();
+    await this.hiddenRowsChip.waitFor({ state: 'hidden' });
+  }
+
+  /** The mismatch banner's offer to remove the rows the gap comes down to. */
+  get removeGapRowsButton() {
+    return this.page.locator('[data-testid=snapshot-summary-remove-gap-rows]');
+  }
+
+  /** The mismatch banner's note that no single location can absorb the difference. */
+  get noReconcileTarget() {
+    return this.page.locator('[data-testid=snapshot-summary-no-reconcile-target]');
+  }
+
+  /** The assets the mismatch banner names as the gap. */
+  get gapAssets() {
+    return this.page.locator('[data-testid=snapshot-summary-gap-assets]');
+  }
+
+  /** Shows the spam and ignored rows from the summary's excluded-value line. */
+  async showExcludedRows(): Promise<void> {
+    await this.page.locator('[data-testid=snapshot-summary-show-excluded]').click();
+  }
+
+  /** Reconcile a sum-mismatch into `location`; nothing is preselected, so it must be picked first. */
+  async reconcile(location: string): Promise<void> {
+    const apply = this.page.locator('[data-testid=snapshot-summary-reconcile-apply]');
+    await expect(apply).toBeDisabled();
+    await this.selectLocation(this.mismatchBanner, location);
+    await apply.click();
     await this.mismatchBanner.waitFor({ state: 'hidden' });
   }
 

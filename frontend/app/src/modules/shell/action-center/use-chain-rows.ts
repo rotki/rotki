@@ -9,6 +9,7 @@ import { INDEXER_SETTINGS, useSuppressOption } from '@/modules/shell/action-cent
 import {
   conditionRowId,
   isConditionOf,
+  NoIndexersCause,
   RaisedConditionKind,
   type RaisedConditionOf,
   useRaisedConditionsStore,
@@ -18,14 +19,28 @@ type NoIndexersCondition = RaisedConditionOf<typeof RaisedConditionKind.NO_AVAIL
 
 const isNoIndexersCondition = isConditionOf(RaisedConditionKind.NO_AVAILABLE_INDEXERS);
 
+/** The causes a key restores, whose row's own action is entering that key. */
+const KEY_CAUSES: ReadonlySet<NoIndexersCause> = new Set([
+  NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY,
+  NoIndexersCause.PAID_ETHERSCAN_KEY,
+]);
+
+/** The external services page, opened on the key a row asks for. */
+function keySettings(service: 'blockscout' | 'etherscan'): ActionTarget {
+  return {
+    kind: 'route',
+    to: getServiceRegisterUrl(service)?.route ?? { name: '/api-keys/external/', query: { service } },
+  };
+}
+
 /**
  * The chain rows: chains no indexer could serve.
  *
  * @remarks
  * Nothing can ask whether a chain has an indexer again, and the backend reports each chain only once
- * per session, so a row stays until the user suppresses the chain or does what it asks: saving an
- * Etherscan key clears the rows that asked for a paid one. A key that is already saved is no reason
- * to hide a row, since the key Etherscan refused is usually that one.
+ * per reason per session, so a row stays until the user suppresses the chain or does what it asks:
+ * saving the key a row asks for clears it. A key that is already saved is no reason to hide a row,
+ * since the key Etherscan refused is usually that one.
  */
 export function useChainRows(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -46,9 +61,13 @@ export function useChainRows(): ComputedRef<ActionItem[]> {
       await updateFrontendSetting({ suppressNoIndexerChains: [...current, chain] });
   }
 
-  function options({ chain, paidKeyRequired }: NoIndexersCondition, chainName: string): ActionItemOption[] {
+  /**
+   * Configuring the indexers, as an option where the row's own action asks for a key, and silencing
+   * the chain.
+   */
+  function options({ cause, chain }: NoIndexersCondition, chainName: string): ActionItemOption[] {
     return applicable<ActionItemOption>([
-      paidKeyRequired
+      KEY_CAUSES.has(cause)
         ? some({
             icon: 'lu-settings',
             id: 'configure-indexers',
@@ -75,27 +94,32 @@ export function useChainRows(): ComputedRef<ActionItem[]> {
       urgency: ActionUrgency.DECISION,
     } as const;
 
-    if (condition.paidKeyRequired) {
-      const etherscanSettings: ActionTarget = {
-        kind: 'route',
-        to: getServiceRegisterUrl('etherscan')?.route ?? { name: '/api-keys/external/', query: { service: 'etherscan' } },
-      };
-      return createActionItem<ActionTarget, string>({
-        ...shared,
-        actionLabel: t('action_center.rows.chains.paid_key_required.action'),
-        description: t('action_center.rows.chains.paid_key_required.description', { chain }),
-        target: etherscanSettings,
-        title: t('action_center.rows.chains.paid_key_required.title', { chain }),
-      });
+    switch (condition.cause) {
+      case NoIndexersCause.PAID_ETHERSCAN_KEY:
+        return createActionItem<ActionTarget, string>({
+          ...shared,
+          actionLabel: t('action_center.rows.chains.paid_key_required.action'),
+          description: t('action_center.rows.chains.paid_key_required.description', { chain }),
+          target: keySettings('etherscan'),
+          title: t('action_center.rows.chains.paid_key_required.title', { chain }),
+        });
+      case NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY:
+        return createActionItem<ActionTarget, string>({
+          ...shared,
+          actionLabel: t('action_center.rows.chains.blockscout_key_required.action'),
+          description: t('action_center.rows.chains.blockscout_key_required.description', { chain }),
+          target: keySettings('blockscout'),
+          title: t('action_center.rows.chains.blockscout_key_required.title', { chain }),
+        });
+      case NoIndexersCause.UNAVAILABLE:
+        return createActionItem<ActionTarget, string>({
+          ...shared,
+          actionLabel: t('action_center.rows.chains.no_indexers.action'),
+          description: t('action_center.rows.chains.no_indexers.description', { chain }),
+          target: INDEXER_SETTINGS,
+          title: t('action_center.rows.chains.no_indexers.title', { chain }),
+        });
     }
-
-    return createActionItem<ActionTarget, string>({
-      ...shared,
-      actionLabel: t('action_center.rows.chains.no_indexers.action'),
-      description: t('action_center.rows.chains.no_indexers.description', { chain }),
-      target: INDEXER_SETTINGS,
-      title: t('action_center.rows.chains.no_indexers.title', { chain }),
-    });
   }
 
   return computed<ActionItem[]>(() => get(conditions).filter(isNoIndexersCondition).filter(isOpen).map(row));

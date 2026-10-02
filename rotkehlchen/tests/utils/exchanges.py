@@ -13,7 +13,6 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, 
 from rotkehlchen.exchanges.bit2me import Bit2me
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
-from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
@@ -797,23 +796,6 @@ def create_test_bit2me(
     )
 
 
-def create_test_bitmex(
-        database: DBHandler,
-        msg_aggregator: MessagesAggregator,
-) -> Bitmex:
-    # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
-    bitmex = Bitmex(
-        name='bitmex',
-        api_key=ApiKey('LAqUlngMIQkIUjXMUreyu3qn'),
-        secret=ApiSecret(b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO'),
-        database=database,
-        msg_aggregator=msg_aggregator,
-    )
-    bitmex.first_connection_made = True
-    bitmex.asset_to_decimals = {'XBt': 8, 'USDt': 6}
-    return bitmex
-
-
 def create_test_bitstamp(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -1070,14 +1052,6 @@ def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.BITFINEX],
 ) -> Bitfinex | None:
-    ...
-
-
-@overload
-def try_get_first_exchange(
-        exchange_manager: ExchangeManager,
-        location: Literal[Location.BITMEX],
-) -> Bitmex | None:
     ...
 
 

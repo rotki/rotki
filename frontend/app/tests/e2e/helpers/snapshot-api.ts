@@ -21,6 +21,36 @@ export interface ApiSnapshot {
 }
 
 /**
+ * Adds assets to the user's ignored list. The app loads that list at login, so call it before a
+ * (re)login for the UI to see it.
+ */
+export async function apiIgnoreAssets(request: APIRequestContext, assets: string[]): Promise<void> {
+  const response = await request.put(`${backendUrl}/api/1/assets/ignored`, { data: { assets } });
+  if (!response.ok())
+    throw new Error(`Failed to ignore ${assets.join(', ')}: ${response.status()} ${await response.text()}`);
+}
+
+/**
+ * Marks tokens as spam, which also ignores them. Like `apiIgnoreAssets`, call it before a (re)login
+ * for the UI to see it.
+ */
+export async function apiMarkSpam(request: APIRequestContext, tokens: string[]): Promise<void> {
+  const response = await request.post(`${backendUrl}/api/1/assets/spam`, { data: { tokens } });
+  if (!response.ok())
+    throw new Error(`Failed to mark ${tokens.join(', ')} as spam: ${response.status()} ${await response.text()}`);
+}
+
+/** The net-value series the dashboard graph plots, keyed by snapshot timestamp (USD). */
+export async function apiGetNetValue(request: APIRequestContext): Promise<Map<number, number>> {
+  const response = await request.get(`${backendUrl}/api/1/statistics/netvalue`);
+  if (!response.ok())
+    throw new Error(`Failed to fetch the net value: ${response.status()} ${await response.text()}`);
+  const body: { result: { times: number[]; data: string[] } } = await response.json();
+  const { data, times } = body.result;
+  return new Map(times.map((time, index) => [time, Number(data[index])]));
+}
+
+/**
  * Reads a snapshot directly from the backend for assertion purposes. Keys are
  * snake_case (the raw backend shape) — the frontend's camelCase is applied by
  * its own API wrapper, which we deliberately bypass here.

@@ -4,7 +4,7 @@ import type { PrioritizedListData } from '@/modules/settings/types/prioritized-l
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';
+import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, initialOrderForChain, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useEvmIndexerSettings } from '@/modules/settings/use-evm-indexer-settings';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -80,17 +80,20 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
 
   const tabs = computed<TabItem[]>(() => buildTabs(get(configuredChains), getChainName));
 
+  // A saved order can hold an indexer the chain lost since, such as Routescan on Optimism.
+  const chainOrders = computed<Record<string, PrioritizedListId[]>>(() => Object.fromEntries(
+    Object.entries(get(localChainOrders)).map(([chain, order]) => [chain, orderForChain(chain, order)]),
+  ));
+
   const currentOrder = computed<PrioritizedListId[]>(() => {
     const tab = get(modelActiveTab);
     if (tab === DEFAULT_INDEXER_TAB)
       return get(localDefaultOrder);
 
-    return get(localChainOrders)[tab] ?? [];
+    return get(chainOrders)[tab] ?? [];
   });
 
   const defaultOrder = computed<PrioritizedListId[]>(() => get(localDefaultOrder));
-
-  const chainOrders = computed<Record<string, PrioritizedListId[]>>(() => get(localChainOrders));
 
   const chainWarnings = computed<MessageKey[]>(() => getChainIndexerWarnings(get(modelActiveTab), get(currentOrder)));
 
@@ -104,7 +107,7 @@ export function useEvmIndexerOrder(): UseEvmIndexerOrderReturn {
   }
 
   async function addChain(chain: ChainItem): Promise<void> {
-    const orders = { ...get(localChainOrders), [chain.id]: orderForChain(chain.id, get(localDefaultOrder)) };
+    const orders = { ...get(localChainOrders), [chain.id]: initialOrderForChain(chain.id, get(localDefaultOrder)) };
     set(localChainOrders, orders);
     set(modelActiveTab, chain.id);
     await persistChainOrders(orders);

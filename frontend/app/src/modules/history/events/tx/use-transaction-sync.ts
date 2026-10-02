@@ -2,6 +2,7 @@ import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
+import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -62,9 +63,14 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    *
    * The failure itself needs no recording here: it is the account activity's own status, which the
    * dock reports. A skip or a cancellation is not something to act on, so neither is announced.
+   *
+   * An incomplete query is not announced either. It fails every address an indexer refused, so a
+   * chain no indexer serves would raise one per address, and the backend already explains it with
+   * its own notification. The failure still shows on the account's dock row, and the missing ranges
+   * are retried by the next sync.
    */
   const notifyQueryFailure = (error: TaskError, account: ChainAddress, chainName: string): void => {
-    if (!isActionable(error))
+    if (!isActionable(error) || error.cause instanceof IncompleteQueryError)
       return;
 
     notifyError(

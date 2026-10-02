@@ -170,7 +170,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterator, Mapping, Sequence
+    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 
     from rotkehlchen.chain.substrate.types import SubstrateAddress
     from rotkehlchen.db.filtering import UserNotesFilterQuery
@@ -887,6 +887,7 @@ class DBHandler:
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
+                DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
                 DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
                 DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
@@ -1407,8 +1408,8 @@ class DBHandler:
 
             write_cursor.execute(
                 'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
-                'AND label=? AND category=?',
-                (chain, address, DEFAULT_BALANCE_LABEL, asset_category),
+                'AND label=? AND category=? AND asset!=?',
+                (chain, address, DEFAULT_BALANCE_LABEL, asset_category, blockchain.get_native_token_id()),  # noqa: E501
             )
             write_cursor.executemany(
                 'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
@@ -2275,6 +2276,43 @@ class DBHandler:
             '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
         )
+
+    def add_tokens_for_address(
+            self,
+            write_cursor: DBCursor,
+            address: ChecksumEvmAddress,
+            blockchain: SupportedBlockchain,
+            tokens: Iterable[Asset],
+    ) -> None:
+        """Adds tokens to the detected tokens of an address keeping the already saved ones.
+        Unlike save_tokens_for_address it doesn't touch the last queried timestamp since
+        this is not a full token detection."""
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            [(address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, x.identifier) for x in tokens],
+        )
+
+    def get_cached_token_ids(
+            self,
+            cursor: DBCursor,
+            address: ChecksumEvmAddress,
+            chain_id: ChainID,
+            token_ids: Collection[str],
+    ) -> set[str]:
+        """Returns which of the given token identifiers are in the detected tokens of the
+        address. Queries by the full primary key in bounded chunks so it doesn't scan the
+        detected tokens of other accounts or load every cached token of the chain."""
+        cached: set[str] = set()
+        for chunk in get_chunks(list(token_ids), n=500):
+            cached.update(row[0] for row in cursor.execute(
+                'SELECT value FROM evm_accounts_details WHERE account=? AND chain_id=? AND '
+                f'key=? AND value IN ({",".join(["?"] * len(chunk))})',
+                (address, chain_id.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS, *chunk),
+            ))
+
+        return cached
 
     def _deserialize_account_blockchain_from_db(
             self,

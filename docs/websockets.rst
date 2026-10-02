@@ -265,7 +265,7 @@ For EVM transactions:
 - ``chain``: The EVM chain for which transactions are being queried.
 - ``subtype``: Labels which type of transaction status message this is. Will be `evm` for EVM transactions.
 - ``period``: The time range that is being queried.
-- ``status``: Either `querying_transactions_started`, `querying_transactions`, `querying_internal_transactions`, `querying_evm_tokens_transactions`, or `querying_transactions_finished`.
+- ``status``: Either `querying_transactions_started`, `querying_transactions`, `querying_internal_transactions`, `querying_evm_tokens_transactions`, `querying_transactions_finished`, or `querying_transactions_failed`. Every query ends with either `querying_transactions_finished` or `querying_transactions_failed`. The latter is sent when not everything could be queried, for example because every indexer failed, and the address is then retried by the next query.
 
 For Bitcoin transactions:
 

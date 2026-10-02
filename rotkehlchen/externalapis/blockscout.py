@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
@@ -8,14 +9,20 @@ import requests
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockscoutIncompleteResponse,
+    ChainNotSupported,
+    IndexerRangeNotCovered,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
-from rotkehlchen.externalapis.utils import get_earliest_ts, maybe_read_integer
+from rotkehlchen.externalapis.utils import get_earliest_ts, read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
@@ -29,7 +36,13 @@ from rotkehlchen.types import (
     ExternalService,
     Timestamp,
 )
-from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.misc import (
+    from_wei,
+    iso8601ts_to_timestamp,
+    set_user_agent,
+    ts_now,
+    ts_sec_to_ms,
+)
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -39,6 +52,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -51,9 +65,20 @@ BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # DoS our own backend.
 BLOCKSCOUT_RATE_LIMIT_RPS: Final = 10.0
 BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
-# The PRO endpoints reject keyless queries with 401, or with 402 asking for a key or an
-# x402 payment. Both mean the same thing for us: no usable API key.
-KEY_REQUIRED_STATUS_CODES: Final = (401, 402)
+# The PRO endpoints reject an invalid key with 401, or a key whose plan does not cover the
+# requested chain with 402. Keyless queries are rejected locally before making a request.
+KEY_REJECTED_STATUS_CODES: Final = (401, 402)
+# How long to skip a chain whose requests were rejected for the configured key. Every query
+# on it would only spend a request before falling back to the next indexer. Not skipped for
+# good, since a key that ran out of quota or had its plan upgraded recovers on its own.
+KEY_REJECTED_SKIP_SECONDS: Final = 600
+# Blockscout answers a txlistinternal query with status 2 when some internal transactions in
+# the requested blocks are not processed yet. The hole is per block, not per address, and it
+# takes hours to be backfilled. So for this long any range containing a range that failed is
+# skipped for every address on the chain, instead of spending a request bound to fail again.
+BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN: Final = HOUR_IN_SECONDS
+# Backstop on how many failed ranges are remembered per chain. The oldest are dropped first.
+BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN: Final = 50
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -75,6 +100,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         ExternalServiceWithRecommendedApiKey.__init__(
             self,
@@ -92,11 +118,21 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 rps=BLOCKSCOUT_RATE_LIMIT_RPS,
                 capacity=BLOCKSCOUT_RATE_LIMIT_BURST,
             ),
+            indexer_stats=indexer_stats,
         )
         self.session = create_session()
         set_user_agent(self.session)
         self.api_urls: dict[ChainID, str] = {}
         self.rpc_urls: dict[ChainID, str] = {}
+        # Chains whose requests were rejected for the configured key, and when that happened
+        self.key_rejected_chains: dict[ChainID, Timestamp] = {}
+        # Makes checking a rejection against the configured key and recording it atomic with
+        # respect to a key change, so a stale rejection cannot be recorded after the reset.
+        self._key_change_lock = threading.Lock()
+        # Internal tx block ranges (from, to) blockscout reported as incomplete, per chain,
+        # with when that happened. Not cleared on a key change, the hole is in its data.
+        self.incomplete_internal_ranges: dict[ChainID, list[tuple[int, int, Timestamp]]] = {}
+        self._incomplete_ranges_lock = threading.Lock()
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
             if chain_id in AUTOSCOUT_INSTANCES:
                 self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
@@ -104,6 +140,97 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             else:
                 self.api_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'  # noqa: E501
                 self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
+
+    def on_api_key_changed(self) -> None:
+        with self._key_change_lock:
+            self.reset_api_key_state()
+            self.key_rejected_chains.clear()
+
+        super().on_api_key_changed()
+
+    @staticmethod
+    def _internal_txs_block_range(
+            module: str,
+            action: str,
+            options: dict[str, Any],
+    ) -> tuple[int, int] | None:
+        """Return the block range of an internal transactions range query, if it is one."""
+        if (
+            module != 'account' or
+            action != 'txlistinternal' or
+            'txhash' in options or
+            (start_block := options.get('startblock')) is None or
+            (end_block := options.get('endblock')) is None
+        ):
+            return None
+
+        try:
+            return int(start_block), int(end_block)
+        except (TypeError, ValueError):
+            return None
+
+    def _prune_incomplete_ranges(
+            self,
+            chain_id: ChainID,
+            now: Timestamp,
+    ) -> list[tuple[int, int, Timestamp]]:
+        """Drop the expired incomplete ranges of the chain and return the rest.
+
+        Must be called with self._incomplete_ranges_lock held.
+        """
+        ranges = [
+            entry for entry in self.incomplete_internal_ranges.get(chain_id, [])
+            if now - entry[2] < BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN
+        ]
+        if len(ranges) == 0:
+            self.incomplete_internal_ranges.pop(chain_id, None)
+        else:
+            self.incomplete_internal_ranges[chain_id] = ranges
+        return ranges
+
+    def _find_incomplete_range(
+            self,
+            chain_id: ChainID,
+            from_block: int,
+            to_block: int,
+    ) -> tuple[int, int] | None:
+        """Return a recently failed range that the given one contains, if any.
+
+        Containing it means containing its unprocessed block, so the query would fail too.
+        A range that only overlaps a failed one, or sits inside it, may exclude that block.
+        """
+        with self._incomplete_ranges_lock:
+            for failed_from, failed_to, _ in self._prune_incomplete_ranges(chain_id, ts_now()):
+                if from_block <= failed_from and failed_to <= to_block:
+                    return failed_from, failed_to
+
+        return None
+
+    def _record_incomplete_range(
+            self,
+            chain_id: ChainID,
+            from_block: int,
+            to_block: int,
+    ) -> None:
+        """Remember a range blockscout reported as incomplete, replacing wider ones.
+
+        Any range containing a wider failed range also contains this one, so the wider ones
+        no longer skip anything this one does not.
+        """
+        now = ts_now()
+        with self._incomplete_ranges_lock:
+            ranges = [
+                entry for entry in self._prune_incomplete_ranges(chain_id, now)
+                if not (entry[0] <= from_block and to_block <= entry[1])
+            ]
+            ranges.append((from_block, to_block, now))
+            del ranges[:-BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN]
+            self.incomplete_internal_ranges[chain_id] = ranges
+
+        log.debug(
+            'Recorded %s blocks %s - %s as having unprocessed internal transactions in blockscout',
+            chain_id.name, from_block, to_block,
+        )
 
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
         url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
@@ -120,7 +247,24 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 f'{chain_id.name} requires. Skipping it.',
             )
 
+        if (
+                (rejected_ts := self.key_rejected_chains.get(chain_id)) is not None and
+                ts_now() - rejected_ts < KEY_REJECTED_SKIP_SECONDS
+        ):
+            raise RemoteError(
+                f'Blockscout recently rejected the configured API key for {chain_id.name}. '
+                f'Skipping it.',
+            )
+
         return url
+
+    def needs_api_key_for_chain(self, chain_id: ChainID) -> bool:
+        """Whether adding a Blockscout api key would let the given chain be queried."""
+        return (
+            chain_id in self.api_urls and
+            chain_id not in AUTOSCOUT_INSTANCES and
+            self._get_api_key() is None
+        )
 
     def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
         """Blockscout uses the same api key for all supported chains."""
@@ -163,13 +307,24 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
     def _query_and_process(
             self,
+            chain_id: ChainID,
+            endpoint: str,
             query_str: str,
             params: dict[str, Any] | None = None,
             query_params: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
             http_method: Literal['get', 'post'] = 'get',
     ) -> dict[str, Any]:
-        """Shared logic between v1 and v2 for querying blockscout api"""
+        """Shared logic between v1 and v2 for querying blockscout api
+
+        Attaches the API key itself, so a rejection can be checked against the key it sent.
+        """
+        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
+            if http_method == 'get':
+                params = (params or {}) | {'apikey': api_key}
+            else:  # the json body of a post is the rpc payload, so the key goes in the url
+                query_params = (query_params or {}) | {'apikey': api_key}
+
         times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
         timeout = timeout or cached_settings.get_timeout_tuple()
@@ -188,6 +343,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     request_kwargs['params'] = query_params
 
                 request_kwargs['params' if http_method == 'get' else 'json'] = params
+                self._record_request(chain_id, endpoint)
                 response = self.session.request(
                     method=http_method,
                     url=query_str,
@@ -217,17 +373,28 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 cancellable_sleep(sleep_seconds)
                 continue
 
-            if response.status_code in KEY_REQUIRED_STATUS_CODES:
+            if (
+                response.status_code in KEY_REJECTED_STATUS_CODES and
+                chain_id not in AUTOSCOUT_INSTANCES
+            ):
                 # Keyless queries never get this far (_get_url bails out first), so reaching
                 # here means the configured key was rejected as invalid, expired or out of
-                # quota. Flag it as a key problem rather than a generic request failure, since
-                # on a chain where blockscout leads it is otherwise unqueryable with no
-                # explanation of why.
-                self.maybe_warn_missing_key()
+                # quota, or its plan does not cover this chain. Distinguish that from a missing
+                # key so the UI does not tell the user to add a credential that already exists.
+                # Only blame the key if it is still the configured one. A request in flight
+                # while the user changed the key must not skip the chain for the new key.
+                with self._key_change_lock:
+                    if api_key == self._get_api_key_for_chain(chain_id):
+                        self.key_rejected_chains[chain_id] = ts_now()
+                        self.maybe_warn_missing_key(
+                            location=chain_id.label(),
+                            reason='key_not_usable',
+                        )
+
                 raise RemoteError(
-                    f'Blockscout API request {response.url} requires an API key. '
-                    f'It failed with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
+                    f'Blockscout API request {response.url} could not authorize the configured '
+                    f'API key for {chain_id.label()}. It failed with HTTP status code '
+                    f'{response.status_code} and text {response.text}',
                 )
 
             if response.status_code != 200:
@@ -302,15 +469,33 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         query_args = {} if options is None else options
         query_args |= {'module': module, 'action': action}
-        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
-            query_args['apikey'] = api_key
+        query_str = self._get_url(chain_id=chain_id, endpoint='api')
+        block_range = self._internal_txs_block_range(module, action, query_args)
+        if (
+            block_range is not None and
+            (failed_range := self._find_incomplete_range(chain_id, *block_range)) is not None
+        ):
+            log.debug(
+                'Skipping blockscout %s internal transactions query for blocks %s - %s, since it '
+                'contains blocks %s - %s that were recently reported as not yet processed',
+                chain_id.name, *block_range, *failed_range,
+            )
+            raise BlockscoutIncompleteResponse(
+                f'Skipped blockscout query for {query_args} from the cache. Blockscout recently '
+                f'reported blocks {failed_range[0]} - {failed_range[1]} as not yet processed',
+            )
+
         response = self._query_and_process(
-            query_str=self._get_url(chain_id=chain_id, endpoint='api'),
+            chain_id=chain_id,
+            endpoint=f'{module}.{action}',
+            query_str=query_str,
             params=query_args,
             timeout=timeout,
         )
         if str(response.get('status')) == '2':  # Missing data, fall back to other indexers
-            raise RemoteError(f'Blockscout is missing data for {query_args}: {response}')
+            if block_range is not None:
+                self._record_incomplete_range(chain_id, *block_range)
+            raise BlockscoutIncompleteResponse(f'Blockscout is missing data for {query_args}: {response}')  # noqa: E501
 
         if (
             (message := response.get('message')) is not None and
@@ -393,10 +578,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         query_str = f"{self._get_url(chain_id=chain_id, endpoint='api')}/v2/{module}/{encoded_args}"  # noqa: E501
         if endpoint is not None:
             query_str += f'/{endpoint}'
-        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
-            extra_args['apikey'] = api_key
 
         return self._query_and_process(
+            chain_id=chain_id,
+            endpoint=f'v2/{module}/:id' + (f'/{endpoint}' if endpoint is not None else ''),
             query_str=query_str,
             params=extra_args,
         )
@@ -454,6 +639,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             params = list(options.values())
 
         if 'result' not in (response := self._query_and_process(
+            chain_id=chain_id,
+            endpoint=f'rpc.{method}',
             query_str=self._get_url(chain_id=chain_id, endpoint='rpc'),
             params={
                 'id': 0,
@@ -461,7 +648,6 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 'method': method,
                 'params': params,
             },
-            query_params={'apikey': api_key} if (api_key := self._get_api_key_for_chain(chain_id)) is not None else None,  # noqa: E501
             http_method='post',
         )):
             raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
@@ -659,14 +845,14 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             if isinstance(period_or_hash, TimestampOrBlockRange):
                 threshold = OP_BEDROCK_BLOCK if period_or_hash.range_type == 'blocks' else OP_BEDROCK_UPGRADE  # noqa: E501
                 if period_or_hash.from_value < threshold:
-                    raise RemoteError(
+                    raise IndexerRangeNotCovered(
                         f'Skipping Optimism internal transactions range query '
                         f'({period_or_hash.from_value} - {period_or_hash.to_value}): '
                         f'range starts before Bedrock {period_or_hash.range_type[:-1]} '
                         f'{threshold}. Other indexers may have this data.',
                     )
             elif tx_timestamp is not None and tx_timestamp < OP_BEDROCK_UPGRADE:
-                raise RemoteError(
+                raise IndexerRangeNotCovered(
                     f'Skipping Optimism internal transactions query for '
                     f'{period_or_hash!s}: tx timestamp {tx_timestamp} < {OP_BEDROCK_UPGRADE}. '
                     f'Other indexers may have this data.',
@@ -695,6 +881,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         """
         if ts < get_earliest_ts(chain_id):
             return 0  # behave like etherscan for timestamps close to the genesis
+        if chain_id == ChainID.OPTIMISM and ts < OP_BEDROCK_UPGRADE:
+            raise IndexerRangeNotCovered(
+                f'Blockscout cannot reliably resolve Optimism blocks before Bedrock ({ts}).',
+            )
 
         response = self._query(
             chain_id=chain_id,
@@ -813,6 +1003,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             block_number: int,
     ) -> int:
         """Query the L1 fee for the given tx hash from the v2 transactions endpoint.
+        Scroll nests the fee under a `scroll` key while OP stack chains return it at the top.
         May raise:
         - RemoteError if unable to get the L1 fee amount or query fails.
         """
@@ -822,6 +1013,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             encoded_args=str(tx_hash),
         )
         try:
-            return maybe_read_integer(data=response, key='l1_fee', api=self.name)
-        except DeserializationError as e:
-            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e
+            return read_integer(
+                data=response['scroll'] if chain_id == ChainID.SCROLL else response,
+                key='l1_fee',
+                api=self.name,
+            )
+        except (KeyError, TypeError, DeserializationError) as e:
+            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501

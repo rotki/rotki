@@ -36,3 +36,7 @@ getrandom = "=0.2.17"
 # PID-1 orphan reaping (waitid/waitpid), privilege separation (setuid/setgid/
 # setgroups/geteuid via "user"), and volume chown ("fs") in docker mode.
 nix = { version = "=0.30.1", features = ["process", "signal", "user", "fs"] }
+
+# Version resource and icon for starling.exe, see ../build-support/windows_resource.rs
+[target.'cfg(windows)'.build-dependencies]
+winresource = { version = "=0.1.31", default-features = false }

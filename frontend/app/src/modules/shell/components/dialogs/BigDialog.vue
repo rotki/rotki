@@ -31,6 +31,11 @@ export interface BigDialogLayout {
   divide?: boolean;
   /** Drop the 50vh minimum on the content area. */
   autoHeight?: boolean;
+  /**
+   * Bound the content area without scrolling it, so the slot scrolls on its own
+   * (a `ScrollableDialogContent` with `fill`) and can keep a toolbar above the table in view.
+   */
+  fill?: boolean;
 }
 
 defineOptions({
@@ -91,6 +96,8 @@ const maxWidth = computed<string>(() => layout?.maxWidth ?? '900px');
 const divide = computed<boolean>(() => layout?.divide ?? false);
 
 const autoHeight = computed<boolean>(() => layout?.autoHeight ?? false);
+
+const fill = computed<boolean>(() => layout?.fill ?? false);
 
 const hasErrors = computed<boolean>(() => get(errorCount) > 0);
 
@@ -190,8 +197,12 @@ function promptClose() {
         <div
           v-if="display"
           ref="wrapper"
-          class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4 max-h-[calc(90vh-190px)]"
-          :class="{ 'min-h-[50vh]': !autoHeight }"
+          class="-mx-4 px-4 -mt-4 pt-2 pb-4 max-h-[calc(90vh-190px)]"
+          :class="{
+            'min-h-[50vh]': !autoHeight,
+            'overflow-y-auto': !fill,
+            'flex flex-col overflow-hidden': fill,
+          }"
         >
           <slot :wrapper="wrapper" />
         </div>

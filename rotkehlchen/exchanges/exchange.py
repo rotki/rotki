@@ -366,7 +366,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """Queries the exchange's API for the margin positions history of the user
 
         Should be implemented by subclasses if the exchange can return margin position history in
-        any form. This is only implemented for bitmex at the moment.
+        any form.
         """
         raise NotImplementedError(
             'query_online_margin_history() should only be implemented by subclasses',

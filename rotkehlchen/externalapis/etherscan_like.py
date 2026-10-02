@@ -42,7 +42,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
+from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -53,10 +53,14 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.utils.rate_limiter import TokenBucket
 
 TRANSACTIONS_BATCH_NUM: Final = 10
+# After a query used up its retries on a transient overload response, fail later overloaded
+# responses fast for this long instead of backing off on each query.
+OVERLOADED_FAIL_FAST_SECONDS: Final = 60
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -99,6 +103,7 @@ class EtherscanLikeApi(ABC):
             pagination_limit: int,
             default_api_key: ApiKey,
             rate_limiter: TokenBucket,
+            indexer_stats: IndexerStats | None = None,
     ) -> None:
         self.db = database
         self.msg_aggregator = msg_aggregator
@@ -107,6 +112,7 @@ class EtherscanLikeApi(ABC):
         self.default_api_key = default_api_key
         self.pagination_limit = pagination_limit
         self.name = name
+        self.indexer_stats = indexer_stats
         # Shared across all greenlets that share this instance — required to
         # gate parallel cross-chain calls into upstreams (e.g. etherscan-v2)
         # that enforce a single rate-limit bucket across chains.
@@ -115,6 +121,12 @@ class EtherscanLikeApi(ABC):
         self._default_rps = rate_limiter.rps
         self._default_capacity = int(rate_limiter.capacity)
         self._default_minimum_rps = rate_limiter.minimum_rps
+        # Until when overloaded responses fail without retrying. See OVERLOADED_FAIL_FAST_SECONDS
+        self.overloaded_until = Timestamp(0)
+
+    def _record_request(self, chain_id: ChainID, endpoint: str) -> None:
+        if self.indexer_stats is not None:
+            self.indexer_stats.record(self.name.lower(), chain_id, endpoint)
 
     def on_api_key_changed(self) -> None:
         """Reset the rate limiter to free-tier defaults so a new key starts fresh.
@@ -226,16 +238,17 @@ class EtherscanLikeApi(ABC):
         """Return optional account endpoint pagination params for an indexer."""
         return None
 
-    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> None:
+    def _handle_missing_result(self, chain_id: ChainID, json_ret: dict[str, Any]) -> bool:
         """Hook for subclasses to map a response carrying no result to a specific error.
 
         Called just before the generic "missing a result" RemoteError is raised, so an
         indexer that answers an oversized query with a distinguishable message can turn it
         into something callers are able to act on instead of a malformed-response error.
 
+        Returns True when the response is transient and the query should be retried.
         May raise RemoteError or any of its subclasses.
         """
-        return  # no-op by default, the generic error is raised right after
+        return False  # no-op by default, the generic error is raised right after
 
     @overload
     def _query(
@@ -369,6 +382,7 @@ class EtherscanLikeApi(ABC):
         while backoff < backoff_limit:
             self._rate_limiter.acquire()
             log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
+            self._record_request(chain_id, f'{module}.{action}')
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
@@ -401,11 +415,41 @@ class EtherscanLikeApi(ABC):
                 ) from e
 
             try:
-                if (result := json_ret.get('result')) is None:
+                if (
+                        (result := json_ret.get('result')) is None and
+                        self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
+                ):
+                    if (
+                            (still_overloaded := ts_now() < self.overloaded_until) or
+                            backoff * 2 >= backoff_limit
+                    ):
+                        self.overloaded_until = Timestamp(ts_now() + OVERLOADED_FAIL_FAST_SECONDS)
+                        if still_overloaded:
+                            # A previous query already used up its retries on this. Fail fast
+                            # so an outage does not add a backoff to every query.
+                            raise RemoteError(
+                                f'{self.name} is still overloaded while querying {chain_id}. '
+                                f'Not retrying. Response was: {response.text}',
+                            )
+
+                        break  # no retry would follow, so do not sleep before failing
+
+                    log.debug(
+                        'Got a transient missing-result response from %s while querying %s. '
+                        'Will backoff for %s seconds.',
+                        self.name,
+                        chain_id,
+                        backoff,
+                    )
+                    cancellable_sleep(backoff)
+                    backoff *= 2
+                    continue
+
+                self.overloaded_until = Timestamp(0)  # any other response means it serves again
+                if result is None:
                     if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
-                    self._handle_missing_result(chain_id=chain_id, json_ret=json_ret)
                     raise RemoteError(
                         f'Unexpected format of {self.name} response for request {response.url}. '
                         f'Missing a result in response. Response was: {response.text}',

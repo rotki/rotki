@@ -227,7 +227,7 @@ class Cryptocompare(
             service_name=ExternalService.CRYPTOCOMPARE,
         )
         PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
-        self.session = create_session(retry_reads=False)
+        self.session = create_session(retry_policy='no_read_retries')
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy

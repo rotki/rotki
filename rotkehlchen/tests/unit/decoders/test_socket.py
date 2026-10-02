@@ -73,7 +73,7 @@ def test_scroll_to_arbitrum_across_bridge(scroll_inquirer, scroll_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal('0.00000785918'),
+            amount=FVal('0.000008504323464698'),
             location_label=user_address,
             counterparty=CPT_GAS,
         ), EvmEvent(

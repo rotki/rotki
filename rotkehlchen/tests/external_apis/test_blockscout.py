@@ -1,8 +1,12 @@
+import datetime
+import json
+import threading
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import ANY, patch
 
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -11,18 +15,41 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.blockscout import BLOCKSCOUT_PAGINATION_LIMIT, Blockscout
+from rotkehlchen.errors.misc import (
+    BlockscoutIncompleteResponse,
+    IndexerRangeNotCovered,
+    RemoteError,
+)
+from rotkehlchen.externalapis.blockscout import (
+    BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN,
+    BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN,
+    BLOCKSCOUT_PAGINATION_LIMIT,
+    KEY_REJECTED_SKIP_SECONDS,
+    Blockscout,
+)
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.database import maybe_include_blockscout_key
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ApiKey,
+    ChainID,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Timestamp,
+    TimestampMS,
+)
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress, EvmInternalTransaction
+
+INCOMPLETE_RANGE_RESPONSE: Final = '{"message": "Some internal transactions within this block range have not yet been processed","result": [],"status": "2"}'  # noqa: E501
+NO_INTERNAL_TXS_RESPONSE: Final = '{"message": "No internal transactions found","result": [],"status": "0"}'  # noqa: E501
 
 
 @pytest.fixture(name='blockscout')
@@ -97,13 +124,13 @@ def test_hash_activity(blockscout):
 
 def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> None:
     """Blockscout does not properly index internal transactions on Optimism for blocks
-    predating the Bedrock upgrade. Queries touching that range must raise RemoteError so
-    that _try_indexers falls back to other indexers (Etherscan, Routescan) that may have
-    the data, rather than silently returning empty results.
+    predating the Bedrock upgrade. Queries touching that range must raise
+    IndexerRangeNotCovered so _try_indexers falls back to another indexer that may
+    have the data, rather than silently returning empty results.
     """
     with patch.object(blockscout.session, 'request') as mock_request:
-        # Block range entirely before Bedrock: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Block range entirely before Bedrock: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -116,9 +143,9 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Block range crossing the Bedrock boundary: also RemoteError so the full range
+        # Block range crossing the Bedrock boundary: also skip so the full range
         # is retried by another indexer rather than returning only post-Bedrock results
-        with pytest.raises(RemoteError):
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -131,8 +158,8 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Timestamp range entirely before Bedrock: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Timestamp range entirely before Bedrock: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=make_evm_address(),
@@ -145,8 +172,8 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ))
         assert mock_request.call_count == 0
 
-        # Hash-based query with a pre-Bedrock timestamp: RemoteError, no network call
-        with pytest.raises(RemoteError):
+        # Hash-based query with a pre-Bedrock timestamp: no network call
+        with pytest.raises(IndexerRangeNotCovered):
             next(blockscout.get_transactions(
                 chain_id=ChainID.OPTIMISM,
                 account=None,
@@ -173,6 +200,16 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
         ))
         assert mock_post.call_count == 1
 
+        # The first Bedrock block timestamp is eligible for hash-based queries too.
+        list(blockscout.get_transactions(
+            chain_id=ChainID.OPTIMISM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=make_evm_tx_hash(),
+            tx_timestamp=OP_BEDROCK_UPGRADE,
+        ))
+        assert mock_post.call_count == 2
+
     # Same pre-Bedrock block range on Ethereum should reach the network (no Bedrock concept)
     with patch.object(blockscout.session, 'request', return_value=MockResponse(
         status_code=HTTPStatus.OK,
@@ -189,6 +226,26 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
             ),
         ))
         assert mock_eth.call_count == 1
+
+
+def test_pre_bedrock_optimism_timestamp_is_not_resolved_by_blockscout(
+        blockscout: Blockscout,
+) -> None:
+    with patch.object(
+        blockscout, '_query', return_value={'blockNumber': OP_BEDROCK_BLOCK + 1},
+    ) as query:
+        with pytest.raises(IndexerRangeNotCovered):
+            blockscout.get_blocknumber_by_time(
+                chain_id=ChainID.OPTIMISM,
+                ts=Timestamp(OP_BEDROCK_UPGRADE - 1),
+            )
+        query.assert_not_called()
+
+        assert blockscout.get_blocknumber_by_time(
+            chain_id=ChainID.OPTIMISM,
+            ts=OP_BEDROCK_UPGRADE,
+        ) == OP_BEDROCK_BLOCK + 1
+        query.assert_called_once()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -223,14 +280,13 @@ def test_live_query_transactions_and_rpc(blockscout: Blockscout) -> None:
     assert int(block_number, 16) > 0x1f6e0f7
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_missing_data_error(blockscout: Blockscout) -> None:
     """Test that we properly handle the custom status 2 missing data error from blockscout
     when querying internal transactions. Should raise a remote error so that we fall back to
     a different indexer.
     """
     with (
-        pytest.raises(RemoteError, match='Blockscout is missing data'),
+        pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'),
         patch.object(blockscout.session, 'request', return_value=MockResponse(
             status_code=HTTPStatus.OK,
             text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501
@@ -242,6 +298,184 @@ def test_missing_data_error(blockscout: Blockscout) -> None:
             action='txlistinternal',
             period_or_hash=make_evm_tx_hash(),
         ))
+
+
+def _query_internal_range(
+        blockscout: Blockscout,
+        from_block: int,
+        to_block: int,
+        chain_id: ChainID = ChainID.BASE,
+        account: ChecksumEvmAddress | None = None,
+) -> list[list[EvmInternalTransaction]]:
+    return list(blockscout.get_transactions(
+        chain_id=chain_id,  # type: ignore[arg-type]  # all callers pass a supported chain
+        account=account if account is not None else make_evm_address(),
+        action='txlistinternal',
+        period_or_hash=TimestampOrBlockRange(
+            range_type='blocks',
+            from_value=from_block,
+            to_value=to_block,
+        ),
+    ))
+
+
+def test_incomplete_internal_range_is_skipped_for_every_address(blockscout: Blockscout) -> None:
+    """A range blockscout reported as incomplete is not requested again, for any address.
+
+    The unprocessed block is a property of the chain, so the same range or a wider one is bound
+    to fail again. It must raise the same error a real response does, so the caller still falls
+    back to the next indexer and leaves the range unrecorded.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200, account=(address := make_evm_address()))
+
+        assert request_mock.call_count == 1
+        for from_block, to_block, account in (
+                (100, 200, address),  # the same range again
+                (100, 200, make_evm_address()),  # another address
+                (50, 300, make_evm_address()),  # a wider range
+                (100, 300, address),  # a later sync of the same unrecorded range
+        ):
+            with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+                _query_internal_range(blockscout, from_block, to_block, account=account)
+
+        assert request_mock.call_count == 1
+
+
+def test_incomplete_internal_range_only_skips_containing_ranges(blockscout: Blockscout) -> None:
+    """Only a range containing a failed one is skipped, and only on the chain it failed on.
+
+    A range inside the failed one, or only overlapping it, may exclude the unprocessed block.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )), pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+        _query_internal_range(blockscout, 100, 200)
+
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        NO_INTERNAL_TXS_RESPONSE,
+    )) as request_mock:
+        for from_block, to_block, chain_id in (
+                (100, 200, ChainID.GNOSIS),  # another chain
+                (120, 180, ChainID.BASE),  # inside the failed range
+                (100, 199, ChainID.BASE),
+                (101, 200, ChainID.BASE),
+                (150, 300, ChainID.BASE),  # overlapping it
+                (50, 150, ChainID.BASE),
+                (201, 300, ChainID.BASE),  # past it
+        ):
+            assert _query_internal_range(blockscout, from_block, to_block, chain_id=chain_id) == [[]]  # noqa: E501
+
+        assert request_mock.call_count == 7
+
+
+def test_narrower_incomplete_range_replaces_wider_ones(blockscout: Blockscout) -> None:
+    """A narrower failed range is kept in place of the wider ones containing it.
+
+    Every range containing a wider one also contains the narrower, so this bounds the cache
+    while skipping more ranges than before.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        for from_block, to_block in ((100, 200), (120, 180), (130, 170)):
+            with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+                _query_internal_range(blockscout, from_block, to_block)
+
+        assert request_mock.call_count == 3
+        assert [(x[0], x[1]) for x in blockscout.incomplete_internal_ranges[ChainID.BASE]] == [
+            (130, 170),
+        ]
+        with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+            _query_internal_range(blockscout, 125, 175)
+
+        assert request_mock.call_count == 3
+
+
+def test_incomplete_internal_range_records_the_failed_page(blockscout: Blockscout) -> None:
+    """When a later page fails, the range recorded is the one that page asked for.
+
+    Pagination moves the start block forward, and the earlier blocks were served fine.
+    """
+    blockscout.pagination_limit = 1
+    with patch.object(blockscout.session, 'request', side_effect=[
+        MockResponse(HTTPStatus.OK, json.dumps({'message': 'OK', 'status': '1', 'result': [{
+            'hash': str(make_evm_tx_hash()),
+            'blockNumber': '150',
+            'timeStamp': '1700000000',
+            'from': (address := make_evm_address()),
+            'to': address,
+            'value': '1',
+            'traceId': '0',
+        }]})),
+        MockResponse(HTTPStatus.OK, INCOMPLETE_RANGE_RESPONSE),
+    ]), pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+        _query_internal_range(blockscout, 100, 200)
+
+    assert [(x[0], x[1]) for x in blockscout.incomplete_internal_ranges[ChainID.BASE]] == [
+        (150, 200),
+    ]
+
+
+def test_incomplete_internal_range_expires(blockscout: Blockscout) -> None:
+    """Blockscout backfills its holes, so a failed range is queried again after the cooldown."""
+    with (
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.OK,
+            INCOMPLETE_RANGE_RESPONSE,
+        )) as request_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200)
+
+        frozen.move_to(start + datetime.timedelta(seconds=BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN - 1))  # noqa: E501
+        with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+            _query_internal_range(blockscout, 100, 200)
+
+        assert request_mock.call_count == 1
+        frozen.move_to(start + datetime.timedelta(seconds=BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN))
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200)
+
+        assert request_mock.call_count == 2
+
+
+def test_incomplete_internal_ranges_are_capped_per_chain(blockscout: Blockscout) -> None:
+    """Past the per chain cap the oldest failed range is dropped, and only on that chain."""
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 0, 5, chain_id=ChainID.GNOSIS)
+
+        for idx in range(BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN + 1):  # disjoint, none replaced
+            with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+                _query_internal_range(blockscout, idx * 10, idx * 10 + 5)
+
+        assert len(blockscout.incomplete_internal_ranges[ChainID.BASE]) == BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN  # noqa: E501
+        assert request_mock.call_count == (call_count := BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN + 2)  # noqa: E501
+        for from_block, to_block, chain_id in (
+                (10, 15, ChainID.BASE),  # the oldest range still kept
+                (BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN * 10, BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN * 10 + 5, ChainID.BASE),  # the newest  # noqa: E501
+                (0, 5, ChainID.GNOSIS),  # another chain's range is not evicted
+        ):
+            with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+                _query_internal_range(blockscout, from_block, to_block, chain_id=chain_id)
+
+        assert request_mock.call_count == call_count
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 0, 5)  # the evicted range is requested again
+
+        assert request_mock.call_count == call_count + 1
 
 
 def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:
@@ -384,6 +618,91 @@ def test_missing_api_key_warns_once(blockscout: Blockscout) -> None:
     assert notifier.pop_message() is None
 
 
+@pytest.mark.parametrize('status_code', [HTTPStatus.UNAUTHORIZED, HTTPStatus.PAYMENT_REQUIRED])
+def test_rejected_api_key_reports_usable_key_problem(
+        blockscout: Blockscout,
+        status_code: HTTPStatus,
+) -> None:
+    """A PRO response can reject an existing key because it is invalid or lacks chain access.
+
+    This is not a missing-key problem, so the websocket message must let the frontend explain
+    that the configured key or plan needs attention and identify the affected chain.
+    """
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is not None
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(
+            blockscout.session,
+            'request',
+            return_value=MockResponse(status_code, '{"error":"API key is not authorized"}'),
+        ),
+        pytest.raises(RemoteError, match='could not authorize the configured API key for Base'),
+    ):
+        blockscout._query_and_process(
+            chain_id=ChainID.BASE,
+            endpoint='account.tokentx',
+            query_str='https://api.blockscout.com/8453/api',
+        )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.message_type == WSMessageType.MISSING_API_KEY
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_rejected_key_warning_after_missing_key_warning(blockscout: Blockscout) -> None:
+    """A missing key warning must not hide the warning about a key added later being rejected.
+
+    Each reason is reported once per configured key, so repeated rejections do not spam the
+    user, while changing the key lets its own problems be reported again.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) is None
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {'service': ExternalService.BLOCKSCOUT.serialize()}
+
+    # the key is read from the DB on the next query, as no key was cached while missing
+    maybe_include_blockscout_key(db=blockscout.db, include_blockscout_key=True)
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+    with patch.object(
+        blockscout.session,
+        'request',
+        return_value=MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}'),
+    ):
+        for _ in range(2):
+            with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+                blockscout._query_and_process(
+                    chain_id=ChainID.BASE,
+                    endpoint='account.tokentx',
+                    query_str='https://api.blockscout.com/8453/api',
+                )
+
+    assert (message := notifier.pop_message()) is not None
+    assert message.data == {
+        'location': 'Base',
+        'reason': 'key_not_usable',
+        'service': ExternalService.BLOCKSCOUT.serialize(),
+    }
+    assert notifier.pop_message() is None  # the second rejection is not reported again
+
+    with blockscout.db.user_write() as write_cursor:
+        blockscout.db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BLOCKSCOUT,
+                api_key=(new_key := ApiKey('new_key')),
+            )],
+        )
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == old_key  # still cached
+    blockscout.on_api_key_changed()
+    assert blockscout.warned_reasons == set()
+    assert blockscout._get_api_key_for_chain(ChainID.BASE) == new_key
+
+
 @pytest.mark.parametrize('include_blockscout_key', [False])
 def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) -> None:
     """The PRO endpoints reject keyless queries, so we must not spend a request on one.
@@ -402,6 +721,114 @@ def test_keyless_pro_query_is_skipped_without_a_request(blockscout: Blockscout) 
 
     # the self-hosted instances need no key, so they must stay queryable
     assert blockscout._get_url(chain_id=ChainID.HYPERLIQUID) == 'https://www.hyperscan.com/api'
+
+
+def test_rejected_chain_is_skipped_for_a_while(blockscout: Blockscout) -> None:
+    """A chain the configured key was rejected for is skipped without spending a request.
+
+    Each query would otherwise make a request bound to fail before falling back to the next
+    indexer. The skip only applies to the rejected chain, expires so a key that regains access
+    recovers, and is dropped when the key changes.
+    """
+    with (
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.PAYMENT_REQUIRED,
+            '{"error":"plan does not cover this chain"}',
+        )) as request_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(RemoteError, match='could not authorize the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        with pytest.raises(RemoteError, match='recently rejected the configured API key'):
+            blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+        assert request_mock.call_count == 1
+        assert blockscout._get_url(chain_id=ChainID.GNOSIS) == 'https://api.blockscout.com/100/api'
+
+        frozen.move_to(start + datetime.timedelta(seconds=KEY_REJECTED_SKIP_SECONDS))
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+        blockscout.key_rejected_chains[ChainID.BASE] = ts_now()
+        blockscout.on_api_key_changed()
+        assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_rejection_of_a_replaced_key_is_ignored(blockscout: Blockscout) -> None:
+    """A request sent with the old key that is rejected after the key changed blames nothing.
+
+    It must neither skip the chain for the new key nor warn that the new key is unusable.
+    """
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert (old_key := blockscout._get_api_key_for_chain(ChainID.BASE)) is not None
+
+    def replace_key_then_reject(**kwargs: Any) -> MockResponse:
+        assert kwargs['params']['apikey'] == old_key  # the request went out with the old key
+        with blockscout.db.user_write() as write_cursor:
+            blockscout.db.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=[ExternalServiceApiCredentials(
+                    service=ExternalService.BLOCKSCOUT,
+                    api_key=ApiKey('new_key'),
+                )],
+            )
+        blockscout.on_api_key_changed()
+        return MockResponse(HTTPStatus.UNAUTHORIZED, '{"error":"not authorized"}')
+
+    with (
+        patch.object(blockscout.session, 'request', side_effect=replace_key_then_reject),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    assert blockscout.key_rejected_chains == {}
+    assert notifier.pop_message() is None
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
+
+
+def test_key_change_racing_the_rejection_check_is_not_lost(blockscout: Blockscout) -> None:
+    """A key change landing between the rejection check and its recording wins.
+
+    The check still sees the old key, so the rejection is recorded, but the concurrent key
+    change must not complete in between and then have its reset overwritten by the stale
+    rejection, which would skip the chain for the new key.
+    """
+    get_key = blockscout._get_api_key_for_chain
+    calls: list[ChainID] = []
+    changer = threading.Thread(target=blockscout.on_api_key_changed)
+
+    def change_key_in_check(chain_id: ChainID) -> ApiKey | None:
+        calls.append(chain_id)
+        key = get_key(chain_id)
+        if len(calls) == 2:  # the first call attaches the key, the second checks the rejection
+            with blockscout.db.user_write() as write_cursor:
+                blockscout.db.add_external_service_credentials(
+                    write_cursor=write_cursor,
+                    credentials=[ExternalServiceApiCredentials(
+                        service=ExternalService.BLOCKSCOUT,
+                        api_key=ApiKey('new_key'),
+                    )],
+                )
+            changer.start()
+            changer.join(timeout=0.5)  # finishes here unless the check holds it off
+
+        return key
+
+    with (
+        patch.object(blockscout, '_get_api_key_for_chain', side_effect=change_key_in_check),
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.UNAUTHORIZED,
+            '{"error":"not authorized"}',
+        )),
+        pytest.raises(RemoteError, match='could not authorize the configured API key'),
+    ):
+        blockscout._query(chain_id=ChainID.BASE, module='block', action='getblocknobytime')
+
+    changer.join(timeout=10)
+    assert not changer.is_alive()
+    assert blockscout.key_rejected_chains == {}
+    assert blockscout._get_url(chain_id=ChainID.BASE) == 'https://api.blockscout.com/8453/api'
 
 
 def test_keyed_pro_query_is_allowed(blockscout: Blockscout) -> None:
@@ -448,3 +875,46 @@ def test_blockscout_internal_by_txhash_keeps_server_paging(blockscout: Blockscou
     query_options = query_mock.call_args.kwargs['options']
     assert 'page' not in query_options
     assert 'offset' not in query_options
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False, True])
+def test_needs_api_key_for_chain(blockscout: Blockscout, include_blockscout_key: bool) -> None:
+    """Only the PRO endpoints need a key. Hyperliquid's own instance and chains blockscout
+    does not serve can never be fixed by adding one."""
+    assert blockscout.needs_api_key_for_chain(ChainID.BASE) is not include_blockscout_key
+    assert blockscout.needs_api_key_for_chain(ChainID.HYPERLIQUID) is False
+    assert blockscout.needs_api_key_for_chain(ChainID.BINANCE_SC) is False
+
+
+@pytest.mark.parametrize(('chain_id', 'response', 'expected_fee'), [
+    (ChainID.SCROLL, {'scroll': {'l1_fee': '733780419502', 'l1_gas_used': 0}}, 733780419502),
+    (ChainID.SCROLL, {'scroll': {'l1_fee': '0'}}, 0),
+    (ChainID.SCROLL, {'l1_fee': '733780419502'}, None),  # Scroll never reads the top level
+    (ChainID.SCROLL, {'scroll': None}, None),
+    (ChainID.BASE, {'l1_fee': '2099098769', 'l1_gas_used': '1600'}, 2099098769),
+    (ChainID.OPTIMISM, {'l1_fee': '0'}, 0),
+    (ChainID.OPTIMISM, {'hash': '0x1'}, None),
+])
+def test_get_l1_fee_response_shapes(
+        blockscout: Blockscout,
+        chain_id: ChainID,
+        response: dict,
+        expected_fee: int | None,
+) -> None:
+    """A missing fee must raise instead of being reported as a resolved zero fee."""
+    with patch.object(blockscout, '_query_v2', return_value=response):
+        if expected_fee is None:
+            with pytest.raises(RemoteError, match='Failed to get L1 fee'):
+                blockscout.get_l1_fee(
+                    chain_id=chain_id,  # type: ignore[arg-type]  # parametrized L2 chains
+                    account=make_evm_address(),
+                    tx_hash=make_evm_tx_hash(),
+                    block_number=1,
+                )
+        else:
+            assert blockscout.get_l1_fee(
+                chain_id=chain_id,  # type: ignore[arg-type]  # parametrized L2 chains
+                account=make_evm_address(),
+                tx_hash=make_evm_tx_hash(),
+                block_number=1,
+            ) == expected_fee

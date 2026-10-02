@@ -4,6 +4,7 @@ import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import type { IndexedBalanceSnapshot } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
 import { isNft } from '@/modules/assets/nft-utils';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import { getSnapshotWarnings, type SnapshotWarning } from '@/modules/dashboard/snapshots/utils/snapshot-warnings';
 
@@ -96,7 +97,7 @@ export function useSnapshotBalanceDisplay(
     if (!net.isGreaterThan(0))
       return '';
     const contribution = isLiability(item) ? item.usdValue.negated() : item.usdValue;
-    return contribution.dividedBy(net).multipliedBy(100).toFormat(2);
+    return formatPercent(contribution.dividedBy(net).multipliedBy(100), 2);
   }
 
   function categoryChipColor(item: IndexedBalanceSnapshot): 'error' | 'info' | 'grey' {

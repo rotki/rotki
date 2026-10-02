@@ -5,7 +5,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const suppressedChains = ref<string[]>([]);
 const updateFrontendSetting = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
@@ -35,8 +35,8 @@ function rows(): ComputedRef<ActionItem[]> {
   return result;
 }
 
-function raiseNoIndexers(chain: string, paidKeyRequired = false): void {
-  useRaisedConditionsStore().raise({ chain, kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired });
+function raiseNoIndexers(chain: string, cause: NoIndexersCause = NoIndexersCause.UNAVAILABLE): void {
+  useRaisedConditionsStore().raise({ cause, chain, kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
 }
 
 function option(row: ActionItem, id: string): ActionItemOption {
@@ -70,7 +70,7 @@ describe('modules/shell/action-center/use-chain-rows', () => {
   });
 
   it('should point a row that needs a paid key at the Etherscan key instead', () => {
-    raiseNoIndexers('base', true);
+    raiseNoIndexers('base', NoIndexersCause.PAID_ETHERSCAN_KEY);
 
     const [base] = get(rows());
 
@@ -78,8 +78,18 @@ describe('modules/shell/action-center/use-chain-rows', () => {
     expect(base.title).toBe('action_center.rows.chains.paid_key_required.title::BASE');
   });
 
+  it('should offer a free Blockscout key first when it would also restore the chain', () => {
+    raiseNoIndexers('optimism', NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY);
+
+    const [optimism] = get(rows());
+
+    expect(optimism.target).toEqual({ kind: 'route', to: getServiceRegisterUrl('blockscout')?.route });
+    expect(optimism.title).toBe('action_center.rows.chains.blockscout_key_required.title::OPTIMISM');
+    expect(optimism.options.map(({ id }) => id)).toEqual(['configure-indexers', 'do-not-show-again']);
+  });
+
   it('should keep configuring the indexers as an option on a paid-key row, and not repeat it on a plain one', () => {
-    raiseNoIndexers('base', true);
+    raiseNoIndexers('base', NoIndexersCause.PAID_ETHERSCAN_KEY);
     raiseNoIndexers('optimism');
 
     const [base, optimism] = get(rows());

@@ -9,6 +9,7 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
@@ -35,7 +36,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.premium.premium import (
     Premium,
     PremiumCredentials,
@@ -44,7 +49,11 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
+from rotkehlchen.tasks.assets import (
+    _find_missing_tokens,
+    detect_tokens_from_decoded_events,
+    maybe_detect_new_tokens,
+)
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
     DATA_ISSUE_REMEDIATION_TASK_NAME,
@@ -88,6 +97,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1186,6 +1196,143 @@ def test_maybe_detect_new_tokens_filters_events(
         )[0] == [detected_token]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_detect_tokens_from_decoded_events(
+        database: DBHandler,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Tokens received in decoded events older than the last balance snapshot are cached if
+    the event has a counterparty or the transaction was sent by a tracked account, and for
+    erc721 only if the account still owns the specific token id. Position 61913 belongs to
+    the same collection as the owned 61912 but to another account, so a positive collection
+    balance must not be enough to cache it."""
+    owned_nft, transferred_nft = (get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in ('61912', '61913'))
+    protocol_token, user_sent_token, spam_token = (get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ARBITRUM_ONE,
+        name=name,
+        symbol=name,
+        decimals=18,
+    ) for name in ('PROTO', 'SENT', 'SPAM'))
+    with database.user_write() as write_cursor:  # snapshot newer than all the events
+        database.add_multiple_location_data(write_cursor=write_cursor, location_data=[
+            LocationData(time=ts_now(), location=Location.TOTAL.serialize_for_db(), usd_value='1'),
+        ])
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=(user_sent_tx := make_evm_tx_hash()),
+                chain_id=ChainID.ARBITRUM_ONE,
+                timestamp=Timestamp(1700000000),
+                block_number=1,
+                from_address=(user_address := arbitrum_one_accounts[0]),
+                to_address=make_evm_address(),
+                value=0,
+                gas=1,
+                gas_price=1,
+                gas_used=1,
+                input_data=b'',
+                nonce=0,
+            )],
+            relevant_address=user_address,
+        )
+
+    events = [EvmEvent(
+        tx_ref=tx_ref,
+        sequence_index=idx,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset,
+        amount=ONE,
+        location_label=user_address,
+        counterparty=counterparty,
+    ) for idx, (asset, counterparty, tx_ref) in enumerate((
+        (owned_nft, 'uniswap-v4', make_evm_tx_hash()),
+        (transferred_nft, 'uniswap-v4', make_evm_tx_hash()),
+        (protocol_token, 'uniswap-v4', make_evm_tx_hash()),
+        (protocol_token, 'uniswap-v4', make_evm_tx_hash()),  # duplicated events are deduplicated
+        (user_sent_token, None, user_sent_tx),  # no counterparty but sent by the user -> cached
+        (spam_token, None, make_evm_tx_hash()),  # no counterparty, sent by others -> skipped
+    ))]
+    detect_tokens_from_decoded_events(
+        database=database,
+        evm_inquirer=arbitrum_one_inquirer,
+        events=events,
+    )
+
+    def assert_cached_tokens() -> None:
+        with database.conn.read_ctx() as cursor:
+            assert set(database.get_tokens_for_address(
+                cursor=cursor,
+                address=user_address,
+                blockchain=SupportedBlockchain.ARBITRUM_ONE,
+                token_exceptions=set(),
+            )[0] or []) == {owned_nft, protocol_token, user_sent_token}
+
+    assert_cached_tokens()
+    # re-decoding only re-checks the ownership of the nfts that are not cached yet, and a
+    # failed check neither drops the valid cached tokens nor caches the transferred nft
+    with patch.object(
+        arbitrum_one_inquirer,
+        'multicall_2',
+        return_value=[(False, b'')],
+    ) as multicall_mock:
+        detect_tokens_from_decoded_events(
+            database=database,
+            evm_inquirer=arbitrum_one_inquirer,
+            events=events,
+        )
+
+    assert multicall_mock.call_count == 1
+    assert len(multicall_mock.call_args.kwargs['calls']) == 1
+    assert_cached_tokens()
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xf296Ec073248026F38289D604A118B6938eA208B']])
+def test_decoding_does_not_cache_transferred_nft(
+        database: DBHandler,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Decoding a mint of an nft that was later transferred away must not cache it even
+    without a balance snapshot, where every decoded event is newer than the last save.
+    The account still owns position 5714043 of the same collection, so only the ownerOf
+    check of the decoded token id can tell that 5713988 is no longer owned."""
+    with database.conn.read_ctx() as cursor:
+        assert database.get_last_balance_save_time(cursor) == 0
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x00c248c6090b2f59322fae914313069cdb98b1dfcbc073e44f5a116f1f90015c'),
+    )
+    transferred_nft = EvmToken('eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/5713988')  # noqa: E501
+    assert any(  # the decoded mint is a receive of the position by the account
+        event.asset == transferred_nft and
+        event.location_label == (user_address := arbitrum_one_accounts[0]) and
+        event.maybe_get_direction() == EventDirection.IN
+        for event in events
+    )
+    with database.conn.read_ctx() as cursor:
+        assert transferred_nft not in (database.get_tokens_for_address(
+            cursor=cursor,
+            address=user_address,
+            blockchain=SupportedBlockchain.ARBITRUM_ONE,
+            token_exceptions=set(),
+        )[0] or [])
+
+
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
@@ -1982,6 +2129,11 @@ def test_graph_query_query_delegations(
             assert cursor.execute("SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'ethereum_GRAPH_DELEGATIONS%'").fetchone() == (2,)  # noqa: E501
 
 
+COUNT_UNDECODED_TXS = (
+    'rotkehlchen.chain.decoding.decoder.TransactionDecoder.count_undecoded_transactions'
+)
+
+
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
@@ -1989,13 +2141,12 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
     task_manager.potential_tasks = [task_manager._maybe_decode_transactions]
 
     # When there are no transactions to decode we expect None
-    with patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx:
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 0
+    with patch(COUNT_UNDECODED_TXS, return_value=0):
         result = task_manager._maybe_decode_transactions()
         assert result is None
 
     with (  # When there are Solana transactions to decode a greenlet should be spawned
-        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+        patch(COUNT_UNDECODED_TXS, return_value=5),
         patch(
             'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
             new=(SupportedBlockchain.SOLANA,),
@@ -2004,7 +2155,6 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
         # the previous block marked solana clean; new work appearing in production always
         # goes through an invalidating DB write, so simulate that here
         task_manager.database.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
 
@@ -2025,11 +2175,12 @@ def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) 
             new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.SOLANA),
         ),
         patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
-        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
-        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+        patch(
+            COUNT_UNDECODED_TXS,
+            autospec=True,  # nothing on ethereum, solana has work
+            side_effect=lambda decoder: 5 if decoder.chain_name == 'solana' else 0,
+        ),
     ):
-        mock_evm_tx.return_value.count_hashes_not_decoded.return_value = 0  # nothing on ethereum
-        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
 
@@ -2047,10 +2198,8 @@ def test_maybe_decode_transactions_skips_recently_clean_chain(task_manager: Task
             'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
             new=(SupportedBlockchain.ETHEREUM,),
         ),
-        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+        patch(COUNT_UNDECODED_TXS, return_value=0) as count,  # nothing to decode
     ):
-        count = mock_evm_tx.return_value.count_hashes_not_decoded
-        count.return_value = 0  # nothing to decode
 
         assert task_manager._maybe_decode_transactions() is None
         assert count.call_count == 1  # scanned once, then marked clean

@@ -216,14 +216,19 @@ class HyperliquidManager(EvmManager):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> None:
-        """Query EVM transactions and Hyperliquid core history for the addresses."""
-        super().query_transactions(
-            addresses=addresses,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-        self.query_proprietary_history(
-            addresses=addresses,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
+        """Query EVM transactions and Hyperliquid core history for the addresses.
+
+        The core history is queried even if the EVM transactions could not all be.
+        """
+        try:
+            super().query_transactions(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+        finally:
+            self.query_proprietary_history(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )

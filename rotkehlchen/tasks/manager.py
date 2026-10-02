@@ -2,7 +2,7 @@ import logging
 import random
 import threading
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, Final, NamedTuple, cast
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple, cast
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
@@ -30,13 +30,8 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import (
-    EvmTransactionsFilterQuery,
-    EvmTransactionsNotDecodedFilterQuery,
-    SolanaTransactionsNotDecodedFilterQuery,
-)
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -502,20 +497,12 @@ class TaskManager:
             if tracker.should_scan_decoding(blockchain, now) is False:
                 continue  # recently scanned with nothing to decode, untouched since -> skip scan
 
-            if blockchain == SupportedBlockchain.SOLANA:
-                number_of_tx_to_decode = DBSolanaTx(self.database).count_hashes_not_decoded(
-                    filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
-                )
-            else:
-                number_of_tx_to_decode = DBEvmTx(self.database).count_hashes_not_decoded(
-                    filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=blockchain.to_chain_id()),
-                )
-
+            chain_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
+            number_of_tx_to_decode = chain_inquirer.transactions_decoder.count_undecoded_transactions()  # type: ignore[attr-defined]  # noqa: E501
             if number_of_tx_to_decode == 0:
                 tracker.mark_decoding_clean(blockchain, now)
                 continue
 
-            chain_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
             task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
@@ -863,10 +850,25 @@ class TaskManager:
 
     def _maybe_check_data_updates(self) -> list[Task] | None:
         """
-        Function that schedules the data update task if either there is no data update
-        cache yet or this cache is older than `DATA_UPDATES_REFRESH`
+        Schedule daily data updates, or retry failed updates after an hour.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
+        if self._scheduler_task_timestamps is not None:
+            retry_pending = DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value in self._scheduler_task_timestamps  # noqa: E501
+        else:
+            with self.database.conn.read_ctx() as cursor:
+                retry_pending = cursor.execute(
+                    'SELECT 1 FROM key_value_cache WHERE name=?',
+                    (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value,),
+                ).fetchone() is not None
+        key: Literal[
+            DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+            DBCacheStatic.LAST_DATA_UPDATES_TS,
+        ]
+        if retry_pending:
+            key, period = DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS, HOUR_IN_SECONDS
+        else:
+            key, period = DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH
+        if should_run_periodic_task(self.database, key, period, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.task_supervisor.spawn_and_track(

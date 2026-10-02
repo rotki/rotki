@@ -79,17 +79,17 @@ describe('modules/history/events/HistoryEventsDecodingStatus', () => {
   });
 
   describe('when decoding finishes', () => {
-    it('should ask for a reset, so the parent stops showing stale progress', async () => {
+    it('should keep the undecoded transactions listed when some are still left', async () => {
       set(isActive, true);
       const wrapper = await mountStatus([undecoded('ethereum', 1, 4)]);
 
       set(isActive, false);
       await flushPromises();
 
-      expect(wrapper.emitted('reset-undecoded-transactions')).toHaveLength(1);
+      expect(wrapper.emitted('reset-undecoded-transactions')).toBeUndefined();
     });
 
-    it('should ask twice when the list is already empty, refresh having asked once too', async () => {
+    it('should ask for one reset when nothing is listed', async () => {
       set(isActive, true);
       const wrapper = await mountStatus([]);
       const onMount = wrapper.emitted('reset-undecoded-transactions')?.length ?? 0;
@@ -97,7 +97,7 @@ describe('modules/history/events/HistoryEventsDecodingStatus', () => {
       set(isActive, false);
       await flushPromises();
 
-      expect((wrapper.emitted('reset-undecoded-transactions')?.length ?? 0) - onMount).toBe(2);
+      expect((wrapper.emitted('reset-undecoded-transactions')?.length ?? 0) - onMount).toBe(1);
     });
 
     it('should ask for nothing while decoding is still running', async () => {

@@ -26,6 +26,7 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .constants import (
+    BEACON_NODE_PROBE_TIMEOUT,
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
@@ -65,7 +66,18 @@ class BeaconNode:
         - RemoteError if we can't connect to the given rpc endpoint
         """
         self.rpc_endpoint = self._normalize_rpc_endpoint(rpc_endpoint)
-        result = self.query(method='GET', endpoint='eth/v1/node/version')
+        # Check once with short, user-capped timeouts; data queries keep their retries.
+        connect_timeout, read_timeout = CachedSettings().get_timeout_tuple()
+        with create_session(retry_policy='none') as session:
+            result = self.query(
+                method='GET',
+                endpoint='eth/v1/node/version',
+                timeout=(
+                    min(BEACON_NODE_PROBE_TIMEOUT, connect_timeout),
+                    min(BEACON_NODE_PROBE_TIMEOUT, read_timeout),
+                ),
+                session=session,
+            )
         try:
             version = result['version']
         except (KeyError, TypeError) as e:  # TypeError if the response data is not a mapping
@@ -79,6 +91,8 @@ class BeaconNode:
             method: Literal['GET'],
             endpoint: Literal['eth/v1/node/version'],
             data: dict[str, Any] | None = None,
+            timeout: int | tuple[int, int] | None = None,
+            session: requests.Session | None = None,
     ) -> dict:
         ...
 
@@ -88,6 +102,8 @@ class BeaconNode:
             method: Literal['POST'],
             endpoint: Literal['eth/v1/beacon/states/head/validators'],
             data: dict[str, Any],
+            timeout: int | tuple[int, int] | None = None,
+            session: requests.Session | None = None,
     ) -> list[dict]:
         ...
 
@@ -97,6 +113,8 @@ class BeaconNode:
             method: Literal['GET'],
             endpoint: str,
             data: dict[str, Any] | None = None,
+            timeout: int | tuple[int, int] | None = None,
+            session: requests.Session | None = None,
     ) -> dict:
         ...
 
@@ -106,6 +124,8 @@ class BeaconNode:
             method: Literal['POST'],
             endpoint: str,
             data: dict[str, Any] | None = None,
+            timeout: int | tuple[int, int] | None = None,
+            session: requests.Session | None = None,
     ) -> list[dict]:
         ...
 
@@ -114,19 +134,25 @@ class BeaconNode:
             method: Literal['GET', 'POST'],
             endpoint: str,
             data: dict[str, Any] | None = None,
+            timeout: int | tuple[int, int] | None = None,
+            session: requests.Session | None = None,
     ) -> dict | list[dict]:
-        """
+        """Query the beacon node. `timeout` defaults to the user's timeouts and
+        `session` to the node's retrying session. The connectivity checks pass
+        their own short-lived session without retries to get a fast answer.
+
         May raise:
         - RemoteError due to problems querying the node
         """
         url = self.rpc_endpoint + '/' + endpoint
         log.debug(f'Querying beacon node {endpoint} with {data=}')
+        session = session or self.session
         try:
-            response = self.session.request(
+            response = session.request(
                 url=url,
                 json=data,
                 method=method,
-                timeout=CachedSettings().get_timeout_tuple(),
+                timeout=timeout if timeout is not None else CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Querying beacon node {url} failed due to {e!s}') from e

@@ -7,6 +7,7 @@ from mcp.types import InitializeRequestParams, RequestParams
 
 from rotkehlchen.mcp import usage_analytics
 from rotkehlchen.mcp.backend import BackendQueryError, configure_backend
+from rotkehlchen.sigil import SIGIL_BATCH_ENDPOINT
 
 if TYPE_CHECKING:
     from mcp.server.session import ServerSession
@@ -116,7 +117,7 @@ def test_submit_mcp_usage_analytics(monkeypatch) -> None:
     })
 
     post_mock.assert_called_once()
-    assert (kwargs := post_mock.call_args.kwargs)['url'] == usage_analytics.SIGIL_BATCH_ENDPOINT
+    assert (kwargs := post_mock.call_args.kwargs)['url'] == SIGIL_BATCH_ENDPOINT
     assert kwargs['timeout'] == 3
     assert kwargs['headers']['Content-Type'] == 'application/json'
     assert kwargs['json'][0]['payload']['website'] == (

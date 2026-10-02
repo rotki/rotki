@@ -119,6 +119,7 @@ def test_refresh_icon(rotkehlchen_api_server: APIServer) -> None:
     sample_filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
     icon_filepath = icon_manager.icons_dir / 'DOGE_small.png'
     shutil.copyfile(sample_filepath, icon_filepath)
+    (marker_filepath := icon_manager.icons_dir / 'DOGE_small.notfound').touch()
 
     now = ts_now()
     response = requests.patch(
@@ -130,3 +131,4 @@ def test_refresh_icon(rotkehlchen_api_server: APIServer) -> None:
     )
     assert_simple_ok_response(response)
     assert icon_filepath.stat().st_ctime > now
+    assert marker_filepath.exists() is False

@@ -92,6 +92,15 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationsDrawer', () =>
     expect(wrapper.find('[data-testid=snapshot-locations-reconcile]').exists()).toBe(false);
   });
 
+  it('should leave a gap between the balances and the locations to the summary', () => {
+    const snapshot = createSnapshot();
+    snapshot.balancesSnapshot[0] = { ...snapshot.balancesSnapshot[0], usdValue: bigNumberify(1e30) };
+    wrapper = createWrapper(snapshot);
+
+    expect(wrapper.find('[data-testid=snapshot-locations-reconcile]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=snapshot-locations-balanced]').exists()).toBe(true);
+  });
+
   it('should confirm a balanced allocation when the sums match', () => {
     wrapper = createWrapper();
 
@@ -116,6 +125,7 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationsDrawer', () =>
       { location: 'binance', usdValue: bigNumberify(30) },
     ];
     const splitComponent = wrapper.findComponent(SnapshotLocationSplit);
+    expect(splitComponent.props('hint')).toBe('dashboard.snapshot.detail.locations.reconcile.split_hint');
     splitComponent.vm.$emit('update:modelValue', split);
     splitComponent.vm.$emit('update:valid', true);
     await nextTick();

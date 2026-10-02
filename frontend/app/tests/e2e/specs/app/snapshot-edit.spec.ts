@@ -65,7 +65,7 @@ test.describe.serial('snapshot edit', () => {
     // Balance editing is locked until the mismatch is reconciled.
     await expect(editor.balanceEditButton('ETH')).toBeDisabled();
 
-    await editor.reconcile();
+    await editor.reconcile('blockchain');
     await expect(editor.mismatchBanner).toBeHidden();
     await expect(editor.balanceEditButton('ETH')).toBeEnabled();
 

@@ -28,4 +28,14 @@ describe('createMissingApiKeyHandler', () => {
     expect(useRaisedConditionsStore().conditions.map(condition => condition.kind === RaisedConditionKind.MISSING_API_KEY && condition.service))
       .toEqual(['etherscan', 'blockscout']);
   });
+
+  it('should distinguish an unusable blockscout key from a missing key', async () => {
+    const handler = createMissingApiKeyHandler();
+
+    await handler.handle({ location: 'Base', reason: 'key_not_usable', service: 'blockscout' });
+
+    expect(useRaisedConditionsStore().conditions).toEqual([
+      { keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'Base', service: 'blockscout' },
+    ]);
+  });
 });

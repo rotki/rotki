@@ -1,9 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import { camelCase } from 'es-toolkit';
+import { useAccountFormIndexerKeys } from '@/modules/accounts/management/use-account-form-indexer-keys';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSetting } from '@/modules/settings/use-setting';
 
 /** The services worth warning about when the account being added would query them without a key. */
@@ -23,6 +22,8 @@ export interface UseAccountFormWarningsReturn {
    * own; it is therefore kept out of `warnings`.
    */
   beaconchainInfo: ComputedRef<WarningItem | undefined>;
+  /** Chain names whose history query waits on a Blockscout key, named in its warning. */
+  blockscoutKeyChainNames: ComputedRef<string[]>;
   warnings: ComputedRef<WarningItem[]>;
   hasMultipleWarnings: ComputedRef<boolean>;
   /** The warnings to render: all of them once expanded, otherwise the first alone. */
@@ -44,38 +45,20 @@ function isBeaconchainService(service: MissingKeyService | undefined): boolean {
  * something the user is about to walk into.
  */
 export function useAccountFormWarnings(state: MaybeRefOrGetter<AccountManageState>): UseAccountFormWarningsReturn {
-  const { isEarlyIntegrationChain, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
+  const { isEarlyIntegrationChain, isSolanaChains } = useSupportedChains();
   const { getApiKey } = useExternalApiKeys();
 
   const beaconRpcEndpoint = useSetting('beaconRpcEndpoint');
-  const defaultEvmIndexerOrder = useSetting('defaultEvmIndexerOrder');
-  const evmIndexersOrder = useSetting('evmIndexersOrder');
 
   const warningExpanded = shallowRef<boolean>(false);
 
   const chain = computed<string | undefined>(() => toValue(state).chain);
   const isAdding = computed<boolean>(() => toValue(state).mode === 'add');
 
-  function isEtherscanTopPriority(chainId: string): boolean {
-    const chainOrders = get(evmIndexersOrder);
-    const evmChainName = camelCase(get(txEvmChains).find(c => c.id === chainId)?.evmChainName ?? '');
-    const indexerOrder = evmChainName && chainOrders[evmChainName]
-      ? chainOrders[evmChainName]
-      : get(defaultEvmIndexerOrder);
-
-    return indexerOrder[0] === EvmIndexer.ETHERSCAN;
-  }
-
-  /** For 'all', any EVM chain putting etherscan first is enough to warn. */
-  function shouldShowEtherscanWarning(selectedChain: string): boolean {
-    if (selectedChain === 'all')
-      return get(txEvmChains).some(chain => isEtherscanTopPriority(chain.id));
-
-    if (!isEvm(selectedChain))
-      return false;
-
-    return isEtherscanTopPriority(selectedChain);
-  }
+  const { blockscoutKeyChainNames, missingIndexerKeys } = useAccountFormIndexerKeys(chain, () => {
+    const currentState = toValue(state);
+    return currentState.mode === 'add' && currentState.type !== 'validator';
+  });
 
   /** Without a beaconchain key, validators fall back to a consensus RPC, which needs its own endpoint. */
   function validatorKeyService(): MissingKeyService | undefined {
@@ -85,17 +68,7 @@ export function useAccountFormWarnings(state: MaybeRefOrGetter<AccountManageStat
     return get(beaconRpcEndpoint) ? 'beaconchain' : 'consensusRpc';
   }
 
-  /** Both indexers are only worth warning about on chains that actually use them. */
-  function indexerKeyService(chain: string): MissingKeyService | undefined {
-    if (!shouldShowEtherscanWarning(chain))
-      return undefined;
-
-    if (!getApiKey('etherscan'))
-      return 'etherscan';
-
-    return getApiKey('blockscout') ? undefined : 'blockscout';
-  }
-
+  /** The key missing for a validator or a Solana account; the indexer keys are `missingIndexerKeys`. */
   const missingApiKeyService = computed<MissingKeyService | undefined>(() => {
     const selectedChain = get(chain);
     const currentState = toValue(state);
@@ -109,7 +82,7 @@ export function useAccountFormWarnings(state: MaybeRefOrGetter<AccountManageStat
     if (isSolanaChains(selectedChain))
       return getApiKey('helius') ? undefined : 'helius';
 
-    return indexerKeyService(selectedChain);
+    return undefined;
   });
 
   const showSolanaInitialAlert = computed<boolean>(() => {
@@ -139,6 +112,8 @@ export function useAccountFormWarnings(state: MaybeRefOrGetter<AccountManageStat
     const service = get(missingApiKeyService);
     if (service && !isBeaconchainService(service))
       result.push({ service, type: 'apiKey' });
+    for (const indexer of get(missingIndexerKeys))
+      result.push({ service: indexer, type: 'apiKey' });
     if (get(showSolanaInitialAlert))
       result.push({ type: 'solana' });
     const earlyChain = get(earlyIntegrationChain);
@@ -166,6 +141,7 @@ export function useAccountFormWarnings(state: MaybeRefOrGetter<AccountManageStat
 
   return {
     beaconchainInfo,
+    blockscoutKeyChainNames,
     hasMultipleWarnings,
     hiddenWarningCount,
     toggleWarningExpanded,

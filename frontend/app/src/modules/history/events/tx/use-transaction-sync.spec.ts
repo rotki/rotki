@@ -3,6 +3,7 @@ import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
@@ -75,6 +76,19 @@ describe('useTransactionSync', () => {
       await syncTransactionTask(account);
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
+    });
+
+    it('should fail an incomplete query without a notification, since the backend reports it', async () => {
+      mocks.submitTask.mockResolvedValue(err(TaskFailed({
+        cause: new IncompleteQueryError('Could not query all transactions'),
+        message: 'Could not query all transactions',
+      })));
+
+      const { syncTransactionTask } = useTransactionSync();
+      const outcome = await syncTransactionTask(account);
+
+      assert(!outcome.ok);
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it.each([

@@ -51,6 +51,51 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     return wrapper.emitted<[LocationSplit[]]>('update:modelValue')!.at(-1)![0];
   }
 
+  it('should show the balance-split hint unless the caller gives its own', async () => {
+    const wrapper = mountSplit();
+    expect(wrapper.text()).toContain('dashboard.snapshot.detail.split.hint');
+
+    await wrapper.setProps({ hint: 'Enter each location' });
+
+    expect(wrapper.text()).toContain('Enter each location');
+    expect(wrapper.text()).not.toContain('dashboard.snapshot.detail.split.hint');
+  });
+
+  it('should fill each row with what its location can still give', async () => {
+    const spam = '1580000000000000000000000000000000';
+    const wrapper = mount(SnapshotLocationSplit, {
+      global: {
+        plugins: [createPinia()],
+        provide: libraryDefaults,
+        stubs: {
+          AmountInput: { emits: ['update:modelValue'], props: ['modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
+          LocationSelector: { emits: ['update:modelValue'], props: ['modelValue'], template: '<input class="loc" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
+          SnapshotFiatDisplay: true,
+        },
+      },
+      props: {
+        locations: ['kraken', 'ledger'],
+        maxPerLocation: { kraken: bigNumberify('1000000000000000000000000000000500'), ledger: bigNumberify('580000000000000000000000000000900') },
+        modelValue: [],
+        timestamp: TS,
+        total: bigNumberify(spam),
+        valid: false,
+      },
+    });
+    const locations = wrapper.findAll('.loc');
+    await locations[0].setValue('kraken');
+    await locations[1].setValue('ledger');
+
+    const fills = wrapper.findAll('[data-testid=snapshot-location-split-fill]');
+    await fills[0].trigger('click');
+    await fills[1].trigger('click');
+
+    expect(isValid(wrapper)).toBe(true);
+    const splits = lastSplits(wrapper);
+    expect(splits[0].usdValue.toFixed()).toBe('1000000000000000000000000000000500');
+    expect(splits[1].usdValue.toFixed()).toBe('579999999999999999999999999999500');
+  });
+
   it('should start invalid with empty rows', () => {
     const wrapper = mountSplit();
     expect(isValid(wrapper)).toBe(false);

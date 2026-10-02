@@ -20,6 +20,18 @@ export const PremiumInactiveCause = {
 
 export type PremiumInactiveCause = (typeof PremiumInactiveCause)[keyof typeof PremiumInactiveCause];
 
+/** Why no indexer could serve a chain, which decides what the row offers as the way out. */
+export const NoIndexersCause = {
+  /** No reason given: every indexer in the chain's order was unavailable. */
+  UNAVAILABLE: 'unavailable',
+  /** Etherscan refused the chain for the key it had, so only a paid Etherscan key restores it. */
+  PAID_ETHERSCAN_KEY: 'paid-etherscan-key',
+  /** As above, but Blockscout is in the chain's order without a key, so a free one also restores it. */
+  BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY: 'blockscout-or-paid-etherscan-key',
+} as const;
+
+export type NoIndexersCause = (typeof NoIndexersCause)[keyof typeof NoIndexersCause];
+
 export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof RaisedConditionKind];
 
 /**
@@ -29,10 +41,11 @@ export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof Rais
  * @remarks
  * The report is the evidence that the user needs this: a missing key only matters to someone whose
  * queries asked for it, so a row waits for the message rather than checking every service up front.
+ * A missing key with `keyRejected` is about a key that is saved but was refused for `location`.
  */
 export type RaisedCondition =
-  | { kind: typeof RaisedConditionKind.MISSING_API_KEY; service: string; location?: string }
-  | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; paidKeyRequired: boolean }
+  | { kind: typeof RaisedConditionKind.MISSING_API_KEY; service: string; location?: string; keyRejected?: boolean }
+  | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; cause: NoIndexersCause }
   | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION }
   | { kind: typeof RaisedConditionKind.MONERIUM_SESSION }
   | { kind: typeof RaisedConditionKind.PREMIUM_INACTIVE; cause: PremiumInactiveCause; reason?: string }

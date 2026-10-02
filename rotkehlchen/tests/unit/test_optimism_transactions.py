@@ -1,23 +1,78 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
+from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.db.filtering import (
+    EvmEventFilterQuery,
+    EvmTransactionsFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
+)
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.pending_transactions import UNRESOLVED_L1_FEE_RETRY_AFTER
+from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.misc import ChainNotSupported, NoAvailableIndexers, RemoteError
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
-from rotkehlchen.types import ChainID, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmInternalTransaction,
+    SupportedBlockchain,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
+from rotkehlchen.utils.misc import from_wei, ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
-    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
-    from rotkehlchen.chain.optimism.transactions import OptimismTransactions
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
+
+
+def _add_pending_transaction(
+        optimism_transactions: OptimismTransactions,
+        l1_fee: int | None = None,
+        account: ChecksumEvmAddress | None = None,
+        timestamp: Timestamp | None = None,
+) -> tuple[EVMTxHash, ChecksumEvmAddress]:
+    tx_hash = make_evm_tx_hash()
+    account = account if account is not None else make_evm_address()
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[L2WithL1FeesTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.OPTIMISM,
+                timestamp=Timestamp(1689113567) if timestamp is None else timestamp,
+                block_number=106757395,
+                from_address=account,
+                to_address=make_evm_address(),
+                value=0,
+                gas=21000,
+                gas_price=1,
+                gas_used=21000,
+                input_data=b'',
+                nonce=1,
+                l1_fee=l1_fee,
+            )],
+            relevant_address=None,
+        )
+    return tx_hash, account
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -39,7 +94,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         assert transactions[0].tx_hash == tx_hash
         assert transactions[0].chain_id == ChainID.OPTIMISM
         assert transactions[0].db_id == 2
-        assert transactions[0].l1_fee == (115752642875381 if should_have_l1 else 0)
+        assert transactions[0].l1_fee == (115752642875381 if should_have_l1 else None)
         assert transactions[0].gas == 523212
         assert transactions[0].gas_used == 322803
         assert transactions[0].timestamp == 1689113567
@@ -86,6 +141,7 @@ def test_l1_fee_queried_when_missing(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
         optimism_manager_connect_at_start: Sequence[WeightedNode],
+        allow_optimism_routescan: None,
 ):
     """Test that if the L1 fee is initially missing it gets queried from either
     the mainnet node or from an indexer. The RPC and etherscan responses are mocked since they
@@ -149,28 +205,1075 @@ def test_l1_fee_fetched_during_indexer_tx_query(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
 ):
-    """Test that L1 fees are fetched via indexer's get_l1_fee during transaction queries.
-
-    This tests the fix where get_transactions() in etherscan_like.py now calls get_l1_fee()
-    for L2 chains when using non-Etherscan indexers (Blockscout, Routescan) since these
-    indexers don't include L1 fee in their txlist response.
-    """
+    """Blockscout's txlist leaves the fee pending until the receipt query."""
     address = optimism_accounts[0]
-    expected_l1_fee = 115752642875381
     tx_hash = deserialize_evm_tx_hash('0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665')  # noqa: E501
 
-    for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
-        account=address,
-        action='txlist',
-        period_or_hash=TimestampOrBlockRange(
-            range_type='blocks',
-            from_value=106757395,
-            to_value=106757395,
-        ),
-    ):
-        for tx in tx_batch:
-            if tx.tx_hash == tx_hash:
-                assert cast('L2WithL1FeesTransaction', tx).l1_fee == expected_l1_fee
-                return
+    with patch.object(optimism_transactions.evm_inquirer.blockscout, 'get_l1_fee') as fee_query:
+        for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
+            account=address,
+            action='txlist',
+            period_or_hash=TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=106757395,
+                to_value=106757395,
+            ),
+        ):
+            for tx in tx_batch:
+                if tx.tx_hash == tx_hash:
+                    assert cast('L2WithL1FeesTransaction', tx).l1_fee is None
+                    fee_query.assert_not_called()
+                    return
 
     raise AssertionError('Expected transaction not found')
+
+
+@pytest.mark.parametrize('partial_pre_coverage', [False, True])
+@pytest.mark.parametrize('post_succeeds', [False, True])
+def test_pre_bedrock_failure_does_not_block_post_coverage(
+        optimism_transactions: OptimismTransactions,
+        partial_pre_coverage: bool,
+        post_succeeds: bool,
+) -> None:
+    """A failed pre-Bedrock query cannot prevent or falsely complete the newer query."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
+    inquirer = optimism_transactions.evm_inquirer
+    ranges = DBQueryRanges(optimism_transactions.database)
+    prefix = inquirer.blockchain.to_range_prefix('internaltxs')
+    location_string = f'{prefix}_{address}'
+    if partial_pre_coverage:
+        with optimism_transactions.database.conn.write_ctx() as cursor:
+            ranges.update_used_query_range(
+                write_cursor=cursor,
+                location_string=location_string,
+                queried_ranges=[(start_ts, Timestamp(start_ts + 10))],
+            )
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]) as resolve_range,
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            RemoteError('pre-Bedrock indexers unavailable'),
+            (iter([[]]), EvmIndexer.BLOCKSCOUT) if post_succeeds else RemoteError(
+                'post-Bedrock indexers unavailable',
+            ),
+        ]),
+        patch.object(
+            optimism_transactions,
+            '_query_and_save_internal_transactions_for_range',
+            wraps=optimism_transactions._query_and_save_internal_transactions_for_range,
+        ) as query_range,
+    ):
+        result = optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+
+    assert result is RangeQueryOutcome.FAILED
+    assert [call.kwargs['update_ranges'] for call in query_range.call_args_list] == [
+        True,
+        not partial_pre_coverage,
+    ]
+    assert [call.kwargs for call in resolve_range.call_args_list] == [
+        {
+            'from_ts': Timestamp(start_ts + 11) if partial_pre_coverage else start_ts,
+            'to_ts': Timestamp(OP_BEDROCK_UPGRADE - 1),
+            'query_end': None,
+        },
+        {'from_ts': OP_BEDROCK_UPGRADE, 'to_ts': end_ts, 'query_end': None},
+    ]
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (
+            (OP_BEDROCK_UPGRADE, end_ts) if post_succeeds else
+            (start_ts, Timestamp(start_ts + 10)) if partial_pre_coverage else
+            None
+        )
+
+    if post_succeeds:
+        with (
+            patch.object(inquirer, '_resolve_timestamp_range', return_value=(
+                OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset(),
+            )) as resolve_retry,
+            patch.object(inquirer, 'get_transactions_with_source', return_value=(
+                iter([[]]), EvmIndexer.ROUTESCAN,
+            ), side_effect=RemoteError('pre-Bedrock indexers still unavailable') if partial_pre_coverage else None,  # noqa: E501
+            ) as query_retry,
+        ):
+            assert optimism_transactions._get_internal_transactions_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ) is (RangeQueryOutcome.FAILED if partial_pre_coverage else RangeQueryOutcome.QUERIED)
+
+        resolve_retry.assert_called_once()
+        query_retry.assert_called_once()
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            assert optimism_transactions.database.get_used_query_range(
+                cursor=cursor,
+                name=location_string,
+            ) == (
+                (OP_BEDROCK_UPGRADE, end_ts) if partial_pre_coverage else (start_ts, end_ts)
+            )
+
+
+def test_post_bedrock_replacement_keeps_pre_coverage_if_probe_fails(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """Do not discard older progress when recent newer coverage cannot be established."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = ts_now()
+    saved_range = (start_ts, Timestamp(start_ts + 10))
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    with optimism_transactions.database.conn.write_ctx() as cursor:
+        DBQueryRanges(optimism_transactions.database).update_used_query_range(
+            write_cursor=cursor,
+            location_string=location_string,
+            queried_ranges=[saved_range],
+        )
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            RemoteError('pre-Bedrock indexers unavailable'),
+            (iter([[]]), EvmIndexer.BLOCKSCOUT),
+        ]),
+        patch.object(inquirer, 'get_blocknumber_by_time', side_effect=RemoteError(
+            'could not determine indexed end',
+        )) as end_probe,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.FAILED
+
+    end_probe.assert_called_once_with(ts=end_ts, closest='before')
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == saved_range  # noqa: E501
+
+
+@pytest.mark.parametrize('saved_range', [
+    None,
+    (Timestamp(OP_BEDROCK_UPGRADE - 100), Timestamp(OP_BEDROCK_UPGRADE - 90)),
+    (OP_BEDROCK_UPGRADE, Timestamp(OP_BEDROCK_UPGRADE + 5)),
+])
+def test_pre_bedrock_success_is_kept_when_post_fails(
+        optimism_transactions: OptimismTransactions,
+        saved_range: tuple[Timestamp, Timestamp] | None,
+) -> None:
+    """Do not download the successful older half again after a newer-half failure."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    if saved_range is not None:
+        with optimism_transactions.database.conn.write_ctx() as cursor:
+            DBQueryRanges(optimism_transactions.database).update_used_query_range(
+                write_cursor=cursor,
+                location_string=location_string,
+                queried_ranges=[saved_range],
+            )
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            (iter([[]]), EvmIndexer.ROUTESCAN),
+            RemoteError('post-Bedrock indexers unavailable'),
+        ]),
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.FAILED
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, max(
+            Timestamp(OP_BEDROCK_UPGRADE - 1),
+            saved_range[1] if saved_range is not None else Timestamp(0),
+        ))
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', return_value=(
+            OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset(),
+        )) as resolve_retry,
+        patch.object(inquirer, 'get_transactions_with_source', return_value=(
+            iter([[]]), EvmIndexer.BLOCKSCOUT,
+        )) as query_retry,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.QUERIED
+
+    resolve_retry.assert_called_once()
+    query_retry.assert_called_once()
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, end_ts)
+
+
+def _interrupted_internal_batches(
+        internal_tx: EvmInternalTransaction,
+) -> Iterator[list[EvmInternalTransaction]]:
+    yield [internal_tx]
+    raise RemoteError('interrupted internal transaction pagination')
+
+
+def test_pre_bedrock_interruption_keeps_batch_progress(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """Keep a fetched older batch when the newer half also fails."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
+    batch_ts = Timestamp(OP_BEDROCK_UPGRADE - 50)
+    internal_tx = EvmInternalTransaction(
+        parent_tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.OPTIMISM,
+        trace_id=1,
+        from_address=address,
+        to_address=make_evm_address(),
+        value=1,
+        gas=1,
+        gas_used=1,
+    )
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+            (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()),
+            (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+        ]),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=[
+            (_interrupted_internal_batches(internal_tx), EvmIndexer.ROUTESCAN),
+            RemoteError('post-Bedrock indexers unavailable'),
+        ]) as query_indexers,
+        patch.object(optimism_transactions, '_process_internal_transactions_batch', return_value=[
+            (internal_tx, batch_ts),
+        ]),
+        patch.object(optimism_transactions.dbevmtx, 'add_evm_internal_transactions') as save_batch,
+        patch.object(
+            optimism_transactions,
+            '_query_and_save_internal_transactions_for_range',
+            wraps=optimism_transactions._query_and_save_internal_transactions_for_range,
+        ) as query_range,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.FAILED
+
+    assert query_indexers.call_count == 2
+    save_batch.assert_called_once()
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, batch_ts)
+    assert [call.kwargs['update_ranges'] for call in query_range.call_args_list] == [True, False]
+
+
+@pytest.mark.parametrize('pre_already_covered', [False, True])
+def test_successful_bedrock_split_marks_combined_range_once(
+        optimism_transactions: OptimismTransactions,
+        pre_already_covered: bool,
+) -> None:
+    """A successful split makes one final mark and one recent-end probe."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = ts_now()
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    if pre_already_covered:
+        with optimism_transactions.database.conn.write_ctx() as cursor:
+            DBQueryRanges(optimism_transactions.database).update_used_query_range(
+                write_cursor=cursor,
+                location_string=location_string,
+                queried_ranges=[(start_ts, Timestamp(OP_BEDROCK_UPGRADE + 5))],
+            )
+
+    resolved_ranges: list[tuple[int, int, frozenset[EvmIndexer]]] = [
+        (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+    ]
+    indexer_results: list[tuple[Iterator[list[EvmInternalTransaction]], EvmIndexer]] = [
+        (iter([[]]), EvmIndexer.BLOCKSCOUT),
+    ]
+    if not pre_already_covered:
+        resolved_ranges.insert(0, (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()))
+        indexer_results.insert(0, (iter([[]]), EvmIndexer.ROUTESCAN))
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=resolved_ranges),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=indexer_results),
+        patch.object(
+            inquirer, 'get_blocknumber_by_time', return_value=OP_BEDROCK_BLOCK + 10,
+        ) as end_block_probe,
+        patch.object(inquirer, 'get_block_timestamp', return_value=end_ts) as end_timestamp_probe,
+        patch.object(
+            optimism_transactions,
+            '_mark_range_as_queried',
+            wraps=optimism_transactions._mark_range_as_queried,
+        ) as mark_range,
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.QUERIED
+
+    assert mark_range.call_count == 1
+    assert mark_range.call_args.kwargs == {
+        'location_string': location_string,
+        'start_ts': start_ts,
+        'end_ts': end_ts,
+        'replace_existing': False,
+        'query_end': None,
+    }
+    end_block_probe.assert_called_once_with(ts=end_ts, closest='before')
+    assert end_timestamp_probe.call_count == 1
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (start_ts, end_ts)
+
+
+@pytest.mark.parametrize('saved_range_start', [
+    None,
+    OP_BEDROCK_UPGRADE,
+    Timestamp(OP_BEDROCK_UPGRADE - 100),
+])
+def test_post_bedrock_interruption_keeps_batch_progress(
+        optimism_transactions: OptimismTransactions,
+        saved_range_start: Timestamp | None,
+) -> None:
+    """A failed page after a saved batch leaves the post-Bedrock range resumable."""
+    address = make_evm_address()
+    start_ts = Timestamp(OP_BEDROCK_UPGRADE - 100)
+    end_ts = Timestamp(OP_BEDROCK_UPGRADE + 100)
+    batch_ts = Timestamp(OP_BEDROCK_UPGRADE + 10)
+    internal_tx = EvmInternalTransaction(
+        parent_tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.OPTIMISM,
+        trace_id=1,
+        from_address=address,
+        to_address=make_evm_address(),
+        value=1,
+        gas=1,
+        gas_used=1,
+    )
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'
+    if saved_range_start is not None:
+        with optimism_transactions.database.conn.write_ctx() as cursor:
+            DBQueryRanges(optimism_transactions.database).update_used_query_range(
+                write_cursor=cursor,
+                location_string=location_string,
+                queried_ranges=[(saved_range_start, Timestamp(OP_BEDROCK_UPGRADE + 5))],
+            )
+
+    resolved_ranges: list[tuple[int, int, frozenset[EvmIndexer]]] = [
+        (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
+    ]
+    indexer_results: list[RemoteError | tuple[Iterator[list[EvmInternalTransaction]], EvmIndexer]] = [  # noqa: E501
+        (_interrupted_internal_batches(internal_tx), EvmIndexer.BLOCKSCOUT),
+    ]
+    if saved_range_start != start_ts:  # older half is not already covered
+        resolved_ranges.insert(0, (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()))
+        indexer_results.insert(0, RemoteError('pre-Bedrock indexers unavailable'))
+
+    with (
+        patch.object(inquirer, '_resolve_timestamp_range', side_effect=resolved_ranges),
+        patch.object(inquirer, 'get_transactions_with_source', side_effect=indexer_results),
+        patch.object(optimism_transactions, '_process_internal_transactions_batch', return_value=[
+            (internal_tx, batch_ts),
+        ]),
+        patch.object(optimism_transactions.dbevmtx, 'add_evm_internal_transactions'),
+    ):
+        assert optimism_transactions._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ) is RangeQueryOutcome.FAILED
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=location_string,
+        ) == (
+            saved_range_start if saved_range_start is not None else OP_BEDROCK_UPGRADE,
+            batch_ts,
+        )
+
+
+@pytest.mark.parametrize(('saved_fee', 'incoming_fee', 'expected_fee'), [
+    (123, None, '123'),
+    (0, None, '0'),
+    (0, 456, '456'),
+    (None, 0, '0'),
+])
+def test_l1_fee_transaction_upsert(
+        optimism_transactions: OptimismTransactions,
+        saved_fee: int | None,
+        incoming_fee: int | None,
+        expected_fee: str,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions, saved_fee)
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        tx = optimism_transactions.dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
+        )[0]
+    assert isinstance(tx, L2WithL1FeesTransaction)
+    tx.l1_fee = incoming_fee
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=None,
+        )
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == (expected_fee,)
+
+
+@pytest.mark.parametrize(('saved_fee', 'receipt_fee', 'fallback_fee', 'expected_fee', 'fallback_calls'), [  # noqa: E501
+    (None, 123, None, '123', 0),
+    (None, 0, None, '0', 0),
+    (None, None, 456, '456', 1),
+    (None, 'invalid', 456, '456', 1),
+    (789, None, None, '789', 0),
+    (789, 0, None, '789', 0),
+    (None, None, None, None, 1),
+    (0, None, None, '0', 0),
+])
+def test_receipt_batch_resolves_l1_fee(
+        optimism_transactions: OptimismTransactions,
+        saved_fee: int | None,
+        receipt_fee: int | str | None,
+        fallback_fee: int | None,
+        expected_fee: str | None,
+        fallback_calls: int,
+) -> None:
+    tx_hash, account = _add_pending_transaction(optimism_transactions, saved_fee)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+    }
+    if receipt_fee is not None:
+        receipt['l1Fee'] = receipt_fee
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]) as batch_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=fallback_fee) as indexer_fee_query,  # noqa: E501
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+
+    batch_query.assert_called_once_with(tx_hashes=[tx_hash])
+    assert indexer_fee_query.call_count == fallback_calls
+    if fallback_calls:
+        indexer_fee_query.assert_called_once_with(
+            account=account,
+            tx_hash=tx_hash,
+            block_number=106757395,
+        )
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id '
+            'WHERE txs.tx_hash=? AND txs.chain_id=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone() == (expected_fee,)
+        assert optimism_transactions.dbevmtx.get_receipt(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            chain_id=ChainID.OPTIMISM,
+        ) is not None
+
+
+def test_failed_batch_fee_lookup_is_retried_during_decode(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """A fee the receipt batch could not resolve is asked for again by the decode, which
+    repairs it once the indexers answer, without refetching the whole transaction."""
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+    }
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]),  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', side_effect=[None, 321]) as fee_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+
+    assert tx.l1_fee == 321
+    assert fee_query.call_count == 2
+    transaction_query.assert_not_called()
+
+
+def test_resolved_zero_fee_survives_new_transaction_handler(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+                'l1Fee': 0,
+            },
+        )
+
+    new_transactions = OptimismTransactions(
+        optimism_inquirer=cast('OptimismInquirer', optimism_transactions.evm_inquirer),
+        database=optimism_transactions.database,
+    )
+    inquirer = new_transactions.evm_inquirer
+    with (
+        patch.object(inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+        patch.object(inquirer, 'get_transaction_by_hash') as transaction_query,
+        new_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = new_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee == 0
+    indexer_fee_query.assert_not_called()
+    transaction_query.assert_not_called()
+
+
+def test_existing_receipt_repairs_missing_l1_fee_without_refetch(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as indexer_fee_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee == 321
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee == 321
+
+    transaction_query.assert_not_called()
+    indexer_fee_query.assert_called_once()
+
+
+def test_fresh_transaction_unresolved_fee_is_repaired_on_next_call(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """A fresh query already tried to resolve the fee, so the call making it does not ask the
+    indexers again. A later call, such as a user-triggered redecode, does try to repair it."""
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        queried_tx = optimism_transactions.dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.OPTIMISM),
+        )[0]
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash', return_value=(
+            queried_tx,
+            {'transactionHash': str(tx_hash), 'contractAddress': None, 'status': 1, 'type': 0, 'logs': []},  # noqa: E501
+        )) as transaction_query,
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as indexer_fee_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+        assert tx.l1_fee is None
+        indexer_fee_query.assert_not_called()
+        tx, _ = optimism_transactions.ensure_tx_data_exists(
+            cursor=cursor,
+            tx_hash=tx_hash,
+            relevant_address=None,
+        )
+
+    assert tx.l1_fee == 321
+    transaction_query.assert_called_once_with(tx_hash)
+    indexer_fee_query.assert_called_once()
+
+
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+def test_add_transaction_by_hash_unresolved_fee(
+        optimism_transactions: OptimismTransactions,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Adding a tx by hash asks the indexers once for a fee missing from the receipt. No
+    failed lookup is remembered, so every later call, starting with the decode that
+    follows, asks again until the fee is repaired."""
+    inquirer = optimism_transactions.evm_inquirer
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash := make_evm_tx_hash()),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'gasUsed': 21000,
+        'logs': [],
+    }
+    with (
+        patch.object(inquirer, 'maybe_get_transaction_by_hash', side_effect=lambda tx_hash, must_exist: deserialize_evm_transaction(  # noqa: E501
+            data={
+                'hash': str(tx_hash),
+                'blockNumber': 106757395,
+                'timeStamp': 1689113567,
+                'from': optimism_accounts[0],
+                'to': make_evm_address(),
+                'value': 0,
+                'gas': 21000,
+                'gasPrice': 1,
+                'input': '0x',
+                'nonce': 1,
+            },
+            internal=False,
+            chain_id=ChainID.OPTIMISM,
+            evm_inquirer=inquirer,
+        )),
+        patch.object(inquirer, 'get_transaction_receipt', return_value=receipt),
+        patch.object(inquirer, 'maybe_get_l1_fees', return_value=None) as indexer_fee_query,
+    ):
+        transaction, _ = optimism_transactions.add_transaction_by_hash(
+            tx_hash=tx_hash,
+            associated_address=optimism_accounts[0],
+            must_exist=True,
+        )
+        assert isinstance(transaction, L2WithL1FeesTransaction)
+        assert transaction.l1_fee is None
+        assert indexer_fee_query.call_count == 1
+
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(  # the decode that follows
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+        assert tx.l1_fee is None
+        assert indexer_fee_query.call_count == 2
+
+        indexer_fee_query.return_value = 321
+        with optimism_transactions.database.conn.read_ctx() as cursor:
+            tx, _ = optimism_transactions.ensure_tx_data_exists(  # a later redecode
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+        assert tx.l1_fee == 321
+        assert indexer_fee_query.call_count == 3
+
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == ('321',)
+
+
+@pytest.mark.parametrize(('indexer_fee', 'receipt', 'expected_fee', 'receipt_calls', 'indexer_calls'), [  # noqa: E501
+    (None, {'l1Fee': '0x3e7'}, 999, 1, 1),
+    (0, {'l1Fee': '0x3e7'}, 0, 0, 1),  # a zero from the indexers is a resolved fee
+    (None, {}, None, 2, 2),  # still unresolved, so the second call retries
+])
+def test_existing_receipt_repairs_fee_from_receipt_when_indexers_cannot(
+        optimism_transactions: OptimismTransactions,
+        indexer_fee: int | None,
+        receipt: dict[str, Any],
+        expected_fee: int | None,
+        receipt_calls: int,
+        indexer_calls: int,
+) -> None:
+    """When indexers cannot resolve a fee only the receipt is queried, never the whole
+    transaction, since deserializing it would ask the indexers again. A resolved fee,
+    zero included, is stored so a second call queries nothing."""
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    with optimism_transactions.database.user_write() as write_cursor:
+        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.OPTIMISM,
+            data={
+                'transactionHash': str(tx_hash),
+                'contractAddress': None,
+                'status': 1,
+                'type': 0,
+                'logs': [],
+            },
+        )
+
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=indexer_fee) as indexer_fee_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipt', return_value=receipt) as receipt_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
+        optimism_transactions.database.conn.read_ctx() as cursor,
+    ):
+        for _ in range(2):
+            tx, _ = optimism_transactions.ensure_tx_data_exists(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                relevant_address=None,
+            )
+            assert tx.l1_fee == expected_fee
+
+    transaction_query.assert_not_called()
+    assert receipt_query.call_count == receipt_calls
+    assert indexer_fee_query.call_count == indexer_calls
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM evm_transactions AS txs LEFT JOIN optimism_transactions '
+            'AS fees ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == (None if expected_fee is None else str(expected_fee),)
+
+
+def test_l1_fee_resolved_after_receipt_batch_failure(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, _ = _add_pending_transaction(optimism_transactions)
+    receipt: dict[str, Any] = {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': 0,
+        'logs': [],
+        'l1Fee': 888,
+    }
+    with (
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipts', return_value=None),  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_receipt', return_value=receipt) as receipt_query,  # noqa: E501
+        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees') as indexer_fee_query,
+    ):
+        optimism_transactions.get_receipts_for_transactions_missing_them()
+
+    receipt_query.assert_called_once_with(tx_hash=tx_hash)
+    indexer_fee_query.assert_not_called()
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT fees.l1_fee FROM optimism_transactions AS fees '
+            'JOIN evm_transactions AS txs ON txs.identifier=fees.tx_id WHERE txs.tx_hash=?',
+            (tx_hash,),
+        ).fetchone() == ('888',)
+
+
+def test_l1_fee_lookup_without_indexers(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    tx_hash, account = _add_pending_transaction(optimism_transactions)
+    with patch.object(
+        optimism_transactions.evm_inquirer,
+        '_try_indexers',
+        side_effect=NoAvailableIndexers('No indexers available'),
+    ):
+        assert optimism_transactions.evm_inquirer.maybe_get_l1_fees(
+            account=account,
+            tx_hash=tx_hash,
+            block_number=106757395,
+        ) is None
+
+
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+def test_unresolved_l1_fee_leaves_transaction_undecoded(
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A transaction whose L1 fee cannot be resolved is left undecoded instead of getting a
+    gas event without its L1 part, which would never be repaired once marked as decoded.
+
+    One unresolved transaction per run probes the lookup, and its failure defers the rest
+    without asking for their fees until the retry delay passes. The probe rotates, so a
+    transaction whose fee can never be resolved does not block the retries of the others.
+    Transactions are decoded oldest first, except for the unresolved ones the probe skips."""
+    optimism_transactions = optimism_transaction_decoder.transactions
+    database = optimism_transactions.database
+
+    def add_pending_with_receipt(timestamp: int, l1_fee: int | None) -> EVMTxHash:
+        tx_hash, _ = _add_pending_transaction(
+            optimism_transactions=optimism_transactions,  # type: ignore[arg-type]  # it is the optimism one
+            l1_fee=l1_fee,
+            account=optimism_accounts[0],
+            timestamp=Timestamp(timestamp),
+        )
+        with database.user_write() as write_cursor:
+            optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
+                write_cursor=write_cursor,
+                chain_id=ChainID.OPTIMISM,
+                data={  # a receipt without l1Fee
+                    'transactionHash': str(tx_hash),
+                    'contractAddress': None,
+                    'status': 1,
+                    'type': 0,
+                    'logs': [],
+                },
+            )
+        return tx_hash
+
+    def decode_run(resolvable: set[EVMTxHash]) -> tuple[list[EVMTxHash], list[EVMTxHash]]:
+        """Run the periodic decoding. Return the hashes it decoded, in order, and the ones
+        it asked a fee for, which is only resolved for the `resolvable` ones."""
+        with (
+            patch.object(
+                target=inquirer,
+                attribute='maybe_get_l1_fees',
+                side_effect=lambda tx_hash, **_kwargs: l1_fee if tx_hash in resolvable else None,
+            ) as fee_query,
+            patch.object(inquirer, 'get_transaction_receipt', return_value={}),
+            patch.object(
+                target=optimism_transaction_decoder,
+                attribute='_decode_transaction',
+                wraps=optimism_transaction_decoder._decode_transaction,
+            ) as decode,
+        ):
+            optimism_transaction_decoder.get_and_decode_undecoded_transactions()
+
+        return (
+            [x.kwargs['transaction'].tx_hash for x in decode.call_args_list],
+            [x.kwargs['tx_hash'] for x in fee_query.call_args_list],
+        )
+
+    def get_decoded_fees() -> dict[EVMTxHash, FVal]:
+        with database.conn.read_ctx() as cursor:
+            return {
+                event.tx_ref: event.amount
+                for event in DBHistoryEvents(database).get_history_events_internal(
+                    cursor=cursor,
+                    filter_query=EvmEventFilterQuery.make(),
+                ) if event.event_subtype == HistoryEventSubType.FEE
+            }
+
+    def expire_retry_delay() -> None:
+        database.pending_txs_tracker.mark_l1_fee_unresolved(
+            blockchain=SupportedBlockchain.OPTIMISM,
+            now=Timestamp(ts_now() - UNRESOLVED_L1_FEE_RETRY_AFTER - 1),
+        )
+
+    inquirer, l1_fee = optimism_transactions.evm_inquirer, 5000
+    older = add_pending_with_receipt(timestamp=1, l1_fee=10)
+    # the fee of the oldest stuck one can never be resolved
+    never, stuck_1, stuck_2 = (add_pending_with_receipt(timestamp=ts, l1_fee=None) for ts in (2, 3, 4))  # noqa: E501
+    newer = add_pending_with_receipt(timestamp=5, l1_fee=10)
+
+    # during an outage the probe fails and the other unresolved ones are not even tried
+    assert decode_run(resolvable=set()) == ([older, never, newer], [never])
+    assert set(get_decoded_fees()) == {older, newer}
+    assert optimism_transaction_decoder.count_undecoded_transactions() == 0  # deferred
+
+    # a transaction added during the delay is still decoded, without any fee lookup
+    newest = add_pending_with_receipt(timestamp=6, l1_fee=10)
+    assert decode_run(resolvable=set()) == ([newest], [])
+
+    # after the delay the outage is over, and the probe moves on to the next transaction,
+    # so the one that never resolves does not block the others
+    expire_retry_delay()
+    assert decode_run(resolvable={stuck_1, stuck_2}) == (
+        [stuck_1, never, stuck_2],  # the probe, then the rest oldest first
+        [stuck_1, never, stuck_2],
+    )
+    assert get_decoded_fees() == {  # gas_used * gas_price of the pending txs plus the L1 fee
+        older: from_wei(FVal(21000 + 10)),
+        newer: from_wei(FVal(21000 + 10)),
+        newest: from_wei(FVal(21000 + 10)),
+        stuck_1: from_wei(FVal(21000 + l1_fee)),
+        stuck_2: from_wei(FVal(21000 + l1_fee)),
+    }
+    assert optimism_transaction_decoder.dbtx.count_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM),
+    ) == 1  # only the one that never resolves is left
+
+
+@pytest.mark.parametrize('pre_bedrock_end', [False, True])
+@pytest.mark.parametrize('free_etherscan', [False, True])
+def test_pre_bedrock_not_covered_does_not_fail_sync(
+        optimism_transactions: OptimismTransactions,
+        free_etherscan: bool,
+        pre_bedrock_end: bool,
+) -> None:
+    """Blockscout cannot serve pre-Bedrock internal transactions or resolve pre-Bedrock
+    blocks, and with a free etherscan key nothing else can either. That is the steady state
+    of the default setup, so a sync from the start of the chain, or one ending before
+    Bedrock like a PnL report of 2022, must not fail every address on every sync because of it.
+
+    What is not covered is left unrecorded so a paid etherscan key can fill it later, while
+    the newer coverage is kept so the next sync does not download it again.
+    """
+    inquirer = optimism_transactions.evm_inquirer
+    blockscout, notifier = inquirer.blockscout, MockRotkiNotifier()
+    indexers: dict[EvmIndexer, Any] = {EvmIndexer.BLOCKSCOUT: blockscout}
+    with ExitStack() as stack:
+        if free_etherscan:  # tried after blockscout fails, and refuses the chain
+            indexers[EvmIndexer.ETHERSCAN] = (etherscan := inquirer.etherscan)
+            for attribute in ('get_blocknumber_by_time', 'get_transactions', 'get_token_transaction_data'):  # noqa: E501
+                stack.enter_context(patch.object(etherscan, attribute, side_effect=ChainNotSupported('free key')))  # noqa: E501
+
+        stack.enter_context(patch.dict(inquirer.available_indexers, indexers, clear=True))
+        stack.enter_context(patch.object(  # one block per second from Bedrock on
+            target=blockscout,
+            attribute='_query',
+            side_effect=lambda options, **kwargs: OP_BEDROCK_BLOCK + options['timestamp'] - OP_BEDROCK_UPGRADE,  # noqa: E501
+        ))
+        indexer_queries = stack.enter_context(patch.object(  # what blockscout's override calls
+            target=EtherscanLikeApi,
+            attribute='get_transactions',
+            side_effect=lambda **kwargs: iter([[]]),
+        ))
+        stack.enter_context(patch.object(blockscout, 'get_token_transaction_data', side_effect=lambda **kwargs: iter([[]])))  # noqa: E501
+        stack.enter_context(patch.object(optimism_transactions.msg_aggregator, 'rotki_notifier', notifier))  # noqa: E501
+        for sync in range(2):
+            optimism_transactions.query_chain(
+                from_timestamp=Timestamp(0),
+                to_timestamp=(end_ts := Timestamp(OP_BEDROCK_UPGRADE + (-1000 if pre_bedrock_end else 1_000_000))),  # noqa: E501
+                addresses=[address := make_evm_address()] if sync == 0 else [address],
+            )
+            if sync == 0:  # with a pre-Bedrock end not even the end block can be resolved
+                assert (indexer_queries.call_count == 0) is pre_bedrock_end
+                indexer_queries.reset_mock()
+
+    assert indexer_queries.call_count == 0  # the second sync had nothing left to download
+    assert [
+        msg.data['status'] for msg in notifier.messages  # type: ignore[call-overload]
+        if msg.message_type == WSMessageType.TRANSACTION_STATUS and msg.data['status'] != str(TransactionStatusStep.QUERYING_TRANSACTIONS)  # type: ignore[call-overload]  # noqa: E501
+    ] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+    ] * 2
+    prefixes: tuple[Literal['txs', 'internaltxs', 'tokentxs'], ...] = ('txs', 'internaltxs', 'tokentxs')  # noqa: E501
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert [optimism_transactions.database.get_used_query_range(
+            cursor=cursor,
+            name=f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}',
+        ) for prefix in prefixes] == ([None] * 3 if pre_bedrock_end else [
+            (0, end_ts),
+            (OP_BEDROCK_UPGRADE, end_ts),
+            (0, end_ts),
+        ])
+
+
+@pytest.mark.parametrize(('prefix', 'range_query', 'indexer_query'), [
+    ('txs', '_get_transactions_for_range', 'get_transactions'),
+    ('tokentxs', '_get_erc20_transfers_for_ranges', 'get_token_transaction_data'),
+])
+def test_not_covered_older_range_does_not_skip_newer_range(
+        optimism_transactions: OptimismTransactions,
+        prefix: Literal['txs', 'tokentxs'],
+        range_query: Literal['_get_transactions_for_range', '_get_erc20_transfers_for_ranges'],
+        indexer_query: Literal['get_transactions', 'get_token_transaction_data'],
+) -> None:
+    """A range no indexer covers is not a failure, so it must not hide a newer range either.
+
+    The ranges are queried oldest first. Stopping at an uncovered pre-Bedrock gap would
+    report the address as complete while the newer gap after the saved coverage was never
+    queried. The newer range is recorded so that the next sync does not query it again,
+    while the uncovered gap stays unrecorded for a covering indexer to fill.
+    """
+    inquirer = optimism_transactions.evm_inquirer
+    blockscout, address = inquirer.blockscout, make_evm_address()
+    location_string = f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}'
+    with optimism_transactions.database.conn.write_ctx() as cursor:
+        DBQueryRanges(optimism_transactions.database).update_used_query_range(
+            write_cursor=cursor,
+            location_string=location_string,
+            queried_ranges=[(Timestamp(OP_BEDROCK_UPGRADE + 10), Timestamp(OP_BEDROCK_UPGRADE + 100))],  # noqa: E501
+        )
+
+    with (
+        patch.dict(inquirer.available_indexers, {EvmIndexer.BLOCKSCOUT: blockscout}, clear=True),
+        patch.object(  # one block per second from Bedrock on
+            target=blockscout,
+            attribute='_query',
+            side_effect=lambda options, **kwargs: OP_BEDROCK_BLOCK + options['timestamp'] - OP_BEDROCK_UPGRADE,  # noqa: E501
+        ),
+        patch.object(
+            target=EtherscanLikeApi,
+            attribute=indexer_query,
+            side_effect=lambda **kwargs: iter([[]]),
+        ) as indexer_queries,
+    ):
+        for _ in range(2):  # the second sync only has the uncovered gap left to query
+            assert getattr(optimism_transactions, range_query)(
+                address=address,
+                start_ts=Timestamp(OP_BEDROCK_UPGRADE - 1000),  # after genesis, so not block 0
+                end_ts=Timestamp(OP_BEDROCK_UPGRADE + 1000),
+            ) is RangeQueryOutcome.NOT_COVERED
+
+    assert [(
+        call.kwargs['period_or_hash'].from_value, call.kwargs['period_or_hash'].to_value,
+    ) if prefix == 'txs' else (
+        call.kwargs['from_block'], call.kwargs['to_block'],
+    ) for call in indexer_queries.call_args_list] == [(OP_BEDROCK_BLOCK + 101, OP_BEDROCK_BLOCK + 1000)]  # noqa: E501
+    with optimism_transactions.database.conn.read_ctx() as cursor:  # older gap not recorded
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == (
+            OP_BEDROCK_UPGRADE + 10, OP_BEDROCK_UPGRADE + 1000,
+        )

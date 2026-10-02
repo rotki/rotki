@@ -58,13 +58,27 @@ export function applyBalanceBulkDelete(snapshot: Snapshot, indices: number[]): S
 }
 
 /**
+ * Locations that can't absorb a reconcile toward `targetTotal` without going negative. Only a
+ * negative difference (the locations sum above the balances) can overdraw one; left unguarded, the
+ * negative location then blocks every later delete from it.
+ */
+export function reconcileOverdrawnLocations(snapshot: Snapshot, targetTotal: BigNumber): string[] {
+  const diff = targetTotal.minus(locationsTotal(snapshot.locationDataSnapshot));
+  if (!diff.isNegative())
+    return [];
+  return snapshot.locationDataSnapshot
+    .filter(item => item.location !== TOTAL_LOCATION && item.usdValue.plus(diff).isNegative())
+    .map(item => item.location);
+}
+
+/**
  * Reconciles a snapshot whose location subtotals don't add up to its net worth:
  * absorbs the whole difference (`targetTotal − locationsSum`) into a single
  * location — created if missing — and snaps the stored total to `targetTotal`.
  * `targetTotal` is the tracked net worth (the balances sum, minus NFTs when they
  * are excluded), so both locations and total land on it. With locations already
  * summing to it the difference is zero, so this just fixes the total. The caller
- * picks the location; the editor pre-selects the largest.
+ * picks the location.
  */
 export function applyReconcileLocations(snapshot: Snapshot, location: string, targetTotal: BigNumber): Snapshot {
   const diff = targetTotal.minus(locationsTotal(snapshot.locationDataSnapshot));

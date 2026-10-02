@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import IndexerOrderSetting from '@/modules/settings/evm/IndexerOrderSetting.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const chains: EvmChainInfo[] = [
   {
@@ -174,7 +174,7 @@ describe('indexerOrderSetting', () => {
 
     const warnings = wrapper.findAll('[data-testid=chain-warning-alert]');
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.gnosis_key_required');
+    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.key_required');
   });
 
   it('should not warn on the default tab', async () => {
@@ -229,14 +229,31 @@ describe('indexerOrderSetting', () => {
   it('should keep the rows of chains no indexer served through a reorder, since the backend reports a chain only once', async () => {
     await mountWith([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT], { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] });
     const conditions = useRaisedConditionsStore();
-    conditions.raise({ chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
+    conditions.raise({ cause: NoIndexersCause.UNAVAILABLE, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
 
     defaultList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
     await selectTab('gnosis');
     chainList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
     await flushPromises();
 
-    expect(get(conditions.conditions)).toEqual([{ chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false }]);
+    expect(get(conditions.conditions)).toEqual([{ cause: NoIndexersCause.UNAVAILABLE, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS }]);
+  });
+
+  it('should leave routescan out of a saved optimism order, since it no longer serves the chain', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], {
+      optimism: [EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN],
+    });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should show a routescan-only optimism order as empty instead of inventing an indexer', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], { optimism: [EvmIndexer.ROUTESCAN] });
+    await selectTab(Blockchain.OPTIMISM);
+
+    expect(chainList().props('modelValue')).toEqual([]);
+    expect(wrapper.text()).toContain('evm_settings.indexer.no_indexers_warning');
   });
 
   it('should persist the remaining overrides when a chain is removed', async () => {

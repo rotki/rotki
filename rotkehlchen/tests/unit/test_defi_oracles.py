@@ -171,6 +171,7 @@ def test_uniswap_oracles_evm(inquirer_defi: Inquirer) -> None:
 def test_uniswap_oracles_routing_assets(
         inquirer_defi: Inquirer,
         globaldb: GlobalDBHandler,
+        allow_optimism_routescan: None,
 ) -> None:
     """Test that the Uniswap oracle correctly handles a missing routing asset."""
     assert inquirer_defi._uniswapv3 is not None

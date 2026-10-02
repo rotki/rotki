@@ -118,26 +118,47 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
     ]);
   }
 
+  /** The title of a row: a refused key names where it was refused, a missing one where it was needed. */
+  function missingKeyTitle({ keyRejected, location }: MissingApiKeyCondition, params: Record<string, string>): string {
+    if (keyRejected && location)
+      return t('action_center.rows.integrations.missing_api_key.title_rejected', params);
+    return location
+      ? t('action_center.rows.integrations.missing_api_key.title_location', params)
+      : t('action_center.rows.integrations.missing_api_key.title', params);
+  }
+
   function missingKeyRow(condition: MissingApiKeyCondition): ActionItem {
-    const { location, service } = condition;
+    const { keyRejected, location, service } = condition;
     const serviceName = toHumanReadable(service, 'capitalize');
-    const params = location
+    const params: Record<string, string> = location
       ? { location: toHumanReadable(location, 'capitalize'), service: serviceName }
       : { service: serviceName };
+    const description = keyRejected
+      ? msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout_rejected')
+      : getOr(MISSING_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION);
 
     return createActionItem<ActionTarget, string>({
       actionLabel: t('action_center.rows.integrations.missing_api_key.action'),
       count: 1,
-      description: t(getOr(MISSING_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION), params),
+      description: t(description, params),
       icon: 'lu-key-round',
       id: conditionRowId(condition),
       options: missingKeyOptions(service, serviceName),
       urgency: OPTIONAL_KEY_SERVICES.has(service) ? ActionUrgency.TODO : ActionUrgency.DECISION,
       target: { kind: 'route', to: getServiceRegisterUrl(service)?.route ?? serviceSettings(service) },
-      title: location
-        ? t('action_center.rows.integrations.missing_api_key.title_location', params)
-        : t('action_center.rows.integrations.missing_api_key.title', params),
+      title: missingKeyTitle(condition, params),
     });
+  }
+
+  /**
+   * Whether a missing key's row is still open.
+   *
+   * @remarks
+   * A refused key is saved by definition, so having a key does not close its row; saving a new key
+   * clears the condition instead.
+   */
+  function isMissingKeyOpen({ keyRejected, service }: MissingApiKeyCondition): boolean {
+    return !isSuppressed(service) && (keyRejected === true || !hasKey(service));
   }
 
   function sessionRow(condition: RaisedCondition, service: ExternalServiceName, copy: { title: string; description: string }): ActionItem {
@@ -156,7 +177,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   function rowFor(condition: RaisedCondition): Option<ActionItem> {
     switch (condition.kind) {
       case RaisedConditionKind.MISSING_API_KEY:
-        return hasKey(condition.service) || isSuppressed(condition.service) ? none : some(missingKeyRow(condition));
+        return isMissingKeyOpen(condition) ? some(missingKeyRow(condition)) : none;
       case RaisedConditionKind.MONERIUM_SESSION:
         return get(moneriumAuthenticated)
           ? none

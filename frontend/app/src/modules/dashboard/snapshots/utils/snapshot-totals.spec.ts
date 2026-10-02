@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
-import { type BalanceSnapshot, BalanceSnapshotSchema, type LocationDataSnapshot, LocationDataSnapshotSchema } from '@/modules/dashboard/snapshots';
+import { type BalanceSnapshot, BalanceSnapshotSchema, type LocationDataSnapshot, LocationDataSnapshotSchema, type Snapshot } from '@/modules/dashboard/snapshots';
 import {
   assetsTotal,
   getTotalEntry,
   getTotalValue,
+  listedNetWorth,
   locationsTotal,
   nftsTotal,
   signedUsdValue,
@@ -78,5 +79,40 @@ describe('modules/dashboard/snapshots/utils/snapshot-totals', () => {
   it('should return zero from getTotalValue when there is no total row', () => {
     expect(getTotalValue([location('kraken', '50')]).toNumber()).toBe(0);
     expect(getTotalEntry([location('kraken', '50')])).toBeUndefined();
+  });
+
+  describe('listedNetWorth', () => {
+    const snapshot: Snapshot = {
+      balancesSnapshot: [
+        balance({ assetIdentifier: 'ETH', usdValue: '100' }),
+        balance({ assetIdentifier: 'SPAM', usdValue: '1000' }),
+        balance({ assetIdentifier: 'DEBT', category: BalanceType.LIABILITY, usdValue: '20' }),
+        balance({ assetIdentifier: '_nft_0xabc_1', usdValue: '40' }),
+        balance({ assetIdentifier: '_nft_0xabc_2', usdValue: '5' }),
+      ],
+      locationDataSnapshot: [location(TOTAL_LOCATION, '1125')],
+    };
+    const ignored = new Set<string>(['SPAM', 'DEBT', '_nft_0xabc_2']);
+    const isIgnored = (identifier: string): boolean => ignored.has(identifier);
+
+    it('should subtract ignored assets and add back ignored liabilities', () => {
+      const listed = listedNetWorth(snapshot, { includeNfts: true, isIgnored });
+      // 1125 - (1000 - 20 + 5)
+      expect(listed.value.toNumber()).toBe(140);
+      expect(listed.ignored.toNumber()).toBe(985);
+      expect(listed.nfts.toNumber()).toBe(0);
+    });
+
+    it('should also subtract NFTs left out of net value, but not an ignored one twice', () => {
+      const listed = listedNetWorth(snapshot, { includeNfts: false, isIgnored });
+      // 1125 - 985 - 40
+      expect(listed.value.toNumber()).toBe(100);
+      expect(listed.nfts.toNumber()).toBe(40);
+    });
+
+    it('should equal the stored total when nothing is left out', () => {
+      const listed = listedNetWorth(snapshot, { includeNfts: true, isIgnored: () => false });
+      expect(listed.value.toNumber()).toBe(1125);
+    });
   });
 });

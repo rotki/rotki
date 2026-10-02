@@ -46,30 +46,43 @@ describe('useExternalApiKeys', () => {
     expect(getApiKey('blockscout')).toBe('new-key');
   });
 
-  describe('the chain rows that asked for a paid Etherscan key', () => {
+  describe('the rows that asked for a key', () => {
     let conditions: Awaited<typeof import('@/modules/shell/action-center/use-raised-conditions-store')>;
 
     beforeEach(async () => {
       conditions = await import('@/modules/shell/action-center/use-raised-conditions-store');
-      const { raise } = conditions.useRaisedConditionsStore();
-      raise({ chain: 'base', kind: conditions.RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: true });
-      raise({ chain: 'optimism', kind: conditions.RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
+      const { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } = conditions;
+      const { raise } = useRaisedConditionsStore();
+      raise({ cause: NoIndexersCause.PAID_ETHERSCAN_KEY, chain: 'base', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
+      raise({ cause: NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY, chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
+      raise({ cause: NoIndexersCause.UNAVAILABLE, chain: 'optimism', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
+      raise({ keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'Base', service: 'blockscout' });
     });
 
-    function raisedChains(): string[] {
-      return get(conditions.useRaisedConditionsStore().conditions).flatMap(condition => 'chain' in condition ? [condition.chain] : []);
+    function raised(): string[] {
+      return get(conditions.useRaisedConditionsStore().conditions).flatMap((condition) => {
+        if ('chain' in condition)
+          return [condition.chain];
+        return 'service' in condition ? [condition.service] : [];
+      });
     }
 
-    it('should come down when an Etherscan key is saved, leaving the chains that asked for no key', async () => {
+    it('should take down every chain an Etherscan key restores, leaving the chains that asked for no key', async () => {
       await api.useExternalApiKeys().save({ apiKey: 'paid-key', name: 'etherscan' });
 
-      expect(raisedChains()).toEqual(['optimism']);
+      expect(raised()).toEqual(['optimism', 'blockscout']);
+    });
+
+    it('should take down the chains a Blockscout key restores and its refused key', async () => {
+      await api.useExternalApiKeys().save({ apiKey: 'new-key', name: 'blockscout' });
+
+      expect(raised()).toEqual(['base', 'optimism']);
     });
 
     it('should stay when another service\'s key is saved', async () => {
-      await api.useExternalApiKeys().save({ apiKey: 'new-key', name: 'blockscout' });
+      await api.useExternalApiKeys().save({ apiKey: 'new-key', name: 'helius' });
 
-      expect(raisedChains()).toEqual(['base', 'optimism']);
+      expect(raised()).toEqual(['base', 'gnosis', 'optimism', 'blockscout']);
     });
 
     it('should stay when saving the Etherscan key fails', async () => {
@@ -77,7 +90,7 @@ describe('useExternalApiKeys', () => {
 
       await api.useExternalApiKeys().save({ apiKey: 'paid-key', name: 'etherscan' });
 
-      expect(raisedChains()).toEqual(['base', 'optimism']);
+      expect(raised()).toEqual(['base', 'gnosis', 'optimism', 'blockscout']);
     });
   });
 

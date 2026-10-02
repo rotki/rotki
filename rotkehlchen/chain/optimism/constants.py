@@ -5,7 +5,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 OPTIMISM_GENESIS: Final = Timestamp(1636666246)
-OP_BEDROCK_UPGRADE: Final = Timestamp(1686081600)
+# OP Mainnet genesis in https://github.com/ethereum-optimism/superchain-registry/blob/main/superchain/configs/mainnet/op.toml
+OP_BEDROCK_UPGRADE: Final = Timestamp(1686068903)  # timestamp of OP_BEDROCK_BLOCK
 OP_BEDROCK_BLOCK: Final = 105235063  # block number at the Bedrock upgrade
 CPT_OPTIMISM: Final = 'optimism'
 

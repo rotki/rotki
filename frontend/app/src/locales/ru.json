@@ -700,14 +700,6 @@
           "title": "Периодический запрос клиента"
         }
       },
-      "refresh_general_cache": {
-        "error": {
-          "message": "Не удалось обновить данные протокола {name}: {message}"
-        },
-        "task": {
-          "title": "Обновление данных протокола ({name})"
-        }
-      },
       "tag_add": {
         "error": {
           "title": "Добавление тега"
@@ -2138,7 +2130,6 @@
       "kraken_futures_keys": "Ключи для фьючерсов",
       "passphrase": "Парольная фраза",
       "private_key": "Приватный ключ",
-      "secret": "Секрет",
       "signing_key": "Ключ подписи"
     },
     "keys": "Ключи",

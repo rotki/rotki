@@ -21,6 +21,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     query_blockstream_like_has_transactions,
 )
 from rotkehlchen.constants import HOUR_IN_SECONDS
+from rotkehlchen.constants.assets import A_BCH
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
@@ -30,7 +31,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int,
     deserialize_timestamp,
 )
-from rotkehlchen.tests.utils.constants import A_BCH
 from rotkehlchen.types import BTCAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now
 from rotkehlchen.utils.network import request_get, request_get_dict

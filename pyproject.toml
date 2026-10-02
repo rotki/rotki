@@ -59,6 +59,8 @@ dependencies = [
     # For Google Calendar integration
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
+    # OAuth client for Monerium
+    "oauthlib==3.3.1",
     # To build JWT for coinbase exchange key validation
     "PyJWT==2.13.0",
     "construct==2.10.68",
@@ -170,7 +172,7 @@ rotkehlchen_mock = "rotkehlchen_mock.__main__:main"
 # dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools_scm]
-fallback_version = "1.44.0"
+fallback_version = "1.44.1"
 
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber, Zero } from '@rotki/common';
+import { BigNumber, Zero } from '@rotki/common';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
@@ -14,7 +14,9 @@ const splits = defineModel<LocationSplit[]>({ required: true });
 /** Whether the split is complete (every row filled, no dupes, sums to `total`). */
 const valid = defineModel<boolean>('valid', { default: false });
 
-const { locations, maxPerLocation = {}, timestamp, total } = defineProps<{
+const { hint, locations, maxPerLocation = {}, timestamp, total } = defineProps<{
+  /** Replaces the default hint, which describes splitting one balance. */
+  hint?: string;
   /** The balance's full USD value that the split must add up to. */
   total: BigNumber;
   timestamp: number;
@@ -32,6 +34,12 @@ const { locations, maxPerLocation = {}, timestamp, total } = defineProps<{
 interface SplitRow {
   location: string;
   amount: string;
+  /**
+   * The exact USD value of a filled row, shown read-only in place of the amount input. The input's
+   * number mask cannot carry thirty-odd digits exactly, and a fiat round trip can land a hair above
+   * the location's cap, either of which would fail the split.
+   */
+  filled?: BigNumber;
 }
 
 const { t } = useI18n({ useScope: 'global' });
@@ -51,8 +59,12 @@ function toUsd(amount: string): BigNumber {
   return get(isUsd) ? value : convertFiatToUsd(value, get(rate));
 }
 
+function rowUsd(row: SplitRow): BigNumber {
+  return row.filled ?? toUsd(row.amount);
+}
+
 const targetFiat = computed<BigNumber>(() => get(isUsd) ? total : convertUsdToFiat(total, get(rate)));
-const allocatedUsd = computed<BigNumber>(() => get(rows).reduce((sum, row) => sum.plus(toUsd(row.amount)), Zero));
+const allocatedUsd = computed<BigNumber>(() => get(rows).reduce((sum, row) => sum.plus(rowUsd(row)), Zero));
 const remainingUsd = computed<BigNumber>(() => total.minus(get(allocatedUsd)));
 
 /** The location's USD cap for a row, or undefined when uncapped (additive split). */
@@ -63,7 +75,7 @@ function capFor(location: string): BigNumber | undefined {
 /** The location's resulting subtotal after this row's removal (capped rows only). */
 function remainingFor(row: SplitRow): BigNumber | null {
   const cap = capFor(row.location);
-  return cap ? cap.minus(toUsd(row.amount)) : null;
+  return cap ? cap.minus(rowUsd(row)) : null;
 }
 
 /** A row exceeds its location's cap when it would remove more than it holds. */
@@ -74,7 +86,7 @@ function exceedsCap(row: SplitRow): boolean {
 
 const isValid = computed<boolean>(() => {
   const current = get(rows);
-  if (current.some(row => !row.location || !row.amount))
+  if (current.some(row => !row.location || (!row.amount && !row.filled)))
     return false;
   const names = current.map(row => row.location);
   if (new Set(names).size !== names.length)
@@ -91,12 +103,34 @@ const isValid = computed<boolean>(() => {
  */
 const result = computed<LocationSplit[]>(() => {
   const current = get(rows);
-  const rest = current.slice(1).reduce((sum, row) => sum.plus(toUsd(row.amount)), Zero);
+  const rest = current.slice(1).reduce((sum, row) => sum.plus(rowUsd(row)), Zero);
   return current.map((row, index) => ({
     location: row.location,
-    usdValue: index === 0 ? total.minus(rest) : toUsd(row.amount),
+    usdValue: index === 0 ? total.minus(rest) : rowUsd(row),
   }));
 });
+
+/**
+ * Fills a row with what is still left to allocate, up to all its location holds. When a value is
+ * spread over several locations, nobody knows each share, but each location's subtotal is the most
+ * it can give, so filling row by row adds up without typing the numbers.
+ */
+function fillAvailable(index: number): void {
+  const current = get(rows);
+  const cap = capFor(current[index].location);
+  if (!cap)
+    return;
+  const others = current.reduce((sum, row, i) => (i === index ? sum : sum.plus(rowUsd(row))), Zero);
+  const usd = BigNumber.min(cap, total.minus(others));
+  if (!usd.isGreaterThan(0))
+    return;
+  set(rows, current.map((row, i) => (i === index ? { ...row, amount: '', filled: usd } : row)));
+}
+
+/** Drops a filled value so the row can be typed into again. */
+function clearFilled(index: number): void {
+  set(rows, get(rows).map((row, i) => (i === index ? { ...row, filled: undefined } : row)));
+}
 
 function addRow(): void {
   set(rows, [...get(rows), { amount: '', location: '' }]);
@@ -112,7 +146,7 @@ function removeRow(index: number): void {
 function distribute(): void {
   const current = get(rows);
   const each = get(targetFiat).dividedBy(current.length).toFixed(2);
-  set(rows, current.map(row => ({ ...row, amount: each })));
+  set(rows, current.map(row => ({ ...row, amount: each, filled: undefined })));
 }
 
 watch([result, isValid], () => {
@@ -142,7 +176,7 @@ watch([result, isValid], () => {
     </div>
 
     <p class="text-caption text-rui-text-secondary">
-      {{ t('dashboard.snapshot.detail.split.hint') }}
+      {{ hint ?? t('dashboard.snapshot.detail.split.hint') }}
     </p>
 
     <div
@@ -163,7 +197,31 @@ watch([result, isValid], () => {
           :label="t('common.location')"
           data-testid="snapshot-location-split-location"
         />
+        <div
+          v-if="row.filled"
+          class="w-40 h-10 flex items-center gap-1 px-3 rounded border border-default"
+          data-testid="snapshot-location-split-filled"
+        >
+          <SnapshotFiatDisplay
+            class="flex-1 truncate"
+            :value="row.filled"
+            :timestamp="timestamp"
+          />
+          <RuiButton
+            variant="text"
+            icon
+            size="sm"
+            data-testid="snapshot-location-split-clear-fill"
+            @click="clearFilled(index)"
+          >
+            <RuiIcon
+              name="lu-x"
+              size="14"
+            />
+          </RuiButton>
+        </div>
         <AmountInput
+          v-else
           v-model="row.amount"
           variant="outlined"
           dense
@@ -197,6 +255,16 @@ watch([result, isValid], () => {
           :value="capFor(row.location)!"
           :timestamp="timestamp"
         />
+        <RuiButton
+          variant="text"
+          color="primary"
+          size="sm"
+          class="!py-0 !px-1"
+          data-testid="snapshot-location-split-fill"
+          @click="fillAvailable(index)"
+        >
+          {{ t('dashboard.snapshot.detail.split.fill_available') }}
+        </RuiButton>
         <span class="border-l border-rui-text-disabled h-3 mx-1" />
         {{ t('dashboard.snapshot.detail.split.location_after') }}
         <SnapshotFiatDisplay

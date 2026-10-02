@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
-import type { SnapshotSumMismatch } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { isNft } from '@/modules/assets/nft-utils';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotFxOverrideControl from '@/modules/dashboard/snapshots/components/SnapshotFxOverrideControl.vue';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
-import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
+import { type MismatchRows, rowsBehindMismatch, type SnapshotSumMismatch } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { reconcileOverdrawnLocations } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
+import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
+import {
+  type ListedNetWorth,
+  listedNetWorth,
+  locationsTotal,
+  TOTAL_LOCATION,
+} from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import { getSnapshotWarnings, type SnapshotWarning } from '@/modules/dashboard/snapshots/utils/snapshot-warnings';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const excludeNfts = defineModel<boolean>('excludeNfts', { default: false });
@@ -25,24 +34,35 @@ const {
   timestamp: number;
   /** The draft's NFT-aware sum mismatch, surfaced as the reconcile banner. */
   mismatch?: SnapshotSumMismatch | null;
-  /** Previous snapshot's stored total (USD) and timestamp, for the delta line. */
+  /** Previous snapshot's value in the net-value series (USD) and timestamp, for the delta line. */
   previous?: { value: BigNumber; timestamp: number };
 }>();
 
 const emit = defineEmits<{
   'edit-locations': [];
   'reconcile-locations': [location: string];
+  'remove-balances': [indices: number[]];
+  'show-excluded': [];
   'show-zero-value': [];
 }>();
 
 /** Number of location rows shown in the allocation glance before "+N more". */
 const ALLOCATION_LIMIT = 4;
 
+/** Number of asset symbols the mismatch banner names before "and N more". */
+const GAP_ASSETS_LIMIT = 3;
+
 const { t } = useI18n({ useScope: 'global' });
 
-const { isSpamAsset } = useSnapshotAssetFilters();
+const { getAssetField } = useAssetInfoRetrieval();
 
-const netWorth = computed<BigNumber>(() => getTotalValue(snapshot.locationDataSnapshot));
+const { isIgnoredAsset, isSpamAsset } = useSnapshotAssetFilters();
+const nftsInNetValue = useSetting('nftsInNetValue');
+
+/** Headlines what the snapshot list and graph show, and says what that leaves out of the stored total. */
+const listed = computed<ListedNetWorth>(() =>
+  listedNetWorth(snapshot, { includeNfts: get(nftsInNetValue), isIgnored: isIgnoredAsset }),
+);
 const hasNfts = computed<boolean>(() => snapshot.balancesSnapshot.some(item => isNft(item.assetIdentifier)));
 
 /** Real (non-`total`) location rows, the candidates for absorbing a reconcile. */
@@ -50,35 +70,67 @@ const existingLocations = computed<string[]>(() =>
   snapshot.locationDataSnapshot.filter(item => item.location !== TOTAL_LOCATION).map(item => item.location),
 );
 
-/** The biggest location by value — pre-selected to absorb the reconcile difference. */
-const largestLocation = computed<string>(() => {
-  const rows = snapshot.locationDataSnapshot.filter(item => item.location !== TOTAL_LOCATION);
-  if (rows.length === 0)
-    return '';
-  return rows.reduce((max, item) => (item.usdValue.gt(max.usdValue) ? item : max)).location;
+/**
+ * The location the user picked to absorb the difference, cleared per snapshot. Nothing is
+ * preselected: no balance says which location it sits in, and the largest one is often where a
+ * high-value spam token inflates the balances rather than where the gap belongs.
+ */
+const reconcileLocation = ref<string>('');
+watch(() => timestamp, () => set(reconcileLocation, ''));
+
+/**
+ * Rows whose value is the whole gap: the locations already leave them out, so removing them settles
+ * the mismatch, where reconciling would put their value back into a location.
+ */
+const gapRows = computed<MismatchRows | null>(() => {
+  if (!mismatch)
+    return null;
+  return rowsBehindMismatch(snapshot, mismatch, identifier => isIgnoredAsset(identifier) || isSpamAsset(identifier));
 });
 
-/** Which location absorbs the difference; defaults to the largest, user can switch. */
-const reconcileLocation = ref<string>('');
-watchImmediate(largestLocation, (location) => {
-  if (!get(reconcileLocation))
-    set(reconcileLocation, location);
-});
-const warnings = computed<SnapshotWarning[]>(() =>
-  getSnapshotWarnings(snapshot, { isSpam: isSpamAsset, previousTotal: previous?.value }),
+/** Reconcile targets that would go negative, unselectable so a reconcile can't leave one overdrawn. */
+const overdrawnTargets = computed<string[]>(() =>
+  mismatch ? reconcileOverdrawnLocations(snapshot, mismatch.balancesSum) : [],
 );
 
+const noReconcileTarget = computed<boolean>(() => {
+  const targets = get(existingLocations);
+  return targets.length > 0 && targets.every(location => get(overdrawnTargets).includes(location));
+});
+
+function isOverdrawnTarget(item: { identifier: string }): boolean {
+  return get(overdrawnTargets).includes(item.identifier);
+}
+
+/** The symbols of the gap rows, since the spam and ignored ones are hidden from the table. */
+const gapAssets = computed<string>(() => {
+  const rows = get(gapRows);
+  if (!rows)
+    return '';
+  const symbols = rows.indices.map((index) => {
+    const identifier = snapshot.balancesSnapshot[index].assetIdentifier;
+    return getAssetField(identifier, 'symbol') || identifier;
+  });
+  const shown = symbols.slice(0, GAP_ASSETS_LIMIT).join(', ');
+  const more = symbols.length - GAP_ASSETS_LIMIT;
+  return more > 0 ? t('dashboard.snapshot.detail.mismatch.assets_more', { assets: shown, count: more }) : shown;
+});
+const warnings = computed<SnapshotWarning[]>(() =>
+  getSnapshotWarnings(snapshot, { currentTotal: get(listed).value, isSpam: isSpamAsset, previousTotal: previous?.value }),
+);
+
+/** Compares like with like: `previous` comes from the net-value series, which is what `listed` mirrors. */
 const delta = computed<BigNumber | undefined>(() => {
   if (previous === undefined)
     return undefined;
-  return get(netWorth).minus(previous.value);
+  return get(listed).value.minus(previous.value);
 });
 
 const deltaPercent = computed<string | undefined>(() => {
   const diff = get(delta);
   if (diff === undefined || previous === undefined || previous.value.isZero())
     return undefined;
-  return diff.dividedBy(previous.value).multipliedBy(100).toFormat(2);
+  return formatPercent(diff.dividedBy(previous.value).multipliedBy(100), 2);
 });
 
 interface AllocationSegment {
@@ -129,7 +181,7 @@ function warningMessage(warning: SnapshotWarning): string {
     case 'nft-amount':
       return t('dashboard.snapshot.detail.warnings.nft_amount', { asset });
     case 'net-worth-swing':
-      return t('dashboard.snapshot.detail.warnings.net_worth_swing', { percent: (warning.swingPercent ?? 0).toFixed(0) });
+      return t('dashboard.snapshot.detail.warnings.net_worth_swing', { percent: formatPercent(warning.swingPercent ?? 0, 0) });
   }
   return '';
 }
@@ -177,11 +229,55 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         <div class="min-h-[2.625rem] flex items-center">
           <SnapshotFiatDisplay
             class="text-h4"
-            :value="netWorth"
+            :value="listed.value"
             :timestamp="timestamp"
             data-testid="snapshot-summary-net-worth"
           />
         </div>
+        <div
+          v-if="!listed.ignored.isZero()"
+          class="flex items-center gap-1"
+        >
+          <i18n-t
+            scope="global"
+            keypath="dashboard.snapshot.detail.summary.excludes_ignored"
+            tag="span"
+            class="text-caption text-rui-text-secondary"
+          >
+            <template #amount>
+              <SnapshotFiatDisplay
+                :value="listed.ignored"
+                :timestamp="timestamp"
+                data-testid="snapshot-summary-excluded-ignored"
+              />
+            </template>
+          </i18n-t>
+          <RuiButton
+            variant="text"
+            size="sm"
+            color="primary"
+            class="!py-0"
+            data-testid="snapshot-summary-show-excluded"
+            @click="emit('show-excluded')"
+          >
+            {{ t('dashboard.snapshot.detail.summary.show_excluded') }}
+          </RuiButton>
+        </div>
+        <i18n-t
+          v-if="!listed.nfts.isZero()"
+          scope="global"
+          keypath="dashboard.snapshot.detail.summary.excludes_nfts"
+          tag="div"
+          class="text-caption text-rui-text-secondary"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              :value="listed.nfts"
+              :timestamp="timestamp"
+              data-testid="snapshot-summary-excluded-nfts"
+            />
+          </template>
+        </i18n-t>
         <div
           v-if="delta && previous"
           class="text-body-2 mt-1 flex items-center gap-1"
@@ -195,6 +291,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           <SnapshotFiatDisplay
             :value="delta"
             :timestamp="timestamp"
+            data-testid="snapshot-summary-delta-value"
           />
           <span v-if="deltaPercent">{{ t('dashboard.snapshot.detail.summary.delta_percent', { percent: deltaPercent }) }}</span>
           <span class="text-rui-text-secondary">
@@ -295,7 +392,10 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
       <template #title>
         {{ t('dashboard.snapshot.detail.mismatch.title') }}
       </template>
-      <p class="text-body-2 mb-2">
+      <p
+        v-if="!gapRows"
+        class="text-body-2 mb-2"
+      >
         {{ t('dashboard.snapshot.detail.mismatch.description') }}
       </p>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-body-2">
@@ -317,6 +417,105 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         </span>
       </div>
       <div
+        v-if="gapRows"
+        class="mb-3"
+        data-testid="snapshot-summary-gap-rows"
+      >
+        <i18n-t
+          v-if="gapRows.excluded && !gapRows.rest.isZero()"
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.excluded_gap_partial"
+          :plural="gapRows.indices.length"
+          tag="p"
+          class="text-body-2 mb-2"
+          data-testid="snapshot-summary-gap-partial"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+          <template #rest>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.rest.abs()"
+              :timestamp="timestamp"
+            />
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else-if="gapRows.excluded"
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.excluded_gap"
+          :plural="gapRows.indices.length"
+          tag="p"
+          class="text-body-2 mb-2"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else
+          scope="global"
+          keypath="dashboard.snapshot.detail.mismatch.row_gap"
+          tag="p"
+          class="text-body-2 mb-2"
+        >
+          <template #amount>
+            <SnapshotFiatDisplay
+              class="font-medium"
+              :value="gapRows.value.abs()"
+              data-testid="snapshot-summary-gap-value"
+              :timestamp="timestamp"
+            />
+          </template>
+          <template #assets>
+            <span
+              class="font-medium"
+              data-testid="snapshot-summary-gap-assets"
+            >
+              {{ gapAssets }}
+            </span>
+          </template>
+        </i18n-t>
+        <RuiButton
+          size="sm"
+          color="warning"
+          data-testid="snapshot-summary-remove-gap-rows"
+          @click="emit('remove-balances', gapRows.indices)"
+        >
+          {{ t('dashboard.snapshot.detail.mismatch.remove_rows', { assets: gapAssets }) }}
+        </RuiButton>
+        <p class="text-body-2 mt-3 mb-0">
+          {{ t('dashboard.snapshot.detail.mismatch.gap_alternative') }}
+        </p>
+      </div>
+      <div
         v-if="existingLocations.length > 0"
         class="flex flex-wrap items-end gap-2 mb-3"
       >
@@ -324,6 +523,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           v-model="reconcileLocation"
           class="w-60"
           :items="existingLocations"
+          :item-disabled="isOverdrawnTarget"
           dense
           hide-details
           :label="t('dashboard.snapshot.detail.mismatch.reconcile_into')"
@@ -331,13 +531,20 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         <RuiButton
           size="sm"
           color="warning"
-          :disabled="!reconcileLocation"
+          :disabled="!reconcileLocation || overdrawnTargets.includes(reconcileLocation)"
           data-testid="snapshot-summary-reconcile-apply"
           @click="emit('reconcile-locations', reconcileLocation)"
         >
           {{ t('dashboard.snapshot.detail.mismatch.reconcile_apply') }}
         </RuiButton>
       </div>
+      <p
+        v-if="noReconcileTarget && !gapRows"
+        class="text-body-2 mb-3"
+        data-testid="snapshot-summary-no-reconcile-target"
+      >
+        {{ t('dashboard.snapshot.detail.mismatch.no_reconcile_target') }}
+      </p>
 
       <div class="flex flex-wrap gap-2">
         <RuiButton

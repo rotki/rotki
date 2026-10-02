@@ -346,6 +346,11 @@
         }
       },
       "chains": {
+        "blockscout_key_required": {
+          "action": "Enter key",
+          "description": "No indexer could serve {chain}. A free Blockscout key restores its transactions, and so does a paid Etherscan key.",
+          "title": "{chain} needs a Blockscout key"
+        },
         "do_not_show_again": "Do not show again for this chain",
         "no_indexers": {
           "action": "Configure indexers",
@@ -409,6 +414,7 @@
           "description": "A query needed a {service} key and ran without one, so it may be slow or incomplete.",
           "description_beaconchain": "A {service} key adds block production history and staking analytics.",
           "description_blockscout": "{service} is one of your transaction indexers and needs a key, so its queries are skipped. Add a key, or put another indexer first.",
+          "description_blockscout_rejected": "The saved {service} key was refused for {location}: it may be invalid, expired, out of quota, or on a plan that does not cover it. Update the key, or put another indexer first.",
           "description_etherscan": "{service} runs without a key of your own, which may slow down queries. Add a key, or put another indexer first.",
           "description_helius": "Solana transaction queries are slow without a {service} key.",
           "description_thegraph": "{location} data cannot be queried without a {service} key authorized for it.",
@@ -420,7 +426,8 @@
             "title": "Stop reporting this key?"
           },
           "title": "{service} API key",
-          "title_location": "{service} API key for {location}"
+          "title_location": "{service} API key for {location}",
+          "title_rejected": "{service} key refused for {location}"
         },
         "monerium_session": {
           "description": "Sign in again to keep importing Monerium activity.",
@@ -1035,14 +1042,6 @@
         "error": {
           "message": "Error at periodic client query: {message}",
           "title": "Periodic client query"
-        }
-      },
-      "refresh_general_cache": {
-        "error": {
-          "message": "Failed to refresh protocol data {name}: {message}"
-        },
-        "task": {
-          "title": "Refresh protocol data ({name})"
         }
       },
       "tag_add": {
@@ -2462,7 +2461,7 @@
     "title": "Create Account",
     "title_restore": "Restore Account",
     "usage_analytics": {
-      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
+      "description": "Usage analytics are optional and support product improvements. When enabled, rotki sends anonymous analytics about application use. The metrics collected may change as the product evolves while remaining anonymous. You can change this setting at any time in General Settings.",
       "label_confirm": "Submit anonymous usage analytics"
     }
   },
@@ -2652,7 +2651,12 @@
             "nft_amount": "NFT amount isn't 1"
           },
           "flagged": "This entry may need attention",
-          "hidden": "no rows hidden | {count} hidden | {count} hidden",
+          "hidden": "{reasons} hidden",
+          "hidden_reason": {
+            "ignored": "{count} ignored",
+            "spam": "{count} spam",
+            "zero_value": "{count} zero-value"
+          },
           "liability": "Liabilities",
           "locked": "This snapshot's totals don't reconcile. Use the reconcile options above to align them before editing balances.",
           "nft": "NFTs",
@@ -2661,6 +2665,7 @@
           "show_ignored": "Show ignored | Show ignored ({count}) | Show ignored ({count})",
           "show_spam": "Show spam | Show spam ({count}) | Show spam ({count})",
           "title": "Balances",
+          "total_with_hidden": "Total | Total, including {count} hidden | Total, including {count} hidden",
           "zero_value": {
             "label": "Zero-value | Zero-value ({count}) | Zero-value ({count})",
             "only": "Only",
@@ -2704,8 +2709,9 @@
           "empty": "No locations in this snapshot",
           "net_worth": "Net worth",
           "reconcile": {
-            "description": "Locations are off by {amount} from the stored net worth. Distribute the difference across your locations to realign the allocation.",
+            "description": "Locations are off by {amount} from the net worth. Distribute the net worth across your locations to realign the allocation.",
             "distribute": "Distribute across locations",
+            "split_hint": "Enter the full value each location should hold, not the difference. Together they must add up to the net worth.",
             "title": "Allocation doesn't match net worth"
           },
           "share": "% net worth",
@@ -2713,11 +2719,18 @@
           "title": "Locations"
         },
         "mismatch": {
+          "assets_more": "{assets} and {count} more",
           "balances_sum": "Sum of balances",
-          "description": "The balances, locations and stored total don't agree. The balances are the source of truth — reconcile to the balances sum by absorbing the difference into a location, or just set the total to the balances sum.",
+          "description": "The balances, locations and stored total don't agree. The balances are the source of truth, so the total already follows them. Reconcile the locations by absorbing the difference into one of them, or edit the locations yourself.",
+          "excluded_gap": "The difference is the {amount} held in {assets}, which is marked as spam or ignored. The locations already leave it out, so removing the balance makes the totals agree. | The difference is the {amount} held in {assets}, which are marked as spam or ignored. The locations already leave them out, so removing the balances makes the totals agree.",
+          "excluded_gap_partial": "Most of the difference is the {amount} held in {assets}, which is marked as spam or ignored. The locations leave it out, so removing the balance leaves {rest} to reconcile. | Most of the difference is the {amount} held in {assets}, which are marked as spam or ignored. The locations leave them out, so removing the balances leaves {rest} to reconcile.",
+          "gap_alternative": "To keep it, absorb the difference into a location instead.",
           "locations_sum": "Sum of locations",
+          "no_reconcile_target": "No single location holds enough to absorb the difference. Edit the locations to lower them instead.",
           "reconcile_apply": "Reconcile locations",
           "reconcile_into": "Absorb difference into",
+          "remove_rows": "Remove {assets}",
+          "row_gap": "The difference is the {amount} held in {assets}. If the locations leave it out on purpose, removing the balance makes the totals agree.",
           "title": "Totals do not match"
         },
         "navigation": {
@@ -2733,6 +2746,7 @@
           "add_row": "Add location",
           "available": "Available:",
           "distribute": "Distribute evenly",
+          "fill_available": "Fill",
           "hint": "Distribute this balance's value across locations. The split must add up to the full value.",
           "location_after": "After:",
           "remaining": "Remaining",
@@ -2745,7 +2759,10 @@
           "delta_percent": "({percent}%)",
           "edit_locations": "Edit locations",
           "exclude_nfts": "Exclude NFTs from net worth",
+          "excludes_ignored": "Excludes {amount} in ignored assets",
+          "excludes_nfts": "Excludes {amount} in NFTs, per your NFT settings",
           "net_worth": "Net worth",
+          "show_excluded": "Show them",
           "since": "since"
         },
         "unsaved_changes": "{count} unsaved change | {count} unsaved changes",
@@ -3313,8 +3330,7 @@
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
       "chain_warnings": {
-        "base_limited_indexers": "Blockscout is the only freely available indexer for Base. Consider setting it as your first priority. Blockscout is currently reindexing Base, so data may be temporarily incomplete.",
-        "gnosis_key_required": "Gnosis needs an API key for one of these two indexers: a Blockscout key, or a paid Etherscan plan (Etherscan no longer serves Gnosis on the free tier). Either one on its own is enough, and an indexer with no usable key is skipped so the other one is used.",
+        "key_required": "This chain needs an API key for one of these two indexers: a Blockscout key (the free plan is enough), or a paid Etherscan plan (Etherscan does not serve it on the free tier). Either one on its own is enough, and an indexer with no usable key is skipped so the other one is used.",
         "optimism_blockscout": "Blockscout does not have properly indexed transactions for Optimism before the Bedrock upgrade. Pre-Bedrock transaction history may be incomplete when using Blockscout."
       },
       "data_name": "indexer",
@@ -3407,12 +3423,10 @@
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
       "futures_api_key": "Futures API Key",
       "futures_api_secret": "Futures API Secret",
-      "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
       "kraken_futures_keys": "Futures Keys",
       "passphrase": "Passphrase",
       "private_key": "Private Key",
-      "secret": "Secret",
       "signing_key": "Signing Key"
     },
     "keys": "Keys",
@@ -3480,7 +3494,7 @@
       "title": "Birdeye"
     },
     "blockscout": {
-      "api_key_message": "Blockscout API key is needed to query historical EVM transactions.",
+      "api_key_message": "Transactions on {chains} are queried from Blockscout first, which needs an API key. Add a Blockscout key (the free plan is enough) to query their history. Where Etherscan serves the chain, a paid Etherscan key works too.",
       "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",
       "hint": "Enter your Blockscout API key",
       "title": "Blockscout"
@@ -4067,7 +4081,7 @@
     },
     "title": "General Settings",
     "usage_analytics": {
-      "label": "Submit anonymous usage analytics data to help improve rotki, your privacy remains protected.",
+      "label": "Submit anonymous usage analytics to help improve rotki; your privacy remains protected.",
       "title": "Usage analytics",
       "validation": {
         "error": "Error setting anonymous usage analytics"

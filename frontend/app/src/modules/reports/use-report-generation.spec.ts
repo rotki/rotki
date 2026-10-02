@@ -1,7 +1,9 @@
 import { err, ok } from 'plainfp/result';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
+import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const mockGenerateReportCaller = vi.fn();
 const mockExportReportDataCaller = vi.fn();
@@ -81,6 +83,71 @@ describe('useReportGeneration', () => {
       await generateReport({ end: 2000, start: 1000 });
 
       expect(mockRunTask).toHaveBeenCalledWith(expect.any(Function), expect.any(String), { conflictFails: true });
+    });
+
+    it('should leave no progress poll behind when a second generation joins the running one', async () => {
+      let finish: (value: unknown) => void = () => {};
+      mockRunTask.mockReturnValue(new Promise((resolve) => {
+        finish = resolve;
+      }));
+      mockGetProgress.mockResolvedValue({ processingState: '', totalProgress: '50' });
+      mockFetchReports.mockResolvedValue(undefined);
+
+      const { generateReport } = scope.run(() => useReportGeneration())!;
+      const first = generateReport({ end: 2000, start: 1000 });
+      const second = generateReport({ end: 2000, start: 1000 });
+      await vi.advanceTimersByTimeAsync(0);
+
+      finish(ok(42));
+      await Promise.all([first, second]);
+      mockGetProgress.mockClear();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect(mockGetProgress).not.toHaveBeenCalled();
+    });
+
+    it('should poll progress while a generation runs', async () => {
+      let finish: (value: unknown) => void = () => {};
+      mockRunTask.mockReturnValue(new Promise((resolve) => {
+        finish = resolve;
+      }));
+      mockGetProgress.mockResolvedValue({ processingState: '', totalProgress: '50' });
+      mockFetchReports.mockResolvedValue(undefined);
+
+      const { generateReport } = scope.run(() => useReportGeneration())!;
+      const generation = generateReport({ end: 2000, start: 1000 });
+      await vi.advanceTimersByTimeAsync(4_000);
+
+      expect(mockGetProgress).toHaveBeenCalledTimes(2);
+
+      finish(ok(42));
+      await generation;
+    });
+
+    it('should poll progress when the task centre re-runs a generation', async () => {
+      mockRunTask.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('Failed'), message: 'Generation failed' })));
+      mockGetProgress.mockResolvedValue({ processingState: '', totalProgress: '50' });
+      mockFetchReports.mockResolvedValue(undefined);
+
+      const { generateReport } = scope.run(() => useReportGeneration())!;
+      await generateReport({ end: 2000, start: 1000 });
+      await vi.advanceTimersByTimeAsync(0);
+
+      let finish: (value: unknown) => void = () => {};
+      mockRunTask.mockReturnValue(new Promise((resolve) => {
+        finish = resolve;
+      }));
+      mockGetProgress.mockClear();
+
+      const rerun = useTaskOrchestrator().rerun(makeActivityId(ActivityKind.PNL_REPORT));
+      assert(rerun.ok);
+      await vi.advanceTimersByTimeAsync(4_000);
+
+      expect(mockGetProgress).toHaveBeenCalledTimes(2);
+
+      finish(ok(42));
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     it('should return -1 on actionable failure', async () => {

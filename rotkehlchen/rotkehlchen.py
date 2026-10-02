@@ -111,6 +111,7 @@ from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOr
 from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
+from rotkehlchen.indexer_stats import IndexerStats
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -252,6 +253,8 @@ class Rotkehlchen:
         # Initialize EVM Contracts common abis
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
+        self.indexer_stats: IndexerStats | None = None
+        self._closing_indexer_stats: IndexerStats | None = None
         self.monerium: Monerium | None = None
         self.shutdown_event = threading.Event()
         self.migration_manager = DataMigrationManager(self)
@@ -325,6 +328,7 @@ class Rotkehlchen:
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
+        self.indexer_stats = None
 
     def _perform_new_db_actions(self) -> None:
         """Actions to perform at creation of a new DB"""
@@ -426,6 +430,7 @@ class Rotkehlchen:
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings
+            self.indexer_stats = IndexerStats()
             self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name='submit_usage_analytics',
@@ -459,14 +464,17 @@ class Rotkehlchen:
                     etherscan=(etherscan := Etherscan(
                         database=self.data.db,
                         msg_aggregator=self.data.db.msg_aggregator,
+                        indexer_stats=self.indexer_stats,
                     )),
                     blockscout=(blockscout := Blockscout(
                         database=self.data.db,
                         msg_aggregator=self.msg_aggregator,
+                        indexer_stats=self.indexer_stats,
                     )),
                     routescan=(routescan := Routescan(
                         database=self.data.db,
                         msg_aggregator=self.msg_aggregator,
+                        indexer_stats=self.indexer_stats,
                     )),
                 )),
                 premium=self.premium,
@@ -768,6 +776,11 @@ class Rotkehlchen:
         self.task_manager.clear()  # type: ignore  # task_manager is not None here
         self.task_manager = None
         self.task_supervisor.clear()
+        stats = self.indexer_stats
+        if stats is not None:
+            stats.start_close()
+            self._closing_indexer_stats = stats
+            self.indexer_stats = None
 
         self.data.logout()
         self.monerium = None
@@ -859,6 +872,11 @@ class Rotkehlchen:
     def main_loop(self) -> None:
         """rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
+            if (stats := self.indexer_stats) is not None:
+                try:
+                    stats.maybe_flush()
+                except RuntimeError:
+                    log.exception('Failed to flush indexer usage analytics')
             # read the attribute once: logout sets it to None concurrently and a second
             # read hitting that window would kill the main loop with AttributeError
             if (task_manager := self.task_manager) is not None and self.args.disable_task_manager is False:  # noqa: E501
@@ -1542,6 +1560,8 @@ class Rotkehlchen:
 
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
+        if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
+            self.indexer_stats.discard()
 
         return True, ''
 
@@ -1660,6 +1680,12 @@ class Rotkehlchen:
     def shutdown(self) -> None:
         self.logout()
         self.shutdown_event.set()
+
+    def wait_for_indexer_stats_close(self) -> None:
+        """Wait for the final analytics upload after other shutdown cleanup completes."""
+        if self._closing_indexer_stats is not None:
+            self._closing_indexer_stats.wait_for_close()
+            self._closing_indexer_stats = None
 
     def create_oracle_cache(
             self,

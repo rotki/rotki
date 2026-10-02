@@ -26,7 +26,7 @@ const { setMessage } = store;
 const dismissMessage = () => setMessage();
 
 const confirmStore = useConfirmStore();
-const { confirm, dismiss } = confirmStore;
+const { alternative, confirm, dismiss } = confirmStore;
 const { confirmation, visible } = storeToRefs(confirmStore);
 
 const { globalPayload, openDialog } = useAddressBookForm();
@@ -71,9 +71,12 @@ async function handlePasswordConfirmation(password: string): Promise<void> {
     :message="confirmation.message"
     :single-action="confirmation.singleAction"
     :primary-action="confirmation.primaryAction"
+    :secondary-action="confirmation.secondaryAction"
+    :alternative-action="confirmation.alternativeAction"
     :confirm-type="confirmation.type || 'warning'"
     @confirm="confirm()"
     @cancel="dismiss()"
+    @alternative="alternative()"
   />
   <PasswordConfirmationDialog
     v-if="needsPasswordConfirmation"

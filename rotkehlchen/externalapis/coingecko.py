@@ -542,7 +542,7 @@ class Coingecko(
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
-        self.session = create_session(retry_reads=False)
+        self.session = create_session(retry_policy='no_read_retries')
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
         self._rate_limiter = TokenBucket(

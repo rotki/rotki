@@ -123,7 +123,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     expect(get(mismatch)?.locationsSum.toNumber()).toBe(1049);
   });
 
-  it('should reconcile off locations by absorbing the difference', () => {
+  it('should reconcile locations that fall short of the balances by absorbing the difference', () => {
     const base: Snapshot = {
       balancesSnapshot: [balance('BTC', 100)],
       locationDataSnapshot: [location('kraken', 60), location('ledger', 20), location('total', 80)],
@@ -202,14 +202,80 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     expect(get(excludeNfts)).toBe(true);
   });
 
-  it('should correct a stale stored total to the balances on load without marking dirty', () => {
+  it('should correct a stale stored total on load as an unsaved change', () => {
     const snap: Snapshot = {
       balancesSnapshot: [balance('BTC', 100), balance('ETH', 50)],
       locationDataSnapshot: [location('kraken', 100), location('ledger', 50), location('total', 999)],
     };
-    const { draft, isDirty } = useSnapshotDraft(snap);
-    // Net worth always tracks the balances: the stale 999 total is corrected to 150 on load.
+    const { changes, draft, isDirty, original } = useSnapshotDraft(snap);
+
     expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(150);
+    expect(getTotalValue(get(original)!.locationDataSnapshot).toNumber()).toBe(999);
+    expect(get(isDirty)).toBe(true);
+    expect(get(changes)).toEqual([{ after: bigNumberify(150), before: bigNumberify(999), kind: 'total-changed' }]);
+  });
+
+  it('should save the corrected total of a snapshot opened with a stale one', async () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('ETH', 50)],
+      locationDataSnapshot: [location('kraken', 100), location('ledger', 50), location('total', 999)],
+    };
+    const { commit, isDirty } = useSnapshotDraft(snap);
+    const saveFn = vi.fn().mockResolvedValue(true);
+
+    await commit(saveFn);
+
+    expect(getTotalValue(saveFn.mock.calls[0][0].locationDataSnapshot).toNumber()).toBe(150);
+    expect(get(isDirty)).toBe(false);
+  });
+
+  it('should keep the stale-total correction after discard', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('ETH', 50)],
+      locationDataSnapshot: [location('kraken', 100), location('ledger', 50), location('total', 999)],
+    };
+    const { discard, draft, editBalance, isDirty } = useSnapshotDraft(snap);
+
+    editBalance(0, { balance: balance('BTC', 200), location: 'kraken' });
+    discard();
+
+    expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(150);
+    expect(get(isDirty)).toBe(true);
+  });
+
+  it('should open a snapshot whose locations disagree with its balances unchanged', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('SPAM', 1e30)],
+      locationDataSnapshot: [location('kraken', 100), location('total', 100)],
+    };
+    const { draft, isDirty, mismatch } = useSnapshotDraft(snap);
+
+    expect(get(isDirty)).toBe(false);
+    expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(100);
+    expect(get(mismatch)).not.toBeNull();
+  });
+
+  it('should settle the total once the rows behind a mismatch are removed', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('SPAM', 1e30)],
+      locationDataSnapshot: [location('kraken', 100), location('total', 100)],
+    };
+    const { deleteBalances, draft, isDirty, mismatch } = useSnapshotDraft(snap);
+
+    deleteBalances([1]);
+
+    expect(get(mismatch)).toBeNull();
+    expect(getTotalValue(get(draft)!.locationDataSnapshot).toNumber()).toBe(100);
+    expect(get(isDirty)).toBe(true);
+  });
+
+  it('should not mark a snapshot dirty over rounding noise in the stored total', () => {
+    const snap: Snapshot = {
+      balancesSnapshot: [balance('BTC', 100), balance('ETH', 50)],
+      locationDataSnapshot: [location('kraken', 100), location('ledger', 50), location('total', 150.000001)],
+    };
+    const { isDirty } = useSnapshotDraft(snap);
+
     expect(get(isDirty)).toBe(false);
   });
 

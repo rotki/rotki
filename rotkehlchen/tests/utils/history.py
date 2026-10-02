@@ -8,7 +8,6 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.settings import STRING_KEYS_REMOVE_IF_EMPTY, DBSettings
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -420,81 +419,6 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bitmex_api_queries(url, **_kwargs):
-        if remote_errors:
-            payload = invalid_payload
-        elif 'user/walletHistory' in url:
-            payload = """[{
-            "transactID": "id1",
-            "account": 0,
-            "currency": "XBt",
-            "transactType": "Deposit",
-            "amount": 15000000,
-            "fee": 0,
-            "transactStatus": "foo",
-            "address": "foo",
-            "tx": "foo",
-            "text": "foo",
-            "transactTime": "2017-04-03T15:00:00.929Z",
-            "timestamp": "2017-04-03T15:00:00.929Z"
-            },{
-            "transactID": "id2",
-            "account": 0,
-            "currency": "XBt",
-            "transactType": "RealisedPNL",
-            "amount": 5000000,
-            "fee": 0.01,
-            "transactStatus": "foo",
-            "address": "foo",
-            "tx": "foo",
-            "text": "foo",
-            "transactTime": "2017-05-02T15:00:00.929Z",
-            "timestamp": "2017-05-02T15:00:00.929Z"
-            },{
-            "transactID": "id3",
-            "account": 0,
-            "currency": "XBt",
-            "transactType": "Withdrawal",
-            "amount": 1000000,
-            "fee": 0.001,
-            "transactStatus": "foo",
-            "address": "foo",
-            "tx": "foo",
-            "text": "foo",
-            "transactTime": "2017-05-23T15:00:00.00.929Z",
-            "timestamp": "2017-05-23T15:00:00.929Z"
-            },{
-            "transactID": "id4",
-            "account": 0,
-            "currency": "XBt",
-            "transactType": "Withdrawal",
-            "amount": 0.5,
-            "fee": 0.001,
-            "transactStatus": "foo",
-            "address": "foo",
-            "tx": "foo",
-            "text": "foo",
-            "transactTime": "2019-08-23T15:00:00.00.929Z",
-            "timestamp": "2019-08-23T15:00:00.929Z"
-            },{
-            "transactID": "id5",
-            "account": 0,
-            "currency": "XBt",
-            "transactType": "RealisedPNL",
-            "amount": 0.5,
-            "fee": 0.001,
-            "transactStatus": "foo",
-            "address": "foo",
-            "tx": "foo",
-            "text": "foo",
-            "transactTime": "2019-08-23T15:00:00.929Z",
-            "timestamp": "2019-08-23T15:00:00.929Z"
-            }]"""
-        else:
-            raise RuntimeError(f'Bitmex test mock got unexpected/unmocked url {url}')
-
-        return MockResponse(200, payload)
-
     # TODO: Turn this into a loop of all exchanges and return a list of patches
     poloniex_objects = rotki.exchange_manager.connected_exchanges.get(Location.POLONIEX, None)
     poloniex = None if poloniex_objects is None else poloniex_objects[0]
@@ -516,17 +440,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_binance_api_queries,
         )
 
-    bitmex_objects = rotki.exchange_manager.connected_exchanges.get(Location.BITMEX, None)
-    bitmex = None if bitmex_objects is None else bitmex_objects[0]
-    bitmex_patch = None
-    if bitmex:
-        bitmex_patch = patch.object(
-            bitmex.session,
-            'get',
-            side_effect=mock_bitmex_api_queries,
-        )
-
-    return polo_patch, binance_patch, bitmex_patch
+    return polo_patch, binance_patch
 
 
 def mock_history_processing(
@@ -561,24 +475,15 @@ def mock_history_processing(
         # TODO: terrible way to check. Figure out something better
         limited_range_test = False
         expected_swap_events_num = 22
-        expected_margin_num = 1
-        expected_asset_movements_num = 21
-        if not limited_range_test:
-            expected_margin_num = 2
-            expected_asset_movements_num = 21
+        expected_asset_movements_num = 16
         if end_ts == 1539713238:
             limited_range_test = True
             expected_swap_events_num = 18
-            expected_margin_num = 1
-            expected_asset_movements_num = 19
         if end_ts == 1601040361:
             expected_swap_events_num = 18
 
         swap_events = [x for x in events if isinstance(x, SwapEvent)]
         assert len(swap_events) == expected_swap_events_num, f'Expected {expected_swap_events_num} but found {len(swap_events)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
-
-        margin_positions = [x for x in events if isinstance(x, MarginPosition)]
-        assert len(margin_positions) == expected_margin_num
 
         asset_movements = [x for x in events if isinstance(x, AssetMovement)]
         assert len(asset_movements) == expected_asset_movements_num
@@ -647,26 +552,6 @@ def mock_history_processing(
             assert asset_movements[15].event_type == HistoryEventType.EXCHANGE_TRANSFER
             assert asset_movements[15].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[15].asset == A_ETH
-            assert asset_movements[16].location == Location.BITMEX
-            assert asset_movements[16].event_type == HistoryEventType.EXCHANGE_TRANSFER
-            assert asset_movements[16].event_subtype == HistoryEventSubType.RECEIVE
-            assert asset_movements[16].asset == A_BTC
-            assert asset_movements[17].location == Location.BITMEX
-            assert asset_movements[17].event_type == HistoryEventType.EXCHANGE_TRANSFER
-            assert asset_movements[17].event_subtype == HistoryEventSubType.SPEND
-            assert asset_movements[17].asset == A_BTC
-            assert asset_movements[18].location == Location.BITMEX
-            assert asset_movements[18].event_type == HistoryEventType.EXCHANGE_TRANSFER
-            assert asset_movements[18].event_subtype == HistoryEventSubType.FEE
-            assert asset_movements[18].asset == A_BTC
-            assert asset_movements[19].location == Location.BITMEX
-            assert asset_movements[19].event_type == HistoryEventType.EXCHANGE_TRANSFER
-            assert asset_movements[19].event_subtype == HistoryEventSubType.SPEND
-            assert asset_movements[19].asset == A_BTC
-            assert asset_movements[20].location == Location.BITMEX
-            assert asset_movements[20].event_type == HistoryEventType.EXCHANGE_TRANSFER
-            assert asset_movements[20].event_subtype == HistoryEventSubType.FEE
-            assert asset_movements[20].asset == A_BTC
 
         tx_events = [x for x in events if isinstance(x, EvmEvent)]
         gas_in_eth = FVal('14.36963')
@@ -802,7 +687,6 @@ def mock_etherscan_like_transaction_response(
 class TradesTestSetup(NamedTuple):
     polo_patch: _patch
     binance_patch: _patch
-    bitmex_patch: _patch
     accountant_patch: _patch
     etherscan_patch: _patch
     blockscout_patch: _patch
@@ -831,7 +715,7 @@ def mock_history_processing_and_exchanges(
         remote_errors=remote_errors,
     )
 
-    polo_patch, binance_patch, bitmex_patch = mock_exchange_responses(
+    polo_patch, binance_patch = mock_exchange_responses(
         rotki,
         remote_errors,
     )
@@ -839,7 +723,6 @@ def mock_history_processing_and_exchanges(
     return TradesTestSetup(
         polo_patch=polo_patch,
         binance_patch=binance_patch,
-        bitmex_patch=bitmex_patch,
         accountant_patch=accountant_patch,
         etherscan_patch=mock_etherscan_like_transaction_response(
             etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,

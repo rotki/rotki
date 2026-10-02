@@ -95,16 +95,6 @@
         }
       }
     },
-    "session": {
-      "refresh_general_cache": {
-        "error": {
-          "message": "Αποτυχία ανανέωσης δεδομένων πρωτοκόλλου {name}: {message}"
-        },
-        "task": {
-          "title": "Ανανέωση δεδομένων πρωτοκόλλου ({name})"
-        }
-      }
-    },
     "transactions_redecode": {
       "error": {
         "description": "Απέτυχε η αποκωδικοποίηση συμβάντων από συναλλαγές: {error}",

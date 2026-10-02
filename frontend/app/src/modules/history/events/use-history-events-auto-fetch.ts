@@ -85,13 +85,34 @@ export function useHistoryEventsAutoFetch(
   let settles = 0;
   let scheduledAt = 0;
 
+  /** A read was asked for while one was running, so the one running may already be stale. */
+  let readAgain = false;
+
+  /**
+   * Reads the events, one read at a time.
+   *
+   * @remarks
+   * A request that arrives during a read is held and served by one more read once it finishes,
+   * however many arrived. Dropping it would lose the change for good: every caller is
+   * edge-triggered, so nothing asks again. The held read still yields to a settle that landed
+   * meanwhile, since the settle already covered it.
+   */
   function read(): void {
-    if (get(isFetching) || scheduledAt !== settles)
+    if (scheduledAt !== settles)
       return;
+
+    if (get(isFetching)) {
+      readAgain = true;
+      return;
+    }
 
     set(isFetching, true);
     startPromise(handlers.onProgress().finally(() => {
       set(isFetching, false);
+      if (readAgain) {
+        readAgain = false;
+        read();
+      }
     }));
   }
 

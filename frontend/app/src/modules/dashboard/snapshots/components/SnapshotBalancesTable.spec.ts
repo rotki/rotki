@@ -135,6 +135,32 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find('[data-testid=snapshot-balances-hidden-count]').exists()).toBe(false);
   });
 
+  it('should name what hides each row in the hidden-count chip', () => {
+    wrapper = createWrapper();
+    const chip = wrapper.find('[data-testid=snapshot-balances-hidden-count]');
+
+    expect(chip.text()).toContain('hidden_reason.spam::1');
+    expect(chip.text()).toContain('hidden_reason.zero_value::1');
+    expect(chip.text()).not.toContain('hidden_reason.ignored');
+  });
+
+  it('should reveal every hidden row when the hidden-count chip is clicked', async () => {
+    wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=snapshot-balances-hidden-count]').trigger('click');
+
+    expect(wrapper.emitted('update:filters')?.at(-1)).toEqual([{
+      [SnapshotBalanceFilterKeys.SHOW_IGNORED]: true,
+      [SnapshotBalanceFilterKeys.SHOW_SPAM]: true,
+      [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ALL,
+    }]);
+  });
+
+  it('should say the total includes the hidden rows', () => {
+    wrapper = createWrapper();
+    expect(wrapper.find('tfoot').text()).toContain('balances.total_with_hidden::2');
+  });
+
   it('should offer a bulk delete when zero-value rows exist and emit their indices', async () => {
     wrapper = createWrapper();
     const button = wrapper.find('[data-testid=snapshot-balances-bulk-delete]');

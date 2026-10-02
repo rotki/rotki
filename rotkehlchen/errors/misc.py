@@ -51,6 +51,22 @@ class NoAvailableIndexers(RemoteError):
     """Raised when there are no available indexers for a given chain."""
 
 
+class IndexerRangeNotCovered(RemoteError):
+    """Raised when an indexer cannot serve the requested chain history range."""
+
+
+class BlockscoutIncompleteResponse(RemoteError):
+    """Raised when Blockscout reports that the requested data is not fully indexed."""
+
+
+class IncompleteTransactionsQuery(RemoteError):
+    """Raised when the transactions of some addresses could not be fully queried.
+
+    Its message is shown to the user, so it must not carry the underlying indexer error,
+    which can include request URLs with API keys and raw response bodies.
+    """
+
+
 class RequestTooLargeError(RemoteError):
     """Raised when a request fails due to size limits (gas limit, URL too long)."""
 

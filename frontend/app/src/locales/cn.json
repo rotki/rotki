@@ -447,14 +447,6 @@
           "title": "定期客户端查询"
         }
       },
-      "refresh_general_cache": {
-        "error": {
-          "message": "刷新协议数据失败 {name}: {message}"
-        },
-        "task": {
-          "title": "刷新协议数据 ({name})"
-        }
-      },
       "tag_add": {
         "error": {
           "title": "添加标签"

@@ -6,7 +6,10 @@ interface ConfirmationMessage {
   type?: DialogType;
   singleAction?: boolean;
   primaryAction?: string;
+  /** Label of the button that backs out, which Escape does too; defaults to "Cancel". */
   secondaryAction?: string;
+  /** Label of a third button for a different outcome than confirming, shown only when set. */
+  alternativeAction?: string;
 }
 
 type AwaitableFunc = () => Promise<void>;
@@ -31,6 +34,7 @@ export const useConfirmStore = defineStore('confirm', () => {
   const confirmation = ref<ConfirmationMessage>(defaultMessage());
   const onConfirm = ref<Func>(defaultFunc);
   const onDismiss = ref<Func>(defaultFunc);
+  const onAlternative = ref<Func>(defaultFunc);
 
   const { start, stop } = useTimeoutFn(
     () => {
@@ -40,11 +44,21 @@ export const useConfirmStore = defineStore('confirm', () => {
     { immediate: false },
   );
 
-  const show = (message: ConfirmationMessage, onConfirmFunc: Func, onDismissFunc?: Func): void => {
+  /**
+   * Opens the confirmation.
+   *
+   * @remarks
+   * `onDismissFunc` runs whenever the user backs out, by the button or by Escape, so it must never
+   * do anything the user did not ask for. A different outcome goes in `onAlternativeFunc`, with its
+   * label in `alternativeAction`.
+   */
+  const show = (message: ConfirmationMessage, onConfirmFunc: Func, onDismissFunc?: Func, onAlternativeFunc?: Func): void => {
     set(confirmation, message);
     set(onConfirm, onConfirmFunc);
     if (onDismissFunc)
       set(onDismiss, onDismissFunc);
+    if (onAlternativeFunc)
+      set(onAlternative, onAlternativeFunc);
 
     set(visible, true);
     stop();
@@ -54,7 +68,14 @@ export const useConfirmStore = defineStore('confirm', () => {
     set(visible, false);
     set(onConfirm, defaultFunc);
     set(onDismiss, defaultFunc);
+    set(onAlternative, defaultFunc);
     start();
+  };
+
+  const alternative = async (): Promise<void> => {
+    const method = get(onAlternative);
+    reset();
+    await method();
   };
 
   const dismiss = async (): Promise<void> => {
@@ -70,6 +91,7 @@ export const useConfirmStore = defineStore('confirm', () => {
   };
 
   return {
+    alternative,
     confirm,
     confirmation,
     dismiss,

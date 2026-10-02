@@ -12,11 +12,10 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selectedIds = defineModel<number[]>('selectedIds', { required: true });
 
-const { matches, highlightedIdentifier, loading, maxHeight } = defineProps<{
+const { matches, highlightedIdentifier, loading } = defineProps<{
   matches: PotentialMatchRow[];
   highlightedIdentifier?: number;
   loading?: boolean;
-  maxHeight: string;
   emptyLabel: string;
 }>();
 
@@ -44,7 +43,7 @@ function eventLabel(row: PotentialMatchRow): string {
 </script>
 
 <template>
-  <ScrollableDialogContent :max-height="maxHeight">
+  <ScrollableDialogContent fill>
     <div
       v-if="matches.length === 0"
       class="flex items-center justify-center py-8 border border-default rounded text-body-2 text-rui-text-secondary"

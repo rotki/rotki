@@ -8,7 +8,13 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+
+/** The chain-row causes a service's key restores. */
+const KEY_CAUSES_BY_SERVICE = new Map<string, NoIndexersCause[]>([
+  ['blockscout', [NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY]],
+  ['etherscan', [NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY, NoIndexersCause.PAID_ETHERSCAN_KEY]],
+]);
 
 function getName(name: ExternalServiceName, _chain?: string): string {
   return name;
@@ -100,17 +106,20 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
   }
 
   /**
-   * Takes down the rows of chains Etherscan refused for the key it had.
+   * Takes down the rows that asked for the key just saved: chains refused for want of it, and a
+   * saved key of the service that was refused.
    *
    * @remarks
-   * Saving an Etherscan key is the fix those rows ask for, and the backend puts Etherscan back in each
-   * chain's indexers when a key is saved. Whether the new key is a paid one cannot be told from here,
-   * and the backend reports a chain without an indexer only once per session, so a chain the new key
-   * still cannot serve stays silent until the next login.
+   * Saving the key is the fix those rows ask for, and the backend puts the indexer back in each
+   * chain's order when a key is saved. Whether the new key works cannot be told from here, and the
+   * backend reports a chain without an indexer only once per reason per session, so a chain the new
+   * key still cannot serve stays silent until the next login.
    */
-  function resolvePaidKeyRows(name: string): void {
-    if (name === 'etherscan')
-      clearRaisedConditions(condition => condition.kind === RaisedConditionKind.NO_AVAILABLE_INDEXERS && condition.paidKeyRequired);
+  function resolveKeyRows(name: string): void {
+    const causes = KEY_CAUSES_BY_SERVICE.get(name);
+    clearRaisedConditions(condition =>
+      (condition.kind === RaisedConditionKind.NO_AVAILABLE_INDEXERS && causes?.includes(condition.cause) === true)
+      || (condition.kind === RaisedConditionKind.MISSING_API_KEY && condition.keyRejected === true && condition.service === name));
   }
 
   async function save(payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> {
@@ -119,7 +128,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     try {
       set(loading, true);
       set(keys, await setExternalServices([payload]));
-      resolvePaidKeyRows(name);
+      resolveKeyRows(name);
 
       const serviceName = toCapitalCase(name.split('_').join(' '));
 

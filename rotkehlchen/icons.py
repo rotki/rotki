@@ -3,7 +3,7 @@ import logging
 import shutil
 import urllib.parse
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import requests
 from flask import Response, make_response
@@ -34,6 +34,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
+# Suffix of the empty file colibri writes when no source has an icon for an asset
+NOT_FOUND_ICON_MARKER_SUFFIX: Final = '.notfound'
 
 
 def _build_http_header_for_images(image_path: Path) -> dict[str, str]:
@@ -188,6 +190,7 @@ class IconManager:
         if icon_path is not None:
             icon_path.unlink()
 
-        icon_path = self.iconfile_path(asset)
-        if icon_path.is_file():
-            icon_path.unlink()
+        # colibri may have saved it with any extension, or left a not found marker
+        asset_id_quoted = urllib.parse.quote_plus(asset.identifier)
+        for suffix in (*ALLOWED_ICON_EXTENSIONS, NOT_FOUND_ICON_MARKER_SUFFIX):
+            (self.icons_dir / f'{asset_id_quoted}_small{suffix}').unlink(missing_ok=True)

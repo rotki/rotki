@@ -1,5 +1,6 @@
 import type { DeepReadonly, MaybeRef, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface UseCacheClearReturn<T> {
@@ -10,13 +11,16 @@ interface UseCacheClearReturn<T> {
 
 interface Clearable<T> { id: T; text: string }
 
+interface ClearMessages {
+  success: (source: string) => string;
+  /** `message` is the rejection's own text, which the screen shows after the failure. */
+  error: (source: string, message: string) => string;
+}
+
 export function useCacheClear<T>(
   clearable: MaybeRef<Clearable<T>[]>,
   clearHandle: (source: T) => Promise<void>,
-  message: (source: string) => {
-    success: string;
-    error: string;
-  },
+  message: ClearMessages,
   confirmText: (
     textSource: string,
     source: T,
@@ -50,13 +54,13 @@ export function useCacheClear<T>(
       await clearHandle(source);
       set(status, {
         error: '',
-        success: message(text(source)).success,
+        success: message.success(text(source)),
       });
       scheduleStatusReset();
     }
-    catch {
+    catch (error: unknown) {
       set(status, {
-        error: message(text(source)).error,
+        error: message.error(text(source), getErrorMessage(error)),
         success: '',
       });
     }

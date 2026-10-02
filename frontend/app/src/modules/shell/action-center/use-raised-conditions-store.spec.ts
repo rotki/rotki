@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 describe('modules/shell/action-center/use-raised-conditions-store', () => {
   beforeEach(() => {
@@ -9,10 +9,10 @@ describe('modules/shell/action-center/use-raised-conditions-store', () => {
   it('should keep one entry per subject, holding the latest report', () => {
     const store = useRaisedConditionsStore();
 
-    store.raise({ chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: false });
-    store.raise({ chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: true });
+    store.raise({ cause: NoIndexersCause.UNAVAILABLE, chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
+    store.raise({ cause: NoIndexersCause.PAID_ETHERSCAN_KEY, chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
 
-    expect(store.conditions).toEqual([{ chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS, paidKeyRequired: true }]);
+    expect(store.conditions).toEqual([{ cause: NoIndexersCause.PAID_ETHERSCAN_KEY, chain: 'gnosis', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS }]);
   });
 
   it('should keep separate entries for different subjects of the same kind', () => {

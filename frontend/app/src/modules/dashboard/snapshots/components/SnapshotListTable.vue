@@ -90,6 +90,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
       <SnapshotFiatDisplay
         :value="row.usdValue"
         :timestamp="row.timestamp"
+        data-testid="snapshot-list-value"
       />
     </template>
 

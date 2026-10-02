@@ -37,6 +37,7 @@ const { handleDetectedAddress, handleDetectedXpub, selectChain, setValidator } =
 
 const {
   beaconchainInfo,
+  blockscoutKeyChainNames,
   hasMultipleWarnings,
   hiddenWarningCount,
   toggleWarningExpanded,
@@ -80,10 +81,13 @@ defineExpose({
       <ul :class="hasMultipleWarnings ? 'list-disc pl-4 space-y-1' : 'list-none pl-0'">
         <li
           v-for="warning in visibleWarnings"
-          :key="warning.type"
+          :key="`${warning.type}-${warning.service ?? warning.chain ?? ''}`"
         >
           <template v-if="warning.type === 'apiKey' && warning.service">
-            <AccountFormApiKeyAlertContent :service="warning.service" />
+            <AccountFormApiKeyAlertContent
+              :service="warning.service"
+              :chains="warning.service === 'blockscout' ? blockscoutKeyChainNames : undefined"
+            />
           </template>
           <template v-else-if="warning.type === 'solana'">
             {{ t('blockchain_balances.solana_warning') }}
