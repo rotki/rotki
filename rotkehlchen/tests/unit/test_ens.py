@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.ens import (
 )
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
+    INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.types import SupportedBlockchain
@@ -106,3 +107,26 @@ def test_ens_reverse_lookup(ethereum_inquirer):
             [reversed_addr_2, reversed_addr_3, reversed_addr_4],
         )
         assert queried_ens_names == expected
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_get_ens_resolver_addr_uses_rpc_nodes(
+        ethereum_inquirer,
+        ethereum_manager_connect_at_start,
+):
+    """Test that the ENS resolver lookup goes through the RPC nodes and not the indexers"""
+    wait_until_all_nodes_connected(ethereum_manager_connect_at_start, ethereum_inquirer)
+    with patch.object(
+        ethereum_inquirer,
+        '_call_contract_indexers',
+        side_effect=AssertionError('The indexers should not be queried'),
+    ):
+        resolver_addr, normal_name = ethereum_inquirer.get_ens_resolver_addr('rotki.eth')
+        assert resolver_addr is not None
+        assert normal_name == 'rotki.eth'
+        # an unresolvable name returns no resolver, instead of raising
+        assert ethereum_inquirer.get_ens_resolver_addr('dsadsad') == (None, None)
+
+        with pytest.raises(InputError):
+            ethereum_inquirer.get_ens_resolver_addr('fl00_id.loopring.eth')
