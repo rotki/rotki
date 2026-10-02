@@ -248,10 +248,9 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             name: str,
     ) -> tuple[ChecksumEvmAddress | None, str | None]:
         """Get the ENS resolver for the given name. Also returns the normalized name.
+        Queries the RPC nodes first, with the indexers as a fallback.
 
         May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
-        parsing its response
         - InputError if the given name is not a valid ENS name
         """
         try:
@@ -260,16 +259,14 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             raise InputError(str(e)) from e
 
         try:
-            resolver_addr, _, _ = self._call_contract(
-                web3=None,
-                contract_address=UNIVERSAL_RESOLVER_ADDR,
-                abi=UNIVERSAL_RESOLVER,
-                method_name='findResolver',
-                arguments=[dns_encode_name(normal_name)],
+            resolver_addr = self._query(
+                method=self._get_ens_resolver_addr,
+                normal_name=normal_name,
             )
-        except (BlockchainQueryError, RemoteError) as e:
+        except RemoteError as e:
             log.error('blockchain query for get_ens_resolver_addr failed due to %s', e)
             return None, None
+
         if is_none_or_zero_address(resolver_addr):
             return None, None
 
@@ -283,6 +280,28 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             return None, None
 
         return deserialized_resolver_addr, normal_name
+
+    def _get_ens_resolver_addr(self, web3: Web3 | None, normal_name: str) -> str | None:
+        """Query the Universal Resolver for the resolver address of the normalized name.
+
+        Returns None if the name can't be resolved.
+        """
+        try:
+            resolver_addr, _, _ = self._call_contract(
+                web3=web3,
+                contract_address=UNIVERSAL_RESOLVER_ADDR,
+                abi=UNIVERSAL_RESOLVER,
+                method_name='findResolver',
+                arguments=[dns_encode_name(normal_name)],
+            )
+        except (BlockchainQueryError, RemoteError) as e:
+            # Universal Resolver reverts for unresolvable names. RPC nodes surface this as
+            # BlockchainQueryError while indexers surface it as RemoteError. In both cases
+            # there is no resolver, so don't try other nodes.
+            log.error('blockchain query for get_ens_resolver_addr failed due to %s', e)
+            return None
+
+        return resolver_addr
 
     # -- Implementation of EvmNodeInquirer base methods --
 
