@@ -1221,24 +1221,31 @@ def test_pre_bedrock_not_covered_does_not_fail_sync(
         ])
 
 
+@pytest.mark.parametrize(('prefix', 'range_query', 'indexer_query'), [
+    ('txs', '_get_transactions_for_range', 'get_transactions'),
+    ('tokentxs', '_get_erc20_transfers_for_ranges', 'get_token_transaction_data'),
+])
 def test_not_covered_older_range_does_not_skip_newer_range(
         optimism_transactions: OptimismTransactions,
+        prefix: Literal['txs', 'tokentxs'],
+        range_query: Literal['_get_transactions_for_range', '_get_erc20_transfers_for_ranges'],
+        indexer_query: Literal['get_transactions', 'get_token_transaction_data'],
 ) -> None:
     """A range no indexer covers is not a failure, so it must not hide a newer range either.
 
     The ranges are queried oldest first. Stopping at an uncovered pre-Bedrock gap would
     report the address as complete while the newer gap after the saved coverage was never
-    queried.
+    queried. The newer range is recorded so that the next sync does not query it again,
+    while the uncovered gap stays unrecorded for a covering indexer to fill.
     """
     inquirer = optimism_transactions.evm_inquirer
     blockscout, address = inquirer.blockscout, make_evm_address()
-    location_string = f'{inquirer.blockchain.to_range_prefix("txs")}_{address}'
-    saved_range = (Timestamp(OP_BEDROCK_UPGRADE + 10), Timestamp(OP_BEDROCK_UPGRADE + 100))
+    location_string = f'{inquirer.blockchain.to_range_prefix(prefix)}_{address}'
     with optimism_transactions.database.conn.write_ctx() as cursor:
         DBQueryRanges(optimism_transactions.database).update_used_query_range(
             write_cursor=cursor,
             location_string=location_string,
-            queried_ranges=[saved_range],
+            queried_ranges=[(Timestamp(OP_BEDROCK_UPGRADE + 10), Timestamp(OP_BEDROCK_UPGRADE + 100))],  # noqa: E501
         )
 
     with (
@@ -1250,19 +1257,23 @@ def test_not_covered_older_range_does_not_skip_newer_range(
         ),
         patch.object(
             target=EtherscanLikeApi,
-            attribute='get_transactions',
+            attribute=indexer_query,
             side_effect=lambda **kwargs: iter([[]]),
         ) as indexer_queries,
     ):
-        assert optimism_transactions._get_transactions_for_range(
-            address=address,
-            start_ts=Timestamp(OP_BEDROCK_UPGRADE - 1000),  # after genesis, so not block 0
-            end_ts=Timestamp(OP_BEDROCK_UPGRADE + 1000),
-        ) is RangeQueryOutcome.NOT_COVERED
+        for _ in range(2):  # the second sync only has the uncovered gap left to query
+            assert getattr(optimism_transactions, range_query)(
+                address=address,
+                start_ts=Timestamp(OP_BEDROCK_UPGRADE - 1000),  # after genesis, so not block 0
+                end_ts=Timestamp(OP_BEDROCK_UPGRADE + 1000),
+            ) is RangeQueryOutcome.NOT_COVERED
 
-    assert [
-        (call.kwargs['period_or_hash'].from_value, call.kwargs['period_or_hash'].to_value)
-        for call in indexer_queries.call_args_list
-    ] == [(OP_BEDROCK_BLOCK + 101, OP_BEDROCK_BLOCK + 1000)]
+    assert [(
+        call.kwargs['period_or_hash'].from_value, call.kwargs['period_or_hash'].to_value,
+    ) if prefix == 'txs' else (
+        call.kwargs['from_block'], call.kwargs['to_block'],
+    ) for call in indexer_queries.call_args_list] == [(OP_BEDROCK_BLOCK + 101, OP_BEDROCK_BLOCK + 1000)]  # noqa: E501
     with optimism_transactions.database.conn.read_ctx() as cursor:  # older gap not recorded
-        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == saved_range  # noqa: E501
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) == (
+            OP_BEDROCK_UPGRADE + 10, OP_BEDROCK_UPGRADE + 1000,
+        )

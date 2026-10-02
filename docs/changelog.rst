@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :release:`1.44.1 <2026-10-01>`
+* :release:`1.44.1 <2026-10-02>`
 * :bug:`-` Asset icons that were downloaded after an earlier failed lookup are shown again. Before, the empty file left by the failed lookup could hide the downloaded icon, and a lookup that failed only due to rate limiting marked the icon as missing for 12 hours.
 * :bug:`-` Logging out while balances are still loading after login, then logging back in, no longer leaves "All balances" running with no end. Before, the new session never queried all balances, so that day's balance snapshot was not saved.
 * :bug:`-` Logging out while prices are still loading no longer shows "Fetching prices" errors after logging back in, and no longer leaves price refreshes stuck in the new session.

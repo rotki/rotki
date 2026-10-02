@@ -1,4 +1,6 @@
+from contextlib import ExitStack
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
@@ -7,8 +9,9 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
 from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
-from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
@@ -20,12 +23,15 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.externalapis.blockscout import Blockscout
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain
+from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 
 
 @dataclass
@@ -524,3 +530,51 @@ def test_gnosis_falls_back_to_etherscan_without_a_blockscout_key(
     # blockscout is attempted first, bails out keyless, and etherscan serves the query
     assert 'etherscan.io' in gnosis_inquirer._try_indexers(func=track)
     assert queried == ['Blockscout', 'Etherscan']
+
+
+def test_cached_incomplete_blockscout_range_still_fails_the_sync(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """A range skipped from blockscout's incomplete range cache fails like a real response.
+
+    The next sync asks again from the same start block, since the range was not recorded, so
+    it contains the failed range and blockscout is not asked. The other indexers must still be
+    tried, the range must stay unrecorded, and the sync must still fail so it is retried.
+    """
+    inquirer = optimism_transactions.evm_inquirer
+    location_string = f'{inquirer.blockchain.to_range_prefix("internaltxs")}_{(address := make_evm_address())}'  # noqa: E501
+    other_indexers = [x for x in inquirer.available_indexers if x != EvmIndexer.BLOCKSCOUT]
+    token = CachedSettings.evm_indexers_order_override_var.set((EvmIndexer.BLOCKSCOUT, *other_indexers))  # noqa: E501
+    try:
+        with ExitStack() as stack:
+            request_mock = stack.enter_context(patch.object(
+                inquirer.blockscout.session,
+                'request',
+                return_value=MockResponse(
+                    HTTPStatus.OK,
+                    '{"message": "Some internal transactions within this block range have not yet been processed","result": [],"status": "2"}',  # noqa: E501
+                ),
+            ))
+            fallback_mocks = [stack.enter_context(patch.object(
+                inquirer.available_indexers[indexer],
+                'get_transactions',
+                side_effect=RemoteError('fallback indexer failed'),
+            )) for indexer in other_indexers]
+            stack.enter_context(patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
+                (OP_BEDROCK_BLOCK + 100, OP_BEDROCK_BLOCK + 200, frozenset()),
+                (OP_BEDROCK_BLOCK + 100, OP_BEDROCK_BLOCK + 300, frozenset()),
+            ]))
+            for sync_end_ts in (OP_BEDROCK_UPGRADE + 100, OP_BEDROCK_UPGRADE + 200):
+                assert optimism_transactions._get_internal_transactions_for_ranges(
+                    address=address,
+                    start_ts=Timestamp(OP_BEDROCK_UPGRADE),
+                    end_ts=Timestamp(sync_end_ts),
+                ) is RangeQueryOutcome.FAILED
+    finally:
+        CachedSettings.evm_indexers_order_override_var.reset(token)
+
+    assert request_mock.call_count == 1  # the second sync was skipped from the cache
+    assert len(fallback_mocks) != 0
+    assert all(x.call_count == 2 for x in fallback_mocks)
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        assert optimism_transactions.database.get_used_query_range(cursor, location_string) is None
