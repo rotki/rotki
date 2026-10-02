@@ -676,6 +676,33 @@ class EvmTransactions(ABC):  # noqa: B024
                     queried_ranges=[(start_ts, covered_end_ts)],
                 )
 
+    def _mark_covered_ranges_as_queried(
+            self,
+            location_string: str,
+            covered_ranges: list[tuple[Timestamp, Timestamp]],
+            query_end: QueryEnd | None,
+    ) -> None:
+        """Record the ranges that were queried in a sync where another range was not covered.
+
+        The uncovered range stays unrecorded so that a covering query fills it later. Only one
+        continuous range is saved per location, so a covered range is recorded only if it
+        joins the saved coverage. A range that does not is queried again in the next sync.
+        """
+        for range_start, range_end in covered_ranges:
+            with self.database.conn.read_ctx() as cursor:
+                saved_range = self.database.get_used_query_range(cursor, location_string)
+            if saved_range is not None and (
+                saved_range[1] + 1 < range_start or range_end + 1 < saved_range[0]
+            ):
+                continue
+
+            self._mark_range_as_queried(
+                location_string=location_string,
+                start_ts=range_start,
+                end_ts=range_end,
+                query_end=query_end,
+            )
+
     def _get_transactions_for_range(
             self,
             address: ChecksumEvmAddress,
@@ -696,6 +723,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 end_ts=end_ts,
             )
         not_covered = False
+        covered_ranges: list[tuple[Timestamp, Timestamp]] = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
@@ -738,7 +766,14 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return RangeQueryOutcome.FAILED
 
+            covered_ranges.append((query_start_ts, query_end_ts))
+
         if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            self._mark_covered_ranges_as_queried(
+                location_string=location_string,
+                covered_ranges=covered_ranges,
+                query_end=query_end,
+            )
             return RangeQueryOutcome.NOT_COVERED
 
         log.debug('%s transactions done for %s', self.evm_inquirer.chain_name, address)
@@ -1254,6 +1289,7 @@ class EvmTransactions(ABC):  # noqa: B024
             )
 
         not_covered = False
+        covered_ranges: list[tuple[Timestamp, Timestamp]] = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
@@ -1296,7 +1332,14 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return RangeQueryOutcome.FAILED
 
+            covered_ranges.append((query_start_ts, query_end_ts))
+
         if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            self._mark_covered_ranges_as_queried(
+                location_string=location_string,
+                covered_ranges=covered_ranges,
+                query_end=query_end,
+            )
             return RangeQueryOutcome.NOT_COVERED
 
         log.debug('%s ERC20 Transfers done for address %s', self.evm_inquirer.chain_name, address)
