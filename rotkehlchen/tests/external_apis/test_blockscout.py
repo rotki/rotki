@@ -22,6 +22,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.externalapis.blockscout import (
     BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN,
+    BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN,
     BLOCKSCOUT_PAGINATION_LIMIT,
     KEY_REJECTED_SKIP_SECONDS,
     Blockscout,
@@ -445,6 +446,36 @@ def test_incomplete_internal_range_expires(blockscout: Blockscout) -> None:
             _query_internal_range(blockscout, 100, 200)
 
         assert request_mock.call_count == 2
+
+
+def test_incomplete_internal_ranges_are_capped_per_chain(blockscout: Blockscout) -> None:
+    """Past the per chain cap the oldest failed range is dropped, and only on that chain."""
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 0, 5, chain_id=ChainID.GNOSIS)
+
+        for idx in range(BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN + 1):  # disjoint, none replaced
+            with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+                _query_internal_range(blockscout, idx * 10, idx * 10 + 5)
+
+        assert len(blockscout.incomplete_internal_ranges[ChainID.BASE]) == BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN  # noqa: E501
+        assert request_mock.call_count == (call_count := BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN + 2)  # noqa: E501
+        for from_block, to_block, chain_id in (
+                (10, 15, ChainID.BASE),  # the oldest range still kept
+                (BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN * 10, BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN * 10 + 5, ChainID.BASE),  # the newest  # noqa: E501
+                (0, 5, ChainID.GNOSIS),  # another chain's range is not evicted
+        ):
+            with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+                _query_internal_range(blockscout, from_block, to_block, chain_id=chain_id)
+
+        assert request_mock.call_count == call_count
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 0, 5)  # the evicted range is requested again
+
+        assert request_mock.call_count == call_count + 1
 
 
 def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:
