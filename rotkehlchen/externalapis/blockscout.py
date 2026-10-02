@@ -9,6 +9,7 @@ import requests
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -75,7 +76,7 @@ KEY_REJECTED_SKIP_SECONDS: Final = 600
 # the requested blocks are not processed yet. The hole is per block, not per address, and it
 # takes hours to be backfilled. So for this long any range containing a range that failed is
 # skipped for every address on the chain, instead of spending a request bound to fail again.
-BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN: Final = 6 * 3600
+BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN: Final = HOUR_IN_SECONDS
 # Backstop on how many failed ranges are remembered per chain. The oldest are dropped first.
 BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN: Final = 50
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
