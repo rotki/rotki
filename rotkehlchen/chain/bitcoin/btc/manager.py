@@ -30,6 +30,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     query_mempool_address_transactions,
     scriptpubkey_to_p2pk_address,
 )
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
@@ -421,12 +422,16 @@ class BitcoinManager(BitcoinCommonManager):
                     position=position,
                     deserialize_fn=self.deserialize_tx_io_from_mempool,
                 ))
-            elif vin.get('is_coinbase') is True or (len(data['vin']) == 1 and vin.get('prevout') is None):
+            elif (
+                vin.get('is_coinbase') is True
+                or (len(data['vin']) == 1 and vin.get('prevout') is None)
+            ):
                 # Mempool coinbase input: carries no prevout. Represent it as a standard
                 # zero-valued placeholder TxIO without an address.
+                script = vin.get('scriptsig')
                 inputs.append(BtcTxIO(
                     value=ZERO,
-                    script=bytes.fromhex(script) if (script := vin.get('scriptsig')) is not None else None,
+                    script=bytes.fromhex(script) if script is not None else None,
                     address=None,
                     direction=BtcTxIODirection.INPUT,
                     io_index=position,

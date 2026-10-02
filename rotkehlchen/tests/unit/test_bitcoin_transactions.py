@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
@@ -1604,14 +1605,18 @@ def test_deserialize_mempool_op_return_tx(
 
 
 def test_deserialize_mempool_coinbase_tx(bitcoin_manager: BitcoinManager) -> None:
-    """A coinbase input has no prevout and is dropped, like the other explorers do."""
+    """A coinbase input has no prevout and deserializes as a zero-valued placeholder input."""
     tx = bitcoin_manager.deserialize_tx_from_mempool(_esplora_tx(
         block_height=900_000,
         vin=[{'is_coinbase': True, 'prevout': None}],
         vout=[_esplora_p2wpkh_txio(value=312_500_000)],
     ))
     assert tx is not None
-    assert tx.inputs == []
+    assert len(tx.inputs) == 1
+    assert tx.inputs[0].value == ZERO
+    assert tx.inputs[0].address is None
+    assert tx.inputs[0].direction == BtcTxIODirection.INPUT
+    assert tx.is_coinbase is True
     assert len(tx.outputs) == 1
 
 
@@ -1797,41 +1802,104 @@ def test_incomplete_non_coinbase_tx_not_detected_as_coinbase(
         assert event.event_subtype != HistoryEventSubType.REWARD
 
 
-@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+@pytest.mark.parametrize('btc_accounts', [['1PuJjnF476W3zXfVYmJfGnouzFDAXakkL4']])
 def test_deserialize_blockcypher_real_coinbase_tx(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
-    """A real BlockCypher coinbase transaction (e.g. block 900000 tx) omits the 'addresses' field
-    on the coinbase input entirely. Deserialization must succeed and reach the coinbase decoder.
+    """A real BlockCypher coinbase transaction (e.g. block 900000 tx) omits both 'addresses'
+    and 'output_value' fields on the coinbase input entirely, has vout_sz=5, and multiple
+    null-data outputs. Deserialization must succeed and reach the coinbase decoder.
     """
     blockcypher_raw_tx = {
-        'hash': '21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
+        'block_hash': '000000000000000000010538edbfd2d5b809a33dd83f284aeea41c6d0d96968a',
         'block_height': 900000,
-        'confirmed': '2025-06-03T20:29:49Z',
+        'block_index': 0,
+        'hash': '21a71ec52cee51aa32db9cb7c1d2a3f016ce9a182403a7d1892761c397c87c4c',
+        'addresses': [
+            btc_accounts[0],
+        ],
+        'total': 314291835,
         'fees': 0,
+        'size': 392,
+        'vsize': 365,
+        'preference': 'low',
+        'confirmed': '2025-06-06T05:42:00.123Z',
+        'received': '2025-06-06T05:42:00.123Z',
+        'ver': 1,
+        'double_spend': False,
         'vin_sz': 1,
-        'vout_sz': 3,
-        'inputs': [{
-            'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
-            'output_index': -1,
-            'script': '0360bb0d',
-            'output_value': 0,
-            'sequence': 4294967295,
-            # Notice: no 'addresses' field here, exactly as returned by BlockCypher API
-        }],
+        'vout_sz': 5,
+        'data_protocol': 'unknown',
+        'confirmations': 69526,
+        'inputs': [
+            {
+                'output_index': -1,
+                'script': (
+                    '03a0bb0d162f5669614254432f4d696e6564206279206e6476312f2cfabe6d6df'
+                    '2d93a8929b144c37681bb0dbd323c2f2be9558c4ac93a4648ee3bea5f070d5010'
+                    '0000000000000010ac16650078daec1bf295d508a963000000000000'
+                ),
+                'sequence': 4294967295,
+                'script_type': 'empty',
+                'age': 900000,
+            },
+        ],
         'outputs': [
             {
-                'value': 312500000,
-                'script': '0014' + '11' * 20,
-                'addresses': [btc_accounts[0]],
-                'n': 0,
+                'value': 314291835,
+                'script': '76a914fb37342f6275b13936799def06f2eb4c0f20151588ac',
+                'spent_by': '54037a000f155f1e43871272bdbecc205502b887ad75e7aade448b321fa8385b',
+                'addresses': [
+                    btc_accounts[0],
+                ],
+                'script_type': 'pay-to-pubkey-hash',
             },
             {
                 'value': 0,
-                'script': '6a24aa21a9ed57c0db690f0553757',
+                'script': (
+                    '6a27737973c247ca537630c8f8341c67965842a448796ff567e496700da8133f7dd2'
+                    'd4e469ac2f1f00'
+                ),
                 'addresses': None,
-                'n': 1,
+                'script_type': 'null-data',
+                'data_hex': (
+                    '737973c247ca537630c8f8341c67965842a448796ff567e496700da8133f7dd2'
+                    'd4e469ac2f1f00'
+                ),
+            },
+            {
+                'value': 0,
+                'script': '6a124558534154011508000113021b1a1f120013',
+                'addresses': None,
+                'script_type': 'null-data',
+                'data_hex': '4558534154011508000113021b1a1f120013',
+            },
+            {
+                'value': 0,
+                'script': (
+                    '6a2952534b424c4f434b3a1ebb475190b26d90d37c58e4a07e520b241c061f2f220'
+                    '0957bdc4e14007491a8'
+                ),
+                'addresses': None,
+                'script_type': 'null-data',
+                'data_hex': (
+                    '52534b424c4f434b3a1ebb475190b26d90d37c58e4a07e520b241c061f2f220'
+                    '0957bdc4e14007491a8'
+                ),
+            },
+            {
+                'value': 0,
+                'script': (
+                    '6a24aa21a9edbecd35348fb234841c425bf812d02d47b45bfef8c29458069e8e968e'
+                    '35fe2c57'
+                ),
+                'addresses': None,
+                'script_type': 'null-data',
+                'data_hex': (
+                    'aa21a9edbecd35348fb234841c425bf812d02d47b45bfef8c29458069e8e968e'
+                    '35fe2c57'
+                ),
             },
         ],
     }
@@ -1840,13 +1908,14 @@ def test_deserialize_blockcypher_real_coinbase_tx(
     assert len(tx.inputs) == 1
     assert tx.inputs[0].value == ZERO
     assert tx.inputs[0].address is None
+    assert len(tx.outputs) == 5
 
     bitcoin_manager.refresh_tracked_accounts()
     events = bitcoin_manager.decode_transaction(tx)
     assert len(events) == 1
     assert events[0].event_type == HistoryEventType.RECEIVE
     assert events[0].event_subtype == HistoryEventSubType.REWARD
-    assert events[0].amount == FVal('3.125')
+    assert events[0].amount == FVal('3.14291835')
     assert events[0].location_label == btc_accounts[0]
 
 
