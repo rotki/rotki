@@ -248,10 +248,9 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             name: str,
     ) -> tuple[ChecksumEvmAddress | None, str | None]:
         """Get the ENS resolver for the given name. Also returns the normalized name.
+        Queries the RPC nodes first, with the indexers as a fallback.
 
         May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
-        parsing its response
         - InputError if the given name is not a valid ENS name
         """
         try:
@@ -260,16 +259,16 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             raise InputError(str(e)) from e
 
         try:
-            resolver_addr, _, _ = self._call_contract(
-                web3=None,
+            resolver_addr, _, _ = self.call_contract(
                 contract_address=UNIVERSAL_RESOLVER_ADDR,
                 abi=UNIVERSAL_RESOLVER,
                 method_name='findResolver',
                 arguments=[dns_encode_name(normal_name)],
             )
-        except (BlockchainQueryError, RemoteError) as e:
+        except RemoteError as e:
             log.error('blockchain query for get_ens_resolver_addr failed due to %s', e)
             return None, None
+
         if is_none_or_zero_address(resolver_addr):
             return None, None
 

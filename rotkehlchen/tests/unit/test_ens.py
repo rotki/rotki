@@ -1,10 +1,12 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
+from rotkehlchen.errors.misc import BlockchainQueryError, InputError
 from rotkehlchen.tests.utils.ens import (
     ENS_BRUNO,
     ENS_BRUNO_BTC_BYTES,
@@ -13,6 +15,7 @@ from rotkehlchen.tests.utils.ens import (
 )
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
+    INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.types import SupportedBlockchain
@@ -106,3 +109,67 @@ def test_ens_reverse_lookup(ethereum_inquirer):
             [reversed_addr_2, reversed_addr_3, reversed_addr_4],
         )
         assert queried_ens_names == expected
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_get_ens_resolver_addr_uses_rpc_nodes(
+        ethereum_inquirer,
+        ethereum_manager_connect_at_start,
+):
+    """Test that the ENS resolver lookup goes through the RPC nodes and not the indexers"""
+    wait_until_all_nodes_connected(ethereum_manager_connect_at_start, ethereum_inquirer)
+    with patch.object(
+        ethereum_inquirer,
+        '_call_contract_indexers',
+        side_effect=AssertionError('The indexers should not be queried'),
+    ):
+        resolver_addr, normal_name = ethereum_inquirer.get_ens_resolver_addr('rotki.eth')
+        assert resolver_addr is not None
+        assert normal_name == 'rotki.eth'
+        # an unresolvable name returns no resolver, instead of raising
+        assert ethereum_inquirer.get_ens_resolver_addr('dsadsad') == (None, None)
+
+        with pytest.raises(InputError):
+            ethereum_inquirer.get_ens_resolver_addr('fl00_id.loopring.eth')
+
+
+def test_get_ens_resolver_addr_falls_back_on_rpc_error(ethereum_inquirer):
+    """Test that an RPC error during the ENS resolver lookup is not treated as
+    an unresolvable name, but the node is marked as failed and the next source is queried"""
+    ethereum_inquirer.rpc_mapping[INFURA_ETH_NODE.node_info] = RPCNode(
+        rpc_client=(failing_web3 := MagicMock()),
+        is_pruned=False,
+        is_archive=True,
+    )
+
+    def mock_call_contract(web3, **kwargs):
+        if web3 is failing_web3:
+            raise BlockchainQueryError('Error doing call on contract: transient RPC error')
+        return '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63', b'', 0
+
+    with (
+        patch.object(
+            ethereum_inquirer,
+            'default_call_order',
+            return_value=[INFURA_ETH_NODE, EVM_INDEXERS_NODE],
+        ),
+        patch.object(
+            ethereum_inquirer,
+            '_call_contract',
+            autospec=True,
+            side_effect=mock_call_contract,
+        ) as call_contract_mock,
+        patch.object(
+            ethereum_inquirer,
+            'mark_node_success',
+            wraps=ethereum_inquirer.mark_node_success,
+        ) as mark_success_mock,
+    ):
+        assert ethereum_inquirer.get_ens_resolver_addr('rotki.eth') == (
+            '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
+            'rotki.eth',
+        )
+
+    assert [call.args[0] for call in call_contract_mock.call_args_list] == [failing_web3, None]
+    mark_success_mock.assert_called_once_with(EVM_INDEXERS_NODE.node_info)
