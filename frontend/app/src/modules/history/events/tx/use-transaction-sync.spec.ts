@@ -3,6 +3,7 @@ import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
@@ -115,6 +116,21 @@ describe('useTransactionSync', () => {
       // it took the whole chain out of the panel and out of its own denominator.
       expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
       expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
+    });
+
+    it('should mark an incomplete query failed without notifying', async () => {
+      // One per address a refused chain fails, and the backend explains it with its own notification.
+      mocks.submitTask.mockResolvedValue(err(TaskFailed({
+        cause: new IncompleteQueryError('Could not query all transactions'),
+        message: 'Could not query all transactions',
+      })));
+
+      const { syncTransactionTask } = useTransactionSync();
+      const outcome = await syncTransactionTask(account, TransactionChainType.EVM);
+
+      assert(!outcome.ok);
+      expect(mocks.markAddressFailed).toHaveBeenCalledWith(account, TransactionChainType.EVM);
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should leave a skipped task alone', async () => {

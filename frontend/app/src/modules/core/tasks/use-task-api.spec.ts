@@ -2,7 +2,7 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
-import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from './use-task-api';
 
@@ -250,6 +250,29 @@ describe('composables/api/task', () => {
       await expect(queryTaskResult(123))
         .rejects
         .toThrow('Backend unavailable');
+    });
+
+    it('should throw IncompleteQueryError on statusCode 503', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: {
+                result: false,
+                message: 'Could not query all transactions',
+              },
+              status: 'completed',
+              statusCode: 503,
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+
+      await expect(queryTaskResult(123))
+        .rejects
+        .toThrow(IncompleteQueryError);
     });
 
     it('should throw error when no outcome', async () => {

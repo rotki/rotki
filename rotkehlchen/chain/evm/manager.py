@@ -93,7 +93,8 @@ class EvmManager(
     ) -> None:
         """Queries and saves the transactions for the given addresses in the specified time range.
         May raise:
-        - RemoteError if there is a problem with an external query.
+        - IncompleteTransactionsQuery if the transactions of any address could not be fully
+        queried.
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """

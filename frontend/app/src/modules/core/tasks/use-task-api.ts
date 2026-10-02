@@ -5,7 +5,7 @@ import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '
 import { CHAIN_KEYED_SETTINGS, DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
-import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
@@ -51,6 +51,9 @@ function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: Actio
 
   if (statusCode === HTTPStatus.BAD_GATEWAY)
     throw new Error(message);
+
+  if (statusCode === HTTPStatus.SERVICE_UNAVAILABLE)
+    throw new IncompleteQueryError(message);
 }
 
 export function useTaskApi(): UseTaskApiReturn {
@@ -68,6 +71,7 @@ export function useTaskApi(): UseTaskApiReturn {
    * - 300 with conflict data: SyncConflictError
    * - 400: ApiValidationError
    * - 502: Error with backend unavailable message
+   * - 503: IncompleteQueryError
    */
   const queryTaskResult = async <T>(id: number): Promise<ActionResult<T>> => {
     const response = await ofetch.raw<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, {

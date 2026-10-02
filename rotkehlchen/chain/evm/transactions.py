@@ -3,6 +3,7 @@ from abc import ABC
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
+from enum import IntEnum
 from functools import wraps
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
@@ -31,6 +32,8 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     AlreadyExists,
     DataIntegrityError,
+    IncompleteTransactionsQuery,
+    IndexerRangeNotCovered,
     InputError,
     NoAvailableIndexers,
     RemoteError,
@@ -82,8 +85,26 @@ RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
 CHAIN_TOP_LAG: Final = 15
 
 
+class RangeQueryOutcome(IntEnum):
+    """How the query of one kind of an address's transactions over its ranges ended.
+
+    Ordered by severity, so max() of several outcomes is the worst of them.
+    """
+    QUERIED = 1  # every range was queried and recorded as such
+    # No configured indexer serves a range, such as pre-Bedrock optimism internal transactions
+    # without a paid etherscan key. Retrying cannot help, so it is not a failure. The range is
+    # left unrecorded so a query that can serve it fills it.
+    NOT_COVERED = 2
+    FAILED = 3  # a range could not be queried. It is retried by the next query
+
+
 def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
-    """Decorator to handle transaction query locking and status messaging."""
+    """Decorator to handle transaction query locking and status messaging.
+
+    The query ends with QUERYING_TRANSACTIONS_FAILED if it raised or returned False, which is
+    how a query reports failures it handles without raising, and with
+    QUERYING_TRANSACTIONS_FINISHED otherwise.
+    """
 
     @wraps(func)
     def wrapper(
@@ -94,29 +115,27 @@ def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
             *args: Any,
             **kwargs: Any,
     ) -> Any:
+        failed = True
         with self.address_tx_locks[address]:
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [start_ts, end_ts],
-                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
-                },
+            self._notify_tx_query_status(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
             )
             try:
                 result = func(self, address, start_ts, end_ts, *args, **kwargs)
+                failed = result is False
             finally:  # always send completion status to prevent inconclusive frontend state
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.TRANSACTION_STATUS,
-                    data={
-                        'address': address,
-                        'chain': self.evm_inquirer.blockchain.value,
-                        'subtype': str(TransactionStatusSubType.EVM),
-                        'period': [start_ts, end_ts],
-                        'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
-                    },
+                self._notify_tx_query_status(
+                    address=address,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    status=(
+                        TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED
+                        if failed else
+                        TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED
+                    ),
                 )
 
             return result
@@ -139,6 +158,30 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
+
+    def _notify_tx_query_status(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            status: TransactionStatusStep,
+    ) -> None:
+        """Tell the frontend which step the transactions query of an address is at.
+
+        The frontend tracks each address of a sync from these messages and keeps it pending
+        until it gets QUERYING_TRANSACTIONS_FINISHED or QUERYING_TRANSACTIONS_FAILED, so every
+        query that sends a start must also send one of them, even if it ends up querying nothing.
+        """
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'chain': self.evm_inquirer.blockchain.value,
+                'subtype': str(TransactionStatusSubType.EVM),
+                'period': [start_ts, end_ts],
+                'status': str(status),
+            },
+        )
 
     def _batch_ensure_evm_txns_in_db(
             self,
@@ -272,11 +315,16 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> bool:
         """Only queries new transactions and adds them to the DB
 
         query_end is the end of a sync over several addresses this query is part of, so
         they all stop at the same block. Without it the end is resolved from end_ts.
+
+        Indexer failures are not raised, so the other kinds of the query still run. False is
+        returned instead, which reports the address to the frontend as failed. The ranges
+        left unqueried are retried by the next query. A range no configured indexer covers
+        is not a failure, see RangeQueryOutcome.NOT_COVERED.
 
         This is our attempt to identify as many transactions related to the address
         as possible. This unfortunately at the moment depends on etherscan as it's
@@ -284,50 +332,70 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
-        if query_end is None and (query_end := self._resolve_query_end(end_ts)) is None:
-            return
+        if query_end is None:
+            try:
+                query_end = self._resolve_query_end(end_ts)
+            except RemoteError as e:
+                log.warning(
+                    'Skipping %s transactions query of %s up to %s: could not resolve its '
+                    'end block due to %s',
+                    self.evm_inquirer.chain_name, address, end_ts, e,
+                )  # an end no configured indexer covers is not a failure, see NOT_COVERED
+                return isinstance(e, IndexerRangeNotCovered)
 
         if query_end.timestamp < start_ts:
-            return  # the whole range is too recent to be indexed yet
+            return True  # the whole range is too recent to be indexed yet
 
-        self._get_transactions_for_range(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
-        self._get_internal_transactions_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
-        self._get_erc20_transfers_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=query_end.timestamp,
-            query_end=query_end,
-        )
+        return RangeQueryOutcome.FAILED not in [  # a list, so every kind is queried
+            self._get_transactions_for_range(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+            self._get_internal_transactions_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+            self._get_erc20_transfers_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ),
+        ]
 
-    def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd | None:
-        """Return where a sync asked to end at end_ts stops, or None if it cannot tell.
+    def _resolve_query_end(self, end_ts: Timestamp) -> QueryEnd:
+        """Return where a sync asked to end at end_ts stops.
 
         The end is kept CHAIN_TOP_LAG seconds behind now and resolved to a block once, so
         every address and query kind of the sync stops at the same block.
 
-        With no block for the end nothing is queried, since none of the ranges could be.
+        May raise:
+        - RemoteError if the end block cannot be resolved, including NoAvailableIndexers.
+        With no block for the end nothing can be queried, since none of the ranges could be.
         """
-        try:
-            return self.evm_inquirer.resolve_query_end(
-                end_ts=Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG)),
-            )
-        except RemoteError as e:  # includes NoAvailableIndexers
-            log.warning(
-                'Skipping %s transactions query up to %s: could not resolve its end block '
-                'due to %s',
-                self.evm_inquirer.chain_name, end_ts, e,
-            )
-            return None
+        return self.evm_inquirer.resolve_query_end(
+            end_ts=Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG)),
+        )
+
+    @with_tx_status_messaging
+    def _skip_address_query(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            succeeded: bool,
+    ) -> bool:
+        """Report the transactions query of an address as done without querying anything.
+
+        For a sync that cannot query any address, so the frontend does not keep waiting on
+        them. Unless no configured indexer covers the sync, which is not a failure, they are
+        reported failed so they are not shown as complete either.
+        """
+        return succeeded
 
     def query_chain(
             self,
@@ -341,22 +409,50 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Saves the results in the database.
 
+        Every address is queried and reported to the frontend before an incomplete query of
+        any of them is raised, so the caller's task fails rather than claiming the history
+        of those addresses as loaded.
+
         May raise:
-        - RemoteError if etherscan is used and there is a problem with reaching it or
-        with parsing the response.
+        - IncompleteTransactionsQuery if the transactions of any address could not be fully
+        queried. The ranges left unqueried are retried by the next query.
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
-        if (query_end := self._resolve_query_end(to_timestamp)) is not None:
-            for address in addresses:
-                self.single_address_query_transactions(
+        try:
+            query_end = self._resolve_query_end(to_timestamp)
+        except RemoteError as e:
+            log.warning(
+                'Skipping %s transactions query up to %s: could not resolve its end block '
+                'due to %s',
+                self.evm_inquirer.chain_name, to_timestamp, e,
+            )
+            failed_addresses = [
+                address for address in addresses
+                if not self._skip_address_query(
+                    address=address,
+                    start_ts=from_timestamp,
+                    end_ts=to_timestamp,
+                    succeeded=isinstance(e, IndexerRangeNotCovered),
+                )
+            ]
+        else:
+            failed_addresses = [
+                address for address in addresses
+                if self.single_address_query_transactions(
                     address=address,
                     start_ts=from_timestamp,
                     end_ts=query_end.timestamp,
                     query_end=query_end,
-                )
+                ) is False
+            ]
 
         self.get_chain_specific_multiaddress_data(addresses)
+        if len(failed_addresses) != 0:  # the indexer errors were logged, not passed on
+            raise IncompleteTransactionsQuery(
+                f'Could not query all {self.evm_inquirer.chain_name} transactions of '
+                f'{", ".join(failed_addresses)}. They will be retried by the next sync.',
+            )
 
     @overload
     def _query_and_save_transactions_for_range(
@@ -586,10 +682,10 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> RangeQueryOutcome:
         """Queries etherscan for all evm transactions of address in the given ranges.
 
-        If any transactions are found, they are added in the DB
+        If any transactions are found, they are added in the DB.
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("txs")}_{address}'
         with self.database.conn.read_ctx() as cursor:
@@ -599,6 +695,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
+        not_covered = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
@@ -617,12 +714,20 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangeNotCovered as e:
+                log.warning(
+                    'Skipping %s transactions query for %s from %s to %s, since no '
+                    'configured indexer covers it: %s',
+                    self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
+                )
+                not_covered = True  # newer ranges may still be covered
+                continue
             except NoAvailableIndexers as e:
                 log.warning(
                     f'Skipping {self.evm_inquirer.chain_name} transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return
+                return RangeQueryOutcome.FAILED
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
@@ -631,7 +736,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return
+                return RangeQueryOutcome.FAILED
+
+        if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            return RangeQueryOutcome.NOT_COVERED
 
         log.debug('%s transactions done for %s', self.evm_inquirer.chain_name, address)
         self._mark_range_as_queried(
@@ -640,6 +748,7 @@ class EvmTransactions(ABC):  # noqa: B024
             end_ts=end_ts,
             query_end=query_end,
         )
+        return RangeQueryOutcome.QUERIED
 
     @overload
     def _query_and_save_internal_transactions_for_range(
@@ -1054,7 +1163,7 @@ class EvmTransactions(ABC):  # noqa: B024
             update_ranges: bool | None = None,
             progress_start_ts: Timestamp | None = None,
             query_end: QueryEnd | None = None,
-    ) -> bool:
+    ) -> RangeQueryOutcome:
         """Query internal transactions, controlling batch progress and the final mark separately."""  # noqa: E501
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
@@ -1064,6 +1173,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
+        not_covered = False
         for range_start_ts, range_end_ts in ranges_to_query:
             # DBQueryRanges may extend a gap past the requested half of the split.
             query_start_ts = max(range_start_ts, start_ts) if not record_range else range_start_ts
@@ -1086,12 +1196,20 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangeNotCovered as e:
+                log.warning(
+                    'Skipping %s internal transactions query for %s from %s to %s, since no '
+                    'configured indexer covers it: %s',
+                    self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
+                )
+                not_covered = True  # newer ranges may still be covered
+                continue
             except NoAvailableIndexers as e:
                 log.warning(
                     f'Skipping {self.evm_inquirer.chain_name} internal transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return False
+                return RangeQueryOutcome.FAILED
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying internal {self.evm_inquirer.chain_name} '
@@ -1100,7 +1218,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return False
+                return RangeQueryOutcome.FAILED
+
+        if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            return RangeQueryOutcome.NOT_COVERED
 
         log.debug('Internal %s transactions for address %s done', self.evm_inquirer.chain_name, address)  # noqa: E501
         if record_range:
@@ -1110,7 +1231,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 end_ts=end_ts,
                 query_end=query_end,
             )
-        return True
+        return RangeQueryOutcome.QUERIED
 
     def _get_erc20_transfers_for_ranges(
             self,
@@ -1118,10 +1239,10 @@ class EvmTransactions(ABC):  # noqa: B024
             start_ts: Timestamp,
             end_ts: Timestamp,
             query_end: QueryEnd | None = None,
-    ) -> None:
+    ) -> RangeQueryOutcome:
         """Queries etherscan for all erc20 transfers of address in the given ranges.
 
-        If any transfers are found, they are added in the DB
+        If any transfers are found, they are added in the DB.
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
         with self.database.conn.read_ctx() as cursor:
@@ -1132,6 +1253,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 end_ts=end_ts,
             )
 
+        not_covered = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
@@ -1150,12 +1272,20 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangeNotCovered as e:
+                log.warning(
+                    'Skipping %s token transactions query for %s from %s to %s, since no '
+                    'configured indexer covers it: %s',
+                    self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
+                )
+                not_covered = True  # newer ranges may still be covered
+                continue
             except NoAvailableIndexers as e:
                 log.warning(
                     f'Skipping {self.evm_inquirer.chain_name} token transactions query '
                     f'for {address} due to {e!s}.',
                 )
-                return
+                return RangeQueryOutcome.FAILED
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
@@ -1164,7 +1294,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
-                return
+                return RangeQueryOutcome.FAILED
+
+        if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            return RangeQueryOutcome.NOT_COVERED
 
         log.debug('%s ERC20 Transfers done for address %s', self.evm_inquirer.chain_name, address)
         self._mark_range_as_queried(
@@ -1173,6 +1306,7 @@ class EvmTransactions(ABC):  # noqa: B024
             end_ts=end_ts,
             query_end=query_end,
         )
+        return RangeQueryOutcome.QUERIED
 
     @overload
     def _query_and_save_erc20_transfers_for_range(

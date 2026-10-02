@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
 from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.concurrency import wait
@@ -1070,9 +1071,9 @@ def test_query_transactions_check_decoded_events(
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-@patch.object(EthereumTransactions, '_get_transactions_for_range', lambda *args, **kargs: None)
-@patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
-@patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
+@patch.object(EthereumTransactions, '_get_transactions_for_range', lambda *args, **kargs: RangeQueryOutcome.QUERIED)  # noqa: E501
+@patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: RangeQueryOutcome.QUERIED)  # noqa: E501
+@patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: RangeQueryOutcome.QUERIED)  # noqa: E501
 @pytest.mark.parametrize('start_with_valid_premium', [True])  # TODO: Test for whichever filters we allow in free  # noqa: E501
 def test_events_filter_params(
         rotkehlchen_api_server: APIServer,
@@ -1294,8 +1295,8 @@ def test_ignored_assets(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])
-@patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
-@patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
+@patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: RangeQueryOutcome.QUERIED)  # noqa: E501
+@patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: RangeQueryOutcome.QUERIED)  # noqa: E501
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 def test_no_value_eth_transfer(rotkehlchen_api_server: APIServer) -> None:
