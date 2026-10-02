@@ -1,7 +1,8 @@
 import datetime
+import json
 import threading
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import ANY, patch
 
 import pytest
@@ -20,6 +21,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.externalapis.blockscout import (
+    BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN,
     BLOCKSCOUT_PAGINATION_LIMIT,
     KEY_REJECTED_SKIP_SECONDS,
     Blockscout,
@@ -43,6 +45,10 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress, EvmInternalTransaction
+
+INCOMPLETE_RANGE_RESPONSE: Final = '{"message": "Some internal transactions within this block range have not yet been processed","result": [],"status": "2"}'  # noqa: E501
+NO_INTERNAL_TXS_RESPONSE: Final = '{"message": "No internal transactions found","result": [],"status": "0"}'  # noqa: E501
 
 
 @pytest.fixture(name='blockscout')
@@ -291,6 +297,154 @@ def test_missing_data_error(blockscout: Blockscout) -> None:
             action='txlistinternal',
             period_or_hash=make_evm_tx_hash(),
         ))
+
+
+def _query_internal_range(
+        blockscout: Blockscout,
+        from_block: int,
+        to_block: int,
+        chain_id: ChainID = ChainID.BASE,
+        account: ChecksumEvmAddress | None = None,
+) -> list[list[EvmInternalTransaction]]:
+    return list(blockscout.get_transactions(
+        chain_id=chain_id,  # type: ignore[arg-type]  # all callers pass a supported chain
+        account=account if account is not None else make_evm_address(),
+        action='txlistinternal',
+        period_or_hash=TimestampOrBlockRange(
+            range_type='blocks',
+            from_value=from_block,
+            to_value=to_block,
+        ),
+    ))
+
+
+def test_incomplete_internal_range_is_skipped_for_every_address(blockscout: Blockscout) -> None:
+    """A range blockscout reported as incomplete is not requested again, for any address.
+
+    The unprocessed block is a property of the chain, so the same range or a wider one is bound
+    to fail again. It must raise the same error a real response does, so the caller still falls
+    back to the next indexer and leaves the range unrecorded.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200, account=(address := make_evm_address()))
+
+        assert request_mock.call_count == 1
+        for from_block, to_block, account in (
+                (100, 200, address),  # the same range again
+                (100, 200, make_evm_address()),  # another address
+                (50, 300, make_evm_address()),  # a wider range
+                (100, 300, address),  # a later sync of the same unrecorded range
+        ):
+            with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+                _query_internal_range(blockscout, from_block, to_block, account=account)
+
+        assert request_mock.call_count == 1
+
+
+def test_incomplete_internal_range_only_skips_containing_ranges(blockscout: Blockscout) -> None:
+    """Only a range containing a failed one is skipped, and only on the chain it failed on.
+
+    A range inside the failed one, or only overlapping it, may exclude the unprocessed block.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )), pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+        _query_internal_range(blockscout, 100, 200)
+
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        NO_INTERNAL_TXS_RESPONSE,
+    )) as request_mock:
+        for from_block, to_block, chain_id in (
+                (100, 200, ChainID.GNOSIS),  # another chain
+                (120, 180, ChainID.BASE),  # inside the failed range
+                (100, 199, ChainID.BASE),
+                (101, 200, ChainID.BASE),
+                (150, 300, ChainID.BASE),  # overlapping it
+                (50, 150, ChainID.BASE),
+                (201, 300, ChainID.BASE),  # past it
+        ):
+            assert _query_internal_range(blockscout, from_block, to_block, chain_id=chain_id) == [[]]  # noqa: E501
+
+        assert request_mock.call_count == 7
+
+
+def test_narrower_incomplete_range_replaces_wider_ones(blockscout: Blockscout) -> None:
+    """A narrower failed range is kept in place of the wider ones containing it.
+
+    Every range containing a wider one also contains the narrower, so this bounds the cache
+    while skipping more ranges than before.
+    """
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        HTTPStatus.OK,
+        INCOMPLETE_RANGE_RESPONSE,
+    )) as request_mock:
+        for from_block, to_block in ((100, 200), (120, 180), (130, 170)):
+            with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+                _query_internal_range(blockscout, from_block, to_block)
+
+        assert request_mock.call_count == 3
+        assert [(x[0], x[1]) for x in blockscout.incomplete_internal_ranges[ChainID.BASE]] == [
+            (130, 170),
+        ]
+        with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+            _query_internal_range(blockscout, 125, 175)
+
+        assert request_mock.call_count == 3
+
+
+def test_incomplete_internal_range_records_the_failed_page(blockscout: Blockscout) -> None:
+    """When a later page fails, the range recorded is the one that page asked for.
+
+    Pagination moves the start block forward, and the earlier blocks were served fine.
+    """
+    blockscout.pagination_limit = 1
+    with patch.object(blockscout.session, 'request', side_effect=[
+        MockResponse(HTTPStatus.OK, json.dumps({'message': 'OK', 'status': '1', 'result': [{
+            'hash': str(make_evm_tx_hash()),
+            'blockNumber': '150',
+            'timeStamp': '1700000000',
+            'from': (address := make_evm_address()),
+            'to': address,
+            'value': '1',
+            'traceId': '0',
+        }]})),
+        MockResponse(HTTPStatus.OK, INCOMPLETE_RANGE_RESPONSE),
+    ]), pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+        _query_internal_range(blockscout, 100, 200)
+
+    assert [(x[0], x[1]) for x in blockscout.incomplete_internal_ranges[ChainID.BASE]] == [
+        (150, 200),
+    ]
+
+
+def test_incomplete_internal_range_expires(blockscout: Blockscout) -> None:
+    """Blockscout backfills its holes, so a failed range is queried again after the cooldown."""
+    with (
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
+            HTTPStatus.OK,
+            INCOMPLETE_RANGE_RESPONSE,
+        )) as request_mock,
+        freeze_time(start := datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC)) as frozen,
+    ):
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200)
+
+        frozen.move_to(start + datetime.timedelta(seconds=BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN - 1))  # noqa: E501
+        with pytest.raises(BlockscoutIncompleteResponse, match='from the cache'):
+            _query_internal_range(blockscout, 100, 200)
+
+        assert request_mock.call_count == 1
+        frozen.move_to(start + datetime.timedelta(seconds=BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN))
+        with pytest.raises(BlockscoutIncompleteResponse, match='Blockscout is missing data'):
+            _query_internal_range(blockscout, 100, 200)
+
+        assert request_mock.call_count == 2
 
 
 def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:

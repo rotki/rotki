@@ -71,6 +71,13 @@ KEY_REJECTED_STATUS_CODES: Final = (401, 402)
 # on it would only spend a request before falling back to the next indexer. Not skipped for
 # good, since a key that ran out of quota or had its plan upgraded recovers on its own.
 KEY_REJECTED_SKIP_SECONDS: Final = 600
+# Blockscout answers a txlistinternal query with status 2 when some internal transactions in
+# the requested blocks are not processed yet. The hole is per block, not per address, and it
+# takes hours to be backfilled. So for this long any range containing a range that failed is
+# skipped for every address on the chain, instead of spending a request bound to fail again.
+BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN: Final = 6 * 3600
+# Backstop on how many failed ranges are remembered per chain. The oldest are dropped first.
+BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN: Final = 50
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -121,6 +128,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         # Makes checking a rejection against the configured key and recording it atomic with
         # respect to a key change, so a stale rejection cannot be recorded after the reset.
         self._key_change_lock = threading.Lock()
+        # Internal tx block ranges (from, to) blockscout reported as incomplete, per chain,
+        # with when that happened. Not cleared on a key change, the hole is in its data.
+        self.incomplete_internal_ranges: dict[ChainID, list[tuple[int, int, Timestamp]]] = {}
+        self._incomplete_ranges_lock = threading.Lock()
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
             if chain_id in AUTOSCOUT_INSTANCES:
                 self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
@@ -135,6 +146,90 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self.key_rejected_chains.clear()
 
         super().on_api_key_changed()
+
+    @staticmethod
+    def _internal_txs_block_range(
+            module: str,
+            action: str,
+            options: dict[str, Any],
+    ) -> tuple[int, int] | None:
+        """Return the block range of an internal transactions range query, if it is one."""
+        if (
+            module != 'account' or
+            action != 'txlistinternal' or
+            'txhash' in options or
+            (start_block := options.get('startblock')) is None or
+            (end_block := options.get('endblock')) is None
+        ):
+            return None
+
+        try:
+            return int(start_block), int(end_block)
+        except (TypeError, ValueError):
+            return None
+
+    def _prune_incomplete_ranges(
+            self,
+            chain_id: ChainID,
+            now: Timestamp,
+    ) -> list[tuple[int, int, Timestamp]]:
+        """Drop the expired incomplete ranges of the chain and return the rest.
+
+        Must be called with self._incomplete_ranges_lock held.
+        """
+        ranges = [
+            entry for entry in self.incomplete_internal_ranges.get(chain_id, [])
+            if now - entry[2] < BLOCKSCOUT_INCOMPLETE_RANGE_COOLDOWN
+        ]
+        if len(ranges) == 0:
+            self.incomplete_internal_ranges.pop(chain_id, None)
+        else:
+            self.incomplete_internal_ranges[chain_id] = ranges
+        return ranges
+
+    def _find_incomplete_range(
+            self,
+            chain_id: ChainID,
+            from_block: int,
+            to_block: int,
+    ) -> tuple[int, int] | None:
+        """Return a recently failed range that the given one contains, if any.
+
+        Containing it means containing its unprocessed block, so the query would fail too.
+        A range that only overlaps a failed one, or sits inside it, may exclude that block.
+        """
+        with self._incomplete_ranges_lock:
+            for failed_from, failed_to, _ in self._prune_incomplete_ranges(chain_id, ts_now()):
+                if from_block <= failed_from and failed_to <= to_block:
+                    return failed_from, failed_to
+
+        return None
+
+    def _record_incomplete_range(
+            self,
+            chain_id: ChainID,
+            from_block: int,
+            to_block: int,
+    ) -> None:
+        """Remember a range blockscout reported as incomplete, replacing wider ones.
+
+        Any range containing a wider failed range also contains this one, so the wider ones
+        no longer skip anything this one does not.
+        """
+        now = ts_now()
+        with self._incomplete_ranges_lock:
+            ranges = [
+                entry for entry in self._prune_incomplete_ranges(chain_id, now)
+                if not (entry[0] <= from_block and to_block <= entry[1])
+            ]
+            ranges.append((from_block, to_block, now))
+            del ranges[:-BLOCKSCOUT_INCOMPLETE_RANGES_PER_CHAIN]
+            self.incomplete_internal_ranges[chain_id] = ranges
+
+        log.debug(
+            'Recorded %s blocks %s - %s as having unprocessed internal transactions in blockscout',
+            chain_id.name, from_block, to_block,
+        )
 
     def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
         url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
@@ -373,14 +468,32 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         query_args = {} if options is None else options
         query_args |= {'module': module, 'action': action}
+        query_str = self._get_url(chain_id=chain_id, endpoint='api')
+        block_range = self._internal_txs_block_range(module, action, query_args)
+        if (
+            block_range is not None and
+            (failed_range := self._find_incomplete_range(chain_id, *block_range)) is not None
+        ):
+            log.debug(
+                'Skipping blockscout %s internal transactions query for blocks %s - %s, since it '
+                'contains blocks %s - %s that were recently reported as not yet processed',
+                chain_id.name, *block_range, *failed_range,
+            )
+            raise BlockscoutIncompleteResponse(
+                f'Skipped blockscout query for {query_args} from the cache. Blockscout recently '
+                f'reported blocks {failed_range[0]} - {failed_range[1]} as not yet processed',
+            )
+
         response = self._query_and_process(
             chain_id=chain_id,
             endpoint=f'{module}.{action}',
-            query_str=self._get_url(chain_id=chain_id, endpoint='api'),
+            query_str=query_str,
             params=query_args,
             timeout=timeout,
         )
         if str(response.get('status')) == '2':  # Missing data, fall back to other indexers
+            if block_range is not None:
+                self._record_incomplete_range(chain_id, *block_range)
             raise BlockscoutIncompleteResponse(f'Blockscout is missing data for {query_args}: {response}')  # noqa: E501
 
         if (
