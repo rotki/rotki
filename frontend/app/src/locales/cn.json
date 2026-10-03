@@ -316,7 +316,9 @@
     "button_checking": "正在检查待办事项",
     "button_clear": "一切正常",
     "checks_passed": "{count} 项检查通过 | {count} 项检查通过",
+    "cleared_since_last_visit": "自上次查看以来已处理",
     "dismiss": "关闭",
+    "down_from": "之前为 {count}",
     "locked": "高级版",
     "locked_hint": "此功能需要 {tier} 等级。",
     "locked_hint_generic": "此功能需要高级版订阅。",
@@ -344,6 +346,11 @@
         }
       },
       "chains": {
+        "blockscout_key_required": {
+          "action": "填写密钥",
+          "description": "没有可用于 {chain} 的索引器。填写免费的 Blockscout 密钥即可恢复其交易记录，付费的 Etherscan 密钥也可以。",
+          "title": "{chain} 需要 Blockscout 密钥"
+        },
         "do_not_show_again": "此链不再显示",
         "no_indexers": {
           "action": "配置索引器",
@@ -407,6 +414,7 @@
           "description": "某项查询需要 {service} 密钥但在没有密钥的情况下运行，因此可能较慢或不完整。",
           "description_beaconchain": "{service} 密钥可提供出块历史和质押分析。",
           "description_blockscout": "{service} 是你的交易索引器之一且需要密钥，因此其查询被跳过。请添加密钥，或将其他索引器排在前面。",
+          "description_blockscout_rejected": "已保存的 {service} 密钥在 {location} 被拒绝：可能无效、已过期、额度已用完，或所属套餐不支持。请更新密钥，或将其他索引器排在前面。",
           "description_etherscan": "{service} 未使用你自己的密钥运行，这可能会减慢查询。请添加密钥，或将其他索引器排在前面。",
           "description_helius": "没有 {service} 密钥时，Solana 交易查询会很慢。",
           "description_thegraph": "没有获得授权的 {service} 密钥，无法查询 {location} 数据。",
@@ -418,7 +426,8 @@
             "title": "停止提示此密钥？"
           },
           "title": "{service} API Key",
-          "title_location": "{location} 的 {service} API Key"
+          "title_location": "{location} 的 {service} API Key",
+          "title_rejected": "{location} 拒绝了 {service} 密钥"
         },
         "monerium_session": {
           "description": "请重新登录以继续导入 Monerium 活动。",
@@ -2639,6 +2648,11 @@
           },
           "flagged": "此条目可能需要关注",
           "hidden": "无隐藏行 | 已隐藏 {count} 行 | 已隐藏 {count} 行",
+          "hidden_reason": {
+            "ignored": "{count} 项已忽略",
+            "spam": "{count} 项垃圾代币",
+            "zero_value": "{count} 项零价值"
+          },
           "liability": "负债",
           "locked": "此快照的总额无法对账。请先使用上方的对账选项使其一致，再编辑余额。",
           "nft": "NFT",
@@ -2647,6 +2661,7 @@
           "show_ignored": "显示已忽略 | 显示已忽略 ({count}) | 显示已忽略 ({count})",
           "show_spam": "显示垃圾代币 | 显示垃圾代币 ({count}) | 显示垃圾代币 ({count})",
           "title": "余额",
+          "total_with_hidden": "合计 | 合计（含 {count} 项隐藏） | 合计（含 {count} 项隐藏）",
           "zero_value": {
             "label": "零价值 | 零价值 ({count}) | 零价值 ({count})",
             "only": "仅显示",
@@ -2692,6 +2707,7 @@
           "reconcile": {
             "description": "各位置合计与已存储的净资产相差 {amount}。请将差额分摊到各位置以重新对齐分配。",
             "distribute": "分摊到各位置",
+            "split_hint": "请填写每个位置应有的全部价值，而不是差额。所有位置合计必须等于净资产。",
             "title": "分配与净资产不一致"
           },
           "share": "净资产占比 %",
@@ -2699,11 +2715,18 @@
           "title": "位置"
         },
         "mismatch": {
+          "assets_more": "{assets} 等另外 {count} 项",
           "balances_sum": "余额合计",
           "description": "余额、位置与已存储的总额不一致。以余额为准——可将差额计入某个位置以对齐余额合计，或直接将总额设为余额合计。",
+          "excluded_gap": "差额是 {assets} 中的 {amount}，该资产已标记为垃圾代币或已忽略。各位置本就不计入它，因此移除这项余额即可使总额一致。 | 差额是 {assets} 中的 {amount}，这些资产已标记为垃圾代币或已忽略。各位置本就不计入它们，因此移除这些余额即可使总额一致。",
+          "excluded_gap_partial": "大部分差额是 {assets} 中的 {amount}，该资产已标记为垃圾代币或已忽略。各位置不计入它，移除这项余额后还剩 {rest} 需要对账。 | 大部分差额是 {assets} 中的 {amount}，这些资产已标记为垃圾代币或已忽略。各位置不计入它们，移除这些余额后还剩 {rest} 需要对账。",
+          "gap_alternative": "如需保留，可改为将差额计入某个位置。",
           "locations_sum": "位置合计",
+          "no_reconcile_target": "没有单个位置的余额足以吸收这笔差额。请改为编辑各位置以调低数值。",
           "reconcile_apply": "对账位置",
           "reconcile_into": "将差额计入",
+          "remove_rows": "移除 {assets}",
+          "row_gap": "差额是 {assets} 中的 {amount}。如果各位置是有意不计入它，移除这项余额即可使总额一致。",
           "title": "总额不一致"
         },
         "navigation": {
@@ -2719,6 +2742,7 @@
           "add_row": "添加位置",
           "available": "可用：",
           "distribute": "平均分配",
+          "fill_available": "填满",
           "hint": "将该余额的价值分摊到各位置。分摊合计必须等于全部价值。",
           "location_after": "之后：",
           "remaining": "剩余",
@@ -2731,7 +2755,10 @@
           "delta_percent": "({percent}%)",
           "edit_locations": "编辑位置",
           "exclude_nfts": "净资产不计入 NFT",
+          "excludes_ignored": "不含已忽略资产中的 {amount}",
+          "excludes_nfts": "按你的 NFT 设置，不含 NFT 中的 {amount}",
           "net_worth": "净资产",
+          "show_excluded": "显示它们",
           "since": "自"
         },
         "unsaved_changes": "{count} 项未保存的更改 | {count} 项未保存的更改",
@@ -3299,8 +3326,7 @@
       "chain_order": "{chain} 索引器顺序",
       "chain_updated": "{chain} 索引器顺序已更新",
       "chain_warnings": {
-        "base_limited_indexers": "Blockscout 是 Base 上唯一免费可用的索引器，建议将其设为首选。Blockscout 目前正在重新索引 Base，数据可能暂时不完整。",
-        "gnosis_key_required": "Gnosis 需要以下两个索引器之一的 API Key：Blockscout 密钥，或 Etherscan 付费套餐（Etherscan 免费版已不再支持 Gnosis）。任意一个即可，没有可用密钥的索引器会被跳过并改用另一个。",
+        "key_required": "该链需要以下两个索引器之一的 API Key：Blockscout 密钥（免费版即可），或 Etherscan 付费套餐（Etherscan 免费版不支持该链）。任意一个即可，没有可用密钥的索引器会被跳过并改用另一个。",
         "optimism_blockscout": "Blockscout 未正确索引 Optimism 在 Bedrock 升级之前的交易。使用 Blockscout 时，Bedrock 之前的交易历史可能不完整。"
       },
       "data_name": "索引器",
@@ -3393,12 +3419,10 @@
       "experimental": "该交易所的集成处于实验阶段，可能存在一些不完善之处。如遇到问题请告知我们。",
       "futures_api_key": "合约 API Key",
       "futures_api_secret": "合约 API Secret",
-      "id": "ID",
       "kraken_account": "选择你的 Kraken 账户类型",
       "kraken_futures_keys": "合约密钥",
       "passphrase": "口令（Passphrase）",
       "private_key": "私钥",
-      "secret": "Secret",
       "signing_key": "签名密钥"
     },
     "keys": "密钥",
