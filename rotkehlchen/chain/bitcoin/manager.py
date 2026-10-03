@@ -142,7 +142,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             action: Literal[BtcQueryAction.TRANSACTIONS],
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         ...
 
     def _query(
@@ -150,7 +150,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             action: BtcQueryAction,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any] | None = None,
-    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | tuple[int, list[BitcoinTx]]:  # noqa: E501
+    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | tuple[dict[BTCAddress, int], list[BitcoinTx]]:  # noqa: E501
         """Queries explorer APIs for the specified action as defined in `self.api_callbacks`.
         If one query fails the next API for that action is tried, and the errors from all the
         queries are included in the resulting remote error if all fail.
@@ -254,8 +254,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         decode them into BitcoinEvents, and save the results to the db.
 
         Queries for addresses that have the same latest queried block height are batched.
-        The maximum block height from any address is then saved in the cache for all addresses
-        since they are all queried up to the same to_timestamp.
+        Each address's checkpoint is then advanced only through the blocks its own query
+        reached, so a block arriving while other addresses are still being queried can't
+        advance it past transactions that were never fetched for it.
         """
         self._send_tx_ws_status(
             addresses=addresses,
@@ -285,9 +286,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 self.mark_addresses_transactions_for_redecode(new_addresses)
 
             tx_list: list[BitcoinTx] = []
-            new_block_height = 0
+            new_block_heights: dict[BTCAddress, int] = {}
             for last_queried_block, accounts in accounts_by_latest_query.items():
-                block_height, accounts_txs = self._query(
+                block_heights, accounts_txs = self._query(
                     action=BtcQueryAction.TRANSACTIONS,
                     accounts=accounts,
                     options={
@@ -301,12 +302,15 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                         ),
                     },
                 )
-                if len(accounts_txs) == 0:
-                    new_block_height = max(new_block_height, last_queried_block)
-                    continue
-
-                new_block_height = max(new_block_height, block_height)
                 tx_list.extend(accounts_txs)
+                for address in accounts:
+                    # An address the query returned no height for keeps its checkpoint.
+                    # Never lower one either: the height an address reports is only ever
+                    # at or past the block its query started from.
+                    new_block_heights[address] = max(
+                        block_heights.get(address, last_queried_block),
+                        last_queried_block,
+                    )
         finally:
             self._send_tx_ws_status(
                 addresses=addresses,
@@ -328,7 +332,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=self.cache_key,
-                    value=new_block_height,
+                    value=new_block_heights[address],
                     address=address,
                 )
 
@@ -549,7 +553,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             raw_tx_lists: list[list[dict[str, Any]]],
             options: dict[str, Any],
             processing_fn: Callable[[dict[str, Any]], BitcoinTx | None],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[list[int], list[BitcoinTx]]:
         """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
         The tx lists must be ordered newest to oldest (the order used by the current APIs).
 
@@ -561,13 +565,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         If we were to quit before querying to the oldest tx, the next query would stop at the
         cached queried_block_height and the skipped older txs would never be queried.
 
-        Returns the latest queried block height (cached and referenced in subsequent queries)
-        and the list of deserialized BitcoinTxs in a tuple.
+        Returns the queried block height of each raw tx list, in the same order (cached and
+        referenced in subsequent queries), and the list of deserialized BitcoinTxs in a tuple.
         """
         tx_list: list[BitcoinTx] = []
         last_queried_block = options.get('last_queried_block', 0)
         to_timestamp = options.get('to_timestamp', ts_now())
-        new_block_height = 0
+        new_block_heights: list[int] = []
         for raw_tx_list in raw_tx_lists:
             list_start = len(tx_list)  # where the txs of this list begin
             for entry in raw_tx_list:
@@ -605,13 +609,12 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             # Each list is ordered newest to oldest, so the first tx kept from it is the
             # newest block this list reached. Taken per list since a later list may reach
             # further than the first one did.
-            block_height = (
+            new_block_heights.append(
                 tx_list[list_start].block_height
-                if len(tx_list) > list_start else last_queried_block
+                if len(tx_list) > list_start else last_queried_block,
             )
-            new_block_height = max(new_block_height, block_height)
 
-        return new_block_height, tx_list
+        return new_block_heights, tx_list
 
     def create_event(
             self,
