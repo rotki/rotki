@@ -978,7 +978,7 @@ def test_blockcypher_sends_query_progress_per_page(bitcoin_manager: BitcoinManag
         patch.object(
             bitcoin_manager,
             '_process_raw_tx_lists',
-            return_value=(900_000, []),
+            return_value=([900_000], []),
         ) as process_mock,
     ):
         bitcoin_manager._query_blockcypher_transactions(
@@ -1054,8 +1054,8 @@ def test_partial_views_from_a_single_query_are_all_saved(
     batches comes back once per batch, each time missing the other's TxIOs. Deduplicating them
     by transaction id would keep whichever came last and persist an incomplete transaction.
     """
-    def query_two_partial_views(**_kwargs: Any) -> tuple[int, list[BitcoinTx]]:
-        return 1, [
+    def query_two_partial_views(**_kwargs: Any) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
+        return dict.fromkeys(btc_accounts, 1), [
             _partial_change_tx(outputs=[CHANGE_TX_EXTERNAL_IO]),
             _partial_change_tx(outputs=[CHANGE_TX_CHANGE_IO]),
         ]
@@ -1314,7 +1314,7 @@ def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManage
             outputs=[],
         )
 
-    new_block_height, txs = bitcoin_manager._process_raw_tx_lists(
+    new_block_heights, txs = bitcoin_manager._process_raw_tx_lists(
         raw_tx_lists=[
             [{'height': 600}, {'height': 400}],  # the last one predates the requested range
             [{'height': 900}, {'height': 550}],  # this list reaches a newer block than the first
@@ -1323,7 +1323,7 @@ def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManage
         processing_fn=process,
     )
     assert [x.block_height for x in txs] == [600, 900, 550]
-    assert new_block_height == 900  # the newest block any of the lists reached
+    assert new_block_heights == [600, 900]  # the newest block each list reached, in order
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
@@ -1654,7 +1654,7 @@ def test_mempool_pagination_stops_at_last_queried_block(
         f'/address/{address_a}/txs?after_txid={page_1[-1]["txid"]}': page_2,
         f'/address/{address_b}/txs': [],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address_a, address_b],
             options={
@@ -1665,7 +1665,7 @@ def test_mempool_pagination_stops_at_last_queried_block(
         )
 
     assert requests_mock.call_count == 3  # no request for the page after 850_000
-    assert block_height == 900_010
+    assert block_heights == {address_a: 900_010, address_b: 880_000}  # the address with no new txs keeps its last queried block  # noqa: E501
     assert [tx.block_height for tx in txs] == [900_010, 900_005, 900_001, 899_990]
     assert progress_callback.call_args_list == [
         call(Timestamp(1700000100)),
@@ -1687,14 +1687,14 @@ def test_mempool_pagination_with_only_unconfirmed_first_page(
         f'/address/{address}/txs?after_txid={unconfirmed_txs[-1]["txid"]}': [confirmed_tx],
         f'/address/{address}/txs?after_txid={confirmed_tx["txid"]}': [],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 0, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 3
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [tx.tx_id for tx in txs] == [confirmed_tx['txid']]
 
 
@@ -1709,14 +1709,14 @@ def test_mempool_pagination_stops_on_a_repeated_page(bitcoin_manager: BitcoinMan
         f'/address/{address}/txs': [tx],
         f'/address/{address}/txs?after_txid={tx["txid"]}': [tx],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 0, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 2
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [x.tx_id for x in txs] == [tx['txid']]
 
 
@@ -1751,14 +1751,14 @@ def test_mempool_pagination_falls_back_to_chain_pages(
         chain_page_1_path: confirmed_txs[2:3] if first_page_confirmed else confirmed_txs[:3],
         f'/address/{address}/txs/chain/{confirmed_txs[2]["txid"]}': confirmed_txs[3:],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 880_000, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 4  # no request for the page after 850_000
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [tx.block_height for tx in txs] == [900_010, 900_005, 899_990]
 
 
@@ -1837,6 +1837,69 @@ def test_custom_mempool_api_queries_transactions(
         (HistoryEventType.SPEND, HistoryEventSubType.FEE, FVal('0.00001')),
         (HistoryEventType.SPEND, HistoryEventSubType.NONE, FVal('0.00099')),
     ]
+
+
+@pytest.mark.parametrize(
+    'btc_accounts',
+    [[P2WPKH_ADDRESS, string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')]],
+)
+def test_checkpoint_does_not_advance_past_unfetched_blocks(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A block arriving between the sequential per-address queries of a mempool api must
+    not advance the checkpoint of an address past transactions it never fetched.
+
+    Regression test for https://github.com/rotki/rotki/issues/13182: address A is queried
+    first while the chain is at block 900_000, then block 900_001 arrives with a
+    transaction for B before B is queried. Only B's checkpoint may advance to 900_001;
+    A's transaction in that block is still unfetched and a later refresh must find it.
+    """
+    address_a, address_b = btc_accounts
+    tx_a = _esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address_a)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=address_a)],
+        fee=1_000,
+    )
+    tx_b = _esplora_tx(
+        block_height=900_001,
+        block_time=1700000001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=200_000, address=address_b)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=199_000, address=address_b)],
+        fee=1_000,
+    )
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{address_a}/txs': [tx_a],
+            f'/address/{address_a}/txs?after_txid={tx_a["txid"]}': [],
+            f'/address/{address_b}/txs': [tx_b],
+            f'/address/{address_b}/txs?after_txid={tx_b["txid"]}': [],
+        }),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_a,
+        ) == 900_000
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_b,
+        ) == 900_001
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
