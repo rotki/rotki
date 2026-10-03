@@ -616,14 +616,22 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def trigger_historical_balance_processing(self) -> list[Task] | None:
+    def trigger_historical_balance_processing(self) -> bool:
+        """Start historical balance processing unless it cannot run now.
+
+        Returns True when a run was started or one is already running, so a
+        HISTORICAL_BALANCE_PROCESSING_COMPLETED message will follow. Returns False
+        when nothing started, because the feature is disabled or a PnL report is gathering history.
+        """
+        if self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME):
+            return True
         if (
             is_accounting_update_enabled() is False or
-            self.history_processing_coordinator.is_history_fetching() or
-            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+            self.history_processing_coordinator.is_history_fetching()
         ):
-            return None
-        return self._spawn_historical_balance_processing(from_ts=None)
+            return False
+        self._spawn_historical_balance_processing(from_ts=None)
+        return True
 
     def retry_data_issue_auto_remediation(
             self,

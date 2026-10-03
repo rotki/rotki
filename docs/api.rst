@@ -1756,7 +1756,7 @@ Trigger an async task
             "status_code": 200
           }
 
-        :resjson bool result: True on success
+        :resjson bool result: True on success. For ``historical_balance_processing`` it is true when a run started or one is already running, so a ``historical_balance_processing_completed`` websocket message will follow, and false when nothing started because a profit and loss report is gathering history events.
         :statuscode 200: Task started successfully
         :statuscode 401: User is not logged in
         :statuscode 403: Task is not available for the current premium tier

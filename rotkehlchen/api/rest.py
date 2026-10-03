@@ -3968,9 +3968,11 @@ class RestAPI:
 
     @accounting_update_required('Historical balance processing is disabled')
     def _trigger_historical_balance_processing(self) -> dict[str, Any]:
-        if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
+        return _wrap_in_ok_result(result=(
+            # task_manager is None if logout races us
+            (task_manager := self.rotkehlchen.task_manager) is not None and
             task_manager.trigger_historical_balance_processing()
-        return OK_RESULT
+        ))
 
     @async_api_call()
     def trigger_task(self, task: TaskName) -> dict[str, Any]:

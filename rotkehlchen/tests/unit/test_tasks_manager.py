@@ -145,6 +145,29 @@ def test_periodic_historical_balances_skip_active_remediation(task_manager: Task
     ]
 
 
+def test_trigger_historical_balance_processing_reports_whether_it_runs(
+        task_manager: TaskManager,
+) -> None:
+    """The trigger is true only when a completion message will follow."""
+    with (
+        patch('rotkehlchen.tasks.manager.is_accounting_update_enabled', return_value=True),
+        patch.object(task_manager, '_spawn_historical_balance_processing') as spawn,
+        patch.object(
+            task_manager.history_processing_coordinator,
+            'is_history_fetching',
+            return_value=True,
+        ) as is_history_fetching,
+    ):
+        assert task_manager.trigger_historical_balance_processing() is False
+        with patch.object(task_manager.task_supervisor, 'has_task', return_value=True):
+            assert task_manager.trigger_historical_balance_processing() is True
+        spawn.assert_not_called()
+
+        is_history_fetching.return_value = False
+        assert task_manager.trigger_historical_balance_processing() is True
+        spawn.assert_called_once_with(from_ts=None)
+
+
 def test_data_issue_remediation_runs_daily_after_initial_processing(
         task_manager: TaskManager,
 ) -> None:

@@ -478,6 +478,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/statistics/historical-balances/': RouteRecordInfo<
+      '/statistics/historical-balances/',
+      '/statistics/historical-balances',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/statistics/history-events/': RouteRecordInfo<
       '/statistics/history-events/',
       '/statistics/history-events',
@@ -1053,6 +1060,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/statistics/graphs/index.vue': {
       routes:
         | '/statistics/graphs/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/statistics/historical-balances/index.vue': {
+      routes:
+        | '/statistics/historical-balances/'
       views:
         | never
       pathParamNames:

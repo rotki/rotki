@@ -42,16 +42,22 @@ describe('useHistoricalBalances', () => {
   it('should process historical balances through the orchestrator', async () => {
     runTaskMock.mockResolvedValue(ok(true));
 
-    await trigger();
+    await expect(trigger()).resolves.toBe(true);
 
     expect(processHistoricalBalancesMock).toHaveBeenCalledOnce();
+  });
+
+  it('should report when the backend could not start processing', async () => {
+    runTaskMock.mockResolvedValue(ok(false));
+
+    await expect(trigger()).resolves.toBe(false);
   });
 
   it('should do nothing when the accounting update flag is off', async () => {
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
     runTaskMock.mockResolvedValue(ok(true));
 
-    await trigger();
+    await expect(trigger()).resolves.toBe(false);
 
     expect(processHistoricalBalancesMock).not.toHaveBeenCalled();
   });
@@ -65,6 +71,6 @@ describe('useHistoricalBalances', () => {
   it('should stay quiet when the task is cancelled', async () => {
     runTaskMock.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
-    await expect(trigger()).resolves.toBeUndefined();
+    await expect(trigger()).resolves.toBe(false);
   });
 });
