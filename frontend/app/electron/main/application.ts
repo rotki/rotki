@@ -181,12 +181,13 @@ export class Application {
       setDataDirectory: dataDirectory => this.menu.setDataDirectory(dataDirectory),
       restartSubprocesses: async (options) => {
         this.logger.setLogLevel(resolveLogLevel(options.loglevel, this.appConfig.isDev));
+        this.window.clearStartupError();
         await this.processHandler.restartBackend({
           ...options,
           mcpAutoStart: this.settings.appSettings.mcpAutoStart,
         }, {
           onMcpState: state => this.window.sendIpcMessage(IpcCommands.MCP_STATE, state),
-          onProcessError: (message, code) => this.window.setStartupError(message, code),
+          onProcessError: (message, code, unusableBinary) => this.window.setStartupError(message, code, unusableBinary),
         });
       },
       terminateSubprocesses: async (update = false) => {

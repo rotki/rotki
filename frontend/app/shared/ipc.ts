@@ -1,4 +1,5 @@
 import type { DebugSettings } from '@rotki/common';
+import type { UnusableBinary } from '@shared/starling/binary-types';
 import { LogLevel } from '@shared/log-level';
 import * as z from 'zod/mini';
 
@@ -6,6 +7,7 @@ export const BackendCode = {
   TERMINATED: 0,
   MACOS_VERSION: 1,
   WIN_VERSION: 2,
+  MISSING_BINARY: 3,
 };
 
 export type BackendCode = typeof BackendCode[keyof typeof BackendCode];
@@ -13,6 +15,7 @@ export type BackendCode = typeof BackendCode[keyof typeof BackendCode];
 export interface StartupError {
   message: string;
   code: BackendCode;
+  unusableBinary?: UnusableBinary;
 }
 
 export const StarlingServiceStatus = {
@@ -130,7 +133,7 @@ export interface WalletBridgeResponse {
 }
 
 export interface Listeners {
-  onError: (backendOutput: string, code: BackendCode) => void;
+  onError: (backendOutput: string, code: BackendCode, unusableBinary?: UnusableBinary) => void;
   onAbout: () => void;
   onRestart: () => void;
   onMcpState?: (state: StarlingServiceStatus) => void;
