@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13278` Choosing Email in the Report an Issue dialog now opens your mail client in the desktop app. Before, the dialog closed without opening anything and the title and description you typed were lost. If an option cannot be opened, the dialog now stays open with your report and says so.
 * :release:`1.44.1 <2026-10-02>`
 * :bug:`-` Asset icons that were downloaded after an earlier failed lookup are shown again. Before, the empty file left by the failed lookup could hide the downloaded icon, and a lookup that failed only due to rate limiting marked the icon as missing for 12 hours.
 * :bug:`-` Logging out while balances are still loading after login, then logging back in, no longer leaves "All balances" running with no end. Before, the new session never queried all balances, so that day's balance snapshot was not saved.

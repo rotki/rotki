@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks, SUPPORT_EMAIL } from '@shared/external-links';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
@@ -26,6 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const issueTitle = ref<string>('');
 const issueDescription = ref<string>('');
+const openError = ref<string>('');
 
 const { showPrivacyModeMenu } = storeToRefs(useAreaVisibilityStore());
 
@@ -65,23 +67,42 @@ function closeDialog(): void {
   close();
   set(issueTitle, '');
   set(issueDescription, '');
+  set(openError, '');
 }
 
-function openUrlAndClose(url: string): void {
-  openUrl(url);
+/** The draft is cleared only once the target app or form accepted it. */
+async function openUrlAndClose(url: string, failureMessage: string): Promise<void> {
+  set(openError, '');
+  try {
+    await openUrl(url);
+  }
+  catch (error: unknown) {
+    logger.error(error);
+    set(openError, failureMessage);
+    return;
+  }
   closeDialog();
 }
 
-function submitViaGithub(): void {
-  openUrlAndClose(`${externalLinks.githubNewBugReport}&title=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+async function submitViaGithub(): Promise<void> {
+  await openUrlAndClose(
+    `${externalLinks.githubNewBugReport}&title=${get(encodedTitle)}&body=${get(encodedDescription)}`,
+    t('help_sidebar.report_issue.dialog.open_failed.generic'),
+  );
 }
 
-function submitViaGoogleForm(): void {
-  openUrlAndClose(`${GOOGLE_FORM_URL}?${GOOGLE_FORM_TITLE_ENTRY}=${get(encodedTitle)}&${GOOGLE_FORM_DESCRIPTION_ENTRY}=${get(encodedDescription)}`);
+async function submitViaGoogleForm(): Promise<void> {
+  await openUrlAndClose(
+    `${GOOGLE_FORM_URL}?${GOOGLE_FORM_TITLE_ENTRY}=${get(encodedTitle)}&${GOOGLE_FORM_DESCRIPTION_ENTRY}=${get(encodedDescription)}`,
+    t('help_sidebar.report_issue.dialog.open_failed.generic'),
+  );
 }
 
-function submitViaEmail(): void {
-  openUrlAndClose(`mailto:${SUPPORT_EMAIL}?subject=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+async function submitViaEmail(): Promise<void> {
+  await openUrlAndClose(
+    `mailto:${SUPPORT_EMAIL}?subject=${get(encodedTitle)}&body=${get(encodedDescription)}`,
+    t('help_sidebar.report_issue.dialog.open_failed.email'),
+  );
 }
 
 function openDiscord(): void {
@@ -97,8 +118,11 @@ function copyEmail(): void {
   copy(SUPPORT_EMAIL);
 }
 
-function openGmail(): void {
-  openUrlAndClose(`${externalLinks.gmailCompose}&to=${encodeURIComponent(SUPPORT_EMAIL)}&su=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+async function openGmail(): Promise<void> {
+  await openUrlAndClose(
+    `${externalLinks.gmailCompose}&to=${encodeURIComponent(SUPPORT_EMAIL)}&su=${get(encodedTitle)}&body=${get(encodedDescription)}`,
+    t('help_sidebar.report_issue.dialog.open_failed.generic'),
+  );
 }
 
 onMounted(() => {
@@ -183,6 +207,14 @@ onMounted(() => {
               @open-gmail="openGmail()"
             />
           </div>
+          <RuiAlert
+            v-if="openError"
+            type="error"
+            variant="outlined"
+            data-testid="report-issue-open-error"
+          >
+            {{ openError }}
+          </RuiAlert>
           <span class="text-xs text-rui-text-secondary flex items-center gap-1">
             <RuiIcon
               name="lu-info"

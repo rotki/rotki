@@ -14,6 +14,11 @@ interface SystemHandlersCallbacks {
   openOAuthInWindow: (url: string) => Promise<void>;
 }
 
+/** `mailto:` is the report issue dialog's Email option. */
+function isTrustedExternalUrl(url: string): boolean {
+  return url.startsWith('https://') || url.startsWith('mailto:');
+}
+
 export class SystemHandlers {
   private callbacks: SystemHandlersCallbacks | null = null;
 
@@ -88,12 +93,13 @@ export class SystemHandlers {
     shell.openPath(path).catch(error => this.logger.error(error));
   };
 
-  // URL handling
+  /**
+   * Rejects instead of returning quietly, so a caller holding unsent input (the report
+   * issue dialog) can tell the hand-off failed and keep it.
+   */
   openUrl = async (url: string): Promise<void> => {
-    if (!url || typeof url !== 'string' || (!this.config.isDev && !url.startsWith('https://'))) {
-      console.error(`Error: Requested to open untrusted URL: ${url} `);
-      return;
-    }
+    if (!url || typeof url !== 'string' || (!this.config.isDev && !isTrustedExternalUrl(url)))
+      throw new Error(`Requested to open untrusted URL: ${url}`);
 
     // Check if this is a rotki OAuth URL and protocol registration failed
     const isRotkiOAuthUrl = /\/oauth\/(google|monerium)/.test(url);
