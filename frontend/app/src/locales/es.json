@@ -374,7 +374,7 @@
     },
     "premium": {
       "button_premium_approve": "Sí, habilitar premium",
-      "premium_question": "¿Ya eres un usuario premium de rotki y quieres habilitar funciones premium?\nEsto es necesario si deseas sincronizar tu base de datos de rotki desde otro dispositivo al crear la cuenta. Puedes comprar premium {premiumLink}"
+      "premium_question": "¿Ya eres un usuario premium de rotki y quieres habilitar funciones premium?\nPuedes comprar premium {premiumLink}"
     },
     "steps": {
       "step_1": {

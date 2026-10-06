@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
 import { type AccountManageState, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { hasAccountChanged, isAddingValidator } from '@/modules/accounts/management/account-dialog-state';
 import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
+import { usePlanUpgradeLink } from '@/modules/premium/use-plan-upgrade-link';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -38,20 +39,11 @@ const subtitle = computed<string>(() =>
 const { modelErrorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
 const { loading } = useAccountLoading();
 const { validatorsLimitInfo } = useEthStaking();
-const { currentTier, ethStakedLimit, premium } = usePremiumHelper();
+const { currentTier, ethStakedLimit } = usePremiumHelper();
+const { upgradeText, upgradeUrl } = usePlanUpgradeLink();
 
 const isValidatorLimitReached = computed<boolean>(() =>
   isAddingValidator(get(model)) && get(validatorsLimitInfo).showWarning,
-);
-
-const upgradeLinkText = computed<string>(() =>
-  get(premium)
-    ? t('upgrade_row.upgrade_your_plan')
-    : t('upgrade_row.rotki_premium'),
-);
-
-const upgradeLinkUrl = computed<string | undefined>(() =>
-  get(premium) ? externalLinks.manageSubscriptions : undefined,
 );
 
 function dismiss(): void {
@@ -129,8 +121,8 @@ watch(model, (model, oldModel) => {
           </template>
           <template #link>
             <ExternalLink
-              :text="upgradeLinkText"
-              :url="upgradeLinkUrl"
+              :text="upgradeText"
+              :url="upgradeUrl"
               premium
               color="primary"
             />
@@ -147,8 +139,8 @@ watch(model, (model, oldModel) => {
           </template>
           <template #link>
             <ExternalLink
-              :text="upgradeLinkText"
-              :url="upgradeLinkUrl"
+              :text="upgradeText"
+              :url="upgradeUrl"
               premium
               color="primary"
             />
@@ -165,26 +157,12 @@ watch(model, (model, oldModel) => {
       type="error"
       class="mt-4"
     >
-      <i18n-t
-        scope="global"
-        keypath="blockchain_balances.validator_limit_reached"
-        tag="span"
-      >
-        <template #limit>
-          {{ validatorsLimitInfo.limit }}
-        </template>
-        <template #total>
-          {{ validatorsLimitInfo.total }}
-        </template>
-        <template #link>
-          <ExternalLink
-            :text="upgradeLinkText"
-            :url="upgradeLinkUrl"
-            premium
-            color="primary"
-          />
-        </template>
-      </i18n-t>
+      <PlanLimitMessage
+        adding
+        :label="t('plan_limit.labels.validators')"
+        :limit="validatorsLimitInfo.limit"
+        :total="validatorsLimitInfo.total"
+      />
     </RuiAlert>
   </BigDialog>
 </template>

@@ -30,6 +30,7 @@ const {
   nftLimited,
   nfts,
   perAccount,
+  total,
 } = useNftGalleryData();
 
 const {
@@ -127,7 +128,7 @@ onMounted(() => {
       <NftGalleryPremiumAlert
         :limit="limit"
         :premium="premium"
-        :visible-count="visibleNfts.length"
+        :total="total"
       />
 
       <NftGalleryGrid :items="visibleNfts" />

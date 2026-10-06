@@ -5,7 +5,8 @@ import { i18n } from '@/i18n';
  * An i18n message key, branded so it cannot be mistaken for an arbitrary string. Values are produced
  * only by {@link msg.$t}, which the i18n key-usage lint rules recognise as a real usage (a literal
  * argument to a `.$t` call). This keeps keys that are referenced only from static config - such as
- * route `nav` meta, resolved later via `t(key)` - from being reported as unused.
+ * route `nav` meta, resolved later via `t(key)` - or picked at runtime for an `i18n-t` `keypath`
+ * from being reported as unused.
  */
 export type MessageKey = Brand<string, 'MessageKey'>;
 

@@ -6,7 +6,6 @@ import UnmatchedBridgesCards from '@/modules/history/events/UnmatchedBridgesCard
 import UnmatchedBridgesTable from '@/modules/history/events/UnmatchedBridgesTable.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import { useUnmatchedBridgeRows } from '@/modules/history/events/use-unmatched-bridge-rows';
-import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
@@ -36,8 +35,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
 const { description, emptyDescription, rows, specFor } = useUnmatchedBridgeRows({
   matchDisabled: () => matchDisabled,
@@ -87,8 +84,7 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedBridgeRows(
       >
         <UnmatchedMatchDisabledAlert
           variant="bridge"
-          :premium="premium"
-          :current-tier="currentTier"
+          :count="showRestore ? 0 : transactions.length"
           :match-minimum-tier="matchMinimumTier"
         />
       </template>

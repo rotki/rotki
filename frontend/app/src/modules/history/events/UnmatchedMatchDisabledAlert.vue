@@ -1,19 +1,35 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
+import { useCountFormatter } from '@/modules/assets/amount-display/use-count-formatter';
+import { usePlanUpgradeLink } from '@/modules/premium/use-plan-upgrade-link';
+import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
-  variant,
-  premium = false,
-  currentTier = null,
+  count = 0,
   matchMinimumTier = null,
+  variant,
 } = defineProps<{
   variant: 'bridge' | 'asset-movement';
-  premium?: boolean;
-  currentTier?: string | null;
+  /** How many entries are waiting to be matched; 0 (the ignored list) leaves the count out. */
+  count?: number;
   matchMinimumTier?: string | null;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { currentTier } = usePremiumHelper();
+const { upgradeText, upgradeUrl } = usePlanUpgradeLink();
+const { formatCount } = useCountFormatter();
+
+/** The plan that unlocks matching, or the product name when the server did not say which plan. */
+const tier = computed<string>(() => matchMinimumTier ?? t('premium_settings.title'));
+
+const messageKey = computed<string>(() => {
+  if (variant === 'bridge')
+    return count > 0 ? msg.$t('bridge_matching.premium.unmatched') : msg.$t('bridge_matching.premium.locked');
+  return count > 0 ? msg.$t('asset_movement_matching.premium.unmatched') : msg.$t('asset_movement_matching.premium.locked');
+});
 </script>
 
 <template>
@@ -23,77 +39,26 @@ const { t } = useI18n({ useScope: 'global' });
     class="whitespace-break-spaces !py-0.5 !rounded-none"
   >
     <i18n-t
-      v-if="variant === 'bridge' && premium"
       scope="global"
-      keypath="bridge_matching.premium.premium_tooltip"
+      :keypath="messageKey"
+      :plural="count"
     >
+      <template #count>
+        {{ formatCount(count) }}
+      </template>
       <template #tier>
-        <strong>{{ matchMinimumTier }}</strong>
+        <strong>{{ tier }}</strong>
       </template>
       <template #currentTier>
         <strong>{{ currentTier }}</strong>
       </template>
       <template #link>
         <ExternalLink
+          :text="upgradeText"
+          :url="upgradeUrl"
           premium
           color="primary"
-        >
-          {{ t('asset_movement_matching.premium.link') }}
-        </ExternalLink>
-      </template>
-    </i18n-t>
-    <i18n-t
-      v-else-if="variant === 'bridge'"
-      scope="global"
-      keypath="bridge_matching.premium.free_tooltip"
-    >
-      <template #tier>
-        <strong>{{ matchMinimumTier }}</strong>
-      </template>
-      <template #link>
-        <ExternalLink
-          premium
-          color="primary"
-        >
-          {{ t('asset_movement_matching.premium.link') }}
-        </ExternalLink>
-      </template>
-    </i18n-t>
-    <i18n-t
-      v-else-if="premium"
-      scope="global"
-      keypath="asset_movement_matching.premium.premium_tooltip"
-    >
-      <template #tier>
-        <strong>{{ matchMinimumTier }}</strong>
-      </template>
-      <template #currentTier>
-        <strong>{{ currentTier }}</strong>
-      </template>
-      <template #link>
-        <ExternalLink
-          premium
-          color="primary"
-        >
-          {{ t('asset_movement_matching.premium.link') }}
-        </ExternalLink>
-      </template>
-    </i18n-t>
-    <i18n-t
-      v-else
-      scope="global"
-      keypath="asset_movement_matching.premium.free_tooltip"
-    >
-      <template #tier>
-        <strong>{{ matchMinimumTier }}</strong>
-      </template>
-      <template #link>
-        <ExternalLink
-          premium
-          color="primary"
-        >
-          {{ t('asset_movement_matching.premium.link') }}
-        </ExternalLink>
+        />
       </template>
     </i18n-t>
   </RuiAlert>

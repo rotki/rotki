@@ -1,37 +1,26 @@
 <script setup lang="ts">
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
 
-interface Props {
+defineProps<{
+  /** How many NFTs the plan shows; 0 or less means there is no limit. */
   limit: number;
   premium: boolean;
-  visibleCount: number;
-}
-
-defineProps<Props>();
+  /** How many NFTs the user owns, including the ones past the limit. */
+  total: number;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <RuiAlert
-    v-if="!premium && visibleCount > 0"
+    v-if="!premium && limit > 0 && total > limit"
     type="info"
   >
-    <i18n-t
-      scope="global"
-      keypath="nft_gallery.upgrade"
-      tag="span"
-    >
-      <template #limit>
-        {{ limit }}
-      </template>
-      <template #link>
-        <ExternalLink
-          :text="t('upgrade_row.rotki_premium')"
-          color="primary"
-          premium
-        />
-      </template>
-    </i18n-t>
+    <PlanLimitMessage
+      :label="t('plan_limit.labels.nfts')"
+      :limit="limit"
+      :total="total"
+    />
   </RuiAlert>
 </template>

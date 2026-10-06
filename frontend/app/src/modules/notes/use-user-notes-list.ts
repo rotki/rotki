@@ -79,6 +79,8 @@ interface UseUserNotesListReturn {
   showDeleteConfirmation: Readonly<Ref<boolean>>;
   /** Pins or unpins a note. */
   togglePin: (note: UserNote) => Promise<void>;
+  /** How many notes the user has, including any past the free-tier cap. */
+  total: ComputedRef<number>;
 }
 
 /**
@@ -255,5 +257,6 @@ export function useUserNotesList(options: UseUserNotesListOptions): UseUserNotes
     showDeleteConfirmation: readonly(showDeleteConfirmation),
     showUpgradeRow,
     togglePin,
+    total,
   };
 }

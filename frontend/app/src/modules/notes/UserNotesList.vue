@@ -2,8 +2,8 @@
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useUserNotesList } from '@/modules/notes/use-user-notes-list';
 import UserNotesFormDialog from '@/modules/notes/UserNotesFormDialog.vue';
+import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -35,6 +35,7 @@ const {
   showDeleteConfirmation,
   showUpgradeRow,
   togglePin,
+  total,
 } = useUserNotesList({
   arrivedBottom: () => arrivedState.bottom,
   location: () => location,
@@ -120,22 +121,12 @@ onMounted(async () => {
       type="warning"
       class="mb-4"
     >
-      <i18n-t
-        scope="global"
-        keypath="notes_menu.limit_warning"
-        tag="span"
-      >
-        <template #limit>
-          {{ limit }}
-        </template>
-        <template #link>
-          <ExternalLink
-            :text="t('upgrade_row.rotki_premium')"
-            color="warning"
-            premium
-          />
-        </template>
-      </i18n-t>
+      <PlanLimitMessage
+        :label="t('plan_limit.labels.notes')"
+        :limit="limit"
+        :total="total"
+        link-color="warning"
+      />
     </RuiAlert>
 
     <div
