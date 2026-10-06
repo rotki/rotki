@@ -9,12 +9,13 @@ import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
 import { defaultPriorityFor } from '@/modules/core/api/request-queue/request-priority';
 import { transformRequestBody, transformRequestQuery } from '@/modules/core/api/request-transformers';
-import { createResponseParser, createStatusError, tryParseJson } from '@/modules/core/api/response-handlers';
+import { createResponseParser, createStatusError, tryParseJson, unwrapResult } from '@/modules/core/api/response-handlers';
+import { SESSION_BOUND_TAG, sessionSignalFor, withSessionSignal } from '@/modules/core/api/session-gate';
 import { queryTransformer } from '@/modules/core/api/transformers';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_STATUS_CODES, type ValidStatuses } from '@/modules/core/api/utils';
 import { withRetry } from '@/modules/core/api/with-retry';
+import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
 
 export class RotkiApi {
   private _serverUrl: string;
@@ -36,6 +37,7 @@ export class RotkiApi {
     this._colibriRequestQueue = new RequestQueue(
       async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options),
     );
+    onSessionEnd('rotki-api', () => this.cancelByTag(SESSION_BOUND_TAG));
   }
 
   get serverUrl(): string {
@@ -142,6 +144,14 @@ export class RotkiApi {
     window.location.href = '/#/';
   }
 
+  /**
+   * Sends a request, through the queue unless `skipQueue` is set.
+   *
+   * @remarks
+   * A session-bound request is checked against the live session when it is made, not when it is
+   * sent: one queued in a session that has since ended is cancelled with it, never sent on behalf
+   * of whoever is logged in by then.
+   */
   async fetch<T>(url: string, options: RotkiFetchOptions<'json', T> = {}): Promise<T> {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
@@ -153,18 +163,21 @@ export class RotkiApi {
       dedupe,
       maxQueueTime,
       queueRetries,
+      sessionless,
       ...restOptions
     } = options;
 
+    const sessionSignal = sessionSignalFor(url, sessionless);
+
     if (skipQueue)
-      return this.fetchDirect<T>(url, restOptions);
+      return this.fetchDirect<T>(url, { ...restOptions, signal: withSessionSignal(sessionSignal, restOptions.signal) });
 
     const queue = restOptions.target === RequestTarget.COLIBRI ? this._colibriRequestQueue : this._requestQueue;
 
     return queue.enqueue<T>(url, {
       ...restOptions,
       priority: priority ?? defaultPriorityFor(restOptions.method),
-      tags,
+      tags: sessionSignal ? [...(tags ?? []), SESSION_BOUND_TAG] : tags,
       dedupe,
       maxQueueTime,
       maxRetries: queueRetries,
@@ -194,29 +207,6 @@ export class RotkiApi {
   }
 
   /**
-   * Unwraps an ActionResult: returns its result, falls back to defaultValue, or
-   * throws (ApiValidationError on 400, plain Error otherwise) when it is an error.
-   */
-  private unwrapResult<T>(data: ActionResult<T> | undefined, status: number, defaultValue?: T): T {
-    if (!data)
-      throw createStatusError(status);
-
-    const { result, message } = data;
-    const isError = result === null || result === undefined || (!result && message);
-
-    if (!isError)
-      return result;
-
-    if (defaultValue !== undefined)
-      return defaultValue;
-
-    if (status === HTTPStatus.BAD_REQUEST)
-      throw new ApiValidationError(message);
-
-    throw new Error(message);
-  }
-
-  /**
    * The single sanctioned generic-boundary escape. Some options
    * (`skipResultUnwrap`, `treat409AsSuccess`) intentionally resolve to a value
    * the wrapper cannot type as `T` — the caller opted into that shape — so this
@@ -230,7 +220,7 @@ export class RotkiApi {
     return value as T;
   }
 
-  private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'> = {}): Promise<T> {
+  private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries' | 'sessionless'> = {}): Promise<T> {
     const {
       target,
       validStatuses,
@@ -275,7 +265,7 @@ export class RotkiApi {
       if (skipResultUnwrap)
         return this.asResult<T>(data);
 
-      return this.unwrapResult<T>(data, status, defaultValue);
+      return unwrapResult<T>(data, status, defaultValue);
     };
 
     if (retry) {
@@ -313,14 +303,15 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, query: rawQuery, target, timeout = DEFAULT_TIMEOUT } = options;
+    const { validStatuses, skipSnakeCase, query: rawQuery, sessionless, signal, target, timeout = DEFAULT_TIMEOUT } = options;
+    const sessionSignal = sessionSignalFor(url, sessionless);
     const query = transformRequestQuery(rawQuery, { skipSnakeCase });
 
     const response = await ofetch.raw(url, {
       method: 'HEAD',
       baseURL: this.baseUrlFor(target),
       timeout,
-      signal: combineAbortSignals(this.abortController.signal, undefined, timeout).signal,
+      signal: combineAbortSignals(this.abortController.signal, withSessionSignal(sessionSignal, signal), timeout).signal,
       ignoreResponseError: true,
       query,
     });
@@ -344,7 +335,8 @@ export class RotkiApi {
     if (this._stopped)
       throw new RequestCancelledError('Application is quitting');
 
-    const { validStatuses, skipSnakeCase, target, timeout = DOWNLOAD_TIMEOUT, ...fetchOptions } = options;
+    const { validStatuses, skipSnakeCase, sessionless, target, timeout = DOWNLOAD_TIMEOUT, ...fetchOptions } = options;
+    const sessionSignal = sessionSignalFor(url, sessionless);
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
     const query = transformRequestQuery(fetchOptions.query, { skipSnakeCase });
 
@@ -352,7 +344,7 @@ export class RotkiApi {
       method: fetchOptions.method,
       baseURL: this.baseUrlFor(target),
       timeout,
-      signal: combineAbortSignals(this.abortController.signal, fetchOptions.signal, timeout).signal,
+      signal: combineAbortSignals(this.abortController.signal, withSessionSignal(sessionSignal, fetchOptions.signal), timeout).signal,
       responseType: 'blob',
       ignoreResponseError: true,
       body,

@@ -3,6 +3,7 @@ import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution 
 import type { LoginCredentials } from '@/modules/auth/login';
 import { type OptionType as Option, pipe, type ResultAsyncType as ResultAsync } from 'plainfp';
 import { flatMap } from 'plainfp/result-async';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 
 /**
  * The single source of truth the login/unlock UI renders from. The whole
@@ -142,9 +143,11 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
    * @remarks
    * The pipeline opens the socket before it knows the session is valid, so every exit without a
    * live session has to disconnect: an invalid session makes that socket 403 and reconnect forever.
+   * The session {@link runPipeline} began ends here for the same reason.
    */
   const fail = (error: UnlockError): void => {
     steps.disconnect();
+    endSession();
     toPhase({ kind: UnlockPhase.error, error });
   };
 
@@ -181,10 +184,13 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   }
 
   /**
-   * Authenticates, opens the websocket, then probes whether the backend already holds a live
-   * session for these credentials.
+   * Begins a session, authenticates, opens the websocket, then probes whether the backend already
+   * holds a live session for these credentials.
    *
    * @remarks
+   * The session begins here rather than once the unlock succeeds, because the unlock's own
+   * requests and tasks belong to it; every failure ends it again.
+   *
    * The socket opens before the probe so backend migration progress can stream while it runs.
    * A live session resumes straight away and never reaches the asset-update prompt: applying an
    * update restarts the backend, which would kill the session just re-attached to.
@@ -194,6 +200,7 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     if (!creds)
       return fail({ kind: UnlockErrorKind.unknown, message: 'unlock without an active flow' });
 
+    beginSession();
     toPhase({ kind: UnlockPhase.authenticating });
     const connected = await pipe(
       steps.authenticate(creds),
@@ -311,6 +318,7 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
 
   function reset(): void {
     steps.disconnect();
+    endSession();
     credentials = undefined;
     startedInTheBackground = false;
     pendingVersion = 0;

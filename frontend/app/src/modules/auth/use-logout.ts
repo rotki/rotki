@@ -5,6 +5,7 @@ import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
@@ -34,11 +35,11 @@ interface UseLogoutReturn {
 const DOM_TEARDOWN_MS = 1500;
 
 /**
- * Drops every request still queued or in flight.
+ * Drops every request still queued or in flight, sessionless ones included.
  *
  * @remarks
- * The first thing a logout does. A response that lands after the session is torn down writes into
- * stores the next user is about to inherit.
+ * The first thing a remote-session logout does. This tab holds no session then, so ending one
+ * would cancel nothing.
  */
 function cancelInFlightRequests(): void {
   api.cancelAllQueued();
@@ -65,8 +66,15 @@ export function useLogout(): UseLogoutReturn {
     await disconnectWalletIfActive();
   };
 
+  /**
+   * Ends the session, then tears the logged-in state down and logs the user out of the backend.
+   *
+   * @remarks
+   * The session ends before anything awaits. The backend keeps serving this user until the logout
+   * call lands, so anything still running for the session must already be refused by then.
+   */
   const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
-    cancelInFlightRequests();
+    endSession();
     resetSchedulerState();
     await closeWalletBridge();
 

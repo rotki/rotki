@@ -75,4 +75,12 @@ export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>
   queueRetries?: number;
   /** Skip the global 401 auth failure handler. Used for endpoints like password change where 401 means wrong password, not session expiry. */
   skipAuthHandler?: boolean;
+  /**
+   * Send the request without a live session. Only for the requests that set a session up or
+   * tear it down, and the logged-out screen's reads.
+   *
+   * Every other request belongs to the session that sent it: it is refused when no session is
+   * live and cancelled when its session ends.
+   */
+  sessionless?: boolean;
 }

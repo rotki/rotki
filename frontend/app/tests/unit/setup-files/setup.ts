@@ -8,6 +8,7 @@ import { RuiTooltipStub } from '@test/stubs/RuiTooltip';
 import { config, enableAutoUnmount, RouterLinkStub } from '@vue/test-utils';
 import consola, { type ConsolaReporter } from 'consola';
 import { afterAll, afterEach, beforeAll, beforeEach, onTestFailed, vi } from 'vitest';
+import { beginSession } from '@/modules/core/session/session-lifecycle';
 import { server } from './server';
 import 'fake-indexeddb/auto';
 
@@ -217,6 +218,10 @@ beforeAll(() => {
 afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
+
+/* Requests and task submits are refused without a live session, as after a logout. Every test
+   starts logged in; a spec about the logged-out side ends the session itself. */
+beforeEach(beginSession);
 
 /**
  * Drops the nodes a teleport left on `document.body`.

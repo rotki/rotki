@@ -10,11 +10,12 @@ export function useInfoApi(): UseInfoApiReturn {
   const info = async (checkForUpdates = false): Promise<BackendInfo> => {
     const response = await api.get<BackendInfo>('/info', {
       query: { checkForUpdates },
+      sessionless: true,
     });
     return BackendInfo.parse(response);
   };
 
-  const ping = async (): Promise<boolean> => api.get<boolean>('/ping');
+  const ping = async (): Promise<boolean> => api.get<boolean>('/ping', { sessionless: true });
 
   return {
     info,

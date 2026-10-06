@@ -5,6 +5,8 @@ import type { RunTaskOptions } from '@/modules/core/tasks/types';
 import { startPromise } from '@shared/utils';
 import { err, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { isTerminalStatus } from './core/status';
@@ -101,15 +103,6 @@ interface UseNativeTaskReturn {
    */
   readonly reset: () => void;
   /**
-   * Which session this is, bumped by every {@link reset}.
-   *
-   * @remarks
-   * {@link reset} settles what is in flight but cannot stop a body still running outside it. A
-   * producer that awaits and then submits reads this before and after the await, and drops the
-   * submit when it changed.
-   */
-  readonly sessionEpoch: () => number;
-  /**
    * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
    * activity terminal *immediately* (so awaiting readers and `useWorkStatus` spinners unblock even
@@ -182,8 +175,6 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    */
   const inflightCancel = new Map<ActivityId, () => void>();
 
-  let epoch = 0;
-
   /**
    * Drop every in-flight submission, settling its callers first.
    *
@@ -207,7 +198,6 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     inflight.clear();
     inflightFinish.clear();
     inflightCancel.clear();
-    epoch++;
   }
 
   /**
@@ -253,9 +243,17 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    * Deliberately not `async`. Re-entrant callers must receive the *same* in-flight promise for
    * dedup to hold, and the body owns its own deferred; an `async` wrapper would mint a fresh
    * promise per call and every caller would get its own.
+   *
+   * With no live session the activity is settled cancelled without being recorded. A body still
+   * running after its session ended would otherwise submit into the next session's orchestrator.
    */
   // eslint-disable-next-line @typescript-eslint/promise-function-async -- returns the shared in-flight promise by identity, see above
   function submitTask<T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> {
+    if (!hasLiveSession()) {
+      logger.debug(`dropped ${spec.id}: no live session`);
+      return Promise.resolve(err(Cancelled({ message: 'no live session' })));
+    }
+
     const running = inflight.get(spec.id);
     if (running)
       return running;
@@ -346,7 +344,6 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     reportProgress,
     statusOf,
     reset,
-    sessionEpoch: () => epoch,
     submitTask,
     supersedeTask,
     useIsActive,
