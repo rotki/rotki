@@ -21,6 +21,14 @@ function isAsyncQuery(url: URL, path: string): boolean {
   return url.pathname.endsWith(path) && url.searchParams.get('async_query') === 'true';
 }
 
+/**
+ * The snapshot query of the Force save, and not the one the login load declares under its balance
+ * refresh: holding that one too keeps the refresh running, a third stoppable job in every prompt.
+ */
+function isForcedSave(url: URL): boolean {
+  return isAsyncQuery(url, '/api/1/balances') && url.searchParams.get('save_data') === 'true';
+}
+
 test.describe.serial('task dock', () => {
   let ctx: SharedTestContext;
   let dock: TaskDockPage;
@@ -35,7 +43,7 @@ test.describe.serial('task dock', () => {
 
     await held.install();
     await held.hold('airdrops', url => url.pathname.endsWith('/api/1/blockchains/eth/airdrops'));
-    await held.hold('balances', url => isAsyncQuery(url, '/api/1/balances'));
+    await held.hold('balances', isForcedSave);
     await held.hold('pnl', url => isAsyncQuery(url, '/api/1/history'));
 
     await page.route('**/api/1/airdrops/metadata', async route => route.fulfill({ json: { message: '', result: [] } }));

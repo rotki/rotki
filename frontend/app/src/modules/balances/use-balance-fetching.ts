@@ -1,6 +1,5 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import type { TaskError } from '@/modules/core/tasks/task-result';
-import { map as mapResult, type Result } from 'plainfp/result';
+import { err, map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
@@ -13,8 +12,9 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { useSnapshotSchedule } from '@/modules/balances/use-snapshot-schedule';
 import { useBanks } from '@/modules/banks/use-banks';
 import { logger } from '@/modules/core/common/logging/logging';
+import { Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export const useBalanceFetching = createSharedComposable(() => {
@@ -58,6 +58,39 @@ export const useBalanceFetching = createSharedComposable(() => {
   };
 
   /**
+   * Submits the login load's snapshot query, to run once every chain job in `chainIds` settled.
+   *
+   * @remarks
+   * Declared with the chains rather than submitted after them, so the batch owns it from the start:
+   * a logout drops it before it runs, and cancelling the batch cancels it. The aggregate query must
+   * never run alongside the chain queries: querying while they were still repopulating chains is
+   * what wrote 0-value rows into the net-worth history.
+   *
+   * Its own id, not the bare `ALL_BALANCES` one, so a forced save during the load is a second query
+   * rather than a join onto this one. It carries no payload on purpose: the backend saves when
+   * `requested_save_data or should_save_balances(...)`, so this asks for a snapshot rather than
+   * forcing one. The schedule is read again when it runs, since the chains can take long enough for
+   * a snapshot to have been saved meanwhile.
+   */
+  const queueSnapshot = async (chainIds: ActivityId[], parent: ActivityId | undefined): Promise<void> => {
+    await submitTask({
+      deps: chainIds,
+      id: makeActivityId(ActivityKind.ALL_BALANCES, ActivityPart.LOGIN),
+      kind: ActivityKind.ALL_BALANCES,
+      parent,
+      rerunnable: false,
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => {
+        if (!(await isSnapshotDue()))
+          return err(Skipped({ message: t('actions.balances.all_balances.skipped.not_due') }));
+
+        return mapResult(await runTask(async () => queryBalancesAsync({})), () => {});
+      },
+      subtitle: t('actions.balances.all_balances.task.description'),
+      title: t('task_center.group.all_balances'),
+    });
+  };
+
+  /**
    * ⭐ `fetchAccounts`, not `refreshAccounts`. Passing no chain made the latter an accounts read and
    * nothing else — both halves of its balance decision need one — so the name promised work it
    * never did here. Each chain's hydration still happens inside the walk, as its accounts land.
@@ -70,28 +103,22 @@ export const useBalanceFetching = createSharedComposable(() => {
   /**
    * The login load: every chain, then the day's snapshot if the schedule is due.
    *
-   * The aggregate query must run after the batch, never alongside it — querying while the per-chain
-   * queries were still repopulating chains is what wrote 0-value rows into the net-worth history.
-   *
-   * It carries no payload on purpose: `save_data` defaults to false and the backend saves when
-   * `requested_save_data or should_save_balances(...)`, so this asks for a snapshot rather than
-   * forcing one. Forcing is {@link fetchBalances} from `forceSave`.
+   * The schedule is read before the batch, so a login with no snapshot due declares no snapshot
+   * node at all. Forcing a save is {@link fetchBalances} from `forceSave`.
    */
   const refreshFromChain = async (): Promise<void> => withDetection(async (detect) => {
     logger.debug(detect
       ? 'refreshFromChain: detect-then-query, every chain'
       : `refreshFromChain: query only (${autoDetectSkipReason() ?? 'unknown'}), every chain`);
 
-    await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
-
     const due = await isSnapshotDue();
+    if (!due)
+      logger.debug('refreshFromChain: snapshot not due, no aggregate query');
 
-    if (!due) {
-      logger.debug('refreshFromChain: snapshot not due, skipping the aggregate query');
-      return;
-    }
-
-    await fetchBalances();
+    await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, {
+      detect,
+      followUp: due ? queueSnapshot : undefined,
+    });
   });
 
   /**

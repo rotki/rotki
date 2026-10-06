@@ -1,6 +1,8 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { flushPromises } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { hasTag } from 'plainfp/tagged';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { type NativeActivitySpec, useNativeTask } from '@/modules/task-center/use-native-task';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
@@ -168,13 +170,31 @@ describe('useBalanceFetching', () => {
       snapshotDue.value = true;
     });
 
+    const chainIds = [makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'eth'), makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'btc')];
+    const batchId = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'run', 'batch');
+
+    interface FollowUpOption {
+      followUp?: (ids: ActivityId[], parent: ActivityId | undefined) => Promise<unknown>;
+    }
+
+    /** Makes the mocked chain refresh declare its follow-up the way the real batch does. */
+    function declareFollowUp(): void {
+      refreshBlockchainBalances.mockImplementationOnce(async (_payload: unknown, _mode: unknown, options?: FollowUpOption) => {
+        await options?.followUp?.(chainIds, batchId);
+      });
+    }
+
+    function snapshotSpec(): NativeActivitySpec<unknown> | undefined {
+      return vi.mocked(useNativeTask().submitTask).mock.calls.map(([spec]) => spec).find(spec => spec.kind === ActivityKind.ALL_BALANCES);
+    }
+
     it('should refresh every chain, without detection, when none is due', async () => {
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', { detect: false });
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', expect.objectContaining({ detect: false }));
     });
 
     /**
@@ -190,7 +210,7 @@ describe('useBalanceFetching', () => {
       await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', { detect: true });
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', expect.objectContaining({ detect: true }));
       // No chain list: the old branch narrowed to non-EVM chains here.
       expect(refreshBlockchainBalances).not.toHaveBeenCalledWith(
         expect.objectContaining({ blockchain: expect.anything() }),
@@ -199,16 +219,9 @@ describe('useBalanceFetching', () => {
       );
     });
 
-    it('should query all balances when the snapshot schedule is due', async () => {
-      const { refreshFromChain } = useBalanceFetching();
-
-      await refreshFromChain();
-
-      expect(queryBalancesAsync).toHaveBeenCalledOnce();
-    });
-
-    it('should query all balances when detecting too', async () => {
-      detectDue.value = true;
+    it.each([false, true])('should query all balances when the snapshot schedule is due (detect: %s)', async (detect) => {
+      detectDue.value = detect;
+      declareFollowUp();
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
@@ -218,6 +231,7 @@ describe('useBalanceFetching', () => {
 
     /** The backend saves on `requested_save_data or should_save_balances`; a refresh only asks. */
     it('should ask for a snapshot rather than force one', async () => {
+      declareFollowUp();
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
@@ -225,13 +239,56 @@ describe('useBalanceFetching', () => {
       expect(queryBalancesAsync).toHaveBeenCalledWith({});
     });
 
-    it('should not query all balances when the snapshot schedule is not due', async () => {
+    /**
+     * Querying while chains were still repopulating is what wrote 0-value rows to net worth, so the
+     * snapshot waits on every chain job by `deps`, under the batch that a logout or a cancel ends.
+     */
+    it('should declare the snapshot to depend on every chain job, under the batch', async () => {
+      declareFollowUp();
+      const { refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+
+      const spec = snapshotSpec();
+      assert(spec !== undefined);
+      expect(spec.deps).toStrictEqual(chainIds);
+      expect(spec.parent).toBe(batchId);
+    });
+
+    /** On the bare id, a forced save during the load would join this query and not force anything. */
+    it('should give the snapshot its own id, apart from a forced save', async () => {
+      declareFollowUp();
+      const { fetchBalances, refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+      await fetchBalances({ saveData: true });
+
+      const ids = vi.mocked(useNativeTask().submitTask).mock.calls.map(([spec]) => spec).filter(spec => spec.kind === ActivityKind.ALL_BALANCES).map(spec => spec.id);
+      expect(new Set(ids).size).toBe(2);
+    });
+
+    it('should declare no snapshot when the schedule is not due', async () => {
       snapshotDue.value = false;
       const { refreshFromChain } = useBalanceFetching();
 
       await refreshFromChain();
 
-      expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'background', expect.objectContaining({ followUp: undefined }));
+      expect(queryBalancesAsync).not.toHaveBeenCalled();
+    });
+
+    it('should skip the snapshot when one was saved while the chains ran', async () => {
+      isSnapshotDue.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+      declareFollowUp();
+      const { refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+
+      const submit = vi.mocked(useNativeTask().submitTask).mock;
+      const index = submit.calls.findIndex(([spec]) => spec.kind === ActivityKind.ALL_BALANCES);
+      const outcome: unknown = await submit.results[index]?.value;
+      assert(typeof outcome === 'object' && outcome !== null && 'error' in outcome);
+      expect(hasTag(outcome.error, 'Skipped')).toBe(true);
       expect(queryBalancesAsync).not.toHaveBeenCalled();
     });
 
@@ -242,26 +299,6 @@ describe('useBalanceFetching', () => {
       await expect(refreshFromChain()).rejects.toThrow('chains failed');
 
       expect(queryBalancesAsync).not.toHaveBeenCalled();
-    });
-
-    /** Querying while chains were still repopulating is what wrote 0-value rows to net worth. */
-    it('should query all balances only after every chain has settled', async () => {
-      let settleChains: () => void = () => {};
-      refreshBlockchainBalances.mockImplementationOnce(async () => new Promise<void>((resolve) => {
-        settleChains = resolve;
-      }));
-      const { refreshFromChain } = useBalanceFetching();
-
-      const refreshing = refreshFromChain();
-      await flushPromises();
-
-      expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
-      expect(queryBalancesAsync).not.toHaveBeenCalled();
-
-      settleChains();
-      await refreshing;
-
-      expect(queryBalancesAsync).toHaveBeenCalledOnce();
     });
   });
 });

@@ -41,11 +41,19 @@ interface BatchUmbrella extends BatchLabels {
   readonly priority?: Priority;
 }
 
+/**
+ * Work that runs after a batch's items, declared with them so the batch owns it from the start.
+ *
+ * @param parent - the umbrella, or the umbrella's own parent when a one-item batch has none
+ */
+type BatchFollowUp = (parent: ActivityId | undefined) => Promise<unknown>;
+
 interface UseActivityBatchReturn {
   runActivityBatch: <TItem, TResult>(
     umbrella: BatchUmbrella,
     items: readonly TItem[],
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
+    followUp?: BatchFollowUp,
   ) => Promise<TResult[]>;
 }
 
@@ -65,22 +73,32 @@ export function useActivityBatch(): UseActivityBatchReturn {
    * needs their promises, which exist only once submitted; hence the deferred `subtree`. Results are
    * then read off the children rather than through the umbrella, because a second batch over the
    * same prefix dedups onto the first umbrella and its outcome would report the wrong run's work.
+   *
+   * A `followUp` is called in the same tick as the items, after them, so whatever it submits can
+   * name the items as `deps` and is part of the batch from the start: the umbrella waits for it, a
+   * cancel of the umbrella reaches it, and an orchestrator reset drops it before it runs. It must
+   * depend on the items, never on the umbrella, which waits for it.
    */
   async function runActivityBatch<TItem, TResult>(
     umbrella: BatchUmbrella,
     items: readonly TItem[],
     run: (item: TItem, parent: ActivityId | undefined) => Promise<TResult>,
+    followUp?: BatchFollowUp,
   ): Promise<TResult[]> {
     if (items.length === 0)
       return [];
 
-    if (items.length === 1)
-      return [await run(items[0], umbrella.parent)];
+    if (items.length === 1) {
+      const work = run(items[0], umbrella.parent);
+      const followed = followUp?.(umbrella.parent);
+      const [result] = await Promise.all([work, followed]);
+      return [result];
+    }
 
     const batchId = umbrella.id;
 
-    let declared!: (work: readonly Promise<TResult>[]) => void;
-    const subtree = new Promise<readonly Promise<TResult>[]>((resolve) => {
+    let declared!: (work: readonly Promise<unknown>[]) => void;
+    const subtree = new Promise<readonly Promise<unknown>[]>((resolve) => {
       declared = resolve;
     });
 
@@ -102,9 +120,11 @@ export function useActivityBatch(): UseActivityBatchReturn {
     });
 
     const work = items.map(async item => run(item, batchId));
-    declared(work);
+    const followed = followUp?.(batchId);
+    declared(followed ? [...work, followed] : work);
 
     const results = await Promise.all(work);
+    await followed;
     await batch;
     return results;
   }
