@@ -10,6 +10,7 @@ import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useRefreshTransactions } from './use-refresh-transactions';
+import { UNDECODED_BREAKDOWN_ID } from './use-undecoded-transactions-status';
 
 const mockOnHistoryStarted = vi.fn();
 const mockOnHistoryFinished = vi.fn();
@@ -75,6 +76,9 @@ vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
 });
 
 const HISTORY_SYNC_ID = makeActivityId(ActivityKind.HISTORY_SYNC);
+
+/** What the chains' decodes wait for besides their accounts; pinned by the undecoded-count specs. */
+const ANY_DECODE_DEPS: unknown = expect.any(Array);
 
 function historySyncStatus(): WorkStatus {
   return useTaskOrchestrator().statusOf(ActivityKind.HISTORY_SYNC);
@@ -173,7 +177,8 @@ vi.mock('@/modules/settings/general/disabled-chain-queries/use-disabled-chains',
   useDisabledChains: vi.fn(() => mockDisabledChains),
 }));
 
-vi.mock('./use-undecoded-transactions-status', () => ({
+vi.mock('./use-undecoded-transactions-status', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   useUndecodedTransactionsStatus: vi.fn(() => mockUndecodedTransactionsStatus),
 }));
 
@@ -247,6 +252,7 @@ describe('useRefreshTransactions', () => {
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining([...mockEvmAccounts, ...mockBitcoinAccounts]),
         HISTORY_SYNC_ID,
+        ANY_DECODE_DEPS,
       );
     });
 
@@ -287,7 +293,7 @@ describe('useRefreshTransactions', () => {
         userInitiated: true, // Ensure it bypasses any "already refreshed" logic
       });
 
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(specificAccounts, HISTORY_SYNC_ID);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(specificAccounts, HISTORY_SYNC_ID, ANY_DECODE_DEPS);
     });
 
     it('should not query exchanges when only accounts are specified', async () => {
@@ -417,7 +423,7 @@ describe('useRefreshTransactions', () => {
 
       // Twice: the first refresh over every account, then the drain over the late arrival alone.
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(2);
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], HISTORY_SYNC_ID);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenLastCalledWith([addedMidRefresh], HISTORY_SYNC_ID, ANY_DECODE_DEPS);
 
       vi.useRealTimers();
     });
@@ -609,6 +615,7 @@ describe('useRefreshTransactions', () => {
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining(mockEvmAccounts),
         HISTORY_SYNC_ID,
+        ANY_DECODE_DEPS,
       );
       expect(historySyncStatus().everCompleted).toBe(true);
     });
@@ -646,6 +653,7 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'optimism' }),
         ]),
         HISTORY_SYNC_ID,
+        ANY_DECODE_DEPS,
       );
     });
 
@@ -659,6 +667,7 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'btc' }),
         ]),
         HISTORY_SYNC_ID,
+        ANY_DECODE_DEPS,
       );
     });
 
@@ -848,11 +857,40 @@ describe('useRefreshTransactions', () => {
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         expect.arrayContaining(mockEvmAccounts),
         HISTORY_SYNC_ID,
+        ANY_DECODE_DEPS,
       );
     });
   });
 
   describe('undecoded transactions', () => {
+    /**
+     * Awaiting the count before declaring the chains left a window where a cancel of the sync
+     * settled the umbrella while its body went on to submit children nothing would cancel.
+     */
+    it('should declare the chains while the count is still being read, under the sync, with every decode waiting for it', async () => {
+      let finishCount = (): void => {};
+      mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown.mockImplementationOnce(async () => new Promise<void>((resolve) => {
+        finishCount = resolve;
+      }));
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      const refreshing = refreshTransactions();
+      await vi.waitFor(() => expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled());
+
+      expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalledWith(HISTORY_SYNC_ID);
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(expect.anything(), HISTORY_SYNC_ID, [UNDECODED_BREAKDOWN_ID]);
+      finishCount();
+      await refreshing;
+    });
+
+    it('should give the decodes nothing more to wait for when the count is not read before them', async () => {
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions({ payload: { accounts: mockBitcoinAccounts } });
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(mockBitcoinAccounts, HISTORY_SYNC_ID, []);
+    });
+
     it('should queue fetchUndecodedTransactionsBreakdown after operations complete', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 

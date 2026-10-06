@@ -7,6 +7,7 @@ import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
+import { accountSyncActivityId } from './sync-activity';
 import { useTransactionSync } from './use-transaction-sync';
 
 const mockNotifyError = vi.fn();
@@ -203,6 +204,16 @@ describe('useTransactionSync', () => {
       }));
 
       expect((await decodeSkipWhen())()).toBe(false);
+    });
+
+    it('should make the decode wait for its accounts and for what the caller names, such as the undecoded count', async () => {
+      const count = makeActivityId(ActivityKind.HISTORY_EVENTS, 'undecoded');
+      const { syncTransactionsByChains } = useTransactionSync();
+
+      await syncTransactionsByChains(accounts, undefined, [count]);
+
+      const placement = mocks.decodeTransactionsTask.mock.calls[0][2];
+      expect(placement?.deps).toStrictEqual([accountSyncActivityId('eth', '0xAAA'), accountSyncActivityId('eth', '0xBBB'), count]);
     });
 
     it('should ask about each account by the id its sync runs under before skipping the decode', async () => {

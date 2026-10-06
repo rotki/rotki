@@ -10,7 +10,7 @@ import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
 import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
 import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-handlers';
 import { useTransactionSync } from '@/modules/history/events/tx/use-transaction-sync';
-import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
+import { UNDECODED_BREAKDOWN_ID, useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
@@ -95,13 +95,14 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     targets: RefreshTargets,
     children: ReturnType<typeof historySyncFlow.children>,
     umbrella: ActivityId,
+    decodeAfter: readonly ActivityId[],
   ): PlannedOperation[] {
     const exchanges = children.flatMap(child => child.payload.type === 'exchange' ? [child.payload.exchange] : []);
     const banks = children.flatMap(child => child.payload.type === 'bank' ? [child.payload.bank] : []);
 
     return [
       ...(targets.accounts.length > 0
-        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, umbrella) }]
+        ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, umbrella, decodeAfter) }]
         : []),
       ...(exchanges.length > 0 ? [{ accounts: false, work: queryAllExchangeEvents(exchanges, umbrella) }] : []),
       ...(banks.length > 0 ? [{ accounts: false, work: queryAllBankEvents(banks, umbrella) }] : []),
@@ -122,6 +123,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
    * silently discards both. The declaration still names every child with the same id constructors
    * the producers submit under, so the tree and progress stay accurate.
    *
+   * The undecoded count is fetched under the umbrella in the same tick as the children rather than
+   * awaited before them, so the whole subtree exists from the start and a cancel of the umbrella
+   * reaches all of it. Each decode waits for the count through `deps`, since the count is what its
+   * progress starts from; the syncs do not need it and start at once.
+   *
    * @returns the **account half's** verdict alone. Nothing else may vote: fold all three kinds
    * together and a protocol query that happened to succeed records the completion over a run where
    * every chain failed. Nor may it require every kind to succeed — an online source failing is
@@ -134,15 +140,16 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     queries: OnlineHistoryEventsQueryType[] | undefined,
     umbrella: ActivityId,
   ): Promise<Result<void, TaskError>> {
-    if (targets.fullRefresh || targets.decodableAccounts.length > 0)
-      await fetchUndecodedTransactionsBreakdown();
+    const breakdown = targets.fullRefresh || targets.decodableAccounts.length > 0
+      ? fetchUndecodedTransactionsBreakdown(umbrella)
+      : undefined;
 
     const asyncOperations = planOperations(targets, historySyncFlow.children({
       accounts: targets.accounts,
       banks: targets.queryBanks ? targets.usedBanks : [],
       exchanges: targets.queryExchanges ? targets.usedExchanges : [],
       queries: resolveOnlineQueries(targets, disableEvmEvents, queries),
-    }), umbrella);
+    }), umbrella, breakdown ? [UNDECODED_BREAKDOWN_ID] : []);
 
     const accountOutcomes: Result<void, TaskError>[] = [];
     const otherOutcomes: Result<void, TaskError>[] = [];
@@ -158,6 +165,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       }
     }
 
+    await breakdown;
     startPromise(fetchUndecodedTransactionsBreakdown());
 
     return accountOutcomes.length > 0

@@ -17,6 +17,8 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 interface TransactionSyncParams {
   accounts: ChainAddress[];
   type: TransactionChainType;
+  /** Activities the chain's decode waits for besides its accounts, such as the undecoded count. */
+  decodeAfter?: readonly ActivityId[];
 }
 
 /** A chain activity's declared children, split by whether they decide the chain's own outcome. */
@@ -33,7 +35,7 @@ interface ChainSubtree {
 interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<Result<void, TaskError>>;
   syncTransactionTask: (account: ChainAddress, parent?: ActivityId) => Promise<Result<void, TaskError>>;
-  syncTransactionsByChains: (accounts: ChainAddress[], parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
+  syncTransactionsByChains: (accounts: ChainAddress[], parent?: ActivityId, decodeAfter?: readonly ActivityId[]) => Promise<Result<void, TaskError>[]>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
@@ -128,7 +130,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     params: TransactionSyncParams,
     parent?: ActivityId,
   ): Promise<Result<void, TaskError>> => {
-    const { accounts, type } = params;
+    const { accounts, decodeAfter = [], type } = params;
     const chainId = chainSyncActivityId(chain);
 
     let declared!: (work: ChainSubtree) => void;
@@ -158,7 +160,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
 
     const decodeWork = TransactionChainTypeNeedDecoding.includes(type)
       ? [decodeTransactionsTask(chain, false, {
-          deps: accounts.map(account => accountSyncActivityId(chain, account.address)),
+          deps: [...accounts.map(account => accountSyncActivityId(chain, account.address)), ...decodeAfter],
           parent: chainId,
           skipWhen: () => accounts.every(wasCancelled),
         })]
@@ -175,14 +177,15 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * @remarks
    * The account set is known synchronously, so every chain and every account below it is declared
    * in this one pass. There is no limiter of its own: {@link CHAIN_SYNC_LANE} caps how many chains
-   * run at a time.
+   * run at a time. Every chain's decode also waits for `decodeAfter`.
    */
-  const syncTransactionsByChains = async (accounts: ChainAddress[], parent?: ActivityId): Promise<Result<void, TaskError>[]> => {
+  const syncTransactionsByChains = async (accounts: ChainAddress[], parent?: ActivityId, decodeAfter: readonly ActivityId[] = []): Promise<Result<void, TaskError>[]> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
     return Promise.all(Object.entries(groupBy(accounts, item => item.chain))
       .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
         accounts: chainAccounts,
+        decodeAfter,
         type: getTransactionTypeFromChain(chain),
       }, parent)));
   };
