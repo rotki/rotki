@@ -2379,9 +2379,6 @@
     }
   },
   "dashboard": {
-    "bank_balances": {
-
-    },
     "blockchain_balances": {
       "behaviour": {
         "only_refresh_balances": "Only refresh balances",
@@ -2423,9 +2420,6 @@
     },
     "liabilities": {
       "title": "Liabilities"
-    },
-    "manual_balances": {
-
     },
     "refresh": {
       "balances": "Refresh balances",
@@ -5920,9 +5914,6 @@
       "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance."
     },
     "tooltip": "Asset graph setting"
-  },
-  "summary_card": {
-
   },
   "swap_event_form": {
     "add_asset": "Add asset",
