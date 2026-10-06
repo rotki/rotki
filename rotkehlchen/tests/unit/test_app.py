@@ -37,9 +37,10 @@ def test_logout_does_not_wait_for_indexer_analytics() -> None:
     rotki = object.__new__(Rotkehlchen)
     rotki.user_is_logged_in = True
     for attribute in (
-        'data', 'exchange_manager', 'task_manager', 'task_supervisor',
-        'cryptocompare', 'defillama', 'coingecko', 'alchemy', 'moralis', 'msg_aggregator',
-        'chains_aggregator', 'accountant', 'history_querying_manager', 'data_importer',
+        'data', 'exchange_manager', 'bank_manager', 'task_manager', 'task_supervisor',
+        'cryptocompare', 'defillama', 'coingecko', 'alchemy', 'moralis', 'birdeye',
+        'msg_aggregator', 'chains_aggregator', 'accountant', 'history_querying_manager',
+        'data_importer',
     ):
         setattr(rotki, attribute, mock.MagicMock())
     stats = mock.MagicMock()

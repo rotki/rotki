@@ -146,11 +146,24 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
         return tx, None
 
     (chains_aggregator := MagicMock()).get_evm_manager.return_value.transactions.ensure_tx_data_exists.side_effect = mock_ensure_tx_data_exists  # noqa: E501
-    with patch.object(MockRotkiForMigrations, 'chains_aggregator', new=chains_aggregator, create=True):  # noqa: E501
+    with (
+        patch.object(
+            MockRotkiForMigrations,
+            'chains_aggregator',
+            new=chains_aggregator,
+            create=True,
+        ),
+        patch.object(
+            MockRotkiForMigrations,
+            'icon_manager',
+            new=MagicMock(),
+            create=True,
+        ),
+    ):
         run_single_migration(database=database, migration=28)
 
     with database.conn.read_ctx() as cursor:
-        for tx, tx_id, (expected_fee, decoded, events_num, gas_amount, failed) in zip(transactions, tx_ids, (  # noqa: E501
+        for tx, tx_id, (expected_fee, decoded, events_num, gas_amount, _failed) in zip(transactions, tx_ids, (  # noqa: E501
             (None, False, 0, None, False),
             (None, False, 0, None, False),
             ('123', True, 1, '0.000021', False),
@@ -179,8 +192,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
                 'events.sequence_index=0',
                 (tx.tx_hash,),
             ).fetchone() == (None if gas_amount is None else (
-                gas_amount,
-                f"Burn {gas_amount} ETH for gas{' of a failed transaction' if failed else ''}",
+                gas_amount, None,
             ))
 
 

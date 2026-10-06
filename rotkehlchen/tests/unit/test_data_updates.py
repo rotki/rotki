@@ -999,7 +999,7 @@ def test_rpc_update_unsupported_chain(data_updater: RotkiDataUpdater, remove_onl
     """Store new unsupported defaults and delete absent ones without runtime refresh."""
     nodes = [
         ('supported', 'https://supported.example.com', 0, 1, '1', 'ETH'),
-        ('unsupported', 'https://unsupported.example.com', 0, 1, '1', 'SONIC'),
+        ('unsupported', 'https://unsupported.example.com', 0, 1, '1', 'UNSUPPORTED_CHAIN'),
     ]
     for conn, table in (
         (GlobalDBHandler().conn, 'default_rpc_nodes'),
@@ -1027,7 +1027,7 @@ def test_rpc_update_unsupported_chain(data_updater: RotkiDataUpdater, remove_onl
         new_default_nodes=[tuple(row.values()) for row in remote_nodes],
         initial_user_nodes=pending['user_nodes'],
     )
-    assert all(node.blockchain.value != 'SONIC' for node in added | removed)
+    assert {node.blockchain for node in added | removed} == {SupportedBlockchain.ETHEREUM}
 
     for conn, table in (
         (GlobalDBHandler().conn, 'default_rpc_nodes'),

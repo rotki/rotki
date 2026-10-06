@@ -1,6 +1,5 @@
 import logging
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from types import SimpleNamespace
@@ -386,24 +385,37 @@ def test_indexer_usage_counts_concurrent_requests(monkeypatch) -> None:
 
 
 def test_indexer_usage_close_overlaps_cleanup_and_is_bounded(monkeypatch) -> None:
+    now = [100.0]
+    monkeypatch.setattr(indexer_stats, 'time', SimpleNamespace(monotonic=lambda: now[0]))
     monkeypatch.setattr(indexer_stats.IndexerStats, '_has_consent', lambda self: True)
     monkeypatch.setattr(indexer_stats, 'INDEXER_ANALYTICS_CLOSE_TIMEOUT', 0.25)
     started, release = threading.Event(), threading.Event()
-    submit = MagicMock(side_effect=partial(_wait_for_release, started, release))
+
+    def submit_batch(**_kwargs) -> bool:
+        started.set()
+        return release.wait()
+
+    submit = MagicMock(side_effect=submit_batch)
     monkeypatch.setattr(indexer_stats, 'submit_sigil_batch', submit)
     stats = indexer_stats.IndexerStats()
     stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
 
-    start = time.monotonic()
-    stats.start_close()
-    assert started.wait(1)
-    assert 0 < submit.call_args.kwargs['timeout'] <= 0.25
-    time.sleep(0.3)  # Other logout work proceeds while the upload is still waiting.
-    stats.wait_for_close()
-    assert time.monotonic() - start < 1
-    release.set()
-    assert stats._close_worker is not None
-    stats._close_worker.join()
+    try:
+        stats.start_close()
+        assert started.wait(5)
+        assert submit.call_args.kwargs['timeout'] == 0.25
+        assert stats._close_worker is not None
+        now[0] += 0.3
+        with patch.object(stats._close_worker, 'join', wraps=stats._close_worker.join) as join:
+            stats.wait_for_close()
+            join.assert_called_once_with(timeout=0)
+        assert stats._close_worker.dead is False
+    finally:
+        release.set()
+        if stats._close_worker is not None:
+            stats._close_worker.join(timeout=5)
+
+    assert stats._close_worker.dead
 
 
 def test_indexer_usage_wait_for_close_uses_remaining_deadline(monkeypatch) -> None:
