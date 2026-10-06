@@ -16,7 +16,7 @@ const { validatorsLimitInfo } = useEthStaking();
     v-if="validatorsLimitInfo.showWarning"
     :limit="validatorsLimitInfo.limit"
     :total="validatorsLimitInfo.total"
-    :label="t('eth2_validator_limit_row.label')"
+    :label="t('plan_limit.labels.validators')"
     :colspan="colspan"
   />
 </template>

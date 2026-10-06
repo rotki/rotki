@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -22,24 +22,12 @@ const { validatorsLimitInfo } = useEthStaking();
       />
     </template>
 
-    <i18n-t
-      scope="global"
-      keypath="eth2_validator_limit_row.complete"
+    <PlanLimitMessage
+      :label="t('plan_limit.labels.validators')"
+      :limit="validatorsLimitInfo.limit"
+      :total="validatorsLimitInfo.total"
+      link-class="!text-white !leading-[0]"
       tag="div"
-    >
-      <template #limit>
-        {{ validatorsLimitInfo.limit }}
-      </template>
-      <template #total>
-        {{ validatorsLimitInfo.total }}
-      </template>
-      <template #button>
-        <ExternalLink
-          class="!text-white !leading-[0]"
-          :text="t('common.here')"
-          premium
-        />
-      </template>
-    </i18n-t>
+    />
   </RuiTooltip>
 </template>

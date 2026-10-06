@@ -118,7 +118,7 @@ useRememberTableSorting<ReportData>(TableId.REPORTS, sort, tableHeaders);
           :total="limits.total"
           :limit="limits.limit"
           :colspan="tableHeaders.length"
-          :label="t('profit_loss_reports.title')"
+          :label="t('plan_limit.labels.reports')"
         />
       </template>
       <template #item.timestamp="{ row }">

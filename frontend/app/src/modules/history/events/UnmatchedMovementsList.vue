@@ -6,7 +6,6 @@ import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatch
 import UnmatchedMovementsCards from '@/modules/history/events/UnmatchedMovementsCards.vue';
 import UnmatchedMovementsTable from '@/modules/history/events/UnmatchedMovementsTable.vue';
 import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
-import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
@@ -36,8 +35,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
 const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRows({
   matchDisabled: () => matchDisabled,
@@ -87,8 +84,7 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRow
       >
         <UnmatchedMatchDisabledAlert
           variant="asset-movement"
-          :premium="premium"
-          :current-tier="currentTier"
+          :count="showRestore ? 0 : movements.length"
           :match-minimum-tier="matchMinimumTier"
         />
       </template>

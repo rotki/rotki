@@ -321,7 +321,7 @@
     "down_from": "之前为 {count}",
     "locked": "高级版",
     "locked_hint": "此功能需要 {tier} 等级。",
-    "locked_hint_generic": "此功能需要高级版订阅。",
+    "locked_hint_generic": "此功能需要 rotki 高级版套餐。",
     "new": "新",
     "new_count": "{count} 条新 | {count} 条新",
     "remind_later": "稍后提醒我",
@@ -1284,9 +1284,8 @@
       "tooltip": "这是一笔法币转移。法币转移通常没有对应的链上事件，一般可以放心忽略。"
     },
     "premium": {
-      "free_tooltip": "资产转移匹配至少需要 {tier} 等级。{link}以解锁此功能。",
-      "link": "升级",
-      "premium_tooltip": "资产转移匹配至少需要 {tier} 等级。你当前的等级为 {currentTier}。{link}以解锁。"
+      "locked": "使用 {tier} 套餐时，rotki 会自动匹配资产转移，其余的可以手动关联。你当前使用的是 {currentTier} 套餐。{link}即可开启匹配。",
+      "unmatched": "你有 {count} 笔未匹配的资产转移。使用 {tier} 套餐时，rotki 会自动匹配资产转移，其余的可以手动关联。你当前使用的是 {currentTier} 套餐。{link}即可开启匹配。"
     },
     "resolved": {
       "external_deposit": "充值已处理为来自未追踪来源的收入。",
@@ -1851,11 +1850,11 @@
   },
   "blockchain_balances": {
     "add_account": "添加账户",
-    "add_validator_premium": "添加 ETH 质押验证者是高级版功能。升级到 rotki 高级版即可添加验证者。",
+    "add_validator_premium": "添加 ETH 质押验证者需要 rotki 高级版套餐。",
     "binance_warning": "Binance Smart Chain 账户只能通过付费 Etherscan 密钥检测。",
     "early_chain_warning": "rotki 对 {chain} 的集成尚处于早期：目前该链上仅能解码有限的协议。其他协议的交易将显示为普通转账，后续会逐步增加更多协议。",
-    "eth_staking_limit_error": "添加此验证者将超出你 {currentTier} 套餐的 ETH 质押上限 {limit} ETH。请通过{link}升级套餐，或联系我们定制套餐以提高上限。",
-    "eth_staking_no_access": "你的 {currentTier} 套餐不包含 ETH 质押。请通过{link}升级套餐，或联系我们定制套餐以获取权限。",
+    "eth_staking_limit_error": "添加此验证者将超出你 {currentTier} 套餐的 ETH 质押上限 {limit} ETH。{link}，或联系我们定制套餐，即可提高上限。",
+    "eth_staking_no_access": "你的 {currentTier} 套餐不包含 ETH 质押。{link}，或联系我们定制套餐，即可获得权限。",
     "evm_detection": {
       "found": "已在 {count} 条链上添加 | 已在 {count} 条链上添加",
       "none": "未发现新链",
@@ -1885,7 +1884,6 @@
       "validators": "验证者"
     },
     "validator_index_label": "以太坊验证者 No. {index}",
-    "validator_limit_reached": "你已达到 ETH 质押验证者上限（{total}/{limit}）。{link}以添加更多验证者。",
     "validators": {
       "auto_detection_info": "验证者会根据 ETH 质押存入自动检测。请将存入地址添加为以太坊账户，解码其历史事件，然后点击刷新以更新列表。",
       "consolidated": "已合并至：",
@@ -1940,8 +1938,8 @@
       "untracked_source_tooltip": "源地址 {address} 未被 rotki 追踪，因此你的历史中不可能存在对应事件。请将此跨链桥提取标记为外部收入来处理。"
     },
     "premium": {
-      "free_tooltip": "跨链桥交易匹配至少需要 {tier} 等级。{link}以解锁此功能。",
-      "premium_tooltip": "跨链桥交易匹配至少需要 {tier} 等级。你当前的等级为 {currentTier}。{link}以解锁。"
+      "locked": "使用 {tier} 套餐时，rotki 会自动匹配跨链桥交易，其余的可以手动关联。你当前使用的是 {currentTier} 套餐。{link}即可开启匹配。",
+      "unmatched": "你有 {count} 笔未匹配的跨链桥交易。使用 {tier} 套餐时，rotki 会自动匹配跨链桥交易，其余的可以手动关联。你当前使用的是 {currentTier} 套餐。{link}即可开启匹配。"
     },
     "resolved": {
       "external_deposit": "跨链桥存入已处理为向外部地址的付款。",
@@ -3050,10 +3048,6 @@
     },
     "no_premium": "ETH 质押视图不可用"
   },
-  "eth2_validator_limit_row": {
-    "complete": "仅显示 {total} 个验证者中 {limit} 个的余额。点击 {button} 购买 rotki 高级版以查看全部验证者余额。",
-    "label": "验证者"
-  },
   "event_asset_price_update": {
     "description": "设置该资产在此事件时间点的价格。",
     "fetch_error": {
@@ -3453,7 +3447,7 @@
       "hint": "输入你的 Moralis API Key",
       "title": "Moralis"
     },
-    "need_premium": "升级到高级版以使用此功能。",
+    "need_premium": "此功能需要 rotki 高级版套餐。",
     "need_tier": "需要 {tier} 或更高等级。",
     "no_services_found": "未找到服务",
     "opensea": {
@@ -4482,7 +4476,7 @@
   },
   "kraken_page": {
     "loading": "你的 Kraken 质押信息正在加载中...",
-    "no_premium": "升级到高级版即可查看 Kraken 质押信息",
+    "no_premium": "Kraken 质押信息需要 rotki 高级版套餐",
     "page": {
       "api_key": "API Key",
       "description": "要查看你的质押信息，需要添加 Kraken {link}",
@@ -4514,7 +4508,7 @@
     "title": "各资产收益"
   },
   "liquity_page": {
-    "no_premium": "免费版不包含 Liquity 质押统计页面"
+    "no_premium": "你当前的套餐不包含 Liquity 质押统计"
   },
   "liquity_pools": {
     "liquidation_gains": "未领取的清算收益",
@@ -4770,7 +4764,7 @@
     "dashboard": {
       "liquidity_pools": {
         "pool_details": {
-          "premium_only": "升级到高级版以查看完整的资产概览 "
+          "premium_only": "使用 rotki 高级版套餐查看完整的资产概览"
         },
         "pool_table": {
           "title": "LP 代币"
@@ -4889,8 +4883,7 @@
     "select_collection": "选择收藏集",
     "sort": {
       "collection": "收藏集"
-    },
-    "upgrade": "正在显示 {limit} 个 NFT。要查看更多，请升级到{link}"
+    }
   },
   "non_fungible_balances": {
     "column": {
@@ -4912,7 +4905,6 @@
       "title": "标题"
     },
     "last_updated": "最后更新时间：{datetime}",
-    "limit_warning": "已达到免费版 {limit} 条笔记的上限。要保存更多笔记，可升级到{link}",
     "rules": {
       "content": {
         "non_empty": "请填写笔记内容"
@@ -5149,6 +5141,19 @@
   "pinned": {
     "tooltip": "已固定版块"
   },
+  "plan_limit": {
+    "hidden": "{plan} 套餐的限制隐藏了你 {total} 项{label}中的 {hidden} 项。{link}即可查看全部。",
+    "labels": {
+      "events": "事件",
+      "nfts": "NFT",
+      "notes": "笔记",
+      "reports": "报告",
+      "validators": "验证者"
+    },
+    "reached": "你已达到 {plan} 套餐 {limit} 项{label}的上限。{link}即可添加更多。",
+    "unprocessed": "此报告仅涵盖 {from} 至 {to}。受 {plan} 套餐限制，{total} 项{label}中有 {hidden} 项未被处理。{link}即可将其纳入。",
+    "upgrade": "升级你的套餐"
+  },
   "poap_delivery_airdrops": {
     "title": "可领取的 POAP Delivery NFT"
   },
@@ -5333,7 +5338,7 @@
     "try_again": "请稍后再试。"
   },
   "premium_lock": {
-    "tooltip": "该功能仅限高级版订阅使用"
+    "tooltip": "需要 rotki 高级版套餐"
   },
   "premium_placeholder": {
     "current_plan": "{tier} 套餐",
@@ -6287,7 +6292,7 @@
   "task_manager": {
     "error": "处理任务 [{taskId}]“{title}”时出错：{error}"
   },
-  "theme_manager_lock": "免费版不包含主题管理器",
+  "theme_manager_lock": "你当前的套餐不包含主题管理器",
   "theme_switch": {
     "auto": "自动（检测设备主题）",
     "dark": "深色",
@@ -6931,15 +6936,6 @@
     "messages": "rotki 有新版本可用。请查看{releaseNotes}。",
     "release_notes": "发布说明",
     "restart": "rotki 即将重启以应用更新。"
-  },
-  "upgrade_row": {
-    "events": "@:upgrade_row.first_line 要查看更多，请升级到 {link}",
-    "events_premium": "@:upgrade_row.first_line 要查看更多，请{link}",
-    "first_line": "已处理 {from} 至 {to} 期间 {total} 条{label}中的 {limit} 条。",
-    "rotki_premium": "rotki 高级版",
-    "upgrade": "正在显示 {total} 条{label}中的 {limit} 条。要查看更多，请升级到 {link}",
-    "upgrade_premium": "正在显示 {total} 条{label}中的 {limit} 条。要查看更多，请{link}",
-    "upgrade_your_plan": "升级你的套餐"
   },
   "user_dropdown": {
     "change_privacy_mode": {

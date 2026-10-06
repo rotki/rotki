@@ -204,7 +204,7 @@
     },
     "premium": {
       "button_premium_approve": "Ναι, ενεργοποιήστε το premium",
-      "premium_question": "Είστε ήδη χρήστης premium του rotki και θέλετε να ενεργοποιήσετε τις λειτουργίες premium?\nΑυτό είναι απαραίτητο εάν θέλετε να συγχρονίσετε τη βάση δεδομένων rotki από άλλη συσκευή κατά τη δημιουργία λογαριασμού. Μπορείτε να αγοράσετε premium {premiumLink}"
+      "premium_question": "Είστε ήδη χρήστης premium του rotki και θέλετε να ενεργοποιήσετε τις λειτουργίες premium?\nΜπορείτε να αγοράσετε premium {premiumLink}"
     },
     "steps": {
       "step_1": {

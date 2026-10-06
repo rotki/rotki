@@ -1052,7 +1052,7 @@
     },
     "premium": {
       "button_premium_approve": "Oui, activer premium",
-      "premium_question": "Êtes-vous déjà un utilisateur premium rotki et souhaitez-vous activer les fonctionnalités premium?\nCeci est nécessaire si vous souhaitez synchroniser votre base de données rotki à partir d'un autre appareil à la création de compte. Vous pouvez acheter premium {premiumLink}"
+      "premium_question": "Êtes-vous déjà un utilisateur premium rotki et souhaitez-vous activer les fonctionnalités premium?\nVous pouvez acheter premium {premiumLink}"
     },
     "steps": {
       "step_1": {
@@ -1329,9 +1329,6 @@
     },
     "ownership_percentage": "Pourcentage de propriété",
     "public_key": "Clé publique"
-  },
-  "eth2_validator_limit_row": {
-    "label": "Validateurs"
   },
   "evm_rpc_node_manager": {
     "activate_error": {
@@ -2129,7 +2126,7 @@
     "dashboard": {
       "liquidity_pools": {
         "pool_details": {
-          "premium_only": "Mettez à niveau vers premium pour voir les informations sur les actifs"
+          "premium_only": "Consultez l'aperçu complet de vos actifs avec un plan rotki Premium"
         },
         "pool_table": {
           "title": "Jetons LP"
@@ -2197,8 +2194,7 @@
     "loading": "Chargement des NFT",
     "refresh_tooltip": "Recharger les NFT",
     "select_account": "Sélectionner le compte",
-    "select_collection": "Sélectionner la collection",
-    "upgrade": "Affichage de {limit} NFT. Pour en voir plus, veuillez passer à {link}"
+    "select_collection": "Sélectionner la collection"
   },
   "non_fungible_balances": {
     "column": {
@@ -2220,7 +2216,6 @@
       "title": "Titre"
     },
     "last_updated": "Dernière mise à jour: {datetime}",
-    "limit_warning": "La limite de {limit} notes utilisateur a été atteinte dans le plan gratuit. Pour obtenir plus de notes, vous pouvez passer à {link}",
     "rules": {
       "content": {
         "non_empty": "Veuillez remplir la note"
@@ -2268,6 +2263,19 @@
   },
   "pinned": {
     "tooltip": "Section épinglée"
+  },
+  "plan_limit": {
+    "hidden": "La limite de votre plan {plan} masque {hidden} de vos {total} {label}. {link} pour tout afficher.",
+    "labels": {
+      "events": "événements",
+      "nfts": "NFT",
+      "notes": "notes",
+      "reports": "rapports",
+      "validators": "validateurs"
+    },
+    "reached": "Vous avez atteint la limite de votre plan {plan} : {limit} {label}. {link} pour en ajouter davantage.",
+    "unprocessed": "Ce rapport ne couvre que la période du {from} au {to}. La limite de votre plan {plan} a laissé {hidden} de ses {total} {label} sans traitement. {link} pour les inclure.",
+    "upgrade": "Améliorez votre plan"
   },
   "poap_delivery_airdrops": {
     "title": "POAP Delivery NFTs réclamables"
@@ -2363,7 +2371,7 @@
       "api_key": "Clé API",
       "api_secret": "Secret API"
     },
-    "get": "Obtenir un premium",
+    "get": "Passer à premium",
     "premium_active": "@:premium_settings.title est activé",
     "subtitle": "@:premium_settings.title est un service d'abonnement optionnel qui donne accès aux analyses, graphiques et débloque de nombreuses fonctionnalités supplémentaires. Pour plus d'informations sur ce qui est disponible, visitez le site web {0}."
   },
@@ -2997,14 +3005,6 @@
     "messages": "Une nouvelle version de rotki est disponible. Consultez {releaseNotes}.",
     "release_notes": "notes de version",
     "restart": "rotki va redémarrer dans un instant pour appliquer la mise à jour."
-  },
-  "upgrade_row": {
-    "events": "@:upgrade_row.first_line Pour en afficher plus, merci de passer à {link}",
-    "events_premium": "@:upgrade_row.first_line Pour en afficher plus, merci de {link}",
-    "first_line": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}.",
-    "upgrade": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de passer à {link}",
-    "upgrade_premium": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de {link}",
-    "upgrade_your_plan": "améliorer votre plan"
   },
   "user_dropdown": {
     "change_privacy_mode": {

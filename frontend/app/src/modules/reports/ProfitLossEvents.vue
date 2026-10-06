@@ -5,7 +5,7 @@ import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report
 import { some } from 'es-toolkit/compat';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
+import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -15,7 +15,7 @@ import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
 import CostBasisTable from '@/modules/reports/CostBasisTable.vue';
 import ProfitLossEventType from '@/modules/reports/ProfitLossEventType.vue';
-import { isTransactionEvent } from '@/modules/reports/report-utils';
+import { isTransactionEvent, stoppedAtPlanLimit } from '@/modules/reports/report-utils';
 import ReportProfitLossEventAction from '@/modules/reports/ReportProfitLossEventAction.vue';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -152,8 +152,9 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
 
 useRememberTableSorting<PnLItem>(TableId.REPORT_EVENTS, sort, tableHeaders);
 
-const { data, entriesFoundTotal, found, limit, total } = getCollectionData<ProfitLossEvent>(state);
-const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
+const { data, limit } = getCollectionData<ProfitLossEvent>(state);
+
+const showPlanLimit = computed<boolean>(() => stoppedAtPlanLimit(report, get(limit)));
 
 const items = computed<PnLItem[]>(() => {
   const dataVal = get(data);
@@ -282,15 +283,15 @@ onMounted(async () => {
         />
       </template>
       <template
-        v-if="showUpgradeRow"
+        v-if="showPlanLimit"
         #body.prepend="{ colspan }"
       >
         <UpgradeRow
-          :limit="found"
-          :total="total"
+          :limit="report.processedActions"
+          :total="report.totalActions"
           :range="{ timeEnd: report.lastProcessedTimestamp, timeStart: report.firstProcessedTimestamp }"
           :colspan="colspan"
-          :label="t('common.events')"
+          :label="t('plan_limit.labels.events')"
         />
       </template>
       <template #item.notes="{ row }">

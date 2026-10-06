@@ -98,7 +98,7 @@ provideHistoryEventsRowContext(rowContext);
       :total="entriesFoundTotal ?? total"
       class="px-2"
       :colspan="5"
-      :label="t('common.events')"
+      :label="t('plan_limit.labels.events')"
     />
 
     <!-- Query Status Slot -->

@@ -65,6 +65,8 @@ vi.mock('@/modules/premium/use-premium-helper', () => ({
   usePremiumHelper: (): Record<string, unknown> => ({ currentTier, ethStakedLimit, premium }),
 }));
 
+vi.mock('@/modules/premium/use-premium', () => ({ usePremium: (): typeof premium => premium }));
+
 /** Exposes `validate` under the name the dialog calls on its form ref. */
 vi.mock('@/modules/accounts/management/AccountForm.vue', async () => {
   const { defineComponent, h } = await import('vue');
@@ -132,6 +134,7 @@ async function confirm(wrapper: VueWrapper<any>): Promise<void> {
 describe('accountDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setActivePinia(createPinia());
     set(currentTier, 'free');
     set(ethStakedLimit, 0);
     set(loading, false);

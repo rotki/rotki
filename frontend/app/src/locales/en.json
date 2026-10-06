@@ -321,7 +321,7 @@
     "down_from": "down from {count}",
     "locked": "Premium",
     "locked_hint": "This requires the {tier} tier.",
-    "locked_hint_generic": "This requires a premium subscription.",
+    "locked_hint_generic": "This requires a rotki Premium plan.",
     "new": "New",
     "new_count": "{count} new | {count} new",
     "remind_later": "Remind me later",
@@ -1284,9 +1284,8 @@
       "tooltip": "This is a fiat currency movement. Fiat movements typically don't have a corresponding on-chain event and can usually be safely ignored."
     },
     "premium": {
-      "free_tooltip": "Asset movement matching requires a minimum of {tier} tier. {link} to unlock this feature.",
-      "link": "Upgrade",
-      "premium_tooltip": "Asset movement matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+      "locked": "With the {tier} plan, rotki matches asset movements automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching.",
+      "unmatched": "You have one unmatched asset movement. With the {tier} plan, rotki matches asset movements automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching. | You have {count} unmatched asset movements. With the {tier} plan, rotki matches asset movements automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching."
     },
     "resolved": {
       "external_deposit": "Deposit resolved as income from an untracked source.",
@@ -1851,11 +1850,11 @@
   },
   "blockchain_balances": {
     "add_account": "Add Account",
-    "add_validator_premium": "Adding ETH staking validators is a premium feature. Upgrade to rotki Premium to add validators.",
+    "add_validator_premium": "Adding ETH staking validators needs a rotki Premium plan.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
     "early_chain_warning": "rotki's {chain} integration is early: only a limited set of protocols is decoded on this chain for now. Transactions from other protocols will appear as plain transfers, with more protocols added over time.",
-    "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to raise your limit.",
-    "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. Upgrade your plan via {link} or contact us for a custom plan to get access.",
+    "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. {link}, or contact us for a custom plan, to raise your limit.",
+    "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. {link}, or contact us for a custom plan, to get access.",
     "evm_detection": {
       "found": "Added on {count} chain | Added on {count} chains",
       "none": "No new chains found",
@@ -1885,7 +1884,6 @@
       "validators": "Validators"
     },
     "validator_index_label": "Ethereum validator No. {index}",
-    "validator_limit_reached": "You have reached the ETH staking validator limit ({total}/{limit}). {link} to add more validators.",
     "validators": {
       "auto_detection_info": "Validators are auto-detected from ETH deposits. Add the depositor address as an Ethereum account, decode its history events, then click refresh to update the list.",
       "consolidated": "Consolidated into:",
@@ -1940,8 +1938,8 @@
       "untracked_source_tooltip": "The source address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Resolve this bridge withdrawal by marking it as external income."
     },
     "premium": {
-      "free_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. {link} to unlock this feature.",
-      "premium_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+      "locked": "With the {tier} plan, rotki matches bridge transactions automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching.",
+      "unmatched": "You have one unmatched bridge transaction. With the {tier} plan, rotki matches bridge transactions automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching. | You have {count} unmatched bridge transactions. With the {tier} plan, rotki matches bridge transactions automatically, and you can link the rest by hand. You are on the {currentTier} plan. {link} to turn on matching."
     },
     "resolved": {
       "external_deposit": "Bridge deposit resolved as a payment to an external address.",
@@ -3050,10 +3048,6 @@
     },
     "no_premium": "The ETH staking view is not available"
   },
-  "eth2_validator_limit_row": {
-    "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",
-    "label": "Validators"
-  },
   "event_asset_price_update": {
     "description": "Set the price of this asset at the event's timestamp.",
     "fetch_error": {
@@ -3453,7 +3447,7 @@
       "hint": "Enter your Moralis API key",
       "title": "Moralis"
     },
-    "need_premium": "Upgrade to premium to use this feature.",
+    "need_premium": "This feature needs a rotki Premium plan.",
     "need_tier": "Requires {tier} tier or higher.",
     "no_services_found": "No services found",
     "opensea": {
@@ -4482,7 +4476,7 @@
   },
   "kraken_page": {
     "loading": "Your Kraken staking information is loading...",
-    "no_premium": "Upgrade to premium to access Kraken staking information",
+    "no_premium": "Kraken staking information needs a rotki Premium plan",
     "page": {
       "api_key": "API key",
       "description": "To see your staking information you need to add a Kraken {link}",
@@ -4514,7 +4508,7 @@
     "title": "Earned Per Asset"
   },
   "liquity_page": {
-    "no_premium": "The Liquity staking statistic page is not included in the FREE version"
+    "no_premium": "The Liquity staking statistics are not available on your current plan"
   },
   "liquity_pools": {
     "liquidation_gains": "Unclaimed liquidation gains",
@@ -4770,7 +4764,7 @@
     "dashboard": {
       "liquidity_pools": {
         "pool_details": {
-          "premium_only": "See your complete assets overview with a Premium account "
+          "premium_only": "See your complete assets overview with a rotki Premium plan"
         },
         "pool_table": {
           "title": "LP Tokens"
@@ -4889,8 +4883,7 @@
     "select_collection": "Select collection",
     "sort": {
       "collection": "Collection"
-    },
-    "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
+    }
   },
   "non_fungible_balances": {
     "column": {
@@ -4912,7 +4905,6 @@
       "title": "Title"
     },
     "last_updated": "Last updated: {datetime}",
-    "limit_warning": "The limit of {limit} user notes has been reached in the free plan. To get more notes you can upgrade to {link}",
     "rules": {
       "content": {
         "non_empty": "Please fill the note"
@@ -5149,6 +5141,19 @@
   "pinned": {
     "tooltip": "Pinned Section"
   },
+  "plan_limit": {
+    "hidden": "Your {plan} plan limit hides {hidden} of your {total} {label}. {link} to see all of them.",
+    "labels": {
+      "events": "events",
+      "nfts": "NFTs",
+      "notes": "notes",
+      "reports": "reports",
+      "validators": "validators"
+    },
+    "reached": "You have reached your {plan} plan limit of {limit} {label}. {link} to add more.",
+    "unprocessed": "This report only covers {from} until {to}. Your {plan} plan limit left {hidden} of its {total} {label} unprocessed. {link} to include them.",
+    "upgrade": "Upgrade your plan"
+  },
   "poap_delivery_airdrops": {
     "title": "Claimable POAP Delivery NFTs"
   },
@@ -5333,7 +5338,7 @@
     "try_again": "Please try again later."
   },
   "premium_lock": {
-    "tooltip": "Feature is only supported with a premium subscription"
+    "tooltip": "Available with a rotki Premium plan"
   },
   "premium_placeholder": {
     "current_plan": "{tier} plan",
@@ -6287,7 +6292,7 @@
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   },
-  "theme_manager_lock": "The theme manager is not included in the FREE version",
+  "theme_manager_lock": "The theme manager is not available on your current plan",
   "theme_switch": {
     "auto": "Auto (Detect Device Theme)",
     "dark": "Dark",
@@ -6931,15 +6936,6 @@
     "messages": "A new version of rotki is available. See the {releaseNotes}.",
     "release_notes": "release notes",
     "restart": "rotki will restart in a moment to apply the update."
-  },
-  "upgrade_row": {
-    "events": "@:upgrade_row.first_line To view more please upgrade to {link}",
-    "events_premium": "@:upgrade_row.first_line To view more please {link}",
-    "first_line": "Processed {limit} out of {total} {label} from {from} until {to}.",
-    "rotki_premium": "rotki Premium",
-    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
-    "upgrade_premium": "Displaying {limit} out of {total} {label}. To view more please {link}",
-    "upgrade_your_plan": "upgrade your plan"
   },
   "user_dropdown": {
     "change_privacy_mode": {
