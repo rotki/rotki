@@ -25,7 +25,7 @@ export function useSessionReady(): UseSessionReadyReturn {
   const { clearUpgradeMessages } = authStore;
   const { showGetPremiumButton } = usePremiumHelper();
   const { fetchTransactionStatusSummary } = useHistoryDataFetching();
-  const { navigateToDashboard } = useAppNavigation();
+  const { navigateAfterUnlock } = useAppNavigation();
   const { showReleaseNotes } = useUpdateMessage();
   const { refreshSupportedChains } = useSupportedChains();
 
@@ -36,7 +36,7 @@ export function useSessionReady(): UseSessionReadyReturn {
     showGetPremiumButton();
     await refreshSupportedChains();
     await fetchTransactionStatusSummary();
-    await navigateToDashboard();
+    await navigateAfterUnlock();
     set(showReleaseNotes, false);
   }
 

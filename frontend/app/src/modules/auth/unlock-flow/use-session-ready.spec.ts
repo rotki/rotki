@@ -6,7 +6,7 @@ import { useSessionReady } from './use-session-ready';
 const {
   fetchTransactionStatusSummary,
   lastLoginRef,
-  navigateToDashboard,
+  navigateAfterUnlock,
   refreshSupportedChains,
   showGetPremiumButton,
   showReleaseNotesRef,
@@ -15,7 +15,7 @@ const {
   return {
     fetchTransactionStatusSummary: vi.fn(),
     lastLoginRef: ref<string>(''),
-    navigateToDashboard: vi.fn(),
+    navigateAfterUnlock: vi.fn(),
     refreshSupportedChains: vi.fn(),
     showGetPremiumButton: vi.fn(),
     showReleaseNotesRef: ref<boolean>(true),
@@ -39,7 +39,7 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
 }));
 
 vi.mock('@/modules/shell/layout/use-navigation', () => ({
-  useAppNavigation: vi.fn(() => ({ navigateToDashboard })),
+  useAppNavigation: vi.fn(() => ({ navigateAfterUnlock })),
 }));
 
 vi.mock('@/modules/core/messaging/use-update-message', () => ({
@@ -65,16 +65,16 @@ describe('useSessionReady', () => {
     expect(get(lastLoginRef)).toBe('alice');
     expect(showGetPremiumButton).toHaveBeenCalled();
     expect(fetchTransactionStatusSummary).toHaveBeenCalled();
-    expect(navigateToDashboard).toHaveBeenCalled();
+    expect(navigateAfterUnlock).toHaveBeenCalled();
     expect(get(showReleaseNotesRef)).toBe(false);
   });
 
-  it('should load the supported chains before navigating to the dashboard', async () => {
+  it('should load the supported chains before navigating to the first page', async () => {
     await useSessionReady().handleSessionReady();
 
     expect(refreshSupportedChains).toHaveBeenCalledOnce();
-    // chains must be populated before the dashboard (and its consumers) mount
+    // chains must be populated before the first page (and its consumers) mount
     expect(refreshSupportedChains.mock.invocationCallOrder[0])
-      .toBeLessThan(navigateToDashboard.mock.invocationCallOrder[0]);
+      .toBeLessThan(navigateAfterUnlock.mock.invocationCallOrder[0]);
   });
 });

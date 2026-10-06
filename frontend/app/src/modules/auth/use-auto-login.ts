@@ -33,7 +33,7 @@ export function createAutoLogin(): UseAutoLoginReturn {
 
   const controller = useUnlockFlowController();
   const { connected } = storeToRefs(useMainStore());
-  const { username } = storeToRefs(useSessionAuthStore());
+  const { logged, username } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
   const { checkIfPasswordConfirmationNeeded, confirmPassword, needsPasswordConfirmation } = usePasswordConfirmation();
 
@@ -46,17 +46,21 @@ export function createAutoLogin(): UseAutoLoginReturn {
    * does. With no saved profile there is nothing to unlock, so the loader is dropped and the login
    * form shown.
    *
+   * Nothing to do while logged in, checked again after the backend reset. The shared instance is
+   * disposed with the login layout and created again by the logged-in one, so this runs on every
+   * login; an unlock started then would begin a second session and navigate a second time.
+   *
    * @param isConnected - whether the backend is reachable
    */
   async function unlockLastProfile(isConnected: boolean): Promise<void> {
-    if (!isConnected)
+    if (!isConnected || get(logged))
       return;
 
     set(autolog, true);
 
     await resetSessionBackend();
 
-    if (!get(lastLogin)) {
+    if (!get(lastLogin) || get(logged)) {
       set(autolog, false);
       return;
     }

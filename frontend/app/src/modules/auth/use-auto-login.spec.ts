@@ -2,6 +2,7 @@ import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { createAutoLogin } from './use-auto-login';
 
@@ -67,6 +68,32 @@ describe('createAutoLogin', () => {
     expect(resetSessionBackend).toHaveBeenCalled();
     expect(startAuto).toHaveBeenCalledTimes(1);
     expect(get(autoLogin!.autolog)).toBe(false);
+  });
+
+  it('should not unlock again when created while already logged in, as the logged-in layout does', async () => {
+    set(lastLoginRef, 'alice');
+    set(storeToRefs(useSessionAuthStore()).logged, true);
+    connect(true);
+
+    scope.run(() => createAutoLogin());
+    await flushPromises();
+
+    expect(resetSessionBackend).not.toHaveBeenCalled();
+    expect(startAuto).not.toHaveBeenCalled();
+  });
+
+  it('should not unlock when a login lands while the backend reset is pending', async () => {
+    set(lastLoginRef, 'alice');
+    resetSessionBackend.mockImplementation(async () => {
+      set(storeToRefs(useSessionAuthStore()).logged, true);
+    });
+
+    scope.run(() => createAutoLogin());
+    connect(true);
+    await flushPromises();
+
+    expect(resetSessionBackend).toHaveBeenCalledOnce();
+    expect(startAuto).not.toHaveBeenCalled();
   });
 
   it('should raise the loader before the backend reset, so the login form never flashes', async () => {
