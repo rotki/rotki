@@ -29,8 +29,8 @@ vi.mock('@/modules/shell/components/inputs/use-asset-search', async (importOrigi
 
 const RuiAutoComplete = {
   name: 'RuiAutoComplete',
-  props: ['label', 'options', 'dense', 'hideDetails', 'variant', 'errorMessages'],
-  template: '<div class="rui-auto-complete" :data-label="label" :data-variant="variant" />',
+  props: ['label', 'options', 'dense', 'hideDetails', 'variant', 'errorMessages', 'placeholder'],
+  template: '<div class="rui-auto-complete" :data-label="label" :data-variant="variant" :data-placeholder="placeholder" />',
 };
 
 function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
@@ -117,6 +117,17 @@ describe('assetSelect', () => {
     expect(wrapper.get('.rui-auto-complete').attributes('data-label')).toBe('Fee asset');
 
     wrapper.unmount();
+  });
+
+  // An allow-list only filters, so the field must not ask for a contract address.
+  it('should invite a filter rather than a search when an allow-list is set', () => {
+    const restricted = createWrapper({ source: { items: ['ETH'] } });
+    expect(restricted.get('.rui-auto-complete').attributes('data-placeholder')).toBe('asset_select.filter_placeholder');
+    restricted.unmount();
+
+    const open = createWrapper({ source: { items: [] } });
+    expect(open.get('.rui-auto-complete').attributes('data-placeholder')).toBe('asset_select.placeholder');
+    open.unmount();
   });
 
   // The variant used to be an `outlined` boolean, which could not name `filled` at all.
