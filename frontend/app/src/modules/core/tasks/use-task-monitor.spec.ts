@@ -1,6 +1,6 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { FetchError } from 'ofetch';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockQueryTasks = vi.fn();
 const mockQueryTaskResult = vi.fn();
@@ -88,27 +88,102 @@ describe('useTaskMonitor', () => {
     );
   });
 
-  it('should apply exponential backoff on timeout errors and keep task running', async () => {
+  describe('timeout backoff', () => {
     const FIRST_RETRY_DELAY_MS = 1000;
-    vi.useFakeTimers();
-    try {
+
+    beforeEach(() => {
+      vi.useFakeTimers();
       store.addTask(3, 'Test task');
-
-      const timeoutError = new FetchError('The operation was aborted due to timeout');
       mockQueryTasks.mockResolvedValue({ pending: [], completed: [3] });
-      mockQueryTaskResult.mockRejectedValue(timeoutError);
+      mockQueryTaskResult.mockRejectedValue(new FetchError('The operation was aborted due to timeout'));
+    });
 
-      const pending = monitor.monitor();
-      await vi.advanceTimersByTimeAsync(FIRST_RETRY_DELAY_MS);
-      await pending;
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should keep a timed out task running and count the timeout', async () => {
+      await monitor.monitor();
 
       expect(get(store.taskById)[3]).toBeDefined();
       expect(mockHandleResult).not.toHaveBeenCalled();
       expect(store.getTimeoutCount(3)).toBe(1);
-    }
-    finally {
-      vi.useRealTimers();
-    }
+    });
+
+    it('should finish the pass without waiting out the backoff, and skip the task until it ends', async () => {
+      await monitor.monitor();
+      await monitor.monitor();
+      expect(mockQueryTaskResult).toHaveBeenCalledOnce();
+
+      await vi.advanceTimersByTimeAsync(FIRST_RETRY_DELAY_MS);
+      await monitor.monitor();
+
+      expect(mockQueryTaskResult).toHaveBeenCalledTimes(2);
+    });
+
+    it('should drop a pending retry when the session ends', async () => {
+      const { endSession } = await import('@/modules/core/session/session-lifecycle');
+      await monitor.monitor();
+
+      endSession();
+      await vi.advanceTimersByTimeAsync(FIRST_RETRY_DELAY_MS);
+
+      expect(get(store.locked).has(3)).toBe(true);
+    });
+  });
+
+  it('should leave a task alone when its result fetch is cancelled, as a logout cancels it', async () => {
+    const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+    store.addTask(5, 'Test task');
+    mockQueryTasks.mockResolvedValue({ pending: [], completed: [5] });
+    mockQueryTaskResult.mockRejectedValue(new RequestCancelledError('No live session'));
+
+    await monitor.monitor();
+
+    expect(mockHandleResult).not.toHaveBeenCalled();
+    expect(get(store.locked).has(5)).toBe(false);
+  });
+
+  describe('tasks the backend no longer lists', () => {
+    it('should settle a task missing from both lists as cancelled by the backend', async () => {
+      store.addTask(40, 'Test task');
+      mockQueryTasks.mockResolvedValue({ pending: [41], completed: [] });
+
+      await monitor.monitor();
+
+      expect(mockHandleResult).toHaveBeenCalledExactlyOnceWith({ message: '', result: null }, 40);
+    });
+
+    it('should not settle a task the backend lists as pending', async () => {
+      store.addTask(40, 'Test task');
+      mockQueryTasks.mockResolvedValue({ pending: [40], completed: [] });
+
+      await monitor.monitor();
+
+      expect(mockHandleResult).not.toHaveBeenCalled();
+    });
+
+    it('should not settle a task added while the listing was in flight', async () => {
+      store.addTask(40, 'Test task');
+      mockQueryTasks.mockImplementation(async (): Promise<unknown> => {
+        store.addTask(42, 'Newer task');
+        return { pending: [40], completed: [] };
+      });
+
+      await monitor.monitor();
+
+      expect(mockHandleResult).not.toHaveBeenCalled();
+    });
+
+    it('should not settle a locked task, whose outcome is being fetched', async () => {
+      store.addTask(40, 'Test task');
+      store.lock(40);
+      mockQueryTasks.mockResolvedValue({ pending: [], completed: [] });
+
+      await monitor.monitor();
+
+      expect(mockHandleResult).not.toHaveBeenCalled();
+    });
   });
 
   it('should remove task and call handler on generic errors', async () => {
