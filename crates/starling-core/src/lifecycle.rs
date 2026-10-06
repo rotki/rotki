@@ -276,11 +276,11 @@ impl<S: Spawner> Supervisor<S> {
 
         let process = match self.spawner.spawn(&spec).await {
             Ok(process) => process,
-            Err(source) => {
+            Err(error) => {
                 let err = SupervisorError::SpawnFailed {
                     service: spec.name.clone(),
                     program: spec.launcher.program.clone(),
-                    source,
+                    error,
                 };
                 let rt = self.services.get_mut(name).expect("service exists");
                 rt.state = ServiceState::Failed;
@@ -441,8 +441,10 @@ impl<S: Spawner> Supervisor<S> {
                     None => None,
                 };
                 rt.state = ServiceState::Failed;
-                rt.last_error = Some(match info {
-                    Some(info) => format!("exited code {:?}", info.code),
+                rt.last_error = Some(match info.map(|info| info.code) {
+                    Some(Some(code)) => format!("exited with code {code}"),
+                    // No code on Unix means a signal ended it (a SIGKILL among them).
+                    Some(None) => "was killed by a signal".to_string(),
                     None => "exited".to_string(),
                 });
                 dead.push(name);
@@ -882,6 +884,10 @@ mod tests {
         let message = err.to_string();
         assert!(message.contains("colibri"), "{message}");
         assert!(message.contains("/bin/true"), "{message}");
+        // The io error is in the message, so it is not also the source a chain printer repeats.
+        let io_error = io::Error::from(io::ErrorKind::NotFound).to_string();
+        assert!(message.contains(&io_error), "{message}");
+        assert!(std::error::Error::source(&err).is_none());
     }
 
     #[tokio::test]
@@ -1315,6 +1321,11 @@ mod tests {
         let dead = sup.poll_exits().await.unwrap();
         assert_eq!(dead, vec!["core"]);
         assert_eq!(sup.status()[0].state, ServiceState::Failed);
+        // Read by people on the error screen, so no `Some(1)` debug output.
+        assert_eq!(
+            sup.status()[0].last_error.as_deref(),
+            Some("exited with code 1")
+        );
     }
 
     impl<S: Spawner> Supervisor<S> {
