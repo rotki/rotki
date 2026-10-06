@@ -96,7 +96,12 @@ test.describe.serial('bank connections', () => {
   });
 
   test('should sync only the bank connection picked in the history refresh menu', async () => {
+    const syncedBeforeVisit = requests.synced.length;
     await banksPage.visitHistory();
+    await expect.poll(() => requests.synced.length, {
+      message: 'the first history visit refreshes the banks, so wait for that refresh to start before picking one',
+      timeout: TIMEOUT_MEDIUM,
+    }).toBeGreaterThan(syncedBeforeVisit);
     await banksPage.openRefreshMenuBanks();
     const syncedBefore = requests.synced.length;
 

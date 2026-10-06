@@ -89,8 +89,10 @@ export class BanksPage {
    * Opens the Banks tab of the history refresh menu.
    *
    * @remarks
-   * The toggle stays disabled while the history page's own refresh runs, so waiting for it to enable
-   * is also the gate that nothing from that refresh is still being sent.
+   * The toggle stays disabled while the history page's own refresh runs, so once that refresh has
+   * started, waiting for it to enable is the gate that nothing from it is still being sent. The first
+   * visit starts that refresh after a debounce, so the toggle is also enabled before it begins: wait
+   * for something the refresh sends first.
    */
   async openRefreshMenuBanks(): Promise<void> {
     const toggle = this.page.locator('[data-testid=refresh-selection-toggle]');
