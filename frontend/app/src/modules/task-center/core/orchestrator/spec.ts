@@ -15,7 +15,8 @@ type StaticLane =
   | typeof SESSION_LANE
   | typeof UMBRELLA_LANE
   | typeof CHAIN_SYNC_LANE
-  | typeof DECODE_LANE;
+  | typeof DECODE_LANE
+  | typeof PRICE_REFRESH_LANE;
 
 /**
  * Prefixes for lanes minted per entity, where the full name is only known at runtime
@@ -56,6 +57,12 @@ export const BALANCES_LANE = 'balances';
 
 /** Exchange balance + savings queries run here; capped at 2, a pool separate from {@link BALANCES_LANE}. */
 export const EXCHANGE_LANE = 'exchange';
+
+/**
+ * Price refreshes run here, capped at 1: each one ends by writing the prices it fetched into the
+ * balances, so two at once would race those writes. A second refresh queues behind the first.
+ */
+export const PRICE_REFRESH_LANE = 'price-refresh';
 
 /**
  * Unlocking a session — login and account creation. On its own lane because session work must
