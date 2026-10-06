@@ -105,6 +105,140 @@ describe('useActivityBatch', () => {
     }
   });
 
+  describe('follow-up', () => {
+    /**
+     * An activity whose run waits until `release` is called, and records when it started.
+     *
+     * @remarks
+     * `settled` is read off the record's status, so it also resolves when a reset or a cancel
+     * settles the record without the run ever being released.
+     */
+    function heldActivity(name: string, deps: string[] = []): {
+      release: () => void;
+      settled: Promise<unknown>;
+      started: () => boolean;
+    } {
+      const { statusOf, submit } = useTaskOrchestrator();
+      const id = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', name);
+      let release!: () => void;
+      let started = false;
+      submit({
+        deps: deps.map(dep => makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', dep)),
+        id,
+        kind: ActivityKind.BLOCKCHAIN_BALANCES,
+        run: async (): ResultAsync<void, TaskError> => {
+          started = true;
+          return new Promise<Result<void, TaskError>>((resolve) => {
+            release = (): void => resolve(ok(undefined));
+          });
+        },
+        title: name,
+      });
+      const settled = vi.waitFor(() => {
+        expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', name).active).toBe(false);
+      }, { interval: 5, timeout: 2000 });
+      return { release: () => release?.(), settled, started: () => started };
+    }
+
+    function batchUmbrella(name: string): { id: ReturnType<typeof makeActivityId>; kind: ActivityKind; title: string } {
+      return { id: makeActivityId(ActivityKind.ACCOUNTS, name), kind: ActivityKind.ACCOUNTS, title: name };
+    }
+
+    it('should declare the follow-up after the items, in the same tick, under the umbrella', async () => {
+      const { runActivityBatch } = useActivityBatch();
+      const order: string[] = [];
+      const parents: (string | undefined)[] = [];
+
+      const running = runActivityBatch(umbrella(), ['a', 'b'], async (item) => {
+        order.push(item);
+      }, async (parent) => {
+        order.push('follow-up');
+        parents.push(parent);
+      });
+
+      expect(order).toStrictEqual(['a', 'b', 'follow-up']);
+      expect(parents).toStrictEqual([umbrellaId]);
+      await running;
+    });
+
+    it('should hand a one-item batch\'s follow-up the umbrella\'s own parent', async () => {
+      const { runActivityBatch } = useActivityBatch();
+      const outer = makeActivityId(ActivityKind.ACCOUNTS, 'outer');
+      const followUp = vi.fn<(parent: string | undefined) => Promise<void>>(async () => {});
+
+      await runActivityBatch({ ...umbrella(), parent: outer }, ['only'], async item => item, followUp);
+
+      expect(followUp).toHaveBeenCalledExactlyOnceWith(outer);
+    });
+
+    it('should start a follow-up that depends on the items only once every item settled', async () => {
+      const { runActivityBatch } = useActivityBatch();
+      const { statusOf } = useTaskOrchestrator();
+      const items: ReturnType<typeof heldActivity>[] = [];
+      let node!: ReturnType<typeof heldActivity>;
+
+      const running = runActivityBatch(batchUmbrella('order'), ['a', 'b'], async (item) => {
+        const held = heldActivity(`order-${item}`);
+        items.push(held);
+        await held.settled;
+      }, async () => {
+        node = heldActivity('order-node', ['order-a', 'order-b']);
+        await node.settled;
+      });
+
+      await vi.waitFor(() => expect(items.every(item => item.started())).toBe(true));
+      items[0].release();
+      await items[0].settled;
+      await vi.waitFor(() => expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', 'order-a').active).toBe(false));
+      expect(node.started()).toBe(false);
+
+      items[1].release();
+      await vi.waitFor(() => expect(node.started()).toBe(true));
+      node.release();
+      await running;
+    });
+
+    it('should keep the umbrella open until the follow-up settles', async () => {
+      const { runActivityBatch } = useActivityBatch();
+      const { statusOf } = useTaskOrchestrator();
+      let node!: ReturnType<typeof heldActivity>;
+
+      const running = runActivityBatch(batchUmbrella('open'), ['a', 'b'], async item => item, async () => {
+        node = heldActivity('open-node');
+        await node.settled;
+      });
+
+      await vi.waitFor(() => expect(node.started()).toBe(true));
+      expect(statusOf(ActivityKind.ACCOUNTS, 'open').active).toBe(true);
+
+      node.release();
+      await running;
+      await vi.waitFor(() => expect(statusOf(ActivityKind.ACCOUNTS, 'open').active).toBe(false));
+    });
+
+    it('should never run a follow-up that a reset drops while it waits on the items', async () => {
+      const { runActivityBatch } = useActivityBatch();
+      const { reset } = useTaskOrchestrator();
+      const items: ReturnType<typeof heldActivity>[] = [];
+      let node!: ReturnType<typeof heldActivity>;
+
+      const running = runActivityBatch(batchUmbrella('reset'), ['a', 'b'], async (item) => {
+        const held = heldActivity(`reset-${item}`);
+        items.push(held);
+        await held.settled;
+      }, async () => {
+        node = heldActivity('reset-node', ['reset-a', 'reset-b']);
+        await node.settled;
+      });
+
+      await vi.waitFor(() => expect(items.every(item => item.started())).toBe(true));
+      reset();
+      await running;
+
+      expect(node.started()).toBe(false);
+    });
+  });
+
   it('should settle the umbrella activity itself, a tick after its own promise resolves', async () => {
     const { runActivityBatch } = useActivityBatch();
     const { statusOf } = useTaskOrchestrator();

@@ -315,6 +315,22 @@ describe('useBlockchainBalances', () => {
       }
     });
 
+    it.each([
+      { detect: false, label: 'a plain refresh' },
+      { detect: true, label: 'a detecting refresh' },
+    ])('should hand the follow-up exactly the chain jobs it submitted, for $label', async ({ detect }) => {
+      const followUp = vi.fn<(chainIds: string[], parent: string | undefined) => Promise<void>>(async () => {});
+
+      await blockchainBalances.refreshBlockchainBalances({}, 'background', { detect, followUp });
+
+      const submitted = submitTask.mock.calls.map(([spec]) => spec);
+      const umbrella = submitted.find(spec => spec.id.includes(`:${ActivityPart.RUN}:`));
+      assert(umbrella !== undefined);
+      const chainJobIds = submitted.filter(spec => spec.parent === umbrella.id).map(spec => spec.id);
+      expect(chainJobIds).toHaveLength(2);
+      expect(followUp).toHaveBeenCalledExactlyOnceWith(chainJobIds, umbrella.id);
+    });
+
     it('should mark the run umbrella as a container, so it claims no freshness for its kind', async () => {
       await blockchainBalances.refreshBlockchainBalances({}, 'background');
 

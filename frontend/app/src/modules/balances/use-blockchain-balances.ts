@@ -27,6 +27,11 @@ interface RefreshOptions {
    * every address on the chain — an account addition is the one flow that knows a smaller answer.
    */
   readonly detectAddresses?: string[];
+  /**
+   * Work to declare with the chains and run after them, as part of the same refresh: it is handed
+   * the chain jobs' ids to depend on and the parent to submit under. See `runActivityBatch`.
+   */
+  readonly followUp?: (chainIds: ActivityId[], parent: ActivityId | undefined) => Promise<unknown>;
 }
 
 interface UseBlockchainBalancesReturn {
@@ -113,7 +118,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     mode: RefreshMode = RefreshMode.BACKGROUND,
     options: RefreshOptions = {},
   ): Promise<void> => {
-    const { detect = false, detectAddresses } = options;
+    const { detect = false, detectAddresses, followUp } = options;
     const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
     const requestedAddresses = addresses?.length ? addresses : undefined;
@@ -127,7 +132,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const priority = refreshPriority(userStarted);
 
     /**
-     * One chain's refresh: token detection when asked, then the network query.
+     * The id of one chain's refresh job, the one the follow-up depends on.
      *
      * @remarks
      * `detect` and the address narrowing are both part of the activity id, because `submitTask`
@@ -137,7 +142,15 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      *
      * Those parts are *appended*, never substituted: every reader is prefix-based, so the kind
      * and the chain have to stay leading.
+     */
+    const chainJobId = (chain: string): ActivityId => (detect
+      ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT, ...(detectAddresses?.length ? [setDigest(detectAddresses)] : []))
+      : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain));
+
+    /**
+     * One chain's refresh: token detection when asked, then the network query.
      *
+     * @remarks
      * The body runs in statement order, and that order is the contract: an excluded chain is
      * answered before detection so it costs neither a detect nor a query, detection is awaited so
      * the query sees the tokens it found, and cancellation is re-checked afterwards because
@@ -147,9 +160,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const chainJob = async (chain: string, parent: ActivityId | undefined): Promise<void> => {
       const chainAddresses = allowedAddresses(chain);
       const chainPayload = { addresses: chainAddresses ?? addresses, blockchain: chain, isXpub };
-      const id = detect
-        ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT, ...(detectAddresses?.length ? [setDigest(detectAddresses)] : []))
-        : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain);
+      const id = chainJobId(chain);
       await submit({
         id,
         parent,
@@ -194,6 +205,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
       },
       chains,
       async (chain, parent) => chainJob(chain, parent),
+      async (parent): Promise<unknown> => followUp?.(chains.map(chainJobId), parent),
     );
   };
 

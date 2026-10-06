@@ -526,6 +526,9 @@
     },
     "balances": {
       "all_balances": {
+        "skipped": {
+          "not_due": "A snapshot was already saved"
+        },
         "task": {
           "description": "Querying all balances and saving a snapshot for statistics.",
           "ignore_errors_note": "Errors during the query will be ignored."
