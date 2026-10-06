@@ -6,11 +6,14 @@ import { EvmUndecodedTransactionResponse } from '@/modules/core/messaging/types'
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
+/** The undecoded-count fetch's activity, which a decode can wait for so its progress starts from it. */
+export const UNDECODED_BREAKDOWN_ID = makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED);
+
 interface UseUndecodedTransactionsStatusReturn {
-  fetchUndecodedTransactionsBreakdown: () => Promise<void>;
+  fetchUndecodedTransactionsBreakdown: (parent?: ActivityId) => Promise<void>;
 }
 
 /**
@@ -26,15 +29,16 @@ export function useUndecodedTransactionsStatus(): UseUndecodedTransactionsStatus
   const { statusOf, submitTask } = useNativeTask();
   const { resetUndecodedTransactionsStatus, updateUndecodedTransactionsStatus } = useDecodingStatusStore();
 
-  const fetchUndecodedTransactionsBreakdown = async (): Promise<void> => {
+  const fetchUndecodedTransactionsBreakdown = async (parent?: ActivityId): Promise<void> => {
     if (statusOf(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED).active) {
       logger.debug(`was already fetching undecoded transactions`);
       return;
     }
 
     await submitTask({
-      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED),
+      id: UNDECODED_BREAKDOWN_ID,
       kind: ActivityKind.HISTORY_EVENTS,
+      parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<EvmUndecodedTransactionResponse>(
