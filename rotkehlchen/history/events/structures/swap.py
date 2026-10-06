@@ -175,7 +175,7 @@ class SwapEvent(HistoryBaseEntry):
             group_identifier=base_data['group_identifier'],
             timestamp=base_data['timestamp'],
             location=base_data['location'],
-            event_subtype=event_subtype,  # type: ignore  # just confirmed it's a SPEND, RECEIVE or FEE above
+            event_subtype=event_subtype,
             asset=base_data['asset'],
             amount=base_data['amount'],
             notes=base_data['notes'],

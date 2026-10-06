@@ -200,7 +200,7 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
             address=account,
             label=DBAddressbook(blockchain.database).get_addressbook_entry_name(
                 book_type=AddressbookType.PRIVATE,
-                chain_address=OptionalChainAddress(address=account, blockchain=chain),  # type: ignore[arg-type]  # account will be ChecksumAddress here
+                chain_address=OptionalChainAddress(address=account, blockchain=chain),
             ),
         )
         for chain in (

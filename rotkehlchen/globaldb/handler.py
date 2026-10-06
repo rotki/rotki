@@ -1204,7 +1204,7 @@ class GlobalDBHandler:
         May raise:
         - InputError if a constraint is hit or the underlying tokens are invalid
         """
-        table_columns = {
+        table_columns: dict[str, list[str]] = {
             'assets': [x for x in ('name',) if x in fields],
             'common_asset_details': [
                 x for x in ('symbol', 'coingecko', 'cryptocompare', 'started') if x in fields
