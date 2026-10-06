@@ -1,5 +1,6 @@
 import type { EffectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 
 const fetchManualBalances = vi.fn(async (): Promise<void> => {});
@@ -171,5 +172,24 @@ describe('useBalanceWatchers', () => {
     expect(removeIgnoredAssets).toHaveBeenCalledOnce();
     expect(removeIgnoredAssets).toHaveBeenCalledWith(updatedAssets);
     expect(hydrate).not.toHaveBeenCalled();
+  });
+
+  it('should not react once the session ended, as the store reset at logout changes both', async () => {
+    const { useBalanceWatchers } = await import('./use-balance-watchers');
+    set(mockIgnoredAssets, ['asset-a']);
+    set(mockBalanceValueThreshold, { [BalanceSource.BLOCKCHAIN]: '10' });
+    await nextTick();
+    scope.run(() => {
+      useBalanceWatchers();
+    });
+    vi.clearAllMocks();
+
+    endSession();
+    set(mockIgnoredAssets, []);
+    set(mockBalanceValueThreshold, {});
+    await nextTick();
+
+    expect(hydrate).not.toHaveBeenCalled();
+    expect(removeIgnoredAssets).not.toHaveBeenCalled();
   });
 });
