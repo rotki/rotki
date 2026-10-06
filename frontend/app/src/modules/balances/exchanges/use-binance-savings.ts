@@ -5,6 +5,7 @@ import type {
   ExchangeSavingsCollectionResponse,
   ExchangeSavingsRequestPayload,
 } from '@/modules/balances/types/exchanges';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { toSentenceCase } from '@rotki/common';
 import { pipe } from 'plainfp';
 import { filter, unique } from 'plainfp/arrays';
@@ -15,8 +16,6 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
@@ -44,7 +43,6 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { submitTask } = useNativeTask();
   const { useWorkStatus } = useTaskCenter();
-  const { notifyError } = useNotifications();
   const { getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -77,7 +75,7 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       orderByAttributes: ['timestamp'],
     };
 
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.EXCHANGE_SAVINGS, location),
       kind: ActivityKind.EXCHANGE_SAVINGS,
       lane: EXCHANGE_LANE,
@@ -90,13 +88,6 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.exchange_savings.interest'), { location: toSentenceCase(location) }),
       title: t('task_center.group.exchange_savings'),
-    });
-
-    onActionableError(outcome, () => {
-      notifyError(
-        t('actions.balances.exchange_savings_interest.error.title', { location }),
-        t('actions.balances.exchange_savings_interest.error.message', { location }),
-      );
     });
   };
 

@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import {
   type BigNumber,
   type CommonQueryStatusData,
@@ -11,8 +12,6 @@ import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { SECONDS_PER_HOUR } from '@/modules/core/common/constraints';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -54,7 +53,6 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
   const { queryHistoricalRates } = usePriceApi();
   const { cancelByPrefix, submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
 
   const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;
 
@@ -90,13 +88,6 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       subtitle: description,
       title: t('task_center.group.prices'),
     });
-
-    onActionableError(outcome, error => notifyError(
-      t('actions.balances.historic_fetch_price.task.title'),
-      t('actions.balances.historic_fetch_price.error.message', {
-        message: error.message,
-      }),
-    ));
 
     const response = HistoricPrices.parse(getOr(outcome, { assets: {}, targetAsset: '' }));
 

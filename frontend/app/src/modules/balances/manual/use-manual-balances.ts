@@ -33,7 +33,7 @@ interface UseManualBalancesReturn {
 
 export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { notifyError, showErrorMessage } = useNotifications();
+  const { showErrorMessage } = useNotifications();
   const { cancelActivity, statusOf, submitTask } = useNativeTask();
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
@@ -81,13 +81,7 @@ export function useManualBalances(): UseManualBalancesReturn {
       title: t('task_center.group.manual_balances'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.balances.manual_balances.error.title'),
-        t('actions.balances.manual_balances.error.message', { message: error.message }),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
   };
 
   /**

@@ -54,20 +54,9 @@
   "actions": {
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "Abfrage der Salden und Speichern des Snapshots fehlgeschlagen: {message}",
-          "title": "Bilanz-Snapshot fehlgeschlagen"
-        },
         "task": {
           "description": "Alle Salden werden abgefragt und ein Snapshot für die Statistik gespeichert.",
           "ignore_errors_note": "Fehler während der Abfrage werden ignoriert."
-        }
-      }
-    },
-    "defi": {
-      "liquity_pools": {
-        "error": {
-          "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}"
         }
       }
     },

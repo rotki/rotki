@@ -47,20 +47,9 @@
   "actions": {
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "Αποτυχία ερωτήματος υπολοίπων και αποθήκευσης του στιγμιότυπου: {message}",
-          "title": "Αποτυχία στιγμιότυπου υπολοίπων"
-        },
         "task": {
           "description": "Ερώτημα όλων των υπολοίπων και αποθήκευση στιγμιότυπου για τα στατιστικά.",
           "ignore_errors_note": "Τα σφάλματα κατά τη διάρκεια του ερωτήματος θα αγνοηθούν."
-        }
-      }
-    },
-    "defi": {
-      "liquity_pools": {
-        "error": {
-          "description": "Αποτυχία ανάκτησης Liquity Pools: {message}"
         }
       }
     },
@@ -81,10 +70,6 @@
       "title": "Εξαγωγή Ιστορικών Γεγονότων"
     },
     "online_events": {
-      "error": {
-        "description": "Αποτυχημένο ερώτημα online συμβάντων με τύπο ερωτήματος {queryType}: {error}",
-        "title": "Ερώτημα online συμβάντων"
-      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -93,18 +78,6 @@
           },
           "title": "Εξαγωγή σε CSV"
         }
-      }
-    },
-    "transactions_redecode": {
-      "error": {
-        "description": "Απέτυχε η αποκωδικοποίηση συμβάντων από συναλλαγές: {error}",
-        "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "Απέτυχε η αποκωδικοποίηση των συμβάντων {chain}: {error}",
-        "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
       }
     }
   },

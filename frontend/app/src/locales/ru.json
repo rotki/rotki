@@ -293,30 +293,9 @@
     },
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "Не удалось запросить балансы и сохранить снимок: {message}",
-          "title": "Не удалось сохранить снимок балансов"
-        },
         "task": {
           "description": "Запрос всех балансов и сохранение снимка для статистики.",
           "ignore_errors_note": "Ошибки во время запроса будут проигнорированы."
-        }
-      },
-      "blockchain": {
-        "error": {
-          "description": "Ошибка при запросе балансов блокчейна: {error}",
-          "title": "Запрос балансов блокчейна"
-        }
-      },
-      "blockchain_account_removal": {
-        "agnostic": {
-          "error": {
-            "title": "Удаление аккаунта для адреса {address}"
-          }
-        },
-        "error": {
-          "description": "Не удалось удалить аккаунт: {error}",
-          "title": "Удаление {count} аккаунтов {blockchain}"
         }
       },
       "blockchain_accounts_add": {
@@ -344,122 +323,30 @@
           "title": "Получение обнаруженных токенов"
         }
       },
-      "exchange_balances": {
-        "error": {
-          "message": "Не удалось запросить балансы {location}: {error}",
-          "title": "Запрос баланса {location}"
-        }
-      },
-      "exchange_rates": {
-        "error": {
-          "message": "Не удалось получить курсы обмена: {message}",
-          "title": "Курсы обмена"
-        }
-      },
       "exchange_removal": {
         "description": "Удаление {exchange} не удалось из-за: {error}",
         "title": "Удаление биржи"
-      },
-      "exchange_savings_interest": {
-        "error": {
-          "message": "Не удалось запросить информацию о процентах по вкладам {location}: {error}",
-          "title": "Запрос процентов {location}"
-        }
       },
       "exchange_setup": {
         "description": "Настройка {exchange} не удалась из-за: {error}",
         "title": "Настройка биржи"
       },
       "historic_fetch_price": {
-        "daily": {
-          "error": {
-            "message": "Не удалось получить исторические дневные цены: {message}"
-          },
-          "task": {
-            "title": "Получение исторических дневных цен"
-          }
-        },
-        "error": {
-          "message": "Не удалось получить исторические цены: {message}"
-        },
         "task": {
-          "description": "Получение курса из {fromAsset} в {toAsset} на {date} | Получение курсов для {count} пар к {toAsset}",
-          "title": "Получение курса конвертации"
-        }
-      },
-      "manual_balances": {
-        "error": {
-          "message": "Ошибка: {message}",
-          "title": "Получение ручных балансов"
+          "description": "Получение курса из {fromAsset} в {toAsset} на {date} | Получение курсов для {count} пар к {toAsset}"
         }
       },
       "manual_delete": {
         "error": {
           "title": "Удаление ручного баланса"
         }
-      },
-      "xpub_removal": {
-        "error": {
-          "description": "Не удалось удалить {xpub}: {error}",
-          "title": "Удаление Xpub"
-        }
       }
     },
     "date_range": " с {from}| по {to}| с {from} по {to}",
-    "defi": {
-      "airdrops": {
-        "error": {
-          "description": "Не удалось получить аирдропы: {error}",
-          "title": "Аирдропы"
-        }
-      },
-      "liquity_balances": {
-        "error": {
-          "description": "Не удалось получить балансы Liquity: {message}",
-          "title": "Балансы Liquity"
-        }
-      },
-      "liquity_pools": {
-        "error": {
-          "description": "Не удалось запросить пулы Liquity: {message}",
-          "title": "Пулы Liquity"
-        }
-      },
-      "liquity_staking": {
-        "error": {
-          "description": "Не удалось получить стейкинг Liquity: {message}",
-          "title": "Стейкинг Liquity"
-        }
-      },
-      "liquity_statistics": {
-        "error": {
-          "description": "Не удалось запросить статистику Liquity: {message}",
-          "title": "Статистика Liquity"
-        }
-      }
-    },
     "delete_eth2_validator": {
       "error": {
         "description": "Не удалось удалить валидаторы стейкинга ETH: {message}",
         "title": "Удаление валидаторов стейкинга ETH"
-      }
-    },
-    "detect_evm_accounts": {
-      "error": {
-        "message": "Не удалось обнаружить EVM-аккаунты из-за ошибки: {message}",
-        "title": "Обнаружение EVM-аккаунтов"
-      }
-    },
-    "eth_block_events_redecoding": {
-      "error": {
-        "description": "Не удалось декодировать события блоков ETH: {error}",
-        "title": "Декодирование событий блоков ETH"
-      }
-    },
-    "exchange_events": {
-      "error": {
-        "description": "Не удалось запросить события биржи для {location} с именем '{name}': {error}",
-        "title": "Запрос событий биржи"
       }
     },
     "fetch_counterparties": {
@@ -482,14 +369,6 @@
         "error": {
           "message": "Не удалось получить связанные местоположения: {message}",
           "title": "Получение связанных местоположений"
-        }
-      },
-      "fetch_undecoded_transactions": {
-        "error": {
-          "message": "Не удалось запросить детали недекодированных транзакций: {message}"
-        },
-        "task": {
-          "title": "Получение деталей недекодированных транзакций."
         }
       }
     },
@@ -557,22 +436,12 @@
         }
       }
     },
-    "nft_balances": {
-      "error": {
-        "message": "Ошибка при запросе балансов NFT: {message}",
-        "title": "Запрос балансов NFT"
-      }
-    },
     "notifications": {
       "consume": {
         "message_title": "Сообщения бэкенда"
       }
     },
     "online_events": {
-      "error": {
-        "description": "Не удалось запросить онлайн-события типа {queryType}: {error}",
-        "title": "Запрос онлайн-событий"
-      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -654,12 +523,6 @@
           "message": "Ошибка удаления запрашиваемого адреса: {message}"
         }
       },
-      "fetch_prices": {
-        "error": {
-          "message": "Не удалось получить цены: {error}",
-          "title": "Получение цен"
-        }
-      },
       "fetch_queriable_address": {
         "error": {
           "message": "Ошибка получения запрашиваемых адресов: {message}"
@@ -722,38 +585,12 @@
         }
       }
     },
-    "staking": {
-      "eth2": {
-        "error": {
-          "description": "Не удалось запросить детали стейкинга ETH: {error}",
-          "title": "Запрос деталей стейкинга ETH"
-        }
-      }
-    },
     "statistics": {
       "net_value": {
         "error": {
           "message": "Ошибка: {message}",
           "title": "Получение данных чистой стоимости"
         }
-      }
-    },
-    "transactions": {
-      "error": {
-        "description": "Ошибка запроса для {address} ({chain}): {error}",
-        "title": "Запрос транзакций блокчейна"
-      }
-    },
-    "transactions_redecode": {
-      "error": {
-        "description": "Не удалось декодировать события транзакций: {error}",
-        "title": "Декодирование событий транзакций"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "Не удалось декодировать события {chain}: {error}",
-        "title": "Декодирование событий транзакций"
       }
     },
     "unignore": {
@@ -1958,14 +1795,6 @@
     "last_12_hours": "Последние 12 часов",
     "last_24_hours": "Последние 24 часа",
     "last_90_days": "Последние 90 дней"
-  },
-  "ens_names": {
-    "error": {
-      "message": "Не удалось запросить имена ENS: {message}"
-    },
-    "task": {
-      "title": "Запрос имен ENS"
-    }
   },
   "error": {
     "generic": {
@@ -3270,10 +3099,6 @@
         },
         "pool_table": {
           "title": "LP токены"
-        },
-        "task": {
-          "error_message": "Произошла ошибка при получении балансов {protocol}: {message}",
-          "title": "Получение балансов {protocol}"
         }
       }
     }

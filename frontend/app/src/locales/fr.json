@@ -207,25 +207,9 @@
     },
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "Échec de la requête des soldes et de l'enregistrement de l'instantané : {message}",
-          "title": "Échec de l'enregistrement de l'instantané des soldes"
-        },
         "task": {
           "description": "Requête de tous les soldes et enregistrement d'un instantané pour les statistiques.",
           "ignore_errors_note": "Les erreurs survenues pendant la requête seront ignorées."
-        }
-      },
-      "blockchain": {
-        "error": {
-          "description": "Erreur lors de la requête des soldes de la blockchain : {error}",
-          "title": "Requête des soldes de la blockchain"
-        }
-      },
-      "blockchain_account_removal": {
-        "error": {
-          "description": "Échec de la suppression du compte : {error}",
-          "title": "Suppression de {count} compte(s) {blockchain}"
         }
       },
       "blockchain_accounts_add": {
@@ -250,87 +234,22 @@
           "title": "Récupération des jetons détectés"
         }
       },
-      "exchange_balances": {
-        "error": {
-          "message": "Échec de la requête des soldes de {location} : {error}",
-          "title": "Requête des soldes de {location}"
-        }
-      },
-      "exchange_rates": {
-        "error": {
-          "message": "Échec de la récupération des taux de change : {message}",
-          "title": "Taux de Change"
-        }
-      },
       "exchange_removal": {
         "description": "La suppression de {exchange} a échoué en raison de : {error}",
         "title": "Suppression de l'échange"
-      },
-      "exchange_savings_interest": {
-        "error": {
-          "message": "Échec de la requête des informations d'intérêt d'épargne de {location} : {error}",
-          "title": "Requête des informations d'intérêt d'épargne de {location}"
-        }
       },
       "exchange_setup": {
         "description": "La configuration de {exchange} a échoué en raison de : {error}",
         "title": "Configuration de l'échange"
       },
       "historic_fetch_price": {
-        "error": {
-          "message": "Échec de la récupération des prix historiques : {message}"
-        },
         "task": {
-          "description": "Récupération du taux de {fromAsset} à {toAsset} à la date {date} | Récupération des taux pour {count} paires à {toAsset}",
-          "title": "Récupération du taux de conversion"
-        }
-      },
-      "manual_balances": {
-        "error": {
-          "message": "Échec : {message}",
-          "title": "Récupération des soldes manuels"
+          "description": "Récupération du taux de {fromAsset} à {toAsset} à la date {date} | Récupération des taux pour {count} paires à {toAsset}"
         }
       },
       "manual_delete": {
         "error": {
           "title": "Suppression du Solde Manuel"
-        }
-      },
-      "xpub_removal": {
-        "error": {
-          "description": "Échec de la suppression de {xpub} : {error}",
-          "title": "Suppression de Xpub"
-        }
-      }
-    },
-    "defi": {
-      "airdrops": {
-        "error": {
-          "description": "Échec de la récupération des airdrops : {error}"
-        }
-      },
-      "liquity_balances": {
-        "error": {
-          "description": "Échec de la récupération des soldes Liquity : {message}",
-          "title": "Soldes Liquity"
-        }
-      },
-      "liquity_pools": {
-        "error": {
-          "description": "Échec de la requête des pools Liquity : {message}",
-          "title": "Pools Liquity"
-        }
-      },
-      "liquity_staking": {
-        "error": {
-          "description": "Échec de la récupération du staking Liquity : {message}",
-          "title": "Staking Liquity"
-        }
-      },
-      "liquity_statistics": {
-        "error": {
-          "description": "Échec de la requête des statistiques Liquity : {message}",
-          "title": "Statistiques Liquity"
         }
       }
     },
@@ -338,12 +257,6 @@
       "error": {
         "description": "La suppression des validateurs de staking ETH a échoué : {message}",
         "title": "Suppression des validateurs de staking ETH"
-      }
-    },
-    "detect_evm_accounts": {
-      "error": {
-        "message": "Échec de la détection des comptes EVM avec l'erreur suivante : {message}",
-        "title": "Détection des comptes EVM"
       }
     },
     "get_accounts": {
@@ -357,14 +270,6 @@
         "error": {
           "message": "Échec de la récupération des emplacements associés : {message}",
           "title": "Récupération des emplacements associés"
-        }
-      },
-      "fetch_undecoded_transactions": {
-        "error": {
-          "message": "Échec de la requête de détail pour les transactions EVM non décodés : {message}"
-        },
-        "task": {
-          "title": "Récupération du détail pour les transactions EVM non décodés."
         }
       }
     },
@@ -414,22 +319,12 @@
         }
       }
     },
-    "nft_balances": {
-      "error": {
-        "message": "Une erreur s'est produite lors de l'interrogation des soldes NFT : {message}",
-        "title": "Interrogation des soldes NFT"
-      }
-    },
     "notifications": {
       "consume": {
         "message_title": "Messages du backend"
       }
     },
     "online_events": {
-      "error": {
-        "description": "Échec de la requête des événements en ligne avec le type de requête {queryType} : {error}",
-        "title": "Requête des événements en ligne"
-      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -475,12 +370,6 @@
       "delete_queriable_address": {
         "error": {
           "message": "Échec de la suppression d'une adresse interrogeable : {message}"
-        }
-      },
-      "fetch_prices": {
-        "error": {
-          "message": "Échec de la récupération des prix : {error}",
-          "title": "Récupération des prix"
         }
       },
       "fetch_queriable_address": {
@@ -545,38 +434,12 @@
         }
       }
     },
-    "staking": {
-      "eth2": {
-        "error": {
-          "description": "Échec de la requête des détails du staking ETH : {error}",
-          "title": "Interrogation des détails du staking ETH"
-        }
-      }
-    },
     "statistics": {
       "net_value": {
         "error": {
           "message": "Échec : {message}",
           "title": "Récupération des données de valeur nette"
         }
-      }
-    },
-    "transactions": {
-      "error": {
-        "description": "Échec de la requête pour {address} ({chain}) : {error}",
-        "title": "Requête des transactions Blockchain"
-      }
-    },
-    "transactions_redecode": {
-      "error": {
-        "description": "Échec du décodage des événements des transactions : {error}",
-        "title": "Décodage des événements des transactions"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "Échec du décodage des événements de {chain} : {error}",
-        "title": "Décodage des événements des transactions"
       }
     },
     "unignore": {
@@ -1453,14 +1316,6 @@
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
   },
-  "ens_names": {
-    "error": {
-      "message": "Échec de la requête des noms ENS : {message}"
-    },
-    "task": {
-      "title": "Requête des noms ENS"
-    }
-  },
   "error": {
     "generic": {
       "message": "Nous avons rencontré une erreur interne lors du traitement de votre demande. Si ce problème persiste, veuillez contacter notre équipe d'assistance avec les détails suivants : \nCode d'erreur : {code} \nMessage d'erreur : {message} \nChemin : {path}",
@@ -2284,10 +2139,6 @@
         },
         "pool_table": {
           "title": "Jetons LP"
-        },
-        "task": {
-          "error_message": "Une erreur s'est produite lors de la récupération des soldes de {protocol}: {message}",
-          "title": "Récupération des soldes de {protocol}"
         }
       }
     }

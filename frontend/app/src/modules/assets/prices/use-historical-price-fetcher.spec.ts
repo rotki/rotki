@@ -261,13 +261,13 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
   });
 
   describe('how it reports a failure', () => {
-    it('should notify the user when the task actually failed', async () => {
+    it('should leave a failed task to its dock row', async () => {
       runTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
 
       await fetchHistoricalAssetPrice(payload());
 
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should stay quiet when the task was cancelled rather than failed', async () => {

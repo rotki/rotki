@@ -5,7 +5,6 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEth2Api } from '@/modules/staking/api/use-eth2-api';
@@ -32,7 +31,6 @@ export function useEth2Staking(): UseEth2StakingReturn {
 
   const premium = usePremium();
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const api = useEth2Api();
@@ -74,15 +72,7 @@ export function useEth2Staking(): UseEth2StakingReturn {
       title: t('task_center.group.staking'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.staking.eth2.error.title'),
-        t('actions.staking.eth2.error.description', {
-          error: error.message,
-        }),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
 
     return !isErr(outcome);
   }

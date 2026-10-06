@@ -69,13 +69,13 @@ describe('useTransactionSync', () => {
       });
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { syncTransactionTask } = useTransactionSync();
       await syncTransactionTask(account);
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should fail an incomplete query without a notification, since the backend reports it', async () => {

@@ -1,4 +1,5 @@
 import type { FetchPricePayload } from '@/modules/accounts/blockchain-accounts';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { chunk } from 'es-toolkit';
 import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -6,8 +7,6 @@ import { AssetPriceResponse } from '@/modules/assets/prices/price-types';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { setDigest } from '@/modules/core/common/data/digest';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -46,7 +45,6 @@ export const assetSetDigest = setDigest;
 export function useFetchPrices(): UseFetchPricesReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const currencySymbol = useSetting('currencySymbol');
   const { prices } = storeToRefs(useBalancePricesStore());
   const { queryPrices } = usePriceApi();
@@ -70,7 +68,7 @@ export function useFetchPrices(): UseFetchPricesReturn {
       },
     );
 
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.LATEST, assetSetDigest(selected), payload.ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
       kind: ActivityKind.PRICES,
       rerunnable: true,
@@ -88,11 +86,6 @@ export function useFetchPrices(): UseFetchPricesReturn {
       subtitle: activityLabelFor(msg.$t('task_center.activity.prices.latest'), { count: assetCount }, assetCount),
       title: t('task_center.group.prices'),
     });
-
-    onActionableError(outcome, error => notifyError(
-      t('actions.session.fetch_prices.error.title'),
-      t('actions.session.fetch_prices.error.message', { error: error.message }),
-    ));
   };
 
   return { fetchPrices };

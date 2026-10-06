@@ -7,7 +7,6 @@ import { accountKey, useDetectedAccountsStore } from '@/modules/accounts/use-det
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { type ActivityContext, ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
@@ -34,7 +33,6 @@ export function useEvmAccountDetection(): UseEvmAccountDetectionReturn {
   const { evmAndEvmLikeTxChainsInfo } = useSupportedChains();
   const { beginRun, record, setLastRun, wasAddedByUser } = useDetectedAccountsStore();
   const { submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   function trackedAccounts(chains: string[]): EvmChainLikeAddress[] {
@@ -84,16 +82,8 @@ export function useEvmAccountDetection(): UseEvmAccountDetectionReturn {
       title: t('task_center.group.accounts'),
     });
 
-    if (!isErr(outcome) || !isActionable(outcome.error))
-      return;
-
-    logger.error(outcome.error.message);
-    notifyError(
-      t('actions.detect_evm_accounts.error.title'),
-      t('actions.detect_evm_accounts.error.message', {
-        message: outcome.error.message,
-      }),
-    );
+    if (isErr(outcome) && isActionable(outcome.error))
+      logger.error(outcome.error.message);
   };
 
   return {

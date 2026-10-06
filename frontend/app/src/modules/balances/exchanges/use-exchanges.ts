@@ -1,4 +1,5 @@
 import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { map as mapResult, type Result } from 'plainfp/result';
@@ -12,7 +13,6 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
@@ -33,7 +33,7 @@ export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { submitTask } = useNativeTask();
-  const { notifyError, showErrorMessage } = useNotifications();
+  const { showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { setConnectedExchanges } = useConnectedExchangesStore();
@@ -53,7 +53,7 @@ export function useExchanges(): UseExchangesReturn {
     const { ignoreCache, location } = payload;
     const threshold = get(valueThreshold);
 
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.EXCHANGE_BALANCES, location),
       kind: ActivityKind.EXCHANGE_BALANCES,
       lane: EXCHANGE_LANE,
@@ -71,13 +71,6 @@ export function useExchanges(): UseExchangesReturn {
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.exchange_balances.query'), { location: toSentenceCase(location) }),
       title: t('task_center.group.exchange_balances'),
-    });
-
-    onActionableError(outcome, (error) => {
-      notifyError(
-        t('actions.balances.exchange_balances.error.title', { location: toSentenceCase(location) }),
-        t('actions.balances.exchange_balances.error.message', { error: error.message, location }),
-      );
     });
   };
 

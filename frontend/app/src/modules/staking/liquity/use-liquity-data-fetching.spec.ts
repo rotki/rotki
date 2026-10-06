@@ -209,14 +209,13 @@ describe('useLiquityDataFetching', () => {
   });
 
   describe('a failed fetch', () => {
-    it('should report an actionable failure with the backend message', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'backend said no' })));
 
       const { fetchPools } = useLiquityDataFetching();
       await fetchPools();
 
-      expect(notifyError).toHaveBeenCalledTimes(1);
-      expect(notifyError.mock.calls[0][1]).toContain('backend said no');
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should stay quiet on a cancellation, which is not a failure', async () => {
@@ -226,16 +225,6 @@ describe('useLiquityDataFetching', () => {
       await fetchPools();
 
       expect(notifyError).not.toHaveBeenCalled();
-    });
-
-    it('should name the failing part in its own message', async () => {
-      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
-
-      const { fetchStatistics } = useLiquityDataFetching();
-      await fetchStatistics();
-
-      // The four fetches must not share one error string, or the toast names the wrong data.
-      expect(notifyError.mock.calls[0][0]).toContain('liquity_statistics');
     });
   });
 });

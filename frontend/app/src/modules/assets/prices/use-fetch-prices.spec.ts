@@ -97,13 +97,13 @@ describe('useFetchPrices', () => {
     });
   });
 
-  it('should notify and stop on the first failing batch', async () => {
+  it('should stop on the first failing batch, leaving the failure to its dock row', async () => {
     runTaskMock.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
     await fetcher.fetchPrices({ ignoreCache: false, selectedAssets: [...manyAssets('A', 100), ...manyAssets('B', 50)] });
 
     expect(usePriceApi().queryPrices).toHaveBeenCalledTimes(1);
-    expect(notifyError).toHaveBeenCalledOnce();
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it('should not submit an activity when no assets are selected, so a concurrent refresh cannot inherit its "0 assets" subtitle', async () => {

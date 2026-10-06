@@ -8,7 +8,6 @@ import {
 import { map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -27,10 +26,6 @@ interface UseLiquityDataFetchingReturn {
 
 /** What separates one liquity fetch from another; everything else is shared. */
 interface FetchDefinition {
-  /** The user-facing failure description, given the backend's message. */
-  errorDescription: (message: string) => string;
-  /** The user-facing failure title. */
-  errorTitle: () => string;
   /** Which part of the liquity activity this fetch reports as. */
   part: ActivityPart;
   /** Whether the fetch needs premium. Balances are free; the backend rejects the other three. */
@@ -46,7 +41,6 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   const activeModules = useSetting('activeModules');
   const { t } = useI18n({ useScope: 'global' });
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const {
     fetchLiquityBalances,
     fetchLiquityStaking,
@@ -77,7 +71,7 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
    * all four liquity fetches share.
    */
   function createFetch(definition: FetchDefinition): (refresh?: boolean) => Promise<void> {
-    const { errorDescription, errorTitle, part, premiumOnly, query, store } = definition;
+    const { part, premiumOnly, query, store } = definition;
 
     return async (refresh = false): Promise<void> => {
       if (premiumOnly && !get(isPremium))
@@ -100,16 +94,11 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
         title: t('task_center.group.liquity'),
       });
 
-      onActionableError(outcome, (error) => {
-        logger.error(`action failure for liquity ${part}:`, error);
-        notifyError(errorTitle(), errorDescription(error.message));
-      });
+      onActionableError(outcome, error => logger.error(`action failure for liquity ${part}:`, error));
     };
   }
 
   const fetchBalances = createFetch({
-    errorDescription: (message: string) => t('actions.defi.liquity_balances.error.description', { message }),
-    errorTitle: () => t('actions.defi.liquity_balances.error.title'),
     part: ActivityPart.BALANCES,
     premiumOnly: false,
     query: async () => fetchLiquityBalances(),
@@ -119,8 +108,6 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   });
 
   const fetchPools = createFetch({
-    errorDescription: (message: string) => t('actions.defi.liquity_pools.error.description', { message }),
-    errorTitle: () => t('actions.defi.liquity_pools.error.title'),
     part: ActivityPart.POOLS,
     premiumOnly: true,
     query: async () => fetchLiquityStakingPools(),
@@ -130,8 +117,6 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   });
 
   const fetchStaking = createFetch({
-    errorDescription: (message: string) => t('actions.defi.liquity_staking.error.description', { message }),
-    errorTitle: () => t('actions.defi.liquity_staking.error.title'),
     part: ActivityPart.STAKE,
     premiumOnly: true,
     query: async () => fetchLiquityStaking(),
@@ -141,8 +126,6 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   });
 
   const fetchStatistics = createFetch({
-    errorDescription: (message: string) => t('actions.defi.liquity_statistics.error.description', { message }),
-    errorTitle: () => t('actions.defi.liquity_statistics.error.title'),
     part: ActivityPart.STATISTICS,
     premiumOnly: true,
     query: async () => fetchLiquityStatistics(),

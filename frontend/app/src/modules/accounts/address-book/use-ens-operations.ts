@@ -1,12 +1,11 @@
 import type { AddressBookSimplePayload, EthNames } from '@/modules/accounts/address-book/eth-names';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { isValidEthAddress } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -19,7 +18,6 @@ interface UseEnsOperationsReturn {
 export function useEnsOperations(): UseEnsOperationsReturn {
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { updateEnsNamesAndReset } = useAddressNameResolution();
   const { getEnsNames, getEnsNamesTask, resolveEnsNames } = useAddressesNamesApi();
 
@@ -55,13 +53,8 @@ export function useEnsOperations(): UseEnsOperationsReturn {
         title: t('task_center.group.accounts'),
       });
 
-      if (isErr(outcome)) {
-        if (isActionable(outcome.error))
-          notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.error.message }));
-      }
-      else {
+      if (!isErr(outcome))
         newResult = outcome.value;
-      }
     }
     else {
       newResult = await getEnsNames(filteredAddresses);

@@ -66,13 +66,13 @@ describe('useExchangeEventsRefresh', () => {
     expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
-  it('should notify on an actionable failure', async () => {
+  it('should leave an actionable failure to its dock row', async () => {
     mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
     const { queryAllExchangeEvents } = useExchangeEventsRefresh();
     await queryAllExchangeEvents([{ location: 'kraken', name: 'kraken 1' }]);
 
-    expect(mockNotifyError).toHaveBeenCalledOnce();
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
   it('should stay quiet on success', async () => {

@@ -1,6 +1,5 @@
 import type { Notification } from '@rotki/common';
-import type { BankConnection, BankConnectionIdentity, BankManifest } from '@/modules/banks/types';
-import { createMock } from '@test/utils/create-mock';
+import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
 import { err, ok } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
@@ -133,24 +132,13 @@ describe('useBankEventsRefresh', () => {
     });
   });
 
-  it('should notify on an actionable failure and hand the outcome back', async () => {
+  it('should hand an actionable failure back and leave it to its dock row', async () => {
     mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
     const { queryAllBankEvents } = useBankEventsRefresh();
     const outcomes = await queryAllBankEvents([banks[0]]);
 
     expect(outcomes).toHaveLength(1);
-    expect(mockNotifyError).toHaveBeenCalledOnce();
-    expect(mockNotifyError.mock.calls[0][1]).toContain('boom');
-  });
-
-  it('should name the bank by its display name in the failure notification', async () => {
-    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
-    mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
-
-    const { queryAllBankEvents } = useBankEventsRefresh();
-    await queryAllBankEvents([banks[0]]);
-
-    expect(mockNotifyError.mock.calls[0][1]).toContain('Qonto Business');
+    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 });

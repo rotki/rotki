@@ -205,15 +205,12 @@ describe('useHistoryEventsExport', () => {
   });
 
   describe('when the task fails', () => {
-    it('should surface an actionable failure with what the task said', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       submitTask.mockResolvedValue(err(taskFailed('disk full')));
 
       await exportAfterConfirming();
 
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'actions.history_events_export.message.failure::disk full',
-        severity: Severity.ERROR,
-      }));
+      expect(notify).not.toHaveBeenCalled();
     });
 
     /** A cancellation is the user's own doing and the task centre already shows it. */

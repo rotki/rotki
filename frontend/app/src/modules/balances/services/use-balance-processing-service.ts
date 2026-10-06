@@ -15,7 +15,6 @@ import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-bloc
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { ActivityKind } from '@/modules/task-center/core/types';
@@ -36,7 +35,6 @@ interface UseBalanceProcessingServiceReturn {
 }
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
-  const { notifyError } = useNotifications();
   const { queryBlockchainBalances, refreshBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
@@ -149,20 +147,10 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const settleChain = (
     blockchain: string,
     result: Result<BlockchainBalances, TaskError>,
-    notify: boolean,
   ): Result<void, TaskError> => {
     if (isErr(result)) {
-      if (isActionable(result.error)) {
+      if (isActionable(result.error))
         logger.error(result.error.message);
-        if (notify) {
-          notifyError(
-            t('actions.balances.blockchain.error.title'),
-            t('actions.balances.blockchain.error.description', {
-              error: result.error.message,
-            }),
-          );
-        }
-      }
       invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
     }
     else {
@@ -186,7 +174,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     return settleChain(
       blockchain,
       mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
-      true,
     );
   };
 
@@ -213,7 +200,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         : TaskFailed({ cause: error, message: getErrorMessage(error) }));
     }
 
-    return settleChain(blockchain, result, false);
+    return settleChain(blockchain, result);
   };
 
   const handleRefresh = async (

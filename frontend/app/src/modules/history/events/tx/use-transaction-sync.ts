@@ -2,11 +2,9 @@ import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
-import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { combineOutcomes, isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { combineOutcomes, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type BlockchainAddress, type ChainAddress, type TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
 import { accountSyncActivity, accountSyncActivityId, chainSyncActivity, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
@@ -40,7 +38,6 @@ interface UseTransactionSyncReturn {
 
 export function useTransactionSync(): UseTransactionSyncReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
   const { statusOf, submitTask } = useNativeTask();
@@ -57,31 +54,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    */
   const wasCancelled = (account: ChainAddress): boolean =>
     statusOf(accountSyncActivity.kind, ...accountSyncActivity.partsOf(account)).lastOutcome === ActivityStatus.CANCELLED;
-
-  /**
-   * Tells the user about a failed query they can act on.
-   *
-   * The failure itself needs no recording here: it is the account activity's own status, which the
-   * dock reports. A skip or a cancellation is not something to act on, so neither is announced.
-   *
-   * An incomplete query is not announced either. It fails every address an indexer refused, so a
-   * chain no indexer serves would raise one per address, and the backend already explains it with
-   * its own notification. The failure still shows on the account's dock row, and the missing ranges
-   * are retried by the next sync.
-   */
-  const notifyQueryFailure = (error: TaskError, account: ChainAddress, chainName: string): void => {
-    if (!isActionable(error) || error.cause instanceof IncompleteQueryError)
-      return;
-
-    notifyError(
-      t('actions.transactions.error.title'),
-      t('actions.transactions.error.description', {
-        address: account.address,
-        chain: chainName,
-        error: error.message,
-      }),
-    );
-  };
 
   /**
    * Syncs one account's transactions on one chain, as its own native activity.
@@ -123,12 +95,8 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       title: t('task_center.group.tx_sync'),
     });
 
-    if (isErr(outcome)) {
-      if (hasTag(outcome.error, 'BackendCancelled'))
-        logger.debug(outcome.error.message);
-      else
-        notifyQueryFailure(outcome.error, account, chainName);
-    }
+    if (isErr(outcome) && hasTag(outcome.error, 'BackendCancelled'))
+      logger.debug(outcome.error.message);
 
     return outcome;
   };

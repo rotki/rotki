@@ -3,7 +3,6 @@ import { map as mapResult, type Result } from 'plainfp/result';
 import { Airdrops } from '@/modules/airdrops/airdrops';
 import { useDefiApi } from '@/modules/airdrops/use-defi-api';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -16,7 +15,6 @@ interface UseAirdropsReturn {
 export function useAirdrops(): UseAirdropsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 
   const airdrops = ref<Airdrops>({});
@@ -40,15 +38,7 @@ export function useAirdrops(): UseAirdropsReturn {
       title: t('task_center.group.airdrops'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.defi.airdrops.error.title'),
-        t('actions.defi.airdrops.error.description', {
-          error: error.message,
-        }),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
 
     set(loading, false);
   };

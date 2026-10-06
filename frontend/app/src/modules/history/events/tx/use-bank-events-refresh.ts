@@ -28,7 +28,7 @@ interface UseBankEventsRefreshReturn {
  */
 export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify, notifyError } = useNotifications();
+  const { notify } = useNotifications();
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
   const store = useBankConnectionsStore();
@@ -95,10 +95,6 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
       }
       else if (isActionable(outcome.error)) {
         logger.error(outcome.error);
-        notifyError(
-          t('actions.bank_events.error.title'),
-          t('actions.bank_events.error.description', { error: outcome.error.message, location: bankName, name }),
-        );
       }
     }
 

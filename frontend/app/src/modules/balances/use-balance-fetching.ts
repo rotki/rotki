@@ -1,4 +1,5 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
@@ -12,8 +13,6 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { useSnapshotSchedule } from '@/modules/balances/use-snapshot-schedule';
 import { useBanks } from '@/modules/banks/use-banks';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -32,7 +31,6 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { queryBalancesAsync } = useBalancesApi();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();
-  const { notifyError } = useNotifications();
   const { sessionEpoch, submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsDataFetching();
@@ -46,7 +44,7 @@ export const useBalanceFetching = createSharedComposable(() => {
       : t('actions.balances.all_balances.task.description');
 
     // Singleton all-balances snapshot query; liveness is read off the orchestrator.
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.ALL_BALANCES),
       kind: ActivityKind.ALL_BALANCES,
       rerunnable: true,
@@ -57,13 +55,6 @@ export const useBalanceFetching = createSharedComposable(() => {
       subtitle: description,
       title: t('task_center.group.all_balances'),
     });
-
-    onActionableError(outcome, error => notifyError(
-      t('actions.balances.all_balances.error.title'),
-      t('actions.balances.all_balances.error.message', {
-        message: error.message,
-      }),
-    ));
   };
 
   /**

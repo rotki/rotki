@@ -160,12 +160,12 @@ describe('useManualBalances', () => {
       expect(get(manualLiabilities)[0].asset).toBe('DAI');
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       await useManualBalances().fetchManualBalances();
 
-      expect(notifyError).toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should not notify when the failure was cancelled', async () => {

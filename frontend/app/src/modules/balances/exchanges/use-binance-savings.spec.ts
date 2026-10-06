@@ -255,12 +255,12 @@ describe('useBinanceSavings', () => {
       expect(mocks.submitTask).not.toHaveBeenCalled();
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       await useBinanceSavings().refreshExchangeSavings(true);
 
-      expect(notifyError).toHaveBeenCalledTimes(2);
+      expect(notifyError).not.toHaveBeenCalled();
     });
   });
 });

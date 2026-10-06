@@ -87,7 +87,7 @@ describe('useRefreshHandlers', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should notify a generic failure and keep its own message', async () => {
+    it('should keep a generic failure\'s own message and leave it to its dock row', async () => {
       runTaskResult.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       const { queryOnlineEvent } = useRefreshHandlers();
@@ -95,7 +95,7 @@ describe('useRefreshHandlers', () => {
 
       assert(isErr(outcome));
       expect(outcome.error.message).toBe('boom');
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should report a skip rather than a success, submitting nothing, when the source is unavailable', async () => {

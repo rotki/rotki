@@ -208,13 +208,12 @@ describe('useNftBalances', () => {
       notifyErrorMock.mockReset();
     });
 
-    it('should notify when the task fails', async () => {
+    it('should leave a failed task to its dock row', async () => {
       submitTaskMock.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       await useNftBalances().refreshNonFungibleBalances(true);
 
-      expect(notifyErrorMock).toHaveBeenCalledOnce();
-      expect(notifyErrorMock.mock.calls[0][1]).toContain('boom');
+      expect(notifyErrorMock).not.toHaveBeenCalled();
     });
 
     it('should not notify when the task was cancelled', async () => {

@@ -108,7 +108,7 @@ describe('useEthValidatorFetching', () => {
       expect(get(mockStakingValidatorsLimits)).toEqual({ limit: 100, total: 50 });
     });
 
-    it('should notify on actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       mockIsEth2Enabled.mockReturnValue(true);
 
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'Network error' })));
@@ -116,7 +116,7 @@ describe('useEthValidatorFetching', () => {
       const { fetchEthStakingValidators } = useEthValidatorFetching();
       await fetchEthStakingValidators();
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
       expect(mockUpdateAccounts).not.toHaveBeenCalled();
     });
 

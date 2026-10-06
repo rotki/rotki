@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { type NotificationPayload, Priority, type SemiPartial, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
@@ -6,7 +7,6 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabel } from '@/modules/task-center/activity-labels';
@@ -19,7 +19,6 @@ type ExportResult = boolean | { filePath: string };
 
 interface ExportOutcome {
   result: ExportResult;
-  message?: string;
 }
 
 type ExportMessage = SemiPartial<NotificationPayload, 'title' | 'message'>;
@@ -52,7 +51,7 @@ export function useHistoryEventsExport(
   const { show } = useConfirmStore();
 
   /**
-   * @returns the outcome, or `null` when the failure was already reported by the task centre
+   * @returns the outcome, or `null` when the task failed or was cancelled, which its dock row reports
    */
   async function createCsv(directoryPath?: string): Promise<ExportOutcome | null> {
     const outcome = await submitTask<ExportResult>({
@@ -72,16 +71,7 @@ export function useHistoryEventsExport(
       title: t('task_center.group.history_events'),
     });
 
-    if (!isErr(outcome))
-      return { result: outcome.value };
-
-    if (!isActionable(outcome.error))
-      return null;
-
-    return {
-      message: outcome.error.message,
-      result: false,
-    };
+    return isErr(outcome) ? null : { result: outcome.value };
   }
 
   function exportOutcomeMessage(succeeded: boolean, taskMessage?: string): ExportMessage {
@@ -99,10 +89,10 @@ export function useHistoryEventsExport(
    * browser session instead gets the generated file streamed back, and only a failure is reported.
    */
   async function reportExport(outcome: ExportOutcome): Promise<ExportMessage | null> {
-    const { message: taskMessage, result } = outcome;
+    const { result } = outcome;
 
     if (appSession || !result)
-      return exportOutcomeMessage(!!result, taskMessage);
+      return exportOutcomeMessage(!!result);
 
     if (result !== true && 'filePath' in result)
       await downloadHistoryEventsCSV(result.filePath);
