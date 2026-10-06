@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { endSession, scheduleSessionClear } from '@/modules/core/session/session-lifecycle';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 
@@ -87,6 +88,23 @@ describe('useAddressNameResolution', () => {
       expect(api.getAddressesNames).toHaveBeenCalledOnce();
       expect(get(firstName)).toBe('test_name');
       expect(get(secondName)).toBe('test1.eth');
+    });
+
+    it('should forget every resolved name once a logout clears the session, as the address book is the user\'s', async () => {
+      enableAliasNames(true);
+      vi.mocked(api.getAddressesNames).mockResolvedValue(mockedResult);
+      const name = resolution.useAddressName(() => '0x4585FE77225b41b697C938B01232131231231233');
+      expect(get(name)).toBeUndefined();
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+      expect(get(name)).toBe('test_name');
+      vi.mocked(api.getAddressesNames).mockResolvedValue([]);
+
+      endSession();
+      scheduleSessionClear();
+      vi.advanceTimersByTime(0);
+
+      expect(get(name)).toBeUndefined();
     });
 
     it('should not match API result with null blockchain against a valid chain key', async () => {

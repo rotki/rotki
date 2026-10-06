@@ -12,6 +12,7 @@ import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { SECONDS_PER_HOUR } from '@/modules/core/common/constraints';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -176,6 +177,9 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
   }
 
   watch(currencySymbol, discardPricesInOldCurrency);
+
+  /** The cache lives outside the store state, so the store reset at logout does not reach it. */
+  onSessionCleared('historic-price-cache', reset);
 
   return {
     cache,

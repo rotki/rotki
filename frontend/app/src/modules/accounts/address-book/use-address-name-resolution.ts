@@ -12,6 +12,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseAddressNameResolutionReturn {
@@ -257,6 +258,9 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     if (changed.length > 0)
       resetAddressNamesData(changed.map(address => ({ address, blockchain: null })));
   }
+
+  /** The names live outside the store state, so the store reset at logout does not reach them. */
+  onSessionCleared('address-names', resetAddressesNames);
 
   return {
     getAddressName,
