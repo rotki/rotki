@@ -1,4 +1,4 @@
-import { expect, type Request } from '@playwright/test';
+import { expect, type Request, type Response } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { confirmDialog } from '../../helpers/utils';
 import { TagManagerPage } from '../../pages/tag-manager';
@@ -11,6 +11,18 @@ function describeRequest(request: Request): string | undefined {
   const { pathname } = new URL(request.url());
   const path = /\/api\/1(\/.*)$/.exec(pathname)?.[1] ?? /(\/colibri\/.*)$/.exec(pathname)?.[1];
   return path ? `${request.method()} ${path}` : undefined;
+}
+
+/**
+ * Waits for the backend logout this spec started to finish.
+ *
+ * @remarks
+ * The backend logout cancels every task it finds when it runs, and it can take seconds. A spec that
+ * ends before it returns lets it cancel the next spec's account creation on the shared backend, and
+ * that spec then fails to log in a user that was never created.
+ */
+async function waitForBackendLogout(loggedOut: Promise<Response>): Promise<void> {
+  expect((await loggedOut).ok()).toBe(true);
 }
 
 /* A reload starts logged out and resumes the session the backend still holds. The resume must
@@ -61,11 +73,13 @@ test.describe.serial('session across a reload and a logout', () => {
 
     await sharedPage.locator('[data-testid=user-menu-button]').click();
     await sharedPage.locator('[data-testid=logout-button]').click();
+    const loggedOut = sharedPage.waitForResponse(response => describeRequest(response.request()) === backendLogout);
     sharedPage.on('request', record);
     await confirmDialog(sharedPage);
     await expect.poll(() => sent.includes(backendLogout)).toBe(true);
     sharedPage.off('request', record);
 
     expect(sent.slice(0, sent.indexOf(backendLogout) + 1)).toEqual(['POST /colibri/user/logout', backendLogout]);
+    await waitForBackendLogout(loggedOut);
   });
 });
