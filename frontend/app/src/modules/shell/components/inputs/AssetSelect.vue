@@ -87,6 +87,14 @@ const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAsset
 // static value and cannot call `t`, which is why it used to read a hardcoded English "Asset".
 const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
 
+/**
+ * With an allow-list the field only filters the listed assets, so it must not invite a contract
+ * address the user could never pick.
+ */
+const placeholder = computed<string>(() => (source?.items?.length ?? 0) > 0
+  ? t('asset_select.filter_placeholder')
+  : t('asset_select.placeholder'));
+
 // Both slots render the asset without its context menu; hoisted so the bag is one stable identity
 // rather than a fresh object per rendered row.
 const noMenu: AssetActions = { hideMenu: true };
@@ -119,7 +127,7 @@ function onUpdateModelValue(value: string): void {
     :hint="hint"
     :label="fieldLabel"
     :clearable="clearable"
-    :placeholder="t('asset_select.placeholder')"
+    :placeholder="placeholder"
     :required="required"
     :success-messages="successMessages"
     :error-messages="errors"
