@@ -5,7 +5,7 @@ import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { endSession } from '@/modules/core/session/session-lifecycle';
+import { endSession, finishPendingWrites } from '@/modules/core/session/session-lifecycle';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
@@ -68,10 +68,12 @@ export function useLogout(): UseLogoutReturn {
    * Ends the session, then tears the logged-in state down and logs the user out of the backend.
    *
    * @remarks
-   * The session ends before anything awaits. The backend keeps serving this user until the logout
-   * call lands, so anything still running for the session must already be refused by then.
+   * Only the writes still persisting the user's input are waited for first; the session ends before
+   * anything else awaits. The backend keeps serving this user until the logout call lands, so
+   * anything still running for the session must already be refused by then.
    */
   const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+    await finishPendingWrites();
     endSession();
     await closeWalletBridge();
 

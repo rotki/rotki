@@ -20,6 +20,7 @@ interface SessionState {
   live: AbortController | undefined;
   readonly endListeners: Map<string, () => void>;
   readonly clearListeners: Map<string, () => void>;
+  readonly pendingWrites: Map<string, () => Promise<void>>;
   /** The clear phase scheduled by a logout and not run yet. */
   pendingClear: ReturnType<typeof setTimeout> | undefined;
 }
@@ -44,6 +45,7 @@ function sessionState(): SessionState {
     endListeners: new Map(),
     live: undefined,
     pendingClear: undefined,
+    pendingWrites: new Map(),
   };
   Reflect.set(globalThis, SESSION_STATE_KEY, created);
   return created;
@@ -55,7 +57,9 @@ function isSessionState(value: unknown): value is SessionState {
     && 'endListeners' in value
     && value.endListeners instanceof Map
     && 'clearListeners' in value
-    && value.clearListeners instanceof Map;
+    && value.clearListeners instanceof Map
+    && 'pendingWrites' in value
+    && value.pendingWrites instanceof Map;
 }
 
 /** Runs the clear phase a logout scheduled, if it has not run yet. */
@@ -88,8 +92,9 @@ export function beginSession(): void {
  * Ends the live session, if there is one. Idempotent.
  *
  * @remarks
- * Synchronous on purpose: it is the first thing a logout does, before anything awaits, so
- * nothing the session started can send another request in the gap.
+ * Synchronous on purpose: a logout calls it as soon as the user's pending writes have landed,
+ * before anything else awaits, so nothing the session started can send another request in the
+ * gap.
  */
 export function endSession(): void {
   const state = sessionState();
@@ -126,6 +131,30 @@ export function hasLiveSession(): boolean {
  */
 export function liveSessionSignal(): AbortSignal | undefined {
   return sessionState().live?.signal;
+}
+
+/**
+ * Runs every write still waiting to persist the user's input, and resolves once they have landed.
+ *
+ * @remarks
+ * Called by a logout before it ends the session: a debounced write that fired afterwards would be
+ * refused, and the change the user made just before logging out would be lost.
+ */
+export async function finishPendingWrites(): Promise<void> {
+  await Promise.allSettled(Array.from(sessionState().pendingWrites.values(), async write => write()));
+}
+
+/**
+ * Registers `write` to run before the session ends, for input that persists on a delay.
+ *
+ * @param key - names the registration, one per writer
+ * @param write - persists what is pending; a no-op when nothing is
+ * @returns a function that removes the registration
+ */
+export function onPendingWrite(key: string, write: () => Promise<void>): () => void {
+  const { pendingWrites } = sessionState();
+  pendingWrites.set(key, write);
+  return () => pendingWrites.delete(key);
 }
 
 /**

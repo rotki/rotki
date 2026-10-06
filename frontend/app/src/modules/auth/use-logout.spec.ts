@@ -4,7 +4,7 @@ import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLogout } from '@/modules/auth/use-logout';
-import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
+import { hasLiveSession, onPendingWrite } from '@/modules/core/session/session-lifecycle';
 
 const mockNavigateToUserLogin = vi.fn();
 const mockCallLogout = vi.fn();
@@ -108,6 +108,20 @@ describe('modules::account::use-logout', () => {
       await flushPromises();
 
       expect(liveAt).toEqual([false]);
+    });
+
+    it('should finish the writes persisting the user\'s input while the session is still live', async () => {
+      const liveAtWrite: boolean[] = [];
+      const remove = onPendingWrite('spec', async () => {
+        liveAtWrite.push(hasLiveSession());
+      });
+
+      const { logout } = useLogout();
+      await logout();
+      remove();
+
+      expect(liveAtWrite).toEqual([true]);
+      expect(hasLiveSession()).toBe(false);
     });
 
     it('should reset the MCP session after backend logout', async () => {
