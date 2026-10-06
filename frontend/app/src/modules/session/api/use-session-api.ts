@@ -17,7 +17,7 @@ interface UseSessionApiReturn {
 
 export function useSessionApi(): UseSessionApiReturn {
   const consumeMessages = async (): Promise<Messages> => {
-    const response = await api.get<Messages>('/messages');
+    const response = await api.get<Messages>('/messages', { sessionless: true });
     return MessagesSchema.parse(response);
   };
 

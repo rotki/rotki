@@ -1,6 +1,7 @@
 import { createPinia, defineStore, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from 'vue';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { StoreStatePersistsPlugin } from './store-debug-plugin';
 
 interface Currency {
@@ -49,5 +50,15 @@ describe('storeStatePersistsPlugin', () => {
     createStore();
 
     expect(usd.tickerSymbol).toBe('USD');
+  });
+
+  it('should not restore a login, so a reload resumes it through the unlock as in production', () => {
+    sessionStorage.setItem('pinia.store.session/auth', JSON.stringify({ logged: true, username: 'alice' }));
+    createStore();
+
+    const auth = useSessionAuthStore();
+
+    expect(auth.logged).toBe(false);
+    expect(sessionStorage.getItem('pinia.store.session/auth')).toBeNull();
   });
 });

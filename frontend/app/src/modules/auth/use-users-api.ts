@@ -38,6 +38,7 @@ interface UseUsersApiReturn {
 export function useUsersApi(): UseUsersApiReturn {
   const getUsers = async (): Promise<AccountSession> => {
     const response = await api.get<AccountSession>(`/users`, {
+      sessionless: true,
       skipRootCamelCase: true,
     });
     return AccountSession.parse(response);
@@ -75,6 +76,7 @@ export function useUsersApi(): UseUsersApiReturn {
         '/user/logout',
         undefined,
         {
+          sessionless: true,
           target: RequestTarget.COLIBRI,
           validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
           treat409AsSuccess: true,
@@ -94,6 +96,7 @@ export function useUsersApi(): UseUsersApiReturn {
       `/users/${username}`,
       { action: 'logout' },
       {
+        sessionless: true,
         validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
         treat409AsSuccess: true,
       },

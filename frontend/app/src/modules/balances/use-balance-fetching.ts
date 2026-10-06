@@ -31,7 +31,7 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { queryBalancesAsync } = useBalancesApi();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();
-  const { sessionEpoch, submitTask } = useNativeTask();
+  const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsDataFetching();
   const { refreshBlockchainBalances } = useBlockchainBalances();
@@ -78,22 +78,13 @@ export const useBalanceFetching = createSharedComposable(() => {
    * forcing one. Forcing is {@link fetchBalances} from `forceSave`.
    */
   const refreshFromChain = async (): Promise<void> => withDetection(async (detect) => {
-    const epoch = sessionEpoch();
-    const sessionEnded = (): boolean => sessionEpoch() !== epoch;
-
     logger.debug(detect
       ? 'refreshFromChain: detect-then-query, every chain'
       : `refreshFromChain: query only (${autoDetectSkipReason() ?? 'unknown'}), every chain`);
 
     await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
 
-    if (sessionEnded())
-      return;
-
     const due = await isSnapshotDue();
-
-    if (sessionEnded())
-      return;
 
     if (!due) {
       logger.debug('refreshFromChain: snapshot not due, skipping the aggregate query');

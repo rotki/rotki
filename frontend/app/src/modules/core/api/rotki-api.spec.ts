@@ -9,6 +9,7 @@ import { RequestPriority } from '@/modules/core/api/request-queue/request-priori
 import { RotkiApi } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
@@ -683,6 +684,17 @@ describe('modules/api/rotki-api', () => {
 
       await expect(api.headStatus('resource')).rejects.toThrow();
     });
+
+    it('should abort a HEAD request through the caller\'s own signal', async () => {
+      server.use(
+        http.head(`${backendUrl}/api/1/resource`, () =>
+          new HttpResponse(null, { status: HTTPStatus.OK })),
+      );
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(api.headStatus('resource', { signal: controller.signal })).rejects.toThrow();
+    });
   });
 
   describe('fetchBlob', () => {
@@ -1000,6 +1012,111 @@ describe('modules/api/rotki-api', () => {
       api.setup(defaultApiUrl);
 
       await expect(api.get('test')).resolves.toEqual({ ok: true });
+    });
+  });
+
+  describe('session gate', () => {
+    let received: string[];
+
+    /** Holds `/slow` open until released, recording the signal the handler saw. */
+    function holdSlowRequest(): { release: () => void; signal: () => AbortSignal | undefined } {
+      let handlerSignal: AbortSignal | undefined;
+      let release = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      server.use(
+        http.get(`${backendUrl}/api/1/slow`, async ({ request }) => {
+          handlerSignal = request.signal;
+          await held;
+          return HttpResponse.json({ message: '', result: true });
+        }),
+      );
+      return { release, signal: () => handlerSignal };
+    }
+
+    beforeEach(() => {
+      received = [];
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, ({ request }) => {
+          received.push(request.method);
+          return HttpResponse.json({ result: { ok: true }, message: '' });
+        }),
+        http.head(`${backendUrl}/api/1/test`, ({ request }) => {
+          received.push(request.method);
+          return new HttpResponse(null, { status: HTTPStatus.OK });
+        }),
+      );
+    });
+
+    it('should refuse every kind of session-bound request without a live session, sending nothing', async () => {
+      endSession();
+
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+      await expect(api.fetch('test', { skipQueue: true })).rejects.toThrow(RequestCancelledError);
+      await expect(api.headStatus('test')).rejects.toThrow(RequestCancelledError);
+      await expect(api.fetchBlob('test')).rejects.toThrow(RequestCancelledError);
+      expect(received).toEqual([]);
+    });
+
+    it('should send a sessionless request without a live session', async () => {
+      endSession();
+
+      await expect(api.get('test', { sessionless: true })).resolves.toEqual({ ok: true });
+      await expect(api.headStatus('test', { sessionless: true })).resolves.toBe(HTTPStatus.OK);
+    });
+
+    it('should send a session-bound request again once the next session begins', async () => {
+      endSession();
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+
+      beginSession();
+
+      await expect(api.get('test')).resolves.toEqual({ ok: true });
+    });
+
+    it('should abort a queued session-bound request when its session ends', async () => {
+      const slow = holdSlowRequest();
+      const settled = expect(api.get('slow')).rejects.toThrow(RequestCancelledError);
+      await vi.waitFor(() => {
+        expect(slow.signal()).toBeDefined();
+      });
+
+      endSession();
+
+      await settled;
+      await vi.waitFor(() => {
+        expect(slow.signal()?.aborted).toBe(true);
+      });
+      slow.release();
+    });
+
+    it('should abort a skipQueue session-bound request when its session ends', async () => {
+      const slow = holdSlowRequest();
+      const settled = expect(api.fetch('slow', { skipQueue: true })).rejects.toThrow();
+      await vi.waitFor(() => {
+        expect(slow.signal()).toBeDefined();
+      });
+
+      endSession();
+
+      await settled;
+      expect(slow.signal()?.aborted).toBe(true);
+      slow.release();
+    });
+
+    it('should leave a sessionless request running when the session ends', async () => {
+      const slow = holdSlowRequest();
+      const pending = api.get('slow', { sessionless: true });
+      await vi.waitFor(() => {
+        expect(slow.signal()).toBeDefined();
+      });
+
+      endSession();
+      slow.release();
+
+      await expect(pending).resolves.toBe(true);
+      expect(slow.signal()?.aborted).toBe(false);
     });
   });
 

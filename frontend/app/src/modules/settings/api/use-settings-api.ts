@@ -68,7 +68,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
   });
 
   const backendSettings = async (): Promise<BackendConfiguration> => {
-    const response = await api.get<BackendConfiguration>('/settings/configuration');
+    const response = await api.get<BackendConfiguration>('/settings/configuration', { sessionless: true });
     return BackendConfiguration.parse(response);
   };
 
@@ -76,6 +76,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
     const response = await api.put<BackendConfiguration>(
       '/settings/configuration',
       { loglevel: loglevel.toUpperCase() },
+      { sessionless: true },
     );
     return BackendConfiguration.parse(response);
   };
@@ -83,7 +84,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
   const colibriSettings = async (): Promise<ColibriConfiguration> => {
     const response = await api.get<ColibriConfiguration>(
       '/settings/configuration',
-      { target: RequestTarget.COLIBRI },
+      { sessionless: true, target: RequestTarget.COLIBRI },
     );
     return ColibriConfiguration.parse(response);
   };
@@ -92,7 +93,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
     const response = await api.put<ColibriConfiguration>(
       '/settings/configuration',
       { loglevel: loglevel.toUpperCase() },
-      { target: RequestTarget.COLIBRI },
+      { sessionless: true, target: RequestTarget.COLIBRI },
     );
     return ColibriConfiguration.parse(response);
   };

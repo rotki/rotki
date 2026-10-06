@@ -80,6 +80,15 @@ function restoreState(store: PiniaPluginContext['store'], persisted: Record<stri
   });
 }
 
+/**
+ * Stores whose state a reload must not restore.
+ *
+ * @remarks
+ * The login is one of them: a reload gets it back the way a production build does, through the
+ * resume every load runs once the backend is reachable, and only that unlock begins a session.
+ */
+const UNPERSISTED_STORES: ReadonlySet<string> = new Set(['session/auth']);
+
 function shouldPersistStore(): any {
   const debugSettings = window.interop?.debugSettings?.();
   const menuEnabled = debugSettings?.persistStore;
@@ -94,7 +103,7 @@ export function StoreStatePersistsPlugin(context: PiniaPluginContext): void {
   const { store } = context;
   const storeId = store.$id;
 
-  if (!persistStore) {
+  if (!persistStore || UNPERSISTED_STORES.has(storeId)) {
     storage.removeItem(PREFIX + storeId);
     return undefined;
   }

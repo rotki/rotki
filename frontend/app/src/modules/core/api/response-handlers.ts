@@ -1,5 +1,7 @@
+import type { ActionResult } from '@rotki/common';
 import { FetchError } from 'ofetch';
 import { camelCaseTransformer, noRootCamelCaseTransformer } from '@/modules/core/api/transformers';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 
 export interface ResponseParserOptions {
@@ -46,6 +48,29 @@ export function createStatusError(status: number, message?: string, data?: unkno
   error.data = data;
   error.request = url;
   return error;
+}
+
+/**
+ * Unwraps an ActionResult: returns its result, falls back to defaultValue, or
+ * throws (ApiValidationError on 400, plain Error otherwise) when it is an error.
+ */
+export function unwrapResult<T>(data: ActionResult<T> | undefined, status: number, defaultValue?: T): T {
+  if (!data)
+    throw createStatusError(status);
+
+  const { result, message } = data;
+  const isError = result === null || result === undefined || (!result && message);
+
+  if (!isError)
+    return result;
+
+  if (defaultValue !== undefined)
+    return defaultValue;
+
+  if (status === HTTPStatus.BAD_REQUEST)
+    throw new ApiValidationError(message);
+
+  throw new Error(message);
 }
 
 /**

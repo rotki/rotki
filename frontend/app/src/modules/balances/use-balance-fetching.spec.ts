@@ -64,16 +64,6 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 
 const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
 
-const { endSession, sessionEpoch } = vi.hoisted(() => {
-  let epoch = 0;
-  return {
-    endSession: (): void => {
-      epoch++;
-    },
-    sessionEpoch: (): number => epoch,
-  };
-});
-
 vi.mock('@/modules/task-center/use-native-task', async () => {
   const { ok } = await import('plainfp/result');
   runTask.mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
@@ -83,7 +73,6 @@ vi.mock('@/modules/task-center/use-native-task', async () => {
 
   return {
     useNativeTask: vi.fn().mockReturnValue({
-      sessionEpoch,
       statusOf: vi.fn().mockReturnValue({ active: false, everCompleted: false, pending: false, running: false }),
       // Run the submitted spec inline so `queryBalancesAsync` is actually reached.
       submitTask: vi.fn(runSpecWith(runTask)),
@@ -273,32 +262,6 @@ describe('useBalanceFetching', () => {
       await refreshing;
 
       expect(queryBalancesAsync).toHaveBeenCalledOnce();
-    });
-
-    it('should not query all balances when the session ended during the chain refresh', async () => {
-      refreshBlockchainBalances.mockImplementationOnce(async () => {
-        endSession();
-      });
-      const { refreshFromChain } = useBalanceFetching();
-
-      await refreshFromChain();
-
-      expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
-      expect(isSnapshotDue).not.toHaveBeenCalled();
-      expect(queryBalancesAsync).not.toHaveBeenCalled();
-    });
-
-    it('should not query all balances when the session ended while reading the schedule', async () => {
-      isSnapshotDue.mockImplementationOnce(async () => {
-        endSession();
-        return true;
-      });
-      const { refreshFromChain } = useBalanceFetching();
-
-      await refreshFromChain();
-
-      expect(isSnapshotDue).toHaveBeenCalledOnce();
-      expect(queryBalancesAsync).not.toHaveBeenCalled();
     });
   });
 });

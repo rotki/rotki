@@ -3,6 +3,7 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { BALANCE_HYDRATION_TAG } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { api } from '@/modules/core/api/rotki-api';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useSync } from '@/modules/session/use-session-sync';
 import { SUGGESTION_PROBE_TAG } from '@/modules/settings/suggestions/use-suggestion-probes';
 import { resetState } from '@/modules/shell/app/store-plugins';
@@ -43,6 +44,13 @@ export function useSessionStateCleaner(): void {
     resetState();
   }
 
+  /**
+   * Starts the monitors on login; on any logout, ends the session and cleans up.
+   *
+   * @remarks
+   * `logout()` has already ended the session by then. Ending it here as well covers the paths
+   * that drop `logged` without one, such as a 401 while logged in.
+   */
   watch(logged, (logged, wasLogged) => {
     if (logged) {
       if (!wasLogged)
@@ -50,6 +58,7 @@ export function useSessionStateCleaner(): void {
 
       return;
     }
+    endSession();
     stop();
     cleanup();
   });

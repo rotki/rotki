@@ -3,6 +3,7 @@ import { mockT } from '@test/i18n';
 import { beforeAll, vi } from 'vitest';
 import { ref } from 'vue';
 import { api } from '@/modules/core/api/rotki-api';
+import { beginSession } from '@/modules/core/session/session-lifecycle';
 import { contractBackendUrl, contractUsername } from './contract-env';
 
 // Not part of the API contract, but some zod schema transforms reach for `useI18n`.
@@ -16,12 +17,13 @@ vi.mock('vue-i18n', () => ({
 }));
 
 /**
- * Points the api singleton at the live contract backend and unlocks the
- * profile user. Runs once per test file; the unlock is idempotent (an
- * already-logged-in response is accepted).
+ * Points the api singleton at the live contract backend, unlocks the profile
+ * user and begins the session the app's own unlock would. Runs once per test
+ * file; the unlock is idempotent (an already-logged-in response is accepted).
  */
 beforeAll(async () => {
   api.setup(contractBackendUrl());
+  beginSession();
 
   const username = contractUsername();
   const response = await fetch(`${contractBackendUrl()}/api/1/users/${username}`, {

@@ -3,6 +3,7 @@ import { neverSettles } from '@test/utils/never-settles';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
@@ -311,16 +312,35 @@ describe('useNativeTask', () => {
       expect(raced).toBe('settled');
       expect(run).toHaveBeenCalledOnce();
     });
+  });
 
-    it('should move the session epoch on reset and only then', () => {
-      const { reset, sessionEpoch } = useNativeTask();
-      const before = sessionEpoch();
+  describe('without a live session', () => {
+    it('should settle a submit cancelled without running or recording it', async () => {
+      const { submitTask } = useNativeTask();
+      const run = vi.fn(async () => ok(undefined));
+      const id = makeActivityId(ActivityKind.ALL_BALANCES, 'after-session');
+      endSession();
 
-      expect(sessionEpoch()).toBe(before);
+      const outcome = await submitTask({ id, kind: ActivityKind.ALL_BALANCES, run, title: 'balances' });
 
-      reset();
+      expect(run).not.toHaveBeenCalled();
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
+      expect(useTaskOrchestrator().snapshot().some(activity => activity.id === id)).toBe(false);
+    });
 
-      expect(sessionEpoch()).not.toBe(before);
+    it('should run a submit again once the next session begins', async () => {
+      const { submitTask } = useNativeTask();
+      const run = vi.fn(async () => ok(undefined));
+      const spec = { id: makeActivityId(ActivityKind.ALL_BALANCES, 'next-session'), kind: ActivityKind.ALL_BALANCES, run, title: 'balances' };
+      endSession();
+      await submitTask(spec);
+
+      beginSession();
+      const outcome = await submitTask(spec);
+
+      expect(run).toHaveBeenCalledOnce();
+      expect(isOk(outcome)).toBe(true);
     });
   });
 });
