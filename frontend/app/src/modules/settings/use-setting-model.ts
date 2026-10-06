@@ -2,8 +2,12 @@ import type { Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
+import { onPendingWrite } from '@/modules/core/session/session-lifecycle';
 import { useSettingsWriter, type WritableSettingKey } from '@/modules/settings/settings-writer';
 import { type SettingValue, useSetting } from '@/modules/settings/use-setting';
+
+/** Numbers each debounced model's pending-write registration, so two models never share one. */
+let modelSequence = 0;
 
 interface UseSettingModelOptions {
   /** Debounce persistence by this many ms (e.g. text inputs). Omit or 0 to persist immediately. */
@@ -30,6 +34,9 @@ interface UseSettingModelReturn<K extends WritableSettingKey> {
  * `{ pending, error, success }`. The draft stays in sync when the persisted value changes elsewhere.
  * Keeps the reactive setter side-effect-free: the input only mutates the local draft, and all network
  * I/O runs in the watcher via the writer.
+ *
+ * A debounced draft is also written before a logout ends the session, so a change made just before
+ * logging out is not lost to a write the ended session would refuse.
  */
 export function useSettingModel<K extends WritableSettingKey>(
   key: K,
@@ -82,6 +89,9 @@ export function useSettingModel<K extends WritableSettingKey>(
   };
 
   const schedule = debounce > 0 ? useDebounceFn(persist, debounce) : persist;
+
+  if (debounce > 0)
+    tryOnScopeDispose(onPendingWrite(`setting-model-${++modelSequence}`, persist));
 
   watch(model, (value) => {
     if (isEqual(value, get(source)))

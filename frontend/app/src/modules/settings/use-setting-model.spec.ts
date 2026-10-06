@@ -1,6 +1,7 @@
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, nextTick, ref } from 'vue';
+import { finishPendingWrites } from '@/modules/core/session/session-lifecycle';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 
 const mockWrite = vi.fn(async (): Promise<{ success: boolean; message?: string }> => ({ success: true }));
@@ -124,6 +125,33 @@ describe('useSettingModel', () => {
     finally {
       vi.useRealTimers();
     }
+  });
+
+  it('should write a debounced draft when a logout finishes the pending writes, before its delay ran out', async () => {
+    vi.useFakeTimers();
+    try {
+      const { model } = createModel({ debounce: 1500 });
+      set(model, 50);
+      await nextTick();
+
+      await finishPendingWrites();
+
+      expect(mockWrite).toHaveBeenCalledWith('itemsPerPage', 50);
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should leave nothing pending once its scope is gone', async () => {
+    const { model } = createModel({ debounce: 1500 });
+    set(model, 50);
+    await nextTick();
+    scope.stop();
+
+    await finishPendingWrites();
+
+    expect(mockWrite).not.toHaveBeenCalled();
   });
 
   it('should not persist a transient edit reverted to the source within the debounce window', async () => {
