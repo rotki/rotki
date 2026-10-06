@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 
@@ -38,7 +39,8 @@ export const useSchedulerState = createSharedComposable((): UseSchedulerStateRet
       logger.info('Task scheduler enabled');
     }
     catch (error: unknown) {
-      logger.error('Failed to enable task scheduler:', error);
+      if (!isRequestCancellation(error))
+        logger.error('Failed to enable task scheduler:', error);
     }
   };
 

@@ -4,6 +4,7 @@ import type { useHistoryEventsApi } from '@/modules/history/api/events/use-histo
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 
 const { spies } = vi.hoisted(() => ({
@@ -165,6 +166,15 @@ describe('use-customized-event-duplicates', () => {
 
       expect(spies.showErrorMessage).toHaveBeenCalledOnce();
       expect(spies.showErrorMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+    });
+
+    it('should stay quiet when the fetch is cancelled, as on a logout', async () => {
+      spies.getCustomizedEventDuplicates.mockRejectedValue(new RequestCancelledError('No live session'));
+
+      await composable.fetchCustomizedEventDuplicates();
+
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+      expect(get(composable.loading)).toBe(false);
     });
 
     it('should preserve existing state on error', async () => {

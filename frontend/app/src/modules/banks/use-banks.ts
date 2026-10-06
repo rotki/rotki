@@ -15,6 +15,7 @@ import {
 } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
@@ -73,7 +74,8 @@ export function useBanks(): UseBanksReturn {
       store.setManifests(await api.getSupportedBanks());
     }
     catch (error: unknown) {
-      notifyError(t('bank_settings.errors.supported_title'), getErrorMessage(error));
+      if (!isRequestCancellation(error))
+        notifyError(t('bank_settings.errors.supported_title'), getErrorMessage(error));
     }
   };
 
@@ -82,7 +84,8 @@ export function useBanks(): UseBanksReturn {
       store.setConnections(await api.getBanks());
     }
     catch (error: unknown) {
-      notifyError(t('bank_settings.errors.list_title'), getErrorMessage(error));
+      if (!isRequestCancellation(error))
+        notifyError(t('bank_settings.errors.list_title'), getErrorMessage(error));
     }
   };
 

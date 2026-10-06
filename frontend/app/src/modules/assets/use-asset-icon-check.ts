@@ -1,6 +1,7 @@
 import { wait } from '@shared/utils';
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface AssetCheckOptions {
@@ -48,7 +49,8 @@ export function useAssetIconCheck(): UseAssetIconCheckReturn {
       return false;
     }
     catch (error: unknown) {
-      logger.error(error);
+      if (!isRequestCancellation(error))
+        logger.error(error);
       return false;
     }
     finally {

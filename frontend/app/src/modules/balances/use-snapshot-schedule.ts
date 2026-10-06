@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -32,7 +33,8 @@ export function useSnapshotSchedule(): UseSnapshotScheduleReturn {
       set(lastBalanceSave, (await fetchPeriodicData()).lastBalanceSave);
     }
     catch (error: unknown) {
-      logger.warn('[snapshot-schedule] could not read the last snapshot time', error);
+      if (!isRequestCancellation(error))
+        logger.warn('[snapshot-schedule] could not read the last snapshot time', error);
     }
   };
 

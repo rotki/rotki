@@ -140,6 +140,18 @@ describe('use-unmatched-asset-movements', () => {
       );
       expect(get(loading)).toBe(false);
     });
+
+    it('should stay quiet when the fetch is cancelled, as on a logout, and stop loading', async () => {
+      const { useUnmatchedAssetMovements } = await importFresh();
+      const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+      spies.getUnmatchedAssetMovements.mockRejectedValueOnce(new RequestCancelledError('No live session'));
+      const { fetchUnmatchedAssetMovements, loading } = useUnmatchedAssetMovements();
+
+      await fetchUnmatchedAssetMovements(false);
+
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+      expect(get(loading)).toBe(false);
+    });
   });
 
   /** The two lists are separate queries, and the ignored one is only worth re-reading sometimes. */

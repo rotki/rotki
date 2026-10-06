@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -64,7 +65,8 @@ export function useTagOperations(): UseTagOperationsReturn {
       set(allTags, await queryTags());
     }
     catch (error: unknown) {
-      logger.error('Tags fetch failed', error);
+      if (!isRequestCancellation(error))
+        logger.error('Tags fetch failed', error);
     }
   }
 
