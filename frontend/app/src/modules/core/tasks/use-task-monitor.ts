@@ -1,8 +1,9 @@
 import { type ActionResult, assert } from '@rotki/common';
 import dayjs from 'dayjs';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { isTimeoutError } from '@/modules/core/api/with-retry';
-import { delay } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
+import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
 import { type Task, TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
@@ -44,9 +45,35 @@ function useTaskMonitorInternal(): {
   const { handleResult } = useTaskHandler();
   const api = useTaskApi();
   const { error } = useError();
+  const retryTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+  onSessionEnd('task-monitor', cancelRetries);
+  tryOnScopeDispose(cancelRetries);
 
   function computeBackoff(timeoutCount: number): number {
     return Math.min(INITIAL_BACKOFF_MS * 2 ** timeoutCount, MAX_BACKOFF_MS);
+  }
+
+  /**
+   * Keeps a task whose result fetch timed out locked for `backoffMs`, so later passes skip it.
+   *
+   * @remarks
+   * The pass that hit the timeout returns at once rather than waiting out the backoff, so the
+   * monitor never sits idle on one task while the others finish, and a logout cannot leave a pass
+   * running into the next session.
+   */
+  function holdForRetry(taskId: number, backoffMs: number): void {
+    clearTimeout(retryTimers.get(taskId));
+    retryTimers.set(taskId, setTimeout(() => {
+      retryTimers.delete(taskId);
+      store.unlock(taskId);
+    }, backoffMs));
+  }
+
+  function cancelRetries(): void {
+    for (const timer of retryTimers.values())
+      clearTimeout(timer);
+    retryTimers.clear();
   }
 
   async function processTask(task: Task): Promise<void> {
@@ -68,14 +95,40 @@ function useTaskMonitorInternal(): {
         store.setTimeoutCount(task.id, count + 1);
         const backoffMs = computeBackoff(count);
         logger.debug(`[TaskMonitor] Timeout for task ${task.id} (${task.label}), retry in ${backoffMs}ms`);
-        await delay(backoffMs);
+        holdForRetry(task.id, backoffMs);
+        return;
       }
-      else {
+      else if (!isRequestCancellation(error_)) {
         store.remove(task.id);
         handleResult({ error: error_, message: error_.message, result: null }, task.id);
       }
     }
     store.unlock(task.id);
+  }
+
+  /**
+   * Settles every task the backend no longer lists as cancelled by the backend.
+   *
+   * @remarks
+   * The backend lists a task, as pending or completed, from its creation until its outcome is
+   * fetched. A task missing from both was dropped without an outcome, as a backend restart that
+   * keeps the session does, and nothing would ever settle it. Only tasks known
+   * before the listing was requested are judged by it: one added since may be newer than the list.
+   * A locked task is having its outcome fetched or waiting to retry.
+   *
+   * @param known - the task ids the store held when the listing was requested
+   * @param listed - the ids the listing returned, pending and completed
+   */
+  function settleDropped(known: number[], listed: Set<number>): void {
+    const lockedSet = get(store.locked);
+    const taskMap = get(store.taskById);
+    for (const id of known) {
+      if (listed.has(id) || lockedSet.has(id) || !taskMap[id])
+        continue;
+
+      logger.warn(`[TaskMonitor] The backend no longer lists task ${id} (${taskMap[id].label})`);
+      handleResult({ message: '', result: null }, id);
+    }
   }
 
   async function handleTasks(ids: number[]): Promise<PromiseSettledResult<void>[]> {
@@ -127,7 +180,9 @@ function useTaskMonitorInternal(): {
 
     set(isRunning, true);
     try {
-      const { completed } = await api.queryTasks();
+      const known = get(store.tasks).map(task => task.id);
+      const { completed, pending } = await api.queryTasks();
+      settleDropped(known, new Set([...pending, ...completed]));
       const { ready, unknown } = store.filterTasks(completed);
       await handleTasks(ready);
       await consumeUnknownTasks(checkUnknownTasksPastThreshold(unknown));
