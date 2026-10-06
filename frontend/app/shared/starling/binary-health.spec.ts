@@ -1,12 +1,13 @@
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { findUnusableBinary } from './binary-health';
-import { BinaryComponent, BinaryStatus, type UnusableBinary } from './binary-types';
+import { findUnusableBinary, refusedStarling } from './binary-health';
+import { BinaryComponent, BinaryPlatform, BinaryStatus, type UnusableBinary } from './binary-types';
 
 const RESOURCES = '/opt/rotki/resources';
 
-const { accessSyncMock, existsSyncMock, findCoreBinaryMock, platformState } = vi.hoisted(() => ({
+const { accessSyncMock, coreSearchDirectoryMock, existsSyncMock, findCoreBinaryMock, platformState } = vi.hoisted(() => ({
   accessSyncMock: vi.fn<(target: string, mode?: number) => void>(),
+  coreSearchDirectoryMock: vi.fn<(directory: string) => string | undefined>(),
   existsSyncMock: vi.fn<(target: string) => boolean>(),
   findCoreBinaryMock: vi.fn<(directory: string) => { binary: string; dir: string } | undefined>(),
   platformState: { platform: 'linux' },
@@ -28,6 +29,7 @@ vi.mock('./starling-paths', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./starling-paths')>();
   return {
     ...actual,
+    coreSearchDirectory: coreSearchDirectoryMock,
     findCoreBinary: findCoreBinaryMock,
     packagedBackendDirectory: (): string => path.join(RESOURCES, 'backend'),
     resourcesDir: (): string => RESOURCES,
@@ -49,11 +51,16 @@ vi.mock('./starling-launchers', async (importOriginal) => {
 const STARLING = path.join(RESOURCES, 'starling', 'starling');
 const COLIBRI = path.join(RESOURCES, 'colibri', 'colibri');
 const BACKEND = path.join(RESOURCES, 'backend');
-const CORE = path.join(BACKEND, 'rotki-core', 'rotki-core-1.44.0');
-const UPGRADED_CORE = path.join(BACKEND, 'rotki-core', 'rotki-core-1.44.1');
+const CORE_FOLDER = path.join(BACKEND, 'rotki-core');
+const CORE = path.join(CORE_FOLDER, 'rotki-core-1.44.0-linux');
+const UPGRADED_CORE = path.join(CORE_FOLDER, 'rotki-core-1.44.1-linux');
 
 function unusable(component: BinaryComponent, target: string, status: BinaryStatus): UnusableBinary {
-  return { component, onWindows: false, path: target, status };
+  return { component, path: target, platform: BinaryPlatform.LINUX, status };
+}
+
+function spawnError(code: string, syscall: string = 'spawn'): Error {
+  return Object.assign(new Error(`${syscall} ${code}`), { code, syscall });
 }
 
 describe('findUnusableBinary', () => {
@@ -62,7 +69,8 @@ describe('findUnusableBinary', () => {
     platformState.platform = 'linux';
     existsSyncMock.mockReturnValue(true);
     accessSyncMock.mockReturnValue(undefined);
-    findCoreBinaryMock.mockReturnValue({ binary: CORE, dir: path.dirname(CORE) });
+    coreSearchDirectoryMock.mockReturnValue(CORE_FOLDER);
+    findCoreBinaryMock.mockReturnValue({ binary: CORE, dir: CORE_FOLDER });
   });
 
   it('should report nothing when every packaged binary is there and runnable', () => {
@@ -90,15 +98,26 @@ describe('findUnusableBinary', () => {
     expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.STARLING, STARLING, BinaryStatus.MISSING));
   });
 
-  it('should mark a report made on Windows, so the recovery steps can name Windows Security', () => {
-    platformState.platform = 'win32';
+  it.each([
+    ['win32', BinaryPlatform.WINDOWS],
+    ['darwin', BinaryPlatform.MACOS],
+    ['linux', BinaryPlatform.LINUX],
+  ])('should mark a report made on %s with its platform, which picks the recovery steps', (platform, expected) => {
+    platformState.platform = platform;
     existsSyncMock.mockImplementation((target: string) => target !== COLIBRI);
 
-    expect(findUnusableBinary()).toStrictEqual({ ...unusable(BinaryComponent.COLIBRI, COLIBRI, BinaryStatus.MISSING), onWindows: true });
+    expect(findUnusableBinary()?.platform).toBe(expected);
   });
 
-  it('should report the searched directory when no core binary resolves', () => {
+  it('should report the folder the core is looked for in when no core binary resolves', () => {
     findCoreBinaryMock.mockReturnValue(undefined);
+
+    expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.CORE, CORE_FOLDER, BinaryStatus.MISSING));
+  });
+
+  it('should report the backend folder itself when not even the core folder is there', () => {
+    findCoreBinaryMock.mockReturnValue(undefined);
+    coreSearchDirectoryMock.mockReturnValue(undefined);
 
     expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.CORE, BACKEND, BinaryStatus.MISSING));
   });
@@ -109,28 +128,80 @@ describe('findUnusableBinary', () => {
     expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.CORE, CORE, BinaryStatus.MISSING));
   });
 
-  it('should report a core directory that cannot be read, as security software locking it looks', () => {
+  it('should report a core folder that cannot be listed as unreadable, not as a program that cannot run', () => {
     findCoreBinaryMock.mockImplementation(() => {
       throw Object.assign(new Error('EACCES: permission denied, scandir'), { code: 'EACCES' });
     });
 
-    expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.CORE, BACKEND, BinaryStatus.NOT_EXECUTABLE));
+    expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.CORE, BACKEND, BinaryStatus.UNREADABLE));
   });
 
   it('should pass over an ambiguous core install instead of throwing, and still inspect colibri', () => {
     findCoreBinaryMock.mockImplementation(() => {
-      throw new Error('Expected one rotki-core binary but found: rotki-core-1.44.0, rotki-core-1.45.0');
+      throw new Error('Expected one rotki-core binary but found: rotki-core-1.44.0-linux, rotki-core-1.45.0-linux');
     });
     existsSyncMock.mockImplementation((target: string) => target !== COLIBRI);
 
     expect(findUnusableBinary()).toStrictEqual(unusable(BinaryComponent.COLIBRI, COLIBRI, BinaryStatus.MISSING));
   });
 
-  it('should check the core starling was launched with, not whichever an upgrade left in the directory', () => {
-    findCoreBinaryMock.mockReturnValue({ binary: UPGRADED_CORE, dir: path.dirname(UPGRADED_CORE) });
+  it('should report the launched core as replaced when an update put another version in its place', () => {
+    findCoreBinaryMock.mockReturnValue({ binary: UPGRADED_CORE, dir: CORE_FOLDER });
+    existsSyncMock.mockImplementation((target: string) => target !== CORE);
+
+    expect(findUnusableBinary(CORE)).toStrictEqual(unusable(BinaryComponent.CORE, CORE, BinaryStatus.REPLACED));
+  });
+
+  it('should report the launched core as missing when nothing took its place', () => {
+    findCoreBinaryMock.mockReturnValue(undefined);
     existsSyncMock.mockImplementation((target: string) => target !== CORE);
 
     expect(findUnusableBinary(CORE)).toStrictEqual(unusable(BinaryComponent.CORE, CORE, BinaryStatus.MISSING));
+  });
+
+  it('should report the launched core as missing when the folder cannot be searched for a replacement', () => {
+    findCoreBinaryMock.mockImplementation(() => {
+      throw new Error('Expected one rotki-core binary but found: two');
+    });
+    existsSyncMock.mockImplementation((target: string) => target !== CORE);
+
+    expect(findUnusableBinary(CORE)).toStrictEqual(unusable(BinaryComponent.CORE, CORE, BinaryStatus.MISSING));
+  });
+
+  it('should not search for a replacement while the launched core is still there', () => {
+    findCoreBinaryMock.mockReturnValue({ binary: UPGRADED_CORE, dir: CORE_FOLDER });
+
+    expect(findUnusableBinary(CORE)).toBeUndefined();
     expect(findCoreBinaryMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('refusedStarling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    platformState.platform = 'win32';
+    existsSyncMock.mockReturnValue(true);
+  });
+
+  it.each(['EPERM', 'UNKNOWN', 'EACCES'])('should report starling as not executable when its spawn fails with %s and the file is there', (code) => {
+    expect(refusedStarling(spawnError(code))).toStrictEqual({
+      ...unusable(BinaryComponent.STARLING, STARLING, BinaryStatus.NOT_EXECUTABLE),
+      platform: BinaryPlatform.WINDOWS,
+    });
+  });
+
+  it('should leave a spawn of a missing starling to the missing-file check', () => {
+    existsSyncMock.mockReturnValue(false);
+
+    expect(refusedStarling(spawnError('EPERM'))).toBeUndefined();
+  });
+
+  it('should ignore a refusal code that did not come from a spawn', () => {
+    expect(refusedStarling(spawnError('EACCES', 'scandir'))).toBeUndefined();
+  });
+
+  it('should ignore spawn errors that do not mean a refusal', () => {
+    expect(refusedStarling(spawnError('EMFILE'))).toBeUndefined();
+    expect(refusedStarling('spawn EPERM')).toBeUndefined();
   });
 });

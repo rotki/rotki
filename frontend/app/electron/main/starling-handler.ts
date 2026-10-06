@@ -7,7 +7,7 @@ import process from 'node:process';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { BackendFailureReport } from '@electron/main/starling-binary-report';
 import { forwardStarlingLine } from '@electron/main/starling-log';
-import { eventLastError, getMcpServerState, isMcpCrash, isServiceLive, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { crashMessage, getMcpServerState, isMcpCrash, isServiceLive, setMcpServerRunning } from '@electron/main/starling-mcp';
 import { isMacOsVersionSupported, isWindowsVersionSupported } from '@electron/main/starling-platform-support';
 import { BackendCode, type BackendOptions, StarlingServiceStatus } from '@shared/ipc';
 import { selectPort } from '@shared/port-utils';
@@ -257,7 +257,7 @@ export class StarlingHandler {
    * @remarks
    * Exit code 0 is also how starling ends on a signal (Ctrl+C, logoff, system shutdown), which
    * reaches it before Electron's own quit marks the stop as asked for, so it is not reported as a
-   * failure. The binary check still runs on it, because antivirus can kill with code 0 too.
+   * failure. The binaries are still checked and watched, because antivirus can kill with code 0 too.
    */
   private onUnexpectedExit(code: number | null, listener: StarlingErrorListener): void {
     if (code === EXIT_DATADIR_IN_USE) {
@@ -267,7 +267,7 @@ export class StarlingHandler {
       );
     }
     else if (code === 0) {
-      this.failures.binaryLost(listener);
+      this.failures.exitedUnasked(listener);
     }
     else {
       this.failures.failedUnlessReported('The rotki backend stopped unexpectedly. Please check the logs for more details.', listener);
@@ -299,14 +299,14 @@ export class StarlingHandler {
    * takes the tree down, and is blamed on a lost binary when one explains it.
    */
   private onCrash(params: unknown, listener: StarlingErrorListener | undefined): void {
-    const lastError = eventLastError(params);
-    this.logger.error(`Backend service crashed: ${lastError}`);
+    const message = crashMessage(params);
+    this.logger.error(`Backend service crashed: ${message}`);
     if (isMcpCrash(params)) {
       listener?.onMcpState?.(StarlingServiceStatus.FAILED);
       return;
     }
     if (!this.exiting && listener)
-      this.failures.failed(lastError, listener);
+      this.failures.failed(message, listener);
   }
 
   async getMcpServerState(): Promise<StarlingServiceStatus> {

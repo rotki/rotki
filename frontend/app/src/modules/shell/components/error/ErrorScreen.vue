@@ -19,6 +19,8 @@ const {
 
 defineSlots<{
   default: () => any;
+  /** Below the card, for an explanation that reads after the card has said what failed. */
+  details: () => any;
   bottom: () => any;
 }>();
 
@@ -83,6 +85,8 @@ const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
     >
       {{ alternative }}
     </div>
+
+    <slot name="details" />
 
     <div
       v-if="$slots.bottom"

@@ -35,17 +35,23 @@ export function isMcpCrash(params: unknown): boolean {
     && params.service === StarlingService.MCP;
 }
 
-export function eventLastError(params: unknown): string {
-  if (
-    params !== null
-    && typeof params === 'object'
-    && 'lastError' in params
-    && typeof params.lastError === 'string'
-    && params.lastError.length > 0
-  ) {
-    return params.lastError;
+function nonEmptyField(params: unknown, field: string): string | undefined {
+  const value: unknown = isRecord(params) ? params[field] : undefined;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * What to tell the user about a crashed service: starling's reason, led by the service when the
+ * event names it, since the reason alone ("exited with code 1") does not say which service died.
+ */
+export function crashMessage(params: unknown): string {
+  const lastError = nonEmptyField(params, 'lastError');
+  const service = nonEmptyField(params, 'service');
+  if (service) {
+    const reason = lastError ? ` (${lastError})` : '';
+    return `The rotki backend service '${service}' stopped unexpectedly${reason}. Please check the logs for more details.`;
   }
-  return 'The rotki backend stopped unexpectedly. Please check the logs for more details.';
+  return lastError ?? 'The rotki backend stopped unexpectedly. Please check the logs for more details.';
 }
 
 export async function getMcpServerState(request: StarlingRequest): Promise<StarlingServiceStatus> {

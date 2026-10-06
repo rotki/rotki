@@ -17,10 +17,24 @@ export type BinaryComponent = typeof BinaryComponent[keyof typeof BinaryComponen
 
 export const BinaryStatus = {
   MISSING: 'missing',
+  /** The file is there, but the system refuses to run it. */
   NOT_EXECUTABLE: 'not-executable',
+  /** The core starling runs is gone and a different version sits in its place: an update, not a quarantine. */
+  REPLACED: 'replaced',
+  /** The folder holding the core cannot be listed, so whether the core is there is unknown. */
+  UNREADABLE: 'unreadable',
 } as const;
 
 export type BinaryStatus = typeof BinaryStatus[keyof typeof BinaryStatus];
+
+/** The platform a report was made on, which decides the recovery steps a user is given. */
+export const BinaryPlatform = {
+  LINUX: 'linux',
+  MACOS: 'macos',
+  WINDOWS: 'windows',
+} as const;
+
+export type BinaryPlatform = typeof BinaryPlatform[keyof typeof BinaryPlatform];
 
 /**
  * A bundled executable that is not there, or is there and cannot be run.
@@ -32,8 +46,8 @@ export type BinaryStatus = typeof BinaryStatus[keyof typeof BinaryStatus];
  */
 export interface UnusableBinary {
   component: BinaryComponent;
-  /** Set by the main process, which knows the platform for certain; the recovery steps name Windows Security on it. */
-  onWindows: boolean;
+  /** Set by the main process, which knows the platform for certain. */
+  platform: BinaryPlatform;
   path: string;
   status: BinaryStatus;
 }

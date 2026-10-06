@@ -1,4 +1,4 @@
-import { BinaryStatus, type UnusableBinary } from '@shared/starling/binary-types';
+import { BinaryPlatform, BinaryStatus, type UnusableBinary } from '@shared/starling/binary-types';
 import { QUARANTINED_COLIBRI } from '@test/fixtures/unusable-binary';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
@@ -18,19 +18,18 @@ describe('missingBinaryScreen', () => {
   it('should name the component and the path it was expected at', () => {
     const text = mountScreen().text();
 
-    expect(text).toContain('missing_binary.missing');
+    expect(text).toContain('missing_binary.title.missing');
     expect(text).toContain(QUARANTINED_COLIBRI.path);
   });
 
-  it('should distinguish a file that is there but cannot be run', () => {
-    const text = mountScreen({ ...QUARANTINED_COLIBRI, status: BinaryStatus.NOT_EXECUTABLE }).text();
+  it('should say which component failed before explaining why, so the card comes before the cause and the steps', () => {
+    const text = mountScreen().text();
 
-    expect(text).toContain('missing_binary.not_executable');
-    expect(text).toContain('missing_binary.header_not_executable');
-    expect(text).not.toContain('missing_binary.missing');
+    expect(text.indexOf(QUARANTINED_COLIBRI.path)).toBeLessThan(text.indexOf('missing_binary.cause.missing'));
+    expect(text.indexOf('missing_binary.cause.missing')).toBeLessThan(text.indexOf('missing_binary.steps.update_definitions'));
   });
 
-  it('should put updating definitions before restoring, since the order is what makes it work', () => {
+  it('should list the recovery steps in order', () => {
     const steps = mountScreen().findAll('li').map(step => step.text());
 
     expect(steps).toStrictEqual([
@@ -41,14 +40,15 @@ describe('missingBinaryScreen', () => {
     ]);
   });
 
-  it('should point at Windows Security only when the report comes from Windows', () => {
-    expect(mountScreen({ ...QUARANTINED_COLIBRI, onWindows: true }).text())
-      .toContain('missing_binary.steps.restore_windows');
-    expect(mountScreen().text()).not.toContain('missing_binary.steps.restore_windows');
+  it('should show only the restart instruction for an update installed while rotki ran', () => {
+    const wrapper = mountScreen({ ...QUARANTINED_COLIBRI, status: BinaryStatus.REPLACED });
+
+    expect(wrapper.findAll('li')).toHaveLength(0);
+    expect(wrapper.find('[data-testid=missing-binary-recovery]').text()).toBe('missing_binary.recovery.restart');
   });
 
   it('should offer only to terminate, since the file is still gone', async () => {
-    const wrapper = mountScreen();
+    const wrapper = mountScreen({ ...QUARANTINED_COLIBRI, platform: BinaryPlatform.WINDOWS });
 
     await wrapper.find('[data-testid=missing-binary-terminate]').trigger('click');
 

@@ -12,16 +12,33 @@
  */
 import fs from 'node:fs';
 import process from 'node:process';
-import { BinaryComponent, BinaryStatus, type UnusableBinary } from './binary-types';
+import { BinaryComponent, BinaryPlatform, BinaryStatus, type UnusableBinary } from './binary-types';
 import { resolvePackagedColibri, resolveStarlingBinary } from './starling-launchers';
-import { findCoreBinary, packagedBackendDirectory } from './starling-paths';
+import { coreSearchDirectory, findCoreBinary, packagedBackendDirectory } from './starling-paths';
 
-function report(component: BinaryComponent, path: string, status: BinaryStatus): UnusableBinary {
-  return { component, onWindows: process.platform === 'win32', path, status };
+/**
+ * The spawn error codes that mean the system refused to start a file that is there.
+ *
+ * @remarks
+ * Windows has no execute bit, so a block by security software, Smart App Control or a policy only
+ * shows at the spawn: `EPERM` for an access denial, `UNKNOWN` for the codes libuv does not map
+ * (`ERROR_VIRUS_INFECTED`, an application control policy). Node throws both from `spawn()` itself.
+ * `EACCES` is the POSIX form, which arrives as an `error` event.
+ */
+const REFUSED_SPAWN_CODES: ReadonlySet<string> = new Set(['EACCES', 'EPERM', 'UNKNOWN']);
+
+function currentPlatform(): BinaryPlatform {
+  if (process.platform === 'win32')
+    return BinaryPlatform.WINDOWS;
+  return process.platform === 'darwin' ? BinaryPlatform.MACOS : BinaryPlatform.LINUX;
 }
 
-/** Whether an error came from the filesystem (it carries an errno `code`) rather than from our own checks. */
-function isFilesystemError(error: unknown): boolean {
+function report(component: BinaryComponent, path: string, status: BinaryStatus): UnusableBinary {
+  return { component, path, platform: currentPlatform(), status };
+}
+
+/** Whether an error came from the system (it carries an errno `code`) rather than from our own checks. */
+function isSystemError(error: unknown): error is Error & { code: string; syscall?: string } {
   return error instanceof Error && 'code' in error && typeof error.code === 'string';
 }
 
@@ -30,7 +47,8 @@ function isFilesystemError(error: unknown): boolean {
  *
  * @remarks
  * `X_OK` is meaningless on Windows, where `accessSync` only tells us the file
- * exists, so `not-executable` is in practice a POSIX answer.
+ * exists, so `not-executable` is in practice a POSIX answer here. On Windows the
+ * same condition only shows when the spawn fails, see {@link refusedStarling}.
  */
 function inspectBinary(component: BinaryComponent, binary: string): UnusableBinary | undefined {
   if (!fs.existsSync(binary))
@@ -47,17 +65,17 @@ function inspectBinary(component: BinaryComponent, binary: string): UnusableBina
 }
 
 /**
- * The packaged core, reported against the directory searched rather than a file:
- * the whole `backend/` directory can be what went, and the binary carries a
- * version in its name that the user has no way to guess.
+ * The packaged core, reported against the folder searched rather than a file:
+ * the whole folder can be what went, and the binary carries a version in its
+ * name that the user has no way to guess.
  *
  * @remarks
- * `findCoreBinary` throws in two ways. A filesystem error means the directory
- * cannot be read, which is how security software locking it looks, so it is
- * reported as unusable. A plain error means a broken upgrade left two binaries:
- * not a quarantine, so it is passed over and left to surface where the
- * invocation is built, whose error handling reports it. Nothing is rethrown,
- * since this runs inside the spawn path and the process event handlers.
+ * `findCoreBinary` throws in two ways. A system error means the folder cannot be
+ * listed, which is how security software locking it looks, so it is reported as
+ * unreadable. A plain error means a broken upgrade left two binaries: not a
+ * quarantine, so it is passed over and left to surface where the invocation is
+ * built, whose error handling reports it. Nothing is rethrown, since this runs
+ * inside the spawn path and the process event handlers.
  */
 function inspectCore(): UnusableBinary | undefined {
   const directory = packagedBackendDirectory();
@@ -66,15 +84,42 @@ function inspectCore(): UnusableBinary | undefined {
     resolved = findCoreBinary(directory);
   }
   catch (error) {
-    return isFilesystemError(error)
-      ? report(BinaryComponent.CORE, directory, BinaryStatus.NOT_EXECUTABLE)
+    return isSystemError(error)
+      ? report(BinaryComponent.CORE, directory, BinaryStatus.UNREADABLE)
       : undefined;
   }
 
   if (!resolved)
-    return report(BinaryComponent.CORE, directory, BinaryStatus.MISSING);
+    return report(BinaryComponent.CORE, coreSearchDirectory(directory) ?? directory, BinaryStatus.MISSING);
 
   return inspectBinary(BinaryComponent.CORE, resolved.binary);
+}
+
+/** Whether a core other than `launchedCore` now sits where the core is looked for, as an update leaves it. */
+function isReplacedByAnotherVersion(launchedCore: string): boolean {
+  try {
+    const current = findCoreBinary(packagedBackendDirectory());
+    return current !== undefined && current.binary !== launchedCore && fs.existsSync(current.binary);
+  }
+  catch {
+    return false;
+  }
+}
+
+/**
+ * The core a running starling was launched with.
+ *
+ * @remarks
+ * The core carries its version in its file name, so an update installed while rotki runs (a
+ * package manager, or a Homebrew cask swapping the app bundle) removes the launched file and puts
+ * a new one beside it. That is reported as replaced, so the user is told to restart rather than
+ * to look for a quarantine.
+ */
+function inspectLaunchedCore(launchedCore: string): UnusableBinary | undefined {
+  const unusable = inspectBinary(BinaryComponent.CORE, launchedCore);
+  if (unusable?.status === BinaryStatus.MISSING && isReplacedByAnotherVersion(launchedCore))
+    return report(BinaryComponent.CORE, launchedCore, BinaryStatus.REPLACED);
+  return unusable;
 }
 
 /**
@@ -93,6 +138,21 @@ function inspectCore(): UnusableBinary | undefined {
  */
 export function findUnusableBinary(launchedCore?: string): UnusableBinary | undefined {
   return inspectBinary(BinaryComponent.STARLING, resolveStarlingBinary())
-    ?? (launchedCore ? inspectBinary(BinaryComponent.CORE, launchedCore) : inspectCore())
+    ?? (launchedCore ? inspectLaunchedCore(launchedCore) : inspectCore())
     ?? inspectBinary(BinaryComponent.COLIBRI, resolvePackagedColibri().binary);
+}
+
+/**
+ * starling, when a failed spawn of it means the system refused a file that is there.
+ *
+ * @remarks
+ * Only a spawn error counts (its `syscall` names the spawn), since a failure building the
+ * invocation can carry the same codes for an unrelated file.
+ */
+export function refusedStarling(error: unknown): UnusableBinary | undefined {
+  if (!isSystemError(error) || !error.syscall?.startsWith('spawn') || !REFUSED_SPAWN_CODES.has(error.code))
+    return undefined;
+
+  const binary = resolveStarlingBinary();
+  return fs.existsSync(binary) ? report(BinaryComponent.STARLING, binary, BinaryStatus.NOT_EXECUTABLE) : undefined;
 }
