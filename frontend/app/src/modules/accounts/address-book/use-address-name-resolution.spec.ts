@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { logger } from '@/modules/core/common/logging/logging';
 import { endSession, scheduleSessionClear } from '@/modules/core/session/session-lifecycle';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
@@ -162,6 +164,28 @@ describe('useAddressNameResolution', () => {
       expect(get(firstName)).toBeUndefined();
       expect(get(secondName)).toBeUndefined();
       expect(resolution.isAddressNamePending('0xCC00000000000000000000000000000000000003')).toBe(false);
+    });
+
+    it('should log a rejected batch, but not one the end of the session cancelled', async () => {
+      enableAliasNames(true);
+      const logError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      vi.mocked(api.getAddressesNames)
+        .mockRejectedValueOnce(new Error('backend is down'))
+        .mockRejectedValueOnce(new RequestCancelledError('Cancelled by tag: session-bound'));
+
+      expect(get(resolution.useAddressName(() => '0xDD00000000000000000000000000000000000005'))).toBeUndefined();
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+      expect(api.getAddressesNames).toHaveBeenCalledOnce();
+      expect(logError).toHaveBeenCalledOnce();
+
+      expect(get(resolution.useAddressName(() => '0xDD00000000000000000000000000000000000006'))).toBeUndefined();
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).toHaveBeenCalledTimes(2);
+      expect(logError).toHaveBeenCalledOnce();
+      logError.mockRestore();
     });
 
     it('should keep a label that is not an address out of the request', async () => {
