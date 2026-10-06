@@ -110,7 +110,7 @@ dev = [
 ]
 
 lint = [
-    "mypy==2.1.0",
+    "mypy==2.4.0",
     "mypy-extensions==1.1.0",
     "pylint==4.0.6",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
@@ -190,6 +190,7 @@ warn_unreachable = true
 warn_redundant_casts = true
 disallow_untyped_decorators = true
 disallow_untyped_calls = true
+num_workers = "auto"
 mypy_path="./stubs/"
 
 [[tool.mypy.overrides]]
@@ -551,7 +552,7 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { eth-keyfile = "2026-08-22T00:00:00Z", eth-keys = "2026-08-22T00:00:00Z", eth-rlp = "2026-08-23T00:00:00Z", hexbytes = "2026-08-22T00:00:00Z", xxhash = "2026-08-18T00:00:00Z", rotki-pysqlcipher3 = "2026-08-27T10:11:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-newer-package = { mypy = "2026-10-02T00:00:00Z" }
 exclude-dependencies = [
     # Rotki only uses HTTP/WebSocket providers. Windows IPC is the only Web3 path using pywin32.
     { package = { name = "web3", version = "7.16.0" }, dependencies = ["pywin32"] },

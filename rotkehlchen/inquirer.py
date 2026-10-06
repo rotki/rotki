@@ -583,7 +583,8 @@ class Inquirer:
             new_oracles.append(oracle)
             new_oracle_instances.append(oracle_instance)
 
-        new_oracles_not_onchain, new_oracle_instances_not_onchain = [], []
+        new_oracles_not_onchain: list[CurrentPriceOracle] = []
+        new_oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(new_oracles, new_oracle_instances, strict=True):
             if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
                 new_oracles_not_onchain.append(oracle)
