@@ -1,5 +1,6 @@
 import type { NativeActivitySpec, TaskOutcome } from '@/modules/task-center/use-native-task';
 import { bigNumberify } from '@rotki/common';
+import flushPromises from 'flush-promises';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { assetSetDigest, useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
@@ -7,6 +8,8 @@ import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const runTaskMock = vi.fn();
 const notifyError = vi.fn();
@@ -17,6 +20,7 @@ vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
   return {
     ...actual,
     useTaskHandler: vi.fn(() => ({
+      cancelTaskById: async (): Promise<boolean> => true,
       runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
         await taskFn();
         return runTaskMock(taskFn, ...rest);
@@ -131,6 +135,19 @@ describe('useFetchPrices', () => {
         subtitle: expect.objectContaining({ params: { count: 150 }, plural: 150 }),
       }),
     );
+  });
+
+  it('should stop between batches once the activity is cancelled, not query the rest', async () => {
+    runTaskMock.mockImplementationOnce(async () => {
+      useTaskOrchestrator().cancelByPrefix(ActivityKind.PRICES, ActivityPart.LATEST);
+      return ok(priceResponse({}));
+    });
+    runTaskMock.mockResolvedValue(ok(priceResponse({})));
+
+    await fetcher.fetchPrices({ ignoreCache: false, selectedAssets: manyAssets('STOP', 250) });
+    await flushPromises();
+
+    expect(usePriceApi().queryPrices).toHaveBeenCalledOnce();
   });
 
   it('should not notify when a batch is cancelled rather than failing', async () => {

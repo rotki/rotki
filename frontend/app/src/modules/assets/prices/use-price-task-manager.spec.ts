@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import flushPromises from 'flush-promises';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
@@ -8,11 +9,13 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
-  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { cancelTaskById: vi.fn(async () => true), runTask: runTaskMock }));
 
 interface PriceResponse {
   assets: Record<string, [number, number]>;
@@ -116,6 +119,120 @@ describe('usePriceTaskManager', () => {
     const { exchangeRates } = storeToRefs(store);
     expect(get(exchangeRates)).toMatchObject({
       EUR: bigNumberify(1.5),
+    });
+  });
+
+  describe('refreshLatestPrices', () => {
+    const priceResponse = (asset: string): Record<string, unknown> => ({
+      assets: { [asset]: [1, 0] },
+      oracles: { [PriceOracle.COINGECKO]: 0, [PriceOracle.MANUALCURRENT]: 1 },
+      targetAsset: 'USD',
+    });
+
+    /**
+     * Makes the next backend task wait until released.
+     *
+     * @returns `release`, which resolves the task once it has started (await it before releasing)
+     */
+    function holdNextTask(asset: string): { release: () => void; started: Promise<void> } {
+      let release = (): void => {};
+      let markStarted = (): void => {};
+      const started = new Promise<void>((resolve) => {
+        markStarted = resolve;
+      });
+      runTaskMock.mockImplementationOnce(async () => new Promise((resolve) => {
+        release = (): void => resolve(ok(priceResponse(asset)));
+        markStarted();
+      }));
+      return { release: () => release(), started };
+    }
+
+    function queried(asset: string): boolean {
+      return vi.mocked(usePriceApi().queryPrices).mock.calls.some(([assets]) => assets.includes(asset));
+    }
+
+    beforeEach(() => {
+      runTaskMock.mockImplementation(async () => ok(priceResponse('ANY')));
+    });
+
+    it('should run one refresh at a time, a second one waiting for the first', async () => {
+      const held = holdNextTask('LANE_A');
+      const first = priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['LANE_A'] }, vi.fn());
+      const second = priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['LANE_B'] }, vi.fn());
+
+      await held.started;
+      await flushPromises();
+      expect(queried('LANE_A')).toBe(true);
+      expect(queried('LANE_B')).toBe(false);
+
+      held.release();
+      await Promise.all([first, second]);
+      expect(queried('LANE_B')).toBe(true);
+    });
+
+    it('should join a refresh of the same assets and mode rather than run it twice', async () => {
+      const onFetched = vi.fn();
+
+      await Promise.all([
+        priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['JOIN'] }, onFetched),
+        priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['JOIN'] }, onFetched),
+      ]);
+
+      expect(usePriceApi().queryPrices).toHaveBeenCalledOnce();
+      expect(onFetched).toHaveBeenCalledOnce();
+    });
+
+    it('should not join a plain price fetch of the same assets, which would apply nothing', async () => {
+      const onFetched = vi.fn();
+
+      await Promise.all([
+        priceTaskManager.fetchPrices({ ignoreCache: false, selectedAssets: ['APART'] }),
+        priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['APART'] }, onFetched),
+      ]);
+
+      expect(usePriceApi().queryPrices).toHaveBeenCalledTimes(2);
+      expect(onFetched).toHaveBeenCalledOnce();
+    });
+
+    it('should fetch the exchange rates before the prices when ignoring the cache, in the same activity', async () => {
+      runTaskMock.mockResolvedValueOnce(ok({ EUR: 1.5 }));
+      const onFetched = vi.fn();
+
+      await priceTaskManager.refreshLatestPrices({ ignoreCache: true, selectedAssets: ['RATES'] }, onFetched);
+
+      const rates = vi.mocked(usePriceApi().queryFiatExchangeRates).mock.invocationCallOrder[0];
+      const prices = vi.mocked(usePriceApi().queryPrices).mock.invocationCallOrder[0];
+      expect(rates).toBeLessThan(prices);
+      expect(get(storeToRefs(store).exchangeRates)).toMatchObject({ EUR: bigNumberify(1.5) });
+      expect(onFetched).toHaveBeenCalledOnce();
+    });
+
+    it('should not apply the prices of a refresh cancelled while it fetched them', async () => {
+      const held = holdNextTask('CANCEL');
+      const onFetched = vi.fn();
+      const refresh = priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['CANCEL'] }, onFetched);
+      await held.started;
+
+      useTaskOrchestrator().cancelByPrefix(ActivityKind.PRICES, ActivityPart.LATEST);
+      held.release();
+      await refresh;
+      await flushPromises();
+
+      expect(onFetched).not.toHaveBeenCalled();
+    });
+
+    it('should drop a queued refresh when a logout resets the orchestrator', async () => {
+      const held = holdNextTask('RESET_A');
+      const first = priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['RESET_A'] }, vi.fn());
+      const second = priceTaskManager.refreshLatestPrices({ ignoreCache: false, selectedAssets: ['RESET_B'] }, vi.fn());
+      await held.started;
+
+      useTaskOrchestrator().reset();
+      held.release();
+      await Promise.all([first, second]);
+      await flushPromises();
+
+      expect(queried('RESET_B')).toBe(false);
     });
   });
 

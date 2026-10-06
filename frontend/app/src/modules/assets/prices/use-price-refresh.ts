@@ -1,6 +1,5 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
-import { startPromise } from '@shared/utils';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
@@ -11,13 +10,6 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
-
-interface PriceRefreshTask {
-  ignoreCache: boolean;
-  selectedAssets: string[];
-  resolve: () => void;
-  reject: (error: any) => void;
-}
 
 interface UsePriceRefreshReturn {
   adjustPrices: (prices: MaybeRef<AssetPrices>) => void;
@@ -36,8 +28,6 @@ interface UsePriceRefreshReturn {
 
 export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn => {
   const pendingAssets = ref<string[]>([]);
-  const taskQueue = ref<PriceRefreshTask[]>([]);
-  const isProcessingQueue = ref<boolean>(false);
 
   const { updatePrices } = useBalancesStore();
   const { prices } = storeToRefs(useBalancePricesStore());
@@ -45,7 +35,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const { missingCustomAssets } = useManualBalanceData();
   const { assets: regularAssets } = useAggregatedBalances();
   const { hasCachedPrice } = usePriceUtils();
-  const { fetchExchangeRates, fetchPrices } = usePriceTaskManager();
+  const { refreshLatestPrices } = usePriceTaskManager();
   const { useIsActive, useIsActivePrefix } = useTaskCenter();
 
   const refreshing = logicOr(
@@ -67,95 +57,36 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   };
 
   /**
-   * Fetches prices for the given assets and writes the result into the balances store.
+   * Fetches prices for the given assets and writes the result into the balances store, one
+   * refresh at a time; see `refreshLatestPrices`.
    *
    * @remarks
-   * Sets no status of its own: the in-flight state belongs to its PRICES activities, read through
+   * Sets no status of its own: the in-flight state belongs to its PRICES activity, read through
    * {@link UsePriceRefreshReturn.refreshing}. Custom assets that no longer resolve are dropped
    * before the request rather than sent and failed.
    *
    * @param ignoreCache - bypasses the cached prices, and additionally re-fetches exchange rates.
-   * @param selectedAssets - the assets to price; an empty list requests none.
+   * @param selectedAssets - the assets to price.
    */
-  const performPriceFetch = async (
-    ignoreCache: boolean,
-    selectedAssets: string[],
-  ): Promise<void> => {
-    if (ignoreCache)
-      await fetchExchangeRates();
-
-    await fetchPrices({
-      ignoreCache,
-      selectedAssets: filterMissingAssets(selectedAssets),
-    });
-
-    adjustPrices(get(prices));
-  };
-
-  const processQueue = async (): Promise<void> => {
-    if (get(isProcessingQueue)) {
+  const runRefresh = async (ignoreCache: boolean, selectedAssets: string[]): Promise<void> => {
+    const applyPrices = (): void => adjustPrices(get(prices));
+    const assetsToPrice = filterMissingAssets(selectedAssets);
+    if (assetsToPrice.length === 0 && !ignoreCache) {
+      applyPrices();
       return;
     }
 
-    set(isProcessingQueue, true);
-
-    try {
-      while (get(taskQueue).length > 0) {
-        const task = get(taskQueue).shift();
-        if (!task)
-          break;
-
-        try {
-          await performPriceFetch(task.ignoreCache, task.selectedAssets);
-          task.resolve();
-        }
-        catch (error) {
-          task.reject(error);
-        }
-      }
-    }
-    finally {
-      set(isProcessingQueue, false);
-    }
+    await refreshLatestPrices({ ignoreCache, selectedAssets: assetsToPrice }, applyPrices);
   };
-
-  /**
-   * Queues one price fetch and resolves once that fetch, and not merely the queueing, has run.
-   *
-   * @remarks
-   * Fetches are serialised: only one drain of the queue runs at a time, so two overlapping
-   * refreshes cannot both hit the backend and race each other's write into the balances store.
-   * The drain is started on the next tick, so several calls made in the same tick are picked up
-   * by one pass of the loop. Each queued task keeps its own settlers, so a failure reaches the
-   * caller that enqueued it rather than whichever caller happened to trigger the drain.
-   *
-   * @param ignoreCache - forwarded to the fetch; bypasses cached prices and exchange rates.
-   * @param selectedAssets - the assets to price.
-   */
-  const enqueueTask = async (ignoreCache: boolean, selectedAssets: string[]): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-      const task: PriceRefreshTask = {
-        ignoreCache,
-        reject,
-        resolve,
-        selectedAssets,
-      };
-
-      get(taskQueue).push(task);
-
-      startPromise(nextTick(() => {
-        startPromise(processQueue());
-      }));
-    });
 
   const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
     const assetsToRefresh = selectedAssets?.filter(uniqueStrings)
       ?? [...get(assets), ...Object.keys(get(prices))].filter(uniqueStrings);
-    await enqueueTask(ignoreCache, assetsToRefresh);
+    await runRefresh(ignoreCache, assetsToRefresh);
   };
 
   const refreshPrice = async (asset: string): Promise<void> => {
-    await enqueueTask(true, [asset]);
+    await runRefresh(true, [asset]);
   };
 
   async function fetchNoPriceAssets(assets: string[]): Promise<void> {

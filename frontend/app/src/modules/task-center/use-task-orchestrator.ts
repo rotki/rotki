@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
-import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, BANK_EVENTS_LANE_PREFIX, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
+import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, BANK_EVENTS_LANE_PREFIX, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, PRICE_REFRESH_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
 import { useActivityDetail } from './use-activity-detail';
 
@@ -63,6 +63,7 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
       [CHAIN_SYNC_LANE]: 2,
       [DECODE_LANE]: 2,
       [EXCHANGE_LANE]: 2,
+      [PRICE_REFRESH_LANE]: 1,
       [SESSION_LANE]: 2,
       [UMBRELLA_LANE]: 16,
     },
