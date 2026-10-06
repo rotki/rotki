@@ -25,7 +25,6 @@ dependencies = [
     "rotki-pysqlcipher3==2026.8.3",
     "rotki-sqlite==2026.07.2",
     "requests==2.33.1",
-    "oauthlib==3.3.1",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
@@ -60,14 +59,14 @@ dependencies = [
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
     # OAuth client for Monerium
-    "oauthlib==3.3.1",
+    "oauthlib==4.0.0",
     # To build JWT for coinbase exchange key validation
-    "PyJWT==2.13.0",
+    "PyJWT==2.15.0",
     "construct==2.10.68",
     "tzdata==2025.2 ; sys_platform == 'win32'",
     # enfore transitive deps versions
     "aiohttp==3.14.3",  # dependency of web3.py that has security issues before this version
-    "urllib3==2.7.0",  # enforced due to dependabot reports
+    "urllib3==2.8.0",  # enforced due to dependabot reports
     "idna==3.18",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
     "protobuf==6.33.6",  # enforced due to dependabot reports
