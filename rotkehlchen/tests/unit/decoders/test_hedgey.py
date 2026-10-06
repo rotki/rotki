@@ -156,9 +156,8 @@ def test_redeem_full_vesting_plan(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000087200182619022'),
+            amount=FVal('0.000087200182619022'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

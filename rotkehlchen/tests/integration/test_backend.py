@@ -17,7 +17,7 @@ def _read_lines(stream: IO[bytes], lines: queue.Queue[str | None]) -> None:
     lines.put(None)
 
 
-def test_backend():
+def test_backend() -> None:
     """Just runs the backend code to make sure `python -m rotkehlchen` works.
 
     The child's stdout is read by a thread so that a backend which hangs at startup fails
@@ -37,8 +37,13 @@ def test_backend():
     if sys.platform == 'darwin':
         timeout = 45  # in macos the backend may take a long time to start
     deadline = time.monotonic() + timeout
+    assert proc.stdout is not None
     lines: queue.Queue[str | None] = queue.Queue()
-    threading.Thread(target=_read_lines, args=(proc.stdout, lines), daemon=True).start()
+    threading.Thread(
+        target=_read_lines,
+        args=(proc.stdout, lines),
+        daemon=True,
+    ).start()
     seen_output: list[str] = []
     try:
         while True:

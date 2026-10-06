@@ -4937,7 +4937,10 @@ def test_upgrade_db_52_to_53(
     db.logout()
 
 
-def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
+def test_upgrade_db_53_to_54(
+        user_data_dir: Path,
+        messages_aggregator: MessagesAggregator,
+) -> None:
     """Test upgrading the DB from version 53 to version 54."""
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v53 = _init_db_with_target_version(

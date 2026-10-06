@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 logger = logging.getLogger(__name__)
@@ -309,7 +310,10 @@ def test_velodrome_cache_progress(database, chain_id, pool_case):
 
 
 @pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.BASE])
-def test_velodrome_cache_chunk_halving(database, chain_id):
+def test_velodrome_cache_chunk_halving(
+        database: DBHandler,
+        chain_id: ChainID,
+) -> None:
     """A chunk that exceeds the gas limit is retried with half the size instead of ending the
     query, so the concentrated liquidity pools listed after the v2 pools are still found.
     The failure happens after a full page of v2 pools, as it does on chain."""
@@ -356,7 +360,9 @@ def test_velodrome_cache_chunk_halving(database, chain_id):
         ).fetchone()[0] == f"{'Velodrome' if chain_id == ChainID.OPTIMISM else 'Aerodrome'} pool CL200"  # noqa: E501
 
 
-def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
+def test_velodrome_cache_backfills_gauges_of_cached_pools(
+        database: DBHandler,
+) -> None:
     """A pool cached before its gauge existed must get the gauge on the next refresh, even
     though the pool itself is skipped as already cached. Otherwise the gauge's reward claims
     decode as plain receives. Uses the Aerodrome CL pool from the 1.44.1 report, whose claim
