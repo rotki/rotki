@@ -1111,14 +1111,8 @@
         "title": "Comportement du bouton de rafraîchissement blockchain"
       }
     },
-    "exchange_balances": {
-
-    },
     "liabilities": {
       "title": "Passifs"
-    },
-    "manual_balances": {
-
     },
     "snapshot": {
       "convert_to_edit": {
@@ -2690,9 +2684,6 @@
       }
     },
     "tooltip": "Paramètre de graphique d'actif"
-  },
-  "summary_card": {
-
   },
   "sync_buttons": {
     "download_tooltip": "Tirer les données enregistrées depuis le serveur et remplacer votre base de données locale",

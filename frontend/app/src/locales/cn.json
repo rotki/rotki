@@ -2379,7 +2379,6 @@
     }
   },
   "dashboard": {
-    "bank_balances": {},
     "blockchain_balances": {
       "behaviour": {
         "only_refresh_balances": "仅刷新余额",
@@ -2422,7 +2421,6 @@
     "liabilities": {
       "title": "负债"
     },
-    "manual_balances": {},
     "refresh": {
       "balances": "刷新余额",
       "balances_hint": "查询你的账户、交易所和银行，重新加载手动余额，然后刷新价格",
@@ -5917,7 +5915,6 @@
     },
     "tooltip": "资产图表设置"
   },
-  "summary_card": {},
   "swap_event_form": {
     "add_asset": "添加资产",
     "fee_notes": "手续费备注",

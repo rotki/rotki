@@ -405,12 +405,6 @@
     "profit_currency": "Divisa de ganancias ({currency})"
   },
   "dashboard": {
-    "blockchain_balances": {
-
-    },
-    "exchange_balances": {
-
-    },
     "snapshot": {
       "edit": {
         "dialog": {
