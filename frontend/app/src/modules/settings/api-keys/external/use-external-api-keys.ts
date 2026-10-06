@@ -3,6 +3,7 @@ import type { ConfirmationMessage } from '@/modules/history/events/use-deletion-
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/modules/integrations/types';
 import { toCapitalCase } from '@rotki/common';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -83,8 +84,9 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     try {
       set(keys, await queryExternalServices());
     }
-    catch (error) {
-      logger.error(error);
+    catch (error: unknown) {
+      if (!isRequestCancellation(error))
+        logger.error(error);
     }
     finally {
       set(loading, false);

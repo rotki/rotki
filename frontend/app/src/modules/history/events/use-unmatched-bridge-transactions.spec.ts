@@ -293,6 +293,30 @@ describe('use-unmatched-bridge-transactions', () => {
 
       expect(get(unmatchedTransactions)).toHaveLength(0);
     });
+
+    it('should report a failed fetch', async () => {
+      spies.getUnmatchedBridgeTransactions.mockRejectedValueOnce(new Error('the backend said no'));
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(false);
+
+      expect(spies.showErrorMessage).toHaveBeenCalledWith(
+        'actions.bridge_matching.fetch_error.title',
+        expect.stringContaining('the backend said no'),
+      );
+    });
+
+    it('should stay quiet when the fetch is cancelled, as on a logout', async () => {
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+      spies.getUnmatchedBridgeTransactions.mockRejectedValueOnce(new RequestCancelledError('No live session'));
+      const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(false);
+
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+    });
   });
 
   describe('matchBridgeTransaction', () => {

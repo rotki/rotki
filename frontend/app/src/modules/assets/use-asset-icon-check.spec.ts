@@ -161,13 +161,27 @@ describe('modules/assets/use-asset-icon-check', () => {
     expect(result).toBe(false);
   });
 
-  it('should return false on error', async () => {
+  it('should return false and log the error on failure', async () => {
     const { checkIfAssetExists } = await createCheck();
+    const { logger } = await import('@/modules/core/common/logging/logging');
 
     mockCheckAsset.mockRejectedValueOnce(new Error('Network error'));
 
     const result = await checkIfAssetExists('ETH', {});
     expect(result).toBe(false);
+    expect(logger.error).toHaveBeenCalledOnce();
+  });
+
+  it('should stay quiet when the check is cancelled, as a logout cancels it', async () => {
+    const { checkIfAssetExists } = await createCheck();
+    const { logger } = await import('@/modules/core/common/logging/logging');
+    const { RequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
+
+    mockCheckAsset.mockRejectedValueOnce(new RequestCancelledError('No live session'));
+
+    const result = await checkIfAssetExists('ETH', {});
+    expect(result).toBe(false);
+    expect(logger.error).not.toHaveBeenCalled();
   });
 
   it('should clear cache when lastRefreshed changes', async () => {

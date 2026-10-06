@@ -4,6 +4,7 @@ import type { LinkedMovementMatch } from '@/modules/history/events/event-payload
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -126,6 +127,8 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
       set(movementsRef, movements);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
       logger.error('Failed to fetch unmatched asset movements:', error);
       showErrorMessage(t('actions.asset_movement_matching.fetch_error.title'), t('actions.asset_movement_matching.fetch_error.description', { error: getErrorMessage(error) }));
     }

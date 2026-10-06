@@ -5,6 +5,7 @@ import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { isErr, map as mapResult } from 'plainfp/result';
 import { z } from 'zod';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -182,6 +183,8 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
       set(transactionsRef, transactions);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
       logger.error('Failed to fetch unmatched bridge transactions:', error);
       showErrorMessage(t('actions.bridge_matching.fetch_error.title'), t('actions.bridge_matching.fetch_error.description', { error: getErrorMessage(error) }));
     }

@@ -2,6 +2,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { Filters } from './use-internal-tx-conflicts-filter';
 import { startPromise } from '@shared/utils';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { internalTxFixedSignal } from '@/modules/core/messaging/handlers/internal-tx-fixed';
@@ -88,7 +89,8 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
       set(failedCount, result.failed);
     }
     catch (error: any) {
-      logger.error('Failed to fetch internal tx conflicts counts:', error);
+      if (!isRequestCancellation(error))
+        logger.error('Failed to fetch internal tx conflicts counts:', error);
     }
   }
 
@@ -97,6 +99,8 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
       await fetchData();
     }
     catch (error: any) {
+      if (isRequestCancellation(error))
+        return;
       logger.error('Failed to fetch internal tx conflicts:', error);
       showErrorMessage(
         t('internal_tx_conflicts.errors.fetch_title'),

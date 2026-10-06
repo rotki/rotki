@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -97,6 +98,8 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       set(rawIgnoredGroupIds, result.ignoredGroupIds);
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
       logger.error('Failed to fetch customized event duplicates:', error);
       showErrorMessage(t('actions.customized_event_duplicates.fetch_error.title'), t('actions.customized_event_duplicates.fetch_error.description', { error: getErrorMessage(error) }));
     }

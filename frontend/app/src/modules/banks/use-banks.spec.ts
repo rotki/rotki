@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
@@ -106,6 +107,28 @@ describe('useBanks', () => {
     expect(store.manifests).toEqual([manifest]);
     expect(store.connections).toEqual([connection]);
     expect(store.manifestFor('qonto')).toEqual(manifest);
+  });
+
+  it('should notify when listing the banks or connections fails', async () => {
+    getSupportedBanks.mockRejectedValue(new Error('down'));
+    getBanks.mockRejectedValue(new Error('down'));
+    const banks = useBanks();
+
+    await banks.refreshSupportedBanks();
+    await banks.refreshBankConnections();
+
+    expect(notifyError).toHaveBeenCalledTimes(2);
+  });
+
+  it('should stay quiet when listing the banks or connections is cancelled, as on a logout', async () => {
+    getSupportedBanks.mockRejectedValue(new RequestCancelledError('No live session'));
+    getBanks.mockRejectedValue(new RequestCancelledError('No live session'));
+    const banks = useBanks();
+
+    await banks.refreshSupportedBanks();
+    await banks.refreshBankConnections();
+
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it('should add through PUT and edit through PATCH, dropping an unchanged new name and refreshing after each setup, balance query and sync', async () => {
