@@ -375,8 +375,11 @@ class Opensea(ExternalServiceWithApiKey):
                     endpoint='collectionstats', options={'name': entry['collection']},
                 )
                 log.debug(stats_result)
+                total_stats = stats_result['total']
+                # opensea no longer returns average_price, so a collection without
+                # listings (floor_price of 0.0) must not need it
                 raw_floor_price = (
-                    stats_result['total']['floor_price'] or stats_result['total']['average_price']
+                    total_stats.get('floor_price') or total_stats.get('average_price')
                 )
                 floor_price = deserialize_optional_to_optional_fval(
                     value=raw_floor_price,

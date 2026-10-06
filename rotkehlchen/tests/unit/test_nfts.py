@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal
@@ -50,6 +51,33 @@ def test_nfts_floor_prices(
     assert nfts[0].collection is not None
     assert nfts[0].collection.floor_price == FVal(599)
     assert nfts[0].collection.floor_price_asset == Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174')  # USDC.e on polygon # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+@pytest.mark.parametrize('mocked_current_prices', [{A_ETH: 3600}])
+def test_nfts_of_collection_without_floor_price(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+):
+    """Test that the NFTs of a collection with a zero floor price are not dropped.
+
+    Opensea's collection stats no longer contain average_price, and a collection
+    without listings, like GasHawk NFTs here, has a floor_price of 0.0.
+    """
+    nft_module = blockchain.get_module('nfts')
+    assert nft_module is not None
+    nfts = nft_module.opensea.get_account_nfts(ethereum_accounts[0])
+    assert len(nfts) == 3
+    gashawk = next(
+        nft for nft in nfts
+        if nft.collection is not None and nft.collection.name == 'GasHawk NFTs'
+    )
+    assert gashawk.collection is not None
+    assert gashawk.collection.floor_price is None
+    assert gashawk.price_in_asset == ZERO
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
