@@ -526,10 +526,6 @@
     },
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "Failed to query balances and save the snapshot: {message}",
-          "title": "Balance Snapshot Failed"
-        },
         "task": {
           "description": "Querying all balances and saving a snapshot for statistics.",
           "ignore_errors_note": "Errors during the query will be ignored."
@@ -537,25 +533,10 @@
       },
       "blockchain": {
         "cancelled": "Cancelled before querying the network",
-        "error": {
-          "description": "Error at querying blockchain balances: {error}",
-          "title": "Querying blockchain balances"
-        },
         "skipped": {
           "busy": "Already refreshing this chain",
           "disabled": "Skipped in settings",
           "no_accounts": "No tracked accounts on this chain"
-        }
-      },
-      "blockchain_account_removal": {
-        "agnostic": {
-          "error": {
-            "title": "Removing account for address {address}"
-          }
-        },
-        "error": {
-          "description": "Failed to remove the account: {error}",
-          "title": "Removing {count} {blockchain} account(s)"
         }
       },
       "blockchain_accounts_add": {
@@ -592,64 +573,22 @@
           "title": "Fetch detected tokens"
         }
       },
-      "exchange_balances": {
-        "error": {
-          "message": "Failed to query {location} balances: {error}",
-          "title": "{location} balance query"
-        }
-      },
-      "exchange_rates": {
-        "error": {
-          "message": "Failed fetching exchange rates: {message}",
-          "title": "Exchange Rates"
-        }
-      },
       "exchange_removal": {
         "description": "The removal of {exchange} failed due to: {error}",
         "title": "Exchange removal"
-      },
-      "exchange_savings_interest": {
-        "error": {
-          "message": "Failed to query {location} savings interest information: {error}",
-          "title": "{location} savings interest information query"
-        }
       },
       "exchange_setup": {
         "description": "The setup of {exchange} failed due to: {error}",
         "title": "Exchange setup"
       },
       "historic_fetch_price": {
-        "daily": {
-          "error": {
-            "message": "Failed to fetch daily historic prices: {message}"
-          },
-          "task": {
-            "title": "Fetching daily historic prices"
-          }
-        },
-        "error": {
-          "message": "Failed to fetch historic prices: {message}"
-        },
         "task": {
-          "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
-          "title": "Fetching conversion rate"
-        }
-      },
-      "manual_balances": {
-        "error": {
-          "message": "Failed: {message}",
-          "title": "Retrieving manual balances"
+          "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}"
         }
       },
       "manual_delete": {
         "error": {
           "title": "Deleting Manual Balance"
-        }
-      },
-      "xpub_removal": {
-        "error": {
-          "description": "Failed to remove {xpub}: {error}",
-          "title": "Xpub Removal"
         }
       }
     },
@@ -658,10 +597,6 @@
         "action": "Authenticate",
         "description": "{location} connection '{name}' needs you to confirm access before rotki can pull new transactions.",
         "title": "Bank authentication required"
-      },
-      "error": {
-        "description": "Failed to sync bank transactions for {location} with name '{name}': {error}",
-        "title": "Bank sync"
       }
     },
     "bridge_matching": {
@@ -709,54 +644,10 @@
       }
     },
     "date_range": " from {from}| to {to}| from {from} to {to}",
-    "defi": {
-      "airdrops": {
-        "error": {
-          "description": "Failed to retrieve airdrops: {error}",
-          "title": "Airdrops"
-        }
-      },
-      "liquity_balances": {
-        "error": {
-          "description": "Failed to retrieve Liquity balances: {message}",
-          "title": "Liquity Balances"
-        }
-      },
-      "liquity_pools": {
-        "error": {
-          "description": "Failed to query Liquity Pools: {message}",
-          "title": "Liquity Pools"
-        }
-      },
-      "liquity_staking": {
-        "error": {
-          "description": "Failed to retrieve Liquity staking: {message}",
-          "title": "Liquity staking"
-        }
-      },
-      "liquity_statistics": {
-        "error": {
-          "description": "Failed to query Liquity statistics: {message}",
-          "title": "Liquity Statistics"
-        }
-      }
-    },
     "delete_eth2_validator": {
       "error": {
         "description": "Deleting the ETH staking validators failed: {message}",
         "title": "Deleting ETH staking validators"
-      }
-    },
-    "detect_evm_accounts": {
-      "error": {
-        "message": "Failed to detect EVM accounts with the following error: {message}",
-        "title": "Detecting EVM accounts"
-      }
-    },
-    "eth_block_events_redecoding": {
-      "error": {
-        "description": "Failed to decode ETH block events: {error}",
-        "title": "Decoding ETH block events"
       }
     },
     "evm_tx_lookup": {
@@ -768,12 +659,6 @@
       "needs_related_address": "Pick a tracked address below to auto-fill the timestamp from this transaction",
       "needs_related_address_swap": "Set a tracked address on the first spend below to auto-fill the timestamp from this transaction",
       "retry": "Retry transaction lookup"
-    },
-    "exchange_events": {
-      "error": {
-        "description": "Failed to query exchange events for {location} with name '{name}': {error}",
-        "title": "Exchange events query"
-      }
     },
     "fetch_counterparties": {
       "actions": {
@@ -801,14 +686,6 @@
         "error": {
           "message": "Failed to retrieve the location labels: {message}",
           "title": "Fetch location labels"
-        }
-      },
-      "fetch_undecoded_transactions": {
-        "error": {
-          "message": "Failed to query breakdown for undecoded transactions: {message}"
-        },
-        "task": {
-          "title": "Retrieving breakdown for undecoded transactions."
         }
       }
     },
@@ -876,22 +753,12 @@
         }
       }
     },
-    "nft_balances": {
-      "error": {
-        "message": "An error occurred while querying the NFT balances: {message}",
-        "title": "NFT balance querying"
-      }
-    },
     "notifications": {
       "consume": {
         "message_title": "Backend messages"
       }
     },
     "online_events": {
-      "error": {
-        "description": "Failed query online events with query type {queryType}: {error}",
-        "title": "Online Events Query"
-      },
       "query_type": {
         "block_productions": "Block production",
         "eth_withdrawals": "ETH withdrawals",
@@ -998,12 +865,6 @@
           "message": "Failure to delete a queriable address: {message}"
         }
       },
-      "fetch_prices": {
-        "error": {
-          "message": "Failed to fetch prices: {error}",
-          "title": "Fetching prices"
-        }
-      },
       "fetch_queriable_address": {
         "error": {
           "message": "Failure to fetch the queriable addresses: {message}"
@@ -1066,14 +927,6 @@
         }
       }
     },
-    "staking": {
-      "eth2": {
-        "error": {
-          "description": "Failed to query the ETH staking details: {error}",
-          "title": "Querying the ETH staking details"
-        }
-      }
-    },
     "statistics": {
       "net_value": {
         "error": {
@@ -1082,23 +935,9 @@
         }
       }
     },
-    "transactions": {
-      "error": {
-        "description": "Failed query for {address} ({chain}): {error}",
-        "title": "Blockchain Transactions Query"
-      }
-    },
     "transactions_redecode": {
       "error": {
-        "description": "Failed to decode events from transactions: {error}",
-        "not_decoded": "The transactions could not be pulled or decoded",
-        "title": "Decoding events from transactions"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "Failed to decode {chain} events: {error}",
-        "title": "Decoding events from transactions"
+        "not_decoded": "The transactions could not be pulled or decoded"
       }
     },
     "unignore": {
@@ -1919,9 +1758,6 @@
   "bank_balances": {
     "add_bank": "Add a bank connection",
     "click_here": "Click here",
-    "errors": {
-      "title": "Bank balances"
-    },
     "no_balances": "No balances were returned by your bank connections yet. Refresh to query them.",
     "no_connections": "No bank connections have been set up yet. {0} to add one.",
     "refresh_tooltip": "Query the current balances of every connected bank"
@@ -3186,14 +3022,6 @@
     "message": "You are running rotki in docker without session authentication. Anyone who can reach this instance can use the API and read your data without signing in.",
     "proxy_note": "If this instance already sits behind a proxy that authenticates every request, it is protected and you can accept below.",
     "recommendation": "Setting {0} makes rotki issue a session cookie on login and reject requests that do not carry it."
-  },
-  "ens_names": {
-    "error": {
-      "message": "Failed to query ENS names: {message}"
-    },
-    "task": {
-      "title": "Querying ENS names"
-    }
   },
   "error": {
     "generic": {
@@ -4952,10 +4780,6 @@
         },
         "pool_table": {
           "title": "LP Tokens"
-        },
-        "task": {
-          "error_message": "There was an error while fetching {protocol} balances: {message}",
-          "title": "Fetching {protocol} balances"
         }
       }
     }

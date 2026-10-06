@@ -100,11 +100,11 @@ describe('useAccountRemovals', () => {
       expect(first).not.toBe(second);
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       whenActionable('remove failed');
       const { useAccountRemovals } = await importModule();
       await useAccountRemovals().removeAccount({ accounts: ['0xabc'], chain: 'eth' });
-      expect(mocks.notifyError).toHaveBeenCalledOnce();
+      expect(mocks.notifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -121,20 +121,20 @@ describe('useAccountRemovals', () => {
       expect(first).not.toBe(second);
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       whenActionable('agnostic failed');
       const { useAccountRemovals } = await importModule();
       await useAccountRemovals().removeAgnosticAccount('evm', '0xabc');
-      expect(mocks.notifyError).toHaveBeenCalledOnce();
+      expect(mocks.notifyError).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteXpub', () => {
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       whenActionable('xpub failed');
       const { useAccountRemovals } = await importModule();
       await useAccountRemovals().deleteXpub({ chain: 'btc', xpub: 'xpub123' });
-      expect(mocks.notifyError).toHaveBeenCalledOnce();
+      expect(mocks.notifyError).not.toHaveBeenCalled();
     });
 
     it('should not notify on success', async () => {

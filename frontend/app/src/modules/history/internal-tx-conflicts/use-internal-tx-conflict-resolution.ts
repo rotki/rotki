@@ -196,15 +196,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
           title: t('internal_tx_conflicts.notifications.title'),
         });
       }
-      else if (failed > 0) {
-        notify({
-          message: t('internal_tx_conflicts.notifications.completed_with_errors', { completed, failed, total }),
-          priority: Priority.NORMAL,
-          severity: Severity.WARNING,
-          title: t('internal_tx_conflicts.notifications.title'),
-        });
-      }
-      else {
+      else if (failed === 0) {
         notify({
           message: t('internal_tx_conflicts.notifications.completed', { total }),
           priority: Priority.NORMAL,

@@ -111,12 +111,12 @@ describe('useEvmAccountDetection', () => {
     expect(h.runTaskResult.mock.invocationCallOrder[0]).toBeLessThan(h.fetchAccounts.mock.invocationCallOrder[0]);
   });
 
-  it('should notify on an actionable failure and leave no result', async () => {
+  it('should leave an actionable failure to its dock row and leave no result', async () => {
     h.runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'detect failed' })));
 
     await detect();
 
-    expect(h.notifyError).toHaveBeenCalledOnce();
+    expect(h.notifyError).not.toHaveBeenCalled();
     expect(h.fetchAccounts).not.toHaveBeenCalled();
     expect(useDetectedAccountsStore().lastRun).toBeUndefined();
   });

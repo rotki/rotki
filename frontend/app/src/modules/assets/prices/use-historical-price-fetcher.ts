@@ -4,7 +4,6 @@ import { msg } from '@/message-key';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -21,7 +20,6 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const api = useStatisticsApi();
   const { submitTask } = useNativeTask();
   const { getAssetField } = useAssetInfoRetrieval();
-  const { notifyError } = useNotifications();
   const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
 
   const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
@@ -95,13 +93,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       title: t('task_center.group.prices'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.balances.historic_fetch_price.daily.task.title'),
-        t('actions.balances.historic_fetch_price.daily.error.message'),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
 
     return getOr(outcome, empty);
   };

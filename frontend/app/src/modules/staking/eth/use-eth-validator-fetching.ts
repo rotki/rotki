@@ -4,7 +4,6 @@ import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { activityLabel } from '@/modules/task-center/activity-labels';
@@ -22,7 +21,6 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
 
   const { updateAccounts } = useBlockchainAccountsStore();
   const { getEth2Validators } = useBlockchainAccountsApi();
-  const { notifyError } = useNotifications();
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -53,16 +51,7 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
       title: t('task_center.group.staking'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.get_accounts.error.title'),
-        t('actions.get_accounts.error.description', {
-          blockchain: Blockchain.ETH2,
-          message: error.message,
-        }),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
   }
 
   return { fetchEthStakingValidators };

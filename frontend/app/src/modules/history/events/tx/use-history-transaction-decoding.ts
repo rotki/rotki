@@ -1,9 +1,8 @@
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import {
   TransactionChainType,
@@ -38,7 +37,6 @@ export interface DecodePlacement {
  */
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
 
   const { decodeTransactions } = useHistoryEventsApi();
   const { cancelByKind, submitTask } = useNativeTask();
@@ -81,19 +79,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       title: t('task_center.group.tx_decoding'),
     });
 
-    if (isErr(outcome)) {
-      const { error } = outcome;
-      if (isActionable(error)) {
-        logger.error(error.message);
-        notifyError(
-          t('actions.transactions_redecode_by_chain.error.title'),
-          t('actions.transactions_redecode_by_chain.error.description', {
-            chain: getChainName(chain),
-            error: error.message,
-          }),
-        );
-      }
-    }
+    onActionableError(outcome, error => logger.error(error.message));
   };
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {

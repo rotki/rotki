@@ -185,13 +185,13 @@ describe('useAccountDelete against the real removal wiring', () => {
     expect(accounts.accounts).toStrictEqual({ eth: [] });
   });
 
-  it('should keep the account when the backend removal fails', async () => {
+  it('should keep the account when the backend removal fails, leaving the failure to its dock row', async () => {
     const { accounts, confirmRemoval } = await setup();
     backendReports(err(TaskFailed({ message: 'boom' })));
 
     await confirmRemoval(singleChainGroup());
 
-    expect(mocks.notifyError).toHaveBeenCalledOnce();
+    expect(mocks.notifyError).not.toHaveBeenCalled();
     expect(accounts.accounts).toStrictEqual({ eth: [account] });
   });
 

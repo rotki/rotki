@@ -5,7 +5,6 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
@@ -27,7 +26,6 @@ interface UseExchangeEventsRefreshReturn {
  */
 export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { queryExchangeEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
 
@@ -51,16 +49,8 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
       title: t('task_center.group.exchange_events'),
     });
 
-    if (isErr(outcome) && isActionable(outcome.error)) {
+    if (isErr(outcome) && isActionable(outcome.error))
       logger.error(outcome.error);
-      notifyError(
-        t('actions.exchange_events.error.title'),
-        t('actions.exchange_events.error.description', {
-          error: outcome.error.message,
-          ...payload,
-        }),
-      );
-    }
 
     return outcome;
   };

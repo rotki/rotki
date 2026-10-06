@@ -102,7 +102,7 @@ describe('useHistoryTransactionDecoding', () => {
   });
 
   describe('redecodeTransactions', () => {
-    it('should complete the flow even when a chain fails', async () => {
+    it('should complete the flow even when a chain fails, leaving that chain to its dock row', async () => {
       mocks.submitTask.mockImplementation(async (spec: {
         kind: string;
         run: (ctx: { report: () => void; runTask: unknown }) => Promise<unknown>;
@@ -116,7 +116,7 @@ describe('useHistoryTransactionDecoding', () => {
       const { redecodeTransactions } = useHistoryTransactionDecoding();
 
       await expect(redecodeTransactions(['ethereum', 'optimism'])).resolves.toBeUndefined();
-      expect(mockNotifyError).toHaveBeenCalled();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -174,13 +174,13 @@ describe('useHistoryTransactionDecoding', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { decodeTransactionsTask } = useHistoryTransactionDecoding();
       await decodeTransactionsTask('ethereum');
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 });

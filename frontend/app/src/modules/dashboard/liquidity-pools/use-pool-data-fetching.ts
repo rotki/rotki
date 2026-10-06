@@ -8,7 +8,6 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -40,7 +39,6 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
 
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
 
   /**
    * The two protocols differ only in module gate, task type, endpoint and target ref, so they
@@ -64,8 +62,6 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
     if (status.active || (status.everCompleted && !refresh))
       return;
 
-    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol: protocol.label });
-
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.LIQUIDITY_POOLS, protocol.part),
       kind: ActivityKind.LIQUIDITY_POOLS,
@@ -82,13 +78,7 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
       title: t('task_center.group.liquidity_pools'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(`action failure for ${protocol.label}:`, error.message);
-      notifyError(title, t('modules.dashboard.liquidity_pools.task.error_message', {
-        message: error.message,
-        protocol: protocol.label,
-      }));
-    });
+    onActionableError(outcome, error => logger.error(`action failure for ${protocol.label}:`, error.message));
   }
 
   const uniswapV2: Protocol = {

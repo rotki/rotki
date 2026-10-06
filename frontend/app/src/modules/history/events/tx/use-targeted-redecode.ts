@@ -11,7 +11,6 @@ import { msg } from '@/message-key';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { blockDecodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
@@ -38,7 +37,6 @@ interface UseTargetedRedecodeReturn {
  */
 export function useTargetedRedecode(): UseTargetedRedecodeReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { pullAndRecodeEthBlockEventRequest, pullAndRecodeTransactionRequest } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
   const { resetUndecodedTransactionsStatus, updateUndecodedTransactionsStatus } = useDecodingStatusStore();
@@ -80,21 +78,14 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
   };
 
   /**
-   * Notifying wrapper — catches errors and shows notifications to the user.
-   * Used by the UI redecode flow where errors are displayed as toast messages.
+   * The UI redecode flow: the failure belongs to the activity's dock row, so it is only logged here.
    */
   const pullAndDecodeTransactions = async (payload: PullTransactionPayload, parent?: ActivityId): Promise<void> => {
     try {
       await pullAndDecodeTransactionsRaw(payload, parent);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      notifyError(
-        t('actions.transactions_redecode.error.title'),
-        t('actions.transactions_redecode.error.description', {
-          error: error.message ?? error,
-        }),
-      );
     }
   };
 
@@ -120,15 +111,8 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       title: t('task_center.group.eth_block_decoding'),
     });
 
-    if (isErr(outcome) && isActionable(outcome.error)) {
+    if (isErr(outcome) && isActionable(outcome.error))
       logger.error(outcome.error.message);
-      notifyError(
-        t('actions.eth_block_events_redecoding.error.title'),
-        t('actions.eth_block_events_redecoding.error.description', {
-          error: outcome.error.message,
-        }),
-      );
-    }
   };
 
   /** Group the requested transactions onto their chains — the resolution the declaration cannot do. */

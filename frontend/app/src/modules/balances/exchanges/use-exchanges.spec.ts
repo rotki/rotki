@@ -64,12 +64,12 @@ describe('useExchanges', () => {
       });
     });
 
-    it('should notify on an actionable failure', async () => {
+    it('should leave an actionable failure to its dock row', async () => {
       runTaskMock.mockResolvedValue(err(TaskFailed({ cause: new Error('boom'), message: 'boom' })));
 
       await exchanges.fetchExchangeBalances({ ignoreCache: true, location: 'kraken' });
 
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should stay quiet when the task is cancelled', async () => {

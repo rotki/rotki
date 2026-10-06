@@ -41,7 +41,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const fetchExchangeRates = async (symbol?: SupportedCurrency): Promise<void> => {
     const selectedCurrency = symbol ?? get(currencySymbol);
 
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
       kind: ActivityKind.PRICES,
       rerunnable: true,
@@ -64,11 +64,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       subtitle: activityLabelFor(msg.$t('task_center.activity.prices.exchange_rates'), { currency: selectedCurrency }),
       title: t('task_center.group.prices'),
     });
-
-    onActionableError(outcome, error => notifyError(
-      t('actions.balances.exchange_rates.error.title'),
-      t('actions.balances.exchange_rates.error.message', { message: error.message }),
-    ));
   };
 
   const getHistoricPrice = async ({ fromAsset, timestamp, toAsset }: HistoricPricePayload): Promise<BigNumber> => {

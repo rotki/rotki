@@ -526,10 +526,6 @@
     },
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "查询余额并保存快照失败：{message}",
-          "title": "余额快照保存失败"
-        },
         "task": {
           "description": "正在查询所有余额并保存统计快照。",
           "ignore_errors_note": "查询过程中的错误将被忽略。"
@@ -537,25 +533,10 @@
       },
       "blockchain": {
         "cancelled": "在查询网络之前已取消",
-        "error": {
-          "description": "查询区块链余额时出错：{error}",
-          "title": "查询区块链余额"
-        },
         "skipped": {
           "busy": "已在刷新此链",
           "disabled": "已在设置中跳过",
           "no_accounts": "此链上没有追踪的账户"
-        }
-      },
-      "blockchain_account_removal": {
-        "agnostic": {
-          "error": {
-            "title": "正在移除地址 {address} 的账户"
-          }
-        },
-        "error": {
-          "description": "删除账户失败：{error}",
-          "title": "删除 {count} 个 {blockchain} 账户"
         }
       },
       "blockchain_accounts_add": {
@@ -592,64 +573,22 @@
           "title": "获取检测到的代币"
         }
       },
-      "exchange_balances": {
-        "error": {
-          "message": "查询 {location} 余额失败：{error}",
-          "title": "{location} 余额查询"
-        }
-      },
-      "exchange_rates": {
-        "error": {
-          "message": "获取汇率失败：{message}",
-          "title": "汇率"
-        }
-      },
       "exchange_removal": {
         "description": "删除 {exchange} 失败，原因是：{error}",
         "title": "交易所移除"
-      },
-      "exchange_savings_interest": {
-        "error": {
-          "message": "查询 {location} 理财利息信息失败：{error}",
-          "title": "{location} 理财利息信息查询"
-        }
       },
       "exchange_setup": {
         "description": "{exchange} 设置失败，原因是：{error}",
         "title": "交易所设置"
       },
       "historic_fetch_price": {
-        "daily": {
-          "error": {
-            "message": "获取每日历史价格失败：{message}"
-          },
-          "task": {
-            "title": "正在获取每日历史价格"
-          }
-        },
-        "error": {
-          "message": "获取历史价格失败：{message}"
-        },
         "task": {
-          "description": "正在获取 {date} {fromAsset} 兑 {toAsset} 的汇率 | 正在获取 {count} 个交易对兑 {toAsset} 的汇率",
-          "title": "获取汇率"
-        }
-      },
-      "manual_balances": {
-        "error": {
-          "message": "失败：{message}",
-          "title": "获取手动余额"
+          "description": "正在获取 {date} {fromAsset} 兑 {toAsset} 的汇率 | 正在获取 {count} 个交易对兑 {toAsset} 的汇率"
         }
       },
       "manual_delete": {
         "error": {
           "title": "删除手动余额"
-        }
-      },
-      "xpub_removal": {
-        "error": {
-          "description": "删除 {xpub} 失败：{error}",
-          "title": "Xpub 移除"
         }
       }
     },
@@ -658,10 +597,6 @@
         "action": "验证",
         "description": "{location} 连接“{name}”需要你确认授权，rotki 才能拉取新交易。",
         "title": "需要银行验证"
-      },
-      "error": {
-        "description": "同步 {location}（名称“{name}”）的银行交易失败：{error}",
-        "title": "银行同步"
       }
     },
     "bridge_matching": {
@@ -709,54 +644,10 @@
       }
     },
     "date_range": " 自 {from}| 至 {to}| 自 {from} 至 {to}",
-    "defi": {
-      "airdrops": {
-        "error": {
-          "description": "获取空投失败：{error}",
-          "title": "空投"
-        }
-      },
-      "liquity_balances": {
-        "error": {
-          "description": "获取 Liquity 余额失败：{message}",
-          "title": "Liquity 余额"
-        }
-      },
-      "liquity_pools": {
-        "error": {
-          "description": "查询 Liquity 池失败：{message}",
-          "title": "Liquity 池"
-        }
-      },
-      "liquity_staking": {
-        "error": {
-          "description": "获取 Liquity 质押失败：{message}",
-          "title": "Liquity 质押"
-        }
-      },
-      "liquity_statistics": {
-        "error": {
-          "description": "查询 Liquity 统计数据失败：{message}",
-          "title": "Liquity 统计"
-        }
-      }
-    },
     "delete_eth2_validator": {
       "error": {
         "description": "删除 ETH 质押验证者失败：{message}",
         "title": "删除 ETH 质押验证者"
-      }
-    },
-    "detect_evm_accounts": {
-      "error": {
-        "message": "检测 EVM 账户失败，错误如下：{message}",
-        "title": "检测 EVM 账户"
-      }
-    },
-    "eth_block_events_redecoding": {
-      "error": {
-        "description": "解码 ETH 区块事件失败：{error}",
-        "title": "解码 ETH 区块事件"
       }
     },
     "evm_tx_lookup": {
@@ -768,12 +659,6 @@
       "needs_related_address": "在下方选择一个已追踪地址，以根据此交易自动填写时间戳",
       "needs_related_address_swap": "在下方第一笔支出上设置已追踪地址，以根据此交易自动填写时间戳",
       "retry": "重试交易查询"
-    },
-    "exchange_events": {
-      "error": {
-        "description": "查询 {location}（名称“{name}”）的交易所事件失败：{error}",
-        "title": "交易所事件查询"
-      }
     },
     "fetch_counterparties": {
       "actions": {
@@ -801,14 +686,6 @@
         "error": {
           "message": "获取位置标签失败：{message}",
           "title": "获取位置标签"
-        }
-      },
-      "fetch_undecoded_transactions": {
-        "error": {
-          "message": "查询未解码交易的明细失败：{message}"
-        },
-        "task": {
-          "title": "正在获取未解码交易的明细。"
         }
       }
     },
@@ -876,22 +753,12 @@
         }
       }
     },
-    "nft_balances": {
-      "error": {
-        "message": "查询 NFT 余额时出错：{message}",
-        "title": "NFT 余额查询"
-      }
-    },
     "notifications": {
       "consume": {
         "message_title": "后端消息"
       }
     },
     "online_events": {
-      "error": {
-        "description": "使用查询类型 {queryType} 查询在线事件失败：{error}",
-        "title": "在线事件查询"
-      },
       "query_type": {
         "block_productions": "出块",
         "eth_withdrawals": "ETH 提款",
@@ -998,12 +865,6 @@
           "message": "删除可查询地址失败：{message}"
         }
       },
-      "fetch_prices": {
-        "error": {
-          "message": "获取价格失败：{error}",
-          "title": "获取价格"
-        }
-      },
       "fetch_queriable_address": {
         "error": {
           "message": "获取可查询地址失败：{message}"
@@ -1066,14 +927,6 @@
         }
       }
     },
-    "staking": {
-      "eth2": {
-        "error": {
-          "description": "查询 ETH 质押详情失败：{error}",
-          "title": "查询 ETH 质押详情"
-        }
-      }
-    },
     "statistics": {
       "net_value": {
         "error": {
@@ -1082,23 +935,9 @@
         }
       }
     },
-    "transactions": {
-      "error": {
-        "description": "{address} ({chain}) 查询失败：{error}",
-        "title": "区块链交易查询"
-      }
-    },
     "transactions_redecode": {
       "error": {
-        "description": "从交易中解码事件失败：{error}",
-        "not_decoded": "无法拉取或解码这些交易",
-        "title": "从交易中解码事件"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "解码 {chain} 事件失败：{error}",
-        "title": "从交易中解码事件"
+        "not_decoded": "无法拉取或解码这些交易"
       }
     },
     "unignore": {
@@ -1919,9 +1758,6 @@
   "bank_balances": {
     "add_bank": "添加银行连接",
     "click_here": "点击这里",
-    "errors": {
-      "title": "银行余额"
-    },
     "no_balances": "你的银行连接尚未返回任何余额。请刷新以查询。",
     "no_connections": "尚未设置任何银行连接。{0}添加一个。",
     "refresh_tooltip": "查询所有已连接银行的当前余额"
@@ -3182,14 +3018,6 @@
     "message": "你正在 docker 中运行 rotki，且未启用会话认证。任何能访问此实例的人都可以无需登录直接使用 API 并读取你的数据。",
     "proxy_note": "如果此实例已部署在会对每个请求进行认证的代理之后，则它已受保护，你可以在下方接受。",
     "recommendation": "设置 {0} 后，rotki 会在登录时签发会话 cookie，并拒绝未携带该 cookie 的请求。"
-  },
-  "ens_names": {
-    "error": {
-      "message": "查询 ENS 名称失败：{message}"
-    },
-    "task": {
-      "title": "查询 ENS 名称"
-    }
   },
   "error": {
     "generic": {
@@ -4948,10 +4776,6 @@
         },
         "pool_table": {
           "title": "LP 代币"
-        },
-        "task": {
-          "error_message": "获取 {protocol} 余额时出错：{message}",
-          "title": "获取 {protocol} 余额"
         }
       }
     }

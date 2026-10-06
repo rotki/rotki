@@ -4,7 +4,6 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { accountActivityLabel, accountAgnosticRemoveActivity, accountRemoveActivity, type AccountSubject } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -21,21 +20,12 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     removeBlockchainAccount,
   } = useBlockchainAccountsApi();
   const { submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
-  /**
-   * Removals report a real failure and stay silent on a cancellation, which is what `isActionable`
-   * distinguishes. All three removals notify the same way, differing only in their title.
-   */
-  const notifyRemovalFailure = (outcome: Result<unknown, TaskError>, title: string): void => {
-    if (!isErr(outcome) || !isActionable(outcome.error))
-      return;
-
-    logger.error(outcome.error.message);
-    notifyError(title, t('actions.balances.blockchain_account_removal.error.description', {
-      error: outcome.error.message,
-    }));
+  /** A failed removal is the activity's dock row; a cancellation is not logged. */
+  const logRemovalFailure = (outcome: Result<unknown, TaskError>): void => {
+    if (isErr(outcome) && isActionable(outcome.error))
+      logger.error(outcome.error.message);
   };
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<Result<void, TaskError>> => {
@@ -56,10 +46,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    notifyRemovalFailure(outcome, t('actions.balances.blockchain_account_removal.error.title', {
-      blockchain: chain,
-      count: accounts.length,
-    }));
+    logRemovalFailure(outcome);
 
     return outcome;
   };
@@ -81,7 +68,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    notifyRemovalFailure(outcome, t('actions.balances.blockchain_account_removal.agnostic.error.title', { address }));
+    logRemovalFailure(outcome);
 
     return outcome;
   };
@@ -106,14 +93,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    if (isErr(outcome) && isActionable(outcome.error)) {
-      logger.error(outcome.error.message);
-      notifyError(t('actions.balances.xpub_removal.error.title'), t('actions.balances.xpub_removal.error.description', {
-        error: outcome.error.message,
-        xpub: params.xpub,
-      }));
-    }
-
+    logRemovalFailure(outcome);
     return outcome;
   };
 

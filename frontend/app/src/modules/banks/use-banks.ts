@@ -1,4 +1,5 @@
 import type { ResultAsync } from 'plainfp/result-async';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -18,7 +19,6 @@ import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -97,7 +97,7 @@ export function useBanks(): UseBanksReturn {
       return;
     }
 
-    const outcome = await submitTask({
+    await submitTask({
       id: makeActivityId(ActivityKind.BANK_BALANCES),
       kind: ActivityKind.BANK_BALANCES,
       lane: EXCHANGE_LANE,
@@ -112,10 +112,6 @@ export function useBanks(): UseBanksReturn {
       title: t('task_center.group.bank_balances'),
     });
     await refreshBankConnections();
-
-    onActionableError(outcome, (error) => {
-      notifyError(t('bank_balances.errors.title'), error.message);
-    });
   };
 
   const resolveSyncTargets = ({ location, name }: BankSyncPayload): BankConnectionIdentity[] =>

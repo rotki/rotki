@@ -88,13 +88,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
 
       if ((refresh || firstLoad) && !isRefreshRunning()) {
         const outcome = await refreshEvents();
-        onActionableError(outcome, (error) => {
-          logger.error(error.message);
-          notifyError(
-            t('actions.kraken_staking.error.title'),
-            t('actions.kraken_staking.error.message', { message: error.message }),
-          );
-        });
+        onActionableError(outcome, error => logger.error(error.message));
       }
 
       await fetchEventsFromApi();

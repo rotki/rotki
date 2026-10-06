@@ -145,25 +145,9 @@
     },
     "balances": {
       "all_balances": {
-        "error": {
-          "message": "No se pudieron consultar los balances ni guardar la instantánea: {message}",
-          "title": "Error al guardar la instantánea de balances"
-        },
         "task": {
           "description": "Consultando todos los balances y guardando una instantánea para las estadísticas.",
           "ignore_errors_note": "Se ignorarán los errores durante la consulta."
-        }
-      },
-      "blockchain": {
-        "error": {
-          "description": "Error al consultar los balances en blockchain.: {error}",
-          "title": "Consultando balances en blockchains"
-        }
-      },
-      "blockchain_account_removal": {
-        "error": {
-          "description": "Error al eliminar la cuenta: {error}",
-          "title": "Eliminando {count} cuentas(s) en {blockchain} "
         }
       },
       "blockchain_accounts_add": {
@@ -184,18 +168,6 @@
           "title": "Recuperando tokens detectados"
         }
       },
-      "exchange_balances": {
-        "error": {
-          "message": "Error al consultar los balances de {location}: {error}",
-          "title": "Consulta de balances de {location}"
-        }
-      },
-      "exchange_rates": {
-        "error": {
-          "message": "Error al consultar los tipos de cambio: {message}",
-          "title": "Tipos de cambio"
-        }
-      },
       "exchange_removal": {
         "description": "No se pudo eliminar {exchange} debido a: {error}",
         "title": "Elimination de plataforma de intercambio"
@@ -206,32 +178,12 @@
       },
       "historic_fetch_price": {
         "task": {
-          "description": "Recuperando tipos de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}",
-          "title": "Recuperando el tipo de intercambio"
-        }
-      },
-      "manual_balances": {
-        "error": {
-          "message": "Falló: {message}",
-          "title": "Recuperando balances manuales"
+          "description": "Recuperando tipos de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}"
         }
       },
       "manual_delete": {
         "error": {
           "title": "Eliminando balance manual"
-        }
-      },
-      "xpub_removal": {
-        "error": {
-          "description": "Falló al eliminar {xpub}: {error}",
-          "title": "Eliminación de Xpub"
-        }
-      }
-    },
-    "defi": {
-      "liquity_staking": {
-        "error": {
-          "description": "Failed to retreive Liquity staking: {message}"
         }
       }
     },
@@ -252,10 +204,6 @@
       "title": "Exportación de Eventos de Historial"
     },
     "online_events": {
-      "error": {
-        "description": "Error al consultar eventos en línea con tipo de consulta {queryType}: {error}",
-        "title": "Consulta de Eventos en Línea"
-      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -264,18 +212,6 @@
           },
           "title": "Exportación CSV"
         }
-      }
-    },
-    "transactions_redecode": {
-      "error": {
-        "description": "Fallo al decodificar eventos de transacciones: {error}",
-        "title": "Descodificando eventos de transacciones"
-      }
-    },
-    "transactions_redecode_by_chain": {
-      "error": {
-        "description": "Falló la decodificación de eventos de {cadena}: {error}",
-        "title": "Descodificando eventos de transacciones"
       }
     }
   },

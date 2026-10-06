@@ -14,7 +14,6 @@ import { fromRequest, type RequestError } from '@/modules/core/api/request-resul
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { shouldSkipFetch } from '@/modules/task-center/core/status';
@@ -30,7 +29,6 @@ export function useNftBalances(): NftBalancesReturn {
   const activeModules = useSetting('activeModules');
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
@@ -93,13 +91,7 @@ export function useNftBalances(): NftBalancesReturn {
       title: t('task_center.group.nft_balances'),
     });
 
-    onActionableError(outcome, (error) => {
-      logger.error(error.message);
-      notifyError(
-        t('actions.nft_balances.error.title'),
-        t('actions.nft_balances.error.message', { message: error.message }),
-      );
-    });
+    onActionableError(outcome, error => logger.error(error.message));
   };
 
   return {

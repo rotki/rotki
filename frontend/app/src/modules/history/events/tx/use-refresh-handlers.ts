@@ -5,7 +5,6 @@ import { err, isErr, mapError, map as mapResult, type Result } from 'plainfp/res
 import { msg } from '@/message-key';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -26,7 +25,6 @@ interface UseRefreshHandlersReturn {
 
 export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { submitTask } = useNativeTask();
   const { queryAllBankEvents, queryAllExchangeEvents } = useEventsRefreshSources();
@@ -120,19 +118,8 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       title: t('task_center.group.online_events'),
     });
 
-    // A missing key is not notified: the failed row in the task dock already says which key to add.
-    if (isErr(outcome) && isActionable(outcome.error)) {
+    if (isErr(outcome) && isActionable(outcome.error))
       logger.error(outcome.error.message);
-      if (!(outcome.error.cause instanceof ApiKeyMissingError)) {
-        notifyError(
-          t('actions.online_events.error.title'),
-          t('actions.online_events.error.description', {
-            error: outcome.error.message,
-            queryType,
-          }),
-        );
-      }
-    }
     logger.debug(`finished querying for ${queryType} events`);
     return outcome;
   };
