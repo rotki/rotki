@@ -1,3 +1,4 @@
+import type { UnusableBinary } from '@shared/starling/binary-types';
 import type { Ref } from 'vue';
 import { BackendCode, type DebugStateGroup, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
@@ -23,6 +24,7 @@ interface UseBackendMessagesInternalReturn {
   registerOAuthCallbackHandler: (handler: OAuthCallback) => void;
   startupErrorMessage: Readonly<Ref<string>>;
   unregisterOAuthCallbackHandler: (handler: OAuthCallback) => void;
+  unusableBinary: Readonly<Ref<UnusableBinary | undefined>>;
 }
 
 /**
@@ -41,6 +43,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const startupErrorMessage = shallowRef<string>('');
   const isMacOsVersionUnsupported = shallowRef<boolean>(false);
   const isWinVersionUnsupported = shallowRef<boolean>(false);
+  const unusableBinary = shallowRef<UnusableBinary>();
 
   const isDevelopment = checkIfDevelopment();
   const { getStartupError, setDataDirectory, setupListeners } = useInterop();
@@ -70,19 +73,32 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   /**
    * Handle a startup error by logging it and updating the appropriate state.
    * Also stops all monitoring, connection attempts, and WebSocket connections since the backend is unavailable.
+   *
+   * @remarks
+   * A code with no screen of its own falls back to the generic one rather than being dropped: a
+   * silently ignored error leaves the user looking at a window that never loads.
+   *
+   * One incident can report twice: a crash can arrive while the killed binary is still on disk and
+   * a later check find it gone. The missing binary screen therefore takes the generic message down,
+   * since both screens are full-window. The reverse order never arrives: the main process holds on
+   * to a missing binary report and does not let a later error replace it.
    */
-  function handleStartupError(message: string, code: BackendCode): void {
+  function handleStartupError(message: string, code: BackendCode, missing?: UnusableBinary): void {
     logger.error(message, code);
     haltBackendActivity();
 
-    if (code === BackendCode.TERMINATED) {
-      set(startupErrorMessage, message);
-    }
-    else if (code === BackendCode.MACOS_VERSION) {
+    if (code === BackendCode.MACOS_VERSION) {
       set(isMacOsVersionUnsupported, true);
     }
     else if (code === BackendCode.WIN_VERSION) {
       set(isWinVersionUnsupported, true);
+    }
+    else if (code === BackendCode.MISSING_BINARY && missing) {
+      set(unusableBinary, missing);
+      set(startupErrorMessage, '');
+    }
+    else {
+      set(startupErrorMessage, message);
     }
   }
 
@@ -114,13 +130,13 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   onBeforeMount(() => {
     const pendingError = getStartupError();
     if (pendingError) {
-      handleStartupError(pendingError.message, pendingError.code);
+      handleStartupError(pendingError.message, pendingError.code, pendingError.unusableBinary);
     }
 
     setupListeners({
       onAbout: () => set(showAbout, true),
-      onError: (message: string, code: BackendCode) => {
-        handleStartupError(message, code);
+      onError: (message: string, code: BackendCode, missing?: UnusableBinary) => {
+        handleStartupError(message, code, missing);
       },
       onMcpState: setMcpServerState,
       onOAuthCallback: (oAuthResult: OAuthResult) => {
@@ -146,6 +162,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
       onResetDebugState: reloadAfterWipingDebugState,
       onRestart: () => {
         set(startupErrorMessage, '');
+        set(unusableBinary, undefined);
         // Re-enable connections for the restart attempt
         set(connectionEnabled, true);
         setWsConnectionEnabled(true);
@@ -163,6 +180,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
     registerOAuthCallbackHandler,
     startupErrorMessage: readonly(startupErrorMessage),
     unregisterOAuthCallbackHandler,
+    unusableBinary: shallowReadonly(unusableBinary),
   };
 }
 

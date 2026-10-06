@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 /// Render an [`SupervisorError::EarlyExit`] detail as a `": <detail>"` suffix, or
@@ -14,6 +16,21 @@ fn early_exit_suffix(detail: &Option<String>) -> String {
 pub enum SupervisorError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+
+    /// A service's program could not be launched at all. Distinct from
+    /// [`SupervisorError::Io`] because the bare io error names neither the service
+    /// nor the file: an `ENOENT` here means the binary we ship is not where we put
+    /// it, which is what antivirus quarantine looks like from the inside.
+    ///
+    /// The io error is part of the message and deliberately not the error's
+    /// `source`: `last_error` and the control protocol carry only `to_string()`,
+    /// and a chain printer would otherwise show it twice.
+    #[error("service '{service}' could not be started from '{}': {error}", program.display())]
+    SpawnFailed {
+        service: String,
+        program: PathBuf,
+        error: std::io::Error,
+    },
 
     /// A service never passed its readiness probe within the configured retries.
     #[error("service '{service}' failed readiness check after {attempts} attempts")]

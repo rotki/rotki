@@ -4721,6 +4721,48 @@
       "title": "Success"
     }
   },
+  "missing_binary": {
+    "cause": {
+      "missing": "This usually means security software removed it. Security software sometimes flags rotki's bundled programs by mistake. It does not mean your machine is infected, and your rotki data is untouched.",
+      "not_executable": "The file is there, but the system refused to run it. Security software can block a program this way, and so can a changed file permission. Your rotki data is untouched.",
+      "not_executable_windows": "The file is there, but Windows refused to run it. Security software can block a program this way, and so can Smart App Control or a policy set by your organization. Your rotki data is untouched.",
+      "replaced": "rotki was updated while it was running. The running rotki still uses the previous version, whose files the update removed. Your rotki data is untouched.",
+      "unreadable": "rotki is not allowed to open the folder that holds this component. Security software locking it can cause this, and so can changed folder permissions. Your rotki data is untouched."
+    },
+    "header": {
+      "missing": "A rotki component is missing",
+      "not_executable": "A rotki component cannot be run",
+      "replaced": "rotki was updated",
+      "unreadable": "A rotki folder cannot be read"
+    },
+    "recovery": {
+      "fix": "To fix it:",
+      "get_back": "To get it back:",
+      "restart": "Close rotki and start it again to use the new version."
+    },
+    "steps": {
+      "allow": "If your security software blocked it, allow the file there, then start rotki again.",
+      "exclude": "If it is removed again, add the rotki installation folder to your antivirus exclusions. Only do this once you are confident the detection is a false positive, for example after checking that you downloaded rotki from the official source.",
+      "reinstall": "If the file cannot be restored, reinstall rotki. Antivirus software deletes quarantined files after a while, so an older detection may leave nothing to restore.",
+      "reinstall_macos": "If the file cannot be restored, reinstall rotki. That is also the way back when macOS itself flagged the file, since it moves the file to the Trash rather than to a quarantine.",
+      "reinstall_otherwise": "If that does not help, reinstall rotki.",
+      "restore": "Restore the file from your antivirus quarantine.",
+      "restore_windows": "Restore the file in Windows Security: open Virus & threat protection, then Protection history, select the item and choose Restore. If it is flagged again, choose Allow on device. Both need administrator rights.",
+      "update_definitions": "Update your antivirus definitions first. Restoring the file while the definitions that flagged it are still in use gets it removed again."
+    },
+    "subtitle": {
+      "folder": "rotki cannot start without this folder. It is here:",
+      "missing": "rotki cannot start without this file. It was expected here:",
+      "present": "rotki cannot start without this file. It is here:",
+      "replaced": "The running rotki was started with this file, which the update removed:"
+    },
+    "title": {
+      "missing": "{component} is missing",
+      "not_executable": "{component} cannot be run",
+      "replaced": "{component} was replaced by a newer version",
+      "unreadable": "The {component} folder cannot be read"
+    }
+  },
   "missing_exchange_rate": {
     "message": "This session of rotki may have errors if you use this currency.",
     "title": "Missing exchange rate"

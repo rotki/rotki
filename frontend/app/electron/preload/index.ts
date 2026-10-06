@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld('interop', {
    */
   setListeners(listeners: Listeners): void {
     ipcRenderer.on(IpcCommands.STARTUP_ERROR, (_event, error: StartupError) => {
-      listeners.onError(error.message, error.code);
+      listeners.onError(error.message, error.code, error.unusableBinary);
     });
 
     ipcRenderer.on(IpcCommands.REQUEST_RESTART, () => {

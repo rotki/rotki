@@ -2,12 +2,13 @@ import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { StarlingErrorListener } from '@electron/main/starling-handler-types';
 import type { ChildProcess } from 'node:child_process';
-import * as os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
+import { BackendFailureReport } from '@electron/main/starling-binary-report';
 import { forwardStarlingLine } from '@electron/main/starling-log';
-import { eventLastError, getMcpServerState, isMcpCrash, isServiceLive, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { crashMessage, getMcpServerState, isMcpCrash, isServiceLive, setMcpServerRunning } from '@electron/main/starling-mcp';
+import { isMacOsVersionSupported, isWindowsVersionSupported } from '@electron/main/starling-platform-support';
 import { BackendCode, type BackendOptions, StarlingServiceStatus } from '@shared/ipc';
 import { selectPort } from '@shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@shared/starling/starling-args';
@@ -50,32 +51,15 @@ export class StarlingHandler {
   /** The listener for the live child, so control-channel events can reach it. */
   private currentListener: StarlingErrorListener | undefined;
 
+  private readonly failures: BackendFailureReport;
+
   /** The NDJSON JSON-RPC client over the child's stdio. */
   private readonly rpc: StarlingRpc;
 
   constructor(private readonly logger: LogService, private readonly config: AppConfig) {
     this.logger.info('Starting rotki (starling supervisor)');
     this.rpc = new StarlingRpc(logger, (method, params) => this.onEvent(method, params));
-  }
-
-  private checkIfMacOsVersionIsSupported(): boolean {
-    if (os.platform() !== 'darwin')
-      return true;
-    const release = os.release();
-    const minorStart = release.indexOf('.');
-    const majorVersion = Number.parseInt(minorStart === -1 ? release : release.slice(0, minorStart));
-    return !(majorVersion < 17);
-  }
-
-  private checkIfWindowsVersionIsSupported(): boolean {
-    if (os.platform() !== 'win32')
-      return true;
-    const parts = os.release().split('.');
-    if (parts.length > 1) {
-      const windowsVersion = Number.parseInt(parts[0]) + Number.parseInt(parts[1]) * 0.1;
-      return windowsVersion >= 6.1;
-    }
-    return true;
+    this.failures = new BackendFailureReport(logger, config.isDev);
   }
 
   /**
@@ -89,11 +73,11 @@ export class StarlingHandler {
       return;
     }
 
-    if (!this.checkIfMacOsVersionIsSupported()) {
+    if (!isMacOsVersionSupported()) {
       listener.onProcessError('rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
       return;
     }
-    if (!this.checkIfWindowsVersionIsSupported()) {
+    if (!isWindowsVersionSupported()) {
       listener.onProcessError('rotki requires at least Windows 10', BackendCode.WIN_VERSION);
       return;
     }
@@ -113,12 +97,13 @@ export class StarlingHandler {
   /** Reconfigure-and-restart the live child via the control RPC. */
   private async restartInPlace(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     this.logger.info('Restarting backend in place via control RPC');
+    this.failures.restarting();
     try {
       await this.rpc.request(StarlingMethod.RESTART, this.restartParams(options));
     }
     catch (error: any) {
       this.logger.error('Backend restart failed', error);
-      listener.onProcessError(error instanceof Error ? error.message : String(error), BackendCode.TERMINATED);
+      this.failures.failed(error instanceof Error ? error.message : String(error), listener);
     }
   }
 
@@ -135,6 +120,7 @@ export class StarlingHandler {
   private async spawnAndGate(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     this.logger.updateLogDirectory(options.logDirectory);
     this.exiting = false;
+    this.failures.reset();
 
     const corePort = await this.resolvePort(StarlingService.CORE);
     if (this.refuseCoreThatWouldStrandTheProxy(corePort, listener))
@@ -147,20 +133,30 @@ export class StarlingHandler {
 
     this.config.apiUrl = `http://${API_HOST}:${proxyPort}`;
 
-    const invocation = buildStarlingInvocation({
-      isDev: this.config.isDev,
-      corePort,
-      colibriPort,
-      mcpPort,
-      proxyPort,
-      coreUpstreamPort: this.config.ports.coreUpstreamPort,
-      apiHost: API_HOST,
-      logsDir,
-      options,
-      devServerUrl: import.meta.env.VITE_DEV_SERVER_URL,
-    });
+    try {
+      const invocation = buildStarlingInvocation({
+        isDev: this.config.isDev,
+        corePort,
+        colibriPort,
+        mcpPort,
+        proxyPort,
+        coreUpstreamPort: this.config.ports.coreUpstreamPort,
+        apiHost: API_HOST,
+        logsDir,
+        options,
+        devServerUrl: import.meta.env.VITE_DEV_SERVER_URL,
+      });
+      this.failures.launched(invocation.args);
+      if (this.failures.binaryLost(listener))
+        return;
+      this.spawnChild(invocation, listener);
+    }
+    catch (error) {
+      this.logger.error('Failed to launch starling', error);
+      this.failures.failed(error instanceof Error ? error : String(error), listener);
+      return;
+    }
 
-    this.spawnChild(invocation, listener);
     this.currentDataDir = options.dataDirectory;
     this.currentLogDir = options.logDirectory;
 
@@ -209,8 +205,8 @@ export class StarlingHandler {
         const message = error instanceof Error && error.message.length > 0
           ? error.message
           : 'Failed to start the rotki backend. Please check the logs for more details.';
-        listener.onProcessError(message, BackendCode.TERMINATED);
-        await this.stop();
+        this.failures.failed(message, listener);
+        await this.stopChild();
       }
     }
   }
@@ -242,27 +238,40 @@ export class StarlingHandler {
     child.on('error', (error) => {
       this.logger.error('Failed to spawn starling', error);
       if (!this.exiting)
-        listener.onProcessError(error, BackendCode.TERMINATED);
+        this.failures.failed(error, listener);
     });
 
     this.exited = exited.then(({ code, signal }) => {
       this.logger.info(`starling exited (code: ${code}, signal: ${signal})`);
       this.child = undefined;
       this.currentListener = undefined;
-      if (!this.exiting && code === EXIT_DATADIR_IN_USE) {
-        listener.onProcessError(
-          'Another rotki instance is already using this data directory. Please close it and try again.',
-          BackendCode.TERMINATED,
-        );
-      }
-      else if (!this.exiting && code !== 0) {
-        listener.onProcessError(
-          'The rotki backend stopped unexpectedly. Please check the logs for more details.',
-          BackendCode.TERMINATED,
-        );
-      }
+      if (!this.exiting)
+        this.onUnexpectedExit(code, listener);
       return code;
     });
+  }
+
+  /**
+   * starling went away without being asked to.
+   *
+   * @remarks
+   * Exit code 0 is also how starling ends on a signal (Ctrl+C, logoff, system shutdown), which
+   * reaches it before Electron's own quit marks the stop as asked for, so it is not reported as a
+   * failure. The binaries are still checked and watched, because antivirus can kill with code 0 too.
+   */
+  private onUnexpectedExit(code: number | null, listener: StarlingErrorListener): void {
+    if (code === EXIT_DATADIR_IN_USE) {
+      listener.onProcessError(
+        'Another rotki instance is already using this data directory. Please close it and try again.',
+        BackendCode.TERMINATED,
+      );
+    }
+    else if (code === 0) {
+      this.failures.exitedUnasked(listener);
+    }
+    else {
+      this.failures.failedUnlessReported('The rotki backend stopped unexpectedly. Please check the logs for more details.', listener);
+    }
   }
 
   /** React to a control-channel notification from starling (an `event.*`). */
@@ -273,15 +282,9 @@ export class StarlingHandler {
         // Informational: readiness is gated on the `start` reply, and this repeats after a restart.
         this.logger.info('Backend event: event.ready');
         break;
-      case StarlingEvent.CRASHED: {
-        const lastError = eventLastError(params);
-        this.logger.error(`Backend service crashed: ${lastError}`);
-        if (isMcpCrash(params))
-          listener?.onMcpState?.(StarlingServiceStatus.FAILED);
-        else if (!this.exiting)
-          listener?.onProcessError(lastError, BackendCode.TERMINATED);
+      case StarlingEvent.CRASHED:
+        this.onCrash(params, listener);
         break;
-      }
       case StarlingEvent.RESTARTING:
       case StarlingEvent.STOPPED:
         this.logger.info(`Backend event: ${method}`);
@@ -289,6 +292,21 @@ export class StarlingHandler {
       default:
         this.logger.debug(`Unhandled control event: ${method}`);
     }
+  }
+
+  /**
+   * A service died. mcp degrades on its own policy and only updates its indicator; anything else
+   * takes the tree down, and is blamed on a lost binary when one explains it.
+   */
+  private onCrash(params: unknown, listener: StarlingErrorListener | undefined): void {
+    const message = crashMessage(params);
+    this.logger.error(`Backend service crashed: ${message}`);
+    if (isMcpCrash(params)) {
+      listener?.onMcpState?.(StarlingServiceStatus.FAILED);
+      return;
+    }
+    if (!this.exiting && listener)
+      this.failures.failed(message, listener);
   }
 
   async getMcpServerState(): Promise<StarlingServiceStatus> {
@@ -327,8 +345,17 @@ export class StarlingHandler {
    * Both waits are derived from the grace we hand starling on the CLI: killing it
    * before its own escalation has run leaves the backends it was reaping orphaned,
    * which is exactly what starling exists to prevent.
+   *
+   * A deliberate stop also ends any watch for a lost binary, even with no child left, because the
+   * watch outlives the child it was started for and an update replacing files must not trip it.
    */
   async stop(): Promise<void> {
+    this.failures.reset();
+    await this.stopChild();
+  }
+
+  /** {@link StarlingHandler.stop} without ending the watch, for tearing down a tree that failed to start. */
+  private async stopChild(): Promise<void> {
     const child = this.child;
     if (!child)
       return;

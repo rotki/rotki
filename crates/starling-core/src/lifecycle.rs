@@ -261,13 +261,7 @@ impl<S: Spawner> Supervisor<S> {
             rt.process.take();
         }
         tokio::time::sleep(backoff).await;
-        let result = self.start_one(name).await;
-        if let Err(err) = &result {
-            let rt = self.services.get_mut(name).expect("service exists");
-            rt.state = ServiceState::Failed;
-            rt.last_error = Some(err.to_string());
-        }
-        result
+        self.start_one(name).await
     }
 
     async fn start_one(&mut self, name: &str) -> Result<()> {
@@ -280,7 +274,20 @@ impl<S: Spawner> Supervisor<S> {
             rt.spec.clone()
         };
 
-        let process = self.spawner.spawn(&spec).await?;
+        let process = match self.spawner.spawn(&spec).await {
+            Ok(process) => process,
+            Err(error) => {
+                let err = SupervisorError::SpawnFailed {
+                    service: spec.name.clone(),
+                    program: spec.launcher.program.clone(),
+                    error,
+                };
+                let rt = self.services.get_mut(name).expect("service exists");
+                rt.state = ServiceState::Failed;
+                rt.last_error = Some(err.to_string());
+                return Err(err);
+            }
+        };
 
         {
             let rt = self.services.get_mut(name).expect("service exists");
@@ -434,8 +441,10 @@ impl<S: Spawner> Supervisor<S> {
                     None => None,
                 };
                 rt.state = ServiceState::Failed;
-                rt.last_error = Some(match info {
-                    Some(info) => format!("exited code {:?}", info.code),
+                rt.last_error = Some(match info.map(|info| info.code) {
+                    Some(Some(code)) => format!("exited with code {code}"),
+                    // No code on Unix means a signal ended it (a SIGKILL among them).
+                    Some(None) => "was killed by a signal".to_string(),
                     None => "exited".to_string(),
                 });
                 dead.push(name);
@@ -732,6 +741,8 @@ mod tests {
         log: EventLog,
         /// Names that should spawn already-dead (to exercise early-exit).
         dead_on_spawn: HashSet<String>,
+        /// Names whose program is not there at all, as after a quarantine.
+        unspawnable: HashSet<String>,
         next_pid: Mutex<u32>,
         /// Stragglers each spawned process reports after its direct child exits.
         tree_probes: u32,
@@ -745,6 +756,7 @@ mod tests {
             Self {
                 log,
                 dead_on_spawn: HashSet::new(),
+                unspawnable: HashSet::new(),
                 next_pid: Mutex::new(1000),
                 tree_probes: 0,
                 killed: Arc::new(Mutex::new(HashSet::new())),
@@ -771,6 +783,12 @@ mod tests {
             self
         }
 
+        /// Make a service's program unreachable, the way a quarantined binary is.
+        fn with_unspawnable(mut self, names: &[&str]) -> Self {
+            self.unspawnable = names.iter().map(|s| s.to_string()).collect();
+            self
+        }
+
         /// Spawn processes whose tree outlives the direct child - the wrapper shape.
         fn with_lingering_tree(mut self, probes: u32) -> Self {
             self.tree_probes = probes;
@@ -785,6 +803,9 @@ mod tests {
                 .lock()
                 .unwrap()
                 .push(format!("spawn:{}", spec.name));
+            if self.unspawnable.contains(&spec.name) {
+                return Err(io::Error::from(io::ErrorKind::NotFound));
+            }
             let pid = {
                 let mut p = self.next_pid.lock().unwrap();
                 *p += 1;
@@ -846,6 +867,44 @@ mod tests {
             result.err(),
             Some(SupervisorError::DuplicateService(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn spawn_failure_names_the_service_and_its_binary() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let spawner = MockSpawner::new(log).with_unspawnable(&["colibri"]);
+        let mut sup = Supervisor::new(spawner, vec![spec("colibri", &[])]).unwrap();
+
+        let err = sup.start_all().await.unwrap_err();
+
+        assert!(
+            matches!(err, SupervisorError::SpawnFailed { .. }),
+            "{err:?}"
+        );
+        let message = err.to_string();
+        assert!(message.contains("colibri"), "{message}");
+        assert!(message.contains("/bin/true"), "{message}");
+        // The io error is in the message, so it is not also the source a chain printer repeats.
+        let io_error = io::Error::from(io::ErrorKind::NotFound).to_string();
+        assert!(message.contains(&io_error), "{message}");
+        assert!(std::error::Error::source(&err).is_none());
+    }
+
+    #[tokio::test]
+    async fn spawn_failure_leaves_the_service_failed_with_its_reason() {
+        let log: EventLog = Arc::new(Mutex::new(Vec::new()));
+        let spawner = MockSpawner::new(log).with_unspawnable(&["colibri"]);
+        let mut sup = Supervisor::new(spawner, vec![spec("colibri", &[])]).unwrap();
+
+        let err = sup.start_all().await.unwrap_err();
+
+        let status = sup
+            .status()
+            .into_iter()
+            .find(|status| status.name == "colibri")
+            .expect("colibri exists");
+        assert_eq!(status.state, ServiceState::Failed);
+        assert_eq!(status.last_error.as_deref(), Some(err.to_string().as_str()));
     }
 
     #[tokio::test]
@@ -1262,6 +1321,11 @@ mod tests {
         let dead = sup.poll_exits().await.unwrap();
         assert_eq!(dead, vec!["core"]);
         assert_eq!(sup.status()[0].state, ServiceState::Failed);
+        // Read by people on the error screen, so no `Some(1)` debug output.
+        assert_eq!(
+            sup.status()[0].last_error.as_deref(),
+            Some("exited with code 1")
+        );
     }
 
     impl<S: Spawner> Supervisor<S> {

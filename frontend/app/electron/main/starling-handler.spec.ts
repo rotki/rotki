@@ -4,9 +4,11 @@ import { EventEmitter } from 'node:events';
 import { PassThrough, Writable } from 'node:stream';
 import { BackendCode, StarlingServiceStatus } from '@shared/ipc';
 import { LogLevel } from '@shared/log-level';
+import { BinaryStatus, type UnusableBinary } from '@shared/starling/binary-types';
 import { StarlingEvent, StarlingMethod, StarlingService } from '@shared/starling/starling-protocol';
+import { QUARANTINED_COLIBRI, QUARANTINED_STARLING } from '@test/fixtures/unusable-binary';
 import { createMock } from '@test/utils/create-mock';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StarlingHandler } from './starling-handler';
 
 // Mutable os identity for the version gates; the rest of the builtin stays real for cargo-env.
@@ -39,6 +41,16 @@ vi.mock('@shared/starling/starling-args', async importOriginal => ({
 
 vi.mock('@shared/port-utils', () => ({
   selectPort: selectPortMock,
+}));
+
+// The real check stats the packaged install, which is not there under test; healthy by default.
+const { findUnusableBinaryMock, refusedStarlingMock } = vi.hoisted(() => ({
+  findUnusableBinaryMock: vi.fn<() => UnusableBinary | undefined>(),
+  refusedStarlingMock: vi.fn<(error: unknown) => UnusableBinary | undefined>(),
+}));
+vi.mock('@shared/starling/binary-health', () => ({
+  findUnusableBinary: findUnusableBinaryMock,
+  refusedStarling: refusedStarlingMock,
 }));
 
 interface FakeChild extends EventEmitter {
@@ -118,6 +130,15 @@ describe('starlingHandler', () => {
     selectPortMock.mockReset();
     selectPortMock.mockImplementation(async (port: number) => port);
     spawnMock.mockReset();
+    findUnusableBinaryMock.mockReset();
+    findUnusableBinaryMock.mockReturnValue(undefined);
+    refusedStarlingMock.mockReset();
+    refusedStarlingMock.mockReturnValue(undefined);
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should drive the initial bring-up via the start request and collapse the renderer onto the proxy origin', async () => {
@@ -329,9 +350,9 @@ describe('starlingHandler', () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  it('should map an unsupported Windows version to WIN_VERSION', async () => {
+  it('should map Windows 8.1 (release 6.3), below the Windows 10 floor, to WIN_VERSION', async () => {
     osState.platform = 'win32';
-    osState.release = '6.0.6000'; // < 6.1 (Windows 7)
+    osState.release = '6.3.9600';
     const handler = new StarlingHandler(makeLogger(), makeConfig());
     const onProcessError = vi.fn();
 
@@ -354,6 +375,381 @@ describe('starlingHandler', () => {
     writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { lastError: 'core died' } });
 
     await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died', BackendCode.TERMINATED));
+  });
+
+  it('should refuse to spawn when a bundled binary is gone, and name it', async () => {
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(onProcessError).toHaveBeenCalledWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    );
+  });
+
+  it('should blame the missing binary rather than the crash when a service dies with exit code 0 and its file gone', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { lastError: 'exited code Some(0)' } });
+
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    ));
+    expect(onProcessError).not.toHaveBeenCalledWith('exited code Some(0)', BackendCode.TERMINATED);
+  });
+
+  it('should blame the missing binary when starling itself exits non-zero', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+      queueMicrotask(() => child.emit('exit', 1, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    );
+    expect(onProcessError).toHaveBeenCalledTimes(1);
+  });
+
+  it('should blame the missing binary when starling is killed with exit code 0 and its file is gone', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      findUnusableBinaryMock.mockReturnValue(QUARANTINED_STARLING);
+      queueMicrotask(() => child.emit('exit', 0, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(
+      expect.stringContaining(QUARANTINED_STARLING.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_STARLING,
+    );
+    expect(onProcessError).toHaveBeenCalledTimes(1);
+  });
+
+  it('should report the binary when antivirus takes the file only after the generic failure was shown', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 1, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    expect(onProcessError).toHaveBeenLastCalledWith(expect.any(String), BackendCode.TERMINATED);
+
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    vi.advanceTimersByTime(2000);
+
+    expect(onProcessError).toHaveBeenLastCalledWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    );
+    vi.advanceTimersByTime(20_000);
+    expect(onProcessError).toHaveBeenCalledTimes(2);
+  });
+
+  it('should stop looking for a lost binary after a few checks when every file stays put', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 1, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError: vi.fn() });
+    const checksBefore = findUnusableBinaryMock.mock.calls.length;
+    vi.advanceTimersByTime(60_000);
+
+    expect(findUnusableBinaryMock.mock.calls.length - checksBefore).toBe(5);
+  });
+
+  it('should not report exit code 0 with every file in place, since that is how starling ends on logoff or Ctrl+C', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 0, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    vi.advanceTimersByTime(60_000);
+
+    expect(findUnusableBinaryMock.mock.calls.length).toBeGreaterThan(2);
+    expect(onProcessError).not.toHaveBeenCalled();
+  });
+
+  it('should keep watching after exit code 0, since antivirus can kill with it and quarantine the file a moment later', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 0, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    expect(onProcessError).not.toHaveBeenCalled();
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_STARLING);
+    vi.advanceTimersByTime(2000);
+
+    expect(onProcessError).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining(QUARANTINED_STARLING.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_STARLING,
+    );
+  });
+
+  it('should end the watch started by exit code 0 when rotki quits', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 0, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    await handler.stop();
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_STARLING);
+    vi.advanceTimersByTime(20_000);
+
+    expect(onProcessError).not.toHaveBeenCalled();
+  });
+
+  it('should report a lost binary once when a crash is followed by starling\'s own exit', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { service: 'colibri', lastError: 'exited with code 1' } });
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalled());
+    child.emit('exit', 1, null);
+    await vi.waitFor(() => expect(findUnusableBinaryMock.mock.calls.length).toBeGreaterThanOrEqual(2));
+
+    expect(onProcessError).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    );
+  });
+
+  it('should name the crashed service in the generic message', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { service: 'core', lastError: 'exited with code 1' } });
+
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith(
+      'The rotki backend service \'core\' stopped unexpectedly (exited with code 1). Please check the logs for more details.',
+      BackendCode.TERMINATED,
+    ));
+  });
+
+  it('should report starling as blocked when the system refuses to spawn a file that is there', async () => {
+    const blocked: UnusableBinary = { ...QUARANTINED_STARLING, status: BinaryStatus.NOT_EXECUTABLE };
+    const refusal = Object.assign(new Error('spawn EPERM'), { code: 'EPERM', syscall: 'spawn' });
+    spawnMock.mockImplementation(() => {
+      throw refusal;
+    });
+    refusedStarlingMock.mockImplementation(error => (error === refusal ? blocked : undefined));
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining(blocked.path),
+      BackendCode.MISSING_BINARY,
+      blocked,
+    );
+  });
+
+  it('should keep a crash\'s own reason rather than bury it under the generic text of the exit that follows', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { lastError: 'core died: disk full' } });
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died: disk full', BackendCode.TERMINATED));
+    child.emit('exit', 1, null);
+    await vi.waitFor(() => expect(findUnusableBinaryMock.mock.calls.length).toBeGreaterThanOrEqual(3));
+
+    expect(onProcessError).toHaveBeenCalledTimes(1);
+  });
+
+  it('should check the core binary starling was launched with', async () => {
+    buildStarlingInvocationMock.mockReturnValue({
+      command: 'starling',
+      args: ['--core-binary', '/opt/rotki/resources/backend/rotki-core/rotki-core-1.44.0'],
+    });
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError: vi.fn() });
+
+    expect(findUnusableBinaryMock).toHaveBeenCalledWith('/opt/rotki/resources/backend/rotki-core/rotki-core-1.44.0');
+  });
+
+  it('should end a running watch when the backend is restarted in place', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => emitReady(child));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    writeMessage(child.stdout, { method: StarlingEvent.CRASHED, params: { lastError: 'core died' } });
+    await vi.waitFor(() => expect(onProcessError).toHaveBeenCalledWith('core died', BackendCode.TERMINATED));
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    vi.advanceTimersByTime(20_000);
+
+    expect(onProcessError).not.toHaveBeenCalledWith(expect.anything(), BackendCode.MISSING_BINARY, expect.anything());
+  });
+
+  it('should keep watching for a lost binary after a rejected start tears the tree down', async () => {
+    const child = makeFakeChild((message, stdout) => {
+      if (message.method === StarlingMethod.START) {
+        writeMessage(stdout, { id: message.id, error: { message: 'service \'colibri\' could not be started' } });
+        return;
+      }
+      writeMessage(stdout, { id: message.id, result: null });
+      if (message.method === 'stop')
+        queueMicrotask(() => child.emit('exit', 0, null));
+    });
+    spawnMock.mockImplementation(() => child);
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    expect(onProcessError).toHaveBeenLastCalledWith('service \'colibri\' could not be started', BackendCode.TERMINATED);
+
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    vi.advanceTimersByTime(2000);
+
+    expect(onProcessError).toHaveBeenLastCalledWith(
+      expect.stringContaining(QUARANTINED_COLIBRI.path),
+      BackendCode.MISSING_BINARY,
+      QUARANTINED_COLIBRI,
+    );
+  });
+
+  it('should report a spawn that throws instead of letting it escape the listener', async () => {
+    spawnMock.mockImplementation(() => {
+      throw Object.assign(new Error('spawn UNKNOWN'), { code: 'UNKNOWN' });
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await expect(handler.restartBackend({ dataDirectory: '/data' }, { onProcessError })).resolves.toBeUndefined();
+
+    expect(onProcessError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'spawn UNKNOWN' }),
+      BackendCode.TERMINATED,
+    );
+  });
+
+  it('should end the watch on a deliberate stop even once the child is gone, so an update cannot trip it', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 1, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+    await handler.stop();
+    findUnusableBinaryMock.mockReturnValue(QUARANTINED_COLIBRI);
+    vi.advanceTimersByTime(20_000);
+
+    expect(onProcessError).not.toHaveBeenCalledWith(expect.anything(), BackendCode.MISSING_BINARY, expect.anything());
+  });
+
+  it('should keep the generic crash message when every binary is still there', async () => {
+    const child = makeFakeChild(nullResponder);
+    spawnMock.mockImplementation(() => {
+      queueMicrotask(() => child.emit('exit', 1, null));
+      return child;
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({ dataDirectory: '/data' }, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(
+      'The rotki backend stopped unexpectedly. Please check the logs for more details.',
+      BackendCode.TERMINATED,
+    );
+  });
+
+  it('should report a core binary that cannot be resolved instead of throwing past the listener', async () => {
+    buildStarlingInvocationMock.mockImplementation(() => {
+      throw new Error('No rotki-core binary found under /opt/rotki/resources/backend');
+    });
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+    const onProcessError = vi.fn();
+
+    await expect(handler.restartBackend({ dataDirectory: '/data' }, { onProcessError })).resolves.toBeUndefined();
+
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(onProcessError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'No rotki-core binary found under /opt/rotki/resources/backend' }),
+      BackendCode.TERMINATED,
+    );
   });
 
   it('should not treat an MCP crash as a backend crash', async () => {
