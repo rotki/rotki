@@ -1,6 +1,7 @@
 import type { EffectScope } from 'vue';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useHistoryWatchers } from './use-history-watchers';
 
 const mockProcessing = ref<boolean>(false);
@@ -191,6 +192,21 @@ describe('useHistoryWatchers', () => {
       await flushPromises();
 
       expect(mockSetPostProcessing.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it('should neither post-process nor refresh the summary when processing ends because the session did', async () => {
+      set(mockProcessing, true);
+      setupWatchers();
+      await flushPromises();
+      vi.clearAllMocks();
+
+      endSession();
+      set(mockProcessing, false);
+      await flushPromises();
+
+      expect(mockSetPostProcessing).not.toHaveBeenCalled();
+      expect(mockFetchTransactionStatusSummary).not.toHaveBeenCalled();
+      expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
     });
 
     it('should end post-processing when a step of it fails', async () => {
