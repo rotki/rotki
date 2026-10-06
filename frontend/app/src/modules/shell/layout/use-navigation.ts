@@ -1,5 +1,7 @@
+import { redirectAfterUnlock } from '@/modules/shell/layout/login-redirect';
+
 interface UseAppNavigationReturn {
-  navigateToDashboard: () => Promise<void>;
+  navigateAfterUnlock: () => Promise<void>;
   navigateToUserCreation: () => Promise<void>;
   navigateToUserLogin: () => Promise<void>;
 }
@@ -17,12 +19,14 @@ export function useAppNavigation(): UseAppNavigationReturn {
     await router.push({ name: '/user/create/' });
   };
 
-  const navigateToDashboard = async (): Promise<void> => {
-    await router.push({ name: '/dashboard/' });
+  /** Opens the page the login was redirected from, or the dashboard when there is none. */
+  const navigateAfterUnlock = async (): Promise<void> => {
+    const target = redirectAfterUnlock(get(router.currentRoute).query);
+    await router.push(target ?? { name: '/dashboard/' });
   };
 
   return {
-    navigateToDashboard,
+    navigateAfterUnlock,
     navigateToUserCreation,
     navigateToUserLogin,
   };

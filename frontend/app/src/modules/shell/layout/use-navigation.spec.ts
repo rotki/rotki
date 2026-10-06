@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 
 const mockPush = vi.fn();
-const mockCurrentRoute = ref<{ name?: string }>({ name: '/' });
+const mockCurrentRoute = ref<{ name?: string; query: Record<string, string> }>({ name: '/', query: {} });
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(() => ({
@@ -14,7 +14,7 @@ vi.mock('vue-router', () => ({
 describe('modules::shell::use-navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    set(mockCurrentRoute, { name: '/' });
+    set(mockCurrentRoute, { name: '/', query: {} });
   });
 
   describe('navigateToUserLogin', () => {
@@ -28,7 +28,7 @@ describe('modules::shell::use-navigation', () => {
     });
 
     it('should be a no-op when already on the login route', async () => {
-      set(mockCurrentRoute, { name: '/user/login/' });
+      set(mockCurrentRoute, { name: '/user/login/', query: {} });
 
       const { navigateToUserLogin } = useAppNavigation();
       await navigateToUserLogin();
@@ -47,13 +47,22 @@ describe('modules::shell::use-navigation', () => {
     });
   });
 
-  describe('navigateToDashboard', () => {
-    it('should push to the dashboard route', async () => {
-      const { navigateToDashboard } = useAppNavigation();
+  describe('navigateAfterUnlock', () => {
+    it('should push to the dashboard when the login carries no redirect', async () => {
+      const { navigateAfterUnlock } = useAppNavigation();
 
-      await navigateToDashboard();
+      await navigateAfterUnlock();
 
       expect(mockPush).toHaveBeenCalledWith({ name: '/dashboard/' });
+    });
+
+    it('should push to the page the login was redirected from', async () => {
+      set(mockCurrentRoute, { name: '/user/login/', query: { redirect: '/history/events?page=2' } });
+      const { navigateAfterUnlock } = useAppNavigation();
+
+      await navigateAfterUnlock();
+
+      expect(mockPush).toHaveBeenCalledWith('/history/events?page=2');
     });
   });
 });

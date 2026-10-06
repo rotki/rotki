@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRe
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
+import { loginRouteFor } from '@/modules/shell/layout/login-redirect';
 import NotFound from '@/pages/404.vue';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
@@ -84,7 +85,7 @@ router.beforeEach((to) => {
   if (to.path.startsWith('/user') || to.path === '/wallet-bridge')
     return true;
 
-  return '/user/login';
+  return loginRouteFor(to);
 });
 
 if (import.meta.hot)
