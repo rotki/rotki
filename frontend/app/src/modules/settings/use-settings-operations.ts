@@ -9,10 +9,10 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
-import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
+import { useItemsPerPageWriter } from '@/modules/settings/use-items-per-page-writer';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -47,7 +47,6 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const api = useSettingsApi();
-  const globalItemsPerPage = useItemsPerPage();
   const { updateFrontendSetting } = useFrontendSettingsWriter();
 
   function handleErrors(error: unknown, keys: string[]): string {
@@ -117,17 +116,7 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
     repo.updateFrontend(payload);
   }
 
-  watchDebounced(globalItemsPerPage, async (value, oldValue): Promise<void> => {
-    if (oldValue === undefined || value === oldValue)
-      return;
-
-    try {
-      await updateFrontendSetting({ itemsPerPage: value });
-    }
-    catch (error: unknown) {
-      logger.error(error);
-    }
-  }, { debounce: 800, maxWait: 1200 });
+  useItemsPerPageWriter();
 
   return {
     applyFrontendSettingLocal,
