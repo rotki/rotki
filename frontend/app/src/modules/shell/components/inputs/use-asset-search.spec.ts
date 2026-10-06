@@ -266,13 +266,47 @@ describe('useAssetSearch', () => {
       expect(mockAssetSearch).not.toHaveBeenCalled();
     });
 
-    it('should resolve a long list in batches', async () => {
+    it('should open on the top 20 of a long list and reach the rest by typing', async () => {
       const items = Array.from({ length: 120 }, (_, index) => `ASSET${index}`);
       const { api } = setup({ items });
       await flushPromises();
 
       expect(mockAssetMapping).toHaveBeenCalledTimes(3);
-      expect(identifiersOf(api)).toStrictEqual(items);
+      expect(identifiersOf(api)).toStrictEqual(items.slice(0, 20));
+
+      await runSearch(api, 'asset119');
+      expect(identifiersOf(api)).toStrictEqual(['ASSET119']);
+    });
+
+    it('should keep a selection ranked below the open list', async () => {
+      const items = Array.from({ length: 30 }, (_, index) => `ASSET${index}`);
+      const { api } = setup({ items, modelValue: 'ASSET25' });
+      await flushPromises();
+
+      expect(identifiersOf(api)).toStrictEqual([...items.slice(0, 20), 'ASSET25']);
+    });
+
+    // The first batch holds the top of the ranking, so the list must not wait on the rest.
+    it('should offer the first batch before the rest has resolved', async () => {
+      let resolveRest!: () => void;
+      const rest = new Promise<void>((resolve) => {
+        resolveRest = resolve;
+      });
+      mockAssetMapping.mockImplementation(async (ids: string[]) => {
+        if (ids[0] !== 'ASSET0')
+          await rest;
+        return mapKnownAssets(ids);
+      });
+      const items = Array.from({ length: 60 }, (_, index) => `ASSET${index}`);
+      const { api } = setup({ items });
+      await flushPromises();
+
+      expect(identifiersOf(api)).toStrictEqual(items.slice(0, 20));
+      expect(get(api.loading)).toBe(true);
+
+      resolveRest();
+      await flushPromises();
+      expect(get(api.loading)).toBe(false);
     });
 
     it('should keep the selected asset while the filter excludes it', async () => {
