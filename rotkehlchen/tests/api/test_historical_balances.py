@@ -14,6 +14,7 @@ from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -269,6 +270,15 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
         str(identifier): {'processing_required': True, 'buckets': []}
         for identifier in requested
     }}
+
+    with db.user_write() as write_cursor:  # never processed and no stale marker
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        )
+    assert assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': requested},
+    )) == result
 
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
     result = assert_proper_sync_response_with_result(requests.post(

@@ -303,14 +303,20 @@ class HistoricalBalancesManager:
                     amount=FVal(amount),
                 ))
 
-            if (stale := self.db.get_static_cache(
-                cursor=cursor, name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-            )) is None:
+            stale, last_processing_ts = self.db.get_static_caches(
+                cursor=cursor,
+                names=(
+                    DBCacheStatic.STALE_BALANCES_FROM_TS,
+                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                ),
+            )
+            if last_processing_ts is None:
+                unprocessed_from_ts = 0
+            elif stale is None:
                 return set(), balances
+            else:
+                unprocessed_from_ts = int(stale)
 
-            processed = self.db.get_static_cache(
-                cursor=cursor, name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
-            ) is not None
             exclusions = ' OR '.join(
                 ['(he.type = ? AND he.subtype = ?)'] * len(self._neutral_balance_tracking_pairs),
             )
@@ -333,7 +339,7 @@ class HistoricalBalancesManager:
                             WHERE em.event_identifier = he.identifier AND em.metric_key = ?
                         )
                 )""",
-                [*bindings, int(stale) if processed else 0,
+                [*bindings, unprocessed_from_ts,
                  *[value for pair in self._neutral_balance_tracking_pairs for value in pair],
                  metric_key],
             )}
@@ -752,21 +758,24 @@ class HistoricalBalancesManager:
         """Return True if events that should have metrics are missing them.
 
         Uses the stale marker to determine which events need checking:
-        - If stale marker is None: all events were evaluated (including negative balance skips)
-        - If stale marker exists and processing ran: only check events >= stale_event_ts
-        - If stale marker exists but never processed: check all events matching where_clause
+        - If processing never ran: check all events matching where_clause, whether or not a
+          stale marker exists
+        - If processing ran and stale marker is None: all events were evaluated (including
+          negative balance skips)
+        - If processing ran and stale marker exists: only check events >= stale_event_ts
         """
         with self.db.conn.read_ctx() as cursor:
-            if (stale_value := self.db.get_static_cache(
+            stale_value, last_processing_ts = self.db.get_static_caches(
                 cursor=cursor,
-                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-            )) is None:
-                return False  # All events evaluated (including negative balance skips)
+                names=(
+                    DBCacheStatic.STALE_BALANCES_FROM_TS,
+                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                ),
+            )
+            if last_processing_ts is not None:  # events before stale_event_ts were already evaluated  # noqa: E501
+                if stale_value is None:
+                    return False
 
-            if self.db.get_static_cache(
-                cursor=cursor,
-                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
-            ) is not None:  # events before stale_event_ts were already evaluated
                 where_clause = f'({where_clause}) AND he.timestamp >= {stale_value}'
 
             exclusions = ' OR '.join(['(he.type = ? AND he.subtype = ?)'] * len(self._neutral_balance_tracking_pairs))  # noqa: E501
