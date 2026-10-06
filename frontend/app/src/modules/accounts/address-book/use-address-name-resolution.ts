@@ -7,6 +7,7 @@ import type {
 import { Blockchain, isValidAddress, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -123,7 +124,8 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
         result = await getAddressesNames(payload);
       }
       catch (error: unknown) {
-        logger.error(error);
+        if (!isRequestCancellation(error))
+          logger.error(error);
         result = [];
       }
     }
