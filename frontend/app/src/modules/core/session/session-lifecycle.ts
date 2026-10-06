@@ -6,11 +6,22 @@
  * {@link hasLiveSession} when they are made, so code still running after the session ended (an
  * async body resuming once logout settled what it awaited, a watcher fired by the store reset)
  * cannot reach the backend, which keeps serving the old user until the logout call lands.
+ *
+ * A session ends in two phases. {@link onSessionEnd} listeners stop its work at once: they cancel
+ * requests and settle what callers await. Those callers resume afterwards, in microtasks, and
+ * whatever they write lands in the session's state. {@link onSessionCleared} listeners clear that
+ * state once the app has logged out, one task after {@link scheduleSessionClear}, so every resumed
+ * caller has run and nothing written late outlives it. A failed unlock ends its session without
+ * ever logging in, so it clears nothing: what it leaves, such as a sync conflict, is for the login
+ * screen to show.
  */
 interface SessionState {
   /** Aborted when the session ends; `undefined` while no session is live. */
   live: AbortController | undefined;
   readonly endListeners: Map<string, () => void>;
+  readonly clearListeners: Map<string, () => void>;
+  /** The clear phase scheduled by a logout and not run yet. */
+  pendingClear: ReturnType<typeof setTimeout> | undefined;
 }
 
 const SESSION_STATE_KEY = Symbol.for('rotki.session-lifecycle');
@@ -28,13 +39,35 @@ function sessionState(): SessionState {
   if (isSessionState(existing))
     return existing;
 
-  const created: SessionState = { endListeners: new Map(), live: undefined };
+  const created: SessionState = {
+    clearListeners: new Map(),
+    endListeners: new Map(),
+    live: undefined,
+    pendingClear: undefined,
+  };
   Reflect.set(globalThis, SESSION_STATE_KEY, created);
   return created;
 }
 
 function isSessionState(value: unknown): value is SessionState {
-  return typeof value === 'object' && value !== null && 'endListeners' in value && value.endListeners instanceof Map;
+  return typeof value === 'object'
+    && value !== null
+    && 'endListeners' in value
+    && value.endListeners instanceof Map
+    && 'clearListeners' in value
+    && value.clearListeners instanceof Map;
+}
+
+/** Runs the clear phase a logout scheduled, if it has not run yet. */
+function clearEndedSession(): void {
+  const state = sessionState();
+  if (state.pendingClear === undefined)
+    return;
+
+  clearTimeout(state.pendingClear);
+  state.pendingClear = undefined;
+  for (const listener of state.clearListeners.values())
+    listener();
 }
 
 /**
@@ -42,10 +75,12 @@ function isSessionState(value: unknown): value is SessionState {
  *
  * @remarks
  * Called when an unlock starts, not when it succeeds: the unlock's own requests and tasks
- * belong to the session it creates. A failed unlock ends it again.
+ * belong to the session it creates. A failed unlock ends it again. A clear phase still pending
+ * runs first, so it can never run inside the new session.
  */
 export function beginSession(): void {
   endSession();
+  clearEndedSession();
   sessionState().live = new AbortController();
 }
 
@@ -68,6 +103,18 @@ export function endSession(): void {
     listener();
 }
 
+/**
+ * Schedules the clear phase one task from now, unless one is already pending.
+ *
+ * @remarks
+ * Called once the app has logged out, after its session ended. Clearing from the logout rather
+ * than from the end of the session keeps the state the logout itself still reads, such as the
+ * username it logs out, until it no longer needs it.
+ */
+export function scheduleSessionClear(): void {
+  sessionState().pendingClear ??= setTimeout(clearEndedSession, 0);
+}
+
 export function hasLiveSession(): boolean {
   return sessionState().live !== undefined;
 }
@@ -82,19 +129,37 @@ export function liveSessionSignal(): AbortSignal | undefined {
 }
 
 /**
- * Runs `listener` every time a session ends.
+ * Registers `listener` under `key` in `listeners`.
  *
  * @remarks
  * Registering under a key already in use replaces that listener. A module evaluated again (a hot
- * update, a spec's `vi.resetModules()`) registers again, and adding instead would keep every
- * earlier copy alive and running.
+ * update, a spec's `vi.resetModules()`) or a shared composable created again registers again, and
+ * adding instead would keep every earlier copy alive and running.
+ */
+function register(listeners: Map<string, () => void>, key: string, listener: () => void): () => void {
+  listeners.set(key, listener);
+  return () => listeners.delete(key);
+}
+
+/**
+ * Runs `listener` the moment a session ends, to stop its work: cancel what it sent, settle what
+ * its callers await.
  *
  * @param key - names the registration, one per module that listens
- * @param listener - runs after the session has ended
+ * @param listener - runs synchronously when the session ends
  * @returns a function that removes the listener
  */
 export function onSessionEnd(key: string, listener: () => void): () => void {
-  const { endListeners } = sessionState();
-  endListeners.set(key, listener);
-  return () => endListeners.delete(key);
+  return register(sessionState().endListeners, key, listener);
+}
+
+/**
+ * Runs `listener` once an ended session's callers have resumed, to clear the state it leaves.
+ *
+ * @param key - names the registration, one per module that listens
+ * @param listener - runs one task after the session ended, or when the next one begins if sooner
+ * @returns a function that removes the listener
+ */
+export function onSessionCleared(key: string, listener: () => void): () => void {
+  return register(sessionState().clearListeners, key, listener);
 }

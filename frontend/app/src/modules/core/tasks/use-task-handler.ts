@@ -3,6 +3,7 @@ import { err, ok, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { logger } from '@/modules/core/common/logging/logging';
+import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
 import {
   BackendCancelled,
   Cancelled,
@@ -118,6 +119,20 @@ function useTaskHandlerInternal(): {
       });
     });
   }
+
+  /**
+   * Settle every task still awaited as cancelled.
+   *
+   * @remarks
+   * Runs when the session ends. The backend logout cancels its tasks and forgets their results, so
+   * a task left here would never be reported and whatever awaits it would stay suspended.
+   */
+  function settleAll(): void {
+    for (const handler of handlers.values())
+      handler({ message: USER_CANCELLED_TASK, result: null });
+  }
+
+  onSessionEnd('task-handlers', settleAll);
 
   /**
    * Abort one backend task by its id. The entry point for the orchestrator, whose activities know

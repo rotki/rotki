@@ -1,16 +1,28 @@
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { BALANCE_HYDRATION_TAG } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
-import { api } from '@/modules/core/api/rotki-api';
-import { endSession } from '@/modules/core/session/session-lifecycle';
+import { endSession, onSessionCleared, onSessionEnd, scheduleSessionClear } from '@/modules/core/session/session-lifecycle';
 import { useSync } from '@/modules/session/use-session-sync';
-import { SUGGESTION_PROBE_TAG } from '@/modules/settings/suggestions/use-suggestion-probes';
 import { resetState } from '@/modules/shell/app/store-plugins';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
+/**
+ * Ties the app-wide parts of a session to its lifecycle: the monitors start on login, and when the
+ * session ends its work stops and the state it leaves is cleared.
+ *
+ * @remarks
+ * The orchestrator, the submission map, the account-load tracker and the hydration map are all
+ * app-scoped. Anything they still hold at logout outlives the session, and because each dedups by
+ * identity, the *next* session is handed work that can never settle: a promise nothing resolves,
+ * or a read belonging to a user who is gone.
+ *
+ * The work stops when the session ends, and `resetNativeTasks` runs after the orchestrator so its
+ * emit can settle each caller normally and this only sweeps what that missed. The stores are reset
+ * in the clear phase, after the callers those resets settled have resumed and written whatever
+ * they write, so none of it reaches the next session.
+ */
 export function useSessionStateCleaner(): void {
   const { logged } = storeToRefs(useSessionAuthStore());
   const { clearUploadStatus } = useSync();
@@ -20,32 +32,21 @@ export function useSessionStateCleaner(): void {
   const { reset: resetAccountLoad } = useAccountLoadState();
   const { reset: resetHydration } = useBalanceHydration();
 
-  /**
-   * Tears down everything a session leaves behind that a pinia reset does not reach.
-   *
-   * @remarks
-   * The orchestrator, the submission map, the account-load tracker and the hydration map are all
-   * app-scoped. Anything they still hold at logout outlives the session, and because each dedups by
-   * identity, the *next* session is handed work that can never settle — a promise nothing resolves,
-   * or a read belonging to a user who is gone.
-   *
-   * Order matters twice: `resetNativeTasks` runs after the orchestrator so its emit can settle each
-   * caller normally and this only sweeps what that missed, and the hydration request is cancelled
-   * before its map is cleared, since clearing first leaves nothing to cancel against.
-   */
-  function cleanup(): void {
-    clearUploadStatus();
-    api.cancelByTag(SUGGESTION_PROBE_TAG);
+  onSessionEnd('session-work', () => {
+    stop();
     orchestrator.reset();
     resetNativeTasks();
     resetAccountLoad();
-    api.cancelByTag(BALANCE_HYDRATION_TAG);
     resetHydration();
+  });
+
+  onSessionCleared('session-state', () => {
+    clearUploadStatus();
     resetState();
-  }
+  });
 
   /**
-   * Starts the monitors on login; on any logout, ends the session and cleans up.
+   * Starts the monitors on login; on any logout, ends the session and schedules its clear phase.
    *
    * @remarks
    * `logout()` has already ended the session by then. Ending it here as well covers the paths
@@ -59,7 +60,6 @@ export function useSessionStateCleaner(): void {
       return;
     }
     endSession();
-    stop();
-    cleanup();
+    scheduleSessionClear();
   });
 }

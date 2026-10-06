@@ -190,6 +190,21 @@ describe('composables::session::use-scheduler-state', () => {
     });
   });
 
+  describe('session end', () => {
+    it('should stop a fallback timer armed after the logout, once the session is cleared', async () => {
+      const scheduler = await createSchedulerState();
+      const { endSession, scheduleSessionClear } = await import('@/modules/core/session/session-lifecycle');
+
+      endSession();
+      scheduleSessionClear();
+      scheduler.onBalancesLoaded();
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
+      await flushPromises();
+
+      expect(mockSetSchedulerState).not.toHaveBeenCalled();
+    });
+  });
+
   describe('fallback timeout', () => {
     it('should enable scheduler after 10 minutes', async () => {
       const scheduler = await createSchedulerState();

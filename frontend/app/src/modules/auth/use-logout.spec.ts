@@ -4,8 +4,8 @@ import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLogout } from '@/modules/auth/use-logout';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 
-const mockResetSchedulerState = vi.fn();
 const mockNavigateToUserLogin = vi.fn();
 const mockCallLogout = vi.fn();
 const mockGetLoggedUsers = vi.fn();
@@ -16,12 +16,6 @@ const mockResetTray = vi.fn();
 const mockSetMessage = vi.fn();
 const mockLogged = ref<boolean>(true);
 const mockUsername = ref<string>('testuser');
-
-vi.mock('@/modules/session/use-scheduler-state', () => ({
-  useSchedulerState: vi.fn(() => ({
-    reset: mockResetSchedulerState,
-  })),
-}));
 
 vi.mock('@/modules/shell/layout/use-navigation', () => ({
   useAppNavigation: vi.fn(() => ({
@@ -102,47 +96,18 @@ describe('modules::account::use-logout', () => {
   });
 
   describe('logout', () => {
-    it('should call resetSchedulerState when logout is called', async () => {
-      const { logout } = useLogout();
-
-      await logout();
-      await flushPromises();
-
-      expect(mockResetSchedulerState).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call resetSchedulerState before other logout operations', async () => {
-      const callOrder: string[] = [];
-
-      mockResetSchedulerState.mockImplementation(() => {
-        callOrder.push('resetSchedulerState');
-      });
+    it('should end the session before anything else in the logout runs', async () => {
+      const liveAt: boolean[] = [];
       mockNotifyUserLogout.mockImplementation(() => {
-        callOrder.push('notifyUserLogout');
+        liveAt.push(hasLiveSession());
       });
-      mockDisconnectWallet.mockImplementation(async () => {
-        callOrder.push('disconnectWallet');
-      });
+      expect(hasLiveSession()).toBe(true);
 
       const { logout } = useLogout();
-
       await logout();
       await flushPromises();
 
-      expect(callOrder[0]).toBe('resetSchedulerState');
-      expect(callOrder).toContain('notifyUserLogout');
-      expect(callOrder).toContain('disconnectWallet');
-    });
-
-    it('should call resetSchedulerState even if logout fails', async () => {
-      mockCallLogout.mockRejectedValue(new Error('Logout failed'));
-
-      const { logout } = useLogout();
-
-      await logout();
-      await flushPromises();
-
-      expect(mockResetSchedulerState).toHaveBeenCalledTimes(1);
+      expect(liveAt).toEqual([false]);
     });
 
     it('should reset the MCP session after backend logout', async () => {
@@ -169,7 +134,7 @@ describe('modules::account::use-logout', () => {
 
     expect(mockCallLogout).not.toHaveBeenCalled();
     expect(mockDisconnectWallet).toHaveBeenCalled();
-    expect(mockResetSchedulerState).toHaveBeenCalled();
+    expect(hasLiveSession()).toBe(false);
     expect(mockResetTray).toHaveBeenCalled();
     expect(mockNavigateToUserLogin).toHaveBeenCalled();
     expect(get(mockLogged)).toBe(false);
