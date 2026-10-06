@@ -156,6 +156,23 @@ describe('useHistoricPriceCache', () => {
     laterSubscriber.stop();
   });
 
+  it('should forget every price once a logout clears the session, as the next user may differ', async () => {
+    const { createKey, resolve, cache } = useHistoricPriceCache();
+    const key = createKey(mockAsset, mockTimestamp);
+    runTaskMock.mockResolvedValue(ok({ targetAsset: 'USD', assets: { [mockAsset]: { [mockTimestamp]: mockPrice } } }));
+    resolve(key);
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+    expect(get(cache)[key]).toEqual(bigNumberify(mockPrice));
+    const { endSession, scheduleSessionClear } = await import('@/modules/core/session/session-lifecycle');
+
+    endSession();
+    scheduleSessionClear();
+    vi.advanceTimersByTime(0);
+
+    expect(get(cache)[key]).toBeUndefined();
+  });
+
   it('should surface each batch as its own native activity, so two never dedup onto one promise', async () => {
     const { ActivityKind, ActivityPart } = await import('@/modules/task-center/core/types');
     const { useTaskOrchestrator } = await import('@/modules/task-center/use-task-orchestrator');
