@@ -1,6 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 
 /**
@@ -75,12 +76,18 @@ export const useSchedulerState = createSharedComposable((): UseSchedulerStateRet
   };
 
   /**
-   * Called on logout - reset state (backend resets scheduler separately)
+   * Forgets the session's scheduler state; the backend resets its own at logout.
+   *
+   * @remarks
+   * Runs in the session's clear phase rather than at the start of a logout, so a fallback timer
+   * armed by a session load that resumed after the logout is stopped too.
    */
   const reset = (): void => {
     stopFallbackTimer();
     set(schedulerEnabled, false);
   };
+
+  onSessionCleared('scheduler-state', reset);
 
   return {
     onBalancesLoaded,

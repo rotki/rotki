@@ -13,7 +13,6 @@ import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { GNOSIS_INDEXER_DECISION, gnosisIndexerProvider } from './gnosis-indexer-suggestion';
 import { getSuggestionKey, type PendingSuggestion, type SettingsSuggestion, type VersionSuggestions } from './settings-suggestions';
 import { collectPendingSuggestions, useSettingsSuggestions } from './use-settings-suggestions';
-import { SUGGESTION_PROBE_TAG } from './use-suggestion-probes';
 
 const mockUpdate = vi.fn();
 const mockUpdateFrontendSetting = vi.fn();
@@ -456,15 +455,13 @@ describe('useSettingsSuggestions', () => {
         limit: 1,
         location: 'gnosis',
         offset: 0,
-      }, { tags: [SUGGESTION_PROBE_TAG] });
+      });
       expect(mockQueryExternalServices).not.toHaveBeenCalled();
 
       mockFetchHistoryEvents.mockResolvedValue({ entriesFound: 3 });
       await checkForSuggestions(createFrontendSettings(), general);
 
       expect(mockQueryExternalServices).toHaveBeenCalledOnce();
-      // Tagged so logging out can cancel whatever is still queued.
-      expect(mockQueryExternalServices).toHaveBeenCalledWith({ tags: [SUGGESTION_PROBE_TAG] });
     });
 
     it('should not probe once the decision has been answered', async () => {

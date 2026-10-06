@@ -167,6 +167,20 @@ describe('useTaskHandler', () => {
       expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
     });
 
+    it('should settle a task still awaited as cancelled when the session ends, as the backend forgets it at logout', async () => {
+      const taskFn = vi.fn().mockResolvedValue({ taskId: 7 });
+      const { endSession } = await import('@/modules/core/session/session-lifecycle');
+
+      const promise = handler.runTask<string>(taskFn, 'Test task');
+      await nextTick();
+      endSession();
+
+      const outcome = await promise;
+
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'Cancelled')).toBe(true);
+    });
+
     it('should return a BackendCancelled error when the result is null with no message', async () => {
       const taskFn = vi.fn().mockResolvedValue({ taskId: 5 });
 

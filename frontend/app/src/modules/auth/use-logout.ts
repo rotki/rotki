@@ -6,7 +6,6 @@ import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { endSession } from '@/modules/core/session/session-lifecycle';
-import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
@@ -52,7 +51,6 @@ export function useLogout(): UseLogoutReturn {
   const { showErrorMessage } = useNotifications();
   const { notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
-  const { reset: resetSchedulerState } = useSchedulerState();
 
   /**
    * Tears the wallet bridge down, main process first.
@@ -75,7 +73,6 @@ export function useLogout(): UseLogoutReturn {
    */
   const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
     endSession();
-    resetSchedulerState();
     await closeWalletBridge();
 
     set(logged, false);

@@ -4,9 +4,6 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
 
-/** Tag every probe carries so logging out can cancel whatever is still queued. */
-export const SUGGESTION_PROBE_TAG = 'settings-suggestions';
-
 /**
  * One run's probes, plus whether any of them fell over.
  *
@@ -43,7 +40,7 @@ export function useSuggestionProbes(): UseSuggestionProbesReturn {
 
     const probes: SuggestionProbes = {
       apiKeys: async (): Promise<ExternalServiceKeys | undefined> => {
-        keys ??= queryExternalServices({ tags: [SUGGESTION_PROBE_TAG] }).catch((error: unknown) => {
+        keys ??= queryExternalServices().catch((error: unknown) => {
           logger.error(error);
           failed = true;
           return undefined;
@@ -60,7 +57,7 @@ export function useSuggestionProbes(): UseSuggestionProbesReturn {
           limit: 1,
           location,
           offset: 0,
-        }, { tags: [SUGGESTION_PROBE_TAG] })
+        })
           .then(({ entriesFound }) => entriesFound > 0)
           .catch((error: unknown) => {
             logger.error(error);
