@@ -1,5 +1,6 @@
 import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -109,6 +110,8 @@ export function useMessageHandling(): UseMessageHandling {
       }
     }
     catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return;
       const message = handleMessageError(error, 'Message consumption failed');
       notify({ message, priority: Priority.NORMAL, title });
     }

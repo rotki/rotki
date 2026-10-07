@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { SocketMessageType } from '@/modules/core/messaging/types';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -230,5 +231,17 @@ describe('useMessageHandling', () => {
 
     expect(notify).toHaveBeenCalledTimes(1);
     expect(vi.mocked(notify).mock.calls[0][0].message).toContain('network down');
+  });
+
+  it('should not notify when the session refuses the poll', async () => {
+    mockConsumeMessages.mockRejectedValue(new RequestCancelledError('No live session'));
+
+    const { consume } = setup();
+    const { notify } = useNotificationDispatcher();
+
+    await consume();
+
+    expect(mockConsumeMessages).toHaveBeenCalledOnce();
+    expect(notify).not.toHaveBeenCalled();
   });
 });

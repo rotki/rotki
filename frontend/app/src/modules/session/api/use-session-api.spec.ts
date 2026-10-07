@@ -1,6 +1,8 @@
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from './use-session-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -63,6 +65,17 @@ describe('composables/api/session/index', () => {
       await expect(consumeMessages())
         .rejects
         .toThrow('Failed to consume messages');
+    });
+
+    it('should refuse to consume without a live session, sending nothing', async () => {
+      const consume = vi.fn(() => HttpResponse.json({ result: { errors: [], warnings: [] }, message: '' }));
+      server.use(http.get(`${backendUrl}/api/1/messages`, consume));
+      endSession();
+
+      const { consumeMessages } = useSessionApi();
+
+      await expect(consumeMessages()).rejects.toThrow(RequestCancelledError);
+      expect(consume).not.toHaveBeenCalled();
     });
   });
 
