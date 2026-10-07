@@ -12,6 +12,7 @@ jobs:
   unit:
     name: 'vitest'
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # observed max 10m
     permissions:
       contents: read
     steps:
