@@ -7,6 +7,7 @@ import type {
 import { assert } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { getAddress, type Hash, isHex, type ViemWalletClient } from '@/modules/wallet/viem-client';
@@ -346,7 +347,8 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   // The immediate run has no previous mode and no connection, so only a real mode change disconnects.
   watch(walletMode, async (walletMode, previousWalletMode) => {
     if (previousWalletMode !== undefined && walletMode !== previousWalletMode) {
-      await disconnect();
+      const isLogoutReset = !hasLiveSession();
+      await disconnect({ forgetProvider: !isLogoutReset });
       resetState();
     }
     syncWalletState();

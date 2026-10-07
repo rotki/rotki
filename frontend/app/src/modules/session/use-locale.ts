@@ -2,6 +2,7 @@ import type { MaybeRef } from 'vue';
 import { loadLocaleMessages } from '@/i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -38,7 +39,21 @@ export const useLocale = createSharedComposable(() => {
     }
   }
 
-  watch([language, forceUpdateMachineLanguage], () => {
+  /**
+   * Remembers the user's language for the login screen when they change it.
+   *
+   * @remarks
+   * Only while a session is live: the store reset at logout puts `language` back to its default,
+   * and remembering that would switch the login screen to English after every logout.
+   */
+  function rememberSessionLanguage(): void {
+    if (hasLiveSession())
+      checkMachineLanguage(get(language));
+  }
+
+  watch(language, rememberSessionLanguage);
+
+  watch(forceUpdateMachineLanguage, () => {
     checkMachineLanguage(get(language));
   });
 
