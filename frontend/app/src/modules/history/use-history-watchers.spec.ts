@@ -194,21 +194,6 @@ describe('useHistoryWatchers', () => {
       expect(mockSetPostProcessing.mock.calls).toEqual([[true], [false]]);
     });
 
-    it('should neither post-process nor refresh the summary when processing ends because the session did', async () => {
-      set(mockProcessing, true);
-      setupWatchers();
-      await flushPromises();
-      vi.clearAllMocks();
-
-      endSession();
-      set(mockProcessing, false);
-      await flushPromises();
-
-      expect(mockSetPostProcessing).not.toHaveBeenCalled();
-      expect(mockFetchTransactionStatusSummary).not.toHaveBeenCalled();
-      expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
-    });
-
     it('should end post-processing when a step of it fails', async () => {
       set(mockProcessing, true);
       setupWatchers();
@@ -250,6 +235,26 @@ describe('useHistoryWatchers', () => {
       expect(mockTriggerHistoricalBalancesProcessing).toHaveBeenCalled();
 
       vi.useRealTimers();
+    });
+
+    it('should not reprocess when a pending call fires after the session ended and its watcher was disposed', async () => {
+      vi.useFakeTimers();
+      onTestFinished(() => {
+        vi.useRealTimers();
+      });
+      set(mockHasUnprocessedModifications, true);
+      setupWatchers();
+      await nextTick();
+      set(mockEventsVersion, 1);
+      await nextTick();
+
+      endSession();
+      scope.stop();
+      await vi.advanceTimersByTimeAsync(15_000);
+      await flushPromises();
+
+      expect(mockAcknowledgeModifications).not.toHaveBeenCalled();
+      expect(mockTriggerHistoricalBalancesProcessing).not.toHaveBeenCalled();
     });
 
     it('should not acknowledge when hasUnprocessedModifications is false', async () => {

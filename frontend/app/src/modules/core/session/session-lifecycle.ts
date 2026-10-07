@@ -1,3 +1,5 @@
+import type { Ref, ShallowRef } from 'vue';
+
 /**
  * One user session, from the start of an unlock to the start of the logout that ends it.
  *
@@ -18,6 +20,10 @@
 interface SessionState {
   /** Aborted when the session ends; `undefined` while no session is live. */
   live: AbortController | undefined;
+  /** Identifies the live session, a new number each time one begins; `undefined` while none is. */
+  readonly key: ShallowRef<number | undefined>;
+  /** How many sessions have begun, so each one gets a key no earlier session had. */
+  begun: number;
   readonly endListeners: Map<string, () => void>;
   readonly clearListeners: Map<string, () => void>;
   readonly pendingWrites: Map<string, () => Promise<void>>;
@@ -41,8 +47,10 @@ function sessionState(): SessionState {
     return existing;
 
   const created: SessionState = {
+    begun: 0,
     clearListeners: new Map(),
     endListeners: new Map(),
+    key: shallowRef<number>(),
     live: undefined,
     pendingClear: undefined,
     pendingWrites: new Map(),
@@ -59,7 +67,9 @@ function isSessionState(value: unknown): value is SessionState {
     && 'clearListeners' in value
     && value.clearListeners instanceof Map
     && 'pendingWrites' in value
-    && value.pendingWrites instanceof Map;
+    && value.pendingWrites instanceof Map
+    && 'key' in value
+    && isRef(value.key);
 }
 
 /** Runs the clear phase a logout scheduled, if it has not run yet. */
@@ -85,7 +95,10 @@ function clearEndedSession(): void {
 export function beginSession(): void {
   endSession();
   clearEndedSession();
-  sessionState().live = new AbortController();
+  const state = sessionState();
+  state.live = new AbortController();
+  state.begun += 1;
+  set(state.key, state.begun);
 }
 
 /**
@@ -103,6 +116,7 @@ export function endSession(): void {
     return;
 
   state.live = undefined;
+  set(state.key, undefined);
   ending.abort();
   for (const listener of state.endListeners.values())
     listener();
@@ -122,6 +136,16 @@ export function scheduleSessionClear(): void {
 
 export function hasLiveSession(): boolean {
   return sessionState().live !== undefined;
+}
+
+/**
+ * The live session's key, reactively: a new number when a session begins, `undefined` once it ends.
+ *
+ * @remarks
+ * For rendering what belongs to one session, keyed on it so the next session builds its own.
+ */
+export function liveSessionKey(): Readonly<Ref<number | undefined>> {
+  return readonly(sessionState().key);
 }
 
 /**
@@ -189,11 +213,16 @@ export function onPendingWrite(key: string, write: () => Promise<void>): () => v
  * @remarks
  * Registering under a key already in use replaces that listener. A module evaluated again (a hot
  * update, a spec's `vi.resetModules()`) or a shared composable created again registers again, and
- * adding instead would keep every earlier copy alive and running.
+ * adding instead would keep every earlier copy alive and running. Removing only removes the
+ * listener it was returned for, so an earlier registration torn down late cannot remove its
+ * replacement.
  */
 function register(listeners: Map<string, () => void>, key: string, listener: () => void): () => void {
   listeners.set(key, listener);
-  return () => listeners.delete(key);
+  return () => {
+    if (listeners.get(key) === listener)
+      listeners.delete(key);
+  };
 }
 
 /**

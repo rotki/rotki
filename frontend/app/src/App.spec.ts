@@ -40,4 +40,31 @@ describe('app', () => {
     expect(wrapper.findComponent(AppQuitting).exists()).toBe(true);
     expect(wrapper.findComponent(LayoutWrapper).exists()).toBe(false);
   });
+
+  it('should render a session host while a session is live, and none once it ends', async () => {
+    const { App } = await loadApp();
+    const { SessionHost } = await import('@/modules/shell/app/session-host');
+    const { endSession } = await import('@/modules/core/session/session-lifecycle');
+    const wrapper = mount(App, { shallow: true });
+
+    expect(wrapper.findComponent(SessionHost).exists()).toBe(true);
+
+    endSession();
+    await nextTick();
+
+    expect(wrapper.findComponent(SessionHost).exists()).toBe(false);
+  });
+
+  it('should build a new session host for each session', async () => {
+    const { App } = await loadApp();
+    const { SessionHost } = await import('@/modules/shell/app/session-host');
+    const { beginSession } = await import('@/modules/core/session/session-lifecycle');
+    const wrapper = mount(App, { shallow: true });
+    const first = wrapper.findComponent(SessionHost).vm;
+
+    beginSession();
+    await nextTick();
+
+    expect(wrapper.findComponent(SessionHost).vm).not.toBe(first);
+  });
 });

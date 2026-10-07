@@ -5,7 +5,6 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -13,9 +12,9 @@ import { useSetting } from '@/modules/settings/use-setting';
  * Re-reads balances when the value threshold or the ignored assets change.
  *
  * @remarks
- * Only while a session is live. These watchers live as long as the app, and the store reset at
- * logout empties the ignored assets and restores the default threshold after the session ended:
- * neither is a change the user made, and reacting would write into the next session's state.
+ * Built by the session's monitor, so the watchers are disposed the moment the session ends, before
+ * the store reset at logout empties the ignored assets and restores the default threshold: neither
+ * is a change the user made, and reacting would write into the next session's state.
  */
 export function useBalanceWatchers(): void {
   const { fetchManualBalances } = useManualBalances();
@@ -27,9 +26,6 @@ export function useBalanceWatchers(): void {
   const { ignoredAssets } = storeToRefs(useAssetsStore());
 
   watch(balanceValueThreshold, (current, old) => {
-    if (!hasLiveSession())
-      return;
-
     if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {
       startPromise(fetchManualBalances(true));
     }
@@ -44,9 +40,6 @@ export function useBalanceWatchers(): void {
   });
 
   watch(ignoredAssets, (curr, prev) => {
-    if (!hasLiveSession())
-      return;
-
     const removedAssets = prev.filter(asset => !curr.includes(asset));
     if (removedAssets.length > 0) {
       startPromise(hydrate());

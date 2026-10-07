@@ -1,224 +1,123 @@
-import { createCustomPinia } from '@test/utils/create-pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useMainStore } from '@/modules/core/common/use-main-store';
-import { endSession } from '@/modules/core/session/session-lifecycle';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 
-const mockConnect = vi.fn();
-const mockDisconnect = vi.fn();
-const mockSetConnectionEnabled = vi.fn();
-const mockConnected = ref<boolean>(false);
-
-const mockMonitor = vi.fn();
-const mockCheck = vi.fn();
-const mockConsume = vi.fn();
-const mockAutoRefresh = vi.fn();
-const mockFetchTransactionStatusSummary = vi.fn();
-const mockCheckIfPasswordConfirmationNeeded = vi.fn();
-
-vi.mock('@/modules/shell/app/use-monitor-watchers', () => ({
-  useMonitorWatchers: vi.fn(),
-}));
-
-vi.mock('@/modules/auth/use-password-confirmation', () => ({
-  usePasswordConfirmation: vi.fn((): { checkIfPasswordConfirmationNeeded: typeof mockCheckIfPasswordConfirmationNeeded } => ({
-    checkIfPasswordConfirmationNeeded: mockCheckIfPasswordConfirmationNeeded,
-  })),
-}));
-
-vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => ({
-  useTokenDetectionOrchestrator: vi.fn(),
-}));
-
-vi.mock('@/modules/balances/use-balance-fetching', () => ({
-  useBalanceFetching: vi.fn((): { autoRefresh: typeof mockAutoRefresh } => ({
-    autoRefresh: mockAutoRefresh,
-  })),
-}));
-
-vi.mock('@/modules/history/use-history-data-fetching', () => ({
-  useHistoryDataFetching: vi.fn((): { fetchTransactionStatusSummary: typeof mockFetchTransactionStatusSummary } => ({
-    fetchTransactionStatusSummary: mockFetchTransactionStatusSummary,
-  })),
-}));
-
-vi.mock('@/modules/core/messaging', () => ({
-  useMessageHandling: vi.fn((): { consume: typeof mockConsume } => ({
-    consume: mockConsume,
-  })),
-}));
-
-vi.mock('@/modules/session/use-periodic-data-fetcher', () => ({
-  usePeriodicDataFetcher: vi.fn((): { check: typeof mockCheck } => ({
-    check: mockCheck,
-  })),
-}));
-
-vi.mock('@/modules/core/tasks/use-task-monitor', () => ({
-  useTaskMonitor: vi.fn((): { monitor: typeof mockMonitor } => ({
-    monitor: mockMonitor,
-  })),
-}));
-
-vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
-  useWebsocketConnection: vi.fn((): { connect: typeof mockConnect; connected: typeof mockConnected; disconnect: typeof mockDisconnect; setConnectionEnabled: typeof mockSetConnectionEnabled } => ({
-    connect: mockConnect,
-    connected: mockConnected,
-    disconnect: mockDisconnect,
-    setConnectionEnabled: mockSetConnectionEnabled,
-  })),
-}));
-
-vi.mock('@/modules/core/common/logging/logging', () => ({
-  getDefaultLogLevel: vi.fn(() => 'debug'),
-  logger: {
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-  },
-  setLevel: vi.fn(),
-}));
-
-async function loadMonitorService(): Promise<typeof import('@/modules/shell/app/use-monitor-service')> {
-  vi.doUnmock('@/modules/shell/app/use-monitor-service');
-  vi.resetModules();
-  return import('@/modules/shell/app/use-monitor-service');
+interface FakeMonitor {
+  start: Mock<(restarting?: boolean) => void>;
+  stop: Mock<() => void>;
 }
 
-describe('useMonitorService', () => {
-  let service: ReturnType<typeof import('@/modules/shell/app/use-monitor-service').useMonitorService>;
-  let scope: ReturnType<typeof effectScope>;
+function fakeMonitor(): FakeMonitor {
+  return { start: vi.fn(), stop: vi.fn() };
+}
 
-  beforeEach(async () => {
-    vi.useFakeTimers();
-    vi.clearAllMocks();
-    scope = effectScope();
-    set(mockConnected, false);
-    mockConnect.mockResolvedValue(undefined);
-    mockMonitor.mockResolvedValue(undefined);
-    mockCheck.mockResolvedValue(undefined);
-    mockConsume.mockResolvedValue(undefined);
-    mockAutoRefresh.mockResolvedValue(undefined);
-    mockFetchTransactionStatusSummary.mockResolvedValue(undefined);
-    mockCheckIfPasswordConfirmationNeeded.mockResolvedValue(undefined);
+/**
+ * Imports the facade into a fresh module registry.
+ *
+ * @remarks
+ * `useMonitorService` is a `createGlobalState` singleton, so without the reset one test's hosted
+ * monitor and wanted state would be the next one's. The shared setup mocks the facade for every
+ * other spec, so this one unmocks it.
+ */
+async function setup(): Promise<ReturnType<typeof import('@/modules/shell/app/use-monitor-service')['useMonitorService']>> {
+  vi.doUnmock('@/modules/shell/app/use-monitor-service');
+  vi.resetModules();
+  const { useMonitorService } = await import('@/modules/shell/app/use-monitor-service');
+  return useMonitorService();
+}
 
-    setActivePinia(createCustomPinia());
-    useMainStore().setConnected(true);
-
-    const { useMonitorService } = await loadMonitorService();
-    scope.run(() => {
-      service = useMonitorService();
-    });
+describe('modules/shell/app/use-monitor-service', () => {
+  beforeEach(() => {
+    beginSession();
   });
 
-  afterEach(() => {
-    service.stop();
-    scope.stop();
-    vi.useRealTimers();
-  });
+  it('should start the hosted monitor', async () => {
+    const service = await setup();
+    const monitor = fakeMonitor();
+    service.host(monitor);
 
-  it('should call connect and set up intervals on start', async () => {
     service.start();
 
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(mockConnect).toHaveBeenCalledOnce();
-    expect(mockMonitor).toHaveBeenCalledOnce();
+    expect(monitor.start).toHaveBeenCalledWith(false);
   });
 
-  it('should re-arm websocket reconnection on start', async () => {
-    service.start();
-    await vi.advanceTimersByTimeAsync(0);
+  it('should apply a start asked for before the host built the monitor', async () => {
+    const service = await setup();
+    service.start(true);
 
-    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(true);
+    const monitor = fakeMonitor();
+    service.host(monitor);
+
+    expect(monitor.start).toHaveBeenCalledWith(true);
   });
 
-  it('should disable websocket reconnection on stop (not just close the socket)', async () => {
+  it('should not start a monitor hosted after a stop', async () => {
+    const service = await setup();
     service.start();
-    await vi.advanceTimersByTimeAsync(0);
-    vi.clearAllMocks();
-
     service.stop();
 
-    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(false);
-    expect(mockDisconnect).toHaveBeenCalledOnce();
+    const monitor = fakeMonitor();
+    service.host(monitor);
+
+    expect(monitor.start).not.toHaveBeenCalled();
   });
 
-  it('should call disconnect and clear all intervals on stop', async () => {
-    service.start();
-    await vi.advanceTimersByTimeAsync(0);
-
-    vi.clearAllMocks();
-
-    service.stop();
-
-    expect(mockDisconnect).toHaveBeenCalledOnce();
-
-    await vi.advanceTimersByTimeAsync(60_000);
-
-    expect(mockCheck).not.toHaveBeenCalled();
-    expect(mockMonitor).not.toHaveBeenCalled();
-  });
-
-  it('should stop polling and close the socket when the session ends', async () => {
-    service.start();
-    await vi.advanceTimersByTimeAsync(0);
-    vi.clearAllMocks();
-
+  it('should ignore a start with no session live, so it cannot carry into the next session', async () => {
+    const service = await setup();
     endSession();
+    service.start();
 
-    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(false);
-    expect(mockDisconnect).toHaveBeenCalledOnce();
+    beginSession();
+    const monitor = fakeMonitor();
+    service.host(monitor);
 
-    await vi.advanceTimersByTimeAsync(60_000);
-
-    expect(mockConsume).not.toHaveBeenCalled();
-    expect(mockCheck).not.toHaveBeenCalled();
-    expect(mockMonitor).not.toHaveBeenCalled();
+    expect(monitor.start).not.toHaveBeenCalled();
   });
 
-  it('should stop and then start with restarting=true on restart', async () => {
+  it('should forget a wanted start when the session ends', async () => {
+    const service = await setup();
     service.start();
-    await vi.advanceTimersByTimeAsync(0);
 
-    vi.clearAllMocks();
-    mockConnect.mockResolvedValue(undefined);
+    beginSession();
+    const monitor = fakeMonitor();
+    service.host(monitor);
+
+    expect(monitor.start).not.toHaveBeenCalled();
+  });
+
+  it('should drop the ended session\'s monitor at once, so a start before its host unmounts cannot reach it', async () => {
+    const service = await setup();
+    const ended = fakeMonitor();
+    service.host(ended);
+
+    beginSession();
+    service.start();
+
+    expect(ended.start).not.toHaveBeenCalled();
+  });
+
+  it('should restart by stopping, then starting without the immediate first poll', async () => {
+    const service = await setup();
+    const monitor = fakeMonitor();
+    service.host(monitor);
 
     service.restart();
-    await vi.advanceTimersByTimeAsync(0);
 
-    expect(mockDisconnect).toHaveBeenCalledOnce();
-    expect(mockConnect).toHaveBeenCalledOnce();
-
-    // Since restarting=true, fetch and monitor should NOT be called immediately
-    expect(mockCheck).not.toHaveBeenCalled();
-    expect(mockMonitor).not.toHaveBeenCalled();
+    expect(monitor.stop).toHaveBeenCalledOnce();
+    expect(monitor.start).toHaveBeenCalledWith(true);
+    expect(monitor.stop.mock.invocationCallOrder[0]).toBeLessThan(monitor.start.mock.invocationCallOrder[0]);
   });
 
-  it('should set up task monitoring interval via startTaskMonitoring', async () => {
-    service.startTaskMonitoring(false);
+  it('should only withdraw the monitor it hosted', async () => {
+    const service = await setup();
+    const first = fakeMonitor();
+    const withdrawFirst = service.host(first);
+    const second = fakeMonitor();
+    service.host(second);
 
-    expect(mockMonitor).toHaveBeenCalledOnce();
+    withdrawFirst();
+    service.start();
 
-    vi.clearAllMocks();
-    mockMonitor.mockResolvedValue(undefined);
-
-    await vi.advanceTimersByTimeAsync(4_000);
-
-    expect(mockMonitor).toHaveBeenCalledOnce();
-  });
-
-  it('should not call fetch/monitor immediately when restarting is true', async () => {
-    service.start(true);
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(mockConnect).toHaveBeenCalledOnce();
-    expect(mockCheck).not.toHaveBeenCalled();
-    expect(mockConsume).not.toHaveBeenCalled();
-    expect(mockMonitor).not.toHaveBeenCalled();
-
-    mockMonitor.mockResolvedValue(undefined);
-    await vi.advanceTimersByTimeAsync(4_000);
-    expect(mockMonitor).toHaveBeenCalledOnce();
+    expect(second.start).toHaveBeenCalledOnce();
+    expect(first.start).not.toHaveBeenCalled();
   });
 });
