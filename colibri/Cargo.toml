@@ -8,10 +8,10 @@ repository.workspace = true
 
 [dependencies]
 # For logging
-log = "=0.4.33"
+log = "=0.4.34"
 # For the asynchronous Rest API
-reqwest = { version = "=0.13.2", default-features = false, features = ["json", "query", "rustls-no-provider"]}
-rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["json", "query", "rustls-no-provider"]}
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
 # `signal` powers the graceful-shutdown hook in main: starling stops us with
 # CTRL_BREAK (windows) / SIGTERM (unix), and without a handler the OS default
 # terminator kills us mid-flight instead of letting us close the database.
@@ -22,7 +22,7 @@ serde.workspace = true
 # For reading / manipulating json data from a string response
 serde_json.workspace = true
 # For md5 checksum in icon cache matching
-md5 = "=0.8.0"
+md5 = "=0.8.1"
 # To retrieve OS-specific directories
 dirs.workspace = true
 # for CLI args parsing
@@ -42,7 +42,7 @@ tracing-subscriber = { workspace = true, features = ["ansi", "fmt", "tracing-log
 # directly (they have a PR but not merged)
 file-rotate = "=0.8.0"
 # used when parsing cors. It is from rust itself
-glob = "=0.3.3"
+glob = "=0.3.4"
 # for hex encoding/decoding in ABI calls
 hex = "=0.4.3"
 base64 = "=0.22.1"
@@ -64,7 +64,7 @@ winresource = { version = "=0.1.31", default-features = false }
 [dev-dependencies]
 mockito = "=1.7.2"
 tokio = { workspace = true, features = ["test-util"] }
-regex = "=1.12.3"
+regex = "=1.13.1"
 # `oneshot` for exercising the session middleware in tests
 tower.workspace = true
 # RAII temp dirs for test fixtures: removed on drop instead of piling up in /tmp
