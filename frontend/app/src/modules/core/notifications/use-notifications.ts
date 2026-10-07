@@ -41,8 +41,17 @@ interface UseNotificationsReturn {
    * Show an error message dialog.
    * When called with two args: `showErrorMessage(title, description)`.
    * When called with one arg: `showErrorMessage(description)` — title is auto-generated.
+   *
+   * @remarks
+   * Dropped when no session is live, like every message dialog, unless `options.sessionless` says
+   * the error belongs to the logged-out screen (a logout that failed after its session ended).
    */
-  showErrorMessage: (title: string, description?: string) => void;
+  showErrorMessage: (title: string, description?: string, options?: ErrorMessageOptions) => void;
+}
+
+interface ErrorMessageOptions {
+  /** Shows the dialog even with no live session. */
+  readonly sessionless?: boolean;
 }
 
 export function useNotifications(): UseNotificationsReturn {
@@ -91,8 +100,8 @@ export function useNotifications(): UseNotificationsReturn {
     setMessage({ description: description ?? title, success: true, ...(description ? { title } : {}) });
   }
 
-  function showErrorMessage(title: string, description?: string): void {
-    setMessage({ description: description ?? title, success: false, ...(description ? { title } : {}) });
+  function showErrorMessage(title: string, description?: string, options?: ErrorMessageOptions): void {
+    setMessage({ description: description ?? title, success: false, ...(description ? { title } : {}) }, options);
   }
 
   return { notify, notifyError, notifyInfo, notifyWarning, removeMatching, showErrorMessage, showSuccessMessage };
