@@ -30,7 +30,13 @@ from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -417,9 +423,13 @@ def test_repull_internal_tx_conflicts_unexpected_worker_exception_records_retry_
     assert ok_row == (1, None)
 
 
-def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database) -> None:
-    tx_hash_never_tried = make_evm_tx_hash()
-    tx_hash_retried = make_evm_tx_hash()
+def test_repull_internal_tx_conflicts_limit_applies_after_excluding_retried_rows(
+        database,
+) -> None:
+    """Retried rows are filtered out before the limit, so they cannot use up the batch.
+    The retried row sorts first by hash, so a limit applied before the filter would pick it."""
+    tx_hash_retried = deserialize_evm_tx_hash(b'\x00' * 32)
+    tx_hash_never_tried = deserialize_evm_tx_hash(b'\xff' * 32)
     with database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, repull_reason, fixed, last_retry_ts) VALUES(?, ?, ?, ?, ?, ?)',  # noqa: E501
@@ -444,8 +454,8 @@ def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database) -> None
             limit=1,
         )
 
-    called_tx_hash = repull_mock.call_args.kwargs['tx_hash']
-    assert called_tx_hash == tx_hash_never_tried
+    repull_mock.assert_called_once()
+    assert repull_mock.call_args.kwargs['tx_hash'] == tx_hash_never_tried
 
 
 def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database) -> None:
