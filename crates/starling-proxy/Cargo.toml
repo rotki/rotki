@@ -14,7 +14,7 @@ tracing.workspace = true
 # Body combinators: the access log wraps the response body to count the bytes
 # actually written, which Content-Length cannot give us once compression makes
 # the response chunked.
-http-body-util = "=0.1.4"
+http-body-util = "=0.1.5"
 
 # In-process HTTP server + reverse proxy, replaces nginx.
 axum.workspace = true
@@ -30,8 +30,8 @@ tower-http = { workspace = true, features = [
     "set-header",
     "timeout",
 ] }
-hyper = { version = "=1.10.1", features = ["http1", "client", "server"] }
-hyper-util = { version = "=0.1.20", features = [
+hyper = { version = "=1.12.0", features = ["http1", "client", "server"] }
+hyper-util = { version = "=0.1.21", features = [
     "client",
     "client-legacy",
     "http1",
@@ -42,4 +42,4 @@ hyper-util = { version = "=0.1.20", features = [
 serde_json.workspace = true
 tower = { workspace = true, features = ["util"] }
 tokio-tungstenite = "=0.24.0"
-futures-util = "=0.3.33"
+futures-util = "=0.3.34"
