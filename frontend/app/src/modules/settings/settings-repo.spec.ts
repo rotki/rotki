@@ -143,6 +143,7 @@ describe('useSettingsRepo frontend channel', () => {
       suppressNoIndexerChains: [],
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: false,
+      autoLogoutPeriod: -1,
       autoRerunOnEdit: false,
       lastAutoDetectAt: 0,
       gnosisPaySafeMigrationNeverNotify: false,

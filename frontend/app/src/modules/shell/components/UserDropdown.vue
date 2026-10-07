@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { useLogout } from '@/modules/auth/use-logout';
-import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import ThemeControl from '@/modules/shell/theme/ThemeControl.vue';
@@ -15,11 +13,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { logout } = useLogout();
 const { username } = storeToRefs(useSessionAuthStore());
-const { clearPassword, isPackaged } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { isXs } = useBreakpoint();
-
-const { savedRememberPassword } = useRememberSettings();
 const { currentTier, premium } = usePremiumHelper();
 
 const tierLabel = computed<string>(() => {
@@ -36,12 +31,7 @@ function showConfirmation() {
       title: t('user_dropdown.confirmation.title'),
       type: 'info',
     },
-    async () => {
-      if (isPackaged && get(savedRememberPassword))
-        await clearPassword();
-
-      await logout();
-    },
+    async () => logout(true, { forgetSavedPassword: true }),
   );
 }
 

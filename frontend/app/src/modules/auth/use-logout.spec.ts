@@ -14,8 +14,17 @@ const mockNotifyUserLogout = vi.fn();
 const mockResetMcpSession = vi.fn();
 const mockResetTray = vi.fn();
 const mockSetMessage = vi.fn();
+const mockClearPassword = vi.fn();
+const mockInterop = { isPackaged: false };
+const mockSavedRememberPassword = ref<string | null>(null);
 const mockLogged = ref<boolean>(true);
 const mockUsername = ref<string>('testuser');
+
+vi.mock('@/modules/auth/use-remember-settings', () => ({
+  useRememberSettings: vi.fn(() => ({
+    savedRememberPassword: mockSavedRememberPassword,
+  })),
+}));
 
 vi.mock('@/modules/shell/layout/use-navigation', () => ({
   useAppNavigation: vi.fn(() => ({
@@ -36,6 +45,8 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({
+    clearPassword: mockClearPassword,
+    isPackaged: mockInterop.isPackaged,
     notifyUserLogout: mockNotifyUserLogout,
     resetMcpSession: mockResetMcpSession,
     resetTray: mockResetTray,
@@ -84,6 +95,8 @@ describe('modules::account::use-logout', () => {
 
     set(mockLogged, true);
     set(mockUsername, 'testuser');
+    set(mockSavedRememberPassword, null);
+    mockInterop.isPackaged = false;
 
     mockCallLogout.mockResolvedValue(undefined);
     mockDisconnectWallet.mockResolvedValue(undefined);
@@ -171,6 +184,47 @@ describe('modules::account::use-logout', () => {
 
       expect(status).toEqual({ message: 'unreachable', success: false });
       expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'unreachable', title: 'Remote session logout failure' }), { sessionless: true });
+    });
+  });
+
+  describe('forgetting the saved password', () => {
+    /**
+     * Only the packaged build stores the password, and only when the user asked it to. Clearing it
+     * is what stops the login screen from unlocking the profile again for whoever is at the machine.
+     */
+    it('should clear a password the desktop build remembered', async () => {
+      mockInterop.isPackaged = true;
+      set(mockSavedRememberPassword, 'true');
+
+      await useLogout().logout(true, { forgetSavedPassword: true });
+
+      expect(mockClearPassword).toHaveBeenCalledTimes(1);
+      expect(mockCallLogout).toHaveBeenCalledWith('testuser');
+    });
+
+    it('should keep the password when the caller does not ask to forget it', async () => {
+      mockInterop.isPackaged = true;
+      set(mockSavedRememberPassword, 'true');
+
+      await useLogout().logout();
+
+      expect(mockClearPassword).not.toHaveBeenCalled();
+    });
+
+    it('should clear nothing when the password was never remembered', async () => {
+      mockInterop.isPackaged = true;
+
+      await useLogout().logout(true, { forgetSavedPassword: true });
+
+      expect(mockClearPassword).not.toHaveBeenCalled();
+    });
+
+    it('should clear nothing in a browser, which stores no password', async () => {
+      set(mockSavedRememberPassword, 'true');
+
+      await useLogout().logout(true, { forgetSavedPassword: true });
+
+      expect(mockClearPassword).not.toHaveBeenCalled();
     });
   });
 

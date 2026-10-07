@@ -61,6 +61,8 @@ export type RoundingMode = z.infer<typeof RoundingMode>;
 
 const RefreshPeriod = z.number().min(-1).max(Constraints.MAX_MINUTES_DELAY).int();
 
+const AutoLogoutPeriod = z.number().min(-1).max(Constraints.AUTO_LOGOUT_MAX_MINUTES).int();
+
 const QueryPeriod = z.number().int().max(Constraints.MAX_SECONDS_DELAY).nonnegative();
 
 export enum DashboardTableType {
@@ -208,6 +210,8 @@ export const FrontendSettings = z.object({
   dateInputFormat: DateFormatEnum.default(Defaults.DEFAULT_DATE_INPUT_FORMAT),
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
   defaultThemeVersion: z.number().default(1),
+  /** Minutes without input before the session logs out, or -1 when auto-logout is off. */
+  autoLogoutPeriod: AutoLogoutPeriod.default(-1),
   defiSetupDone: z.boolean().default(false),
   /**
    * The external services whose optional-API-key prompt the user has dismissed. Deliberately without

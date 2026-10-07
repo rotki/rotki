@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
+import AutoLogoutNotice from '@/modules/auth/login/AutoLogoutNotice.vue';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
 import { classifyLoginErrors, type LoginFormState, loginSchema } from '@/modules/auth/login/login-form';
@@ -233,6 +234,8 @@ onMounted(() => {
             </template>
           </i18n-t>
         </div>
+
+        <AutoLogoutNotice />
 
         <div>
           <form

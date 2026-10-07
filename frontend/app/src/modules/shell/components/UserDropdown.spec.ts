@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import UserDropdown from '@/modules/shell/components/UserDropdown.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { confirm, currentTier, interop, logout, premium, privacyModeIcon, savedRememberPassword, username } = await vi.hoisted(async () => {
+const { confirm, currentTier, logout, premium, privacyModeIcon, username } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   /** Holds the callback the confirmation store was handed, so a test can accept the prompt. */
   const confirm: { run?: () => Promise<void> } = {};
@@ -12,11 +12,9 @@ const { confirm, currentTier, interop, logout, premium, privacyModeIcon, savedRe
   return {
     confirm,
     currentTier: ref<string>(''),
-    interop: { clearPassword: vi.fn(), isPackaged: false },
     logout: vi.fn(),
     premium: ref<boolean>(false),
     privacyModeIcon: ref<string>('lu-eye'),
-    savedRememberPassword: ref<boolean>(false),
     username: ref<string>('alice'),
   };
 });
@@ -25,16 +23,8 @@ vi.mock('@/modules/auth/use-logout', () => ({
   useLogout: (): { logout: Mock } => ({ logout }),
 }));
 
-vi.mock('@/modules/auth/use-remember-settings', () => ({
-  useRememberSettings: (): { savedRememberPassword: Ref<boolean> } => ({ savedRememberPassword }),
-}));
-
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: (): { username: Ref<string> } => ({ username }),
-}));
-
-vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): typeof interop => interop,
 }));
 
 vi.mock('@/modules/premium/use-premium-helper', () => ({
@@ -86,10 +76,8 @@ describe('userDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     confirm.run = undefined;
-    interop.isPackaged = false;
     set(currentTier, '');
     set(premium, false);
-    set(savedRememberPassword, false);
     set(username, 'alice');
   });
 
@@ -127,44 +115,12 @@ describe('userDropdown', () => {
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should log out once confirmed', async () => {
+    it('should log out and forget the saved password once confirmed', async () => {
       const wrapper = createWrapper();
 
       await logOut(wrapper);
 
-      expect(logout).toHaveBeenCalledTimes(1);
-    });
-
-    /**
-     * Only the packaged build stores the password, and only when the user asked it to. Clearing it
-     * on log out is what stops the next person on the machine signing straight back in.
-     */
-    it('should clear a password the desktop build remembered', async () => {
-      interop.isPackaged = true;
-      set(savedRememberPassword, true);
-
-      await logOut(createWrapper());
-
-      expect(interop.clearPassword).toHaveBeenCalledTimes(1);
-      expect(logout).toHaveBeenCalledTimes(1);
-    });
-
-    it('should clear nothing when the password was never remembered', async () => {
-      interop.isPackaged = true;
-
-      await logOut(createWrapper());
-
-      expect(interop.clearPassword).not.toHaveBeenCalled();
-      expect(logout).toHaveBeenCalledTimes(1);
-    });
-
-    it('should clear nothing in a browser, which stores no password', async () => {
-      set(savedRememberPassword, true);
-
-      await logOut(createWrapper());
-
-      expect(interop.clearPassword).not.toHaveBeenCalled();
-      expect(logout).toHaveBeenCalledTimes(1);
+      expect(logout).toHaveBeenCalledExactlyOnceWith(true, { forgetSavedPassword: true });
     });
   });
 });
