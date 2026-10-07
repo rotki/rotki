@@ -1,9 +1,9 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { err, ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { err, ok, type Result } from 'plainfp/result';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { blockDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { targetedRedecodeFlow } from '@/modules/history/events/tx/targeted-redecode.flow';
 import { ActivityKind } from '@/modules/task-center/core/types';
@@ -158,6 +158,56 @@ describe('useTargetedRedecode', () => {
       const { redecodeTargeted } = useTargetedRedecode();
 
       await expect(redecodeTargeted({ blockNumbers: [1, 2] })).resolves.toBeUndefined();
+    });
+
+    /** Runs a request whose children answer as `outcomeOf` says, and returns the umbrella's own outcome. */
+    async function umbrellaOutcome(outcomeOf: (kind: ActivityKind) => Result<void, TaskError>): Promise<Result<void, TaskError>> {
+      let umbrella: Promise<Result<void, TaskError>> | undefined;
+      mocks.submitTask.mockImplementation(async (spec: { kind: ActivityKind; run: () => Promise<Result<void, TaskError>> }) => {
+        if (spec.kind === ActivityKind.REDECODE) {
+          umbrella = spec.run();
+          return umbrella;
+        }
+        return outcomeOf(spec.kind);
+      });
+
+      await useTargetedRedecode().redecodeTargeted({
+        blockNumbers: [1],
+        transactions: [{ location: 'ethereum', txRef: '0xabc' }],
+      });
+      assert(umbrella);
+      return umbrella;
+    }
+
+    it('should fail the umbrella when every child failed, rather than report the redecode done', async () => {
+      const outcome = await umbrellaOutcome(() => err(TaskFailed({ message: 'boom' })));
+
+      assert(!outcome.ok);
+      expect(outcome.error.message).toBe('boom');
+    });
+
+    it('should complete the umbrella when at least one child decoded', async () => {
+      const outcome = await umbrellaOutcome(kind => (kind === ActivityKind.ETH_BLOCK_DECODING ? ok(undefined) : err(TaskFailed({ message: 'boom' }))));
+
+      expect(outcome.ok).toBe(true);
+    });
+
+    it('should count a child that throws as failed, not as decoded', async () => {
+      let umbrella: Promise<Result<void, TaskError>> | undefined;
+      mocks.submitTask.mockImplementation(async (spec: { kind: ActivityKind; run: () => Promise<Result<void, TaskError>> }) => {
+        if (spec.kind === ActivityKind.REDECODE) {
+          umbrella = spec.run();
+          return umbrella;
+        }
+        throw new Error('child threw');
+      });
+
+      await useTargetedRedecode().redecodeTargeted({ blockNumbers: [1] });
+
+      assert(umbrella);
+      const outcome = await umbrella;
+      assert(!outcome.ok);
+      expect(outcome.error.message).toBe('child threw');
     });
   });
 

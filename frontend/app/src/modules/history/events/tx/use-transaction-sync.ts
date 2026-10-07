@@ -24,7 +24,7 @@ interface TransactionSyncParams {
 /** A chain activity's declared children, split by whether they decide the chain's own outcome. */
 interface ChainSubtree {
   readonly accounts: readonly Promise<Result<void, TaskError>>[];
-  readonly decode: readonly Promise<void>[];
+  readonly decode: readonly Promise<Result<void, TaskError>>[];
 }
 
 /**

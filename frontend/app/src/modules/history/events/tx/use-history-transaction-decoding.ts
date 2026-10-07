@@ -2,7 +2,7 @@ import { map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { combineSettled, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import {
   TransactionChainType,
@@ -56,7 +56,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     chain: string,
     ignoreCache = false,
     placement: DecodePlacement = {},
-  ): Promise<void> => {
+  ): Promise<Result<void, TaskError>> => {
     const outcome = await submitTask({
       deps: placement.deps,
       id: decodeActivity.id({ chain, ignoreCache }),
@@ -80,6 +80,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     });
 
     onActionableError(outcome, error => logger.error(error.message));
+    return outcome;
   };
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
@@ -118,8 +119,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const children = redecodeFlow.children(decodeChains);
 
     // The flow is submitted before its children, so its `run` awaits this rather than a still-empty array.
-    let declared!: (work: readonly Promise<void>[]) => void;
-    const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
+    let declared!: (work: readonly Promise<Result<void, TaskError>>[]) => void;
+    const subtree = new Promise<readonly Promise<Result<void, TaskError>>[]>((resolve) => {
       declared = resolve;
     });
 
@@ -130,15 +131,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       rerunnable: false,
       resets: redecodeFlow.resets,
       userStarted: true,
-      run: async (): Promise<Result<void, TaskError>> => {
-        const outcomes = await Promise.allSettled(await subtree);
-        const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;
-
-        if (failed > 0)
-          logger.debug(`redecode finished with ${failed} of ${outcomes.length} chains failed`);
-
-        return ok(undefined);
-      },
+      run: async (): Promise<Result<void, TaskError>> => combineSettled(await subtree),
       // Only the subtitle carries the scope, so a partial run does not read as the full one.
       subtitle: coversEverything
         ? undefined
