@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import base64
+import functools
 import logging
 import os
 import platform
@@ -12,7 +13,7 @@ import sys
 import urllib.request
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from packaging import version
 from setuptools_scm import get_version
@@ -48,6 +49,10 @@ WIN_CERTIFICATE = 'CERTIFICATE_WIN_APPLICATION'
 CERTIFICATE_KEY = 'CSC_KEY_PASSWORD'
 APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
+# Whether MacPackaging.sign() runs codesign on every file it is given. It never did while
+# log_group dropped return values, and the build is signed through PyInstaller's
+# codesign_identity and electron-builder, so turning it on is a separate decision.
+CODESIGN_EACH_FILE: Final[bool] = False
 X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
 ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
 
@@ -164,24 +169,57 @@ def env_var_to_bool(value: str | None) -> bool:
     return value.lower() in {'1', 'true', 'yes', 'on'}
 
 
+_open_log_groups: list[str] = []
+
+
+def write_workflow_command(command: str) -> None:
+    """
+    Writes a GitHub Actions workflow command on its own line.
+
+    Written directly rather than through ``echo`` in a shell, which on Windows keeps the quotes
+    around the group name. Logging goes to stderr, so both streams are flushed to keep the
+    command in order with the step's output.
+    """
+    sys.stderr.flush()
+    sys.stdout.write(f'{command}\n')
+    sys.stdout.flush()
+
+
 def log_group(name: str) -> Callable:
-    def start_group(group_name: str) -> None:
+    """
+    Wraps a build step in a collapsible log group on CI, or between banners locally.
+
+    GitHub Actions cannot nest groups, so a step called from inside another step closes the
+    outer group, runs in its own ``outer / inner`` group, and reopens the outer one when it
+    ends. The group is closed even when the step raises, and the step's return value is passed
+    through.
+    """
+    def start_group(title: str) -> None:
         if os.environ.get('CI'):
-            subprocess.call(f'echo ::group::"{group_name}"', shell=True)
+            write_workflow_command(f'::group::{title}')
         else:
-            logger.info(f'\n\n-----{group_name}-----\n\n')
+            logger.info('\n\n-----%s-----\n\n', title)
 
     def end_group() -> None:
         if os.environ.get('CI'):
-            subprocess.call('echo ::endgroup::', shell=True)
+            write_workflow_command('::endgroup::')
         else:
             logger.info('\n\n-----------------\n\n')
 
     def decorate(fn: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: Any | None) -> None:
-            start_group(name)
-            fn(*args, **kwargs)
-            end_group()
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if _open_log_groups:
+                end_group()
+            _open_log_groups.append(name)
+            start_group(' / '.join(_open_log_groups))
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                end_group()
+                _open_log_groups.pop()
+                if _open_log_groups:
+                    start_group(' / '.join(_open_log_groups))
 
         return wrapper
     return decorate
@@ -629,10 +667,10 @@ class MacPackaging:
     @log_group('signing')
     def sign(self, paths: Generator[Path]) -> None:
         """
-        Signs all the contents of the directory created by PyInstaller
-        with the provided signing key/identity.
+        Prepares the keychain and, when CODESIGN_EACH_FILE is on, signs every
+        file under ``paths`` with the provided signing key/identity.
         """
-        if not self.import_signing_certificates():
+        if not self.import_signing_certificates() or not CODESIGN_EACH_FILE:
             return
 
         identify = os.environ.get('IDENTITY')
