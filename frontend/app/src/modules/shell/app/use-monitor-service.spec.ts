@@ -1,6 +1,7 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 
 const mockConnect = vi.fn();
 const mockDisconnect = vi.fn();
@@ -155,6 +156,23 @@ describe('useMonitorService', () => {
 
     await vi.advanceTimersByTimeAsync(60_000);
 
+    expect(mockCheck).not.toHaveBeenCalled();
+    expect(mockMonitor).not.toHaveBeenCalled();
+  });
+
+  it('should stop polling and close the socket when the session ends', async () => {
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+    vi.clearAllMocks();
+
+    endSession();
+
+    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(false);
+    expect(mockDisconnect).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(mockConsume).not.toHaveBeenCalled();
     expect(mockCheck).not.toHaveBeenCalled();
     expect(mockMonitor).not.toHaveBeenCalled();
   });

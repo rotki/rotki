@@ -1,6 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { logger } from '@/modules/core/common/logging/logging';
+import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
 import { useMonitorWatchers } from '@/modules/shell/app/use-monitor-watchers';
 import { useBalanceRefreshScheduler } from './schedulers/use-balance-refresh-scheduler';
 import { useEvmStatusScheduler } from './schedulers/use-evm-status-scheduler';
@@ -65,7 +66,10 @@ function useMonitorServiceInternal(): UseMonitorServiceInternalReturn {
     start(true);
   };
 
+  const stopOnSessionEnd = onSessionEnd('monitor-service', stop);
+
   onScopeDispose(() => {
+    stopOnSessionEnd();
     stop();
   });
 
@@ -77,4 +81,11 @@ function useMonitorServiceInternal(): UseMonitorServiceInternalReturn {
   };
 }
 
+/**
+ * The websocket and the session's pollers, started by the unlock flow.
+ *
+ * @remarks
+ * Stops when the session ends. Every poller reads data that belongs to the session, so one still
+ * ticking on the login screen only reaches a backend that refuses it.
+ */
 export const useMonitorService = createGlobalState(useMonitorServiceInternal);
