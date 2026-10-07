@@ -39,6 +39,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     KRAKEN_FUTURES_API_KEY_KEY,
     KRAKEN_FUTURES_API_SECRET_KEY,
+    SQL_VARIABLE_CHUNK_SIZE,
     HistoryMappingState,
 )
 from rotkehlchen.db.dbhandler import DBHandler
@@ -2770,6 +2771,52 @@ def test_startup_check_settings(database: DBHandler) -> None:
     assert settings.non_syncing_exchanges == frozenset({
         ExchangeLocationID(name='Coinbase', location=Location.COINBASE),
     })
+
+
+@pytest.mark.parametrize('count', [0, 1, SQL_VARIABLE_CHUNK_SIZE, SQL_VARIABLE_CHUNK_SIZE * 2 + 1])
+def test_add_asset_identifiers_bulk(database: DBHandler, count: int) -> None:
+    identifiers = [f"bulk_asset_'_{idx}" for idx in range(count)]
+    with database.user_write() as write_cursor:
+        database.add_asset_identifiers(
+            write_cursor, [A_ETH.identifier, *identifiers, *identifiers],
+        )
+        database.add_asset_identifiers(write_cursor, identifiers)
+
+    with database.conn.read_ctx() as cursor:
+        assert {row[0] for row in cursor.execute(
+            "SELECT identifier FROM assets WHERE identifier LIKE 'bulk_asset_%'",
+        )} == set(identifiers)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?',
+            (A_ETH.identifier,),
+        ).fetchone()[0] == 1
+
+
+def test_add_asset_identifiers_after_rollback_and_deletion(database: DBHandler) -> None:
+    identifier = 'bulk_asset_rollback'
+
+    def insert_and_rollback() -> None:
+        with database.user_write() as write_cursor:
+            database.add_asset_identifiers(write_cursor, [identifier])
+            raise ValueError('rollback asset insertion')
+
+    with pytest.raises(ValueError, match='rollback asset insertion'):
+        insert_and_rollback()
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 0
+
+    with database.user_write() as write_cursor:
+        database.add_asset_identifiers(write_cursor, [identifier])
+        database.delete_asset_identifier(write_cursor, identifier)
+        database.add_asset_identifiers(write_cursor, [identifier])
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 1
 
 
 def test_address_book_primary_key(database: DBHandler):

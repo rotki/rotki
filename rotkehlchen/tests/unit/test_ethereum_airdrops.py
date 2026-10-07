@@ -714,3 +714,21 @@ def test_airdrop_index_with_invalid_token_address_is_skipped(
             'decimals': 18,
         },
     }}) == {}
+
+
+def test_airdrop_index_new_asset_is_mirrored_in_user_db(database: DBHandler) -> None:
+    """A non-token asset created from the index must also exist in the user DB assets table,
+    since user DB tables (balances cache, snapshots) reference it via foreign keys."""
+    _parse_airdrops(database=database, airdrops_data={'newchain': {
+        'file_path': 'airdrops/newchain.csv.gz',
+        'file_hash': 'a' * 64,
+        'asset_identifier': (identifier := 'NEWCHAIN_AIRDROP_ASSET'),
+        'url': 'https://example.com/',
+        'name': 'NEWCHAIN',
+        'icon': 'newchain.svg',
+        'new_asset_data': {'asset_type': 'OTHER', 'name': 'New chain', 'symbol': 'NEWC'},
+    }})
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 1

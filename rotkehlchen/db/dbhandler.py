@@ -62,6 +62,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_FUTURES_API_KEY_KEY,
     KRAKEN_FUTURES_API_SECRET_KEY,
     OKX_LOCATION_KEY,
+    SQL_VARIABLE_CHUNK_SIZE,
     USER_CREDENTIAL_MAPPING_KEYS,
     HistoryMappingState,
 )
@@ -1372,6 +1373,10 @@ class DBHandler:
         if len(rows) == 0:
             return
 
+        self.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=list({row[2] for row in rows}),
+        )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO blockchain_balances_cache('
             'blockchain, address, asset, label, category, amount'
@@ -1436,6 +1441,10 @@ class DBHandler:
         if len(rows) == 0:
             return
 
+        self.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=list({row[2] for row in rows}),
+        )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO blockchain_balances_cache('
             'blockchain, address, asset, label, category, amount'
@@ -2265,6 +2274,10 @@ class DBHandler:
                 now,
             ),
         )
+        self.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=[token.identifier for token in tokens],
+        )
         # Delete previous entries for tokens
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY IN(?, ?)',
@@ -2288,10 +2301,18 @@ class DBHandler:
         Unlike save_tokens_for_address it doesn't touch the last queried timestamp since
         this is not a full token detection."""
         chain_id = blockchain.to_chain_id().serialize_for_db()
+        token_identifiers = [token.identifier for token in tokens]
+        self.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=token_identifiers,
+        )
         write_cursor.executemany(
             'INSERT OR IGNORE INTO evm_accounts_details '
             '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
-            [(address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, x.identifier) for x in tokens],
+            [
+                (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, token_identifier)
+                for token_identifier in token_identifiers
+            ],
         )
 
     def get_cached_token_ids(
@@ -3981,11 +4002,13 @@ class DBHandler:
         GlobalDBHandler.add_user_owned_assets(assets)
 
     def add_asset_identifiers(self, write_cursor: DBCursor, asset_identifiers: list[str]) -> None:
-        """Adds an asset to the user db asset identifier table"""
-        write_cursor.executemany(
-            'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
-            [(x,) for x in asset_identifiers],
-        )
+        """Mirror identifiers in bounded bulk inserts, ignoring those already present."""
+        for chunk in get_chunks(list(dict.fromkeys(asset_identifiers)), n=SQL_VARIABLE_CHUNK_SIZE):
+            placeholders = ','.join(['(?)'] * len(chunk))
+            write_cursor.execute(
+                f'INSERT OR IGNORE INTO assets(identifier) VALUES {placeholders}',
+                chunk,
+            )
 
     def sync_globaldb_assets(self, write_cursor: DBCursor) -> None:
         """Makes sure that:

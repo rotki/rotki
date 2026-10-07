@@ -196,6 +196,8 @@ def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[
                         cryptocompare=new_asset_data.get('cryptocompare'),
                     )
                     GlobalDBHandler.add_asset(crypto_asset)
+                    with database.user_write() as write_cursor:
+                        database.add_asset_identifiers(write_cursor, [crypto_asset.identifier])
             else:
                 try:
                     crypto_asset = Asset(airdrop_data['asset_identifier']).resolve_to_crypto_asset()  # noqa: E501

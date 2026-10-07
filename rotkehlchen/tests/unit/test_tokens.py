@@ -61,6 +61,44 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     return EthereumTokens(database, ethereum_inquirer)
 
 
+def test_save_tokens_for_address_adds_missing_asset_identifier(database: DBHandler) -> None:
+    address = make_evm_address()
+    asset = Asset('eip155:1/erc20:0x0000000000000000000000000000000000001234')
+
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[asset],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?',
+            (asset.identifier,),
+        ).fetchone()[0] == 1
+
+
+def test_add_tokens_for_address_adds_missing_asset_identifier(database: DBHandler) -> None:
+    address = make_evm_address()
+    asset = Asset('eip155:1/erc20:0x0000000000000000000000000000000000005678')
+
+    with database.user_write() as write_cursor:
+        database.add_tokens_for_address(
+            write_cursor=write_cursor,
+            address=address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[asset],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?',
+            (asset.identifier,),
+        ).fetchone()[0] == 1
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cached_tokens_detection_uses_cached_proxy_mapping_without_rpc(
         tokens: EthereumTokens,
