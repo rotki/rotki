@@ -2,6 +2,7 @@ import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import consola, { type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
 import { IndexedDb } from '@/modules/core/common/helpers/indexed-db';
+import { demoteCancellations } from '@/modules/core/common/logging/demote-cancellations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const isDevelopment = checkIfDevelopment();
@@ -80,6 +81,9 @@ else {
     },
   });
 }
+
+consola.error = demoteCancellations(consola.error, consola.debug);
+consola.warn = demoteCancellations(consola.warn, consola.debug);
 
 function setLevel(level?: LogLevel): void {
   consola.level = mapToFrontendLogLevel(level);
