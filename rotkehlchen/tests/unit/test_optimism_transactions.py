@@ -794,45 +794,6 @@ def test_resolved_zero_fee_survives_new_transaction_handler(
     transaction_query.assert_not_called()
 
 
-def test_existing_receipt_repairs_missing_l1_fee_without_refetch(
-        optimism_transactions: OptimismTransactions,
-) -> None:
-    tx_hash, _ = _add_pending_transaction(optimism_transactions)
-    with optimism_transactions.database.user_write() as write_cursor:
-        optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
-            write_cursor=write_cursor,
-            chain_id=ChainID.OPTIMISM,
-            data={
-                'transactionHash': str(tx_hash),
-                'contractAddress': None,
-                'status': 1,
-                'type': 0,
-                'logs': [],
-            },
-        )
-
-    with (
-        patch.object(optimism_transactions.evm_inquirer, 'get_transaction_by_hash') as transaction_query,  # noqa: E501
-        patch.object(optimism_transactions.evm_inquirer, 'maybe_get_l1_fees', return_value=321) as indexer_fee_query,  # noqa: E501
-        optimism_transactions.database.conn.read_ctx() as cursor,
-    ):
-        tx, _ = optimism_transactions.ensure_tx_data_exists(
-            cursor=cursor,
-            tx_hash=tx_hash,
-            relevant_address=None,
-        )
-        assert tx.l1_fee == 321
-        tx, _ = optimism_transactions.ensure_tx_data_exists(
-            cursor=cursor,
-            tx_hash=tx_hash,
-            relevant_address=None,
-        )
-        assert tx.l1_fee == 321
-
-    transaction_query.assert_not_called()
-    indexer_fee_query.assert_called_once()
-
-
 def test_fresh_transaction_unresolved_fee_is_repaired_on_next_call(
         optimism_transactions: OptimismTransactions,
 ) -> None:
@@ -946,11 +907,12 @@ def test_add_transaction_by_hash_unresolved_fee(
 
 
 @pytest.mark.parametrize(('indexer_fee', 'receipt', 'expected_fee', 'receipt_calls', 'indexer_calls'), [  # noqa: E501
+    (321, {'l1Fee': '0x3e7'}, 321, 0, 1),  # the indexers repair it, no receipt needed
     (None, {'l1Fee': '0x3e7'}, 999, 1, 1),
     (0, {'l1Fee': '0x3e7'}, 0, 0, 1),  # a zero from the indexers is a resolved fee
     (None, {}, None, 2, 2),  # still unresolved, so the second call retries
 ])
-def test_existing_receipt_repairs_fee_from_receipt_when_indexers_cannot(
+def test_existing_receipt_repairs_missing_l1_fee(
         optimism_transactions: OptimismTransactions,
         indexer_fee: int | None,
         receipt: dict[str, Any],
@@ -958,9 +920,10 @@ def test_existing_receipt_repairs_fee_from_receipt_when_indexers_cannot(
         receipt_calls: int,
         indexer_calls: int,
 ) -> None:
-    """When indexers cannot resolve a fee only the receipt is queried, never the whole
-    transaction, since deserializing it would ask the indexers again. A resolved fee,
-    zero included, is stored so a second call queries nothing."""
+    """A missing fee of a tx with a stored receipt is asked from the indexers first, and only
+    when they cannot resolve it is the receipt queried. The whole transaction is never
+    refetched, since deserializing it would ask the indexers again. A resolved fee, zero
+    included, is stored so a second call queries nothing."""
     tx_hash, _ = _add_pending_transaction(optimism_transactions)
     with optimism_transactions.database.user_write() as write_cursor:
         optimism_transactions.dbevmtx.add_or_ignore_receipt_data(
