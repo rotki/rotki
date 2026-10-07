@@ -1,4 +1,5 @@
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
+import { isErr } from 'plainfp/result';
 import { useAssets } from '@/modules/assets/use-assets';
 import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { BackendRestartStatus, useBackendManagement } from '@/modules/shell/app/use-backend-management';
@@ -44,8 +45,11 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
         return ok(none);
       if (!updateThrottle.shouldCheck())
         return ok(none);
-      const { updateAvailable, versions } = await checkForUpdate();
+      const outcome = await checkForUpdate();
+      if (isErr(outcome))
+        return ok(none);
       updateThrottle.recordCheck();
+      const { updateAvailable, versions } = outcome.value;
       if (!updateAvailable || !versions || get(skipped) === versions.remote)
         return ok(none);
       return ok(some({

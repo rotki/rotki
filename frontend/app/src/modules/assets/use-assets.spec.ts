@@ -4,11 +4,11 @@ import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const runTaskResult = vi.fn();
@@ -95,10 +95,10 @@ describe('useAssets', () => {
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
-      expect(result).toEqual({
+      expect(result).toEqual(ok({
         updateAvailable: true,
         versions,
-      });
+      }));
     });
 
     it('should detect no available update', async () => {
@@ -114,23 +114,30 @@ describe('useAssets', () => {
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
-      expect(result).toEqual({
+      expect(result).toEqual(ok({
         updateAvailable: false,
         versions,
-      });
+      }));
     });
 
-    it('should handle error', async () => {
+    it('should report a failed check as a failure, not as no update, and notify', async () => {
       whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.checkForUpdate();
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
-      expect(result).toEqual({
-        updateAvailable: false,
-      });
+      assert(!result.ok);
+      expect(result.error.message).toBe('failed');
+      expect(useNotificationDispatcher().notify).toHaveBeenCalledOnce();
+    });
 
-      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+    it('should report a cancelled check as a failure without notifying', async () => {
+      whenTask(err(Cancelled({ message: 'cancelled' })));
+
+      const result = await store.checkForUpdate();
+
+      assert(!result.ok);
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
   });
 
