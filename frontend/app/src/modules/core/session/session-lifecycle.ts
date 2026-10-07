@@ -134,6 +134,23 @@ export function liveSessionSignal(): AbortSignal | undefined {
 }
 
 /**
+ * Captures the live session, for work that has to know later whether that same session is live.
+ *
+ * @remarks
+ * Requests and task submits only check that *a* session is live. Work whose await is not a
+ * session-bound request, such as a timer, can span a logout and the next login, and would then act
+ * in a session that never started it. Capture the session when the work starts and check the
+ * returned predicate after each such await.
+ *
+ * @returns a predicate that is true while the session live at capture is still live; always false
+ * when none was
+ */
+export function captureSession(): () => boolean {
+  const signal = liveSessionSignal();
+  return () => signal !== undefined && !signal.aborted;
+}
+
+/**
  * Runs every write still waiting to persist the user's input, and resolves once they have landed.
  *
  * @remarks
