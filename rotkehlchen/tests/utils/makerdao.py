@@ -5,7 +5,6 @@ from unittest.mock import patch
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import WAD
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
 
 if TYPE_CHECKING:
     from web3 import Web3
@@ -17,9 +16,15 @@ if TYPE_CHECKING:
 
 
 class VaultTestData(NamedTuple):
+    """Mocked on-chain state of the expected vaults.
+
+    oracle_prices maps a collateral type to the USD price the VAT reports, which only drives
+    the collateralization ratio. The collateral value of a vault comes from the Inquirer price
+    in the main currency instead, so the two must differ to tell them apart."""
     vaults: list[MakerdaoVault]
     proxy_mappings: dict[ChecksumEvmAddress, ChecksumEvmAddress]
     mock_contracts: list[str]
+    oracle_prices: dict[str, FVal]
 
 
 class MockCaller:
@@ -32,7 +37,11 @@ class MockCaller:
 
 class MockContract:
     def __init__(self, test_data, **kwargs):
-        self.caller = MockCaller(test_data, **kwargs)
+        self._caller = MockCaller(test_data, **kwargs)
+
+    def caller(self, **_kwargs) -> MockCaller:
+        """Mirror web3's `contract.caller(block_identifier=...)`, which returns the caller"""
+        return self._caller
 
 
 def mock_get_cdps_asc(
@@ -52,10 +61,6 @@ def mock_get_cdps_asc(
         result[2].append(bytes(ilk))
 
     return result
-
-
-def mock_registry_proxies(self, address) -> ChecksumEvmAddress:
-    return self.test_data.proxy_mappings.get(address, ZERO_ETH_ADDRESS)
 
 
 def mock_vat_urns(
@@ -82,7 +87,7 @@ def mock_vat_ilks(self, ilk) -> tuple[int, int, FVal]:
         )
         if vault_ilk == ilk:
             rate = 100
-            price = vault.collateral.usd_value / vault.collateral.amount
+            price = self.test_data.oracle_prices[vault.collateral_type]
             spot = (price / vault.liquidation_ratio) * RAY
             whatever = 1
             return whatever, rate, spot
@@ -119,14 +124,8 @@ def mock_jug_ilks(_, ilk) -> tuple[int, int]:
 
 def create_web3_mock(web3: Web3, ethereum: EthereumInquirer, test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument
-        mock_proxy_registry = (
-            address == ethereum.contracts.contract('DS_PROXY_REGISTRY').address and
-            'ProxyRegistry' in test_data.mock_contracts
-        )
         if address == string_to_evm_address('0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573') and 'GetCDPS' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, getCdpsAsc=mock_get_cdps_asc)
-        if mock_proxy_registry:
-            return MockContract(test_data, proxies=mock_registry_proxies)
         if address == string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B') and 'VAT' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, urns=mock_vat_urns, ilks=mock_vat_ilks)
         if address == string_to_evm_address('0x65C79fcB50Ca1594B025960e539eD7A9a6D434A3') and 'SPOT' in test_data.mock_contracts:  # noqa: E501
