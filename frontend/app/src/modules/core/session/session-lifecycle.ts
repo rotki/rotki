@@ -134,6 +134,15 @@ export function liveSessionSignal(): AbortSignal | undefined {
 }
 
 /**
+ * The signal for session work that may retry or wait: the live session's, or an already aborted
+ * one when no session is live, so work started outside a session gives up at once rather than
+ * waiting out its retries.
+ */
+export function sessionWorkSignal(): AbortSignal {
+  return liveSessionSignal() ?? AbortSignal.abort();
+}
+
+/**
  * Captures the live session, for work that has to know later whether that same session is live.
  *
  * @remarks

@@ -6,7 +6,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
-import { liveSessionSignal } from '@/modules/core/session/session-lifecycle';
+import { sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { createHandlerRegistry } from './handler-registry';
 import { WebsocketMessage } from './messages';
@@ -93,7 +93,7 @@ export function useMessageHandling(): UseMessageHandling {
     const title = t('actions.notifications.consume.message_title');
 
     try {
-      const messages = await backoff(3, async () => consumeMessages(), 10000, liveSessionSignal());
+      const messages = await backoff(3, async () => consumeMessages(), 10000, sessionWorkSignal());
       const existing = get(notifications).map(({ message }) => message);
 
       const errors = messages.errors

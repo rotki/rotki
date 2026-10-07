@@ -33,20 +33,16 @@ export function startPromise<T>(promise: Promise<T>): void {
 
 type BackoffCall<T> = () => Promise<T>;
 
-export async function wait(duration: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, duration));
-}
-
 /** Waits `duration` ms, or until `signal` aborts, whichever comes first. */
-async function waitUnlessAborted(duration: number, signal: AbortSignal): Promise<void> {
+export async function wait(duration: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     const done = (): void => {
       clearTimeout(timer);
-      signal.removeEventListener('abort', done);
+      signal?.removeEventListener('abort', done);
       resolve();
     };
     const timer = setTimeout(done, duration);
-    signal.addEventListener('abort', done, { once: true });
+    signal?.addEventListener('abort', done, { once: true });
   });
 }
 
@@ -65,11 +61,7 @@ export async function backoff<T>(retries: number, call: BackoffCall<T>, delay = 
     if (retries <= 1 || signal?.aborted)
       throw error;
 
-    if (signal)
-      await waitUnlessAborted(delay, signal);
-    else
-      await wait(delay);
-
+    await wait(delay, signal);
     if (signal?.aborted)
       throw error;
 
