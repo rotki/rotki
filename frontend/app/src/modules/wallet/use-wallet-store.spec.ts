@@ -3,6 +3,7 @@ import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { WALLET_MODES } from './constants';
 
 const txParams: TransactionParams = { amount: '1', chain: 'ethereum', native: true, to: '0xto' };
@@ -169,6 +170,19 @@ describe('modules/wallet/use-wallet-store', () => {
     // back to local bridge, the mode disconnect() clears the provider for
     store.walletMode = WALLET_MODES.LOCAL_BRIDGE;
     await vi.waitFor(() => expect(providers().clearProvider).toHaveBeenCalledTimes(1));
+    expect(providers().clearProvider).toHaveBeenCalledWith({ forget: true });
+  });
+
+  it('should keep the remembered provider when the logout reset changes the mode', async () => {
+    const store = await getStore();
+    store.walletMode = WALLET_MODES.WALLET_CONNECT;
+    await nextTick();
+
+    endSession();
+    store.walletMode = WALLET_MODES.LOCAL_BRIDGE;
+
+    await vi.waitFor(() => expect(providers().clearProvider).toHaveBeenCalledTimes(1));
+    expect(providers().clearProvider).toHaveBeenCalledWith({ forget: false });
   });
 
   it('should reflect walletconnect mode in isWalletConnect', async () => {

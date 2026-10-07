@@ -65,6 +65,10 @@ function resolveActiveId(names: PinnedName[], storedActive: Nullable<PinnedName>
  * (see `tabsKeyFor`). Restore is non-intrusive: the tabs come back but the rail stays collapsed
  * until the user opens it (the indicator shows the count). Panels flagged `restorable: false` in
  * the registry (they need live context) are skipped. Call once from the app shell.
+ *
+ * @remarks
+ * Both are saved only while logged in: the store reset at logout empties the rail and restores the
+ * default width, and saving that would lose the user's layout.
  */
 export function usePinnedPersistence(): void {
   const store = useAreaVisibilityStore();
@@ -91,7 +95,8 @@ export function usePinnedPersistence(): void {
   }
 
   watch(pinnedWidth, (width) => {
-    set(persistedWidth, width);
+    if (get(logged))
+      set(persistedWidth, width);
   });
 
   watch([pinnedPanels, activePinnedId], ([panels, active]) => {

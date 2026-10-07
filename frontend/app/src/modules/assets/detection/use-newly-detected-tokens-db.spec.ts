@@ -4,6 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { useNewlyDetectedTokensDb } from '@/modules/assets/detection/use-newly-detected-tokens-db';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useDatabase } from '@/modules/user-data/use-database';
 import { NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
@@ -421,6 +422,24 @@ describe('useNewlyDetectedTokensDb', () => {
       await addToken({ tokenIdentifier: 'token-1', tokenKind: NewDetectedTokenKind.EVM });
       await addToken({ tokenIdentifier: 'token-2', tokenKind: NewDetectedTokenKind.EVM });
 
+      await prune();
+
+      expect(await count()).toBe(2);
+    });
+
+    it('should not prune with no session live, when logout has reset the limits to their defaults', async () => {
+      const { db } = useDatabase();
+      const { count, isPruning, prune } = useNewlyDetectedTokensDb();
+      const now = Date.now();
+      await db().newlyDetectedTokens.bulkAdd([
+        { tokenIdentifier: 'old', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 2000 },
+        { tokenIdentifier: 'new', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 1000 },
+      ]);
+
+      endSession();
+      useSettingsRepo().updateFrontend({ newlyDetectedTokensMaxCount: 1 });
+      await flushPromises();
+      await until(isPruning).toBe(false);
       await prune();
 
       expect(await count()).toBe(2);

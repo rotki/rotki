@@ -5,6 +5,7 @@ import type { ItemFilter } from '@/modules/user-data/pagination';
 import { transformCase } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { logger } from '@/modules/core/common/logging/logging';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useDatabase } from '@/modules/user-data/use-database';
 import {
@@ -160,8 +161,14 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
    * Concurrent calls are dropped rather than queued: several settings watchers and a timer all
    * reach here, and two passes deleting from the same table would race over what the other has
    * already removed. A dropped call is harmless, since the next tick prunes what this one skipped.
+   *
+   * It prunes only while a session is live: the limits are the user's settings, and the store reset
+   * at logout puts them back to their defaults, which would delete rows the user's own limits keep.
    */
   async function prune(): Promise<void> {
+    if (!hasLiveSession())
+      return;
+
     if (get(isPruning)) {
       logger.debug('Prune already in progress, skipping');
       return;

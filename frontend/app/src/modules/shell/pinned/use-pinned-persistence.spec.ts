@@ -7,6 +7,7 @@ import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
+import { PINNED_DEFAULT_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
 import { usePinnedPersistence } from '@/modules/shell/pinned/use-pinned-persistence';
 
 const WIDTH_KEY = 'rotki.pinned.width';
@@ -179,6 +180,21 @@ describe('usePinnedPersistence', () => {
     // The rail is empty, but what we restore on the next sign-in must survive.
     expect(get(store.pinnedPanels)).toHaveLength(0);
     expect(readTabs().names).toEqual([PinnedNames.DATA_ISSUES]);
+  });
+
+  it('should keep the persisted width when logging out restores the default width', async () => {
+    const { pinnedWidth } = storeToRefs(useAreaVisibilityStore());
+    const { logged } = storeToRefs(useSessionAuthStore());
+    scope.run(() => usePinnedPersistence());
+
+    set(pinnedWidth, 640);
+    await nextTick();
+
+    set(logged, false);
+    set(pinnedWidth, PINNED_DEFAULT_WIDTH);
+    await nextTick();
+
+    expect(localStorage.getItem(WIDTH_KEY)).toBe('640');
   });
 
   it('should restore the tabs again on the next sign-in', async () => {
