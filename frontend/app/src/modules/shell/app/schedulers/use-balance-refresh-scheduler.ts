@@ -16,22 +16,19 @@ export function useBalanceRefreshScheduler(): UseBalanceRefreshSchedulerReturn {
   const refreshPeriod = useSetting('refreshPeriod');
   const { autoRefresh } = useBalanceFetching();
 
-  const period = get(refreshPeriod) * MINUTES_TO_MS;
-
   const scheduler = useIntervalScheduler({
     callback(): void {
       if (get(canRequestData))
         startPromise(autoRefresh());
     },
-    intervalMs: Math.max(period, 1),
+    intervalMs: () => get(refreshPeriod) * MINUTES_TO_MS,
   });
 
   function start(): void {
     if (import.meta.env.VITE_NO_AUTO_FETCH === 'true')
       return;
 
-    if (period > 0)
-      scheduler.start();
+    scheduler.start();
   }
 
   return {

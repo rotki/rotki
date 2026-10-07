@@ -1,9 +1,10 @@
+import type { MaybeRefOrGetter } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePeriodicPollingScheduler } from './use-periodic-polling-scheduler';
 
 interface SchedulerOptions {
   callback: () => void;
-  intervalMs: number;
+  intervalMs: MaybeRefOrGetter<number>;
 }
 
 let capturedOptions: SchedulerOptions | undefined;
@@ -54,7 +55,13 @@ describe('usePeriodicPollingScheduler', () => {
 
   it('should compute the interval from the query period in seconds', () => {
     usePeriodicPollingScheduler();
-    expect(capturedOptions?.intervalMs).toBe(5000);
+    expect(toValue(capturedOptions?.intervalMs)).toBe(5000);
+  });
+
+  it('should read the query period when the interval is armed, not when it is built', () => {
+    usePeriodicPollingScheduler();
+    set(queryPeriod, 12);
+    expect(toValue(capturedOptions?.intervalMs)).toBe(12_000);
   });
 
   it('should fetch periodic data when data can be requested', () => {
