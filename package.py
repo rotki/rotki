@@ -187,6 +187,18 @@ def log_group(name: str) -> Callable:
     return decorate
 
 
+def run_security(step: str, arguments: str) -> None:
+    """
+    Runs one macOS ``security`` keychain step and stops the build when it fails.
+
+    Only the step name is logged, never the command: the certificate import carries the
+    certificate password.
+    """
+    if subprocess.call(f'security {arguments}', shell=True) != 0:
+        logger.error('keychain setup failed at: %s', step)
+        sys.exit(1)
+
+
 class Environment:
     def __init__(self) -> None:
         self.arch = platform.machine()
@@ -583,26 +595,24 @@ class MacPackaging:
             encoding='utf8',
         ).strip()
 
-        # Create a keychain
-        subprocess.call(f'security create-keychain -p actions {keychain}', shell=True)
+        run_security('create keychain', f'create-keychain -p actions {keychain}')
         # A new keychain auto-locks 300 s after it is unlocked, and unlocking it again does not
         # reset that. PyInstaller re-signs rotki-core long after colibri and starling were
         # signed, so on a slow runner its codesign waited forever on a password prompt.
         # Allow 6 hours.
-        subprocess.call(f'security set-keychain-settings -lut 21600 {keychain}', shell=True)
+        run_security('set keychain timeout', f'set-keychain-settings -lut 21600 {keychain}')
         # Logs "timeout=21600s", so a build log shows the setting took
         subprocess.call(f'security show-keychain-info {keychain}', shell=True)
         # Make the keychain the default so identities are found
-        subprocess.call(f'security default-keychain -s {keychain}', shell=True)
-        # Unlock the keychains
-        subprocess.call(f'security unlock-keychain -p actions {keychain}', shell=True)
-        subprocess.call(
-            f'security import {p12!s} -k {keychain} -P {csc_password} -T /usr/bin/codesign;',
-            shell=True,
+        run_security('make keychain default', f'default-keychain -s {keychain}')
+        run_security('unlock keychain', f'unlock-keychain -p actions {keychain}')
+        run_security(
+            'import certificate',
+            f'import {p12!s} -k {keychain} -P {csc_password} -T /usr/bin/codesign',
         )
-        subprocess.call(
-            f'security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k actions {keychain}',  # noqa: E501
-            shell=True,
+        run_security(
+            'set key partition list',
+            f'set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k actions {keychain}',  # noqa: E501
         )
 
         return True
