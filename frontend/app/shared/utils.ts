@@ -37,19 +37,42 @@ export async function wait(duration: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, duration));
 }
 
-export async function backoff<T>(retries: number, call: BackoffCall<T>, delay = 5000): Promise<T> {
-  let result: T;
+/** Waits `duration` ms, or until `signal` aborts, whichever comes first. */
+async function waitUnlessAborted(duration: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, duration);
+    signal.addEventListener('abort', done, { once: true });
+  });
+}
+
+/**
+ * Calls `call`, retrying a failure up to `retries` attempts in all, doubling `delay` (ms) each time.
+ *
+ * @remarks
+ * Once `signal` aborts, the last failure is thrown instead of retrying, including from inside a
+ * wait, so a caller holding a running flag across the retries gets it back at once.
+ */
+export async function backoff<T>(retries: number, call: BackoffCall<T>, delay = 5000, signal?: AbortSignal): Promise<T> {
   try {
-    result = await call();
+    return await call();
   }
   catch (error) {
-    if (retries > 1) {
-      await wait(delay);
-      result = await backoff(retries - 1, call, delay * 2);
-    }
-    else {
+    if (retries <= 1 || signal?.aborted)
       throw error;
-    }
+
+    if (signal)
+      await waitUnlessAborted(delay, signal);
+    else
+      await wait(delay);
+
+    if (signal?.aborted)
+      throw error;
+
+    return backoff(retries - 1, call, delay * 2, signal);
   }
-  return result;
 }
