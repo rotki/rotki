@@ -137,6 +137,7 @@ def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[
     May raise - RemoteError if the metadata is invalid.
     """
     airdrops: dict[str, Airdrop] = {}
+    asset_identifiers: list[str] = []
     for protocol_name, airdrop_data in airdrops_data.items():
         try:
             if (new_asset_data := airdrop_data.get('new_asset_data')) is not None:
@@ -196,8 +197,6 @@ def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[
                         cryptocompare=new_asset_data.get('cryptocompare'),
                     )
                     GlobalDBHandler.add_asset(crypto_asset)
-                    with database.user_write() as write_cursor:
-                        database.add_asset_identifiers(write_cursor, [crypto_asset.identifier])
             else:
                 try:
                     crypto_asset = Asset(airdrop_data['asset_identifier']).resolve_to_crypto_asset()  # noqa: E501
@@ -237,8 +236,14 @@ def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[
                 continue
 
             airdrops[protocol_name] = new_airdrop
+            asset_identifiers.append(crypto_asset.identifier)
         except KeyError as e:
             log.error(f'Airdrops Index does not contain a valid key for {protocol_name}. {e!s}')
+
+    if len(asset_identifiers) != 0:  # one transaction instead of one per airdrop
+        with database.user_write() as write_cursor:
+            database.add_asset_identifiers(write_cursor, asset_identifiers)
+
     return airdrops
 
 
