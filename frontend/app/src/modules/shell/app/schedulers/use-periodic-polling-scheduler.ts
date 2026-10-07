@@ -30,7 +30,7 @@ export function usePeriodicPollingScheduler(): UsePeriodicPollingSchedulerReturn
 
   const scheduler = useIntervalScheduler({
     callback: fetch,
-    intervalMs: get(queryPeriod) * SECONDS_TO_MS,
+    intervalMs: () => get(queryPeriod) * SECONDS_TO_MS,
   });
 
   return {

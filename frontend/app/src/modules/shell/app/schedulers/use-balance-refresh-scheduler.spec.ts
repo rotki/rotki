@@ -1,25 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceRefreshScheduler } from './use-balance-refresh-scheduler';
 
-interface SchedulerOptions {
-  callback: () => void;
-  intervalMs: number;
-}
+const MINUTE = 60 * 1000;
 
-let capturedOptions: SchedulerOptions | undefined;
-const schedulerStart = vi.fn();
-const schedulerStop = vi.fn();
-
-const canRequestData = ref<boolean>(false);
-const refreshPeriod = ref<number>(0);
-const autoRefresh = vi.fn().mockResolvedValue(undefined);
-
-vi.mock('./use-interval-scheduler', () => ({
-  useIntervalScheduler: (options: SchedulerOptions): object => {
-    capturedOptions = options;
-    return { start: schedulerStart, stop: schedulerStop };
-  },
-}));
+const canRequestData = ref<boolean>(true);
+const refreshPeriod = ref<number>(-1);
+const autoRefresh = vi.fn<() => Promise<void>>();
 
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: (): object => ({ canRequestData }),
@@ -34,64 +20,110 @@ vi.mock('@/modules/balances/use-balance-fetching', () => ({
 }));
 
 describe('useBalanceRefreshScheduler', () => {
+  let scope: ReturnType<typeof effectScope>;
+
+  function startScheduler(): ReturnType<typeof useBalanceRefreshScheduler> {
+    const scheduler = scope.run(() => useBalanceRefreshScheduler());
+    assert(scheduler);
+    scheduler.start();
+    return scheduler;
+  }
+
+  async function changePeriod(minutes: number): Promise<void> {
+    set(refreshPeriod, minutes);
+    await nextTick();
+  }
+
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
-    capturedOptions = undefined;
-    set(canRequestData, false);
-    set(refreshPeriod, 0);
+    autoRefresh.mockResolvedValue(undefined);
+    scope = effectScope();
+    set(canRequestData, true);
+    set(refreshPeriod, -1);
   });
 
   afterEach(() => {
+    scope.stop();
+    vi.useRealTimers();
     vi.unstubAllEnvs();
   });
 
-  it('should convert the refresh period from minutes to milliseconds', () => {
-    set(refreshPeriod, 5);
-    useBalanceRefreshScheduler();
-    expect(capturedOptions?.intervalMs).toBe(5 * 60 * 1000);
-  });
+  it('should refresh once per refresh period', async () => {
+    set(refreshPeriod, 30);
+    startScheduler();
 
-  it('should floor the interval at 1ms when the period is zero', () => {
-    set(refreshPeriod, 0);
-    useBalanceRefreshScheduler();
-    expect(capturedOptions?.intervalMs).toBe(1);
-  });
-
-  it('should auto refresh when data can be requested', () => {
-    set(canRequestData, true);
-    useBalanceRefreshScheduler();
-    capturedOptions?.callback();
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
     expect(autoRefresh).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
+    expect(autoRefresh).toHaveBeenCalledTimes(2);
   });
 
-  it('should not auto refresh when data cannot be requested', () => {
-    set(canRequestData, false);
-    useBalanceRefreshScheduler();
-    capturedOptions?.callback();
+  it('should stay idle while the refresh period is disabled', async () => {
+    startScheduler();
+
+    await vi.advanceTimersByTimeAsync(24 * 60 * MINUTE);
+
     expect(autoRefresh).not.toHaveBeenCalled();
   });
 
-  it('should start the scheduler when the period is positive', () => {
-    set(refreshPeriod, 5);
-    useBalanceRefreshScheduler().start();
-    expect(schedulerStart).toHaveBeenCalledOnce();
+  it('should start refreshing when the period is enabled after the scheduler started', async () => {
+    startScheduler();
+
+    await changePeriod(30);
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
+
+    expect(autoRefresh).toHaveBeenCalledOnce();
   });
 
-  it('should not start the scheduler when the period is zero', () => {
-    set(refreshPeriod, 0);
-    useBalanceRefreshScheduler().start();
-    expect(schedulerStart).not.toHaveBeenCalled();
+  it('should follow a period change while running', async () => {
+    set(refreshPeriod, 60);
+    startScheduler();
+
+    await changePeriod(30);
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
+
+    expect(autoRefresh).toHaveBeenCalledOnce();
   });
 
-  it('should not start when auto fetch is disabled via env', () => {
+  it('should stop refreshing when the period is disabled while running', async () => {
+    set(refreshPeriod, 30);
+    startScheduler();
+
+    await changePeriod(-1);
+    await vi.advanceTimersByTimeAsync(60 * MINUTE);
+
+    expect(autoRefresh).not.toHaveBeenCalled();
+  });
+
+  it('should not arm on a period change after it was stopped', async () => {
+    set(refreshPeriod, 30);
+    startScheduler().stop();
+
+    await changePeriod(5);
+    await vi.advanceTimersByTimeAsync(60 * MINUTE);
+
+    expect(autoRefresh).not.toHaveBeenCalled();
+  });
+
+  it('should skip a tick while data cannot be requested', async () => {
+    set(refreshPeriod, 30);
+    set(canRequestData, false);
+    startScheduler();
+
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
+
+    expect(autoRefresh).not.toHaveBeenCalled();
+  });
+
+  it('should not start when auto fetch is disabled via env', async () => {
     vi.stubEnv('VITE_NO_AUTO_FETCH', 'true');
-    set(refreshPeriod, 5);
-    useBalanceRefreshScheduler().start();
-    expect(schedulerStart).not.toHaveBeenCalled();
-  });
+    set(refreshPeriod, 30);
+    startScheduler();
 
-  it('should delegate stop to the interval scheduler', () => {
-    useBalanceRefreshScheduler().stop();
-    expect(schedulerStop).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(30 * MINUTE);
+
+    expect(autoRefresh).not.toHaveBeenCalled();
   });
 });

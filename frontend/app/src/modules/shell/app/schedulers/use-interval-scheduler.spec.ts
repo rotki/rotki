@@ -100,6 +100,50 @@ describe('useIntervalScheduler', () => {
     scheduler.stop();
   });
 
+  it('should re-arm at the new interval when it changes while running', async () => {
+    const callback = vi.fn().mockResolvedValue(undefined);
+    const intervalMs = ref<number>(10_000);
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs }))!;
+
+    scheduler.start();
+    set(intervalMs, 1000);
+    await nextTick();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(callback).toHaveBeenCalledOnce();
+
+    scheduler.stop();
+  });
+
+  it('should stay idle while the interval is not positive, and arm once it is', async () => {
+    const callback = vi.fn().mockResolvedValue(undefined);
+    const intervalMs = ref<number>(-1);
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs }))!;
+
+    scheduler.start();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(callback).not.toHaveBeenCalled();
+
+    set(intervalMs, 1000);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(callback).toHaveBeenCalledOnce();
+
+    scheduler.stop();
+  });
+
+  it('should not arm on an interval change while stopped', async () => {
+    const callback = vi.fn().mockResolvedValue(undefined);
+    const intervalMs = ref<number>(1000);
+    scope.run(() => useIntervalScheduler({ callback, intervalMs }));
+
+    set(intervalMs, 500);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
   it('should handle stop when not started', () => {
     const callback = vi.fn();
     const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
