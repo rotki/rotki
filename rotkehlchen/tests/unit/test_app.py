@@ -153,14 +153,8 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
 @mock.patch('os.access')
 def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access, cli_args):
     mock_os_access.return_value = False
-    success = True
-    try:
-        with pytest.raises(SystemPermissionError):
-            Rotkehlchen(args=cli_args)
-    except Exception:  # pylint: disable=broad-except
-        success = False
-
-    assert success is True
+    with pytest.raises(SystemPermissionError):
+        Rotkehlchen(args=cli_args)
 
 
 def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
