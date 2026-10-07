@@ -601,6 +601,26 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 elif _is_rate_limit_error(e):
                     self.mark_node_rate_limited(node_info, str(e))
                 else:
+                    if (
+                        rpc_node is not None and rpc_node.is_archive and
+                        kwargs.get('block_identifier', 'latest') != 'latest' and
+                        any(message in str(e).lower() for message in (
+                            'old data not available due to pruning',
+                            'historical state pruned',
+                            'missing trie node',
+                            'state not available',
+                        ))
+                    ):
+                        with self._nodes_lock:
+                            if self.rpc_mapping.get(node_info) is rpc_node:
+                                self.rpc_mapping[node_info] = rpc_node._replace(is_archive=False)
+                                self.database.set_rpc_node_capabilities(
+                                    node_info, is_archive=False, is_pruned=rpc_node.is_pruned,
+                                )
+                                log.warning(
+                                    f'Node {node_info.name} cannot serve historical state. '
+                                    f'Removing its archive flag: {e!s}',
+                                )
                     self.mark_node_failure(node_info, str(e))
                 # Catch all possible errors here and just try next node call
                 continue
