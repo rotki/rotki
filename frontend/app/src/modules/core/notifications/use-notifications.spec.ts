@@ -1,6 +1,7 @@
 import { Priority, Severity } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 
 const mockNotify = vi.fn();
 const mockSetMessage = vi.fn();
@@ -112,5 +113,21 @@ describe('useNotifications', () => {
       success: false,
       title: 'Error Title',
     });
+  });
+
+  it('should drop an error message raised with no live session', () => {
+    endSession();
+    const { showErrorMessage } = useNotifications();
+    showErrorMessage('Error Title', 'Error description');
+
+    expect(mockSetMessage).not.toHaveBeenCalled();
+  });
+
+  it('should show a sessionless error message with no live session', () => {
+    endSession();
+    const { showErrorMessage } = useNotifications();
+    showErrorMessage('Error Title', 'Error description', { sessionless: true });
+
+    expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'Error description', success: false }));
   });
 });

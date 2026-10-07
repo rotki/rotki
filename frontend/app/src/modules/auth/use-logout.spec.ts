@@ -4,7 +4,7 @@ import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLogout } from '@/modules/auth/use-logout';
-import { hasLiveSession, onPendingWrite } from '@/modules/core/session/session-lifecycle';
+import { endSession, hasLiveSession, onPendingWrite } from '@/modules/core/session/session-lifecycle';
 
 const mockNavigateToUserLogin = vi.fn();
 const mockCallLogout = vi.fn();
@@ -64,6 +64,7 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: {
+    debug: vi.fn(),
     error: vi.fn(),
   },
 }));
@@ -138,6 +139,38 @@ describe('modules::account::use-logout', () => {
       await logout();
 
       expect(callOrder).toEqual(['backendLogout', 'resetMcpSession']);
+    });
+
+    it('should show a failed backend logout although its session has ended', async () => {
+      mockCallLogout.mockRejectedValue(new Error('backend down'));
+
+      const { logout } = useLogout();
+      await logout();
+
+      expect(hasLiveSession()).toBe(false);
+      expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'backend down', title: 'Logout failed' }));
+    });
+
+    it('should show a failed MCP logout although its session has ended', async () => {
+      mockResetMcpSession.mockRejectedValue(new Error('mcp down'));
+
+      const { logout } = useLogout();
+      await logout();
+
+      expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'mcp down', title: 'MCP logout failed' }));
+    });
+  });
+
+  describe('logoutRemoteSession', () => {
+    it('should show its failure on the logged-out screen', async () => {
+      mockGetLoggedUsers.mockRejectedValue(new Error('unreachable'));
+      endSession();
+
+      const { logoutRemoteSession } = useLogout();
+      const status = await logoutRemoteSession();
+
+      expect(status).toEqual({ message: 'unreachable', success: false });
+      expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'unreachable', title: 'Remote session logout failure' }));
     });
   });
 

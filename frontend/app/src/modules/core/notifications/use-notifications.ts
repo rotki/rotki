@@ -1,6 +1,8 @@
 import { type Notification, type NotificationData, Priority, Severity } from '@rotki/common';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 export { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -41,8 +43,17 @@ interface UseNotificationsReturn {
    * Show an error message dialog.
    * When called with two args: `showErrorMessage(title, description)`.
    * When called with one arg: `showErrorMessage(description)` — title is auto-generated.
+   *
+   * @remarks
+   * Dropped when no session is live, like a notification, unless `options.sessionless` says the
+   * error belongs to the logged-out screen (a logout that failed after its session ended).
    */
-  showErrorMessage: (title: string, description?: string) => void;
+  showErrorMessage: (title: string, description?: string, options?: ErrorMessageOptions) => void;
+}
+
+interface ErrorMessageOptions {
+  /** Shows the dialog even with no live session. */
+  readonly sessionless?: boolean;
 }
 
 export function useNotifications(): UseNotificationsReturn {
@@ -91,7 +102,11 @@ export function useNotifications(): UseNotificationsReturn {
     setMessage({ description: description ?? title, success: true, ...(description ? { title } : {}) });
   }
 
-  function showErrorMessage(title: string, description?: string): void {
+  function showErrorMessage(title: string, description?: string, options?: ErrorMessageOptions): void {
+    if (!options?.sessionless && !hasLiveSession()) {
+      logger.debug(`dropped error message with no live session: ${title}`);
+      return;
+    }
     setMessage({ description: description ?? title, success: false, ...(description ? { title } : {}) });
   }
 
