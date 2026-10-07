@@ -4,6 +4,7 @@ import { useAssets } from '@/modules/assets/use-assets';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { isActionable } from '@/modules/core/tasks/task-result';
 import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -73,14 +74,17 @@ export function useRestoreAssetDb(): UseRestoreAssetDbReturn {
     if (get(loading))
       return;
 
-    const result = await restoreAssetsDatabase(resetType);
+    const outcome = await restoreAssetsDatabase(resetType);
 
-    if (result.success) {
+    if (outcome.ok) {
       showDoneConfirmation();
       return;
     }
 
-    const { message } = result;
+    if (!isActionable(outcome.error))
+      return;
+
+    const { message } = outcome.error;
     if (message.includes(UNDELETABLE_ASSETS))
       showDoubleConfirmation(resetType);
 

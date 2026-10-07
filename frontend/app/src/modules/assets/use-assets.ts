@@ -13,7 +13,7 @@ import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -31,7 +31,8 @@ interface UseAssetsReturn {
   mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
   importCustomAssets: (file: File) => Promise<ActionStatus>;
   exportCustomAssets: () => Promise<ActionStatus | ExportCustomAssetsResult>;
-  restoreAssetsDatabase: (resetType: 'hard' | 'soft') => Promise<ActionStatus>;
+  /** Fails as not actionable when the reset was cancelled, so a caller can stay quiet. */
+  restoreAssetsDatabase: (resetType: 'hard' | 'soft') => Promise<Result<void, TaskError>>;
 }
 
 export function useAssets(): UseAssetsReturn {
@@ -215,7 +216,7 @@ export function useAssets(): UseAssetsReturn {
     return { message: '', success: false };
   };
 
-  const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<ActionStatus> => {
+  const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<Result<void, TaskError>> => {
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.RESET),
       kind: ActivityKind.ASSETS,
@@ -232,15 +233,8 @@ export function useAssets(): UseAssetsReturn {
       title: t('task_center.group.assets'),
     });
 
-    if (!isErr(outcome))
-      return { success: true };
-
-    if (isActionable(outcome.error)) {
-      logger.error(outcome.error.message);
-      return { message: outcome.error.message, success: false };
-    }
-
-    return { message: '', success: false };
+    onActionableError(outcome, error => logger.error(error.message));
+    return outcome;
   };
 
   return {
