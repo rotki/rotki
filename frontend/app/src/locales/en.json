@@ -561,11 +561,6 @@
       },
       "create_oracle_cache": {
         "already_running": "Task is already running",
-        "error": {
-          "message": "Failed to create oracle cache: {message}",
-          "title": "Create oracle cache"
-        },
-        "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
         "task": "Building the {source} price cache from {fromAsset} to {toAsset}"
       },
       "detect_tokens": {

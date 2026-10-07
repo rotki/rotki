@@ -2,7 +2,9 @@ import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import { componentVm } from '@test/utils/component-vm';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
 const mockCreateOracleCache = vi.fn();
@@ -67,7 +69,7 @@ interface CacheContentVm {
 describe('oracleCacheContent', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    mockCreateOracleCache.mockClear().mockResolvedValue({ success: true });
+    mockCreateOracleCache.mockClear().mockResolvedValue(ok(undefined));
     mockNotify.mockClear();
     mockGetPriceCache.mockClear().mockResolvedValue([]);
     mockDeletePriceCache.mockClear().mockResolvedValue(true);
@@ -105,8 +107,8 @@ describe('oracleCacheContent', () => {
     });
   });
 
-  it('should notify on populate error and not reload caches', async () => {
-    mockCreateOracleCache.mockResolvedValueOnce({ message: 'Rate limited', success: false });
+  it('should not reload caches or add a second message after a failed populate', async () => {
+    mockCreateOracleCache.mockResolvedValueOnce(err(TaskFailed({ message: 'Rate limited' })));
     const wrapper = createWrapper();
     await flushPromises();
     mockGetPriceCache.mockClear();
@@ -116,10 +118,20 @@ describe('oracleCacheContent', () => {
     vm.newToAsset = 'USD';
     await vm.populateCache();
 
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ severity: 'error' }),
-    );
+    expect(mockNotify).not.toHaveBeenCalled();
     expect(mockGetPriceCache).not.toHaveBeenCalled();
+  });
+
+  it('should reload caches without a second message after a successful populate', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+    mockGetPriceCache.mockClear();
+
+    const vm = componentVm<CacheContentVm>(wrapper);
+    await vm.populateCache();
+
+    expect(mockGetPriceCache).toHaveBeenCalledOnce();
+    expect(mockNotify).not.toHaveBeenCalled();
   });
 
   it('should delete a cache entry and reload', async () => {
