@@ -30,9 +30,16 @@ export class TaskDockPage {
     }).toPass({ timeout: TIMEOUT_MEDIUM });
   }
 
-  /** A job's row, found by its title whether the row shows it as the label or the line under it. */
+  /**
+   * A job's row, found by its title whether the row shows it as the label or the line under it.
+   *
+   * @remarks
+   * Matched on the `title` attribute the label and that line carry, not on the row's text: a graph
+   * row lists its lanes by name in its breakdown, so the login's "Blockchain balances" row also
+   * contains the text "All balances".
+   */
   private row(title: string): Locator {
-    return this.panel.getByTestId('dock-activity-row').filter({ hasText: title });
+    return this.panel.getByTestId('dock-activity-row').filter({ has: this.page.getByTitle(title, { exact: true }) });
   }
 
   async expectRow(label: string, status: RowStatus): Promise<void> {
