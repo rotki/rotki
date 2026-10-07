@@ -424,31 +424,17 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
 
 
 @pytest.mark.parametrize('our_version', ['1.35.0'])  # set a normal version for CI
-def test_no_update_due_to_min_rotki(data_updater: RotkiDataUpdater) -> None:
-    """Check updates don't execute if there is a min rotki version requirement greater than ours"""
+@pytest.mark.parametrize('version_limits', [
+    {'min_version': '99.99.99'},
+    {'max_version': '1.0.0'},
+])
+def test_no_update_due_to_rotki_version_limits(
+        data_updater: RotkiDataUpdater,
+        version_limits: dict[str, str],
+) -> None:
+    """Check updates don't execute if our rotki version is outside the min/max limits"""
     with ExitStack() as stack:
-        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1, min_version='99.99.99')))  # noqa: E501
-        patches = [
-            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
-            for update_type in UpdateType
-        ]
-        reset_update_type_mappings(data_updater)
-        data_updater.check_for_updates()
-
-    assert all(patch.call_count == 0 for patch in patches)
-    with data_updater.user_db.conn.read_ctx() as cursor:
-        cursor.execute(  # also make sure latest DB value is not changed
-            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
-            [x.serialize() for x in UpdateType],
-        )
-        assert {x[0] for x in cursor} == set()
-
-
-@pytest.mark.parametrize('our_version', ['1.35.0'])  # set a normal version for CI
-def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
-    """Check updates don't execute if there is a max rotki version requirement lower than ours"""
-    with ExitStack() as stack:
-        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1, max_version='1.0.0')))  # noqa: E501
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1, **version_limits)))  # noqa: E501
         patches = [
             stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
             for update_type in UpdateType
