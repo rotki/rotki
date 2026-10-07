@@ -3,10 +3,11 @@ import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { none, ok, some } from 'plainfp';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { UnlockErrorKind, UnlockPhase } from './use-unlock-flow';
 import { createUnlockFlowController, type UseUnlockFlowControllerReturn } from './use-unlock-flow-controller';
 
@@ -143,6 +144,61 @@ describe('useUnlockFlowController', () => {
     expect(h.handleSessionReady).toHaveBeenCalled();
     expect(h.updateFrontendSetting).toHaveBeenCalled();
     expect(h.disconnectWallet).toHaveBeenCalled();
+    expect(h.checkIfPasswordConfirmationNeeded).not.toHaveBeenCalled();
+  });
+
+  /** A fast account creation that ran a database upgrade, so `onReady` pads before loading. */
+  function padCreate(): void {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    setUsernameOnLoad('bob');
+    set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+  }
+
+  it('should not load the next session when a logout and a login land inside the create padding', async () => {
+    padCreate();
+
+    await controller.startCreate({ credentials: { password: 'p', username: 'bob' }, initialSettings: { submitUsageAnalytics: true } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+
+    endSession();
+    beginSession();
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(h.handleSessionReady).not.toHaveBeenCalled();
+  });
+
+  it('should load the session after the create padding when it is still live', async () => {
+    padCreate();
+
+    await controller.startCreate({ credentials: { password: 'p', username: 'bob' }, initialSettings: { submitUsageAnalytics: true } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.handleSessionReady).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(h.handleSessionReady).toHaveBeenCalledOnce();
+  });
+
+  it('should not run the login follow-ups in the next session when a logout and a login land during the session load', async () => {
+    let finishLoad: () => void = () => {};
+    h.handleSessionReady.mockImplementationOnce(async () => new Promise<void>((resolve) => {
+      finishLoad = resolve;
+    }));
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await flushPromises();
+    expect(h.handleSessionReady).toHaveBeenCalledOnce();
+
+    endSession();
+    beginSession();
+    finishLoad();
+    await flushPromises();
+
+    expect(h.disconnectWallet).not.toHaveBeenCalled();
     expect(h.checkIfPasswordConfirmationNeeded).not.toHaveBeenCalled();
   });
 

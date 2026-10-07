@@ -8,6 +8,7 @@ import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
+import { captureSession } from '@/modules/core/session/session-lifecycle';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
 import { useSessionReady } from './use-session-ready';
@@ -123,28 +124,45 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   });
 
   /**
+   * Keeps the upgrade progress of an account creation on screen for a moment.
+   *
+   * @remarks
+   * Only a create that ran an upgrade and was fast is padded, so the progress bar is seen at all;
+   * a slow upgrade was on screen long enough already.
+   */
+  async function padFastCreateUpgrade(current: UnlockMode): Promise<void> {
+    if (current === 'create' && get(upgradeVisible) && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
+      await wait(3000);
+  }
+
+  /**
    * Runs the post-unlock side-effects once the flow reports ready.
    *
    * @remarks
    * `ready.resumed`, not the caller's mode, picks the branch: a saved-password auto-unlock can end
-   * in either. A create that also ran an upgrade is padded only when it was fast, so the progress
-   * bar is seen at all; a slow upgrade was on screen long enough already.
+   * in either.
+   *
+   * Stops at each await if the session that became ready has ended by then: a logout and a fresh
+   * login inside the padding or the session load would otherwise act on the new session from this
+   * one.
    */
   async function onReady(): Promise<void> {
     const current = get(mode);
     const state = get(flow.state);
     const resumed = state.kind === UnlockPhase.ready && state.resumed;
+    const sameSession = captureSession();
 
-    if (current === 'create' && get(upgradeVisible) && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
-      await wait(3000);
+    await padFastCreateUpgrade(current);
     if (!resumed && current !== 'create')
       await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
+    if (!sameSession())
+      return;
     if (current === 'create')
       set(savedUsername, get(username));
 
     await handleSessionReady();
 
-    if (current === 'create')
+    if (current === 'create' || !sameSession())
       return;
     if (resumed)
       await checkIfPasswordConfirmationNeeded(get(username));

@@ -1,7 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { beginSession, endSession, hasLiveSession, liveSessionSignal, onSessionCleared, onSessionEnd, scheduleSessionClear } from '@/modules/core/session/session-lifecycle';
+import { beginSession, captureSession, endSession, hasLiveSession, liveSessionSignal, onSessionCleared, onSessionEnd, scheduleSessionClear } from '@/modules/core/session/session-lifecycle';
 
 describe('session-lifecycle', () => {
+  it('should tell captured work its session ended, even once the next one began', () => {
+    const sameSession = captureSession();
+    expect(sameSession()).toBe(true);
+
+    endSession();
+    beginSession();
+
+    expect(hasLiveSession()).toBe(true);
+    expect(sameSession()).toBe(false);
+  });
+
+  it('should treat work captured with no live session as never live', () => {
+    endSession();
+    const sameSession = captureSession();
+    beginSession();
+
+    expect(sameSession()).toBe(false);
+  });
+
   it('should hold no live session and no signal once the session ends', () => {
     endSession();
 
