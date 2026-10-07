@@ -7,8 +7,10 @@ const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribution-guides/`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
 const UTM_PARAMS = '?utm_source=rotki_app&utm_medium=desktop&utm_campaign=upgrade';
 
-// Cannot be checked with fetch because it always returns 400
-export const TWITTER_URL = 'https://twitter.com/rotkiapp';
+/**
+ * Excluded from the link checker because automated requests are rejected.
+ */
+export const TWITTER_URL = 'https://x.com/rotkiapp';
 
 export const SUPPORT_EMAIL = 'support@rotki.com';
 

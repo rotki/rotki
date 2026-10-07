@@ -3,7 +3,8 @@ import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
 import path from 'node:path';
 import { assert } from '@rotki/common';
-import { Menu, type MenuItem, type MenuItemConstructorOptions, nativeImage, Tray } from 'electron';
+import { externalLinks, TWITTER_URL } from '@shared/external-links';
+import { app, Menu, type MenuItem, type MenuItemConstructorOptions, nativeImage, shell, Tray } from 'electron';
 
 interface TrayManagerListener {
   toggleWindowVisibility: () => boolean;
@@ -25,10 +26,14 @@ export class TrayManager {
     return this.config.isDev ? path.join(import.meta.dirname, '..', 'public') : import.meta.dirname;
   }
 
+  private openLink(url: string): void {
+    shell.openExternal(url).catch(error => console.error(error));
+  }
+
   private buildMenu(visible: boolean, info = ''): Menu {
     return Menu.buildFromTemplate([
       {
-        label: 'rotki',
+        label: `rotki ${app.getVersion()}`,
         enabled: false,
         icon: path.join(this.iconPath, 'rotki_tray.png'),
       },
@@ -41,6 +46,10 @@ export class TrayManager {
           ]
         : []),
       { type: 'separator' },
+      {
+        label: visible ? 'Minimize to tray' : 'Restore from tray',
+        click: () => this.toggleWindowVisibility(),
+      },
       ...(this.config.isMac
         ? ([{
             label: 'Display net worth on the tray',
@@ -55,19 +64,28 @@ export class TrayManager {
             },
           }] satisfies MenuItemConstructorOptions[])
         : []),
+      { type: 'separator' },
       {
-        label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: () => this.toggleWindowVisibility(),
+        label: 'Sponsor rotki',
+        click: () => this.openLink(externalLinks.sponsor),
+      },
+      {
+        label: 'Join Discord',
+        click: () => this.openLink(externalLinks.discord),
+      },
+      {
+        label: 'Follow on X',
+        click: () => this.openLink(TWITTER_URL),
       },
       { type: 'separator' },
       {
-        label: 'Quit',
+        label: 'Quit rotki',
         click: this.listener?.quit,
       },
     ]);
   }
 
-  update(tray?: TrayUpdate) {
+  update(tray?: TrayUpdate): void {
     if (!this.tray)
       return;
 
@@ -121,26 +139,32 @@ export class TrayManager {
     this.updateContextMenu(this.isVisible);
   }
 
-  private setIcon(iconName: string) {
+  private setIcon(iconName: string): void {
     const iconPath = path.join(this.iconPath, iconName);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     trayIcon.setTemplateImage(this.config.isMac);
     this.tray?.setImage(trayIcon);
   }
 
-  private toggleWindowVisibility() {
+  private toggleWindowVisibility(): void {
     const listener = this.listener;
     assert(listener, 'No listener set');
     const visible = listener.toggleWindowVisibility();
     this.updateContextMenu(visible);
   }
 
-  updateContextMenu(visible: boolean) {
-    this.isVisible = visible;
-    this.tray?.setContextMenu(this.buildMenu(visible, this.tooltip));
+  private openContextMenu(): void {
+    this.tray?.popUpContextMenu(this.buildMenu(this.isVisible, this.tooltip));
   }
 
-  build() {
+  updateContextMenu(visible: boolean): void {
+    this.isVisible = visible;
+
+    if (!this.config.isMac)
+      this.tray?.setContextMenu(this.buildMenu(visible, this.tooltip));
+  }
+
+  build(): void {
     const icon = this.config.isMac ? 'rotki-trayTemplate@5x.png' : 'rotki_tray@5x.png';
     const iconPath = path.join(this.iconPath, icon);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
@@ -148,12 +172,17 @@ export class TrayManager {
     this.tray = new Tray(trayIcon);
     this.tray.setToolTip('rotki is running');
 
-    this.tray.setContextMenu(this.buildMenu(true));
+    if (!this.config.isMac)
+      this.tray.setContextMenu(this.buildMenu(true));
+
     this.tray.on('double-click', () => this.toggleWindowVisibility());
     this.tray.on('click', () => this.toggleWindowVisibility());
+
+    if (this.config.isMac)
+      this.tray.on('right-click', () => this.openContextMenu());
   }
 
-  cleanup() {
+  cleanup(): void {
     if (this.tray) {
       this.tray.destroy();
       this.tray = undefined;
@@ -161,7 +190,7 @@ export class TrayManager {
     this.listener = undefined;
   }
 
-  initialize(listener: TrayManagerListener) {
+  initialize(listener: TrayManagerListener): void {
     if (!this.settings.appSettings.displayTray) {
       return;
     }
