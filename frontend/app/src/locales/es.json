@@ -160,7 +160,6 @@
       },
       "create_oracle_cache": {
         "already_running": "La tarea ya está en curso",
-        "failed": "Error al crear una entrada de caché de {fromAsset} a {toAsset} en la fuente: {error}",
         "task": "Creando entrada de caché dee {fromAsset} a {toAsset} en {source}"
       },
       "detect_tokens": {

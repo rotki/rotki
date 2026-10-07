@@ -1,17 +1,17 @@
 import type { FetchPricePayload } from '@/modules/accounts/blockchain-accounts';
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
-import type { ActionStatus } from '@/modules/core/common/action';
 import { type BigNumber, One } from '@rotki/common';
-import { err, getOr, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { err, getOr, isErr, isOk, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/modules/assets/prices/price-types';
 import { assetSetDigest, useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { convertFromTimestamp } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { Cancelled, isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { Cancelled, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ExchangeRates } from '@/modules/settings/types/user-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -20,7 +20,8 @@ import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-cente
 import { type RunBackendTask, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UsePriceTaskManagerReturn {
-  createOracleCache: (payload: OracleCachePayload) => Promise<ActionStatus>;
+  /** Reports the outcome as its only message; a cancelled run reports nothing. */
+  createOracleCache: (payload: OracleCachePayload) => Promise<Result<void, TaskError>>;
   fetchExchangeRates: (symbol?: SupportedCurrency) => Promise<void>;
   fetchPrices: (payload: FetchPricePayload) => Promise<void>;
   getHistoricPrice: (payload: HistoricPricePayload) => Promise<BigNumber>;
@@ -30,7 +31,8 @@ interface UsePriceTaskManagerReturn {
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
+  const { notifyError, notifyInfo } = useNotifications();
+  const { getAssetField } = useAssetInfoRetrieval();
   const currencySymbol = useSetting('currencySymbol');
   const { exchangeRates } = storeToRefs(useBalancePricesStore());
   const {
@@ -138,18 +140,14 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     return getOr(outcome, One.negated());
   };
 
-  const createOracleCache = async ({
+  const buildOracleCache = async ({
     fromAsset,
     purgeOld,
     source,
     toAsset,
-  }: OracleCachePayload): Promise<ActionStatus> => {
-    if (statusOf(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE).active) {
-      return {
-        message: t('actions.balances.create_oracle_cache.already_running'),
-        success: false,
-      };
-    }
+  }: OracleCachePayload): Promise<Result<void, TaskError>> => {
+    if (statusOf(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE).active)
+      return err(TaskFailed({ message: t('actions.balances.create_oracle_cache.already_running') }));
 
     const cacheTitle = t('actions.balances.create_oracle_cache.task', {
       fromAsset,
@@ -157,7 +155,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       toAsset,
     });
 
-    const outcome = await submitTask({
+    return submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE),
       kind: ActivityKind.PRICES,
       rerunnable: false,
@@ -170,29 +168,23 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       subtitle: cacheTitle,
       title: t('task_center.group.prices'),
     });
+  };
 
-    if (isErr(outcome)) {
-      if (isActionable(outcome.error)) {
-        notifyError(
-          t('actions.balances.create_oracle_cache.error.title'),
-          t('actions.balances.create_oracle_cache.error.message', {
-            message: outcome.error.message,
-          }),
-        );
-      }
+  const createOracleCache = async (payload: OracleCachePayload): Promise<Result<void, TaskError>> => {
+    const outcome = await buildOracleCache(payload);
+    const title = t('oracle_prices.cache.notification.title');
+    const pair = {
+      fromAsset: getAssetField(payload.fromAsset, 'symbol'),
+      source: payload.source,
+      toAsset: getAssetField(payload.toAsset, 'symbol'),
+    };
 
-      return {
-        message: t('actions.balances.create_oracle_cache.failed', {
-          error: outcome.error.message,
-          fromAsset,
-          source,
-          toAsset,
-        }),
-        success: false,
-      };
-    }
+    if (isOk(outcome))
+      notifyInfo(title, t('oracle_prices.cache.notification.success', pair));
+    else
+      onActionableError(outcome, error => notifyError(title, t('oracle_prices.cache.notification.error', { ...pair, error: error.message })));
 
-    return { success: true };
+    return outcome;
   };
 
   return {

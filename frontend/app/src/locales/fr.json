@@ -222,11 +222,6 @@
       },
       "create_oracle_cache": {
         "already_running": "La tâche est déjà en cours",
-        "error": {
-          "message": "Échec de la création du cache oracle : {message}",
-          "title": "Création du cache oracle"
-        },
-        "failed": "Échec lors de la création d'une entrée de cache de {fromAsset} à {toAsset} sur la source : {error}",
         "task": "Création d'une entrée de cache de {fromAsset} à {toAsset} sur {source}"
       },
       "detect_tokens": {

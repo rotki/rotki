@@ -558,11 +558,6 @@
       },
       "create_oracle_cache": {
         "already_running": "任务已经在运行",
-        "error": {
-          "message": "创建预言机缓存失败：{message}",
-          "title": "创建预言机缓存"
-        },
-        "failed": "在该来源上创建从 {fromAsset} 到 {toAsset} 的缓存条目失败：{error}",
         "task": "正在构建 {source} 从 {fromAsset} 到 {toAsset} 的价格缓存"
       },
       "detect_tokens": {

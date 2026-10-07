@@ -109,37 +109,15 @@ watch(cacheSource, async () => {
 });
 
 async function populateCache(): Promise<void> {
-  const source = get(cacheSource);
-  const fromAssetVal = get(newFromAsset);
-  const toAssetVal = get(newToAsset);
-
-  const status = await createOracleCache({
-    fromAsset: fromAssetVal,
+  const outcome = await createOracleCache({
+    fromAsset: get(newFromAsset),
     purgeOld: false,
-    source,
-    toAsset: toAssetVal,
+    source: get(cacheSource),
+    toAsset: get(newToAsset),
   });
 
-  if (!('message' in status))
+  if (outcome.ok)
     await loadCaches();
-
-  const from = getAssetField(fromAssetVal, 'symbol');
-  const to = getAssetField(toAssetVal, 'symbol');
-
-  const message = status.success
-    ? t('oracle_prices.cache.notification.success', {
-        fromAsset: from,
-        source,
-        toAsset: to,
-      })
-    : t('oracle_prices.cache.notification.error', {
-        error: status.message,
-        fromAsset: from,
-        source,
-        toAsset: to,
-      });
-
-  notify({ message: message.toString(), priority: Priority.HIGH, severity: status.success ? Severity.INFO : Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
 }
 
 async function clearCache(entry: OracleCacheMeta): Promise<void> {

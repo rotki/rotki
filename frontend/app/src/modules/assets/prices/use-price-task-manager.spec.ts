@@ -1,21 +1,32 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
-import { ok } from 'plainfp/result';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, ok } from 'plainfp/result';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
-const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
+const { notifyError, notifyInfo, runTaskMock } = vi.hoisted(() => ({ notifyError: vi.fn(), notifyInfo: vi.fn(), runTaskMock: vi.fn() }));
 
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
   mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { cancelTaskById: vi.fn(async () => true), runTask: runTaskMock }));
+
+vi.mock('@/modules/core/notifications/use-notifications', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  ...mockUseNotifications({ notifyError, notifyInfo }),
+}));
+
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: vi.fn(() => ({ getAssetField: (asset: string): string => asset })),
+}));
 
 interface PriceResponse {
   assets: Record<string, [number, number]>;
@@ -233,6 +244,41 @@ describe('usePriceTaskManager', () => {
       await flushPromises();
 
       expect(queried('RESET_B')).toBe(false);
+    });
+  });
+
+  describe('createOracleCache', () => {
+    const payload = { fromAsset: 'ETH', purgeOld: false, source: PriceOracle.CRYPTOCOMPARE, toAsset: 'USD' };
+
+    it('should confirm once when the backend built the cache', async () => {
+      runTaskMock.mockResolvedValue(ok(true));
+
+      const result = await priceTaskManager.createOracleCache(payload);
+
+      expect(usePriceApi().createPriceCache).toHaveBeenCalledWith(PriceOracle.CRYPTOCOMPARE, 'ETH', 'USD', false);
+      expect(result.ok).toBe(true);
+      expect(notifyInfo).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
+    });
+
+    it('should report a failure once, with the backend reason', async () => {
+      runTaskMock.mockResolvedValue(err(TaskFailed({ message: 'Rate limited' })));
+
+      const result = await priceTaskManager.createOracleCache(payload);
+
+      assert(!result.ok);
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), expect.stringContaining('Rate limited'));
+      expect(notifyInfo).not.toHaveBeenCalled();
+    });
+
+    it('should stay quiet when the run was cancelled', async () => {
+      runTaskMock.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
+
+      const result = await priceTaskManager.createOracleCache(payload);
+
+      expect(result.ok).toBe(false);
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(notifyInfo).not.toHaveBeenCalled();
     });
   });
 

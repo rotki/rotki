@@ -308,11 +308,6 @@
       },
       "create_oracle_cache": {
         "already_running": "Задача уже запущена",
-        "error": {
-          "message": "Не удалось создать кэш оракула: {message}",
-          "title": "Создание кэша оракула"
-        },
-        "failed": "Ошибка создания кэша из {fromAsset} в {toAsset} на источнике: {error}",
         "task": "Создание записи кэша из {fromAsset} в {toAsset} на {source}"
       },
       "detect_tokens": {
