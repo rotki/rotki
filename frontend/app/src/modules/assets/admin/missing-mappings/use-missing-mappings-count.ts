@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
+import { captureSession } from '@/modules/core/session/session-lifecycle';
 
 interface UseMissingMappingsCountReturn {
   /** How many exchange assets are waiting for a mapping, as of the last read. */
@@ -16,7 +17,9 @@ interface UseMissingMappingsCountReturn {
  *
  * @remarks
  * The table is a local browser store with no change feed, so every writer refreshes this after its
- * write. It belongs to the logged in user, so it goes back to zero on logout.
+ * write. It belongs to the logged in user, so it goes back to zero on logout, and a read that
+ * finishes after the session it started in has ended is dropped rather than bringing the old
+ * user's count back.
  */
 export const useMissingMappingsCount = createSharedComposable((): UseMissingMappingsCountReturn => {
   const { count: countMappings } = useMissingMappingsDB();
@@ -25,8 +28,14 @@ export const useMissingMappingsCount = createSharedComposable((): UseMissingMapp
   const count = shallowRef<number>(0);
 
   async function refresh(): Promise<void> {
+    const sameSession = captureSession();
+    if (!sameSession())
+      return;
+
     try {
-      set(count, await countMappings());
+      const mappings = await countMappings();
+      if (sameSession())
+        set(count, mappings);
     }
     catch (error: unknown) {
       logger.error(error);

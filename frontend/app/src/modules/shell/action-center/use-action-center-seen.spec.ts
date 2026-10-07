@@ -2,6 +2,7 @@ import type { EffectScope } from 'vue';
 import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
 
 function row(id: string, count: number, overrides: Partial<ActionItem> = {}): ActionItem {
@@ -109,6 +110,22 @@ describe('modules/shell/action-center/use-action-center-seen', () => {
     await nextTick();
 
     expect(get(newIds)).toEqual(['a']);
+  });
+
+  it('should keep what was seen when the counts drop to zero after the session ended', async () => {
+    set(items, [row('a', 5)]);
+    const { markSeen, newIds } = seen();
+    markSeen();
+
+    endSession();
+    set(items, [row('a', 0)]);
+    await nextTick();
+
+    beginSession();
+    set(items, [row('a', 5)]);
+    await nextTick();
+
+    expect(get(newIds)).toEqual([]);
   });
 
   it('should not lower what was seen from a row that is still loading', async () => {
