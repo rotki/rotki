@@ -71,41 +71,15 @@ def test_query_proprietary_history_success_stores_events_and_updates_range() -> 
     ):
         manager.query_proprietary_history(addresses=[address], from_timestamp=Timestamp(0), to_timestamp=Timestamp(100))  # noqa: E501
 
+    range_key = f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
+    assert ranges.get_location_query_ranges.call_args[1]['location_string'] == range_key
     history_db.add_history_events.assert_called_once()
     stored_events = history_db.add_history_events.call_args[1]['history']
     assert stored_events == fake_events
     ranges.update_used_query_range.assert_called_once()
     update_args = ranges.update_used_query_range.call_args[1]
-    assert update_args['location_string'] == f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
+    assert update_args['location_string'] == range_key
     assert update_args['queried_ranges'] == [(Timestamp(0), Timestamp(100))]
-
-
-def test_query_proprietary_history_uses_core_specific_range_key() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.user_write.side_effect = _dummy_ctx
-    manager.node_inquirer = MagicMock(database=db)
-    manager.transactions = MagicMock()
-
-    ranges = MagicMock()
-    ranges.get_location_query_ranges.return_value = []
-
-    with (
-        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
-        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents'),
-        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI'),
-    ):
-        manager.query_proprietary_history(
-            addresses=[address],
-            from_timestamp=Timestamp(10),
-            to_timestamp=Timestamp(20),
-        )
-
-    assert ranges.get_location_query_ranges.call_args[1]['location_string'] == (
-        f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
-    )
 
 
 def test_refetch_proprietary_history_ignores_query_ranges() -> None:
