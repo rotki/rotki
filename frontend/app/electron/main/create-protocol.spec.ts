@@ -6,6 +6,8 @@ import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProtocol, getMimeType } from './create-protocol';
 
+vi.mock('electron', () => ({ protocol: {} }));
+
 describe('getMimeType', () => {
   it.each([
     ['app.js', 'application/javascript'],
