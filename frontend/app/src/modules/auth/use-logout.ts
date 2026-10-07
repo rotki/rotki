@@ -1,5 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import { promiseTimeout } from '@vueuse/core';
+import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
@@ -11,6 +12,11 @@ import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
 
 interface LogoutOptions {
+  /**
+   * Remove the password saved for auto-login from the OS keychain. Without it, the login screen
+   * unlocks the profile again as soon as it mounts.
+   */
+  forgetSavedPassword?: boolean;
   navigate?: boolean;
   /**
    * Skip the backend logout call, for callers that have just restarted the
@@ -52,8 +58,9 @@ export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
   const { showErrorMessage } = useNotifications();
-  const { notifyUserLogout, resetMcpSession, resetTray } = useInterop();
+  const { clearPassword, isPackaged, notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
+  const { savedRememberPassword } = useRememberSettings();
 
   /**
    * Tears the wallet bridge down, main process first.
@@ -78,6 +85,10 @@ export function useLogout(): UseLogoutReturn {
   const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
     await finishPendingWrites();
     endSession();
+
+    if (options.forgetSavedPassword && isPackaged && get(savedRememberPassword))
+      await clearPassword();
+
     await closeWalletBridge();
 
     set(logged, false);

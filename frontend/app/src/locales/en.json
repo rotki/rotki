@@ -1469,6 +1469,18 @@
     "refresh_price": "Refresh price",
     "value": "Value"
   },
+  "auto_logout_setting": {
+    "hint": "Logging out stops everything rotki runs in the background, such as balance refreshes and history syncing, until you log in again.",
+    "label": "Log out automatically after a period of inactivity",
+    "period_label": "Minutes without activity before logging out",
+    "subtitle": "Close your session when rotki is left unattended, so that nobody else can see your data. If you use auto-login, the saved password is removed and you need to enter it again.",
+    "title": "Auto logout",
+    "validation": {
+      "error": "Failed to set the auto logout period",
+      "invalid_period": "Period must be between {start} and {end} min",
+      "non_empty": "Please enter the number of minutes"
+    }
+  },
   "back_button": {
     "tooltip": "Navigate back to the previous page."
   },
@@ -4561,6 +4573,7 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
+    "auto_logout_notice": "You were logged out after {minutes} minute without activity. | You were logged out after {minutes} minutes without activity.",
     "button_create_account": "Create account",
     "button_no_account": "Don’t have an account?",
     "button_refresh_profiles": "Refresh Profiles",

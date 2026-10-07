@@ -2,6 +2,7 @@
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import AutoLogoutSetting from '@/modules/settings/data-security/AutoLogoutSetting.vue';
 import ChangePassword from '@/modules/settings/data-security/ChangePassword.vue';
 import PasswordConfirmationSetting from '@/modules/settings/data-security/PasswordConfirmationSetting.vue';
 import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
@@ -35,6 +36,7 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
 
       <ChangePassword />
       <PasswordConfirmationSetting />
+      <AutoLogoutSetting />
     </SettingCategory>
   </SettingsPage>
 </template>

@@ -43,6 +43,14 @@ export const frontendRegistry = {
       titleKey: msg.$t('general_settings.auto_detect_tokens_on_login.title'),
     },
   }),
+  autoLogoutPeriod: frontend('autoLogoutPeriod', {
+    anchor: SettingsHighlightIds.AUTO_LOGOUT,
+    search: {
+      category: SettingsCategoryIds.SECURITY,
+      keywords: [msg.$t('auto_logout_setting.subtitle')],
+      titleKey: msg.$t('auto_logout_setting.title'),
+    },
+  }),
   autoRerunOnEdit: frontend('autoRerunOnEdit'),
   balanceValueThreshold: frontend('balanceValueThreshold'),
   blockchainRefreshButtonBehaviour: frontend('blockchainRefreshButtonBehaviour'),

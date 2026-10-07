@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { checkIfDevelopment, startPromise } from '@shared/utils';
+import { useAutoLogout } from '@/modules/auth/auto-logout/use-auto-logout';
 import { useSigil } from '@/modules/core/sigil/use-sigil';
 import SingleTabOverlay from '@/modules/session/single-tab/SingleTabOverlay.vue';
 import { useSingleTabGuard } from '@/modules/session/single-tab/use-single-tab-guard';
@@ -23,6 +24,7 @@ const { setupBackend } = useBackendManagement();
 const route = useRoute();
 useSessionStateCleaner();
 useSingleTabGuard();
+useAutoLogout();
 
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => isDevelopment && get(route).path === '/playground');
