@@ -714,3 +714,36 @@ def test_airdrop_index_with_invalid_token_address_is_skipped(
             'decimals': 18,
         },
     }}) == {}
+
+
+def test_airdrop_index_new_asset_is_mirrored_in_user_db(database: DBHandler) -> None:
+    """New and globally existing non-token assets must be mirrored in the user DB assets table,
+    since user DB tables (balances cache, snapshots) reference them via foreign keys."""
+    airdrops_data = {'newchain': {
+        'file_path': 'airdrops/newchain.csv.gz',
+        'file_hash': 'a' * 64,
+        'asset_identifier': (identifier := 'NEWCHAIN_AIRDROP_ASSET'),
+        'url': 'https://example.com/',
+        'name': 'NEWCHAIN',
+        'icon': 'newchain.svg',
+        'new_asset_data': {'asset_type': 'OTHER', 'name': 'New chain', 'symbol': 'NEWC'},
+    }}
+    _parse_airdrops(database=database, airdrops_data=airdrops_data)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 1
+
+    with database.user_write() as cursor:
+        cursor.execute('DELETE FROM assets WHERE identifier=?', (identifier,))
+    assert Asset(identifier).exists() is True
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 0
+
+    _parse_airdrops(database=database, airdrops_data=airdrops_data)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (identifier,),
+        ).fetchone()[0] == 1

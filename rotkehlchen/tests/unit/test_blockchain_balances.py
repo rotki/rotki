@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS, ChainsAggregator
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
@@ -319,6 +319,31 @@ def test_protocol_balance_refresh_uses_requested_addresses(
             balances=defaultdict(BalanceSheet),
             addresses=requested_addresses,
         )
+
+
+def test_blockchain_balances_cache_adds_missing_asset_identifier(
+        blockchain: ChainsAggregator,
+) -> None:
+    """Balance caching can receive assets that were not mirrored into the user DB yet."""
+    address = make_evm_address()
+    asset = Asset('eip155:1/erc20:0x0000000000000000000000000000000000001234')
+    blockchain.balances.eth[address].assets[asset][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+
+    blockchain._update_blockchain_balances_cache(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        addresses=[address],
+    )
+
+    with blockchain.database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?',
+            (asset.identifier,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT amount FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
+            'AND asset=?',
+            (SupportedBlockchain.ETHEREUM.serialize(), address, asset.identifier),
+        ).fetchone()[0] == '1'
 
 
 def test_blockchain_balances_cache_removes_spent_token(blockchain: ChainsAggregator) -> None:
