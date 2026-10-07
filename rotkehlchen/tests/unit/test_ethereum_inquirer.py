@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from hexbytes import HexBytes
+from web3.datastructures import AttributeDict
 from web3.exceptions import TransactionNotFound, Web3Exception
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -55,16 +57,35 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_block_by_number(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
-    wait_until_all_nodes_connected(
-        connect_at_start=ethereum_manager_connect_at_start,
-        evm_inquirer=ethereum_inquirer,
+def test_get_block_by_number_rpc(ethereum_inquirer: EthereumInquirer) -> None:
+    """The RPC path returns the web3 block with its HexBytes hash normalized to a 0x string,
+    the same shape the indexers return. The indexer path is covered in test_indexers.py"""
+    block_hash = '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
+    weighted_node = WeightedNode(
+        node_info=NodeName(
+            name='mock node',
+            endpoint='http://mock.node',
+            owned=True,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=ONE,
+        active=True,
     )
-    block = ethereum_inquirer.get_block_by_number(10304885, call_order=call_order)
-    assert block['timestamp'] == 1592686213
-    assert block['number'] == 10304885
-    assert block['hash'] == '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
+    (fake_web3 := MagicMock()).eth.get_block.return_value = AttributeDict({
+        'number': 10304885,
+        'timestamp': 1592686213,
+        'hash': HexBytes(block_hash),
+    })
+    ethereum_inquirer.rpc_mapping[weighted_node.node_info] = RPCNode(
+        rpc_client=fake_web3,
+        is_pruned=False,
+        is_archive=True,
+    )
+
+    block = ethereum_inquirer.get_block_by_number(10304885, call_order=[weighted_node])
+
+    fake_web3.eth.get_block.assert_called_once_with(10304885)
+    assert block == {'number': 10304885, 'timestamp': 1592686213, 'hash': block_hash}
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
