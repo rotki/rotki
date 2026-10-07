@@ -1,7 +1,9 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { BackendRestartStatus } from '@/modules/shell/app/use-backend-management';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
 import { UnlockErrorKind } from './use-unlock-flow';
@@ -37,7 +39,7 @@ describe('useAssetUpdateSteps', () => {
 
   describe('checkUpdate (throttled)', () => {
     it('should hit the network on the first login of the day and report an update', async () => {
-      checkForUpdate.mockResolvedValue({ updateAvailable: true, versions: { local: 5, newChanges: 3, remote: 42 } });
+      checkForUpdate.mockResolvedValue(ok({ updateAvailable: true, versions: { local: 5, newChanges: 3, remote: 42 } }));
 
       const result = await useAssetUpdateSteps().checkUpdate();
 
@@ -56,7 +58,7 @@ describe('useAssetUpdateSteps', () => {
 
     it('should report no update when the remote version was permanently skipped', async () => {
       localStorage.setItem('rotki_skip_asset_db_version', '42');
-      checkForUpdate.mockResolvedValue({ updateAvailable: true, versions: { local: 5, newChanges: 3, remote: 42 } });
+      checkForUpdate.mockResolvedValue(ok({ updateAvailable: true, versions: { local: 5, newChanges: 3, remote: 42 } }));
 
       const result = await useAssetUpdateSteps().checkUpdate();
 
@@ -64,7 +66,7 @@ describe('useAssetUpdateSteps', () => {
     });
 
     it('should report no update when none is available', async () => {
-      checkForUpdate.mockResolvedValue({ updateAvailable: false, versions: undefined });
+      checkForUpdate.mockResolvedValue(ok({ updateAvailable: false, versions: undefined }));
 
       const result = await useAssetUpdateSteps().checkUpdate();
 
@@ -72,7 +74,7 @@ describe('useAssetUpdateSteps', () => {
     });
 
     it('should skip the network on a second check the same day/version', async () => {
-      checkForUpdate.mockResolvedValue({ updateAvailable: false, versions: undefined });
+      checkForUpdate.mockResolvedValue(ok({ updateAvailable: false, versions: undefined }));
 
       const steps = useAssetUpdateSteps();
       await steps.checkUpdate();
@@ -81,6 +83,18 @@ describe('useAssetUpdateSteps', () => {
 
       expect(checkForUpdate).not.toHaveBeenCalled();
       expect(result).toEqual({ ok: true, value: { some: false } });
+    });
+
+    it('should let the login continue when the check fails, and retry on the next login', async () => {
+      checkForUpdate.mockResolvedValue(err(TaskFailed({ message: 'unreachable' })));
+
+      const steps = useAssetUpdateSteps();
+      const result = await steps.checkUpdate();
+      checkForUpdate.mockClear();
+      await steps.checkUpdate();
+
+      expect(result).toEqual({ ok: true, value: { some: false } });
+      expect(checkForUpdate).toHaveBeenCalledOnce();
     });
   });
 

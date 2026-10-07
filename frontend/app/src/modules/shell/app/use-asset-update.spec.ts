@@ -1,8 +1,10 @@
 import type { ApplyUpdateResult, AssetUpdateCheckResult, AssetUpdateConflictResult } from '@/modules/assets/types';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useAssetUpdate } from './use-asset-update';
 
 const {
@@ -52,7 +54,11 @@ function conflict(identifier: string): AssetUpdateConflictResult {
 }
 
 function checkReturns(result: Partial<AssetUpdateCheckResult>): void {
-  checkForUpdate.mockResolvedValue({ updateAvailable: false, ...result });
+  checkForUpdate.mockResolvedValue(ok({ updateAvailable: false, ...result }));
+}
+
+function checkFails(error: TaskError): void {
+  checkForUpdate.mockResolvedValue(err(error));
 }
 
 function applyReturns(result: Partial<ApplyUpdateResult>): void {
@@ -161,6 +167,34 @@ describe('modules/shell/app/useAssetUpdate', () => {
       expect(setMessage).not.toHaveBeenCalled();
     });
 
+    it('should not tell a settings user they are up to date when the check failed', async () => {
+      checkFails(TaskFailed({ message: 'unreachable' }));
+      const { check, showUpdateDialog } = mountUpdate(false);
+
+      await check();
+
+      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(showUpdateDialog)).toBe(false);
+    });
+
+    it('should not tell a settings user they are up to date when the check was cancelled', async () => {
+      checkFails(Cancelled({ message: 'cancelled' }));
+      const { check } = mountUpdate(false);
+
+      await check();
+
+      expect(setMessage).not.toHaveBeenCalled();
+    });
+
+    it('should move the app on when a check it owns the screen for fails', async () => {
+      checkFails(TaskFailed({ message: 'unreachable' }));
+      mountUpdate(true);
+      await flushPromises();
+
+      expect(onSkip).toHaveBeenCalledOnce();
+      expect(setMessage).not.toHaveBeenCalled();
+    });
+
     it('should not offer a version the user already skipped', async () => {
       localStorage.setItem('rotki_skip_asset_db_version', '2');
       checkReturns({ updateAvailable: true, versions: { local: 1, newChanges: 5, remote: 2 } });
@@ -195,7 +229,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
     });
 
     it('should report it is checking only while the check is in flight', async () => {
-      let release: (result: AssetUpdateCheckResult) => void = () => {};
+      let release: (result: Result<AssetUpdateCheckResult, TaskError>) => void = () => {};
       checkForUpdate.mockReturnValue(new Promise((resolve) => {
         release = resolve;
       }));
@@ -204,7 +238,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
       const pending = check();
       expect(get(status)).toBe('checking');
 
-      release({ updateAvailable: false });
+      release(ok({ updateAvailable: false }));
       await pending;
       expect(get(status)).toBeNull();
     });

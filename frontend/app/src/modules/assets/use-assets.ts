@@ -7,7 +7,7 @@ import type {
   AssetUpdateResult,
 } from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/core/common/action';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
@@ -25,7 +25,8 @@ interface ExportCustomAssetsResult {
 }
 
 interface UseAssetsReturn {
-  checkForUpdate: () => Promise<AssetUpdateCheckResult>;
+  /** Fails when the check did not finish (failed or cancelled), so a caller never reads that as "up to date". */
+  checkForUpdate: () => Promise<Result<AssetUpdateCheckResult, TaskError>>;
   applyUpdates: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
   mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
   importCustomAssets: (file: File) => Promise<ActionStatus>;
@@ -49,7 +50,7 @@ export function useAssets(): UseAssetsReturn {
 
   const { notifyError } = useNotifications();
 
-  const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
+  const checkForUpdate = async (): Promise<Result<AssetUpdateCheckResult, TaskError>> => {
     const outcome = await submitTask<AssetDBVersion>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.VERSIONS),
       kind: ActivityKind.ASSETS,
@@ -64,24 +65,23 @@ export function useAssets(): UseAssetsReturn {
       title: t('task_center.group.assets'),
     });
 
-    if (!isErr(outcome)) {
-      const versions = outcome.value;
-      return {
-        updateAvailable: versions.local < versions.remote && versions.newChanges > 0,
-        versions,
-      };
-    }
-    if (isErr(outcome) && isActionable(outcome.error)) {
-      const title = t('actions.assets.versions.task.title');
-      const description = t('actions.assets.versions.error.description', {
-        message: outcome.error.message,
-      }).toString();
+    if (isErr(outcome)) {
+      if (isActionable(outcome.error)) {
+        const title = t('actions.assets.versions.task.title');
+        const description = t('actions.assets.versions.error.description', {
+          message: outcome.error.message,
+        }).toString();
 
-      notifyError(title, description);
+        notifyError(title, description);
+      }
+      return outcome;
     }
-    return {
-      updateAvailable: false,
-    };
+
+    const versions = outcome.value;
+    return ok({
+      updateAvailable: versions.local < versions.remote && versions.newChanges > 0,
+      versions,
+    });
   };
 
   const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {

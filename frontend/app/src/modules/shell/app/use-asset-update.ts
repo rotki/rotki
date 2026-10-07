@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
+import { isErr } from 'plainfp/result';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -13,8 +14,8 @@ interface UseAssetUpdateOptions {
    *
    * @remarks
    * Changes three behaviours rather than only the layout: the check runs on mount, a skipped
-   * version short-circuits it, and "nothing to update" reports through `onSkip` instead of a
-   * success message the user has nowhere to read.
+   * version short-circuits it, and "nothing to update" or a check that did not finish reports
+   * through `onSkip` instead of a message the user has nowhere to read.
    */
   headless: MaybeRefOrGetter<boolean>;
   /** Called whenever this surface is finished and the app should move on. */
@@ -102,9 +103,16 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
 
   async function check(): Promise<void> {
     set(checking, true);
-    const checkResult = await checkForUpdate();
+    const outcome = await checkForUpdate();
     set(checking, false);
 
+    if (isErr(outcome)) {
+      if (toValue(headless))
+        onSkip();
+      return;
+    }
+
+    const checkResult = outcome.value;
     const skippedVersion = get(skipped);
     const versions = checkResult.versions;
 
