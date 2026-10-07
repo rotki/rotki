@@ -27,6 +27,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -472,7 +473,7 @@ def test_accounting_multi_trade_skip_warns_user(accounting_pot: AccountingPot) -
         ) == 1
 
     assert len(accounting_pot.processed_events) == 1  # only the initial ETH gain
-    assert accounting_pot.database.msg_aggregator.consume_warnings() == [(
+    assert consume_warnings(accounting_pot.database.msg_aggregator) == [(
         f'Multi trade events are not supported in accounting yet, so the multi '
         f'trade with identifier {events[0].group_identifier} is not included in the report.'
     )]

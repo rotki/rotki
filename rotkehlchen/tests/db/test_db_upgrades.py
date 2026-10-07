@@ -62,6 +62,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import (
     ChainID,
     ExternalService,
@@ -2185,8 +2186,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    assert messages_aggregator.consume_errors() == []
-    assert messages_aggregator.consume_warnings() == []
+    assert consume_errors(messages_aggregator) == []
+    assert consume_warnings(messages_aggregator) == []
     # check if all the above values have been moved
     with db.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
@@ -2360,8 +2361,8 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    assert messages_aggregator.consume_errors() == []
-    assert messages_aggregator.consume_warnings() == []
+    assert consume_errors(messages_aggregator) == []
+    assert consume_warnings(messages_aggregator) == []
 
     with db.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is True
@@ -2458,8 +2459,8 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    assert messages_aggregator.consume_errors() == []
-    assert messages_aggregator.consume_warnings() == []
+    assert consume_errors(messages_aggregator) == []
+    assert consume_warnings(messages_aggregator) == []
 
     with db.conn.read_ctx() as cursor:
         nfts = cursor.execute('SELECT name, usd_price FROM nfts').fetchall()
@@ -2551,8 +2552,8 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    assert messages_aggregator.consume_errors() == []
-    assert messages_aggregator.consume_warnings() == []
+    assert consume_errors(messages_aggregator) == []
+    assert consume_warnings(messages_aggregator) == []
 
     with db.conn.read_ctx() as cursor:
         assert cursor.execute(  # we have one entry with null values and two with the details

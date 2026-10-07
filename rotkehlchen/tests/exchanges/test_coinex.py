@@ -18,6 +18,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
@@ -313,7 +314,7 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             'limit': API_MAX_LIMIT,
         },
     )]
-    assert coinex_exchange.msg_aggregator.consume_errors() == [
+    assert consume_errors(coinex_exchange.msg_aggregator) == [
         'Skipped CoinEx trades in unknown or delisted markets: LUNAUSDT',
     ]
     group_identifier = create_group_identifier_from_unique_id(

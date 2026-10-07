@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.exchanges import (
     BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
     assert_binance_asset_movements_result,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -130,8 +131,8 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
             end_ts=Timestamp(end_ts),
         )
 
-    errors = binance.msg_aggregator.consume_errors()
-    warnings = binance.msg_aggregator.consume_warnings()
+    errors = consume_errors(binance.msg_aggregator)
+    warnings = consume_warnings(binance.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 

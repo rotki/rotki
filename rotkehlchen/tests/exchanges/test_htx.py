@@ -19,6 +19,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_DOGE
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -178,7 +179,7 @@ def test_htx_movement_query_should_report_remote_errors(htx_exchange: Htx) -> No
             query_for='deposit',
         )
 
-    assert htx_exchange.msg_aggregator.consume_errors() == [
+    assert consume_errors(htx_exchange.msg_aggregator) == [
         'Failed to query htx deposits. Check the logs for details.',
     ]
 

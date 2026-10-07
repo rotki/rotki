@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_LTC, A_TRY
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -114,8 +115,8 @@ def test_balances(mock_bitpanda, inquirer):
     with patch.object(mock_bitpanda.session, 'get', side_effect=mock_bitpanda_query):
         balances, msg = mock_bitpanda.query_balances()
 
-    warnings = mock_bitpanda.msg_aggregator.consume_warnings()
-    errors = mock_bitpanda.msg_aggregator.consume_errors()
+    warnings = consume_warnings(mock_bitpanda.msg_aggregator)
+    errors = consume_errors(mock_bitpanda.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
 
@@ -165,8 +166,8 @@ def test_trades(mock_bitpanda):
             end_ts=ts_now(),
         )
 
-    warnings = mock_bitpanda.msg_aggregator.consume_warnings()
-    errors = mock_bitpanda.msg_aggregator.consume_errors()
+    warnings = consume_warnings(mock_bitpanda.msg_aggregator)
+    errors = consume_errors(mock_bitpanda.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
 
@@ -268,8 +269,8 @@ def test_asset_movements(database, mock_bitpanda):
             filter_query=HistoryEventFilterQuery.make(location=Location.BITPANDA),
         )
 
-    warnings = mock_bitpanda.msg_aggregator.consume_warnings()
-    errors = mock_bitpanda.msg_aggregator.consume_errors()
+    warnings = consume_warnings(mock_bitpanda.msg_aggregator)
+    errors = consume_errors(mock_bitpanda.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
 

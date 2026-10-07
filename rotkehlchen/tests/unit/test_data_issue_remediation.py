@@ -22,6 +22,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
@@ -663,4 +664,4 @@ def test_decoder_rule_failure_is_reported_as_failed_comparison(
         )
         assert failing_rule.call_count == 2
         assert len(events) != 0
-        assert any('failed' in message for message in decoder.msg_aggregator.consume_errors())
+        assert any('failed' in message for message in consume_errors(decoder.msg_aggregator))

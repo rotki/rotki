@@ -16,6 +16,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -81,7 +82,7 @@ def test_paginated_query_does_not_duplicate_api_error(mock_cryptocom: Cryptocom)
             deserialize_fn=MagicMock(),
         )
 
-    assert mock_cryptocom.msg_aggregator.consume_errors() == [
+    assert consume_errors(mock_cryptocom.msg_aggregator) == [
         f'Failed to query {mock_cryptocom.name} trades: failed',
     ]
 

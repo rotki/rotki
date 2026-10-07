@@ -31,6 +31,7 @@ from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tasks.utils import prefetch_scheduler_task_timestamps
 from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
@@ -334,7 +335,7 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
     Test that spam assets for different chains have been correctly populated
     """
     # consume warnings from other tests
-    data_updater.msg_aggregator.consume_warnings()
+    consume_warnings(data_updater.msg_aggregator)
 
     # check that spam assets don't exist before
     eth_spam_token_id = evm_address_to_identifier(ETHEREUM_SPAM_ASSET_ADDRESS, ChainID.ETHEREUM, TokenKind.ERC20)  # noqa: E501
@@ -495,7 +496,7 @@ def test_failed_rpc_nodes_update_is_retried(
         update_type.serialize(): str(latest)
         for update_type in UpdateType if update_type != UpdateType.RPC_NODES
     }
-    assert data_updater.msg_aggregator.consume_warnings() == [
+    assert consume_warnings(data_updater.msg_aggregator) == [
         'Failed to update rpc nodes. It will be retried later.',
     ]
 
@@ -559,7 +560,7 @@ def test_failed_rpc_nodes_download_is_retried(
         update_type.serialize(): str(latest)
         for update_type in UpdateType if update_type != UpdateType.RPC_NODES
     }
-    assert data_updater.msg_aggregator.consume_warnings() == [
+    assert consume_warnings(data_updater.msg_aggregator) == [
         'Failed to update rpc nodes. It will be retried later.',
     ]
 
@@ -642,7 +643,7 @@ def test_nonmapping_update_info_is_retried(data_updater: RotkiDataUpdater) -> No
 def test_partial_update_does_not_clear_full_check_failure(data_updater: RotkiDataUpdater) -> None:
     with patch.object(data_updater, '_get_remote_info_json', return_value=[]):
         data_updater.check_for_updates()
-    data_updater.msg_aggregator.consume_warnings()
+    consume_warnings(data_updater.msg_aggregator)
     with data_updater.user_db.conn.read_ctx() as cursor:
         failed_at = data_updater.user_db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
@@ -677,11 +678,11 @@ def test_failed_update_warns_once_until_recovered(
             'rotkehlchen.db.updates.query_file', return_value={},
     ):
         data_updater.check_for_updates()
-        assert data_updater.msg_aggregator.consume_warnings() == [
+        assert consume_warnings(data_updater.msg_aggregator) == [
             'Failed to update rpc nodes. It will be retried later.',
         ]
         data_updater.check_for_updates()
-        assert data_updater.msg_aggregator.consume_warnings() == []
+        assert consume_warnings(data_updater.msg_aggregator) == []
 
     with patch.object(data_updater, '_get_remote_info_json', return_value={
         update_type.value: {'latest': 0} for update_type in UpdateType
@@ -692,7 +693,7 @@ def test_failed_update_warns_once_until_recovered(
             'rotkehlchen.db.updates.query_file', return_value={},
     ):
         data_updater.check_for_updates()
-    assert data_updater.msg_aggregator.consume_warnings() == [
+    assert consume_warnings(data_updater.msg_aggregator) == [
         'Failed to update rpc nodes. It will be retried later.',
     ]
 

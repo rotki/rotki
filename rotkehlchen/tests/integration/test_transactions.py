@@ -17,6 +17,7 @@ from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR2,
     setup_ethereum_transactions_test,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -87,14 +88,14 @@ def test_get_or_create_transaction(ethereum_accounts, eth_transactions, database
     with database.conn.read_ctx() as cursor:
         # check that the transaction is properly added to the DB
         returned_tx, tx_receipt = eth_transactions.get_or_create_transaction(cursor, tx_hash, relevant_address=ethereum_accounts[2])  # noqa: E501
-        assert len(msg_aggregator.consume_errors()) == 0
-        assert len(msg_aggregator.consume_warnings()) == 0
+        assert len(consume_errors(msg_aggregator)) == 0
+        assert len(consume_warnings(msg_aggregator)) == 0
         assert returned_tx == expected_transaction
         assert tx_receipt is not None
         # check that the existing transaction is properly returned from the DB
         returned_tx, tx_receipt = eth_transactions.get_or_create_transaction(cursor, tx_hash, relevant_address=ethereum_accounts[2])  # noqa: E501
-        assert len(msg_aggregator.consume_errors()) == 0
-        assert len(msg_aggregator.consume_warnings()) == 0
+        assert len(consume_errors(msg_aggregator)) == 0
+        assert len(consume_warnings(msg_aggregator)) == 0
         assert returned_tx == expected_transaction
 
     # check that if there is a tx with no receipt, the receipt is created because it is a

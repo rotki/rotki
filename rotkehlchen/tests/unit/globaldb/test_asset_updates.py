@@ -18,6 +18,7 @@ from rotkehlchen.globaldb.asset_updates.manager import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
+from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, HyperliquidTokenAddress, Timestamp, TokenKind
 
@@ -511,7 +512,7 @@ def test_updates_assets_collections_errors(
     """  # noqa: E501
 
     # consume warnings to remove any warning that might have been kept in the object
-    assets_updater.msg_aggregator.consume_warnings()
+    consume_warnings(assets_updater.msg_aggregator)
     connection = GlobalDBHandler().conn
     assets_updater._apply_single_version_update(
         connection=connection,
@@ -538,7 +539,7 @@ def test_updates_assets_collections_errors(
         cursor.execute('SELECT COUNT(*) FROM asset_collections WHERE id = 99999999')
         assert cursor.fetchone()[0] == 0
 
-    assert len(assets_updater.msg_aggregator.consume_warnings()) == 3
+    assert len(consume_warnings(assets_updater.msg_aggregator)) == 3
     for warning in (  # problems with one identity are held once, so read each from the log
         "Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')",  # noqa: E501
         'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
@@ -562,7 +563,7 @@ def test_asset_update(
     and assets collections are applied correctly in the process
     """
     # consume warnings from other tests
-    assets_updater.msg_aggregator.consume_warnings()
+    consume_warnings(assets_updater.msg_aggregator)
     # set a high version of the globaldb to avoid conflicts with future changes
     GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 997)
     with patch('requests.get', wraps=get_mock_github_assets_response(update_assets, update_collections, update_mappings)):  # noqa: E501
@@ -589,7 +590,7 @@ def test_asset_update(
 
         # check that we skip versions with wrong schema and that all the versions
         # required are correctly queried.
-        warnings = assets_updater.msg_aggregator.consume_warnings()
+        warnings = consume_warnings(assets_updater.msg_aggregator)
         assert warnings == [
             f'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is {GlobalDBHandler().get_schema_version()}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
         ]

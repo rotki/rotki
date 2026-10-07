@@ -21,6 +21,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_SOL
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -124,7 +125,7 @@ def test_api_query_retries_request(mock_kucoin):
         )
 
     assert result.status_code == HTTPStatus.TOO_MANY_REQUESTS
-    errors = mock_kucoin.msg_aggregator.consume_errors()
+    errors = consume_errors(mock_kucoin.msg_aggregator)
     assert len(errors) == 1
     expected_error = (
         'Got remote error while querying kucoin trades: Kucoin trades request '

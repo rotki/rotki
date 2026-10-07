@@ -86,6 +86,7 @@ from rotkehlchen.tests.utils.kraken import (
     KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE,
     MockKraken,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Location, Timestamp, TimestampMS
@@ -215,7 +216,7 @@ def test_kraken_connection_reset_does_not_notify_user(kraken: Kraken) -> None:
 
     assert events == []
     assert queried_until == Timestamp(1)
-    assert kraken.msg_aggregator.consume_errors() == []
+    assert consume_errors(kraken.msg_aggregator) == []
 
 
 @pytest.mark.asset_test
@@ -728,8 +729,8 @@ def test_kraken_trade_with_spend_receive(kraken):
             sequence_index=3,
         )]
 
-    errors = kraken.msg_aggregator.consume_errors()
-    warnings = kraken.msg_aggregator.consume_warnings()
+    errors = consume_errors(kraken.msg_aggregator)
+    warnings = consume_warnings(kraken.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -804,8 +805,8 @@ def test_kraken_trade_with_same_spend_receive_amount(kraken):
             location_label=kraken.name,
         )]
 
-    errors = kraken.msg_aggregator.consume_errors()
-    warnings = kraken.msg_aggregator.consume_warnings()
+    errors = consume_errors(kraken.msg_aggregator)
+    warnings = consume_warnings(kraken.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -900,8 +901,8 @@ def test_kraken_tokenized_asset_trade(kraken):
             location_label=kraken.name,
         )]
 
-    assert len(kraken.msg_aggregator.consume_errors()) == 0
-    assert len(kraken.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(kraken.msg_aggregator)) == 0
+    assert len(consume_warnings(kraken.msg_aggregator)) == 0
 
     # A group with more than 2 spend/receive legs containing a canceling pair but
     # no tokenized_asset leg is left untouched by the settlement leg removal
@@ -1014,8 +1015,8 @@ def test_kraken_trade_with_adjustment(kraken):
                 location_label=kraken.name,
             )]
 
-    errors = kraken.msg_aggregator.consume_errors()
-    warnings = kraken.msg_aggregator.consume_warnings()
+    errors = consume_errors(kraken.msg_aggregator)
+    warnings = consume_warnings(kraken.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -1255,8 +1256,8 @@ def test_kraken_trade_no_counterpart(kraken):
                 location_label=kraken.name,
             )]
 
-    errors = kraken.msg_aggregator.consume_errors()
-    warnings = kraken.msg_aggregator.consume_warnings()
+    errors = consume_errors(kraken.msg_aggregator)
+    warnings = consume_warnings(kraken.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -1340,8 +1341,8 @@ def test_kraken_trade_no_counterpart_resolves_pair(kraken):
             group_identifier=group_identifier,
             location_label=kraken.name,
         )]
-    assert len(kraken.msg_aggregator.consume_errors()) == 0
-    assert len(kraken.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(kraken.msg_aggregator)) == 0
+    assert len(consume_warnings(kraken.msg_aggregator)) == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1456,8 +1457,8 @@ def test_trade_from_kraken_unexpected_data(kraken):
             assert events[2].asset == A_EUR
         else:
             assert len(events) == 0
-        errors = kraken.msg_aggregator.consume_errors()
-        warnings = kraken.msg_aggregator.consume_warnings()
+        errors = consume_errors(kraken.msg_aggregator)
+        warnings = consume_warnings(kraken.msg_aggregator)
         assert len(errors) == expected_errors_num
         assert len(warnings) == expected_warnings_num
 

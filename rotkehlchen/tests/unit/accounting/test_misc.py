@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.accounting import (
 )
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.tests.utils.messages import no_message_errors
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings, no_message_errors
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
@@ -126,7 +126,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
         AccountingEventType.TRADE: PNL(taxable=FVal('619.025'), free=ZERO),
     })
     assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_ETH) is None
-    warnings = accountant.msg_aggregator.consume_warnings()
+    warnings = consume_warnings(accountant.msg_aggregator)
     assert len(warnings) == 0
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -209,8 +209,8 @@ def test_main_currency_is_respected(
         end_ts=Timestamp(1625001466),
         history_list=history,
     )
-    errors = accountant.msg_aggregator.consume_errors()
-    warnings = accountant.msg_aggregator.consume_warnings()
+    errors = consume_errors(accountant.msg_aggregator)
+    warnings = consume_warnings(accountant.msg_aggregator)
     assert len(warnings) == len(errors) == 0
     # Check that the price is correctly computed in GBP
     assert accountant.pots[0].processed_events[0].price == trade_rate * mocked_price_queries['USD']['GBP'][1609537953]  # noqa: E501

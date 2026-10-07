@@ -44,6 +44,7 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
     prices,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import (
@@ -209,9 +210,9 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: APIS
             'invalid JSON', 'binance', 'Bittrex', 'Kraken', 'Poloniex',
         ],
     )
-    warnings = rotki.msg_aggregator.consume_warnings()
+    warnings = consume_warnings(rotki.msg_aggregator)
     assert len(warnings) == 0
-    errors = rotki.msg_aggregator.consume_errors()
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 2
     assert 'kraken' in errors[0]
     # the indexers return invalid JSON too, which leaves the transactions of every chain

@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.tests.utils.messages import no_message_errors
+from rotkehlchen.tests.utils.messages import consume_errors, no_message_errors
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     AssetAmount,
@@ -360,7 +360,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         end_ts=Timestamp(1514764799),  # 31/12/2017
         history_list=history,
     )
-    errors = accountant.msg_aggregator.consume_errors()
+    errors = consume_errors(accountant.msg_aggregator)
     assert len(errors) == 0
     assert len(accountant.pots[0].cost_basis.missing_prices) == 1
     assert next(iter(accountant.pots[0].cost_basis.missing_prices)) == MissingPrice(

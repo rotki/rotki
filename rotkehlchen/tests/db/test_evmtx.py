@@ -11,6 +11,7 @@ from rotkehlchen.tests.utils.constants import (
     MOCK_INPUT_DATA,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -88,8 +89,8 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     with data.db.user_write() as cursor:
         dbevmtx = DBEvmTx(data.db)
         dbevmtx.add_transactions(cursor, [tx1, tx2], relevant_address=ETH_ADDRESS3)
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
+        errors = consume_errors(msg_aggregator)
+        warnings = consume_warnings(msg_aggregator)
         assert len(errors) == 0
         assert len(warnings) == 0
         filter_query = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
@@ -99,8 +100,8 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         # Add the last 2 transactions. Since tx2 already exists in the DB it should be
         # ignored (no errors shown for attempting to add already existing transaction)
         dbevmtx.add_transactions(cursor, [tx2, tx3], relevant_address=ETH_ADDRESS3)
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
+        errors = consume_errors(msg_aggregator)
+        warnings = consume_warnings(msg_aggregator)
         assert len(errors) == 0
         assert len(warnings) == 0
         returned_transactions = dbevmtx.get_transactions(cursor, filter_query)
@@ -268,8 +269,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx2, internal_tx3, internal_tx4], relevant_address=ETH_ADDRESS1)  # noqa: E501
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1, internal_tx4], relevant_address=ETH_ADDRESS3)  # noqa: E501
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1], relevant_address=address_4)
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
+        errors = consume_errors(msg_aggregator)
+        warnings = consume_warnings(msg_aggregator)
         assert len(errors) == 0
         assert len(warnings) == 0
 

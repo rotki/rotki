@@ -36,6 +36,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_solana_address
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import Location, TokenKind
 
 if TYPE_CHECKING:
@@ -1143,7 +1144,7 @@ def test_importing_user_assets_list(
         assert_simple_ok_response(response)
 
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    errors = rotki.msg_aggregator.consume_errors()
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
 
     assert_proper_sync_response_with_result(response)

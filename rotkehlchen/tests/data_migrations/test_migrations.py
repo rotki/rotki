@@ -52,6 +52,7 @@ from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -280,8 +281,8 @@ def test_migration_1(database: DBHandler) -> None:
     )
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
-    errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = consume_errors(rotki.msg_aggregator)
+    warnings = consume_warnings(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
@@ -312,7 +313,7 @@ def test_failed_migration(database: DBHandler) -> None:
 
     # Ignore websocket messages with notifications about db upgrade version.
     # By default they will be treated as errors since we have no websocket connection set up.
-    rotki.msg_aggregator.consume_errors()
+    consume_errors(rotki.msg_aggregator)
 
     with migrate_mock:
         DataMigrationManager(rotki).maybe_migrate_data()
@@ -320,8 +321,8 @@ def test_failed_migration(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         last_data_migration = database.get_setting(cursor=cursor, name='last_data_migration')
     assert last_data_migration == 0, 'no migration should have happened'
-    errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = consume_errors(rotki.msg_aggregator)
+    warnings = consume_warnings(rotki.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 1
     assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
@@ -341,7 +342,7 @@ def test_cancelled_migration(database: DBHandler) -> None:
     def cancelled_migration(rotki: MockDataForMigrations, progress_handler: MigrationProgressHandler) -> None:  # noqa: E501
         raise TaskCancelledError('Cancelled due to logout')
 
-    rotki.msg_aggregator.consume_errors()  # discard db upgrade notification messages
+    consume_errors(rotki.msg_aggregator)  # discard db upgrade notification messages
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MigrationRecord(version=1, function=cancelled_migration)],  # type: ignore
@@ -351,8 +352,8 @@ def test_cancelled_migration(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         last_data_migration = database.get_setting(cursor=cursor, name='last_data_migration')
     assert last_data_migration == 0, 'no migration should have been recorded'
-    assert len(rotki.msg_aggregator.consume_errors()) == 0
-    assert len(rotki.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(rotki.msg_aggregator)) == 0
+    assert len(consume_warnings(rotki.msg_aggregator)) == 0
 
 
 @pytest.mark.parametrize('data_migration_version', [2])

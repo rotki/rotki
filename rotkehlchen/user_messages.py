@@ -376,10 +376,6 @@ class MessagesAggregator:
             drained.extend(store.pop(key) for key in selected)
         return sorted(drained, key=lambda message: message.seq)
 
-    def _drain(self, select: Callable[[HeldMessage], bool]) -> list[HeldMessage]:
-        with self._lock:
-            return self._drain_locked(select)
-
     def add_warning(
             self,
             msg: str,
@@ -464,21 +460,6 @@ class MessagesAggregator:
             self._drain_locked(lambda _: True)
             self._dropped = 0
 
-    @staticmethod
-    def _is_user_warning(message: HeldMessage) -> bool:
-        return (
-            message.payload['type'] == WSMessageType.USER_MESSAGE and
-            message.payload['data']['verbosity'] == 'warning'
-        )
-
-    def consume_warnings(self) -> list[str]:
-        """Drain the held user warnings as rendered text, once per time each was sent."""
-        return [
-            message.text
-            for message in self._drain(self._is_user_warning)
-            for _ in range(message.count)
-        ]
-
     def add_missing_key_message(
             self,
             service: ExternalService,
@@ -500,31 +481,6 @@ class MessagesAggregator:
             data['reason'] = reason
 
         self.add_message(message_type=WSMessageType.MISSING_API_KEY, data=data)
-
-    @staticmethod
-    def _is_failure(message: HeldMessage) -> bool:
-        """A user error, or a structured failure held as a report. Events such as a CSV
-        import result and state such as a premium status change are not failures."""
-        message_type, data = WSMessageType(message.payload['type']), message.payload['data']
-        if message_type == WSMessageType.USER_MESSAGE:
-            return data['verbosity'] == 'error'
-        return delivery_of(message_type, data).policy == DeliveryPolicy.REPORT
-
-    def consume_errors(self) -> list[str]:
-        """Drain the held failures as text, once per time each was sent: the rendered
-        sentence of a user error, the serialized payload of a report."""
-        return [message.text for message in self._consume_failures()]
-
-    def consume_error_payloads(self) -> list[dict[str, Any]]:
-        """Like consume_errors, as the `{type, data}` objects the websocket sends."""
-        return [message.payload for message in self._consume_failures()]
-
-    def _consume_failures(self) -> list[HeldMessage]:
-        return [
-            message
-            for message in self._drain(self._is_failure)
-            for _ in range(message.count)
-        ]
 
     @staticmethod
     def how_many_events_per_ws(total_events: int) -> int:
