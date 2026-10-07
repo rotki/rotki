@@ -106,6 +106,13 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   }),
 }));
 
+vi.mock('@/modules/banks/use-banks', () => ({
+  useBanks: vi.fn().mockReturnValue({
+    fetchBankBalances: vi.fn().mockResolvedValue(undefined),
+    refreshBankConnections: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
 vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
   useExchanges: vi.fn().mockReturnValue({
     fetchConnectedExchangeBalances: vi.fn().mockResolvedValue({}),
