@@ -1,0 +1,96 @@
+name: Update Release Sponsors
+
+on:
+  release:
+    types: [ published, edited ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published minor release tag (for example, v1.44.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-sponsors-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions: { }
+
+jobs:
+  update:
+    if: >-
+      github.repository == 'rotki/rotki' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (!github.event.release.draft && !github.event.release.prerelease))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Select minor release
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.0$ ]]; then
+            echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+            echo "minor=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            echo 'Expected a minor release tag such as v1.44.0' >&2
+            exit 1
+          else
+            echo 'Skipping a non-minor release'
+          fi
+
+      - name: Checkout develop
+        if: steps.release.outputs.minor == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: develop
+          persist-credentials: false
+
+      - name: Fetch release and update sponsors
+        if: steps.release.outputs.minor == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          EVENT_ACTION: ${{ github.event.action }}
+        run: |
+          gh release view "$RELEASE_TAG" --json tagName,body,isDraft,isPrerelease > "$RUNNER_TEMP/release.json"
+          args=(--release-json "$RUNNER_TEMP/release.json")
+          if [[ "$EVENT_ACTION" == edited ]]; then
+            args+=(--skip-without-sponsors)
+          fi
+          python3 tools/scripts/update_release_sponsors.py "${args[@]}"
+          git diff --check
+
+      - name: Create app token
+        if: steps.release.outputs.minor == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349  # v2.2.2
+        with:
+          app-id: ${{ vars.RELEASE_SPONSORS_APP_ID }}
+          private-key: ${{ secrets.RELEASE_SPONSORS_APP_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Create or update pull request
+        if: steps.release.outputs.minor == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+          add-paths: releases_sponsors.md
+          base: develop
+          branch: automation/release-sponsors/${{ steps.release.outputs.tag }}
+          delete-branch: true
+          commit-message: Update sponsors for ${{ steps.release.outputs.tag }}
+          title: Update sponsors for ${{ steps.release.outputs.tag }}
+          body: |
+            Update `releases_sponsors.md` from the sponsor section of
+            https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.tag }}.
+
+            Keeps sponsor tiers and details as published and releases ordered newest first.
