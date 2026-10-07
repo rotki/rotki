@@ -111,6 +111,16 @@ describe('useNotifications', () => {
       description: 'Error description',
       success: false,
       title: 'Error Title',
-    });
+    }, undefined);
+  });
+
+  it('should pass the sessionless option on to the message store', () => {
+    const { showErrorMessage } = useNotifications();
+    showErrorMessage('Error Title', 'Error description', { sessionless: true });
+
+    expect(mockSetMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Error description', success: false }),
+      { sessionless: true },
+    );
   });
 });

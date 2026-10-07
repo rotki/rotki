@@ -1,6 +1,7 @@
 import { NotificationCategory, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
@@ -26,6 +27,27 @@ describe('useNotificationDispatcher', () => {
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({ message: 'message-1', title: 'title-1' });
+  });
+
+  it('should drop a notification raised with no live session', () => {
+    const { notify } = useNotificationDispatcher();
+    const { data } = storeToRefs(useNotificationsStore());
+
+    endSession();
+    notify({ message: 'late failure', title: 'title-1' });
+
+    expect(get(data)).toHaveLength(0);
+  });
+
+  it('should record notifications again once the next session begins', () => {
+    const { notify } = useNotificationDispatcher();
+    const { data } = storeToRefs(useNotificationsStore());
+
+    endSession();
+    beginSession();
+    notify({ message: 'message-1', title: 'title-1' });
+
+    expect(get(data)).toHaveLength(1);
   });
 
   it('should handle group notifications with cooldown', () => {

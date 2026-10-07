@@ -33,6 +33,9 @@ interface UseLogoutReturn {
 /** Long enough for the components to leave the DOM and the loading overlay to take over. */
 const DOM_TEARDOWN_MS = 1500;
 
+/** A logout reports its failures after its session ended, to the logged-out screen. */
+const SESSIONLESS = { sessionless: true } as const;
+
 /**
  * Drops every request still queued or in flight, sessionless ones included.
  *
@@ -88,7 +91,7 @@ export function useLogout(): UseLogoutReturn {
       }
       catch (error: unknown) {
         logger.error(error);
-        showErrorMessage('Logout failed', getErrorMessage(error));
+        showErrorMessage('Logout failed', getErrorMessage(error), SESSIONLESS);
       }
     }
 
@@ -97,7 +100,7 @@ export function useLogout(): UseLogoutReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      showErrorMessage('MCP logout failed', getErrorMessage(error));
+      showErrorMessage('MCP logout failed', getErrorMessage(error), SESSIONLESS);
     }
 
     if (navigate)
@@ -118,7 +121,7 @@ export function useLogout(): UseLogoutReturn {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      showErrorMessage('Remote session logout failure', message);
+      showErrorMessage('Remote session logout failure', message, SESSIONLESS);
       return { message, success: false };
     }
   };
