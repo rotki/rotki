@@ -1,6 +1,7 @@
 from collections import defaultdict
 from contextlib import ExitStack, nullcontext
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 from web3 import Web3
@@ -12,9 +13,10 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH, A_USDC
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH, A_EUR, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.migrations.manager import (
     MIGRATIONS_LIST,
@@ -45,6 +47,9 @@ def assert_vaults_equal(a: MakerdaoVault, b: MakerdaoVault) -> None:
         msg = f'Vaults differ in attribute "{attr}". "{vala}" != "{valb}"'
         if isinstance(vala, FVal):
             assert vala.is_close(valb), msg
+        elif isinstance(vala, Balance):
+            assert vala.amount.is_close(valb.amount), msg
+            assert vala.value.is_close(valb.value), msg
         else:
             assert vala == valb, msg
 
@@ -66,7 +71,7 @@ def fixture_makerdao_test_data(
         urn=make_evm_address(),
         collateral_type='ETH-A',
         collateral_asset=A_ETH.resolve_to_crypto_asset(),
-        collateral=Balance(FVal('3.1'), FVal('850.1')),
+        collateral=Balance(FVal('3.1'), FVal('775')),  # 250 EUR, not the oracle price
         debt=Balance(FVal('635.1'), FVal('952.65')),
         collateralization_ratio='133.85%',
         liquidation_ratio=FVal('1.5'),
@@ -79,7 +84,7 @@ def fixture_makerdao_test_data(
         urn=make_evm_address(),
         collateral_type='BAT-A',
         collateral_asset=A_BAT.resolve_to_crypto_asset(),
-        collateral=Balance(FVal('255.1'), FVal('0.09055272442179537436299490395')),
+        collateral=Balance(FVal('255.1'), FVal('51.02')),  # 0.2 EUR, not the oracle price
         debt=Balance(FVal('15.4'), FVal('23.1')),
         collateralization_ratio='0.59%',
         liquidation_ratio=FVal('1.5'),
@@ -91,7 +96,11 @@ def fixture_makerdao_test_data(
     return VaultTestData(
         vaults=expected_vaults,
         proxy_mappings={user_address: proxy_address},
-        mock_contracts=['GetCDPS', 'ProxyRegistry', 'VAT', 'SPOT', 'JUG'],
+        mock_contracts=['GetCDPS', 'VAT', 'SPOT', 'JUG'],
+        oracle_prices={  # USD prices giving the expected collateralization ratios
+            'ETH-A': FVal('850.1') / FVal('3.1'),
+            'BAT-A': FVal('0.09055272442179537436299490395') / FVal('255.1'),
+        },
     )
 
 
@@ -136,14 +145,32 @@ def fixture_makerdao_vaults(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('mocked_proxies', [{}])
+@pytest.mark.parametrize('mocked_current_prices', [{  # main currency prices of the test vaults
+    (A_ETH, A_EUR): FVal('250'),
+    (A_BAT, A_EUR): FVal('0.2'),
+    (A_DAI, A_EUR): FVal('1.5'),
+}])
 def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
     web3_node = get_web3_node_from_inquirer(makerdao_vaults.ethereum)
     web3_patch = create_web3_mock(web3=web3_node.rpc_client, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
-    with web3_patch:
+    own_node = next(node for node in ethereum_inquirer.rpc_mapping if node.name == 'own')
+    with web3_patch, patch.object(
+        ethereum_inquirer,
+        'default_call_order',
+        return_value=[WeightedNode(node_info=own_node, active=True, weight=ONE)],
+    ), patch.object(
+        makerdao_vaults.ethereum.proxies_inquirer,
+        'get_accounts_having_proxy',
+        return_value={
+            user_address: {proxy}
+            for user_address, proxy in makerdao_test_data.proxy_mappings.items()
+        },
+    ):
         vaults = makerdao_vaults.get_vaults()
 
-    for idx, vault in enumerate(vaults):
-        assert_vaults_equal(vault, makerdao_test_data.vaults[idx])
+    assert len(vaults) == len(makerdao_test_data.vaults)
+    for vault, expected_vault in zip(vaults, makerdao_test_data.vaults, strict=True):
+        assert_vaults_equal(vault, expected_vault)
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{
