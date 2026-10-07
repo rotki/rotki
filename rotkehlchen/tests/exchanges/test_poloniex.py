@@ -25,7 +25,11 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
     POLONIEX_TRADES_RESPONSE,
 )
-from rotkehlchen.tests.utils.messages import consume_errors_and_unknown_assets
+from rotkehlchen.tests.utils.messages import (
+    consume_errors,
+    consume_errors_and_unknown_assets,
+    consume_warnings,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -134,7 +138,7 @@ def test_poloniex_trade_missing_timestamp_is_skipped(poloniex: Poloniex) -> None
         start_ts=Timestamp(1500000000),
         end_ts=Timestamp(1565732120),
     ) == []
-    assert poloniex.msg_aggregator.consume_errors() == [
+    assert consume_errors(poloniex.msg_aggregator) == [
         'Error deserializing a poloniex trade. Check the logs and open a bug report.',
     ]
 
@@ -303,7 +307,7 @@ def test_incremental_trade_history_skips_missing_id(poloniex: Poloniex) -> None:
 
     event_queue.flush.assert_called_once()
     assert len(event_queue.flush.call_args.args[0]) == 3
-    assert poloniex.msg_aggregator.consume_warnings() == [
+    assert consume_warnings(poloniex.msg_aggregator) == [
         'Error deserializing a poloniex trade. Check the logs for details',
     ]
 
@@ -327,7 +331,7 @@ def test_query_trade_history_unexpected_data(poloniex):
             )
 
         assert len(events) == expected_trades_len
-        warnings = poloniex.msg_aggregator.consume_warnings()
+        warnings = consume_warnings(poloniex.msg_aggregator)
         assert len(warnings) == expected_warnings_num
         errors, unknown = consume_errors_and_unknown_assets(poloniex.msg_aggregator)
         assert len(errors) == expected_errors_num
@@ -540,7 +544,7 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex: Poloniex):
     assert asset_movements[0].asset == Asset('FAIR')
     assert asset_movements[0].amount == FVal('100.5')
 
-    warnings = poloniex.msg_aggregator.consume_warnings()
+    warnings = consume_warnings(poloniex.msg_aggregator)
     assert len(warnings) == 0
 
 
@@ -572,9 +576,9 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
                 assert len(asset_movements) == 1
         else:
             assert len(asset_movements) == 0
-            warnings = poloniex.msg_aggregator.consume_warnings()
+            warnings = consume_warnings(poloniex.msg_aggregator)
             assert len(warnings) == expected_warnings_num
-            errors = poloniex.msg_aggregator.consume_errors()
+            errors = consume_errors(poloniex.msg_aggregator)
             assert len(errors) == expected_errors_num
 
     def check_permutations_of_input_invalid_data(given_input):

@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.banks import (
     QontoFixtureTransport,
     patch_bank_transport,
 )
+from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -85,7 +86,7 @@ def test_unknown_status_is_reported_once_and_skipped(qonto, function_scope_messa
         account = qonto.query_accounts()[0]
     for tx in transport.transactions[:2]:
         assert qonto._deserialize_transaction({**tx, 'status': 'teleported'}, account) is None
-    warnings = function_scope_messages_aggregator.consume_warnings()
+    warnings = consume_warnings(function_scope_messages_aggregator)
     assert len(warnings) == 1, 'reported once, not per transaction'
     assert 'teleported' in warnings[0]
 
@@ -98,7 +99,7 @@ def test_unknown_operation_type_is_ingested_as_other(qonto, function_scope_messa
     transaction = qonto._deserialize_transaction({**tx, 'operation_type': 'holo_pay'}, account)
     assert transaction is not None
     assert transaction.kind == BankTransactionKind.OTHER
-    assert 'holo_pay' in function_scope_messages_aggregator.consume_warnings()[0]
+    assert 'holo_pay' in consume_warnings(function_scope_messages_aggregator)[0]
 
 
 def test_missing_key_is_schema_drift_without_values(qonto):

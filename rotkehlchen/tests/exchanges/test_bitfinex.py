@@ -28,6 +28,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_NEO
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
@@ -236,7 +237,7 @@ def test_api_key_err_auth_nonce(mock_bitfinex: Bitfinex) -> None:
 
         events, _ = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
         assert events == []
-        errors = mock_bitfinex.msg_aggregator.consume_errors()
+        errors = consume_errors(mock_bitfinex.msg_aggregator)
         assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 

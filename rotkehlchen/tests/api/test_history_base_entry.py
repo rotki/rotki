@@ -71,6 +71,7 @@ from rotkehlchen.tests.utils.history_base_entry import (
     maybe_group_entries,
     predefined_events_to_insert,
 )
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import (
     BTCAddress,
     BTCTxId,
@@ -738,7 +739,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
             ),
         )
     assert_proper_sync_response_with_result(response)
-    assert rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors() == ['Could not deserialize one or more history event(s). Try redecoding the event(s) or check the logs for more details.']  # noqa: E501
+    assert consume_errors(rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator) == ['Could not deserialize one or more history event(s). Try redecoding the event(s) or check the logs for more details.']  # noqa: E501
 
     # check that address filter shows incoming transactions to the filtered address.
     with rotki.data.db.conn.write_ctx() as write_cursor:

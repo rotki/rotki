@@ -24,6 +24,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_ethereum_event
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -1133,8 +1134,8 @@ def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transa
         decoder = EthereumTransactionDecoder(database=database, ethereum_inquirer=ethereum_inquirer, transactions=eth_transactions)  # noqa: E501
         assert decoder is not None
 
-    errors = database.msg_aggregator.consume_errors()
-    warnings = database.msg_aggregator.consume_warnings()
+    errors = consume_errors(database.msg_aggregator)
+    warnings = consume_warnings(database.msg_aggregator)
 
     assert len(warnings) == 0
     assert errors == ['Failed at initialization of ethereum Lockedgno decoder due to non conformant token']  # noqa: E501

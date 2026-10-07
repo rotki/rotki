@@ -56,6 +56,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -1004,7 +1005,7 @@ def test_decoding_before_protocol_caches_are_loaded(
         (HistoryEventType.SPEND, HistoryEventSubType.FEE),
         (HistoryEventType.TRANSFER, HistoryEventSubType.NONE),
     ]
-    assert database.msg_aggregator.consume_errors() == []
+    assert consume_errors(database.msg_aggregator) == []
 
 
 def test_one_failing_enricher_does_not_hide_the_rest(

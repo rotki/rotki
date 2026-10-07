@@ -51,6 +51,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
@@ -93,8 +94,8 @@ def _prepare_clean_validators(rotkehlchen_api_server: APIServer) -> None:
         )
         assert_simple_ok_response(response)
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
 

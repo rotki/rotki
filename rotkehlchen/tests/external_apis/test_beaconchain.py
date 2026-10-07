@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -149,7 +150,7 @@ def test_free_trial_expired_deletes_api_key(
 
     assert database.get_external_service_credentials(ExternalService.BEACONCHAIN) is None
     assert beaconchain.api_key is None
-    assert messages_aggregator.consume_warnings() == [
+    assert consume_warnings(messages_aggregator) == [
         'The beaconcha.in API key is no longer active and was removed.',
     ]
 

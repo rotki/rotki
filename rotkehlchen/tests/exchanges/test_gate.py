@@ -29,6 +29,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
@@ -222,7 +223,7 @@ def test_gate_trade_query_should_report_remote_errors(
     ):
         gate_exchange._query_trades(start_ts=Timestamp(0), end_ts=Timestamp(1))
 
-    assert gate_exchange.msg_aggregator.consume_errors() == [expected_error]
+    assert consume_errors(gate_exchange.msg_aggregator) == [expected_error]
 
 
 @pytest.mark.parametrize(('api_error', 'response', 'expected_error'), [
@@ -258,7 +259,7 @@ def test_gate_movement_query_should_report_remote_errors(
             query_for=HistoryEventType.DEPOSIT,
         )
 
-    assert gate_exchange.msg_aggregator.consume_errors() == [expected_error]
+    assert consume_errors(gate_exchange.msg_aggregator) == [expected_error]
 
 
 def test_gate_requery_uses_incremental_queue(gate_exchange: Gate) -> None:

@@ -46,6 +46,7 @@ from rotkehlchen.tests.utils.exchanges import (
     assert_binance_asset_movements_result,
     mock_binance_balance_response,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -768,8 +769,8 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: Binance) -> 
             end_ts=Timestamp(end_ts),
         )
 
-    errors = binance.msg_aggregator.consume_errors()
-    warnings = binance.msg_aggregator.consume_warnings()
+    errors = consume_errors(binance.msg_aggregator)
+    warnings = consume_warnings(binance.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     assert_binance_asset_movements_result(
@@ -996,8 +997,8 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
             end_ts=Timestamp(end_ts),
         )
 
-    errors = binance.msg_aggregator.consume_errors()
-    warnings = binance.msg_aggregator.consume_warnings()
+    errors = consume_errors(binance.msg_aggregator)
+    warnings = consume_warnings(binance.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -1451,8 +1452,8 @@ def test_binance_query_lending_interests_history(
                 (location.serialize_for_db(),),
             ).fetchone()[0] == count
 
-    assert len(binance.msg_aggregator.consume_errors()) == 0
-    assert len(binance.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(binance.msg_aggregator)) == 0
+    assert len(consume_warnings(binance.msg_aggregator)) == 0
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -1499,13 +1500,13 @@ def test_binance_query_lending_interests_history_chunks_30_days(
             end_ts=Timestamp(BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS),
         )
 
-    assert binance.msg_aggregator.consume_errors() == []  # no window was rejected
+    assert consume_errors(binance.msg_aggregator) == []  # no window was rejected
     assert len(requested_windows) > 1  # the range had to be chunked
     for start_time, end_time in requested_windows:
         assert end_time - start_time <= max_window_ms
 
-    assert len(binance.msg_aggregator.consume_errors()) == 0
-    assert len(binance.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(binance.msg_aggregator)) == 0
+    assert len(consume_warnings(binance.msg_aggregator)) == 0
 
 
 def test_binance_query_convert_trades(function_scope_binance: Binance) -> None:
@@ -1573,5 +1574,5 @@ def test_binance_query_convert_trades(function_scope_binance: Binance) -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
         )]
 
-    assert len(function_scope_binance.msg_aggregator.consume_errors()) == 0
-    assert len(function_scope_binance.msg_aggregator.consume_warnings()) == 0
+    assert len(consume_errors(function_scope_binance.msg_aggregator)) == 0
+    assert len(consume_warnings(function_scope_binance.msg_aggregator)) == 0

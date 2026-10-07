@@ -15,6 +15,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -188,8 +189,8 @@ def test_okx_query_balances(mock_okx: Okx):
     assert (balances[A_USDT.resolve_to_asset_with_oracles()]).amount == FVal('75.00000065312')
     assert (balances[A_USDC.resolve_to_asset_with_oracles()]).amount == FVal('30')
 
-    warnings = mock_okx.msg_aggregator.consume_warnings()
-    errors = mock_okx.msg_aggregator.consume_errors()
+    warnings = consume_warnings(mock_okx.msg_aggregator)
+    errors = consume_errors(mock_okx.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
 

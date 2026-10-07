@@ -54,6 +54,7 @@ from rotkehlchen.tests.utils.constants import (
     A_XRP,
     A_XTZ,
 )
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -91,8 +92,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
     with rotki.data.db.conn.read_ctx() as cursor:
         events = dbevents.get_history_events_internal(cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
@@ -227,8 +228,8 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
                 ('history_events_identifier', True),
             ]),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -648,8 +649,8 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
                 ('history_events_identifier', True),
             ]),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -849,8 +850,8 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -930,8 +931,8 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -964,8 +965,8 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
@@ -1241,8 +1242,8 @@ def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     notes1 = """
 Trade from ShapeShift with ShapeShift Deposit Address:
  0xc181da8187a37f8c518a2d12733c763a491a873c, and
@@ -1327,8 +1328,8 @@ def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
             filter_query=HistoryEventFilterQuery.make(),
                     )
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     notes1 = """
 Activity from uphold with uphold transaction id:
  1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: credit-card,
@@ -1517,8 +1518,8 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
 
@@ -1944,8 +1945,8 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         margin_positions = rotki.data.db.get_margin_positions(cursor)
-        warnings = rotki.msg_aggregator.consume_warnings()
-        errors = rotki.msg_aggregator.consume_errors()
+        warnings = consume_warnings(rotki.msg_aggregator)
+        errors = consume_errors(rotki.msg_aggregator)
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
@@ -3124,7 +3125,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
                     )
-        warnings = rotki.msg_aggregator.consume_warnings()
+        warnings = consume_warnings(rotki.msg_aggregator)
 
     assert len(history_events) == 7
     assert len(expected_history_events) == 7
@@ -3277,8 +3278,8 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
             filter_query=HistoryEventFilterQuery.make(),
                     )
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     assert len(history_events) == 5
@@ -3343,8 +3344,8 @@ def assert_bittrex_import_results(rotki: Rotkehlchen):
             filter_query=HistoryEventFilterQuery.make(),
                     )
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     assert events == [AssetMovement(
@@ -3502,8 +3503,8 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KUCOIN),
                     )
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     expected_swap_events = [SwapEvent(
@@ -3619,8 +3620,8 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             ]),
         )
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == len(warnings) == 0
 
     expected_history_events = [
@@ -3874,8 +3875,8 @@ def assert_coinbasepro_import_results(rotki: Rotkehlchen) -> None:
             filter_query=HistoryEventFilterQuery.make(),
         )
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    errors = rotki.msg_aggregator.consume_errors()
+    warnings = consume_warnings(rotki.msg_aggregator)
+    errors = consume_errors(rotki.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 0
     assert len(history_events) == 21

@@ -31,6 +31,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -527,7 +528,7 @@ def test_export_snapshot_unknown_asset(
         is_download=False,
         expected_entries=1,
     )
-    errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
+    errors = consume_errors(rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator)
     assert len(errors) == 1
     assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
 

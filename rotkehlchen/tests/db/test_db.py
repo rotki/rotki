@@ -121,6 +121,7 @@ from rotkehlchen.tests.utils.constants import (
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_evm_tx_hash
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -1156,7 +1157,7 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
         assets_list = data.db.query_owned_assets(cursor)
     assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}
     assert all(isinstance(x, Asset) for x in assets_list)
-    warnings = data.db.msg_aggregator.consume_warnings()
+    warnings = consume_warnings(data.db.msg_aggregator)
     assert len(warnings) == 0
     data.logout()
 
@@ -1444,8 +1445,8 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
     # Add and retrieve the first 2 margins. All should be fine.
     with data.db.user_write() as cursor:
         data.db.add_margin_positions(cursor, [margin1, margin2])
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
+        errors = consume_errors(msg_aggregator)
+        warnings = consume_warnings(msg_aggregator)
         assert len(errors) == 0
         assert len(warnings) == 0
         returned_margins = data.db.get_margin_positions(cursor)
@@ -1492,8 +1493,8 @@ def test_non_checksummed_eth_account_in_db(database, caplog):
     eth_accounts = blockchain_accounts.eth
     assert len(eth_accounts) == 1
     assert eth_accounts[0] == valid_address
-    errors = database.msg_aggregator.consume_errors()
-    warnings = database.msg_aggregator.consume_warnings()
+    errors = consume_errors(database.msg_aggregator)
+    warnings = consume_warnings(database.msg_aggregator)
     assert len(errors) == 0
     assert len(warnings) == 2  # one problem sent twice, held once with its newest sentence
     for address in (non_checksummed_address, invalid_address):
@@ -1815,8 +1816,8 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
     # and that an error is logged when trying to get premium
     with data.db.conn.read_ctx() as cursor:
         assert not data.db.get_rotkehlchen_premium(cursor)
-    warnings = msg_aggregator.consume_warnings()
-    errors = msg_aggregator.consume_errors()
+    warnings = consume_warnings(msg_aggregator)
+    errors = consume_errors(msg_aggregator)
 
     assert len(warnings) == 0
     assert len(errors) == 1
@@ -1899,7 +1900,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
             notes='',
         )])
 
-    errors = database.msg_aggregator.consume_errors()
+    errors = consume_errors(database.msg_aggregator)
     assert len(errors) == 1
     assert 'Failed to add "margin_position" to the DB with overflow error' in errors[0]
     assert 'Overflow error while trying to add "margin_position" tuples to the DB. Tuples:' in caplog.text  # noqa: E501

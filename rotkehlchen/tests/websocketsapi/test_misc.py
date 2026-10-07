@@ -27,6 +27,11 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.tests.utils.messages import (
+    consume_error_payloads,
+    consume_errors,
+    consume_warnings,
+)
 from rotkehlchen.types import Location
 from rotkehlchen.user_messages import (
     MAX_HELD_EVENTS,
@@ -123,8 +128,8 @@ def test_requeue_undelivered_messages():
     msg_aggregator.requeue_undelivered(json.dumps({'type': 'not_a_type', 'data': {}}))
     msg_aggregator.requeue_undelivered('{not json')  # malformed input is just logged
 
-    assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg, unknown_asset_msg]
-    assert msg_aggregator.consume_warnings() == ['a warning']
+    assert consume_errors(msg_aggregator) == ['an error', snapshot_error_msg, unknown_asset_msg]
+    assert consume_warnings(msg_aggregator) == ['a warning']
 
 
 def test_polling_fallback_keeps_the_envelope() -> None:
@@ -139,7 +144,7 @@ def test_polling_fallback_keeps_the_envelope() -> None:
     )
     msg_aggregator.add_warning('a warning', classification=_TAG_PROBLEM)
 
-    assert msg_aggregator.consume_error_payloads() == [{
+    assert consume_error_payloads(msg_aggregator) == [{
         'type': 'user_message',
         'data': {
             'verbosity': 'error',
@@ -150,8 +155,8 @@ def test_polling_fallback_keeps_the_envelope() -> None:
             'group': ['error', 'bad_data', 'kucoin', 'balance'],
         },
     }]
-    assert msg_aggregator.consume_errors() == []  # the payload read drained the queue
-    assert msg_aggregator.consume_warnings() == ['a warning']
+    assert consume_errors(msg_aggregator) == []  # the payload read drained the queue
+    assert consume_warnings(msg_aggregator) == ['a warning']
 
 
 def test_every_message_type_has_a_delivery_policy() -> None:
@@ -186,7 +191,7 @@ def test_repeats_of_one_problem_are_held_once_with_a_count() -> None:
 
     for _ in range(2):
         msg_aggregator.add_error('kucoin is down', classification=_TAG_PROBLEM)
-    assert msg_aggregator.consume_errors() == ['kucoin is down', 'kucoin is down']
+    assert consume_errors(msg_aggregator) == ['kucoin is down', 'kucoin is down']
 
 
 def test_state_keeps_only_the_latest_message_per_key() -> None:
@@ -234,7 +239,7 @@ def test_errors_read_only_the_failures() -> None:
     msg_aggregator.add_error('kucoin is down', classification=_TAG_PROBLEM)
     msg_aggregator.add_message(WSMessageType.ORACLE_PENALIZED, {'oracle': 'coingecko'})
 
-    assert [error['type'] for error in msg_aggregator.consume_error_payloads()] == [
+    assert [error['type'] for error in consume_error_payloads(msg_aggregator)] == [
         'user_message',
         'oracle_penalized',
     ]
@@ -501,7 +506,7 @@ def test_a_user_message_cannot_be_emitted_unclassified() -> None:
         msg_aggregator.add_error('an error')  # type: ignore[call-arg]  # classification is required
     with pytest.raises(TypeError):
         msg_aggregator.add_warning('a warning')  # type: ignore[call-arg]  # classification is required
-    assert msg_aggregator.consume_errors() == msg_aggregator.consume_warnings() == []
+    assert consume_errors(msg_aggregator) == consume_warnings(msg_aggregator) == []
 
 
 def test_a_family_cannot_be_emitted_without_its_required_data() -> None:

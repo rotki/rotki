@@ -30,6 +30,7 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_GBP
+from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_list
@@ -108,7 +109,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         with pytest.raises(RemoteError, match=API_ERR_AUTH_NONCE_MESSAGE):
             mock_bitstamp.query_online_history_events(0, 1)
 
-        assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+        assert len(errors := consume_errors(mock_bitstamp.msg_aggregator)) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
@@ -586,7 +587,7 @@ def test_api_query_paginated_non_related_error_code(
             case='trades',
         )
 
-    assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+    assert len(errors := consume_errors(mock_bitstamp.msg_aggregator)) == 1
     assert expected_message in errors[0]
 
 
@@ -604,7 +605,7 @@ def test_crypto_transactions_raises_decoded_error_once(mock_bitstamp: Bitstamp) 
     ):
         mock_bitstamp._query_crypto_transactions(offset=0, force_refresh=False)
 
-    assert len(errors := mock_bitstamp.msg_aggregator.consume_errors()) == 1
+    assert len(errors := consume_errors(mock_bitstamp.msg_aggregator)) == 1
     assert 'has reason' in errors[0]
 
 
@@ -1307,8 +1308,8 @@ def test_asset_movement_with_fee_works_correctly(mock_bitstamp: Bitstamp) -> Non
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_query):
         mock_bitstamp.query_history_events()
 
-    assert len(mock_bitstamp.msg_aggregator.consume_warnings()) == 0
-    assert len(mock_bitstamp.msg_aggregator.consume_errors()) == 0
+    assert len(consume_warnings(mock_bitstamp.msg_aggregator)) == 0
+    assert len(consume_errors(mock_bitstamp.msg_aggregator)) == 0
 
 
 @pytest.mark.parametrize('force_requery', [False, True])

@@ -66,6 +66,7 @@ from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS2,
     make_evm_address,
 )
+from rotkehlchen.tests.utils.messages import consume_error_payloads
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 from rotkehlchen.types import (
@@ -241,7 +242,7 @@ def test_query_all_balances(
     # the mocked exchange balances hold assets rotki can't map, and nothing else goes wrong
     assert sorted(
         (error['type'], error['data'].get('location'), error['data'].get('identifier'))
-        for error in rotki.msg_aggregator.consume_error_payloads()
+        for error in consume_error_payloads(rotki.msg_aggregator)
     ) == [
         ('exchange_unknown_asset', 'binance', 'IDONTEXIST'),
         ('exchange_unknown_asset', 'poloniex', 'CNOTE'),
