@@ -1,5 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EffectScope, MaybeRefOrGetter } from 'vue';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePeriodicPollingScheduler } from './use-periodic-polling-scheduler';
 
 interface SchedulerOptions {
@@ -99,4 +99,65 @@ describe('usePeriodicPollingScheduler', () => {
     stop();
     expect(schedulerStop).toHaveBeenCalledOnce();
   });
+
+  describe('while the window is hidden', () => {
+    let scope: EffectScope;
+
+    /** Builds the scheduler in a scope the test stops, so its visibility watcher cannot outlive it. */
+    function build(): ReturnType<typeof usePeriodicPollingScheduler> {
+      const scheduler = scope.run(() => usePeriodicPollingScheduler());
+      assert(scheduler);
+      return scheduler;
+    }
+
+    beforeEach(() => {
+      set(canRequestData, true);
+      setVisibility('visible');
+      scope = effectScope();
+    });
+
+    afterEach(() => {
+      scope.stop();
+    });
+
+    it('should skip periodic data but keep consuming messages', () => {
+      build();
+      setVisibility('hidden');
+
+      capturedOptions?.callback();
+
+      expect(check).not.toHaveBeenCalled();
+      expect(consume).toHaveBeenCalledOnce();
+    });
+
+    it('should read periodic data once as soon as the window is shown again', async () => {
+      const { start } = build();
+      start(false);
+      setVisibility('hidden');
+      await nextTick();
+
+      setVisibility('visible');
+      await nextTick();
+
+      expect(check).toHaveBeenCalledOnce();
+    });
+
+    it('should not read periodic data on being shown while stopped', async () => {
+      const { start, stop } = build();
+      start(false);
+      stop();
+      setVisibility('hidden');
+      await nextTick();
+
+      setVisibility('visible');
+      await nextTick();
+
+      expect(check).not.toHaveBeenCalled();
+    });
+  });
 });
+
+function setVisibility(state: DocumentVisibilityState): void {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
