@@ -105,6 +105,20 @@ export function combineOutcomes(outcomes: readonly Result<unknown, TaskError>[])
 }
 
 /**
+ * {@link combineOutcomes} over a fan-out's pending children, waiting for every one of them.
+ *
+ * @remarks
+ * A child that rejects instead of resolving to an outcome counts as a failed child, so one throw
+ * neither aborts the wait for its siblings nor escapes into the parent.
+ */
+export async function combineSettled(work: readonly Promise<Result<unknown, TaskError>>[]): Promise<Result<void, TaskError>> {
+  const settled = await Promise.allSettled(work);
+  return combineOutcomes(settled.map(child => (child.status === 'fulfilled'
+    ? child.value
+    : err(TaskFailed({ message: child.reason instanceof Error ? child.reason.message : String(child.reason) })))));
+}
+
+/**
  * Run `handler` only when `outcome` is an actionable failure, not a cancellation. The canonical
  * tail for a native producer that surfaces real errors (notify, throw, …) while staying silent
  * on cancels. No-op on success.

@@ -1,8 +1,8 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
-import { err, ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { err, ok, type Result } from 'plainfp/result';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryTransactionDecoding } from './use-history-transaction-decoding';
@@ -117,6 +117,35 @@ describe('useHistoryTransactionDecoding', () => {
 
       await expect(redecodeTransactions(['ethereum', 'optimism'])).resolves.toBeUndefined();
       expect(mockNotifyError).not.toHaveBeenCalled();
+    });
+
+    /** Runs the flow with each chain's decode answering as `outcomeOf` says, and returns the flow's own outcome. */
+    async function flowOutcome(outcomeOf: (chain: string) => Result<void, TaskError>): Promise<Result<void, TaskError>> {
+      let flow: Promise<Result<void, TaskError>> | undefined;
+      mocks.submitTask.mockImplementation(async (spec: { id: string; kind: string; run: () => Promise<Result<void, TaskError>> }) => {
+        if (spec.kind === ActivityKind.REDECODE) {
+          flow = spec.run();
+          return flow;
+        }
+        return outcomeOf(spec.id);
+      });
+
+      await useHistoryTransactionDecoding().redecodeTransactions(['ethereum', 'optimism']);
+      assert(flow);
+      return flow;
+    }
+
+    it('should fail the flow when every chain failed, rather than report the redecode done', async () => {
+      const outcome = await flowOutcome(() => err(TaskFailed({ message: 'boom' })));
+
+      assert(!outcome.ok);
+      expect(outcome.error.message).toBe('boom');
+    });
+
+    it('should complete the flow when at least one chain decoded', async () => {
+      const outcome = await flowOutcome(id => (id === decodeActivityId('ethereum', true) ? ok(undefined) : err(TaskFailed({ message: 'boom' }))));
+
+      expect(outcome.ok).toBe(true);
     });
   });
 
