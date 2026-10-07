@@ -26,6 +26,19 @@ export default mergeConfig(
       globals: true,
       environment: 'happy-dom',
       /*
+       * A click on a `target="_blank"` link opens a child page, which happy-dom then loads for real:
+       * a spec clicking a docs link sent requests to docs.rotki.com from every run.
+       */
+      environmentOptions: {
+        happyDOM: {
+          settings: {
+            navigation: {
+              disableChildPageNavigation: true,
+            },
+          },
+        },
+      },
+      /*
        * `vmThreads` builds the happy-dom environment once per worker instead of once per file,
        * which was a quarter of the run across 1111 files. `vmMemoryLimit` is not optional here:
        * this pool does not reclaim contexts reliably, and without a limit the run holds ~17GB
