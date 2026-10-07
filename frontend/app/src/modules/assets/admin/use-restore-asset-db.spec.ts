@@ -1,8 +1,10 @@
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useRestoreAssetDb } from './use-restore-asset-db';
 
 let loading: Ref<boolean>;
@@ -47,7 +49,7 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     loading = ref<boolean>(false);
-    restoreAssetsDatabase.mockResolvedValue({ success: true });
+    restoreAssetsDatabase.mockResolvedValue(ok(undefined));
   });
 
   afterEach(() => {
@@ -131,7 +133,7 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
 
   describe('a reset that fails', () => {
     it('should report the reason and not offer a restart', async () => {
-      restoreAssetsDatabase.mockResolvedValue({ message: 'the database is locked', success: false });
+      restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({ message: 'the database is locked' })));
 
       const { showRestoreConfirmation } = restore();
       showRestoreConfirmation('soft');
@@ -143,10 +145,9 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     });
 
     it('should escalate to a second confirmation when assets would be lost', async () => {
-      restoreAssetsDatabase.mockResolvedValue({
+      restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({
         message: 'There are assets that can not be deleted. Check logs for more details.',
-        success: false,
-      });
+      })));
 
       const { showRestoreConfirmation } = restore();
       showRestoreConfirmation('hard');
@@ -159,10 +160,9 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     });
 
     it('should retry with the same reset type once the escalation is confirmed', async () => {
-      restoreAssetsDatabase.mockResolvedValue({
+      restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({
         message: 'There are assets that can not be deleted. Check logs for more details.',
-        success: false,
-      });
+      })));
 
       const { showRestoreConfirmation } = restore();
       showRestoreConfirmation('hard');
@@ -176,8 +176,20 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
       expect(restoreAssetsDatabase).toHaveBeenCalledWith('hard');
     });
 
+    it('should stay quiet when the reset was cancelled', async () => {
+      restoreAssetsDatabase.mockResolvedValue(err(Cancelled({ message: '' })));
+
+      const { showRestoreConfirmation } = restore();
+      showRestoreConfirmation('soft');
+      await useConfirmStore().confirm();
+      await flushPromises();
+
+      expect(notify).not.toHaveBeenCalled();
+      expect(get(useConfirmStore().visible)).toBe(false);
+    });
+
     it('should not escalate for an unrelated failure', async () => {
-      restoreAssetsDatabase.mockResolvedValue({ message: 'the database is locked', success: false });
+      restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({ message: 'the database is locked' })));
 
       const { showRestoreConfirmation } = restore();
       showRestoreConfirmation('hard');
