@@ -1464,7 +1464,7 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
-def test_non_checksummed_eth_account_in_db(database):
+def test_non_checksummed_eth_account_in_db(database, caplog):
     """
     Regression test for  https://github.com/rotki/rotki/issues/519
 
@@ -1495,9 +1495,9 @@ def test_non_checksummed_eth_account_in_db(database):
     errors = database.msg_aggregator.consume_errors()
     warnings = database.msg_aggregator.consume_warnings()
     assert len(errors) == 0
-    assert len(warnings) == 2
-    assert f'Invalid ETH account in DB: {non_checksummed_address}' in warnings[0]
-    assert f'Invalid ETH account in DB: {invalid_address}' in warnings[1]
+    assert len(warnings) == 2  # one problem sent twice, held once with its newest sentence
+    for address in (non_checksummed_address, invalid_address):
+        assert any(f'Invalid ETH account in DB: {address}' in line for line in caplog.messages)
 
 
 def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sql_vm_instructions_cb):  # noqa: E501

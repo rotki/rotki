@@ -680,7 +680,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             cursor: DBCursor,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> bool:
+    ) -> None:
         """Queries Binance Simple Earn history, transforms it into `HistoryEvent` objects
         and saves it in the database.
 
@@ -699,12 +699,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         May raise:
         - RemoteError
         - BinancePermissionError
-
-        Returns True if there is an error, otherwise returns False.
         """
         if self.location == Location.BINANCEUS:
             log.debug('Skipping query of simple earn history as Binance US does not support it.')
-            return False
+            return
 
         ranges = DBQueryRanges(self.db)
         history_events_db = DBHistoryEvents(self.db)
@@ -747,7 +745,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                             record=UserMessageRecord.HISTORY_EVENT,
                             error=str(e),
                         ))
-                    return True
+                    return
 
                 for entry in response:
                     try:
@@ -827,7 +825,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         record=UserMessageRecord.HISTORY_EVENT,
                         error=str(e),
                     ))
-                return True
+                return
 
             for entry in response:
                 try:
@@ -886,8 +884,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     location_string=range_query_name,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
-
-        return False
 
     def _query_cross_collateral_futures_balances(
             self,

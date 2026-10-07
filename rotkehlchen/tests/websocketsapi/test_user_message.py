@@ -27,6 +27,7 @@ def test_query_user_message(rotkehlchen_api_server, websocket_connection):
         'key': 'local_db',
         'subject': None,
         'fields': {'entry': 'tag'},
+        'group': ['warning', 'local_db', None, 'tag'],
     }}
     assert websocket_connection.pop_message() == {'type': 'user_message', 'data': {
         'verbosity': 'error',
@@ -34,5 +35,6 @@ def test_query_user_message(rotkehlchen_api_server, websocket_connection):
         'key': 'bad_data',
         'subject': 'kucoin',
         'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+        'group': ['error', 'bad_data', 'kucoin', 'balance'],
     }}
     assert websocket_connection.messages_num() == 0

@@ -31,7 +31,7 @@ def test_name():
     assert exchange.name == 'iconomi1'
 
 
-def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
+def test_iconomi_query_balances_unknown_asset(function_scope_iconomi, caplog):
     """Test that if a iconomi balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
     iconomi = function_scope_iconomi
@@ -51,9 +51,9 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
     assert balances[A_REP].value == FVal('0.79717986765')
 
     warnings = iconomi.msg_aggregator.consume_warnings()
-    assert len(warnings) == 2
-    assert 'unsupported ICONOMI strategy CAR' in warnings[0]
-    assert 'unsupported ICONOMI strategy SCND' in warnings[1]
+    assert len(warnings) == 2  # one problem sent twice, held once with its newest sentence
+    for strategy in ('CAR', 'SCND'):
+        assert any(f'unsupported ICONOMI strategy {strategy}' in line for line in caplog.messages)
 
 
 def test_query_trade_history(function_scope_iconomi):

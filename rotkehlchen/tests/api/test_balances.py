@@ -787,6 +787,7 @@ def test_balance_snapshot_error_message(
             'key': 'network',
             'subject': 'binance',
             'fields': {'record': 'balance', 'error': 'Made a booboo'},
+            'group': ['error', 'network', 'binance', 'balance'],
         },
     }
     assert websocket_connection.messages_num() == 1

@@ -16,10 +16,14 @@ from rotkehlchen.api.asgi import (
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import (
+    DeliveryPolicy,
     UserMessageEntry,
+    UserMessageFeature,
+    UserMessageOperation,
     UserMessageRecord,
     WebsocketSendError,
     WSMessageType,
+    delivery_of,
 )
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.serialization.serialize import process_result
@@ -31,10 +35,14 @@ from rotkehlchen.user_messages import (
     MAX_HELD_USER_MESSAGES,
     AuthFailure,
     BadData,
-    DeliveryPolicy,
+    Internal,
     LocalDbProblem,
+    MessageClassification,
     MessagesAggregator,
-    delivery_of,
+    MissingPrice,
+    NetworkFailure,
+    UnknownAssetSeen,
+    Unsupported,
 )
 
 if TYPE_CHECKING:
@@ -86,11 +94,19 @@ def test_requeue_undelivered_messages():
     msg_aggregator = MessagesAggregator()
     msg_aggregator.requeue_undelivered(json.dumps({
         'type': 'user_message',
-        'data': {'verbosity': 'error', 'value': 'an error'},
+        'data': {
+            'verbosity': 'error',
+            'value': 'an error',
+            'group': ['error', 'local_db', None, 'tag'],
+        },
     }))
     msg_aggregator.requeue_undelivered(json.dumps({
         'type': 'user_message',
-        'data': {'verbosity': 'warning', 'value': 'a warning'},
+        'data': {
+            'verbosity': 'warning',
+            'value': 'a warning',
+            'group': ['warning', 'local_db', None, 'tag'],
+        },
     }))
     msg_aggregator.requeue_undelivered(snapshot_error_msg := json.dumps({
         'type': 'balance_snapshot_error',
@@ -131,6 +147,7 @@ def test_polling_fallback_keeps_the_envelope() -> None:
             'key': 'bad_data',
             'subject': 'kucoin',
             'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+            'group': ['error', 'bad_data', 'kucoin', 'balance'],
         },
     }]
     assert msg_aggregator.consume_errors() == []  # the payload read drained the queue
@@ -143,18 +160,27 @@ def test_every_message_type_has_a_delivery_policy() -> None:
         assert delivery_of(message_type, {}).policy in DeliveryPolicy
 
 
-def test_repeated_report_is_held_once_with_a_count() -> None:
-    """The same failure sent again while nobody listens is one entry that counts, and
-    text readers still see it once per send."""
+def test_repeats_of_one_problem_are_held_once_with_a_count() -> None:
+    """Messages with one identity are one held entry that counts every send and keeps the
+    newest sentence, however the text varies; a different identity is a separate entry.
+    Text readers still see the entry once per send."""
     msg_aggregator = MessagesAggregator()
-    for _ in range(3):
-        msg_aggregator.add_error('kucoin is down', classification=_TAG_PROBLEM)
-    msg_aggregator.add_error('kraken is down', classification=_TAG_PROBLEM)
+    for index in range(3):
+        msg_aggregator.add_error(
+            f'Binance rejected the API key of main ({index})',
+            classification=AuthFailure(service='binance', account='main'),
+            subject=Location.BINANCE,
+        )
+    msg_aggregator.add_error(
+        'Binance rejected the API key of other',
+        classification=AuthFailure(service='binance', account='other'),
+        subject=Location.BINANCE,
+    )
 
     messages, dropped = msg_aggregator.consume_held()
     assert [(message['data']['value'], message['count']) for message in messages] == [
-        ('kucoin is down', 3),
-        ('kraken is down', 1),
+        ('Binance rejected the API key of main (2)', 3),
+        ('Binance rejected the API key of other', 1),
     ]
     assert dropped == 0
 
@@ -300,19 +326,22 @@ def test_repeating_failures_cannot_push_out_an_event_or_a_state() -> None:
         WSMessageType.PREMIUM_STATUS_UPDATE,
         premium := {'is_premium_active': True},
     )
-    for index in range(MAX_HELD_REPORTS + 10):
-        msg_aggregator.add_error(f'failure {index}', classification=_TAG_PROBLEM)
+    for index in range(MAX_HELD_USER_MESSAGES + 10):
+        msg_aggregator.add_error(
+            f'unknown asset {index}',
+            classification=UnknownAssetSeen(identifier=str(index)),
+        )
 
     messages, dropped = msg_aggregator.consume_held()
     assert [message['data'] for message in messages[:2]] == [token, premium]
-    assert len(messages) == 2 + MAX_HELD_REPORTS
+    assert len(messages) == 2 + MAX_HELD_USER_MESSAGES
     assert dropped == 10
 
 
-def test_a_storm_of_user_messages_cannot_push_out_reports_or_rejected_credentials() -> None:
-    """User message text varies with every occurrence, so its repeats are all distinct and
-    are bounded in a store of their own, apart from the structured reports and from the
-    rejected credentials only the user can fix."""
+def test_a_storm_of_one_failure_is_one_entry_beside_reports_and_credentials() -> None:
+    """A failure that repeats with varying text is one held entry, so it cannot push out
+    rejected credentials; and user messages are bounded in a store of their own, apart
+    from the structured reports."""
     msg_aggregator = MessagesAggregator()
     msg_aggregator.add_error(
         'Binance rejected the API key of main',
@@ -323,12 +352,13 @@ def test_a_storm_of_user_messages_cannot_push_out_reports_or_rejected_credential
         msg_aggregator.add_error(f'Skipping transaction {index}', classification=_TAG_PROBLEM)
 
     messages, dropped = msg_aggregator.consume_held()
-    assert [message['data']['value'] for message in messages[:1]] == [
-        'Binance rejected the API key of main',
+    assert [(message['data'].get('value'), message['count']) for message in messages] == [
+        ('Binance rejected the API key of main', 1),
+        (None, 1),
+        (f'Skipping transaction {MAX_HELD_USER_MESSAGES + 9}', MAX_HELD_USER_MESSAGES + 10),
     ]
     assert messages[1]['data'] == oracle
-    assert len(messages) == 2 + MAX_HELD_USER_MESSAGES
-    assert dropped == 10
+    assert dropped == 0
 
 
 def test_a_message_that_does_not_serialize_is_dropped_not_raised(
@@ -385,10 +415,37 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
             'key': 'local_db',
             'subject': None,
             'fields': {'entry': 'tag'},
+            'group': ['error', 'local_db', None, 'tag'],
         }},
         {'type': 'balance_snapshot_error', 'data': snapshot_error},
         {'type': 'missing_api_key', 'data': missing_key},
     ]
+
+
+@pytest.mark.parametrize(('classification', 'subject', 'group'), [
+    # unreadable data and unreachable remotes fold per location and record
+    (BadData(record=UserMessageRecord.TRADE, error='x'), Location.KUCOIN, ['error', 'bad_data', 'kucoin', 'trade']),  # noqa: E501
+    (NetworkFailure(record=UserMessageRecord.BALANCE, error='x'), Location.KRAKEN, ['error', 'network', 'kraken', 'balance']),  # noqa: E501
+    # rejected credentials stay per account, so the key that needs replacing stays visible
+    (AuthFailure(service='binance', account='main'), Location.BINANCE, ['error', 'auth', 'binance', 'binance', 'main']),  # noqa: E501
+    # unknown assets stay per asset, so each one that needs adding stays visible
+    (UnknownAssetSeen(identifier='FOO'), None, ['error', 'unknown_asset', None, 'FOO']),
+    (LocalDbProblem(entry=UserMessageEntry.TAG), None, ['error', 'local_db', None, 'tag']),
+    (MissingPrice(asset='ETH', timestamp=1), Location.KRAKEN, ['error', 'price', 'kraken']),
+    (Unsupported(feature=UserMessageFeature.ASSET), Location.KRAKEN, ['error', 'unsupported', 'kraken', 'asset']),  # noqa: E501
+    (Internal(operation=UserMessageOperation.BACKGROUND_TASK), None, ['error', 'internal', None, 'background_task']),  # noqa: E501
+])
+def test_each_family_declares_its_identity(
+        classification: MessageClassification,
+        subject: Location | None,
+        group: list[str | None],
+) -> None:
+    """`group` is the one definition of which messages are one problem: the free-text
+    `error` and asset/timestamp details never take part."""
+    msg_aggregator = MessagesAggregator()
+    msg_aggregator.add_error('a sentence', classification=classification, subject=subject)
+    messages, _ = msg_aggregator.consume_held()
+    assert json.loads(json.dumps(messages[0]['data']['group'])) == group
 
 
 def test_user_message_carries_its_classification():
@@ -415,6 +472,7 @@ def test_user_message_carries_its_classification():
         'key': 'bad_data',
         'subject': 'kucoin',
         'fields': {'record': 'balance', 'error': 'Missing key: amount'},
+        'group': ['error', 'bad_data', 'kucoin', 'balance'],
     }
 
     msg_aggregator.add_warning(msg := 'a message about no location', classification=_TAG_PROBLEM)
@@ -426,6 +484,7 @@ def test_user_message_carries_its_classification():
         'key': 'local_db',
         'subject': None,
         'fields': {'entry': 'tag'},
+        'group': ['warning', 'local_db', None, 'tag'],
     }
 
 

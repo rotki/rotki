@@ -3,17 +3,18 @@ import logging
 import threading
 from collections import OrderedDict, deque
 from dataclasses import dataclass, fields
-from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, ClassVar, Final, assert_never
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from rotkehlchen.api.websockets.typedefs import (
-    ProgressUpdateSubType,
+    Delivery,
+    DeliveryPolicy,
     UserMessageEntry,
     UserMessageFeature,
     UserMessageKey,
     UserMessageOperation,
     UserMessageRecord,
     WSMessageType,
+    delivery_of,
 )
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -36,108 +37,15 @@ log = RotkehlchenLogsAdapter(logger)
 MAX_HELD_EVENTS: Final = 500
 MAX_HELD_STATES: Final = 200
 MAX_HELD_REPORTS: Final = 200
+# User messages are reports too, but held in a store of their own with this limit, so a
+# storm of distinct problems cannot push the structured reports out
 MAX_HELD_USER_MESSAGES: Final = 200
 # The interpolated values of a user message, unrendered. Kept to primitives because the
 # payload goes through process_result and then json.dumps: a value neither can handle is
 # logged and the message dropped rather than raised to the emitter, so it fails silently.
 UserMessageField = str | int | float | bool | None
-
-
-class DeliveryPolicy(Enum):
-    """What happens to a message no client received, decided by what losing it costs."""
-    LIVE = auto()  # progress of work in flight, meaningless once it is over: dropped
-    EVENT = auto()  # something that happened once: every one is held, in order
-    STATE = auto()  # how things are now: only the latest per key is held
-    REPORT = auto()  # a failure that tends to repeat: held once per key, with a count
-    # a free-text user message: held like a REPORT, but in a store of its own, since text
-    # that varies with every occurrence would otherwise push the structured reports out
-    MESSAGE = auto()
-
-
-@dataclass(frozen=True)
-class Delivery:
-    """How an undelivered message of one type is held.
-
-    `key_fields` are the data fields that tell two STATE or REPORT messages of one type
-    apart, and none means one entry for the whole type. `whole_payload` keys on every
-    field instead, so only exact repeats collapse: a report whose text varies is still
-    held once per distinct text, and never replaced by a different one.
-    """
-    policy: DeliveryPolicy
-    key_fields: tuple[str, ...] = ()
-    whole_payload: bool = False
-
-
-LIVE: Final = Delivery(DeliveryPolicy.LIVE)
-EVENT: Final = Delivery(DeliveryPolicy.EVENT)
-LATEST: Final = Delivery(DeliveryPolicy.STATE)
-EXACT_REPEATS: Final = Delivery(DeliveryPolicy.REPORT, whole_payload=True)
-
-
-def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -> Delivery:
-    """Decide how an undelivered message is held until a client connects or polls.
-
-    Every message type needs an answer, and assert_never makes a new one without an
-    answer a type error rather than a message that silently falls back to a default.
-    """
-    match message_type:
-        case (
-            WSMessageType.TRANSACTION_STATUS |
-            WSMessageType.DB_UPGRADE_STATUS |
-            WSMessageType.DATA_MIGRATION_STATUS |
-            WSMessageType.HISTORY_EVENTS_STATUS |
-            WSMessageType.DATABASE_UPLOAD_PROGRESS
-        ):
-            return LIVE
-        case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
-            is_import_result = (
-                isinstance(data, dict) and
-                data.get('subtype') == ProgressUpdateSubType.CSV_IMPORT_RESULT
-            )
-            return EVENT if is_import_result else LIVE
-        case WSMessageType.NEW_TOKEN_DETECTED | WSMessageType.EVMLIKE_ACCOUNTS_DETECTION:
-            return EVENT
-        case (
-            WSMessageType.PREMIUM_STATUS_UPDATE |
-            WSMessageType.DATABASE_UPLOAD_RESULT |
-            WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED |
-            WSMessageType.MONERIUM_SESSIONKEY_EXPIRED |
-            WSMessageType.ACCOUNTING_RULE_CONFLICT |
-            WSMessageType.UNMATCHED_ASSET_MOVEMENTS |
-            WSMessageType.UNMATCHED_BRIDGE_TRANSACTIONS |
-            WSMessageType.INTERNAL_TX_FIXED |
-            WSMessageType.SOLANA_TOKENS_MIGRATION |
-            WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED
-        ):
-            return LATEST
-        case WSMessageType.REFRESH_BALANCES:
-            return Delivery(DeliveryPolicy.STATE, key_fields=('blockchain',))
-        case WSMessageType.NO_AVAILABLE_INDEXERS:
-            return Delivery(DeliveryPolicy.STATE, key_fields=('chain', 'reason'))
-        case WSMessageType.MISSING_API_KEY:
-            return Delivery(DeliveryPolicy.STATE, key_fields=('service', 'location'))
-        case WSMessageType.CALENDAR_REMINDER:  # re-sent every few minutes until acknowledged
-            return Delivery(DeliveryPolicy.STATE, key_fields=('identifier',))
-        case WSMessageType.NEGATIVE_BALANCE_DETECTED:
-            return Delivery(DeliveryPolicy.STATE, key_fields=('event_identifier',))
-        case WSMessageType.USER_MESSAGE:
-            # rejected credentials are the one family only the user can fix, and there
-            # is one per account, so they are kept as state no storm of other text can evict
-            is_auth = isinstance(data, dict) and data.get('key') == UserMessageKey.AUTH
-            return Delivery(
-                DeliveryPolicy.STATE if is_auth else DeliveryPolicy.MESSAGE,
-                whole_payload=True,
-            )
-        case WSMessageType.BALANCE_SNAPSHOT_ERROR:
-            return EXACT_REPEATS
-        case WSMessageType.BINANCE_PAIRS_MISSING:
-            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name'))
-        case WSMessageType.ORACLE_PENALIZED:
-            return Delivery(DeliveryPolicy.REPORT, key_fields=('oracle',))
-        case WSMessageType.EXCHANGE_UNKNOWN_ASSET:
-            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name', 'identifier'))
-        case _:
-            assert_never(message_type)
+# The AuthFailure service for rotki's own premium credentials, shared so its emitters group
+ROTKI_PREMIUM_SERVICE: Final = 'rotki_premium'
 
 
 @dataclass(frozen=True)
@@ -173,11 +81,20 @@ class MessageClassification:
 
     Subclasses hold only primitives, so the whole payload stays serializable, and only
     fields worth grouping or reading: the rendered sentence is already in `value`.
+
+    `group_by` names the fields that, with the verbosity, family and subject, identify one
+    problem. It is the only definition of a message's identity: the backend holds repeats
+    under it and the frontend folds them into one row by it. The free-text `error` never
+    takes part, since it varies between repeats of the same failure.
     """
     key: ClassVar[UserMessageKey]
+    group_by: ClassVar[tuple[str, ...]]
 
     def serialize(self) -> dict[str, UserMessageField]:
         return {field.name: getattr(self, field.name) for field in fields(self)}
+
+    def identity(self) -> list[UserMessageField]:
+        return [getattr(self, field) for field in self.group_by]
 
 
 @dataclass(frozen=True)
@@ -188,6 +105,7 @@ class BadData(MessageClassification):
     into one row.
     """
     key: ClassVar = UserMessageKey.BAD_DATA
+    group_by: ClassVar = ('record',)
     record: UserMessageRecord
     error: str
 
@@ -200,6 +118,7 @@ class NetworkFailure(MessageClassification):
     trade query and an unreadable trade name the same thing.
     """
     key: ClassVar = UserMessageKey.NETWORK
+    group_by: ClassVar = ('record',)
     record: UserMessageRecord
     error: str
 
@@ -208,21 +127,18 @@ class NetworkFailure(MessageClassification):
 class AuthFailure(MessageClassification):
     """Credentials are missing, rejected or expired.
 
-    Only the user can resolve this, so it is the one family that must not collapse into a
-    count. Prefer WSMessageType.MISSING_API_KEY where it fits: it is already structured
-    and already has a frontend handler.
+    Only the user can resolve this, so it groups per account: folding accounts together
+    would hide which key needs replacing. Prefer WSMessageType.MISSING_API_KEY where it
+    fits: it is already structured and already has a frontend handler.
 
     `service` is a fixed id (an exchange's location, ROTKI_PREMIUM_SERVICE, an
     ExternalService), never a name the user chose, so two services cannot collide.
     `account` is the user's name for the rejected account, when there can be several.
     """
     key: ClassVar = UserMessageKey.AUTH
+    group_by: ClassVar = ('service', 'account')
     service: str
     account: str | None
-
-
-# The AuthFailure service for rotki's own premium credentials, shared so its emitters group
-ROTKI_PREMIUM_SERVICE: Final = 'rotki_premium'
 
 
 @dataclass(frozen=True)
@@ -235,6 +151,7 @@ class UnknownAssetSeen(MessageClassification):
     mapped, so it stays here with the id as `identifier`.
     """
     key: ClassVar = UserMessageKey.UNKNOWN_ASSET
+    group_by: ClassVar = ('identifier',)
     identifier: str
 
 
@@ -242,6 +159,7 @@ class UnknownAssetSeen(MessageClassification):
 class LocalDbProblem(MessageClassification):
     """Our own stored data is inconsistent, or could not be written."""
     key: ClassVar = UserMessageKey.LOCAL_DB
+    group_by: ClassVar = ('entry',)
     entry: UserMessageEntry
 
 
@@ -253,6 +171,7 @@ class MissingPrice(MessageClassification):
     is null for a current price.
     """
     key: ClassVar = UserMessageKey.PRICE
+    group_by: ClassVar = ()  # per location: one row for every price a location lacks
     asset: str | None
     timestamp: int | None
 
@@ -261,6 +180,7 @@ class MissingPrice(MessageClassification):
 class Unsupported(MessageClassification):
     """rotki does not support this thing yet."""
     key: ClassVar = UserMessageKey.UNSUPPORTED
+    group_by: ClassVar = ('feature',)
     feature: UserMessageFeature
 
 
@@ -272,6 +192,7 @@ class Internal(MessageClassification):
     message would share one row.
     """
     key: ClassVar = UserMessageKey.INTERNAL
+    group_by: ClassVar = ('operation',)
     operation: UserMessageOperation
 
 
@@ -303,13 +224,21 @@ class MessagesAggregator:
         The key and the fields come from one object so they cannot disagree: a family and
         the data that family promises travel together or not at all. `subject` is null for
         a message that is not about any one location, such as a broken local database row.
+        `group` is the message's identity, see MessageClassification.
         """
+        serialized_subject = subject.serialize() if subject is not None else None
         return {
             'verbosity': verbosity,
             'value': msg,
             'key': classification.key,
-            'subject': subject.serialize() if subject is not None else None,
+            'subject': serialized_subject,
             'fields': classification.serialize(),
+            'group': [
+                verbosity,
+                classification.key,
+                serialized_subject,
+                *classification.identity(),
+            ],
         }
 
     @staticmethod
@@ -366,7 +295,7 @@ class MessagesAggregator:
                     envelope=envelope,
                     text=text,
                     key=key,
-                    policy=delivery.policy,
+                    store_limit=self._store_of(delivery.policy, is_user_message),
                     now=now,
                 )
 
@@ -389,26 +318,30 @@ class MessagesAggregator:
         ]
         return json.dumps([envelope['type'], identity], sort_keys=True)
 
-    def _store_of(self, policy: DeliveryPolicy) -> tuple[OrderedDict[str, HeldMessage], int]:
+    def _store_of(
+            self,
+            policy: DeliveryPolicy,
+            is_user_message: bool,
+    ) -> tuple[OrderedDict[str, HeldMessage], int]:
         if policy == DeliveryPolicy.STATE:
             return self._states, MAX_HELD_STATES
-        if policy == DeliveryPolicy.REPORT:
-            return self._reports, MAX_HELD_REPORTS
-        return self._user_messages, MAX_HELD_USER_MESSAGES
+        if is_user_message:
+            return self._user_messages, MAX_HELD_USER_MESSAGES
+        return self._reports, MAX_HELD_REPORTS
 
     def _hold_keyed(
             self,
             envelope: dict[str, Any],
             text: str,
             key: str,
-            policy: DeliveryPolicy,
+            store_limit: tuple[OrderedDict[str, HeldMessage], int],
             now: Timestamp,
     ) -> HeldMessage | None:
         """Keep a keyed message, replacing an earlier one with the same key.
 
         Must be called with the lock held. Returns the entry dropped to make room, if any.
         """
-        store, limit = self._store_of(policy)
+        store, limit = store_limit
         previous = store.pop(key, None)
         store[key] = HeldMessage(
             payload=envelope,
@@ -431,17 +364,21 @@ class MessagesAggregator:
         if (delivery := delivery_of(message_type, data)).policy != DeliveryPolicy.LIVE:
             self._hold(envelope=self._envelope(message_type, data), delivery=delivery)
 
-    def _drain(self, select: Callable[[HeldMessage], bool]) -> list[HeldMessage]:
-        """Remove the held messages `select` picks and return them in the order they were
-        last sent."""
-        with self._lock:
-            drained = [message for message in self._events if select(message)]
-            self._events = deque(message for message in self._events if not select(message))
-            for store in (self._states, self._reports, self._user_messages):
-                selected = [key for key, message in store.items() if select(message)]
-                drained.extend(store.pop(key) for key in selected)
+    def _drain_locked(self, select: Callable[[HeldMessage], bool]) -> list[HeldMessage]:
+        """Remove the held messages `select` picks, in the order they were last sent.
 
+        Must be called with the lock held.
+        """
+        drained = [message for message in self._events if select(message)]
+        self._events = deque(message for message in self._events if not select(message))
+        for store in (self._states, self._reports, self._user_messages):
+            selected = [key for key, message in store.items() if select(message)]
+            drained.extend(store.pop(key) for key in selected)
         return sorted(drained, key=lambda message: message.seq)
+
+    def _drain(self, select: Callable[[HeldMessage], bool]) -> list[HeldMessage]:
+        with self._lock:
+            return self._drain_locked(select)
 
     def add_warning(
             self,
@@ -513,16 +450,18 @@ class MessagesAggregator:
         """Drain every held message for a client, with how many were dropped for room.
 
         Each message is the `{type, data}` object the websocket sends plus its `count`.
+        The drain and the drop counter are read under one lock, so a message dropped
+        between them cannot be counted against the wrong poll.
         """
-        messages = [message.serialize() for message in self._drain(lambda _: True)]
         with self._lock:
+            held = self._drain_locked(lambda _: True)
             dropped, self._dropped = self._dropped, 0
-        return messages, dropped
+        return [message.serialize() for message in held], dropped
 
     def clear(self) -> None:
         """Drop every held message, so none leaks into the next user's session."""
-        self._drain(lambda _: True)
         with self._lock:
+            self._drain_locked(lambda _: True)
             self._dropped = 0
 
     @staticmethod

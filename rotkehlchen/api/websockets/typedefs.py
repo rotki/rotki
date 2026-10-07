@@ -5,7 +5,9 @@ https://github.com/python/mypy/issues/10722
 https://github.com/python/mypy/issues/1876#issuecomment-782458452
 """
 
-from enum import StrEnum, auto
+from dataclasses import dataclass
+from enum import Enum, StrEnum, auto
+from typing import Any, Final, assert_never
 
 
 class WSMessageType(StrEnum):
@@ -202,3 +204,93 @@ class DBUploadStatusStep(StrEnum):
 
 class WebsocketSendError(Exception):
     """Raised when sending a message to a websocket subscriber fails"""
+
+
+class DeliveryPolicy(Enum):
+    """What happens to a message no client received, decided by what losing it costs."""
+    LIVE = auto()  # progress of work in flight, meaningless once it is over: dropped
+    EVENT = auto()  # something that happened once: every one is held, in order
+    STATE = auto()  # how things are now: only the latest per key is held
+    REPORT = auto()  # a failure that tends to repeat: held once per key, with a count
+
+
+@dataclass(frozen=True)
+class Delivery:
+    """How an undelivered message of one type is held.
+
+    `key_fields` are the data fields that tell two STATE or REPORT messages of one type
+    apart, and none means one entry for the whole type. `whole_payload` keys on every
+    field instead, so only exact repeats collapse.
+    """
+    policy: DeliveryPolicy
+    key_fields: tuple[str, ...] = ()
+    whole_payload: bool = False
+
+
+LIVE: Final = Delivery(DeliveryPolicy.LIVE)
+EVENT: Final = Delivery(DeliveryPolicy.EVENT)
+LATEST: Final = Delivery(DeliveryPolicy.STATE)
+EXACT_REPEATS: Final = Delivery(DeliveryPolicy.REPORT, whole_payload=True)
+# A user message carries the identity its family declares as `group`, so every repeat of
+# one problem is one held entry with a count and the newest sentence, whatever the text says
+BY_GROUP: Final = Delivery(DeliveryPolicy.REPORT, key_fields=('group',))
+
+
+def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -> Delivery:
+    """Decide how an undelivered message is held until a client connects or polls.
+
+    Every message type needs an answer, and assert_never makes a new one without an
+    answer a type error rather than a message that silently falls back to a default.
+    """
+    match message_type:
+        case (
+            WSMessageType.TRANSACTION_STATUS |
+            WSMessageType.DB_UPGRADE_STATUS |
+            WSMessageType.DATA_MIGRATION_STATUS |
+            WSMessageType.HISTORY_EVENTS_STATUS |
+            WSMessageType.DATABASE_UPLOAD_PROGRESS
+        ):
+            return LIVE
+        case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
+            is_import_result = (
+                isinstance(data, dict) and
+                data.get('subtype') == ProgressUpdateSubType.CSV_IMPORT_RESULT
+            )
+            return EVENT if is_import_result else LIVE
+        case WSMessageType.NEW_TOKEN_DETECTED | WSMessageType.EVMLIKE_ACCOUNTS_DETECTION:
+            return EVENT
+        case (
+            WSMessageType.PREMIUM_STATUS_UPDATE |
+            WSMessageType.DATABASE_UPLOAD_RESULT |
+            WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED |
+            WSMessageType.MONERIUM_SESSIONKEY_EXPIRED |
+            WSMessageType.ACCOUNTING_RULE_CONFLICT |
+            WSMessageType.UNMATCHED_ASSET_MOVEMENTS |
+            WSMessageType.UNMATCHED_BRIDGE_TRANSACTIONS |
+            WSMessageType.INTERNAL_TX_FIXED |
+            WSMessageType.SOLANA_TOKENS_MIGRATION |
+            WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED
+        ):
+            return LATEST
+        case WSMessageType.REFRESH_BALANCES:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('blockchain',))
+        case WSMessageType.NO_AVAILABLE_INDEXERS:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('chain', 'reason'))
+        case WSMessageType.MISSING_API_KEY:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('service', 'location'))
+        case WSMessageType.CALENDAR_REMINDER:  # re-sent every few minutes until acknowledged
+            return Delivery(DeliveryPolicy.STATE, key_fields=('identifier',))
+        case WSMessageType.NEGATIVE_BALANCE_DETECTED:
+            return Delivery(DeliveryPolicy.STATE, key_fields=('event_identifier',))
+        case WSMessageType.USER_MESSAGE:
+            return BY_GROUP
+        case WSMessageType.BALANCE_SNAPSHOT_ERROR:
+            return EXACT_REPEATS
+        case WSMessageType.BINANCE_PAIRS_MISSING:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name'))
+        case WSMessageType.ORACLE_PENALIZED:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('oracle',))
+        case WSMessageType.EXCHANGE_UNKNOWN_ASSET:
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('location', 'name', 'identifier'))
+        case _:
+            assert_never(message_type)

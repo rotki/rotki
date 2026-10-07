@@ -484,7 +484,10 @@ INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); 
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
+def test_updates_assets_collections_errors(
+        assets_updater: AssetsUpdater,
+        caplog: pytest.LogCaptureFixture,
+):
     """
     Check that assets collections can be created and edited correctly.
 
@@ -535,12 +538,13 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
         cursor.execute('SELECT COUNT(*) FROM asset_collections WHERE id = 99999999')
         assert cursor.fetchone()[0] == 0
 
-    warnings = assets_updater.msg_aggregator.consume_warnings()
-    assert warnings == [
+    assert len(assets_updater.msg_aggregator.consume_warnings()) == 3
+    for warning in (  # problems with one identity are held once, so read each from the log
         "Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')",  # noqa: E501
         'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
         'Skipping entry during assets collection multimapping update due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
-    ]
+    ):
+        assert any(warning in line for line in caplog.messages)
 
 
 @pytest.mark.parametrize('update_assets', [True, False])

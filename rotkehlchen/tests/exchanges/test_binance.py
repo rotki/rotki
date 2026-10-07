@@ -1440,11 +1440,11 @@ def test_binance_query_lending_interests_history(
             (4, Location.BINANCE),
         ]:
             binance.location = location
-            assert binance.query_lending_interests_history(
+            binance.query_lending_interests_history(
                 cursor=binance.db.conn.cursor(),
                 start_ts=Timestamp(0),
                 end_ts=Timestamp(API_TIME_INTERVAL_CONSTRAINT_TS),
-            ) is False
+            )
 
             assert cursor.execute(
                 'SELECT COUNT(*) FROM history_events WHERE subtype="reward" AND location=?;',
@@ -1493,12 +1493,13 @@ def test_binance_query_lending_interests_history_chunks_30_days(
         patch.object(binance.session, 'request', side_effect=mock_my_lendings),
         binance.db.conn.read_ctx() as cursor,
     ):
-        assert binance.query_lending_interests_history(
+        binance.query_lending_interests_history(
             cursor=cursor,
             start_ts=BINANCE_LAUNCH_TS,
             end_ts=Timestamp(BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS),
-        ) is False
+        )
 
+    assert binance.msg_aggregator.consume_errors() == []  # no window was rejected
     assert len(requested_windows) > 1  # the range had to be chunked
     for start_time, end_time in requested_windows:
         assert end_time - start_time <= max_window_ms
