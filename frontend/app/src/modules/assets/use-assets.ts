@@ -7,13 +7,13 @@ import type {
   AssetUpdateResult,
 } from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/core/common/action';
-import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -30,7 +30,8 @@ interface UseAssetsReturn {
   applyUpdates: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
   mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
   importCustomAssets: (file: File) => Promise<ActionStatus>;
-  exportCustomAssets: () => Promise<ActionStatus | ExportCustomAssetsResult>;
+  /** Fails as not actionable when the export was cancelled, so a caller can stay quiet. */
+  exportCustomAssets: () => Promise<Result<ExportCustomAssetsResult, TaskError>>;
   /** Fails as not actionable when the reset was cancelled, so a caller can stay quiet. */
   restoreAssetsDatabase: (resetType: 'hard' | 'soft') => Promise<Result<void, TaskError>>;
 }
@@ -173,16 +174,13 @@ export function useAssets(): UseAssetsReturn {
     return { message: '', success: false };
   };
 
-  const exportCustomAssets = async (): Promise<ActionStatus | ExportCustomAssetsResult> => {
+  const exportCustomAssets = async (): Promise<Result<ExportCustomAssetsResult, TaskError>> => {
     let directory: string | undefined;
     if (appSession) {
       const selectedDirectory = await openDirectory(t('common.select_directory').toString());
-      if (!selectedDirectory) {
-        return {
-          message: t('assets.backup.missing_directory'),
-          success: false,
-        };
-      }
+      if (!selectedDirectory)
+        return err(TaskFailed({ message: t('assets.backup.missing_directory') }));
+
       directory = selectedDirectory;
     }
 
@@ -200,20 +198,16 @@ export function useAssets(): UseAssetsReturn {
       title: t('task_center.group.assets'),
     });
 
-    if (!isErr(outcome)) {
-      const filePath = outcome.value;
-      if (!appSession)
-        await downloadCustomAssets(filePath);
-
-      return { directory, filePath };
+    if (isErr(outcome)) {
+      onActionableError(outcome, error => logger.error(error.message));
+      return outcome;
     }
 
-    if (isErr(outcome) && isActionable(outcome.error)) {
-      logger.error(outcome.error.message);
-      return { message: outcome.error.message, success: false };
-    }
+    const filePath = outcome.value;
+    if (!appSession)
+      await downloadCustomAssets(filePath);
 
-    return { message: '', success: false };
+    return ok({ directory, filePath });
   };
 
   const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<Result<void, TaskError>> => {

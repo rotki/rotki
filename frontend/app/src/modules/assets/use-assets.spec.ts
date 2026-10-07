@@ -271,10 +271,10 @@ describe('useAssets', () => {
 
       expect(api.exportCustom).toHaveBeenCalledWith(directory);
 
-      expect(result).toEqual({
+      expect(result).toEqual(ok({
         directory,
         filePath: 'export.csv',
-      });
+      }));
     });
 
     it('should handle failure', async () => {
@@ -284,11 +284,8 @@ describe('useAssets', () => {
       const result = await store.exportCustomAssets();
 
       expect(api.exportCustom).toHaveBeenCalledWith(directory);
-
-      expect(result).toEqual({
-        success: false,
-        message: 'failed',
-      });
+      assert(!result.ok);
+      expect(result.error.message).toBe('failed');
     });
   });
 });

@@ -2,6 +2,7 @@
 import { assert, Priority, Severity } from '@rotki/common';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { isActionable } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -39,23 +40,25 @@ async function importZip(): Promise<void> {
  * @remarks
  * A success in the web build earns none. The browser shows its own download prompt, and a second
  * confirmation from the app would only repeat it. A desktop export picks a directory first, so its
- * path is worth reporting, because nothing else tells the user where the file went.
+ * path is worth reporting, because nothing else tells the user where the file went. A cancelled
+ * export earns none either.
  *
- * @param result - what the export returned, which names either a failure or a written file
+ * @param outcome - what the export returned, which names either a failure or a written file
  * @returns the payload to notify with, or `undefined` when the export should pass silently
  */
-function exportNotification(result: Awaited<ReturnType<typeof exportCustomAssets>>): Parameters<typeof notify>[0] | undefined {
+function exportNotification(outcome: Awaited<ReturnType<typeof exportCustomAssets>>): Parameters<typeof notify>[0] | undefined {
   const title = t('manage_user_assets.export.title');
 
-  if ('success' in result && !result.success) {
-    return { message: t('manage_user_assets.export.error', { message: result.message }), severity: Severity.ERROR, title };
+  if (!outcome.ok) {
+    return isActionable(outcome.error)
+      ? { message: t('manage_user_assets.export.error', { message: outcome.error.message }), severity: Severity.ERROR, title }
+      : undefined;
   }
 
-  if ('filePath' in result && result.directory) {
-    return { message: t('manage_user_assets.export.success', { filePath: result.filePath }), severity: Severity.INFO, title };
-  }
-
-  return undefined;
+  const { directory, filePath } = outcome.value;
+  return directory
+    ? { message: t('manage_user_assets.export.success', { filePath }), severity: Severity.INFO, title }
+    : undefined;
 }
 
 async function exportZip(): Promise<void> {

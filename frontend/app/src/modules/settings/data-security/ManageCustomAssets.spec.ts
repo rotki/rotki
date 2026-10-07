@@ -1,7 +1,9 @@
 import { Severity } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import ManageCustomAssets from '@/modules/settings/data-security/ManageCustomAssets.vue';
 
 const exportCustomAssets = vi.fn();
@@ -41,7 +43,7 @@ describe('manageCustomAssets export', () => {
   });
 
   it('should report a failed export', async () => {
-    exportCustomAssets.mockResolvedValue({ message: 'disk full', success: false });
+    exportCustomAssets.mockResolvedValue(err(TaskFailed({ message: 'disk full' })));
 
     await clickExport(createWrapper());
 
@@ -49,8 +51,16 @@ describe('manageCustomAssets export', () => {
     expect(notify.mock.calls[0][0]).toMatchObject({ severity: Severity.ERROR });
   });
 
+  it('should pass silently on a cancelled export', async () => {
+    exportCustomAssets.mockResolvedValue(err(Cancelled({ message: '' })));
+
+    await clickExport(createWrapper());
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('should report where a desktop export wrote the file', async () => {
-    exportCustomAssets.mockResolvedValue({ directory: '/home/user', filePath: '/home/user/assets.zip' });
+    exportCustomAssets.mockResolvedValue(ok({ directory: '/home/user', filePath: '/home/user/assets.zip' }));
 
     await clickExport(createWrapper());
 
@@ -59,7 +69,7 @@ describe('manageCustomAssets export', () => {
   });
 
   it('should pass silently on a web export, which the browser prompt already confirms', async () => {
-    exportCustomAssets.mockResolvedValue({ filePath: 'assets.zip' });
+    exportCustomAssets.mockResolvedValue(ok({ filePath: 'assets.zip' }));
 
     await clickExport(createWrapper());
 
