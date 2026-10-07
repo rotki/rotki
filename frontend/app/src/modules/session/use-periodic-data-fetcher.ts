@@ -2,7 +2,7 @@ import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { liveSessionSignal } from '@/modules/core/session/session-lifecycle';
+import { sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
@@ -27,7 +27,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
     set(periodicRunning, true);
     try {
-      const result = await backoff(3, async () => fetchPeriodicData(), 10000, liveSessionSignal());
+      const result = await backoff(3, async () => fetchPeriodicData(), 10000, sessionWorkSignal());
       if (Object.keys(result).length === 0) {
         // an empty object means user is not logged in yet
         return;
