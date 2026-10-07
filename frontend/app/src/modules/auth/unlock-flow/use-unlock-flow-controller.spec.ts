@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import { type EffectScope, effectScope } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
-import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
+import { beginSession, endSession, hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { UnlockErrorKind, UnlockPhase } from './use-unlock-flow';
 import { createUnlockFlowController, type UseUnlockFlowControllerReturn } from './use-unlock-flow-controller';
 
@@ -366,6 +366,16 @@ describe('useUnlockFlowController', () => {
     action();
     expect(get(logged)).toBe(false); // ...and clears the session
     expect(isSessionActive?.()).toBe(false); // a 401 while logged out stays local
+  });
+
+  it('should end the session before the 401 reaches its caller, not in a later watcher', () => {
+    const [action] = authApi.setOnAuthFailure.mock.calls.at(-1)!;
+    set(storeToRefs(useSessionAuthStore()).logged, true);
+    expect(hasLiveSession()).toBe(true);
+
+    action();
+
+    expect(hasLiveSession()).toBe(false);
   });
 
   it('should keep errors empty for a sync conflict (the alert is store-driven)', async () => {
