@@ -3,18 +3,31 @@ import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import HistoricalBalancesAsOf from '@/modules/statistics/historical-balances/components/HistoricalBalancesAsOf.vue';
+import HistoricalBalancesFilters from '@/modules/statistics/historical-balances/components/HistoricalBalancesFilters.vue';
 import HistoricalBalancesTable from '@/modules/statistics/historical-balances/components/HistoricalBalancesTable.vue';
 import { useAsOfDate } from '@/modules/statistics/historical-balances/use-as-of-date';
 import { useHistoricalBalanceValues } from '@/modules/statistics/historical-balances/use-historical-balance-values';
 import { useHistoricalBalancesAt } from '@/modules/statistics/historical-balances/use-historical-balances-at';
 import { ProcessingState, useHistoricalBalancesProcessing } from '@/modules/statistics/historical-balances/use-historical-balances-processing';
+import { useHistoricalBalancesView } from '@/modules/statistics/historical-balances/use-historical-balances-view';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { modelDay, restamp, timestamp } = useAsOfDate();
 const { empty, error, groups, loadedAt, loading, processingRequired, refresh } = useHistoricalBalancesAt(timestamp);
 const shownAt = computed<number>(() => get(loadedAt) ?? get(timestamp));
-const { missingCount, pendingCount, rows, spamCount, total } = useHistoricalBalanceValues(groups, shownAt);
+const { rows: pricedRows } = useHistoricalBalanceValues(groups, shownAt);
+const {
+  accounts,
+  filtered,
+  locations,
+  modelAccounts,
+  modelLocations,
+  modelMode,
+  modelSearch,
+  rows,
+  summary,
+} = useHistoricalBalancesView(pricedRows);
 const { failure, processNow, state: processingState } = useHistoricalBalancesProcessing();
 
 /** A day came back empty after events were processed, so there is nothing left to offer. */
@@ -107,32 +120,49 @@ async function reload(): Promise<void> {
               />
             </template>
           </i18n-t>
+          <span
+            v-if="filtered"
+            class="ml-1"
+            data-testid="historical-balances-total-filtered"
+          >
+            {{ t('historical_balances.total.filtered') }}
+          </span>
         </div>
         <FiatDisplay
           class="text-h5 font-medium"
-          :value="total"
-          :loading="pendingCount > 0 && total.isZero()"
+          :value="summary.total"
+          :loading="summary.pendingCount > 0 && summary.total.isZero()"
         />
         <div
-          v-if="pendingCount > 0 || missingCount > 0 || spamCount > 0"
+          v-if="summary.pendingCount > 0 || summary.missingCount > 0 || summary.spamCount > 0"
           class="flex flex-col text-body-2 text-rui-text-secondary mt-1"
         >
-          <span v-if="pendingCount > 0">{{ t('historical_balances.total.pending', { count: pendingCount }, pendingCount) }}</span>
-          <span v-if="missingCount > 0">{{ t('historical_balances.total.missing', { count: missingCount }, missingCount) }}</span>
+          <span v-if="summary.pendingCount > 0">{{ t('historical_balances.total.pending', { count: summary.pendingCount }, summary.pendingCount) }}</span>
+          <span v-if="summary.missingCount > 0">{{ t('historical_balances.total.missing', { count: summary.missingCount }, summary.missingCount) }}</span>
           <span
-            v-if="spamCount > 0"
+            v-if="summary.spamCount > 0"
             data-testid="historical-balances-spam-count"
           >
-            {{ t('historical_balances.total.spam', { count: spamCount }, spamCount) }}
+            {{ t('historical_balances.total.spam', { count: summary.spamCount }, summary.spamCount) }}
           </span>
         </div>
       </div>
 
-      <HistoricalBalancesTable
-        v-if="!error"
-        :rows="rows"
-        :loading="loading"
-      />
+      <template v-if="!error">
+        <HistoricalBalancesFilters
+          v-model:locations="modelLocations"
+          v-model:accounts="modelAccounts"
+          v-model:search="modelSearch"
+          v-model:mode="modelMode"
+          :location-options="locations"
+          :account-options="accounts"
+        />
+        <HistoricalBalancesTable
+          :rows="rows"
+          :loading="loading"
+          :filtered="filtered"
+        />
+      </template>
     </RuiCard>
   </TablePageLayout>
 </template>

@@ -3,6 +3,7 @@ import { type BigNumber, bigNumberify, NoPrice } from '@rotki/common';
 import { get } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, type EffectScope, effectScope, nextTick } from 'vue';
+import { type HistoricalBalancesSummary, summarize } from './historical-balances-view';
 import { PRICE_BATCH_SIZE, PriceStatus, useHistoricalBalanceValues } from './use-historical-balance-values';
 
 interface InfoStub { isSpam?: boolean; resolved: boolean }
@@ -62,6 +63,10 @@ function statusOf(values: ReturnType<typeof useHistoricalBalanceValues>, asset: 
   return get(values.rows).find(row => row.asset === asset)?.priceStatus;
 }
 
+function summaryOf(values: ReturnType<typeof useHistoricalBalanceValues>): HistoricalBalancesSummary {
+  return summarize(get(values.rows));
+}
+
 describe('useHistoricalBalanceValues', () => {
   beforeEach(() => {
     scope = effectScope();
@@ -82,7 +87,7 @@ describe('useHistoricalBalanceValues', () => {
     await nextTick();
 
     expect(get(values.rows)[0].value?.toString()).toBe('2000');
-    expect(get(values.total).toString()).toBe('2000');
+    expect(summaryOf(values).total.toString()).toBe('2000');
     expect(getHistoricPrice).toHaveBeenCalledWith('ETH', 100);
   });
 
@@ -92,8 +97,8 @@ describe('useHistoricalBalanceValues', () => {
 
     expect(statusOf(values, 'SCAM')).toBe(PriceStatus.SPAM);
     expect(getHistoricPrice).not.toHaveBeenCalledWith('SCAM', expect.any(Number));
-    expect(get(values.spamCount)).toBe(1);
-    expect(get(values.total).toString()).toBe('2000');
+    expect(summaryOf(values).spamCount).toBe(1);
+    expect(summaryOf(values).total.toString()).toBe('2000');
   });
 
   it('should hold an asset back until its info says whether it is spam', async () => {
@@ -129,7 +134,7 @@ describe('useHistoricalBalanceValues', () => {
     await nextTick();
 
     expect(asked()).toBe(assets.length);
-    expect(get(values.pendingCount)).toBe(10);
+    expect(summaryOf(values).pendingCount).toBe(10);
   });
 
   it('should count an asset whose price settled empty as missing, not pending', async () => {
@@ -137,7 +142,7 @@ describe('useHistoricalBalanceValues', () => {
     await nextTick();
 
     expect(statusOf(values, 'RARE')).toBe(PriceStatus.MISSING);
-    expect(get(values.missingCount)).toBe(1);
-    expect(get(values.pendingCount)).toBe(0);
+    expect(summaryOf(values).missingCount).toBe(1);
+    expect(summaryOf(values).pendingCount).toBe(0);
   });
 });

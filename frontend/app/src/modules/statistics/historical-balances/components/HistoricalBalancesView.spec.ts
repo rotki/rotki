@@ -8,12 +8,24 @@ import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/
 import HistoricalBalancesView from '@/modules/statistics/historical-balances/components/HistoricalBalancesView.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { empty, error, loadedAt, processingRequired, refresh, restamp, rows, triggerProcessing, valuedAt } = await vi.hoisted(async () => {
+const {
+  empty,
+  error,
+  filtered,
+  loadedAt,
+  processingRequired,
+  refresh,
+  restamp,
+  rows,
+  triggerProcessing,
+  valuedAt,
+} = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   const valuedAt: { current?: MaybeRefOrGetter<number> } = {};
   return {
     empty: ref<boolean>(false),
     error: ref<string>(),
+    filtered: ref<boolean>(false),
     loadedAt: ref<number>(),
     processingRequired: ref<boolean>(false),
     refresh: vi.fn<() => Promise<void>>(),
@@ -34,19 +46,31 @@ vi.mock('@/modules/statistics/historical-balances/use-historical-balances-at', a
     useHistoricalBalancesAt: (): Record<string, unknown> => ({ empty, error, groups: ref([]), loadedAt, loading: ref(false), processingRequired, refresh }),
   };
 });
-vi.mock('@/modules/statistics/historical-balances/use-historical-balance-values', async () => {
+vi.mock('@/modules/statistics/historical-balances/use-historical-balance-values', async (importOriginal) => {
+  const { ref } = await import('vue');
+  return {
+    ...await importOriginal<typeof import('@/modules/statistics/historical-balances/use-historical-balance-values')>(),
+    useHistoricalBalanceValues: (_groups: unknown, at: MaybeRefOrGetter<number>): Record<string, unknown> => {
+      valuedAt.current = at;
+      return { rows: ref([]) };
+    },
+  };
+});
+vi.mock('@/modules/statistics/historical-balances/use-historical-balances-view', async () => {
   const { computed, ref } = await import('vue');
   const { bigNumberify: toBigNumber } = await import('@rotki/common');
   return {
-    useHistoricalBalanceValues: (_groups: unknown, at: MaybeRefOrGetter<number>): Record<string, unknown> => {
-      valuedAt.current = at;
-      return {
-        missingCount: ref(0),
-        pendingCount: ref(0),
-        rows,
-        total: computed(() => toBigNumber('100')),
-      };
-    },
+    useHistoricalBalancesView: (): Record<string, unknown> => ({
+      accounts: ref([]),
+      filtered,
+      locations: ref([]),
+      modelAccounts: ref([]),
+      modelLocations: ref([]),
+      modelMode: ref('collection'),
+      modelSearch: ref(''),
+      rows,
+      summary: computed(() => ({ missingCount: 0, pendingCount: 0, spamCount: 0, total: toBigNumber('100') })),
+    }),
   };
 });
 vi.mock('@/modules/history/balances/use-historical-balances', () => ({
@@ -59,7 +83,7 @@ function createWrapper(): VueWrapper<InstanceType<typeof HistoricalBalancesView>
   return mount(HistoricalBalancesView, {
     global: {
       plugins: [createPinia(), createRuiPlugin({})],
-      stubs: { DateDisplay: true, FiatDisplay: true, HistoricalBalancesAsOf: true, HistoricalBalancesTable: true },
+      stubs: { DateDisplay: true, FiatDisplay: true, HistoricalBalancesAsOf: true, HistoricalBalancesFilters: true, HistoricalBalancesTable: true },
     },
   });
 }
@@ -69,6 +93,7 @@ describe('historical balances view', () => {
     setActivePinia(createPinia());
     set(empty, false);
     set(error, undefined);
+    set(filtered, false);
     set(loadedAt, undefined);
     set(processingRequired, false);
     set(rows, [{ amount: bigNumberify('1'), asset: 'ETH' }]);
@@ -189,6 +214,16 @@ describe('historical balances view', () => {
     await flushPromises();
 
     expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it('should mark the total as filtered only while a filter narrows it', async () => {
+    const wrapper = createWrapper();
+    expect(wrapper.find('[data-testid=historical-balances-total-filtered]').exists()).toBe(false);
+
+    set(filtered, true);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=historical-balances-total-filtered]').exists()).toBe(true);
   });
 
   it('should show a failure in place of the total', async () => {

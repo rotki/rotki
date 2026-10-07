@@ -1,6 +1,6 @@
+import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoricalAssetGroup } from '@/modules/statistics/historical-balances/historical-balances-grouping';
-import { type BigNumber, Zero } from '@rotki/common';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
@@ -31,11 +31,6 @@ export interface HistoricalAssetRow extends HistoricalAssetGroup {
 
 interface UseHistoricalBalanceValuesReturn {
   rows: ComputedRef<HistoricalAssetRow[]>;
-  /** The sum of every priced row. */
-  total: ComputedRef<BigNumber>;
-  pendingCount: ComputedRef<number>;
-  missingCount: ComputedRef<number>;
-  spamCount: ComputedRef<number>;
 }
 
 /**
@@ -110,10 +105,6 @@ export function useHistoricalBalanceValues(
       set(released, new Set([...current, ...next]));
   }
 
-  const total = computed<BigNumber>(() => get(rows).reduce((sum, { value }) => (value ? sum.plus(value) : sum), Zero));
-
-  const countOf = (status: PriceStatus): ComputedRef<number> => computed<number>(() => get(rows).filter(row => row.priceStatus === status).length);
-
   watch([(): HistoricalAssetGroup[] => toValue(groups), (): number => toValue(timestamp)], () => {
     set(released, new Set());
   });
@@ -123,11 +114,5 @@ export function useHistoricalBalanceValues(
       releaseNextBatch();
   });
 
-  return {
-    missingCount: countOf(PriceStatus.MISSING),
-    pendingCount: countOf(PriceStatus.PENDING),
-    rows,
-    spamCount: countOf(PriceStatus.SPAM),
-    total,
-  };
+  return { rows };
 }

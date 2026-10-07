@@ -1,35 +1,35 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { HistoricalBucket } from '@/modules/statistics/historical-balances/historical-balances-grouping';
-import type { PriceStatus } from '@/modules/statistics/historical-balances/use-historical-balance-values';
+import type { HistoricalBucketRow } from '@/modules/statistics/historical-balances/historical-balances-view';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import HistoricalBalanceValueCell from '@/modules/statistics/historical-balances/components/HistoricalBalanceValueCell.vue';
 
-interface BucketRow extends HistoricalBucket {
+interface BucketRow extends HistoricalBucketRow {
   id: string;
 }
 
-const { buckets, price, priceStatus } = defineProps<{
-  buckets: HistoricalBucket[];
-  /** The asset's price at the as-of time, in the user's currency; undefined unless priced. */
-  price: BigNumber | undefined;
-  priceStatus: PriceStatus;
+const { buckets, showAsset = false } = defineProps<{
+  buckets: HistoricalBucketRow[];
+  /** Name each bucket's asset, for a collection whose buckets hold different members. */
+  showAsset?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const rows = computed<BucketRow[]>(() => buckets.map(bucket => ({
   ...bucket,
-  id: `${bucket.location}|${bucket.locationLabel ?? ''}|${bucket.protocol ?? ''}`,
+  id: `${bucket.asset}|${bucket.location}|${bucket.locationLabel ?? ''}|${bucket.protocol ?? ''}`,
 })));
 
 const cols = computed<DataTableColumn<BucketRow>[]>(() => [
-  { cellClass: 'py-1', class: 'w-full', key: 'location', label: t('common.account') },
+  ...(showAsset ? [{ cellClass: 'py-1', key: 'asset', label: t('common.asset') }] : []),
+  { cellClass: 'py-1', class: 'text-no-wrap', key: 'location', label: t('common.location') },
+  { cellClass: 'py-1', class: 'w-full', key: 'locationLabel', label: t('common.account') },
   { cellClass: 'py-1', key: 'protocol', label: t('common.protocol') },
   { align: 'end', cellClass: 'py-1', key: 'amount', label: t('common.amount') },
   { align: 'end', cellClass: 'py-1', key: 'value', label: t('common.value') },
@@ -50,18 +50,30 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
       outlined
       data-testid="historical-balances-buckets"
     >
+      <template #item.asset="{ row }">
+        <AssetDetails :asset="row.asset" />
+      </template>
       <template #item.location="{ row }">
+        <LocationDisplay
+          :identifier="row.location"
+          size="20px"
+          class="w-fit"
+          horizontal
+          data-testid="historical-balances-bucket-location"
+        />
+      </template>
+      <template #item.locationLabel="{ row }">
         <HistoryEventAccount
           v-if="row.locationLabel"
           :location="row.location"
           :location-label="row.locationLabel"
         />
-        <LocationDisplay
+        <span
           v-else
-          :identifier="row.location"
-          class="w-fit"
-          horizontal
-        />
+          class="text-rui-text-secondary"
+        >
+          -
+        </span>
       </template>
       <template #item.protocol="{ row }">
         <CounterpartyDisplay
@@ -80,8 +92,8 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
       </template>
       <template #item.value="{ row }">
         <HistoricalBalanceValueCell
-          :value="price ? row.amount.times(price) : undefined"
-          :status="priceStatus"
+          :value="row.value"
+          :status="row.priceStatus"
         />
       </template>
     </RuiDataTable>

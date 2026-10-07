@@ -4259,7 +4259,15 @@
       "today": "Today"
     },
     "empty": "No balances on this day.",
+    "empty_filtered": "No balances on this day match the filters.",
     "error": "Could not load the balances: {message}",
+    "filter": {
+      "search_hint": "Search using the asset name or symbol"
+    },
+    "mode": {
+      "collection": "By collection",
+      "flat": "By asset"
+    },
     "negative_balances": {
       "view_event_tooltip": "The negative balance was detected at this event, but it doesn't necessarily mean this event is the cause. The issue might originate from an earlier event during processing."
     },
@@ -4267,6 +4275,7 @@
     "price": {
       "missing": "No price",
       "missing_hint": "No price was found for this asset on this day, so it is left out of the total.",
+      "partial_hint": "Some assets in this collection have no price on this day, so the value covers only the priced ones.",
       "spam": "Spam",
       "spam_hint": "This asset is marked as spam, so it is not priced and is left out of the total."
     },
@@ -4282,6 +4291,7 @@
       "locations": "Locations"
     },
     "total": {
+      "filtered": "(filtered)",
       "missing": "{count} asset has no price for this day and is left out | {count} assets have no price for this day and are left out",
       "pending": "{count} price still loading | {count} prices still loading",
       "spam": "{count} spam asset is not priced | {count} spam assets are not priced",
