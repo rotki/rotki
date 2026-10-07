@@ -322,7 +322,34 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
             )
 
+        if len(tx_list) == 0:
+            log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
+            if len(new_addresses) != 0:
+                # Nothing new came back, but the saved transactions the newly tracked
+                # addresses appear in were marked above and still need decoding with them
+                # tracked. Without this they would wait for a query that returns something.
+                # The checkpoints stay unwritten until the redecode succeeds: a failed
+                # redecode keeps the addresses as never queried, so the next refresh
+                # marks them again and retries the decode instead of assuming they
+                # are fully synced.
+                self.decode_transactions()
+
+            with self.database.conn.write_ctx() as write_cursor:
+                for address in addresses:
+                    self.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=self.cache_key,
+                        value=new_block_heights[address],
+                        address=address,
+                    )
+
+            return
+
         with self.database.conn.write_ctx() as write_cursor:
+            # Checkpoints and transactions share one write transaction. If saving
+            # raises, the checkpoints roll back with it, so the next refresh
+            # re-queries from the previous checkpoint instead of skipping the
+            # unsaved transactions.
             for address in addresses:
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,
@@ -330,18 +357,6 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     value=new_block_heights[address],
                     address=address,
                 )
-
-        if len(tx_list) == 0:
-            log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
-            if len(new_addresses) != 0:
-                # Nothing new came back, but the saved transactions the newly tracked
-                # addresses appear in were marked above and still need decoding with them
-                # tracked. Without this they would wait for a query that returns something.
-                self.decode_transactions()
-
-            return
-
-        with self.database.conn.write_ctx() as write_cursor:
 
             # Save the transactions before decoding them. Decoding runs in its own write so
             # that a failure only leaves them pending decoding instead of losing the query.

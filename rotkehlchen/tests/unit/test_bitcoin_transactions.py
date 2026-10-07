@@ -2618,6 +2618,194 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_checkpoint_rolls_back_when_saving_fails(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Checkpoints and transactions share one write transaction: if saving the fetched
+    transactions fails, the checkpoint must roll back with them, so the next refresh
+    re-queries from the old checkpoint instead of skipping the transactions that were
+    never stored.
+    """
+    address = btc_accounts[0]
+    tx = _esplora_tx(
+        block_height=900_001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=address)],
+        fee=1_000,
+    )
+    pages = {
+        f'/address/{address}/txs': [tx],
+        f'/address/{address}/txs?after_txid={tx["txid"]}': [],
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, '_save_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=btc_accounts,
+            )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        # The checkpoint was rolled back together with the failed save.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) is None
+        assert bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        ) == []
+
+    # A later refresh re-queries from the old checkpoint and stores everything.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) == 900_001
+        assert tx['txid'] in [
+            x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        ]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_failed_initial_redecode_is_retried(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A newly tracked address whose query returns nothing still needs its saved
+    transactions decoded with it tracked. If that initial redecode fails, its
+    checkpoint must stay missing, so the next refresh treats it as newly tracked
+    again and retries the decode instead of assuming it is fully synced.
+    """
+    tracked = btc_accounts[0]
+    new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
+    tx = _esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=tracked)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=new_address)],
+        fee=1_000,
+    )
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{tracked}/txs': [tx],
+            f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
+        }),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.BITCOIN,
+                address=new_address,
+            )],
+        )
+
+    # The new address has no history of its own; its initial redecode fails.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=[new_address],
+            )
+
+    with database.conn.read_ctx() as cursor:
+        # The checkpoint was not persisted, so the address is still never queried.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) is None
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    # The failed redecode changed nothing: the transaction is still decoded as a
+    # spend, as it was before the new address was tracked.
+    assert not any(event.event_type == HistoryEventType.TRANSFER for event in events)
+
+    # The next refresh retries the decode and then persists the checkpoint.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=[new_address],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) == 0
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    # The retried decode ran with the new address tracked: the spend is now a transfer.
+    assert any(
+        event.event_type == HistoryEventType.TRANSFER and event.location_label == tracked
+        for event in events
+    )
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
 def test_custom_mempool_api_setting_is_queried_under_its_api_path(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
