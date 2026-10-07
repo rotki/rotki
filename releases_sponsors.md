@@ -1,5 +1,50 @@
 # rotki Release Sponsors
 
+## 1.44.0
+
+🥇 Gold Sponsors
+
+* Ambire Wallet (0xa07D75aacEFd11b425AF7181958F0F85c312f143)
+
+🥉 Bronze Sponsors
+
+* soxpert.eth (0xEf6FE9C9B351824c96e5C7a478C1e52BAdCBAEe0)
+
+## 1.43.0
+
+🥇 Gold Sponsors
+
+* pcaversaccio (0xe9Fa0c8B5d7F79DeC36D3F448B1Ac4cEdedE4e69)
+
+🥈 Silver Sponsors
+
+* respired.eth (0x42726b0570174227679521E48cDDf454357C8553)
+
+🥉 Bronze Sponsors
+
+* lightwalker.eth (0x1A199654959140e5c1A2F4135FAa7Ba2748939c5)
+* Pablo Sabbatella - Opsek (0x5C07cbbD3F74925A362acAB166e9b1C59a5235c3)
+* 0x6a2dBD6f01eeA7f9D7DF1b5Bf3394E7cEE20842E (0x6a2dBD6f01eeA7f9D7DF1b5Bf3394E7cEE20842E)
+
+## 1.42.0
+
+🥇 Gold Sponsors
+
+* jespow.eth (0x24422361687270C1Ac2DD3f336E1bc130849617b) x2
+
+🥈 Silver Sponsors
+
+* 我喜歡大奶.eth (0x31A1AAB023739d5CA68c49cE0e695c744B79260c)
+* mem.eth (0x221C2f9Fe59f6D6dD569cb8Fc94755e247AfC309)
+
+🥉 Bronze Sponsors
+
+* flyguy.eth (0x23fC0A44B875790D4EfD7E785495C556Ca4C815c)
+* isidoros.eth (0x938Bf2B8a7e40472D846E50B8fFe763a0fC749D4)
+* lightwalker.eth (0x1A199654959140e5c1A2F4135FAa7Ba2748939c5)
+* caldonia.eth (0x9a41C5549BCc7d3f8D80E639714a4823dE559134)
+* mem.eth (0x221C2f9Fe59f6D6dD569cb8Fc94755e247AfC309)
+
 ## 1.41.0
 
 🥇 Gold Sponsors
