@@ -8,7 +8,7 @@ import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
-import { captureSession } from '@/modules/core/session/session-lifecycle';
+import { captureSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
 import { useSessionReady } from './use-session-ready';
@@ -63,8 +63,21 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { handleSessionReady } = useSessionReady();
   const { logged, upgradeVisible, username } = storeToRefs(useSessionAuthStore());
 
+  /**
+   * Ends the session the moment the backend rejects it, then logs the app out.
+   *
+   * @remarks
+   * Ending it here, synchronously, rather than in the watcher on `logged`, means the request that
+   * got the 401 already sees no live session when its caller handles the failure, so whatever it
+   * would report is dropped every time instead of depending on microtask order.
+   */
+  function endSessionOnAuthFailure(): void {
+    endSession();
+    set(logged, false);
+  }
+
   api.setOnAuthFailure(
-    () => set(logged, false),
+    endSessionOnAuthFailure,
     () => get(logged),
   );
   const { updateFrontendSetting } = useSettingsOperations();
