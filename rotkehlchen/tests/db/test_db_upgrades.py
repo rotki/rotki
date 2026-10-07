@@ -5022,6 +5022,19 @@ def test_upgrade_db_53_to_54(
                     (identifier, 42, 0),
                 )
 
+    # checkpoints stored by v53 may have been advanced past blocks whose transactions
+    # were never fetched, so the upgrade deletes them and the next refresh rebuilds them
+    # with the corrected logic. An unrelated cache entry must survive the cleanup.
+    with db_v53.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                ('last_btc_tx_block_bc1qtestaddress', '900001'),
+                ('last_bch_tx_block_bitcoincash:qtestaddress', '800000'),
+                ('unrelated_cache_key', '1'),
+            ],
+        )
+
     db_v53.logout()
     db = _init_db_with_target_version(
         target_version=54,
@@ -5058,5 +5071,14 @@ def test_upgrade_db_53_to_54(
             'SELECT COUNT(*) FROM rpc_nodes WHERE is_archive IS NOT NULL OR is_pruned IS NOT NULL',
         ).fetchone()[0] == 0
         assert db.get_setting(cursor, 'version') == 54
+        # the bitcoin checkpoints stored by v53 were deleted so the next refresh
+        # rebuilds them, while unrelated cache entries were left alone
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'last\\_btc\\_tx\\_block\\_%' "
+            "ESCAPE '\\' OR name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            "SELECT value FROM key_value_cache WHERE name='unrelated_cache_key'",
+        ).fetchone()[0] == '1'
 
     db.logout()

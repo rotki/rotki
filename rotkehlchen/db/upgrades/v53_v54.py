@@ -151,4 +151,19 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         )
         write_cursor.execute('DROP TABLE asset_symbols')
 
+    @progress_step(description='Reset bitcoin transaction checkpoints.')
+    def _reset_btc_tx_checkpoints(write_cursor: DBCursor) -> None:
+        """Delete the per-address last queried block of bitcoin and bitcoin cash.
+
+        The checkpoints stored by released v53 may have been advanced past blocks
+        whose transactions were never fetched, by the shared-height behavior fixed
+        for #13182. Deleting them makes the next refresh rebuild every checkpoint
+        with the corrected per-address logic instead of keeping the wrong ones.
+        """
+        write_cursor.execute(
+            "DELETE FROM key_value_cache WHERE "
+            "name LIKE 'last\\_btc\\_tx\\_block\\_%' ESCAPE '\\' OR "
+            "name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

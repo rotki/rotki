@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+import requests
 
 from rotkehlchen.api.websockets.typedefs import (
     ProgressUpdateSubType,
     TransactionStatusStep,
     WSMessageType,
 )
+from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
 from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
@@ -1297,6 +1299,91 @@ def test_unplaceable_txios_do_not_advance_the_query_range(
         ) is None
 
 
+def _blockcypher_batch_response(address_a: BTCAddress, address_b: BTCAddress) -> str:
+    """A blockcypher response for two addresses whose newest transactions sit in
+    different blocks, 900_001 for the first and 900_000 for the second.
+    """
+    def entry(address: BTCAddress, txid: str, block_height: int) -> dict[str, Any]:
+        return {
+            'address': address,
+            'hasMore': False,
+            'txs': [{
+                'hash': txid,
+                'confirmed': '2023-11-14T22:15:00Z',
+                'block_height': block_height,
+                'fees': 1000,
+                'vin_sz': 1,
+                'vout_sz': 1,
+                'inputs': [{'output_value': 5000000, 'addresses': [address]}],
+                'outputs': [{'value': 4999000, 'script': '00', 'addresses': [address]}],
+            }],
+        }
+
+    return json.dumps([
+        entry(address_a, 'a' * 64, 900_001),
+        entry(address_b, 'b' * 64, 900_000),
+    ])
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
+def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A blockcypher fallback query must not split addresses into single-address groups.
+
+    Blockcypher answers one request per batch of addresses, and every address of a batch
+    is observed at the same snapshot. Caching each address's own newest block would give
+    the two addresses different checkpoints, so the next refresh would query them
+    separately, one blockchain.info request each, forever. Sharing the batch's maximum
+    height keeps them grouped in a single request.
+    """
+    address_a, address_b = btc_accounts
+    info_requests: list[str] = []
+
+    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
+        if BLOCKCHAIN_INFO_BASE_URL in url:
+            info_requests.append(url)
+            if len(info_requests) == 1:
+                raise requests.exceptions.RequestException('blockchain.info is down')
+            return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
+
+        assert BLOCKCYPHER_BASE_URL in url
+        return MockResponse(200, _blockcypher_batch_response(address_a, address_b))
+
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        for address in btc_accounts:
+            assert bitcoin_manager.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                address=address,
+            ) == 900_001  # the batch's maximum, not each address's own newest block
+
+    # The next refresh goes to blockchain.info again. Both addresses share one checkpoint,
+    # so they are queried together in a single multiaddr request instead of one each.
+    first_query_info_requests = len(info_requests)
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+    assert len(info_requests) - first_query_info_requests == 1
+
+
 def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:
     """Test that every list of raw transactions is processed separately.
 
@@ -1325,6 +1412,90 @@ def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManage
     )
     assert [x.block_height for x in txs] == [600, 900, 550]
     assert new_block_heights == [600, 900]  # the newest block each list reached, in order
+
+
+def _blockchain_info_tx(txid: str, block_height: int) -> dict[str, Any]:
+    """A minimal blockchain.info transaction at the given height."""
+    return {
+        'hash': txid,
+        'time': 1700000000,
+        'block_height': block_height,
+        'fee': 1000,
+        'vin_sz': 1,
+        'vout_sz': 1,
+        'inputs': [{'index': 0, 'prev_out': {
+            'value': 100000, 'script': '00', 'addr': P2WPKH_ADDRESS,
+        }}],
+        'out': [{'n': 0, 'value': 99000, 'script': '00', 'addr': P2WPKH_ADDRESS}],
+    }
+
+
+def test_blockchain_info_chunk_boundary_aligns_heights(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """81 addresses are queried in chunks of 80, producing two raw transaction lists.
+
+    The per-address heights must align with those chunks: the first 80 addresses get the
+    first list's height and the final address gets the second's. The addresses are
+    synthetic since only the chunking and the positional alignment are under test.
+    """
+    accounts = [BTCAddress(f'chunk-test-address-{i:03d}') for i in range(81)]
+    with patch.object(
+        BitcoinManager,
+        '_query_blockchain_info',
+        return_value=[
+            [_blockchain_info_tx(txid='a' * 64, block_height=900_001)],
+            [_blockchain_info_tx(txid='b' * 64, block_height=900_000)],
+        ],
+    ) as query_mock:
+        address_heights, _ = bitcoin_manager._query_blockchain_info_transactions(
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+    assert query_mock.call_count == 1
+    assert [address_heights[address] for address in accounts[:80]] == [900_001] * 80
+    assert address_heights[accounts[80]] == 900_000
+
+
+def _haskoin_tx(txid: str, block_height: int) -> dict[str, Any]:
+    """A minimal haskoin transaction at the given height."""
+    return {
+        'txid': txid,
+        'time': 1700000000,
+        'block': {'height': block_height},
+        'fee': 1000,
+        'inputs': [{'value': 100000, 'pkscript': '00'}],
+        'outputs': [{'value': 99000, 'pkscript': '00'}],
+    }
+
+
+def test_haskoin_chunk_boundary_aligns_heights(
+        bitcoin_cash_manager: BitcoinCashManager,
+) -> None:
+    """101 addresses are queried in chunks of 100, producing two raw transaction lists.
+
+    The per-address heights must align with those chunks: the first 100 addresses get the
+    first list's height and the final address gets the second's. The addresses are
+    synthetic since only the chunking and the positional alignment are under test.
+    """
+    accounts = [BTCAddress(f'chunk-test-address-{i:03d}') for i in range(101)]
+    with (
+        patch.object(BitcoinCashManager, '_check_haskoin_health'),
+        patch(
+            'rotkehlchen.chain.bitcoin.bch.manager.request_get',
+            side_effect=[
+                [_haskoin_tx(txid='a' * 64, block_height=900_001)],
+                [_haskoin_tx(txid='b' * 64, block_height=900_000)],
+            ],
+        ),
+    ):
+        address_heights, _ = bitcoin_cash_manager._query_haskoin_transactions(
+            base_url='https://api.haskoin.com',
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+    assert [address_heights[address] for address in accounts[:100]] == [900_001] * 100
+    assert address_heights[accounts[100]] == 900_000
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
@@ -2398,6 +2569,52 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
             name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             address=address_b,
         ) == 900_001
+
+    # A later refresh exposes A's block-900001 transaction. It must be saved and decoded,
+    # proving the missed transaction is picked up rather than skipped for good.
+    tx_a2 = _esplora_tx(
+        block_height=900_001,
+        block_time=1700000002,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=99_000, address=address_a)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=97_000, address=address_a)],
+        fee=2_000,
+    )
+    tx_a2['txid'] = 'a' * 64  # the helper derives the txid from the block height
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{address_a}/txs': [tx_a2],
+            f'/address/{address_a}/txs?after_txid={tx_a2["txid"]}': [],
+            f'/address/{address_b}/txs': [tx_b],
+            f'/address/{address_b}/txs?after_txid={tx_b["txid"]}': [],
+        }),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert tx_a2['txid'] in [
+            x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        ]
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_a,
+        ) == 900_001
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(tx_a2['txid'] in event.group_identifier for event in events)
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])

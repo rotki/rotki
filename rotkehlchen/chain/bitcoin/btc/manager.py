@@ -261,10 +261,20 @@ class BitcoinManager(BitcoinCommonManager):
         """Query blockcypher for transactions.
         Txs from the api are ordered newest to oldest, with pagination via block_height.
         Returns a tuple containing the queried block height per address and the list of txs.
+        Every address of one request batch is observed at the same snapshot, so all of
+        them share the batch's maximum safe height. Keeping one checkpoint per batch
+        preserves the address grouping of the next query; per-address heights would
+        split them into single-address groups that never coalesce again.
         """
         accounts_tx_lists: dict[BTCAddress, list[dict[str, Any]]] = defaultdict(list)
         limits = f'limit={BLOCKCYPHER_TX_LIMIT}&txlimit={BLOCKCYPHER_TX_IO_LIMIT}'
+        request_chunks: list[list[BTCAddress]] = []
         for accounts_chunk in get_chunks(list(accounts), BLOCKCYPHER_BATCH_SIZE):
+            # Remember the batch before pagination below shrinks the chunk, and make sure
+            # every queried address has a tx list even if the api omits it from a response.
+            request_chunks.append(chunk_addresses := list(accounts_chunk))
+            for address in chunk_addresses:
+                accounts_tx_lists.setdefault(address, [])
             before_height = None
             while len(accounts_chunk) > 0:
                 url = f"{BLOCKCYPHER_BASE_URL}/addrs/{';'.join(accounts_chunk)}/full?{limits}"
@@ -297,7 +307,12 @@ class BitcoinManager(BitcoinCommonManager):
         )
         # accounts_tx_lists is keyed by address in insertion order, so its keys line up
         # with the raw tx lists handed to the processing above.
-        return dict(zip(accounts_tx_lists, new_block_heights, strict=True)), txs
+        address_heights = dict(zip(accounts_tx_lists, new_block_heights, strict=True))
+        return {
+            address: max(address_heights[chunk_address] for chunk_address in chunk)
+            for chunk in request_chunks
+            for address in chunk
+        }, txs
 
     def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a blockcypher.
