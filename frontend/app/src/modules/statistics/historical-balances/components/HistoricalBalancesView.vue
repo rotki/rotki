@@ -8,6 +8,7 @@ import HistoricalBalancesTable from '@/modules/statistics/historical-balances/co
 import { useAsOfDate } from '@/modules/statistics/historical-balances/use-as-of-date';
 import { useHistoricalBalanceValues } from '@/modules/statistics/historical-balances/use-historical-balance-values';
 import { useHistoricalBalancesAt } from '@/modules/statistics/historical-balances/use-historical-balances-at';
+import { useHistoricalBalancesExport } from '@/modules/statistics/historical-balances/use-historical-balances-export';
 import { ProcessingState, useHistoricalBalancesProcessing } from '@/modules/statistics/historical-balances/use-historical-balances-processing';
 import { useHistoricalBalancesView } from '@/modules/statistics/historical-balances/use-historical-balances-view';
 
@@ -28,6 +29,16 @@ const {
   rows,
   summary,
 } = useHistoricalBalancesView(pricedRows);
+const { blockedReason, exportCsv } = useHistoricalBalancesExport({
+  accounts: modelAccounts,
+  loading,
+  locations: modelLocations,
+  processingRequired,
+  rows,
+  search: modelSearch,
+  summary,
+  timestamp: shownAt,
+});
 const { failure, processNow, state: processingState } = useHistoricalBalancesProcessing();
 
 /** A day came back empty after events were processed, so there is nothing left to offer. */
@@ -43,6 +54,27 @@ async function reload(): Promise<void> {
 <template>
   <TablePageLayout :title="[t('navigation_menu.statistics_sub.historical_balances')]">
     <template #buttons>
+      <RuiTooltip
+        :disabled="!blockedReason"
+        :open-delay="200"
+        :class-names="{ tooltip: 'max-w-[16rem]' }"
+      >
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :disabled="!!blockedReason"
+            data-testid="historical-balances-export"
+            @click="exportCsv()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-file-spreadsheet" />
+            </template>
+            {{ t('historical_balances.export.action') }}
+          </RuiButton>
+        </template>
+        {{ blockedReason }}
+      </RuiTooltip>
       <RuiButton
         variant="outlined"
         color="primary"
@@ -145,6 +177,12 @@ async function reload(): Promise<void> {
           >
             {{ t('historical_balances.total.spam', { count: summary.spamCount }, summary.spamCount) }}
           </span>
+        </div>
+        <div
+          class="text-caption text-rui-text-secondary mt-1"
+          data-testid="historical-balances-coverage"
+        >
+          {{ t('historical_balances.total.coverage') }}
         </div>
       </div>
 

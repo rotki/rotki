@@ -4261,6 +4261,15 @@
     "empty": "No balances on this day.",
     "empty_filtered": "No balances on this day match the filters.",
     "error": "Could not load the balances: {message}",
+    "export": {
+      "action": "Export CSV",
+      "blocked": {
+        "empty": "There are no balances to export.",
+        "loading": "The balances are still loading.",
+        "pending": "Some prices are still loading. The export is available once every price is in.",
+        "processing": "Some history events have not been processed yet. Process them first so the export is up to date."
+      }
+    },
     "filter": {
       "search_hint": "Search using the asset name or symbol"
     },
@@ -4291,6 +4300,7 @@
       "locations": "Locations"
     },
     "total": {
+      "coverage": "Rebuilt from your history events. Holdings without history events, such as manual balances, liabilities and ETH staking validators, are not included.",
       "filtered": "(filtered)",
       "missing": "{count} asset has no price for this day and is left out | {count} assets have no price for this day and are left out",
       "pending": "{count} price still loading | {count} prices still loading",

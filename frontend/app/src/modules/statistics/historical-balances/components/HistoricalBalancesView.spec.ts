@@ -9,8 +9,10 @@ import HistoricalBalancesView from '@/modules/statistics/historical-balances/com
 import { createRuiPlugin } from '@/plugins/rui';
 
 const {
+  blockedReason,
   empty,
   error,
+  exportCsv,
   filtered,
   loadedAt,
   processingRequired,
@@ -23,8 +25,10 @@ const {
   const { ref } = await import('vue');
   const valuedAt: { current?: MaybeRefOrGetter<number> } = {};
   return {
+    blockedReason: ref<string>(),
     empty: ref<boolean>(false),
     error: ref<string>(),
+    exportCsv: vi.fn<() => void>(),
     filtered: ref<boolean>(false),
     loadedAt: ref<number>(),
     processingRequired: ref<boolean>(false),
@@ -73,6 +77,9 @@ vi.mock('@/modules/statistics/historical-balances/use-historical-balances-view',
     }),
   };
 });
+vi.mock('@/modules/statistics/historical-balances/use-historical-balances-export', () => ({
+  useHistoricalBalancesExport: (): Record<string, unknown> => ({ blockedReason, exportCsv }),
+}));
 vi.mock('@/modules/history/balances/use-historical-balances', () => ({
   useHistoricalBalances: (): { triggerHistoricalBalancesProcessing: typeof triggerProcessing } => ({
     triggerHistoricalBalancesProcessing: triggerProcessing,
@@ -91,9 +98,11 @@ function createWrapper(): VueWrapper<InstanceType<typeof HistoricalBalancesView>
 describe('historical balances view', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    set(blockedReason, undefined);
     set(empty, false);
     set(error, undefined);
     set(filtered, false);
+    exportCsv.mockReset();
     set(loadedAt, undefined);
     set(processingRequired, false);
     set(rows, [{ amount: bigNumberify('1'), asset: 'ETH' }]);
@@ -214,6 +223,27 @@ describe('historical balances view', () => {
     await flushPromises();
 
     expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it('should export the shown balances when nothing blocks it', async () => {
+    const wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=historical-balances-export]').trigger('click');
+
+    expect(exportCsv).toHaveBeenCalledOnce();
+  });
+
+  it('should hold the export back while something blocks it', () => {
+    set(blockedReason, 'prices loading');
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=historical-balances-export]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should say under the total what the balances leave out', () => {
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=historical-balances-coverage]').text()).toBe('historical_balances.total.coverage');
   });
 
   it('should mark the total as filtered only while a filter narrows it', async () => {
