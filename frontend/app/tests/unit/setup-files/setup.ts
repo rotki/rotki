@@ -157,9 +157,9 @@ vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
 
 vi.mock('@/modules/shell/app/use-monitor-service', () => ({
   useMonitorService: () => ({
+    host: vi.fn(() => vi.fn()),
     restart: vi.fn(),
     start: vi.fn(),
-    startTaskMonitoring: vi.fn(),
     stop: vi.fn(),
   }),
 }));

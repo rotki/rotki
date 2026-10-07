@@ -10,7 +10,8 @@ import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator
 
 /**
  * Ties the app-wide parts of a session to its lifecycle: the monitors start on login, and when the
- * session ends its work stops and the state it leaves is cleared.
+ * session ends its work stops and the state it leaves is cleared. The session host stops the
+ * monitors themselves.
  *
  * @remarks
  * The orchestrator, the submission map, the account-load tracker and the hydration map are all
@@ -26,14 +27,13 @@ import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator
 export function useSessionStateCleaner(): void {
   const { logged } = storeToRefs(useSessionAuthStore());
   const { clearUploadStatus } = useSync();
-  const { start, stop } = useMonitorService();
+  const { start } = useMonitorService();
   const orchestrator = useTaskOrchestrator();
   const { reset: resetNativeTasks } = useNativeTask();
   const { reset: resetAccountLoad } = useAccountLoadState();
   const { reset: resetHydration } = useBalanceHydration();
 
   onSessionEnd('session-work', () => {
-    stop();
     orchestrator.reset();
     resetNativeTasks();
     resetAccountLoad();

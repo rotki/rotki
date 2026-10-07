@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { beginSession, captureSession, endSession, hasLiveSession, liveSessionSignal, onSessionCleared, onSessionEnd, scheduleSessionClear, sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
+import { beginSession, captureSession, endSession, hasLiveSession, liveSessionKey, liveSessionSignal, onSessionCleared, onSessionEnd, scheduleSessionClear, sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 
 describe('session-lifecycle', () => {
   it('should give session work the live session\'s signal', () => {
@@ -86,6 +86,33 @@ describe('session-lifecycle', () => {
     expect(earlier).not.toHaveBeenCalled();
     expect(later).toHaveBeenCalledOnce();
     remove();
+  });
+
+  it('should keep the replacement when the listener it replaced is removed late', () => {
+    beginSession();
+    const removeEarlier = onSessionEnd('spec', vi.fn<() => void>());
+    const later = vi.fn<() => void>();
+    const removeLater = onSessionEnd('spec', later);
+
+    removeEarlier();
+    endSession();
+
+    expect(later).toHaveBeenCalledOnce();
+    removeLater();
+  });
+
+  it('should give each session its own key, and none once it ends', () => {
+    const key = liveSessionKey();
+    beginSession();
+    const first = get(key);
+    beginSession();
+    const second = get(key);
+
+    endSession();
+
+    expect(first).toBeDefined();
+    expect(second).not.toBe(first);
+    expect(get(key)).toBeUndefined();
   });
 
   describe('clear phase', () => {

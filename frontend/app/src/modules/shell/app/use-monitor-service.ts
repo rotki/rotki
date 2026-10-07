@@ -1,91 +1,79 @@
-import { startPromise } from '@shared/utils';
-import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import type { SessionMonitor } from '@/modules/shell/app/use-session-monitor';
 import { logger } from '@/modules/core/common/logging/logging';
-import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
-import { useMonitorWatchers } from '@/modules/shell/app/use-monitor-watchers';
-import { useBalanceRefreshScheduler } from './schedulers/use-balance-refresh-scheduler';
-import { useEvmStatusScheduler } from './schedulers/use-evm-status-scheduler';
-import { usePasswordCheckScheduler } from './schedulers/use-password-check-scheduler';
-import { usePeriodicPollingScheduler } from './schedulers/use-periodic-polling-scheduler';
-import { useTaskPollingScheduler } from './schedulers/use-task-polling-scheduler';
-import { useWebsocketConnection } from './use-websocket-connection';
+import { hasLiveSession, onSessionEnd } from '@/modules/core/session/session-lifecycle';
 
-interface UseMonitorServiceInternalReturn {
-  restart: () => void;
+const MonitorIntent = {
+  STARTED: 'started',
+  STOPPED: 'stopped',
+} as const;
+
+type MonitorIntent = { kind: typeof MonitorIntent.STOPPED } | { kind: typeof MonitorIntent.STARTED; restarting: boolean };
+
+const STOPPED: MonitorIntent = { kind: MonitorIntent.STOPPED };
+
+interface UseMonitorServiceReturn {
+  /** Starts the live session's monitor, or once the session host has built it. */
   start: (restarting?: boolean) => void;
-  startTaskMonitoring: (restarting: boolean) => void;
   stop: () => void;
-}
-
-function useMonitorServiceInternal(): UseMonitorServiceInternalReturn {
-  const { connect, disconnect, setConnectionEnabled } = useWebsocketConnection();
-
-  const taskScheduler = useTaskPollingScheduler();
-  const periodicScheduler = usePeriodicPollingScheduler();
-  const balanceScheduler = useBalanceRefreshScheduler();
-  const evmStatusScheduler = useEvmStatusScheduler();
-  const passwordCheckScheduler = usePasswordCheckScheduler();
-
-  useMonitorWatchers();
-  useTokenDetectionOrchestrator();
-
-  const schedulers = [taskScheduler, periodicScheduler, balanceScheduler, evmStatusScheduler, passwordCheckScheduler];
-
-  const connectWebSocket = async (restarting: boolean): Promise<void> => {
-    try {
-      await connect();
-      periodicScheduler.start(!restarting);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-    }
-  };
-
-  const startTaskMonitoring = (restarting: boolean): void => {
-    taskScheduler.start(!restarting);
-  };
-
-  const start = function (restarting = false): void {
-    setConnectionEnabled(true);
-    startPromise(connectWebSocket(restarting));
-    startTaskMonitoring(restarting);
-    balanceScheduler.start();
-    evmStatusScheduler.start();
-    passwordCheckScheduler.start();
-  };
-
-  const stop = (): void => {
-    setConnectionEnabled(false);
-    disconnect();
-    for (const scheduler of schedulers)
-      scheduler.stop();
-  };
-
-  const restart = (): void => {
-    stop();
-    start(true);
-  };
-
-  const stopOnSessionEnd = onSessionEnd('monitor-service', stop);
-
-  onScopeDispose(() => {
-    stopOnSessionEnd();
-    stop();
-  });
-
-  return {
-    restart,
-    start,
-    startTaskMonitoring,
-    stop,
-  };
+  restart: () => void;
+  /**
+   * Hands the facade the live session's monitor, applying a start asked for before it existed.
+   *
+   * @returns a function that withdraws it
+   */
+  host: (monitor: SessionMonitor) => () => void;
 }
 
 /**
- * The websocket and the session's pollers, started by the unlock flow.
+ * Starts and stops the live session's monitor, which the session host builds for each session.
  *
  * @remarks
- * Stops when the session ends. Every poller reads data that belongs to the session, so one still
- * ticking on the login screen only reaches a backend that refuses it.
+ * Callers may ask for a start before the host has built the monitor: the unlock flow starts it as
+ * soon as it connects, and the host only mounts on the next render after the session began. The
+ * wanted state is kept and applied when the host hands its monitor over. A start with no session
+ * live is ignored, so it can never carry over into the next session and open the websocket before
+ * that session's handshake. When a session ends the wanted state goes back to stopped and its
+ * monitor is dropped at once: its host only unmounts on the next render, and starting the ended
+ * session's monitor in between would arm pollers nothing could stop.
  */
-export const useMonitorService = createGlobalState(useMonitorServiceInternal);
+export const useMonitorService = createGlobalState((): UseMonitorServiceReturn => {
+  let hosted: SessionMonitor | undefined;
+  let intent: MonitorIntent = STOPPED;
+
+  onSessionEnd('monitor-service', () => {
+    intent = STOPPED;
+    hosted = undefined;
+  });
+
+  function start(restarting = false): void {
+    if (!hasLiveSession()) {
+      logger.debug('monitor start ignored: no session is live');
+      return;
+    }
+    intent = { kind: MonitorIntent.STARTED, restarting };
+    hosted?.start(restarting);
+  }
+
+  function stop(): void {
+    intent = STOPPED;
+    hosted?.stop();
+  }
+
+  function restart(): void {
+    stop();
+    start(true);
+  }
+
+  function host(monitor: SessionMonitor): () => void {
+    hosted = monitor;
+    if (intent.kind === MonitorIntent.STARTED)
+      monitor.start(intent.restarting);
+
+    return () => {
+      if (hosted === monitor)
+        hosted = undefined;
+    };
+  }
+
+  return { host, restart, start, stop };
+});

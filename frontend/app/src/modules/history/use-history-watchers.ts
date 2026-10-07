@@ -17,10 +17,11 @@ const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
  * post-processing steps.
  *
  * @remarks
- * Every reaction runs only while a session is live. These watchers live as long as the app, and
- * the store reset at logout ends processing after the session ended: reacting would start
- * post-processing for a user who is gone, or leave `postProcessing` set in the state the next
- * session starts from.
+ * Built by the session's monitor, so the watchers are disposed the moment the session ends, before
+ * the store reset at logout ends processing: reacting to that would start post-processing for a
+ * user who is gone, or leave `postProcessing` set in the state the next session starts from. The
+ * debounced reprocessing still checks for a live session itself, since a debounced call already
+ * pending runs after its watcher is disposed.
  */
 export function useHistoryWatchers(): void {
   const { processing } = useHistoryEventsStatus();
@@ -52,9 +53,6 @@ export function useHistoryWatchers(): void {
       [currentProcessing, connectedExchanges],
       [previousProcessing, previousConnectedExchanges],
     ) => {
-      if (!hasLiveSession())
-        return;
-
       if (
         currentProcessing !== previousProcessing ||
         !isEqual(connectedExchanges, previousConnectedExchanges)
@@ -65,12 +63,12 @@ export function useHistoryWatchers(): void {
   );
 
   watch(processing, (isProcessing, wasProcessing) => {
-    if (hasLiveSession() && !isProcessing && wasProcessing)
+    if (!isProcessing && wasProcessing)
       historyStore.setPostProcessing(true);
   });
 
   watch(processingDebounced, async (processing, wasProcessing) => {
-    if (hasLiveSession() && !processing && wasProcessing) {
+    if (!processing && wasProcessing) {
       try {
         historyStore.acknowledgeModifications();
         await triggerHistoricalBalancesProcessing();

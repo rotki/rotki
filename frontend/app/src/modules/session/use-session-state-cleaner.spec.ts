@@ -7,7 +7,6 @@ import { useSessionStateCleaner } from './use-session-state-cleaner';
 const logged = ref<boolean>(false);
 const clearUploadStatus = vi.fn();
 const start = vi.fn();
-const stop = vi.fn();
 const reset = vi.fn();
 const resetState = vi.fn();
 const resetNativeTasks = vi.fn();
@@ -23,7 +22,7 @@ vi.mock('@/modules/session/use-session-sync', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-monitor-service', () => ({
-  useMonitorService: (): object => ({ start, stop }),
+  useMonitorService: (): object => ({ start }),
 }));
 
 vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
@@ -72,7 +71,6 @@ describe('useSessionStateCleaner', () => {
     set(logged, true);
     await nextTick();
     expect(start).toHaveBeenCalledOnce();
-    expect(stop).not.toHaveBeenCalled();
   });
 
   it('should stop the session\'s work when the user logs out, before clearing anything', async () => {
@@ -81,7 +79,6 @@ describe('useSessionStateCleaner', () => {
     set(logged, false);
     await nextTick();
 
-    expect(stop).toHaveBeenCalledOnce();
     expect(reset).toHaveBeenCalledOnce();
     expect(resetNativeTasks).toHaveBeenCalledOnce();
     expect(resetAccountLoad).toHaveBeenCalledOnce();
@@ -122,7 +119,6 @@ describe('useSessionStateCleaner', () => {
     set(logged, true);
     await nextTick();
     await nextTask();
-    expect(stop).not.toHaveBeenCalled();
     expect(reset).not.toHaveBeenCalled();
     expect(resetNativeTasks).not.toHaveBeenCalled();
     expect(resetHydration).not.toHaveBeenCalled();
