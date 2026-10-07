@@ -641,6 +641,43 @@ def test_find_onchain_historical_balance_divergence(
     assert [probe['event']['block_number'] for probe in result['probes']] == [7, 1, 4, 5]
     assert balance_mock.call_count == 4
 
+    # A later correction must not hide the divergence when investigating an earlier issue.
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(node_inquirer, 'get_historical_native_balance', return_value=FVal(8)),
+    ):
+        latest = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={'evm_chain': 'ethereum', 'address': user_address, 'asset': A_ETH.identifier},
+        ))
+    assert latest['status'] == 'no_divergence'
+
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(
+            node_inquirer,
+            'get_historical_native_balance',
+            side_effect=[FVal(7), FVal(1), FVal(3), FVal(5)],
+        ) as bounded_mock,
+    ):
+        bounded = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={
+                'evm_chain': 'ethereum',
+                'address': user_address,
+                'asset': A_ETH.identifier,
+                'to_timestamp': (START_TS + 5) * 1000,
+            },
+        ))
+    assert bounded['status'] == 'diverged'
+    assert bounded['total_events'] == 5
+    assert bounded['last_matching']['block_number'] == 4
+    assert bounded['first_diverged']['block_number'] == 5
+    assert bounded['first_diverged']['tracked_balance'] == '6'
+    assert bounded['first_diverged']['difference'] == '1'
+    assert [probe['event']['block_number'] for probe in bounded['probes']] == [5, 1, 3, 4]
+    assert bounded_mock.call_count == 4
+
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('accounting_update_enabled', [True, False])

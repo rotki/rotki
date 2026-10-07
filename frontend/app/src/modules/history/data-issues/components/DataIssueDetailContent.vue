@@ -3,6 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
@@ -189,6 +190,13 @@ const resolutionNote = computed<string | undefined>(() => {
           </div>
         </div>
       </section>
+
+      <DataIssueBalanceDivergence
+        :key="`${issue.id}:${issue.tsEnd}`"
+        :issue="issue"
+        :busy="busy"
+        @navigate="emit('close')"
+      />
 
       <section>
         <div class="text-overline text-rui-text-secondary mb-2">

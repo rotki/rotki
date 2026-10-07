@@ -4,7 +4,7 @@ import type { useHistoryEventsApi } from '@/modules/history/api/events/use-histo
 import type { HistoryEventNavigationRequest } from '@/modules/history/events/use-history-event-navigation';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRouterPush = vi.fn().mockResolvedValue(undefined);
 const mockRouterReplace = vi.fn().mockResolvedValue(undefined);
@@ -152,6 +152,34 @@ describe('use-history-event-navigation-consumer', () => {
           page: '3',
         },
       });
+    });
+
+    it('should keep asset-filter navigation active until the target page finishes loading', async () => {
+      mockGetHistoryEventGroupPosition.mockResolvedValue(25);
+      setupMockRoute('/history/events/', { location: 'kraken' });
+      const { useHistoryEventNavigation, useHistoryEventNavigationConsumer } = await importFresh();
+      const loading = ref<boolean>(false);
+      const navigation = scope.run(() => {
+        useHistoryEventNavigationConsumer(createPagination(10), undefined, loading);
+        return useHistoryEventNavigation();
+      });
+      assert(navigation);
+      navigation.requestNavigation({
+        assetFilter: 'ETH',
+        highlightedAccountingEvent: 123,
+        targetGroupIdentifier: 'group-1',
+      });
+      await flushPromises();
+
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', { asset: 'ETH' });
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: { asset: 'ETH', highlightedAccountingEvent: '123', limit: '10', page: '3' },
+      });
+      expect(get(navigation.isNavigating)).toBe(true);
+      await runPaginationLoadCycle(loading);
+      expect(get(navigation.isNavigating)).toBe(false);
     });
 
     it('should navigate with potential match highlight', async () => {
@@ -608,10 +636,8 @@ describe('use-history-event-navigation-consumer', () => {
       });
 
       await flushPromises();
-      // Position is computed within the asset-filtered view.
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
-      // The push is deferred until the pagination refetch settles.
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockRouterPush).toHaveBeenCalledOnce();
 
       await runPaginationLoadCycle(loading);
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);

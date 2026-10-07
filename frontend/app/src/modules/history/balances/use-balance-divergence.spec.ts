@@ -5,6 +5,7 @@ import flushPromises from 'flush-promises';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
 
 const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 const mockFindDivergence = vi.fn();
@@ -81,6 +82,15 @@ describe('useBalanceDivergence', () => {
     expect(get(divergence.boundaries).map(boundary => boundary.key)).toStrictEqual(['last_matching', 'first_diverged']);
     expect(get(divergence.summary)).toContain('balance_divergence.checked');
     expect(get(divergence.error)).toBeUndefined();
+  });
+
+  it('should restore the completed boundaries without running another task', () => {
+    const result = HistoricalBalanceDivergenceResponse.parse(divergedResult());
+    const divergence = useBalanceDivergence(result);
+
+    expect(get(divergence.boundaries).map(boundary => boundary.event.eventIdentifier)).toEqual([101, 102]);
+    expect(get(divergence.summary)).toContain('balance_divergence.checked');
+    expect(mockFindDivergence).not.toHaveBeenCalled();
   });
 
   it('should not dedup two runs that differ only by tolerance', async () => {

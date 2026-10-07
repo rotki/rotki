@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { fromNullable, isSome, map as mapOption } from 'plainfp/option';
 import { isErr, map as mapResult } from 'plainfp/result';
@@ -27,6 +27,7 @@ interface DivergenceError {
 }
 
 interface UseBalanceDivergenceReturn {
+  result: Readonly<Ref<HistoricalBalanceDivergenceResponse | undefined>>;
   loading: Readonly<Ref<boolean>>;
   error: Readonly<Ref<string | undefined>>;
   boundaries: ComputedRef<DivergenceBoundaryEvent[]>;
@@ -37,14 +38,16 @@ interface UseBalanceDivergenceReturn {
 }
 
 /** Runs the balance divergence query as a task, exposing its state and the boundary events. */
-export function useBalanceDivergence(): UseBalanceDivergenceReturn {
+export function useBalanceDivergence(
+  initialResult?: MaybeRefOrGetter<HistoricalBalanceDivergenceResponse | undefined>,
+): UseBalanceDivergenceReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { findHistoricalBalanceDivergence } = useHistoricalBalancesApi();
   const { submitTask } = useNativeTask();
   const { requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
 
   const loading = shallowRef<boolean>(false);
-  const result = ref<HistoricalBalanceDivergenceResponse>();
+  const result = shallowRef<HistoricalBalanceDivergenceResponse>();
   const error = ref<string>();
 
   const boundaries = computed<DivergenceBoundaryEvent[]>(() => {
@@ -107,7 +110,7 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
     payload: HistoricalBalanceDivergencePayload,
   ): Promise<Result<Option<HistoricalBalanceDivergenceResponse>, DivergenceError>> {
     const outcome = await submitTask<HistoricalBalanceDivergenceResponse>({
-      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0),
+      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0, payload.toTimestamp ?? 'latest'),
       kind: ActivityKind.HISTORICAL_BALANCES,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricalBalanceDivergenceResponse, TaskError>> => mapResult(
@@ -152,6 +155,8 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
       set(result, found.value);
   }
 
+  watchImmediate(() => toValue(initialResult), value => set(result, value));
+
   return {
     boundaries,
     clear,
@@ -159,6 +164,7 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
     find,
     loading: readonly(loading),
     navigate,
+    result: shallowReadonly(result),
     summary,
   };
 }

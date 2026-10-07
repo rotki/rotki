@@ -93,4 +93,6 @@ export interface HistoricalBalanceDivergencePayload {
   address: string;
   asset: string;
   tolerance?: string;
+  /** Inclusive upper bound in milliseconds. */
+  toTimestamp?: number;
 }

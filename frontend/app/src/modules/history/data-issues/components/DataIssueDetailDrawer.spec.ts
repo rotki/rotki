@@ -52,6 +52,7 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
       stubs: {
         AssetDetails: true,
         CounterpartyDisplay: true,
+        DataIssueBalanceDivergence: true,
         DataIssueDescription: true,
         DataIssueDetectedTime: true,
         DataIssueKindChip: true,
@@ -76,6 +77,16 @@ describe('dataIssueDetailDrawer', () => {
   });
 
   afterEach(() => vi.useRealTimers());
+
+  it('should pass the issue to the divergence section and close when navigating to a checkpoint', async () => {
+    const issue = createIssue();
+    const wrapper = createWrapper(issue);
+    const divergence = wrapper.findComponent({ name: 'DataIssueBalanceDivergence' });
+    expect(divergence.props('issue')).toEqual(issue);
+    divergence.vm.$emit('navigate');
+    await nextTick();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+  });
 
   it('should render a related-event link for an issue that carries an event identifier', () => {
     const wrapper = createWrapper(createIssue());
@@ -120,6 +131,7 @@ describe('dataIssueDetailDrawer', () => {
         stubs: {
           AssetDetails: true,
           CounterpartyDisplay: true,
+          DataIssueBalanceDivergence: true,
           DataIssueDescription: true,
           DataIssueKindChip: true,
           DataIssueStateChip: true,

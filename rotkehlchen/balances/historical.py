@@ -352,6 +352,7 @@ class HistoricalBalancesManager:
             address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal = ZERO,
+            to_timestamp: TimestampMS | None = None,
     ) -> HistoricalBalanceDivergenceResult:
         """Find the first tracked wallet-balance event that disagrees with on-chain data.
 
@@ -359,6 +360,8 @@ class HistoricalBalancesManager:
         a point, then remain diverged because a balance-changing event is missing or incorrect.
         The database scan is narrow to one chain/address/asset wallet bucket, while remote archive
         node probes are O(log n). Transient mismatches that later resolve are outside this search.
+        When supplied, to_timestamp is an inclusive upper bound in milliseconds, so an issue can
+        be investigated without later corrections hiding its divergence.
 
         May raise:
         - NotFoundError if no processed wallet balance metrics exist for the address/asset.
@@ -370,6 +373,7 @@ class HistoricalBalancesManager:
             location=location,
             address=address,
             asset=asset,
+            to_timestamp=to_timestamp,
         )
         if len(events) == 0:
             raise NotFoundError(
@@ -800,6 +804,7 @@ class HistoricalBalancesManager:
             location: Location,
             address: ChecksumEvmAddress,
             asset: Asset,
+            to_timestamp: TimestampMS | None = None,
     ) -> list[_TrackedBalanceEvent]:
         """Load processed wallet balance checkpoints for one chain/address/asset.
 
@@ -825,6 +830,7 @@ class HistoricalBalancesManager:
                     LEFT JOIN evm_transactions et ON et.tx_hash = cei.tx_ref AND et.chain_id = ?
                     WHERE em.metric_key = ? AND em.location = ? AND em.location_label = ?
                     AND em.protocol IS NULL AND em.asset = ?
+                    AND (? IS NULL OR em.timestamp <= ?)
                     ORDER BY em.sort_key
                     """,
                     (
@@ -833,6 +839,8 @@ class HistoricalBalancesManager:
                         location.serialize_for_db(),
                         address,
                         asset.resolve_swapped_for().identifier,
+                        to_timestamp,
+                        to_timestamp,
                     ),
                 )
             ]
