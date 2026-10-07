@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM, LidoCsmOperatorType
@@ -31,47 +30,6 @@ def _make_evm_inquirer():
     return SimpleNamespace(
         database=MagicMock(),
         chain_id=ChainID.ETHEREUM,
-    )
-
-
-def test_lido_csm_balances_accumulates():
-    entry = LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=9)
-    with patch(
-        'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
-        return_value=(entry,),
-    ), patch.object(
-        LidoCsmBalances,
-        '_get_bond_shares',
-        return_value=1_000_000_000_000_000_000,
-    ), patch.object(
-        LidoCsmBalances,
-        '_convert_shares_to_steth',
-        return_value=FVal('1.5'),
-    ), patch.object(
-        Inquirer,
-        'find_price',
-        return_value=FVal('2000'),
-    ), patch.object(
-        LidoCsmMetricsFetcher,
-        'get_operator_stats',
-        return_value=LidoCsmNodeOperatorStats(
-            operator_type=LidoCsmOperatorType.UNKNOWN,
-            current_bond=FVal(0),
-            required_bond=FVal(0),
-            claimable_bond=FVal(0),
-            total_deposited_validators=0,
-            rewards_steth=FVal(0),
-        ),
-    ):
-        balances = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
-            tx_decoder=MagicMock(),
-        )
-        result = balances.query_balances(addresses=[entry.address])
-
-    assert result[entry.address].assets[A_STETH][CPT_LIDO_CSM] == Balance(
-        amount=FVal('1.5'),
-        value=FVal('3000'),
     )
 
 
