@@ -2,9 +2,10 @@ import type { SupportedAsset } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import { createMock } from '@test/utils/create-mock';
+import { withSetup } from '@test/utils/with-setup';
 import { flushPromises } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type Ref, ref } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useManagedAssetTable } from './use-managed-asset-table';
 
@@ -30,11 +31,9 @@ let pagination: Ref<TablePaginationData>;
 let expanded: Ref<SupportedAsset[]>;
 let collection: Ref<Collection<SupportedAsset>>;
 let selected: Ref<string[]>;
-let scope: ReturnType<typeof effectScope>;
 
 function table(): ReturnType<typeof useManagedAssetTable> {
-  scope = effectScope();
-  return scope.run(() => useManagedAssetTable(pagination, expanded, collection, selected))!;
+  return withSetup(() => useManagedAssetTable(pagination, expanded, collection, selected)).result;
 }
 
 describe('modules/assets/admin/useManagedAssetTable', () => {
@@ -44,10 +43,6 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
     expanded = ref<SupportedAsset[]>([]);
     collection = ref<Collection<SupportedAsset>>(page([]));
     selected = ref<string[]>([]);
-  });
-
-  afterEach(() => {
-    scope?.stop();
   });
 
   describe('the rows', () => {
