@@ -22,6 +22,7 @@ vi.mock('@/modules/core/common/use-locations', () => ({
 
 const badData: UserMessageData = {
   fields: { error: 'Missing key: amount', record: 'balance' },
+  group: ['error', 'bad_data', 'kucoin', 'balance'],
   key: 'bad_data',
   subject: 'kucoin',
   value: 'Failed to deserialize a kucoin balance. Ignoring it.',
@@ -30,6 +31,7 @@ const badData: UserMessageData = {
 
 const localDb: UserMessageData = {
   fields: { entry: 'tag' },
+  group: ['warning', 'local_db', null, 'tag'],
   key: 'local_db',
   subject: null,
   value: 'Could not read a tag',
@@ -37,7 +39,14 @@ const localDb: UserMessageData = {
 };
 
 function authFailure(service: string, account: string | null): UserMessageData {
-  return { fields: { account, service }, key: 'auth', subject: null, value: `${service} rejected the key`, verbosity: 'error' };
+  return {
+    fields: { account, service },
+    group: ['error', 'auth', null, service, account],
+    key: 'auth',
+    subject: null,
+    value: `${service} rejected the key`,
+    verbosity: 'error',
+  };
 }
 
 function singleAction(action: NotificationAction | NotificationAction[] | undefined): NotificationAction {

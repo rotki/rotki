@@ -20,6 +20,7 @@ export const UserMessageKey = {
 export type UserMessageKey = (typeof UserMessageKey)[keyof typeof UserMessageKey];
 
 const UserMessageBase = z.object({
+  group: z.array(z.string().nullable()),
   subject: z.string().nullable(),
   value: z.string(),
   verbosity: MessageVerbosity,
@@ -31,7 +32,8 @@ const UserMessageBase = z.object({
  * @remarks
  * Every emitter declares `key` (why it happened) and `fields` (the unrendered data its family
  * requires). `subject` (the location it happened to) is null for a message about no single
- * location. `value` is the rendered English sentence.
+ * location. `value` is the rendered English sentence. `group` is the message's identity as the
+ * backend's family declares it: messages with one `group` are one problem.
  *
  * The family fields are read as plain strings rather than as the backend's enums: they are only
  * compared for grouping, and an enum would drop the whole message the day the backend adds a

@@ -7681,7 +7681,8 @@ Querying messages to show to the user
                           "value": "Failed to deserialize a kucoin balance. Ignoring it.",
                           "key": "bad_data",
                           "subject": "kucoin",
-                          "fields": {"record": "balance", "error": "Missing key: amount"}
+                          "fields": {"record": "balance", "error": "Missing key: amount"},
+                          "group": ["error", "bad_data", "kucoin", "balance"]
                       },
                       "count": 3,
                       "last_sent": 1790773550
@@ -7689,7 +7690,7 @@ Querying messages to show to the user
                   {"type": "balance_snapshot_error", "data": {"location": "kraken", "error": "Could not reach kraken"}, "count": 1, "last_sent": 1790773560},
                   {
                       "type": "user_message",
-                      "data": {"verbosity": "warning", "value": "Tag foo with invalid color code found in the DB. Skipping tag", "key": "local_db", "subject": null, "fields": {"entry": "tag"}},
+                      "data": {"verbosity": "warning", "value": "Tag foo with invalid color code found in the DB. Skipping tag", "key": "local_db", "subject": null, "fields": {"entry": "tag"}, "group": ["warning", "local_db", null, "tag"]},
                       "count": 1,
                       "last_sent": 1790773570
                   }
@@ -7702,7 +7703,7 @@ Querying messages to show to the user
    :resjson list[object] messages: The held messages, ordered by when each was last sent. Each entry is a message in the same ``{"type": ..., "data": ...}`` shape the websocket sends, plus ``count``, how many times it was sent while held, and ``last_sent``, the timestamp in seconds of the last time it was sent.
    :resjson int dropped: How many messages were dropped to keep the stores within their bounds since the last read. Each dropped message is written to the backend log.
 
-   A ``user_message`` message carries ``verbosity`` (``"error"`` or ``"warning"``) and ``value``, the rendered text. It also carries ``key`` (why it happened, e.g. ``"bad_data"``, ``"network"``) and ``fields`` (the data specific to that key), which every message has, and ``subject`` (the location it happened to, e.g. ``"kucoin"``), which is ``null`` for a message about no single location.
+   A ``user_message`` message carries ``verbosity`` (``"error"`` or ``"warning"``) and ``value``, the rendered text. It also carries ``key`` (why it happened, e.g. ``"bad_data"``, ``"network"``) and ``fields`` (the data specific to that key), which every message has, and ``subject`` (the location it happened to, e.g. ``"kucoin"``), which is ``null`` for a message about no single location. ``group`` is its identity: repeats with the same ``group`` are held as one entry with a ``count`` and the newest ``value``. See the ``user_message`` websocket message for what each key groups by.
 
    :statuscode 200: Messages popped and read successfully.
    :statuscode 500: Internal rotki error.

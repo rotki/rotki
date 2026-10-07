@@ -16,11 +16,12 @@ Classified User Messages
   - Besides ``verbosity`` and ``value``, ``data`` now always carries ``key`` and ``fields``, and carries ``subject``, which is ``null`` for a message about no single location.
   - ``key`` is why the message happened, one of ``bad_data``, ``network``, ``auth``, ``unknown_asset``, ``local_db``, ``price``, ``unsupported`` or ``internal``.
   - ``fields`` holds the unrendered data of that family, e.g. ``record`` and ``error`` for ``bad_data``. ``value`` keeps the rendered sentence.
+  - ``group`` is the message's identity, ``[verbosity, key, subject, ...]`` followed by the fields that family groups by. Messages with the same ``group`` are repeats of one problem.
 
 * **Changed Endpoint**: ``GET /api/(version)/messages``
 
   - The response is now ``{"messages": [...], "dropped": int}`` instead of ``{"errors": [...], "warnings": [...]}``. Each entry of ``messages`` is the same ``{"type": ..., "data": ...}`` object the websocket sends, instead of a string, plus ``count``, how many times it was sent while held, and ``last_sent``, the timestamp of its last send. ``dropped`` counts the messages discarded to stay within bounds, each of which is written to the backend log.
-  - Every message type that could not be delivered over a websocket is now held here, whether the send failed, no client was connected, or the client disconnected before receiving it. Previously each of those three paths applied a different policy. Progress and status types are dropped, except a ``progress_updates`` message carrying a CSV import result. A state message is held only in its latest form per key (e.g. ``refresh_balances`` per chain), and a repeating failure once per distinct message with a count.
+  - Every message type that could not be delivered over a websocket is now held here, whether the send failed, no client was connected, or the client disconnected before receiving it. Previously each of those three paths applied a different policy. Progress and status types are dropped, except a ``progress_updates`` message carrying a CSV import result. A state message is held only in its latest form per key (e.g. ``refresh_balances`` per chain), and a repeating failure once with a count: a ``user_message`` once per ``group``, keeping its newest ``value``.
 
 * **Changed Message**: ``exchange_unknown_asset``
 

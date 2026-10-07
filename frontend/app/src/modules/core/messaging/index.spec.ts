@@ -178,8 +178,8 @@ describe('useMessageHandling', () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
       messages: [
-        held({ verbosity: 'error', value: 'an error', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
-        held({ verbosity: 'warning', value: 'a warning', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
+        held({ verbosity: 'error', value: 'an error', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }),
+        held({ verbosity: 'warning', value: 'a warning', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['warning', 'local_db', null, 'tag'] }),
       ],
     });
 
@@ -238,7 +238,7 @@ describe('useMessageHandling', () => {
       dropped: 0,
       messages: [
         { unexpected: true, count: 1, lastSent: LAST_SENT },
-        held({ verbosity: 'error', value: 'valid', key: 'local_db', subject: null, fields: { entry: 'tag' } }),
+        held({ verbosity: 'error', value: 'valid', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }),
       ],
     });
 
@@ -259,6 +259,7 @@ describe('useMessageHandling', () => {
         key: 'bad_data',
         subject: 'kucoin',
         fields: { record: 'balance', error: 'Missing key: amount' },
+        group: ['error', 'bad_data', 'kucoin', 'balance'],
       })],
     });
 
@@ -274,7 +275,7 @@ describe('useMessageHandling', () => {
   it('should count a held user message as every time the backend sent it', async () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
-      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' } }, 4)],
+      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }, 4)],
     });
 
     const { consume } = setup();
@@ -291,7 +292,7 @@ describe('useMessageHandling', () => {
   it('should date a held message by when the backend last sent it, not when it was read', async () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
-      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' } })],
+      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] })],
     });
 
     const { consume } = setup();
@@ -308,7 +309,7 @@ describe('useMessageHandling', () => {
 
     await handleMessage(JSON.stringify({
       type: SocketMessageType.USER_MESSAGE,
-      data: { verbosity: 'error', value: 'live', key: 'local_db', subject: null, fields: { entry: 'tag' } },
+      data: { verbosity: 'error', value: 'live', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] },
     }));
 
     expect(vi.mocked(notify).mock.calls[0][0].date).toBeUndefined();
