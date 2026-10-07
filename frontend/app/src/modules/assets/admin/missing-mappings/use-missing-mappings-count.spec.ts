@@ -1,5 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 
 const { countMappings, logError } = vi.hoisted(() => ({
   countMappings: vi.fn<() => Promise<number>>(),
@@ -75,5 +76,29 @@ describe('modules/assets/admin/missing-mappings/use-missing-mappings-count', () 
     await nextTick();
 
     expect(get(count)).toBe(0);
+  });
+
+  it('should drop a read that finishes after the session it started in has ended', async () => {
+    let finishRead: (count: number) => void = () => {};
+    countMappings.mockReturnValue(new Promise((resolve) => {
+      finishRead = resolve;
+    }));
+    const { count, refresh } = await setup();
+
+    const reading = refresh();
+    endSession();
+    finishRead(5);
+    await reading;
+
+    expect(get(count)).toBe(0);
+  });
+
+  it('should not read the table with no session live', async () => {
+    endSession();
+    const { refresh } = await setup();
+
+    await refresh();
+
+    expect(countMappings).not.toHaveBeenCalled();
   });
 });

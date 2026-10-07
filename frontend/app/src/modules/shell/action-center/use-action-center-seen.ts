@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionItem } from '@/modules/core/action-center/types';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 
 /** The count each row had when the user last closed the center, by row id. */
 type SeenCounts = Record<string, number>;
@@ -30,6 +31,10 @@ interface UseActionCenterSeenReturn {
  * the first scan (every count still zero) forgets nothing. A count that drops, because the user
  * resolved part of it elsewhere, lowers its watermark once the counts can be trusted, so the rows
  * that come back later count as new again.
+ *
+ * Watermarks are lowered only while a session is live. At logout the counts fall to zero, and a
+ * rescan that settles after the session ended can mark them trustworthy again; lowering then would
+ * delete the user's watermarks and show every row as new at their next login.
  */
 export function useActionCenterSeen(options: UseActionCenterSeenOptions): UseActionCenterSeenReturn {
   const { active, checking, items } = options;
@@ -68,7 +73,7 @@ export function useActionCenterSeen(options: UseActionCenterSeenOptions): UseAct
         lowered[item.id] = item.count;
       changed = true;
     }
-    if (changed)
+    if (changed && hasLiveSession())
       set(seen, lowered);
   });
 
