@@ -10,7 +10,6 @@ import { useAssetUpdate } from './use-asset-update';
 const {
   applyUpdates,
   checkForUpdate,
-  notifyError,
   reload,
   restarting,
   setMessage,
@@ -20,7 +19,6 @@ const {
   return {
     applyUpdates: vi.fn(),
     checkForUpdate: vi.fn(),
-    notifyError: vi.fn(),
     reload: vi.fn(),
     restarting: ref<boolean>(false),
     setMessage: vi.fn(),
@@ -42,10 +40,6 @@ vi.mock('@/modules/auth/use-restarting-status', () => ({
 
 vi.mock('@/modules/core/common/use-message-store', () => ({
   useMessageStore: (): Record<string, unknown> => ({ setMessage }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -369,27 +363,25 @@ describe('modules/shell/app/useAssetUpdate', () => {
   });
 
   describe('a failed update', () => {
-    it('should report the backend reason and open neither the conflicts nor the confirmation', async () => {
+    it('should open neither the conflicts nor the confirmation, leaving the failure to its dock row', async () => {
+      localStorage.setItem('rotki_skip_asset_db_version', '2');
       applyFails(TaskFailed({ message: 'disk full' }));
+      const { modelShowConflictDialog, skipped, updateAssets } = mountUpdate();
+
+      await updateAssets();
+
+      expect(get(modelShowConflictDialog)).toBe(false);
+      expect(show).not.toHaveBeenCalled();
+      expect(get(skipped)).toBe(2);
+    });
+
+    it('should do the same when the user cancelled the update', async () => {
+      applyFails(Cancelled({ message: 'cancelled' }));
       const { modelShowConflictDialog, updateAssets } = mountUpdate();
 
       await updateAssets();
 
-      expect(notifyError).toHaveBeenCalledExactlyOnceWith(
-        'actions.assets.update.task.title',
-        'actions.assets.update.error.description::disk full',
-      );
       expect(get(modelShowConflictDialog)).toBe(false);
-      expect(show).not.toHaveBeenCalled();
-    });
-
-    it('should stay quiet when the user cancelled the update', async () => {
-      applyFails(Cancelled({ message: 'cancelled' }));
-      const { updateAssets } = mountUpdate();
-
-      await updateAssets();
-
-      expect(notifyError).not.toHaveBeenCalled();
       expect(show).not.toHaveBeenCalled();
     });
   });

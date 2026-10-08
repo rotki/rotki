@@ -273,22 +273,6 @@
           "description": "Ошибка при получении данных токена: {message}",
           "title": "Получение данных токена для {address} ({evmChain})"
         }
-      },
-      "update": {
-        "error": {
-          "description": "Ошибка обновления базы активов: {message}"
-        },
-        "task": {
-          "title": "Обновление базы данных активов"
-        }
-      },
-      "versions": {
-        "error": {
-          "description": "Ошибка проверки обновлений базы активов: {message}"
-        },
-        "task": {
-          "title": "Проверка обновлений базы активов"
-        }
       }
     },
     "balances": {
@@ -472,9 +456,6 @@
       }
     },
     "repulling_exchange_events": {
-      "error": {
-        "description": "Не удалось повторно получить события для {exchange}"
-      },
       "success": {
         "description": "{length} событий получено повторно",
         "no_events_description": "Нет событий для повторного получения"
@@ -485,10 +466,6 @@
       }
     },
     "repulling_transaction": {
-      "error": {
-        "description": "Не удалось повторно получить транзакции для {address} ({chain}).",
-        "no_address_or_chain_transaction": "Не удалось повторно получить транзакции"
-      },
       "success": {
         "description": "{length} транзакций получено повторно",
         "no_tx_description": "Нет транзакций для повторного получения"

@@ -2,6 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { type Blockchain, Priority, Severity } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -125,16 +126,9 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
+      logger.error(error);
       set(nodes, []);
       set(loadError, message);
-      notify({
-        message,
-        priority: Priority.NORMAL,
-        severity: Severity.ERROR,
-        title: t('evm_rpc_node_manager.loading_error.title', {
-          chain: toValue(chain),
-        }),
-      });
     }
     finally {
       set(loading, false);

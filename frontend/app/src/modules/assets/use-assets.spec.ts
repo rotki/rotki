@@ -120,7 +120,7 @@ describe('useAssets', () => {
       }));
     });
 
-    it('should report a failed check as a failure, not as no update, and notify', async () => {
+    it('should report a failed check as a failure, not as no update, leaving it to its dock row', async () => {
       whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.checkForUpdate();
@@ -128,7 +128,7 @@ describe('useAssets', () => {
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
       assert(!result.ok);
       expect(result.error.message).toBe('failed');
-      expect(useNotificationDispatcher().notify).toHaveBeenCalledOnce();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
 
     it('should report a cancelled check as a failure without notifying', async () => {

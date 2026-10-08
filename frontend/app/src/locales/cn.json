@@ -506,22 +506,6 @@
           "timeout": "获取代币详情超时。你可以手动输入代币信息。",
           "title": "正在获取 {address} ({evmChain}) 的代币详情"
         }
-      },
-      "update": {
-        "error": {
-          "description": "资产数据库更新失败：{message}"
-        },
-        "task": {
-          "title": "更新资产数据库"
-        }
-      },
-      "versions": {
-        "error": {
-          "description": "资产数据库更新检查失败：{message}"
-        },
-        "task": {
-          "title": "检查资产数据库更新"
-        }
       }
     },
     "balances": {
@@ -796,9 +780,6 @@
       }
     },
     "repulling_eth_staking": {
-      "error": {
-        "description": "重新拉取 {entryType} 事件失败"
-      },
       "success": {
         "address_entry": "{address}: {count}",
         "description": "已重新拉取 {count} 个新的 {entryType} 事件",
@@ -813,9 +794,6 @@
       }
     },
     "repulling_exchange_events": {
-      "error": {
-        "description": "重新拉取 {exchange} 的事件失败"
-      },
       "success": {
         "description": "已重新拉取 {length} 个事件",
         "no_events_description": "未重新拉取到任何事件"
@@ -826,10 +804,6 @@
       }
     },
     "repulling_transaction": {
-      "error": {
-        "description": "重新拉取 {address} ({chain}) 的交易失败。",
-        "no_address_or_chain_transaction": "重新拉取交易失败"
-      },
       "success": {
         "action": "查看已拉取的交易",
         "description": "已重新拉取 {length} 笔交易",
@@ -5016,7 +4990,6 @@
         "to_date": "结束日期"
       },
       "notification": {
-        "error": "在 {source} 上创建 {fromAsset} 到 {toAsset} 的缓存失败：{error}",
         "success": "已成功在 {source} 上创建 {fromAsset} 到 {toAsset} 的缓存",
         "title": "预言机缓存填充"
       }

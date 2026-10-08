@@ -261,13 +261,14 @@ describe('usePriceTaskManager', () => {
       expect(notifyError).not.toHaveBeenCalled();
     });
 
-    it('should report a failure once, with the backend reason', async () => {
+    it('should hand a failure back with the backend reason, leaving the report to its dock row', async () => {
       runTaskMock.mockResolvedValue(err(TaskFailed({ message: 'Rate limited' })));
 
       const result = await priceTaskManager.createOracleCache(payload);
 
       assert(!result.ok);
-      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), expect.stringContaining('Rate limited'));
+      expect(result.error.message).toBe('Rate limited');
+      expect(notifyError).not.toHaveBeenCalled();
       expect(notifyInfo).not.toHaveBeenCalled();
     });
 

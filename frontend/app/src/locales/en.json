@@ -506,22 +506,6 @@
           "timeout": "Timed out while retrieving token details. You can enter the token information manually.",
           "title": "Retrieving token details for {address} ({evmChain})"
         }
-      },
-      "update": {
-        "error": {
-          "description": "The asset database update failed: {message}"
-        },
-        "task": {
-          "title": "Updating assets database"
-        }
-      },
-      "versions": {
-        "error": {
-          "description": "The asset database update check failed: {message}"
-        },
-        "task": {
-          "title": "Checking for asset database updates"
-        }
       }
     },
     "balances": {
@@ -800,9 +784,6 @@
       }
     },
     "repulling_eth_staking": {
-      "error": {
-        "description": "Failed to re-pull {entryType} events"
-      },
       "success": {
         "address_entry": "{address}: {count}",
         "description": "{count} new {entryType} events re-pulled",
@@ -817,9 +798,6 @@
       }
     },
     "repulling_exchange_events": {
-      "error": {
-        "description": "Failed to re-pull events for {exchange}"
-      },
       "success": {
         "description": "{length} events re-pulled",
         "no_events_description": "No events re-pulled"
@@ -830,10 +808,6 @@
       }
     },
     "repulling_transaction": {
-      "error": {
-        "description": "Failed to re-pull transactions for {address} ({chain}).",
-        "no_address_or_chain_transaction": "Failed to re-pull transactions"
-      },
       "success": {
         "action": "See pulled transactions",
         "description": "{length} transactions re-pulled",
@@ -5142,7 +5116,6 @@
         "to_date": "To Date"
       },
       "notification": {
-        "error": "Cache creation for {fromAsset} to {toAsset} on {source} failed: {error}",
         "success": "Cache for {fromAsset} to {toAsset} on {source} was successfully created",
         "title": "Oracle cache population"
       }

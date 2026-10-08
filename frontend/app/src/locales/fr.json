@@ -187,22 +187,6 @@
           "description": "Il y a eu une erreur lors de la récupération des détails du token : {message}",
           "title": "Récupération des détails du token pour {address} ({evmChain})"
         }
-      },
-      "update": {
-        "error": {
-          "description": "La mise à jour de la base de données des actifs a échoué : {message}"
-        },
-        "task": {
-          "title": "Mise à jour de la base de données des actifs"
-        }
-      },
-      "versions": {
-        "error": {
-          "description": "La vérification de la mise à jour de la base de données des actifs a échoué : {message}"
-        },
-        "task": {
-          "title": "Vérification des mises à jour de la base de données des actifs"
-        }
       }
     },
     "balances": {

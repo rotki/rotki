@@ -13,7 +13,7 @@ import {
 } from '@/modules/assets/types';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -55,8 +55,6 @@ export function useAssets(): UseAssetsReturn {
     restoreAssetsDatabase: restoreAssetsDatabaseCaller,
   } = useAssetsApi();
 
-  const { notifyError } = useNotifications();
-
   const checkForUpdate = async (): Promise<Result<AssetUpdateCheckResult, TaskError>> => {
     const outcome = await submitTask<AssetDBVersion>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.VERSIONS),
@@ -72,17 +70,8 @@ export function useAssets(): UseAssetsReturn {
       title: t('task_center.group.assets'),
     });
 
-    if (isErr(outcome)) {
-      if (isActionable(outcome.error)) {
-        const title = t('actions.assets.versions.task.title');
-        const description = t('actions.assets.versions.error.description', {
-          message: outcome.error.message,
-        }).toString();
-
-        notifyError(title, description);
-      }
+    if (isErr(outcome))
       return outcome;
-    }
 
     const versions = outcome.value;
     return ok({

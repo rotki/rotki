@@ -337,14 +337,11 @@ describe('useHistoryTransactions', () => {
         .toContain('actions.repulling_transaction.task.no_address_or_chain_transaction');
     });
 
-    it('should report a failure and hand back nothing', async () => {
+    it('should leave a failure to its dock row and hand back nothing', async () => {
       outcome.value = err(TaskFailed({ message: 'the backend gave up' }));
 
       expect(await useHistoryTransactions().repullingTransactions({})).toBeUndefined();
-      expect(notifyError).toHaveBeenCalledWith(
-        'actions.repulling_transaction.task.title',
-        expect.stringContaining('actions.repulling_transaction.error.no_address_or_chain_transaction'),
-      );
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     /** The user asked for the cancellation, so there is nothing to report back to them. */
@@ -385,11 +382,11 @@ describe('useHistoryTransactions', () => {
       );
     });
 
-    it('should report a failure', async () => {
+    it('should leave a failure to its dock row', async () => {
       outcome.value = err(TaskFailed({ message: 'the backend gave up' }));
 
       expect(await useHistoryTransactions().repullingExchangeEvents(payload)).toBe(false);
-      expect(notifyError).toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(notifyInfo).not.toHaveBeenCalled();
     });
 
@@ -444,11 +441,12 @@ describe('useHistoryTransactions', () => {
       );
     });
 
-    it('should report a failure', async () => {
+    it('should leave a failure to its dock row', async () => {
       outcome.value = err(TaskFailed({ message: 'the backend gave up' }));
 
       expect(await useHistoryTransactions().repullingEthStakingEvents(payload)).toBe(false);
-      expect(notifyError).toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(notifyInfo).not.toHaveBeenCalled();
     });
   });
 });
