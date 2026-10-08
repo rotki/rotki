@@ -105,7 +105,7 @@ const BODY_READ_TIMEOUT: Duration = Duration::from_secs(60);
 /// nothing else. Deliberately not the detailed status — pids, per-service state
 /// and `lastError` stay on the authenticated control surfaces (§S3), because
 /// this one answers anyone who can reach the published port.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Health {
     /// True once every autostarted service is ready.
     pub ok: bool,
@@ -134,14 +134,8 @@ impl HealthProbe {
     }
 }
 
-impl std::fmt::Debug for HealthProbe {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("HealthProbe(..)")
-    }
-}
-
 /// Where to bind and what to proxy to.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ProxyConfig {
     /// The single external port the SPA + proxy is served on.
     pub port: u16,

@@ -81,7 +81,7 @@ pub trait Spawner: Send + Sync {
 }
 
 /// The real, OS-backed spawner.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct OsSpawner;
 
 #[async_trait]

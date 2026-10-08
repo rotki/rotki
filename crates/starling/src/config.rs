@@ -62,7 +62,7 @@ fn parse_logtarget(raw: &str) -> Result<Option<LogTarget>, String> {
 }
 
 /// The tunables after resolution, ready to drop into `ServiceLayout`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Tunables {
     pub log_level: String,
     pub log_target: LogTarget,
@@ -73,7 +73,7 @@ pub struct Tunables {
 }
 
 /// Tunables from `/config/rotki_config.json` (the JSON keys entrypoint.py used).
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct FileConfig {
     pub loglevel: Option<String>,
@@ -85,7 +85,7 @@ pub struct FileConfig {
 }
 
 /// Tunables from the environment.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct EnvConfig {
     pub loglevel: Option<String>,
     pub logtarget: Option<LogTarget>,
@@ -256,7 +256,7 @@ pub fn resolve(env: EnvConfig, file: FileConfig) -> Tunables {
 }
 
 /// Which layer a resolved value came from (for the startup log).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum Source {
     /// Only `--port` still has a CLI tier: it is a launch fact, not a tunable.
     Cli,

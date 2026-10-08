@@ -103,7 +103,7 @@ impl SupportedBlockchain {
 }
 
 /// Information about an RPC node
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct RpcNode {
     pub name: String,
     pub endpoint: String,

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::database::errors::DBError;
 use crate::database::sql_utils::escape_like_pattern;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize)]
 pub struct NftData {
     pub name: String,
     pub asset_type: String,
@@ -17,7 +17,6 @@ pub struct NftData {
     pub image_url: Option<String>,
 }
 
-#[derive(Debug)]
 pub struct NftSearchData {
     pub identifier: String,
     pub name: Option<String>,

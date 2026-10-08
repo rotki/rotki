@@ -50,7 +50,7 @@ pub const DEFAULT_MIN_MUTATION_INTERVAL: Duration = Duration::from_secs(2);
 /// A cheap, cloneable snapshot of service state the run loop publishes after
 /// every poll and around every mutation. Reads are answered from this, so they
 /// never block on the loop.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ControllerSnapshot {
     services: Vec<ServiceStatus>,
     started_at: Option<u64>,

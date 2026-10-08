@@ -11,7 +11,7 @@ pub struct AssetsIdentifier {
 /// choose which queries to run rather than filter what comes back. That matters for `ShowOnly`:
 /// both result sets are ranked and truncated to `limit` together, so a caller cannot get "nfts
 /// only" by filtering the response of an `Include` search.
-#[derive(Deserialize, Default, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Deserialize, Default, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum NftHandling {
     #[default]

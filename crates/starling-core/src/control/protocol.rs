@@ -190,14 +190,14 @@ pub fn is_authorized(transport: Transport, method: Method) -> bool {
 }
 
 /// Parameters for an operation targeting one named managed service.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServiceParams {
     pub service: String,
 }
 
 /// Parameters for `setServiceAutostart`: which service, and whether it should
 /// come up with the backend tree from the next boot on.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServiceAutostartParams {
     pub service: String,
     pub autostart: bool,
@@ -250,7 +250,7 @@ impl BackendOptions {
 
 /// Result of `health`, the minimal boolean shape safe for the public surface.
 /// Deliberately carries no pids, states, or error detail (§S3).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HealthResult {
     /// True once every service is `Ready`.
     pub ok: bool,

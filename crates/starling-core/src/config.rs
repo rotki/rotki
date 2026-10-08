@@ -93,7 +93,7 @@ pub enum OnCrash {
 }
 
 /// Per-service restart behavior.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct RestartPolicy {
     pub max_retries: u32,
     pub backoff: Duration,
@@ -119,7 +119,7 @@ impl Default for RestartPolicy {
 /// No shell is involved either way, so the clean process group and the absence
 /// of shell-injection are preserved. The service-specific args (`--rest-api-port`,
 /// …) are built mode-independently and appended *after* the prefix.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Launcher {
     /// Absolute path for packaged binaries; a bare name resolved via `PATH`
     /// (e.g. `uv`, `cargo`) for dev commands.
@@ -193,7 +193,7 @@ pub struct RunAs {
 }
 
 /// How a spawned service connects to the supervisor's standard streams.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum StdioMode {
     /// Inherit the supervisor's stdin/stdout/stderr. In Docker this lets a
     /// backend's stdout/stderr flow to the container log. The default.
@@ -212,7 +212,7 @@ pub enum StdioMode {
 /// Spawn order is data, not code: the supervisor topologically orders services
 /// by `deps` and blocks each on its dependencies' readiness. Adding a future
 /// service is one struct, not new orchestration code.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ServiceSpec {
     pub name: String,
     pub launcher: Launcher,
@@ -317,7 +317,7 @@ pub const MCP_SERVICE: &str = "mcp";
 ///
 /// This mirrors the argument construction in `packaging/docker/entrypoint.py`
 /// so the two cannot drift.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ServiceLayout {
     pub core_launcher: Launcher,
     pub colibri_launcher: Launcher,
