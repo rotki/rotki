@@ -16279,13 +16279,15 @@ Historical Balance Queries
           "evm_chain": "arbitrum_one",
           "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
           "asset": "ETH",
-          "tolerance": "0.0033305072912590555"
+          "tolerance": "0.0033305072912590555",
+          "to_timestamp": 1755037590000
         }
 
     :reqjson string evm_chain: The EVM chain name (e.g., "ethereum", "optimism", "arbitrum_one")
     :reqjson string address: The EVM address whose wallet balance should be checked
     :reqjson string asset: The asset identifier (native token or ERC20 token on the specified chain)
     :reqjson string[optional] tolerance: Maximum absolute difference treated as a match. Defaults to ``"0"``.
+    :reqjson int[optional] to_timestamp: Inclusive upper bound, in **milliseconds**, for the checkpoints considered by the search. Checkpoints after it are ignored, so a divergence that a later event corrects can still be found. If omitted or ``null``, all checkpoints are considered. Note that the ``timestamp`` fields in the response are in seconds.
 
     **Example Response:**
 
@@ -16306,6 +16308,7 @@ Historical Balance Queries
             "last_matching": {
               "event_identifier": 12345,
               "group_identifier": "421610x7e3b7cc64daf94ed14d47743908cf1ef11be0da3adaf9887d59847330230882c",
+              "tx_hash": "0x7e3b7cc64daf94ed14d47743908cf1ef11be0da3adaf9887d59847330230882c",
               "timestamp": 1755037576,
               "block_number": 371234567,
               "tracked_balance": "0.005964804719627",
@@ -16315,6 +16318,7 @@ Historical Balance Queries
             "first_diverged": {
               "event_identifier": 12346,
               "group_identifier": "421610x4e2dab3d32fbec3123de4f83fd2dc3becb7cf3a7bbfcb75d8dc35d1a80a355b3",
+              "tx_hash": "0x4e2dab3d32fbec3123de4f83fd2dc3becb7cf3a7bbfcb75d8dc35d1a80a355b3",
               "timestamp": 1755037590,
               "block_number": 371234580,
               "tracked_balance": "1.60181176561987326",
@@ -16327,6 +16331,7 @@ Historical Balance Queries
               "event": {
                 "event_identifier": 12000,
                 "group_identifier": "421610x...",
+                "tx_hash": "0x...",
                 "timestamp": 1735689600,
                 "block_number": 290000000,
                 "tracked_balance": "0.004369412502091037",
@@ -16346,12 +16351,13 @@ Historical Balance Queries
     :resjson string tolerance: The tolerance used for match comparisons
     :resjson object/null last_matching: Last checkpoint where tracked and on-chain balances matched
     :resjson object/null first_diverged: First checkpoint where tracked and on-chain balances diverged
+    :resjson string/null tx_hash: In each checkpoint event, the transaction hash of the event, or ``null`` if the event is not tied to a transaction. ``group_identifier`` is the history event group and is prefixed with the chain id.
     :resjson list[object] probes: Ordered list of balance probes performed by the binary search
     :statuscode 200: Divergence search completed successfully
     :statuscode 400: Invalid request (wrong chain for asset, invalid chain, negative tolerance)
     :statuscode 401: User is not logged in
     :statuscode 403: User does not have premium access
-    :statuscode 404: Accounting refactor feature flag is disabled or no tracked historical balance data exists
+    :statuscode 404: Accounting refactor feature flag is disabled or no tracked historical balance data exists (up to ``to_timestamp`` if given)
     :statuscode 409: No archive node available for the specified chain or archive balance query failed
 
 

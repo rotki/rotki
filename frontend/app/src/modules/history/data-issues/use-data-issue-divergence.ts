@@ -6,6 +6,7 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useArchiveNodes } from '@/modules/history/balances/use-archive-nodes';
 import { type DivergenceBoundaryEvent, useBalanceDivergence } from '@/modules/history/balances/use-balance-divergence';
 import { IssueKind } from '@/modules/history/data-issues/constants';
+import { dataIssueDivergenceKey, useDataIssueDivergenceStore } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
@@ -14,24 +15,37 @@ interface UseDataIssueDivergenceReturn {
   boundaries: ComputedRef<DivergenceBoundaryEvent[]>;
   canSearch: ComputedRef<boolean>;
   chain: ComputedRef<string | undefined>;
+  chainName: ComputedRef<string>;
+  checkingArchive: Readonly<Ref<boolean>>;
   error: Readonly<Ref<string | undefined>>;
-  loading: Readonly<Ref<boolean>>;
+  loading: ComputedRef<boolean>;
   missingArchive: ComputedRef<boolean>;
   search: () => Promise<void>;
+  status: ComputedRef<HistoricalBalanceDivergenceResponse['status'] | undefined>;
   summary: ComputedRef<string | undefined>;
   view: (boundary: DivergenceBoundaryEvent) => void;
 }
 
-/** Searches the affected EVM wallet through the issue's timestamp, excluding later corrections. */
-export function useDataIssueDivergence(
-  issue: MaybeRefOrGetter<DataIssue>,
-  initialResult?: MaybeRefOrGetter<HistoricalBalanceDivergenceResponse | undefined>,
-): UseDataIssueDivergenceReturn {
-  const { getEvmChainName, matchChain } = useSupportedChains();
-  const divergence = useBalanceDivergence(initialResult);
+/**
+ * Searches the affected EVM wallet through the issue's timestamp, excluding later corrections.
+ *
+ * @remarks
+ * The result and running state are kept in {@link useDataIssueDivergenceStore}, so a search
+ * survives the drawer closing and is shared with the pinned rail showing the same issue.
+ */
+export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseDataIssueDivergenceReturn {
+  const { getChainName, getEvmChainName, matchChain } = useSupportedChains();
+  const store = useDataIssueDivergenceStore();
+  const { results, running } = storeToRefs(store);
+  const key = computed<string>(() => dataIssueDivergenceKey(toValue(issue)));
+  const divergence = useBalanceDivergence(() => get(results).get(get(key)));
   const { pin } = usePinnedPanel(PinnedNames.BALANCE_DIVERGENCE);
 
   const chain = computed<string | undefined>(() => matchChain(toValue(issue).location));
+  const chainName = computed<string>(() => {
+    const selectedChain = get(chain);
+    return selectedChain ? getChainName(selectedChain) : '';
+  });
   const payload = computed<HistoricalBalanceDivergencePayload | undefined>(() => {
     const current = toValue(issue);
     const selectedChain = get(chain);
@@ -52,25 +66,37 @@ export function useDataIssueDivergence(
   });
 
   const available = computed<boolean>(() => !!get(payload));
-  const { hasArchiveNode, loading: archiveLoading } = useArchiveNodes(() => {
+  const { hasArchiveNode, loading: checkingArchive } = useArchiveNodes(() => {
     const selectedChain = get(chain);
     return get(available) && selectedChain ? [selectedChain] : [];
   });
   const hasArchive = hasArchiveNode(chain);
-  const missingArchive = computed<boolean>(() => get(available) && !get(archiveLoading) && !get(hasArchive));
-  const canSearch = computed<boolean>(() => get(available) && !get(archiveLoading)
-    && get(hasArchive) && !get(divergence.loading));
+  const loading = computed<boolean>(() => get(divergence.loading) || get(running).has(get(key)));
+  const missingArchive = computed<boolean>(() => get(available) && !get(checkingArchive) && !get(hasArchive));
+  const canSearch = computed<boolean>(() => get(available) && !get(checkingArchive)
+    && get(hasArchive) && !get(loading));
+  const status = computed<HistoricalBalanceDivergenceResponse['status'] | undefined>(() => get(divergence.result)?.status);
 
   async function search(): Promise<void> {
     const scope = get(payload);
-    if (scope && get(canSearch))
+    if (!scope || !get(canSearch))
+      return;
+
+    const searchKey = get(key);
+    store.setRunning(searchKey, true);
+    try {
       await divergence.find(scope);
+      store.setResult(searchKey, get(divergence.result));
+    }
+    finally {
+      store.setRunning(searchKey, false);
+    }
   }
 
   function view(boundary: DivergenceBoundaryEvent): void {
     const scope = get(payload);
     if (scope) {
-      pin({ issue: toValue(issue), result: get(divergence.result) });
+      pin({ issue: toValue(issue) });
       divergence.navigate(boundary.event, scope.asset);
     }
   }
@@ -80,10 +106,13 @@ export function useDataIssueDivergence(
     boundaries: divergence.boundaries,
     canSearch,
     chain,
+    chainName,
+    checkingArchive,
     error: divergence.error,
-    loading: divergence.loading,
+    loading,
     missingArchive,
     search,
+    status,
     summary: divergence.summary,
     view,
   };

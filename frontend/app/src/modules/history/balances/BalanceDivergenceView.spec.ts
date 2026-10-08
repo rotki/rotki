@@ -24,6 +24,7 @@ vi.mock('@/modules/settings/api/use-evm-nodes-api', () => ({
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
+    getChainName: (chain: string): string => chain === 'eth' ? 'Ethereum' : chain,
     getEvmChainName: (chain: string): string | undefined => chain === 'eth' ? 'ethereum' : undefined,
     isEvm: (chain: string): boolean => chain === 'eth',
     matchChain: (location: string): string | undefined => ['eth', 'ethereum'].includes(location) ? 'eth' : undefined,
@@ -125,6 +126,7 @@ function makeDivergenceResult(): { result: Record<string, unknown>; success: boo
         onchainBalance: '4.9',
         timestamp: 200,
         trackedBalance: '5',
+        txHash: `0x${'b'.repeat(64)}`,
       },
       lastMatching: {
         blockNumber: 11,
@@ -134,6 +136,7 @@ function makeDivergenceResult(): { result: Record<string, unknown>; success: boo
         onchainBalance: '5',
         timestamp: 100,
         trackedBalance: '5',
+        txHash: `0x${'a'.repeat(64)}`,
       },
       location: 'ethereum',
       probes: [],
@@ -212,6 +215,7 @@ describe('balanceDivergenceView.vue', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid=balance-divergence-missing-archive]').exists()).toBe(true);
+    expect(wrapper.get('[data-testid=balance-divergence-missing-archive]').text()).toContain('Ethereum');
     expect(wrapper.find('[data-testid=find-divergence]').attributes('disabled')).toBeDefined();
   });
 

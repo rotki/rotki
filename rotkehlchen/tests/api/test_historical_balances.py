@@ -638,6 +638,9 @@ def test_find_onchain_historical_balance_divergence(
     assert result['first_diverged']['tracked_balance'] == '6'
     assert result['first_diverged']['onchain_balance'] == '7'
     assert result['first_diverged']['difference'] == '1'
+    assert result['last_matching']['tx_hash'] == str(tx_hashes[4])
+    assert result['first_diverged']['tx_hash'] == str(tx_hashes[5])
+    assert result['first_diverged']['group_identifier'] != result['first_diverged']['tx_hash']
     assert [probe['event']['block_number'] for probe in result['probes']] == [7, 1, 4, 5]
     assert balance_mock.call_count == 4
 

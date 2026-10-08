@@ -1,6 +1,5 @@
 import type { TimeFramePeriod } from '@rotki/common';
 import type { Module } from '@/modules/core/common/modules';
-import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { Report } from '@/modules/reports/report-types';
 import { z } from 'zod';
@@ -59,7 +58,6 @@ export type PinnedName = typeof PinnedNames[keyof typeof PinnedNames];
 export interface PinnedPanelProps {
   [PinnedNames.BALANCE_DIVERGENCE]: {
     issue?: DataIssue;
-    result?: HistoricalBalanceDivergenceResponse;
   };
   [PinnedNames.DATA_ISSUES]: Record<never, never>;
   [PinnedNames.INTERNAL_TX_CONFLICTS]: {

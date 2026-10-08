@@ -19,7 +19,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    EventMetricKey,
+    EVMTxHash,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -54,6 +61,7 @@ class HistoricalBalanceSeriesEntry(NamedTuple):
 class HistoricalBalanceDivergenceEvent(NamedTuple):
     event_identifier: int
     group_identifier: str | None
+    tx_hash: EVMTxHash | None
     timestamp: Timestamp
     block_number: int
     tracked_balance: FVal
@@ -82,6 +90,7 @@ class HistoricalBalanceDivergenceResult(NamedTuple):
 class _TrackedBalanceEvent(NamedTuple):
     event_identifier: int
     group_identifier: str | None
+    tx_hash: EVMTxHash | None
     timestamp: Timestamp
     tracked_balance: FVal
     block_number: int | None
@@ -516,6 +525,7 @@ class HistoricalBalancesManager:
         divergence_event = HistoricalBalanceDivergenceEvent(
             event_identifier=event.event_identifier,
             group_identifier=event.group_identifier,
+            tx_hash=event.tx_hash,
             timestamp=event.timestamp,
             block_number=block_number,
             tracked_balance=event.tracked_balance,
@@ -816,13 +826,14 @@ class HistoricalBalancesManager:
                 _TrackedBalanceEvent(
                     event_identifier=event_identifier,
                     group_identifier=group_identifier,
+                    tx_hash=None if tx_ref is None else deserialize_evm_tx_hash(tx_ref),
                     timestamp=ts_ms_to_sec(TimestampMS(timestamp)),
                     tracked_balance=FVal(metric_value),
                     block_number=block_number,
                 )
-                for event_identifier, group_identifier, timestamp, metric_value, block_number in cursor.execute(  # noqa: E501
+                for event_identifier, group_identifier, tx_ref, timestamp, metric_value, block_number in cursor.execute(  # noqa: E501
                     """
-                    SELECT em.event_identifier, he.group_identifier, em.timestamp,
+                    SELECT em.event_identifier, he.group_identifier, cei.tx_ref, em.timestamp,
                     em.metric_value, et.block_number
                     FROM event_metrics em
                     JOIN history_events he ON he.identifier = em.event_identifier

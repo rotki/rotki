@@ -1,3 +1,4 @@
+import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
 import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-balance-divergence';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { useDataIssueDivergence } from '@/modules/history/data-issues/use-data-issue-divergence';
@@ -21,6 +22,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
       onchainBalance: '3',
       timestamp: 1700000000,
       trackedBalance: '2',
+      txHash: `0x${'1'.repeat(64)}`,
     }),
     key: 'first_diverged',
   };
@@ -29,6 +31,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
     boundaries: ref<DivergenceBoundaryEvent[]>([]),
     canSearch: ref<boolean>(true),
     missingArchive: ref<boolean>(false),
+    status: ref<HistoricalBalanceDivergenceResponse['status']>(),
     summary: ref<string>(),
   };
   return {
@@ -38,10 +41,13 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
       boundaries: computed<DivergenceBoundaryEvent[]>(() => get(state.boundaries)),
       canSearch: computed<boolean>(() => get(state.canSearch)),
       chain: computed<string | undefined>(() => 'eth'),
+      chainName: computed<string>(() => 'Ethereum'),
+      checkingArchive: ref<boolean>(false),
       error: ref<string>(),
-      loading: ref<boolean>(false),
+      loading: computed<boolean>(() => false),
       missingArchive: computed<boolean>(() => get(state.missingArchive)),
       search: vi.fn<() => Promise<void>>(),
+      status: computed<HistoricalBalanceDivergenceResponse['status'] | undefined>(() => get(state.status)),
       summary: computed<string | undefined>(() => get(state.summary)),
       view: vi.fn<(boundary: DivergenceBoundaryEvent) => void>(),
     } satisfies ReturnType<typeof useDataIssueDivergence>,
@@ -64,7 +70,7 @@ function mountDiagnostic(busy = false): ReturnType<typeof mount> {
           template: '<button data-testid="test-divergence-boundary" @click="$emit(\'view\')">{{ boundary.event.eventIdentifier }}</button>',
         },
         HistoryEventNote: { props: ['notes'], template: '<span>{{ notes }}</span>' },
-        I18nT: { template: '<span><slot name="chain" /><slot name="link" /></span>' },
+        I18nT: { template: '<span><slot name="chain" /><slot name="link" /><slot name="date" /></span>' },
         InternalLink: { template: '<a><slot /></a>' },
         RuiAlert: { template: '<div><slot /></div>' },
         RuiButton: { props: ['disabled', 'loading'], template: '<button :disabled="disabled"><slot /></button>' },
@@ -86,12 +92,13 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     set(state.missingArchive, false);
     set(state.boundaries, []);
     set(state.summary, undefined);
+    set(state.status, undefined);
     set(diagnostic.error, undefined);
   });
 
-  it('should display the issue time and start diagnosis from the detail-panel action', async () => {
+  it('should state the issue time as the search bound and start diagnosis from the detail-panel action', async () => {
     const wrapper = mountDiagnostic();
-    expect(wrapper.text()).toContain('1710000000123');
+    expect(wrapper.get('[data-testid="data-issue-divergence-scope"]').text()).toContain('1710000000123');
     expect(wrapper.findComponent({ name: 'DateDisplay' }).props('milliseconds')).toBe(true);
     await wrapper.get('[data-testid="data-issue-find-divergence"]').trigger('click');
     expect(diagnostic.search).toHaveBeenCalledOnce();
@@ -110,7 +117,9 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     set(state.missingArchive, true);
     set(state.canSearch, false);
     const wrapper = mountDiagnostic();
-    expect(wrapper.get('[data-testid="data-issue-divergence-missing-archive"]').text()).toContain('balance_divergence.settings_link');
+    const message = wrapper.get('[data-testid="data-issue-divergence-missing-archive"]').text();
+    expect(message).toContain('Ethereum');
+    expect(message).toContain('balance_divergence.settings_link');
     expect(wrapper.get('[data-testid="data-issue-find-divergence"]').attributes('disabled')).toBeDefined();
   });
 
@@ -123,6 +132,21 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     set(state.summary, 'No persistent divergence found');
     const wrapper = mountDiagnostic();
     expect(wrapper.get('[data-testid="data-issue-divergence-summary"]').text()).toBe('No persistent divergence found');
+  });
+
+  it.each([
+    ['diverged', 'data_issues.detail.divergence_next_step'],
+    ['diverged_from_start', 'data_issues.detail.divergence_from_start'],
+    ['no_divergence', 'data_issues.detail.divergence_no_mismatch'],
+  ] as const)('should suggest the next step for a %s result', (status, message) => {
+    set(state.status, status);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.get('[data-testid="data-issue-divergence-next-step"]').text()).toBe(message);
+  });
+
+  it('should suggest no next step before a search has run', () => {
+    const wrapper = mountDiagnostic();
+    expect(wrapper.find('[data-testid="data-issue-divergence-next-step"]').exists()).toBe(false);
   });
 
   it('should show a failed search without hiding the retry action', () => {

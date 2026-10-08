@@ -1497,7 +1497,10 @@ def test_failed_archive_query_updates_capabilities(
 
     assert request.call_count >= 1
     expected_archive = not (unavailable_state and block_identifier != 'latest')
-    assert database.get_rpc_node_capabilities(node.node_info) == (expected_archive, False)
+    assert database.get_rpc_node_capabilities(node.node_info) == (
+        True if expected_archive else None,  # demoted nodes are rechecked on reconnect
+        False,
+    )
     if isinstance(response, requests.Timeout):
         assert node.node_info not in ethereum_inquirer.rpc_mapping
         assert node.node_info.name in ethereum_inquirer.failed_to_connect_nodes

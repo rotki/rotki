@@ -40,6 +40,7 @@ function boundaryEvent(overrides: Record<string, unknown> = {}): Record<string, 
     onchainBalance: '5',
     timestamp: 100,
     trackedBalance: '5',
+    txHash: `0x${'a'.repeat(64)}`,
     ...overrides,
   };
 }
@@ -138,6 +139,7 @@ describe('useBalanceDivergence', () => {
       onchainBalance: bigNumberify('5'),
       timestamp: 100,
       trackedBalance: bigNumberify('5'),
+      txHash: null,
     }, 'ETH');
 
     expect(mockSetHighlightTarget).toHaveBeenCalledWith('accountingEvent', {
@@ -161,6 +163,7 @@ describe('useBalanceDivergence', () => {
       onchainBalance: bigNumberify('5'),
       timestamp: 100,
       trackedBalance: bigNumberify('5'),
+      txHash: null,
     };
 
     divergence.navigate(event, 'ETH');

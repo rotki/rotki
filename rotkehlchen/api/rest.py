@@ -4115,6 +4115,7 @@ class RestAPI:
         return {
             'event_identifier': event.event_identifier,
             'group_identifier': event.group_identifier,
+            'tx_hash': None if event.tx_hash is None else str(event.tx_hash),
             'timestamp': event.timestamp,
             'block_number': event.block_number,
             'tracked_balance': str(event.tracked_balance),

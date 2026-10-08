@@ -62,9 +62,9 @@ const label = computed<string>(() => isMatching.value
     <div class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-rui-text-secondary">
       <span>{{ t('balance_divergence.event') }}</span>
       <HashLink
-        v-if="boundary.event.groupIdentifier"
+        v-if="boundary.event.txHash"
         class="justify-self-end"
-        :text="boundary.event.groupIdentifier"
+        :text="boundary.event.txHash"
         type="transaction"
         :location="location"
         :truncate-length="8"

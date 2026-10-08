@@ -27,6 +27,7 @@ function boundary(overrides: Partial<DivergenceBoundaryEvent['event']> = {}): Di
       onchainBalance: bigNumberify('5'),
       timestamp: 100,
       trackedBalance: bigNumberify('5'),
+      txHash: `0x${'a'.repeat(64)}`,
       ...overrides,
     },
     key: 'last_matching',
@@ -41,12 +42,12 @@ function createWrapper(boundaryEvent: DivergenceBoundaryEvent): VueWrapper {
 }
 
 describe('divergenceBoundaryCard', () => {
-  it('should render the truncated group identifier and balances', () => {
+  it('should link the transaction hash, not the chain-prefixed group identifier', () => {
     const wrapper = createWrapper(boundary());
 
     const card = wrapper.find('[data-testid=divergence-boundary][data-key=last_matching]');
     expect(card.exists()).toBe(true);
-    expect(card.find('.hash').text()).toBe(`1${'a'.repeat(64)}`);
+    expect(card.find('.hash').text()).toBe(`0x${'a'.repeat(64)}`);
     expect(card.text()).toContain('11');
   });
 
@@ -56,6 +57,13 @@ describe('divergenceBoundaryCard', () => {
     await wrapper.find('[data-testid=view-divergence][data-key=last_matching]').trigger('click');
 
     expect(wrapper.emitted('view')).toHaveLength(1);
+  });
+
+  it('should show the missing transaction label when the boundary has no transaction hash', () => {
+    const wrapper = createWrapper(boundary({ txHash: null }));
+
+    expect(wrapper.find('.hash').exists()).toBe(false);
+    expect(wrapper.text()).toContain('balance_divergence.missing_group');
   });
 
   it('should disable the view button when the boundary has no group identifier', () => {

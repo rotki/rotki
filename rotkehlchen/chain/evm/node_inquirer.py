@@ -615,11 +615,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                             if self.rpc_mapping.get(node_info) is rpc_node:
                                 self.rpc_mapping[node_info] = rpc_node._replace(is_archive=False)
                                 self.database.set_rpc_node_capabilities(
-                                    node_info, is_archive=False, is_pruned=rpc_node.is_pruned,
+                                    node_info, is_archive=None, is_pruned=rpc_node.is_pruned,
                                 )
                                 log.warning(
-                                    f'Node {node_info.name} cannot serve historical state. '
-                                    f'Removing its archive flag: {e!s}',
+                                    'Node %s cannot serve historical state. Skipping it for '
+                                    'archive queries until its capability is rechecked: %s',
+                                    node_info.name,
+                                    e,
                                 )
                     self.mark_node_failure(node_info, str(e))
                 # Catch all possible errors here and just try next node call

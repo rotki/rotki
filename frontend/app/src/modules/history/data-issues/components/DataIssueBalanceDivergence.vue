@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
 import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-balance-divergence';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundaryCard.vue';
@@ -8,10 +7,9 @@ import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
-const { issue, busy = false, initialResult } = defineProps<{
+const { issue, busy = false } = defineProps<{
   issue: DataIssue;
   busy?: boolean;
-  initialResult?: HistoricalBalanceDivergenceResponse;
 }>();
 
 const emit = defineEmits<{
@@ -19,8 +17,34 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { available, boundaries, canSearch, chain, error, loading, missingArchive, search, summary, view }
-  = useDataIssueDivergence(() => issue, () => initialResult);
+const {
+  available,
+  boundaries,
+  canSearch,
+  chain,
+  chainName,
+  checkingArchive,
+  error,
+  loading,
+  missingArchive,
+  search,
+  status,
+  summary,
+  view,
+} = useDataIssueDivergence(() => issue);
+
+const nextStep = computed<string | undefined>(() => {
+  switch (get(status)) {
+    case 'diverged':
+      return t('data_issues.detail.divergence_next_step');
+    case 'diverged_from_start':
+      return t('data_issues.detail.divergence_from_start');
+    case 'no_divergence':
+      return t('data_issues.detail.divergence_no_mismatch');
+    default:
+      return undefined;
+  }
+});
 
 function viewBoundary(boundary: DivergenceBoundaryEvent): void {
   if (!boundary.event.groupIdentifier)
@@ -39,16 +63,21 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
     <div class="text-overline text-rui-text-secondary">
       {{ t('balance_divergence.title') }}
     </div>
-    <div class="text-body-2">
-      {{ t('data_issues.detail.divergence_until') }}
-      <DateDisplay
-        :timestamp="issue.tsEnd"
-        milliseconds
-      />
-    </div>
-    <p class="text-body-2 text-rui-text-secondary">
-      {{ t('data_issues.detail.divergence_hint') }}
-    </p>
+    <i18n-t
+      keypath="data_issues.detail.divergence_scope"
+      tag="p"
+      class="text-body-2 text-rui-text-secondary"
+      scope="global"
+      data-testid="data-issue-divergence-scope"
+    >
+      <template #date>
+        <DateDisplay
+          :timestamp="issue.tsEnd"
+          milliseconds
+          class="text-rui-text"
+        />
+      </template>
+    </i18n-t>
     <div
       v-if="missingArchive"
       class="text-body-2 text-rui-text-secondary"
@@ -60,7 +89,7 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
         scope="global"
       >
         <template #chain>
-          {{ chain }}
+          {{ chainName }}
         </template>
         <template #link>
           <InternalLink :to="{ name: '/settings/rpc/' }">
@@ -74,7 +103,7 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
       color="primary"
       variant="outlined"
       :disabled="busy || !canSearch"
-      :loading="loading"
+      :loading="loading || checkingArchive"
       data-testid="data-issue-find-divergence"
       @click="search()"
     >
@@ -92,6 +121,13 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
       data-testid="data-issue-divergence-summary"
     >
       {{ summary }}
+    </p>
+    <p
+      v-if="nextStep"
+      class="text-body-2"
+      data-testid="data-issue-divergence-next-step"
+    >
+      {{ nextStep }}
     </p>
     <DivergenceBoundaryCard
       v-for="boundary in boundaries"
