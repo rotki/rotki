@@ -8,7 +8,7 @@ import DockSyncHint from '@/modules/task-center/components/DockSyncHint.vue';
 import { isTerminalStatus, needsAttention, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
-import { arrangeChildren, type DockChildEntry, groupFailedLeaves } from '@/modules/task-center/dock-children';
+import { arrangeChildren, type DockChildEntry } from '@/modules/task-center/dock-children';
 import { type JobBreakdownEntry, useJobBreakdown } from '@/modules/task-center/use-job-breakdown';
 
 const { activity, children, depth = 0, dismissible = false, now, parent } = defineProps<{
@@ -49,6 +49,12 @@ const NESTED_LIMIT = 5;
  */
 const expanded = ref<boolean>(false);
 
+/**
+ * Whether the user has used this node's toggle since the job last settled or started again, after
+ * which folding hides everything beneath it.
+ */
+const toggled = ref<boolean>(false);
+
 const showAll = ref<boolean>(false);
 
 const jobBreakdown = useJobBreakdown(() => activity, () => children);
@@ -67,11 +73,15 @@ function outcomeOf(child: Activity): ActivityStatus {
   return someInSubtree(children, child, needsAttention) ? ActivityStatus.SKIPPED : child.status;
 }
 
+function isLeaf(child: Activity): boolean {
+  return (children.get(child.id)?.length ?? 0) === 0;
+}
+
 /** The unfolded children: start order while the job runs, sorted and grouped once it settles. */
 const entries = computed<DockChildEntry[]>(() => arrangeChildren(
   get(descendants),
   isTerminalStatus(activity.status),
-  child => (children.get(child.id)?.length ?? 0) === 0,
+  isLeaf,
   outcomeOf,
 ));
 
@@ -116,22 +126,39 @@ const repeatsChildReason = computed<boolean>(() => get(isParent)
 const leaves = computed<Activity[]>(() => (get(isParent) ? subtreeLeaves(children, activity) : []));
 
 /**
- * The failed leaves of a settled job, shown under it while it stays folded.
+ * The failed children of a settled job, shown under it while it stays folded.
  *
  * @remarks
  * Folding keeps a 21-chain job to one row, but a failure is the one part a reader has to act on,
  * so it should not take a click to find. Only a settled job surfaces them: while work runs a leaf
  * can still fail, and rows appearing under a job mid-run would jump the list.
+ *
+ * A failed chain surfaces as its own folded row rather than as every account beneath it: thirty
+ * failed accounts listed flat filled the panel, and each carries its address in its reason, so
+ * none of them group. Nested parents surface nothing, or folding one would list more rows than
+ * unfolding it, which caps at {@link NESTED_LIMIT}. Once the user uses the toggle, folding hides
+ * everything, since a collapse that leaves the rows in place reads as a broken button.
+ *
+ * A child counts when a failure sits anywhere in its subtree, so a chain that was cancelled over a
+ * failed account still surfaces.
  */
-const failedLeaves = computed<Activity[]>(() => {
-  if (!get(isParent) || !isTerminalStatus(activity.status))
+const failedChildren = computed<Activity[]>(() => {
+  if (depth > 0 || get(toggled) || !get(isParent) || !isTerminalStatus(activity.status))
     return [];
-  return get(leaves).filter(leaf => leaf.status === ActivityStatus.FAILED);
+  return get(descendants).filter(child => someInSubtree(children, child, node => node.status === ActivityStatus.FAILED));
 });
 
-const failedEntries = computed<DockChildEntry[]>(() => groupFailedLeaves(get(failedLeaves)));
+const failedEntries = computed<DockChildEntry[]>(() => arrangeChildren(get(failedChildren), true, isLeaf, () => ActivityStatus.FAILED));
 
-const hiddenCount = computed<number>(() => get(leaves).length - get(failedLeaves).length);
+/** One list for both states, so a row unfolded in the folded list keeps its state when the job opens. */
+const shownEntries = computed<DockChildEntry[]>(() => (get(expanded) ? get(visibleEntries) : get(failedEntries)));
+
+const hiddenCount = computed<number>(() => get(descendants).length - get(failedChildren).length);
+
+function toggle(): void {
+  set(expanded, !get(expanded));
+  set(toggled, true);
+}
 
 /** A settled parent's leaves by status, which its row shows in place of a tally that is now always full. */
 const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTerminalStatus(activity.status)
@@ -140,6 +167,12 @@ const leafTally = computed<StatusTally | undefined>(() => (get(isParent) && isTe
 
 /** The skipped leaves that asked for attention, which the summary counts apart from routine skips. */
 const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.status === ActivityStatus.SKIPPED && needsAttention(leaf)).length);
+
+/**
+ * A run that settles, or a retry that starts it again, brings failures the user has not seen yet,
+ * so a fold made before then no longer means they want them hidden.
+ */
+watch(() => isTerminalStatus(activity.status), () => set(toggled, false));
 </script>
 
 <template>
@@ -173,7 +206,7 @@ const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.s
               :aria-expanded="expanded"
               :aria-label="toggleLabel"
               data-testid="dock-job-toggle"
-              @click="expanded = !expanded"
+              @click="toggle()"
             >
               <RuiIcon
                 :name="expanded ? 'lu-chevron-down' : 'lu-chevron-right'"
@@ -214,11 +247,12 @@ const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.s
       so the wider step spent a fifth of the width on guide lines and truncated the labels instead.
     -->
     <div
-      v-if="isParent && expanded"
+      v-if="shownEntries.length > 0"
       class="flex flex-col ml-2 pl-2 border-l border-default"
+      :data-testid="expanded ? undefined : 'dock-failed-children'"
     >
       <template
-        v-for="entry in visibleEntries"
+        v-for="entry in shownEntries"
         :key="entry.type === 'node' ? entry.activity.id : entry.key"
       >
         <DockJobNode
@@ -246,7 +280,7 @@ const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.s
         />
       </template>
       <RuiButton
-        v-if="limited"
+        v-if="expanded && limited"
         class="self-start"
         variant="text"
         size="sm"
@@ -255,36 +289,9 @@ const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.s
       >
         {{ t('task_dock.panel.show_all', { count: entries.length - NESTED_LIMIT }, entries.length - NESTED_LIMIT) }}
       </RuiButton>
-    </div>
-    <div
-      v-else-if="failedLeaves.length > 0"
-      class="flex flex-col ml-2 pl-2 border-l border-default"
-      data-testid="dock-failed-leaves"
-    >
-      <template
-        v-for="entry in failedEntries"
-        :key="entry.type === 'node' ? entry.activity.id : entry.key"
-      >
-        <DockActivityRow
-          v-if="entry.type === 'node'"
-          :activity="entry.activity"
-          :now="now"
-          :percentage="entry.activity.percentage"
-          :parent="activity"
-          @retry="emit('retry', $event)"
-        />
-        <DockFailedGroup
-          v-else-if="entry.type === 'failed'"
-          :activities="entry.activities"
-          :reason="entry.reason"
-          :parent="activity"
-          :now="now"
-          @retry="emit('retry', $event)"
-        />
-      </template>
       <!-- The same spacer a row has for its icon, so the button's text lines up with the labels above it. -->
       <div
-        v-if="hiddenCount > 0"
+        v-if="!expanded && hiddenCount > 0"
         class="flex items-center gap-2.5 px-1"
       >
         <div class="w-4 shrink-0" />
@@ -293,7 +300,7 @@ const attentionLeaves = computed<number>(() => get(leaves).filter(leaf => leaf.s
           variant="text"
           size="sm"
           data-testid="dock-show-all"
-          @click="expanded = true"
+          @click="toggle()"
         >
           {{ t('task_dock.panel.show_all', { count: hiddenCount }, hiddenCount) }}
         </RuiButton>

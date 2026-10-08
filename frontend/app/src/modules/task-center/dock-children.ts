@@ -53,15 +53,6 @@ export function arrangeChildren(
   return groupByReason(sortSettled(children, outcomeOf), isLeaf);
 }
 
-/**
- * The failed leaves a folded job surfaces beneath it, with those sharing a reason folded into one entry.
- *
- * @param leaves - failed leaves only, so every one of them is groupable
- */
-export function groupFailedLeaves(leaves: Activity[]): DockChildEntry[] {
-  return groupByReason(leaves, () => true);
-}
-
 function stableSort(activities: Activity[], rank: (activity: Activity) => number): Activity[] {
   return activities
     .map((activity, index) => ({ activity, index }))
