@@ -24,14 +24,14 @@ describe('createGroupUpdateStrategy', () => {
   }
 
   it('should skip a notification that belongs to no group', () => {
-    const result = strategy.process({ message: 'test', title: 'test' }, context());
+    const result = strategy.process({ message: 'test', severity: Severity.INFO, title: 'test' }, context());
 
     expect(result).toBeUndefined();
     expect(cooldown.shouldSuppress).not.toHaveBeenCalled();
   });
 
   it('should show a new group notification that is not suppressed', () => {
-    const result = strategy.process({ group, message: 'no indexers', priority: Priority.ACTION, title: 'test' }, context());
+    const result = strategy.process({ group, message: 'no indexers', priority: Priority.ACTION, severity: Severity.INFO, title: 'test' }, context());
 
     expect(result!.notifications).toHaveLength(1);
     expect(result!.notifications[0].display).toBe(true);
@@ -41,7 +41,7 @@ describe('createGroupUpdateStrategy', () => {
   it('should still create a suppressed group notification, without displaying it', () => {
     vi.mocked(cooldown.shouldSuppress).mockReturnValue(true);
 
-    const result = strategy.process({ group, message: 'no indexers', title: 'test' }, context());
+    const result = strategy.process({ group, message: 'no indexers', severity: Severity.INFO, title: 'test' }, context());
 
     // Exhausted is not gone: the row stays in the sidebar, actionable, it just does not interrupt.
     expect(result!.notifications).toHaveLength(1);
@@ -53,14 +53,14 @@ describe('createGroupUpdateStrategy', () => {
   it('should not record a display for a notification that was never displayed', () => {
     vi.mocked(cooldown.shouldSuppress).mockReturnValue(true);
 
-    strategy.process({ group, message: 'no indexers', title: 'test' }, context());
+    strategy.process({ group, message: 'no indexers', severity: Severity.INFO, title: 'test' }, context());
 
     expect(cooldown.recordDisplay).not.toHaveBeenCalled();
   });
 
   it('should not record a display for a new notification whose priority does not pop', () => {
     const result = strategy.process(
-      { group, message: 'no indexers', priority: Priority.NORMAL, title: 'test' },
+      { group, message: 'no indexers', priority: Priority.NORMAL, severity: Severity.INFO, title: 'test' },
       context(),
     );
 
@@ -69,9 +69,9 @@ describe('createGroupUpdateStrategy', () => {
   });
 
   it('should store the same priority on update as it decided display from', () => {
-    const existing = [createNotification(2, { group, message: 'stale', priority: Priority.ACTION, title: 'test' })];
+    const existing = [createNotification(2, { group, message: 'stale', priority: Priority.ACTION, severity: Severity.INFO, title: 'test' })];
 
-    const result = strategy.process({ group, message: 'fresh', priority: Priority.ACTION, title: 'test' }, context(existing));
+    const result = strategy.process({ group, message: 'fresh', priority: Priority.ACTION, severity: Severity.INFO, title: 'test' }, context(existing));
 
     expect(result!.notifications[0].priority).toBe(existing[0].priority);
     expect(result!.notifications[0].display).toBe(true);
@@ -79,9 +79,9 @@ describe('createGroupUpdateStrategy', () => {
 
   it('should keep separate subjects of the same group apart', () => {
     const other = `${NotificationGroup.ORACLE_PENALIZED}:cryptocompare`;
-    const existing = [createNotification(1, { group, message: 'optimism', title: 'test' })];
+    const existing = [createNotification(1, { group, message: 'optimism', severity: Severity.INFO, title: 'test' })];
 
-    const result = strategy.process({ group: other, message: 'binance', title: 'test' }, context(existing));
+    const result = strategy.process({ group: other, message: 'binance', severity: Severity.INFO, title: 'test' }, context(existing));
 
     expect(result!.notifications).toHaveLength(2);
     expect(result!.notifications.map(({ group }) => group)).toStrictEqual([group, other]);
@@ -89,8 +89,8 @@ describe('createGroupUpdateStrategy', () => {
 
   it('should refresh an existing notification and move it to the top', () => {
     const existing = [
-      createNotification(1, { group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'other', title: 'other' }),
-      createNotification(2, { group, message: 'stale', title: 'test' }),
+      createNotification(1, { group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'other', severity: Severity.INFO, title: 'other' }),
+      createNotification(2, { group, message: 'stale', severity: Severity.INFO, title: 'test' }),
     ];
 
     const result = strategy.process(
@@ -110,11 +110,11 @@ describe('createGroupUpdateStrategy', () => {
 
   it('should update a suppressed existing notification without displaying it again', () => {
     vi.mocked(cooldown.shouldSuppress).mockReturnValue(true);
-    const existing = [createNotification(2, { group, groupCount: 1, message: 'stale', title: 'test' })];
+    const existing = [createNotification(2, { group, groupCount: 1, message: 'stale', severity: Severity.INFO, title: 'test' })];
     const originalDate = existing[0].date;
 
     const result = strategy.process(
-      { group, groupCount: 5, message: 'fresh', title: 'test' },
+      { group, groupCount: 5, message: 'fresh', severity: Severity.INFO, title: 'test' },
       context(existing),
     );
 
@@ -124,16 +124,16 @@ describe('createGroupUpdateStrategy', () => {
     expect(cooldown.recordDisplay).not.toHaveBeenCalled();
   });
 
-  it('should keep the existing severity when the payload omits it', () => {
-    const existing = [createNotification(2, { group, message: 'stale', severity: Severity.ERROR, title: 'test' })];
+  it('should take the severity of the update over the one the row had', () => {
+    const existing = [createNotification(2, { group, message: 'stale', severity: Severity.WARNING, title: 'test' })];
 
-    const result = strategy.process({ group, message: 'fresh', title: 'test' }, context(existing));
+    const result = strategy.process({ group, message: 'fresh', severity: Severity.ERROR, title: 'test' }, context(existing));
 
     expect(result!.notifications[0].severity).toBe(Severity.ERROR);
   });
 
   it('should consult the cooldown once per payload', () => {
-    strategy.process({ group, message: 'no indexers', title: 'test' }, context());
+    strategy.process({ group, message: 'no indexers', severity: Severity.INFO, title: 'test' }, context());
 
     expect(cooldown.shouldSuppress).toHaveBeenCalledTimes(1);
   });

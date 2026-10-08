@@ -23,10 +23,10 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({ message: 'message-1', title: 'title-1' });
+    notify({ message: 'message-1', severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)).toHaveLength(1);
-    expect(get(data)[0]).toMatchObject({ message: 'message-1', title: 'title-1' });
+    expect(get(data)[0]).toMatchObject({ message: 'message-1', severity: Severity.INFO, title: 'title-1' });
   });
 
   it('should drop a notification raised with no live session', () => {
@@ -34,7 +34,7 @@ describe('useNotificationDispatcher', () => {
     const { data } = storeToRefs(useNotificationsStore());
 
     endSession();
-    notify({ message: 'late failure', title: 'title-1' });
+    notify({ message: 'late failure', severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)).toHaveLength(0);
   });
@@ -45,7 +45,7 @@ describe('useNotificationDispatcher', () => {
 
     endSession();
     beginSession();
-    notify({ message: 'message-1', title: 'title-1' });
+    notify({ message: 'message-1', severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)).toHaveLength(1);
   });
@@ -55,13 +55,13 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'message-1', priority: Priority.ACTION, title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'message-1', priority: Priority.ACTION, severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS });
     const originalDate = get(data)[0].date;
 
     // Second notification within cooldown should suppress display
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'message-2', priority: Priority.ACTION, title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'message-2', priority: Priority.ACTION, severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({
@@ -73,7 +73,7 @@ describe('useNotificationDispatcher', () => {
 
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 3, message: 'message-3', priority: Priority.ACTION, title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 3, message: 'message-3', priority: Priority.ACTION, severity: Severity.INFO, title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, groupCount: 3, message: 'message-3' });
   });
@@ -84,10 +84,10 @@ describe('useNotificationDispatcher', () => {
     const earlier = new Date('2026-09-30T08:00:00Z');
     const later = new Date('2026-09-30T09:00:00Z');
 
-    notify({ date: earlier, message: 'plain', title: 'plain' });
-    notify({ date: earlier, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'grouped' });
+    notify({ date: earlier, message: 'plain', severity: Severity.INFO, title: 'plain' });
+    notify({ date: earlier, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', severity: Severity.INFO, title: 'grouped' });
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
-    notify({ date: later, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'grouped' });
+    notify({ date: later, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', severity: Severity.INFO, title: 'grouped' });
 
     expect(get(data).map(({ date, message }) => [message, date])).toEqual(expect.arrayContaining([
       ['plain', earlier],
@@ -100,9 +100,9 @@ describe('useNotificationDispatcher', () => {
     const { data } = storeToRefs(useNotificationsStore());
     const recent = new Date('2026-09-30T09:00:00Z');
 
-    notify({ date: recent, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'recent', title: 'grouped' });
+    notify({ date: recent, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'recent', severity: Severity.INFO, title: 'grouped' });
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
-    notify({ date: new Date('2026-09-30T07:00:00Z'), group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'older', title: 'grouped' });
+    notify({ date: new Date('2026-09-30T07:00:00Z'), group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'older', severity: Severity.INFO, title: 'grouped' });
 
     expect(get(data)[0].date).toEqual(recent);
   });
@@ -111,8 +111,8 @@ describe('useNotificationDispatcher', () => {
     const { notify } = useNotificationDispatcher();
     const { data } = storeToRefs(useNotificationsStore());
 
-    notify({ extras: { sentence: 'first' }, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'grouped' });
-    notify({ extras: { sentence: 'second' }, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'grouped' });
+    notify({ extras: { sentence: 'first' }, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', severity: Severity.INFO, title: 'grouped' });
+    notify({ extras: { sentence: 'second' }, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', severity: Severity.INFO, title: 'grouped' });
 
     expect(get(data)[0].extras).toEqual({ sentence: 'second' });
   });
@@ -170,12 +170,13 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { prioritized } = storeToRefs(store);
 
-    notify({ message: 'normal', title: 'normal' });
+    notify({ message: 'normal', severity: Severity.INFO, title: 'normal' });
 
     notify({
       action: { action: vi.fn, label: 'Action' },
       message: 'action-msg',
       priority: Priority.ACTION,
+      severity: Severity.INFO,
       title: 'action',
     });
 
@@ -207,8 +208,8 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({ message: 'msg-1', title: 'title-1' });
-    notify({ message: 'msg-2', title: 'title-2' });
+    notify({ message: 'msg-1', severity: Severity.INFO, title: 'title-1' });
+    notify({ message: 'msg-2', severity: Severity.INFO, title: 'title-2' });
 
     expect(get(data)).toHaveLength(2);
 
@@ -230,7 +231,7 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { data, queue } = storeToRefs(useNotificationsStore());
 
-      notify({ message: 'msg', title: 'title' });
+      notify({ message: 'msg', severity: Severity.INFO, title: 'title' });
 
       expect(get(queue)).toHaveLength(0);
       expect(get(data)[0]).toMatchObject({ display: false, message: 'msg' });
@@ -245,6 +246,7 @@ describe('useNotificationDispatcher', () => {
         action: { action: vi.fn(), label: 'Configure' },
         message: 'msg',
         priority: Priority.ACTION,
+        severity: Severity.INFO,
         title: 'title',
       });
 
@@ -259,8 +261,8 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { data } = storeToRefs(useNotificationsStore());
 
-      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'title' });
-      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'title' });
+      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', severity: Severity.INFO, title: 'title' });
+      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', severity: Severity.INFO, title: 'title' });
 
       expect(get(data)).toHaveLength(1);
       expect(get(data)[0]).toMatchObject({ display: false, groupCount: 2, message: 'second' });
@@ -271,9 +273,9 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { queue } = storeToRefs(useNotificationsStore());
 
-      notify({ message: 'quiet', priority: Priority.HIGH, title: 'title' });
+      notify({ message: 'quiet', priority: Priority.HIGH, severity: Severity.INFO, title: 'title' });
       unsilence();
-      notify({ message: 'loud', priority: Priority.HIGH, title: 'title' });
+      notify({ message: 'loud', priority: Priority.HIGH, severity: Severity.INFO, title: 'title' });
 
       expect(get(queue)).toHaveLength(1);
       expect(get(queue)[0]).toMatchObject({ message: 'loud' });

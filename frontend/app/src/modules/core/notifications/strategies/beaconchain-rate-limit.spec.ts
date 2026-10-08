@@ -42,6 +42,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old message',
+        severity: Severity.WARNING,
         title: 'grouped',
       }),
     ];
@@ -69,6 +70,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
       groupCount: 1,
       message: 'old message',
       priority: Priority.BULK,
+      severity: Severity.WARNING,
       title: 'grouped',
     });
 
@@ -93,6 +95,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old',
+        severity: Severity.WARNING,
         title: 'grouped',
       }),
     ];

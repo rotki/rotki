@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import { type NotificationPayload, Priority, type SemiPartial, Severity } from '@rotki/common';
+import { type Notification, Priority, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -21,7 +21,7 @@ interface ExportOutcome {
   result: ExportResult;
 }
 
-type ExportMessage = SemiPartial<NotificationPayload, 'title' | 'message'>;
+type ExportMessage = Notification;
 
 interface UseHistoryEventsExportReturn {
   /** Whether an export is already running, so the caller can disable its control. */
