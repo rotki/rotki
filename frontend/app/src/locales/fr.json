@@ -224,11 +224,6 @@
         "already_running": "La tâche est déjà en cours",
         "task": "Création d'une entrée de cache de {fromAsset} à {toAsset} sur {source}"
       },
-      "detect_tokens": {
-        "task": {
-          "title": "Récupération des jetons détectés"
-        }
-      },
       "exchange_removal": {
         "description": "La suppression de {exchange} a échoué en raison de : {error}",
         "title": "Suppression de l'échange"

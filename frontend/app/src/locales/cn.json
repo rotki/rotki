@@ -560,14 +560,6 @@
         "already_running": "任务已经在运行",
         "task": "正在构建 {source} 从 {fromAsset} 到 {toAsset} 的价格缓存"
       },
-      "detect_tokens": {
-        "error": {
-          "message": "检测 {address} ({chain}) 的代币失败：{error}"
-        },
-        "task": {
-          "title": "获取检测到的代币"
-        }
-      },
       "exchange_removal": {
         "description": "删除 {exchange} 失败，原因是：{error}",
         "title": "交易所移除"

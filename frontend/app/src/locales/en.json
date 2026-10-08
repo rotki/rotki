@@ -563,14 +563,6 @@
         "already_running": "Task is already running",
         "task": "Building the {source} price cache from {fromAsset} to {toAsset}"
       },
-      "detect_tokens": {
-        "error": {
-          "message": "Failed to detect tokens for {address} ({chain}): {error}"
-        },
-        "task": {
-          "title": "Fetch detected tokens"
-        }
-      },
       "exchange_removal": {
         "description": "The removal of {exchange} failed due to: {error}",
         "title": "Exchange removal"

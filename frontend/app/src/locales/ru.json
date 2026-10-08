@@ -310,14 +310,6 @@
         "already_running": "Задача уже запущена",
         "task": "Создание записи кэша из {fromAsset} в {toAsset} на {source}"
       },
-      "detect_tokens": {
-        "error": {
-          "message": "Не удалось обнаружить токены для {address} ({chain}): {error}"
-        },
-        "task": {
-          "title": "Получение обнаруженных токенов"
-        }
-      },
       "exchange_removal": {
         "description": "Удаление {exchange} не удалось из-за: {error}",
         "title": "Удаление биржи"
