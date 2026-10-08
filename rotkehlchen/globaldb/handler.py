@@ -1011,8 +1011,9 @@ class GlobalDBHandler:
                 tokens.append(token)
             except UnknownAsset as e:
                 log.error(
-                    f'Found unknown swapped_for asset {e!s} in '
-                    f'the DB when deserializing a {token_class!s}',
+                    'Found unknown swapped_for asset %s in the DB when deserializing a %s',
+                    e,
+                    token_class,
                 )
 
         return tokens
