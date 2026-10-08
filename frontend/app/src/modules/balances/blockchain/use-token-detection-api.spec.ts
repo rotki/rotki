@@ -20,21 +20,7 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: vi.fn().mockReturnValue({
-    getChainName: (chain: string): string => chain.toUpperCase(),
-  }),
-}));
-
 const mockRunTask = vi.fn();
-
-const mockNotifyError = vi.fn();
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockReturnValue({
-    notifyError: mockNotifyError,
-  }),
-  getErrorMessage: (e: unknown): string => (e instanceof Error ? e.message : String(e)),
-}));
 
 describe('useTokenDetectionApi', () => {
   beforeEach(() => {
@@ -73,39 +59,39 @@ describe('useTokenDetectionApi', () => {
     expect(mockSetState).toHaveBeenCalledWith('eth', taskResult);
   });
 
-  it('should notify on task failure', async () => {
+  it('should hand a failed detection back to its activity, whose dock row reports it', async () => {
     mockRunTask.mockResolvedValue(err(TaskFailed({ message: 'Network error' })));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
     const { detectTokensForAddress } = useTokenDetectionApi();
 
-    await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
+    const result = await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
 
+    expect(result).toEqual(err(TaskFailed({ message: 'Network error' })));
     expect(mockSetState).not.toHaveBeenCalled();
-    expect(mockNotifyError).toHaveBeenCalledOnce();
   });
 
-  it('should not notify on cancelled task', async () => {
+  it('should hand a cancelled detection back as a cancellation', async () => {
     mockRunTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
     const { detectTokensForAddress } = useTokenDetectionApi();
 
-    await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
+    const result = await detectTokensForAddress(mockRunTask, 'eth', '0xaddr1');
 
+    expect(result).toEqual(err(Cancelled({ message: 'cancelled' })));
     expect(mockSetState).not.toHaveBeenCalled();
-    expect(mockNotifyError).not.toHaveBeenCalled();
   });
 
-  it('should notify on cached fetch error', async () => {
+  it('should return a failed cached read with its reason and keep the previous state', async () => {
     mockFetchDetectedTokens.mockRejectedValue(new Error('API error'));
 
     const { useTokenDetectionApi } = await import('./use-token-detection-api');
     const { fetchCachedDetectedTokens } = useTokenDetectionApi();
 
-    await fetchCachedDetectedTokens('eth');
+    const result = await fetchCachedDetectedTokens('eth');
 
+    expect(result).toEqual(err(TaskFailed({ message: 'API error' })));
     expect(mockSetState).not.toHaveBeenCalled();
-    expect(mockNotifyError).toHaveBeenCalledOnce();
   });
 });

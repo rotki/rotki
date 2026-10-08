@@ -5,8 +5,7 @@ import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { Cancelled, isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 
 interface UseTokenDetectionApiReturn {
@@ -22,9 +21,6 @@ interface UseTokenDetectionApiReturn {
 export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
   const { setState } = useTokenDetectionStore();
   const { fetchDetectedTokens: fetchCachedTokens, fetchDetectedTokensTask } = useBlockchainBalancesApi();
-  const { getChainName } = useSupportedChains();
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
 
   const detectTokensForAddress = async (
     runTask: RunBackendTask,
@@ -36,17 +32,8 @@ export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
     );
 
     if (isErr(result)) {
-      if (isActionable(result.error)) {
-        logger.error(result.error.message);
-        notifyError(
-          t('actions.balances.detect_tokens.task.title'),
-          t('actions.balances.detect_tokens.error.message', {
-            address,
-            chain: getChainName(chain),
-            error: result.error.message,
-          }),
-        );
-      }
+      if (isActionable(result.error))
+        logger.error(`token detection failed for ${address} on ${chain}: ${result.error.message}`);
     }
     else {
       setState(chain, result.value);
@@ -67,15 +54,7 @@ export function useTokenDetectionApi(): UseTokenDetectionApiReturn {
       if (isRequestCancellation(error))
         return err(Cancelled({ message }));
 
-      logger.error(error);
-      notifyError(
-        t('actions.balances.detect_tokens.task.title'),
-        t('actions.balances.detect_tokens.error.message', {
-          address: '',
-          chain: getChainName(chain),
-          error: message,
-        }),
-      );
+      logger.error(`reading the detected tokens of ${chain} failed: ${message}`);
       return err(TaskFailed({ message }));
     }
   };

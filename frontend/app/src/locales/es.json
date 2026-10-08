@@ -162,11 +162,6 @@
         "already_running": "La tarea ya está en curso",
         "task": "Creando entrada de caché dee {fromAsset} a {toAsset} en {source}"
       },
-      "detect_tokens": {
-        "task": {
-          "title": "Recuperando tokens detectados"
-        }
-      },
       "exchange_removal": {
         "description": "No se pudo eliminar {exchange} debido a: {error}",
         "title": "Elimination de plataforma de intercambio"
