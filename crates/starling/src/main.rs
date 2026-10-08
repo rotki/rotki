@@ -104,7 +104,7 @@ impl Mode {
 /// Subcommands that do *not* start the supervisor. With no subcommand, starling
 /// runs the supervisor from the top-level flags below (which are clap-optional
 /// so a subcommand need not supply them; see the explicit check in `main`).
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand)]
 enum Command {
     /// Probe the running supervisor and exit 0 if healthy, 1 otherwise.
     ///
@@ -148,7 +148,7 @@ enum Command {
 /// `docker stop`. `stop` remains available on stdio, where Electron genuinely
 /// owns the process lifecycle.
 #[cfg(unix)]
-#[derive(Clone, Copy, Debug, ValueEnum)]
+#[derive(Clone, Copy, ValueEnum)]
 enum CtlMethod {
     Status,
     Health,
@@ -166,7 +166,7 @@ impl CtlMethod {
     }
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(
     name = "starling",
     version,

@@ -31,7 +31,7 @@ LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collectio
 LEFT JOIN asset_collections  AS ac  ON ac.id          = collection_id
 "#;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize)]
 pub struct AssetMappings {
     pub name: String,
     pub symbol: String,
@@ -53,7 +53,7 @@ pub struct AssetMappings {
     pub cryptocompare: Option<String>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize)]
 pub struct CollectionInfo {
     pub name: String,
     pub symbol: String,

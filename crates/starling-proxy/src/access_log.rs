@@ -42,7 +42,7 @@ use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderMap, Method, Request};
 
 /// A parsed CIDR block, used to extend the default trusted-hop set.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cidr {
     base: IpAddr,
     prefix_len: u8,
@@ -260,7 +260,7 @@ pub struct RequestLine {
 
 /// The access log's policy: whether to log at all, whose forwarded headers to
 /// believe, and which external peers may send unlogged health probes.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct AccessLog {
     /// Whether to emit anything. **False in embedded mode**, where the proxy only
     /// fronts the local Electron renderer: every line would be the app talking to

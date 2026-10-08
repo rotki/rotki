@@ -15,7 +15,7 @@ pub struct GlobalDB {
     pub conn: Arc<Mutex<Connection>>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct OraclePriceEntry {
     pub from_asset: String,
     pub to_asset: String,
@@ -24,7 +24,7 @@ pub struct OraclePriceEntry {
     pub price: String,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct OraclePricesQueryResult {
     pub entries: Vec<OraclePriceEntry>,
     pub entries_found: i64,
@@ -32,7 +32,7 @@ pub struct OraclePricesQueryResult {
     pub entries_limit: i64,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct OraclePricesQueryFilters {
     pub from_asset: Option<String>,
     pub to_asset: Option<String>,

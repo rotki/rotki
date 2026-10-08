@@ -270,14 +270,6 @@ impl ControlDispatch {
     }
 }
 
-impl std::fmt::Debug for ControlDispatch {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ControlDispatch")
-            .field("methods", &self.methods)
-            .finish_non_exhaustive()
-    }
-}
-
 /// `GET /_control` → what this deployment can do, without authenticating.
 ///
 /// Unauthenticated on purpose. The SPA needs the answer *before* it can act on
