@@ -918,3 +918,23 @@ def test_get_l1_fee_response_shapes(
                 tx_hash=make_evm_tx_hash(),
                 block_number=1,
             ) == expected_fee
+
+
+@pytest.mark.parametrize('sends_items_count', [True, False])
+def test_withdrawals_pagination_items_count(
+        blockscout: Blockscout,
+        sends_items_count: bool,
+) -> None:
+    """items_count is a cursor echoed back before blockscout v12, and absent afterwards"""
+    def mock_query(chain_id, endpoint, query_str, params=None, **kwargs):
+        queries.append(params)
+        if len(queries) == 1:
+            next_page = {'index': 5} | ({'items_count': 50} if sends_items_count else {})
+            return {'items': [{'index': 6, 'validator_index': '1', 'timestamp': '2024-01-01T00:00:00Z', 'amount': '1000000000'}], 'next_page_params': next_page}  # noqa: E501
+        return {'items': [], 'next_page_params': None}
+
+    queries: list[dict[str, Any] | None] = []
+    with patch.object(blockscout, '_query_and_process', side_effect=mock_query):
+        blockscout.query_withdrawals(make_evm_address())
+
+    assert queries[1] == {'index': 5} | ({'items_count': 50} if sends_items_count else {})

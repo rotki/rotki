@@ -790,7 +790,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 if (next_params := result['next_page_params']) is None:
                     break  # got no more pages
 
-                extra_args = {'index': next_params['index'], 'items_count': next_params['items_count']}  # noqa: E501
+                extra_args = {'index': next_params['index']}
+                # before blockscout v12 items_count is a cursor to send back. v12 omits it
+                if (items_count := next_params.get('items_count')) is not None:
+                    extra_args['items_count'] = items_count
                 continue
 
             # if we get here it means we found a known index so we break out
