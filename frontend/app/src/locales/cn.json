@@ -4921,12 +4921,6 @@
       "message": "从事件处理和查询中检测到标识符为 {identifier} 的新代币。|从事件处理和查询中检测到 {count} 个新代币。",
       "title": "检测到新代币|检测到新代币"
     },
-    "oracle_penalized": {
-      "action": "配置价格预言机",
-      "message_errors": "{oracle} 多次价格查询失败，将在 {minutes} 分钟内被跳过。在此期间将使用其他预言机的价格。",
-      "message_timeout": "{oracle} 已停止响应价格查询，将在 {minutes} 分钟内被跳过。在此期间将使用其他预言机的价格。",
-      "title": "价格预言机 {oracle} 已暂停使用"
-    },
     "premium": {
       "active": {
         "message": "已检测到你的高级版订阅。",

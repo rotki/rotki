@@ -1,78 +1,70 @@
-import type { Router } from 'vue-router';
-import type { OraclePenalizedData } from '@/modules/core/messaging/types';
-import { assert, type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { mockT } from '@test/i18n';
-import { createMock } from '@test/utils/create-mock';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOraclePenalizedHandler } from '@/modules/core/messaging/handlers/oracle-penalized';
-import { LIVE_DELIVERY, type MessageDelivery } from '@/modules/core/messaging/interfaces';
-import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const push = vi.fn<Router['push']>();
-const router = createMock<Router>({ push });
-
+const NOW = new Date('2026-10-08T12:00:00Z').getTime();
 const PENALTY_SECONDS = 1800;
-
-async function notificationFor(data: OraclePenalizedData, delivery: MessageDelivery = LIVE_DELIVERY): Promise<Notification> {
-  const result = await createOraclePenalizedHandler(mockT, router).handle(data, delivery);
-  assert(result);
-  return result;
-}
+const PENALTY_MS = PENALTY_SECONDS * 1000;
 
 describe('createOraclePenalizedHandler', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
   });
 
-  it('should build a warning that names the oracle and explains it stopped answering', async () => {
-    const result = await notificationFor({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
-
-    expect(result.severity).toBe(Severity.WARNING);
-    expect(result.priority).toBe(Priority.HIGH);
-    expect(result.display).toBeUndefined();
-    expect(result.message).toContain('message_timeout');
-    expect(result.message).not.toContain('message_errors');
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('should explain repeated failures differently from a silent host', async () => {
-    const result = await notificationFor({ oracle: 'defillama', penaltyDuration: PENALTY_SECONDS, reason: 'errors' });
+  it('should raise the oracle\'s row until its penalty ends, and create no notification', async () => {
+    const result = await createOraclePenalizedHandler().handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
 
-    expect(result.message).toContain('message_errors');
-    expect(result.message).not.toContain('message_timeout');
+    expect(result).toBeUndefined();
+    expect(useRaisedConditionsStore().conditions).toEqual([
+      { kind: RaisedConditionKind.ORACLE_PENALIZED, oracle: 'coingecko', reason: 'timeout', until: NOW + PENALTY_MS },
+    ]);
   });
 
-  it('should give each oracle its own group so two penalized oracles do not collapse into one', async () => {
-    const coingecko = await notificationFor({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
-    const defillama = await notificationFor({ oracle: 'defillama', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
+  it('should keep one row per oracle', async () => {
+    const handler = createOraclePenalizedHandler();
 
-    expect(coingecko.group).toBe(`${NotificationGroup.ORACLE_PENALIZED}:coingecko`);
-    expect(coingecko.group).not.toBe(defillama.group);
+    await handler.handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
+    await handler.handle({ oracle: 'defillama', penaltyDuration: PENALTY_SECONDS, reason: 'errors' });
+    await handler.handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'errors' });
+
+    expect(useRaisedConditionsStore().conditions.map(condition => 'oracle' in condition && condition.oracle)).toEqual(['coingecko', 'defillama']);
   });
 
-  it('should route to the price oracle settings when the action is clicked', async () => {
-    const result = await notificationFor({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
-    assert(!Array.isArray(result.action));
-    assert(result.action);
+  it('should take the row down once the penalty ends', async () => {
+    await createOraclePenalizedHandler().handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
 
-    await result.action.action();
+    vi.advanceTimersByTime(PENALTY_MS - 1);
+    expect(useRaisedConditionsStore().conditions).toHaveLength(1);
 
-    expect(push).toHaveBeenCalledWith({ name: '/settings/oracle/', hash: `#${SettingsCategoryIds.PRICE_ORACLE}` });
+    vi.advanceTimersByTime(1);
+    expect(useRaisedConditionsStore().conditions).toEqual([]);
   });
 
-  it('should skip a held penalty that had already run out when it was read', async () => {
-    const lastSent = new Date(Date.now() - (PENALTY_SECONDS + 60) * 1000);
+  it('should keep the row of a penalty renewed before the first one ended', async () => {
+    const handler = createOraclePenalizedHandler();
+    await handler.handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
 
-    const result = await createOraclePenalizedHandler(mockT, router)
-      .handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' }, { count: 1, lastSent });
+    vi.advanceTimersByTime(PENALTY_MS / 2);
+    await handler.handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' });
+    vi.advanceTimersByTime(PENALTY_MS / 2);
 
-    expect(result).toBeNull();
+    expect(useRaisedConditionsStore().conditions).toHaveLength(1);
   });
 
-  it('should show a held penalty that is still running, with how many times it was sent', async () => {
-    const lastSent = new Date(Date.now() - 60 * 1000);
+  it('should date a held penalty from when it was sent, and raise nothing once it has run out', async () => {
+    const handler = createOraclePenalizedHandler();
 
-    const result = await notificationFor({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' }, { count: 3, lastSent });
+    await handler.handle({ oracle: 'coingecko', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' }, { count: 1, lastSent: new Date(NOW - PENALTY_MS - 1) });
+    await handler.handle({ oracle: 'defillama', penaltyDuration: PENALTY_SECONDS, reason: 'timeout' }, { count: 1, lastSent: new Date(NOW - 1000) });
 
-    expect(result.message).toMatch(/^notification_messages\.repeated::3, notification_messages\.oracle_penalized\.message_timeout/);
+    expect(useRaisedConditionsStore().conditions).toEqual([
+      { kind: RaisedConditionKind.ORACLE_PENALIZED, oracle: 'defillama', reason: 'timeout', until: NOW - 1000 + PENALTY_MS },
+    ]);
   });
 });

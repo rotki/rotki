@@ -18,7 +18,6 @@ export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
   BEACONCHAIN_RATE_LIMITED = 'BEACONCHAIN_RATE_LIMITED',
   MONERIUM_AUTH = 'MONERIUM_AUTH',
-  ORACLE_PENALIZED = 'ORACLE_PENALIZED',
   USER_MESSAGE = 'USER_MESSAGE',
   ASSET_MAPPINGS = 'ASSET_MAPPINGS',
 }
@@ -27,9 +26,8 @@ export enum NotificationGroup {
  * A notification group, optionally narrowed to a single subject.
  *
  * Some groups cover a whole class of notifications that must not collapse into each other: one
- * oracle being penalized is a different event from another oracle being penalized, and both need
- * their own entry. Those append a discriminator (`ORACLE_PENALIZED:coingecko`) so the grouping
- * stays per subject.
+ * backend problem is a different event from another, and both need their own entry. Those append
+ * a discriminator (`USER_MESSAGE:<identity>`) so the grouping stays per subject.
  */
 export type NotificationGroupKey = NotificationGroup | `${NotificationGroup}:${string}`;
 

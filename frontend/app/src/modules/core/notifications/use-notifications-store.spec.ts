@@ -148,7 +148,7 @@ describe('useNotificationsStore', () => {
   it('should record the display of a grouped notification against its cooldown', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
-    const group = `${NotificationGroup.ORACLE_PENALIZED}:coingecko`;
+    const group = `${NotificationGroup.USER_MESSAGE}:coingecko`;
 
     store.add([
       createNotification(store.getNextId(), testPayload({ group, message: 'msg', title: 'title' })),

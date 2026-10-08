@@ -6,6 +6,7 @@ export const RaisedConditionKind = {
   MISSING_API_KEY: 'missing-api-key',
   MONERIUM_SESSION: 'monerium-session',
   NO_AVAILABLE_INDEXERS: 'no-available-indexers',
+  ORACLE_PENALIZED: 'oracle-penalized',
   PREMIUM_INACTIVE: 'premium-inactive',
 } as const;
 
@@ -35,6 +36,9 @@ export type NoIndexersCause = (typeof NoIndexersCause)[keyof typeof NoIndexersCa
 
 export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof RaisedConditionKind];
 
+/** Why the backend set an oracle aside: it stopped answering, or it kept failing. */
+export type OraclePenaltyReason = 'errors' | 'timeout';
+
 /**
  * A condition the backend reported over the websocket, which stays raised until an event or a
  * check says it is over.
@@ -43,12 +47,14 @@ export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof Rais
  * The report is the evidence that the user needs this: a missing key only matters to someone whose
  * queries asked for it, so a row waits for the message rather than checking every service up front.
  * A missing key with `keyRejected` is about a key that is saved but was refused for `location`. A
- * rejected exchange key is about one connected account, `name` on `location`.
+ * rejected exchange key is about one connected account, `name` on `location`. A penalized oracle
+ * is skipped until `until` (milliseconds since the epoch), when it is used again by itself.
  */
 export type RaisedCondition =
   | { kind: typeof RaisedConditionKind.MISSING_API_KEY; service: string; location?: string; keyRejected?: boolean }
   | { kind: typeof RaisedConditionKind.EXCHANGE_KEY_REJECTED; location: string; name: string }
   | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; cause: NoIndexersCause }
+  | { kind: typeof RaisedConditionKind.ORACLE_PENALIZED; oracle: string; reason: OraclePenaltyReason; until: number }
   | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION }
   | { kind: typeof RaisedConditionKind.MONERIUM_SESSION }
   | { kind: typeof RaisedConditionKind.PREMIUM_INACTIVE; cause: PremiumInactiveCause; reason?: string }
@@ -69,6 +75,8 @@ function conditionKey(condition: RaisedCondition): string {
       return `${condition.kind}:${condition.service}`;
     case RaisedConditionKind.NO_AVAILABLE_INDEXERS:
       return `${condition.kind}:${condition.chain}`;
+    case RaisedConditionKind.ORACLE_PENALIZED:
+      return `${condition.kind}:${condition.oracle}`;
     case RaisedConditionKind.BINANCE_PAIRS_MISSING:
     case RaisedConditionKind.EXCHANGE_KEY_REJECTED:
       return `${condition.kind}:${condition.location}:${condition.name}`;

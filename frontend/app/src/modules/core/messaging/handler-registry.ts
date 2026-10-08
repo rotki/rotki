@@ -17,7 +17,7 @@ export function createHandlerRegistry(
   router: ReturnType<typeof useRouter>,
 ): MessageHandlerRegistry {
   const statusRegistry = createStatusRegistry(t);
-  const notificationRegistry = createNotificationRegistry(t, router);
+  const notificationRegistry = createNotificationRegistry(t);
   const businessRegistry = createBusinessRegistry(t, router);
 
   return Object.assign(

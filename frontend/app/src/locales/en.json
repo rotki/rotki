@@ -519,6 +519,12 @@
           "description": "Sign in again to keep importing Monerium activity.",
           "title": "Monerium session expired"
         },
+        "oracle_penalized": {
+          "action": "Price oracles",
+          "description_errors": "{oracle} kept failing price queries, so prices come from the other oracles for now. rotki tries {oracle} again by itself.",
+          "description_timeout": "{oracle} stopped answering price queries, so prices come from the other oracles for now. rotki tries {oracle} again by itself.",
+          "title": "{oracle} set aside for a while"
+        },
         "premium_inactive": {
           "description_device_limit": "Premium is off on this device: {reason}",
           "description_expired": "Your premium key was rejected, usually because the subscription ended. Premium features are off until it is renewed.",
@@ -5259,12 +5265,6 @@
       "action": "See more",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
       "title": "New Token Detected|New Tokens Detected"
-    },
-    "oracle_penalized": {
-      "action": "Configure price oracles",
-      "message_errors": "{oracle} kept failing price queries and is skipped for {minutes} minutes. Prices come from the other oracles in the meantime.",
-      "message_timeout": "{oracle} stopped answering price queries and is skipped for {minutes} minutes. Prices come from the other oracles in the meantime.",
-      "title": "Price oracle {oracle} set aside"
     },
     "premium": {
       "active": {

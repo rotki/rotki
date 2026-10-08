@@ -15,7 +15,6 @@ import { SocketMessageType } from '../types/base';
 
 export function createNotificationRegistry(
   t: ReturnType<typeof useI18n>['t'],
-  router: ReturnType<typeof useRouter>,
 ): Pick<
   MessageHandlerRegistry,
   | typeof SocketMessageType.BALANCES_SNAPSHOT_ERROR
@@ -38,7 +37,7 @@ export function createNotificationRegistry(
     [SocketMessageType.MISSING_API_KEY]: createMissingApiKeyHandler(),
     [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(),
     [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(),
-    [SocketMessageType.ORACLE_PENALIZED]: createOraclePenalizedHandler(t, router),
+    [SocketMessageType.ORACLE_PENALIZED]: createOraclePenalizedHandler(),
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(),
