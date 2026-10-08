@@ -964,7 +964,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             reward_events: list[BitcoinEvent] = []
             for output_address, amount in io_totals_per_address[BtcTxIODirection.OUTPUT].items():
                 if amount == ZERO or output_address not in self.tracked_accounts_set:
-                    continue  # op_return outputs carry no value
+                    continue
                 reward_events.append(self.create_event(
                     tx=tx,
                     event_type=HistoryEventType.RECEIVE,
