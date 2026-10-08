@@ -13,6 +13,7 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
@@ -27,6 +28,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
     deserialize_fval,
     deserialize_int_from_str,
     deserialize_timestamp_ms_from_intms,
@@ -75,6 +77,7 @@ HYPERLIQUID_MIN_PAGE_CAP: Final = 500
 # The REST weight limit is per minute, so keep retrying rate limited requests for that long.
 HYPERLIQUID_RATE_LIMIT_WINDOW: Final = 60
 USDC_SYMBOL: Final = 'USDC'
+STAKING_SUMMARY_KEYS: Final = ('delegated', 'undelegated', 'totalPendingWithdrawal')
 HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
 
 
@@ -472,6 +475,32 @@ class HyperliquidAPI:
                     )
 
         return usdc_hold
+
+    def query_staking_balance(self, address: ChecksumEvmAddress) -> FVal:
+        """Query the HYPE held in the user's Hyperliquid core staking account.
+
+        This is the HYPE delegated to validators, the HYPE in the staking account that
+        is not delegated and the HYPE queued for withdrawal back to spot. None of it is
+        part of the spot balances.
+
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+
+        May raise:
+            - RemoteError
+        """
+        data = self._query_dict(
+            payload={'type': 'delegatorSummary', 'user': address},
+            query_name='delegatorSummary',
+        )
+        try:
+            return sum(
+                (self._deserialize_amount(data[key], f'delegatorSummary {key}') for key in STAKING_SUMMARY_KEYS),  # noqa: E501
+                start=ZERO,
+            )
+        except (KeyError, DeserializationError) as e:
+            raise RemoteError(
+                f'Hyperliquid delegatorSummary returned malformed response {data}: {e}',
+            ) from e
 
     @staticmethod
     def _entry_strict_unique_id(
@@ -1086,6 +1115,8 @@ class HyperliquidAPI:
                         notes='Hyperliquid internal transfer',
                     ),
                 )
+            elif parsed.entry_type == 'cStakingTransfer':
+                continue  # spot <-> staking transfers come from iter_staking_history_event_batches
             elif parsed.entry_type == 'liquidation':
                 events.append(
                     self._make_history_event(
@@ -1214,6 +1245,195 @@ class HyperliquidAPI:
                 )
 
         return events
+
+    def _query_staking_entries(
+            self,
+            query_type: Literal['delegatorHistory', 'delegatorRewards'],
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list[EntryContext]:
+        """Query a staking history endpoint and return the entries in the given range.
+
+        These endpoints return the full history of the user in one response and ignore
+        `startTime`/`endTime`, so the range is applied here, including the whole end second
+        since the next queried range starts at the second after it. Their entries have no unique
+        identifier: rewards have no hash and finalized withdrawals share the zero hash.
+        The unique id is built from the address, the time and the hash or reward source instead,
+        prefixed so it can't collide with ids of the other history endpoints. Entries that would
+        still share an id get the number of earlier entries with it appended.
+
+        May raise:
+            - RemoteError
+        """
+        start_ms, end_ms = ts_sec_to_ms(start_ts), ts_sec_to_ms(Timestamp(end_ts + 1)) - 1
+        id_occurrences: defaultdict[str, int] = defaultdict(int)
+        contexts: list[EntryContext] = []
+        for entry in self._query_list(
+            payload={'type': query_type, 'user': address},
+            query_name=query_type,
+            wait_for_rate_limit=True,
+        ):
+            try:
+                entry_time = deserialize_timestamp_ms_from_intms(entry['time'])
+            except (DeserializationError, KeyError) as e:
+                log.error('Skipping hyperliquid %s entry %s due to %s', query_type, entry, e)
+                continue
+
+            entry_id = entry.get('hash') or entry.get('source') or self._entry_content_id(entry)
+            unique_id = base_id = f'{query_type}_{address}_{entry_time}_{entry_id}'
+            if (occurrence := id_occurrences[base_id]) != 0:
+                unique_id = f'{base_id}_{occurrence}'
+            id_occurrences[base_id] += 1
+
+            if start_ms <= entry_time <= end_ms:
+                contexts.append(EntryContext(
+                    entry=entry,
+                    timestamp=entry_time,
+                    unique_id=unique_id,
+                    group_identifier=self._entry_group_identifier(unique_id),
+                ))
+
+        return contexts
+
+    def _create_staking_reward_events(
+            self,
+            address: ChecksumEvmAddress,
+            contexts: list[EntryContext],
+    ) -> list[HistoryBaseEntry]:
+        """Convert `delegatorRewards` entries to staking reward events.
+
+        The `commission` source is the commission a validator earns from its delegators.
+        """
+        events: list[HistoryBaseEntry] = []
+        for context in contexts:
+            try:
+                amount = self._deserialize_amount(
+                    value=context.entry['totalAmount'],
+                    name='staking reward',
+                )
+            except (KeyError, DeserializationError) as e:
+                log.error('Failed to parse hyperliquid staking reward %s due to %s', context.entry, e)  # noqa: E501
+                continue
+
+            if amount == ZERO:
+                continue
+
+            reward_name = 'validator commission' if context.entry.get('source') == 'commission' else 'staking reward'  # noqa: E501
+            events.append(self._make_history_event(
+                context=context,
+                sequence_index=0,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=A_HYPE,
+                amount=amount,
+                location_label=address,
+                notes=f'Receive {amount} HYPE as Hyperliquid {reward_name}',
+            ))
+
+        return events
+
+    def _create_staking_history_events(
+            self,
+            address: ChecksumEvmAddress,
+            contexts: list[EntryContext],
+    ) -> list[HistoryBaseEntry]:
+        """Convert `delegatorHistory` entries to rotki events.
+
+        Moving HYPE between spot and the staking account keeps it with the user, so it is
+        a staking deposit/removal (as for Kraken) and not a spend/receive. Delegations,
+        undelegations and withdrawal requests only move HYPE inside the staking account
+        and are informational.
+        """
+        events: list[HistoryBaseEntry] = []
+        for context in contexts:
+            delta = context.entry.get('delta')
+            if not isinstance(delta, dict) or len(delta) != 1:
+                log.error('Skipping hyperliquid staking entry %s with malformed delta', context.entry)  # noqa: E501
+                continue
+
+            (action, details), = delta.items()
+            try:
+                amount = self._deserialize_amount(value=details['amount'], name=f'staking {action}')  # noqa: E501
+                validator = deserialize_evm_address(details['validator']) if action == 'delegate' else None  # noqa: E501
+            except (KeyError, TypeError, DeserializationError) as e:
+                log.error('Failed to parse hyperliquid staking entry %s due to %s', context.entry, e)  # noqa: E501
+                continue
+
+            extra_data = None
+            if action == 'cDeposit':
+                event_type, event_subtype = HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
+                notes = f'Deposit {amount} HYPE to Hyperliquid staking'
+            elif action == 'withdrawal' and details.get('phase') == 'initiated':
+                event_type, event_subtype = HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE  # noqa: E501
+                notes = f'Request withdrawal of {amount} HYPE from Hyperliquid staking'
+            elif action == 'withdrawal' and details.get('phase') == 'finalized':
+                event_type, event_subtype = HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+                notes = f'Withdraw {amount} HYPE from Hyperliquid staking'
+            elif action == 'delegate':
+                event_type, event_subtype = HistoryEventType.INFORMATIONAL, HistoryEventSubType.DELEGATE  # noqa: E501
+                notes = (
+                    f'Undelegate {amount} HYPE from validator {validator}'
+                    if details.get('isUndelegate') is True else
+                    f'Delegate {amount} HYPE to validator {validator}'
+                )
+                extra_data = {'validator': validator}
+            else:
+                log.warning(
+                    'Unknown hyperliquid staking entry %s. Skipping. '
+                    'This may indicate a new staking action that needs handling.',
+                    context.entry,
+                )
+                continue
+
+            events.append(self._make_history_event(
+                context=context,
+                sequence_index=0,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=A_HYPE,
+                amount=amount,
+                location_label=address,
+                notes=notes,
+                extra_data=extra_data,
+            ))
+
+        return events
+
+    def iter_staking_history_event_batches(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Iterator[list[HistoryBaseEntry]]:
+        """Query Hyperliquid core staking history and yield the rotki events of each response.
+
+        Includes transfers between spot and the staking account, delegations,
+        undelegations, withdrawal requests and staking rewards.
+
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+
+        May raise:
+            - RemoteError
+        """
+        yield self._create_staking_history_events(
+            address=address,
+            contexts=self._query_staking_entries(
+                query_type='delegatorHistory',
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ),
+        )
+        yield self._create_staking_reward_events(
+            address=address,
+            contexts=self._query_staking_entries(
+                query_type='delegatorRewards',
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ),
+        )
 
     def iter_history_event_batches(
             self,

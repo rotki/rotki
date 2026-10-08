@@ -1,12 +1,15 @@
 import logging
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Protocol
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants.assets import A_HYPE
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -28,6 +31,7 @@ from .transactions import HyperliquidTransactions
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -38,9 +42,20 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX: Final = 'hyperliquid_core_history'
+HYPERLIQUID_CORE_STAKING_RANGE_PREFIX: Final = 'hyperliquid_core_staking'
 HYPERLIQUID_EVM_TOKEN_PREFIX: Final = 'eip155:999/erc20:'
 STHYPE_IDENTIFIER: Final = 'eip155:999/erc20:0xfFaa4a3D97fE9107Cef8a3F48c069F577Ff76cC1'
 WSTHYPE_IDENTIFIER: Final = 'eip155:999/erc20:0x94e8396e0869c9F2200760aF0621aFd240E1CF38'
+
+
+class CoreHistoryQuery(Protocol):
+    def __call__(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Iterator[list[HistoryBaseEntry]]:
+        ...
 
 
 class HyperliquidManager(EvmManager):
@@ -77,7 +92,7 @@ class HyperliquidManager(EvmManager):
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
-        """Query EVM on-chain balances plus Hyperliquid core spot/perp balances."""
+        """Query EVM on-chain balances plus Hyperliquid core spot/perp/staking balances."""
         balances = defaultdict(BalanceSheet, super().query_balances(addresses))
         for address in addresses:
             if (
@@ -94,6 +109,12 @@ class HyperliquidManager(EvmManager):
         api = HyperliquidAPI()
         main_currency = CachedSettings().main_currency
         for address in addresses:
+            self._add_core_staking_balance(
+                api=api,
+                address=address,
+                main_currency=main_currency,
+                balances=balances,
+            )
             try:
                 proprietary_balances = api.query_balances(address=address)
             except RemoteError as e:
@@ -125,6 +146,31 @@ class HyperliquidManager(EvmManager):
                 )
 
         return balances
+
+    @staticmethod
+    def _add_core_staking_balance(
+            api: HyperliquidAPI,
+            address: ChecksumEvmAddress,
+            main_currency: Asset,
+            balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
+    ) -> None:
+        """Add the HYPE in the Hyperliquid core staking account of the address."""
+        try:
+            if (staked_amount := api.query_staking_balance(address=address)) == ZERO:
+                return
+        except RemoteError as e:
+            log.error('Failed to query Hyperliquid core staking balance for %s: %s', address, e)
+            return
+
+        try:
+            price = Inquirer.find_price(from_asset=A_HYPE, to_asset=main_currency)
+        except RemoteError:
+            price = ZERO_PRICE
+
+        balances[address].assets[A_HYPE][CPT_HYPER] += Balance(
+            amount=staked_amount,
+            value=staked_amount * price,
+        )
 
     def _query_legacy_funding_events(self) -> Counter[tuple[int, str | None]]:
         """Count the customized funding events under the zero hash by (timestamp, address).
@@ -212,6 +258,21 @@ class HyperliquidManager(EvmManager):
 
         return inserted
 
+    def _core_history_queries(
+            self,
+            api: HyperliquidAPI,
+    ) -> tuple[tuple[str, str, CoreHistoryQuery], ...]:
+        """Return the Hyperliquid core history queries with their query range prefix and name.
+
+        Staking history has its own query range so that it is queried for the whole
+        history of addresses whose core history range was already queried before
+        staking history existed.
+        """
+        return (
+            (HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX, 'history', api.iter_history_event_batches),
+            (HYPERLIQUID_CORE_STAKING_RANGE_PREFIX, 'staking history', api.iter_staking_history_event_batches),  # noqa: E501
+        )
+
     def query_proprietary_history(
             self,
             addresses: Sequence[ChecksumEvmAddress],
@@ -228,47 +289,52 @@ class HyperliquidManager(EvmManager):
         history_db = DBHistoryEvents(self.node_inquirer.database)
 
         for address in addresses:
-            location_string = f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
-            with self.node_inquirer.database.conn.read_ctx() as cursor:
-                ranges_to_query = ranges.get_location_query_ranges(
-                    cursor=cursor,
-                    location_string=location_string,
-                    start_ts=from_timestamp,
-                    end_ts=to_timestamp,
-                )
-
-            for range_start, range_end in ranges_to_query:
-                try:
-                    self._save_history_batches(
-                        history_db=history_db,
-                        batches=api.iter_history_event_batches(
-                            address=address,
-                            start_ts=range_start,
-                            end_ts=range_end,
-                        ),
-                    )
-                except RemoteError as e:
-                    log.error(
-                        f'Failed to query hyperliquid history for {address} '
-                        f'from {range_start} to {range_end} due to {e}',
-                    )
-                    self.transactions.msg_aggregator.add_error(
-                        f'Failed to query Hyperliquid history for {address}. '
-                        'Will retry in a future sync.',
-                        classification=NetworkFailure(
-                            record=UserMessageRecord.TRANSACTION,
-                            error=str(e),
-                        ),
-                        subject=Location.HYPERLIQUID,
-                    )
-                    continue
-
-                with self.node_inquirer.database.user_write() as write_cursor:
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
+            for range_prefix, history_name, query_batches in self._core_history_queries(api):
+                location_string = f'{range_prefix}_{address}'
+                with self.node_inquirer.database.conn.read_ctx() as cursor:
+                    ranges_to_query = ranges.get_location_query_ranges(
+                        cursor=cursor,
                         location_string=location_string,
-                        queried_ranges=[(range_start, range_end)],
+                        start_ts=from_timestamp,
+                        end_ts=to_timestamp,
                     )
+
+                for range_start, range_end in ranges_to_query:
+                    try:
+                        self._save_history_batches(
+                            history_db=history_db,
+                            batches=query_batches(
+                                address=address,
+                                start_ts=range_start,
+                                end_ts=range_end,
+                            ),
+                        )
+                    except RemoteError as e:
+                        log.error(
+                            'Failed to query hyperliquid %s for %s from %s to %s due to %s',
+                            history_name,
+                            address,
+                            range_start,
+                            range_end,
+                            e,
+                        )
+                        self.transactions.msg_aggregator.add_error(
+                            f'Failed to query Hyperliquid {history_name} for {address}. '
+                            'Will retry in a future sync.',
+                            classification=NetworkFailure(
+                                record=UserMessageRecord.TRANSACTION,
+                                error=str(e),
+                            ),
+                            subject=Location.HYPERLIQUID,
+                        )
+                        continue
+
+                    with self.node_inquirer.database.user_write() as write_cursor:
+                        ranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(range_start, range_end)],
+                        )
 
     def refetch_proprietary_history(
             self,
@@ -283,13 +349,12 @@ class HyperliquidManager(EvmManager):
         May raise:
         - RemoteError
         """
-        return self._save_history_batches(
-            history_db=DBHistoryEvents(self.node_inquirer.database),
-            batches=HyperliquidAPI().iter_history_event_batches(
-                address=address,
-                start_ts=start_ts,
-                end_ts=end_ts,
-            ),
+        history_db = DBHistoryEvents(self.node_inquirer.database)
+        return sum(
+            self._save_history_batches(
+                history_db=history_db,
+                batches=query_batches(address=address, start_ts=start_ts, end_ts=end_ts),
+            ) for _, _, query_batches in self._core_history_queries(HyperliquidAPI())
         )
 
     def query_transactions(
