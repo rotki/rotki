@@ -194,6 +194,24 @@ def test_repeats_of_one_problem_are_held_once_with_a_count() -> None:
     assert consume_errors(msg_aggregator) == ['kucoin is down', 'kucoin is down']
 
 
+def test_missing_prices_are_held_once_per_asset() -> None:
+    """The prices one asset lacks at several times are one held entry, and each asset
+    keeps its own, so a reconnecting client still learns every asset that needs a price."""
+    msg_aggregator = MessagesAggregator()
+    for asset, timestamp in (('ETH', 1), ('ETH', 2), ('BTC', 1)):
+        msg_aggregator.add_error(
+            f'Could not find a price for {asset} at {timestamp}',
+            classification=MissingPrice(asset=asset, timestamp=timestamp),
+            subject=Location.KRAKEN,
+        )
+
+    messages, _ = msg_aggregator.consume_held()
+    assert [(message['data']['fields']['asset'], message['count']) for message in messages] == [
+        ('ETH', 2),
+        ('BTC', 1),
+    ]
+
+
 def test_state_keeps_only_the_latest_message_per_key() -> None:
     msg_aggregator = MessagesAggregator()
     for blockchain in ('eth', 'optimism', 'eth'):
@@ -436,7 +454,8 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
     # unknown assets stay per asset, so each one that needs adding stays visible
     (UnknownAssetSeen(identifier='FOO'), None, ['error', 'unknown_asset', None, 'FOO']),
     (LocalDbProblem(entry=UserMessageEntry.TAG), None, ['error', 'local_db', None, 'tag']),
-    (MissingPrice(asset='ETH', timestamp=1), Location.KRAKEN, ['error', 'price', 'kraken']),
+    # missing prices stay per asset, so each one that needs a price stays visible
+    (MissingPrice(asset='ETH', timestamp=1), Location.KRAKEN, ['error', 'price', 'kraken', 'ETH']),
     (Unsupported(feature=UserMessageFeature.ASSET), Location.KRAKEN, ['error', 'unsupported', 'kraken', 'asset']),  # noqa: E501
     (Internal(operation=UserMessageOperation.BACKGROUND_TASK), None, ['error', 'internal', None, 'background_task']),  # noqa: E501
 ])
@@ -446,7 +465,7 @@ def test_each_family_declares_its_identity(
         group: list[str | None],
 ) -> None:
     """`group` is the one definition of which messages are one problem: the free-text
-    `error` and asset/timestamp details never take part."""
+    `error` and a missing price's timestamp never take part."""
     msg_aggregator = MessagesAggregator()
     msg_aggregator.add_error('a sentence', classification=classification, subject=subject)
     messages, _ = msg_aggregator.consume_held()
