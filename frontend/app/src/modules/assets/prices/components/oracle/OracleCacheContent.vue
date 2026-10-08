@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
 import OracleCacheFormDialog from '@/modules/assets/prices/components/oracle/OracleCacheFormDialog.vue';
 import OracleCacheTable from '@/modules/assets/prices/components/oracle/OracleCacheTable.vue';
@@ -79,7 +79,7 @@ async function loadCaches(): Promise<void> {
     set(cacheEntries, await getPriceCache(get(cacheSource)));
   }
   catch (error: unknown) {
-    notify({ message: getErrorMessage(error), priority: Priority.NORMAL, severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
+    notify({ kind: NotificationKind.FAILURE, message: getErrorMessage(error), severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
     set(cacheEntries, []);
   }
   finally {
@@ -119,7 +119,7 @@ async function clearCache(entry: OracleCacheMeta): Promise<void> {
         fromAsset: getAssetField(entry.fromAsset, 'symbol'),
         toAsset: getAssetField(entry.toAsset, 'symbol'),
       }),
-      priority: Priority.HIGH,
+      kind: NotificationKind.RESULT,
       severity: Severity.ERROR,
       title: t('oracle_prices.cache.notification.title'),
     });

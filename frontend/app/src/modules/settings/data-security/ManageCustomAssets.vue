@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { assert, Priority, Severity } from '@rotki/common';
+import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -70,13 +70,13 @@ function exportNotification(outcome: Awaited<ReturnType<typeof exportCustomAsset
 
   if (!outcome.ok) {
     return isActionable(outcome.error)
-      ? { message: t('manage_user_assets.export.error', { message: outcome.error.message }), severity: Severity.ERROR, title }
+      ? { kind: NotificationKind.RESULT, message: t('manage_user_assets.export.error', { message: outcome.error.message }), severity: Severity.ERROR, title }
       : undefined;
   }
 
   const { directory, filePath } = outcome.value;
   return directory
-    ? { message: t('manage_user_assets.export.success', { filePath }), severity: Severity.INFO, title }
+    ? { kind: NotificationKind.RESULT, message: t('manage_user_assets.export.success', { filePath }), severity: Severity.INFO, title }
     : undefined;
 }
 
@@ -86,7 +86,7 @@ async function exportZip(): Promise<void> {
 
   const notification = exportNotification(await exportCustomAssets());
   if (notification)
-    notify({ ...notification, priority: Priority.HIGH });
+    notify(notification);
 }
 </script>
 

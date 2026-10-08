@@ -1,4 +1,4 @@
-import { type NotificationAction, NotificationCategory, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationAction, type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { NOTIFICATION_MAX_HEIGHT, useNotificationCard } from './use-notification-card';
@@ -17,11 +17,11 @@ vi.mock('@vueuse/core', async () => {
 
 function notification(overrides: Partial<NotificationData> = {}): NotificationData {
   return {
-    category: NotificationCategory.DEFAULT,
     date: new Date('2026-03-04T05:06:07Z'),
     display: true,
     duration: 5000,
     id: 42,
+    kind: NotificationKind.RESULT,
     message: 'the message',
     read: false,
     severity: Severity.INFO,
@@ -79,7 +79,6 @@ describe('modules/core/notifications/useNotificationCard', () => {
       [Severity.ERROR, 'lu-circle-alert', 'bg-rui-error-soft text-rui-error'],
       [Severity.INFO, 'lu-circle-alert', 'bg-rui-info-soft text-rui-info'],
       [Severity.WARNING, 'lu-siren', 'bg-rui-warning-soft text-rui-warning'],
-      [Severity.REMINDER, 'lu-alarm-clock', 'bg-rui-secondary-soft text-rui-secondary'],
     ])('should pick the icon and circle for %s', (severity, expectedIcon, expectedCircle) => {
       const { circleBgClass, icon } = card(notification({ severity }));
 
@@ -92,7 +91,6 @@ describe('modules/core/notifications/useNotificationCard', () => {
       [Severity.ERROR, 'error', 'border-rui-error-border', 'to-rui-surface'],
       [Severity.INFO, 'info', 'border-rui-info-border', 'to-rui-surface'],
       [Severity.WARNING, 'warning', 'border-rui-warning-border', 'to-rui-surface'],
-      [Severity.REMINDER, 'reminder', 'border-rui-secondary-border', 'to-rui-surface'],
     ])('should derive the colour classes for %s', (severity, expectedColor, expectedBg, expectedButton) => {
       const { color, colorBgClass, expandButtonClass } = card(notification({ severity }));
 
@@ -101,16 +99,13 @@ describe('modules/core/notifications/useNotificationCard', () => {
       expect(get(expandButtonClass)).toBe(expectedButton);
     });
 
-    it('should fall back when the severity is not one it knows', () => {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- exercising the defensive default arm
-      const unknown = 'unknown' as Severity;
+    it('should style a reminder as one whatever its severity', () => {
+      const { circleBgClass, color, colorBgClass, expandButtonClass, icon } = card(notification({ kind: NotificationKind.REMINDER, severity: Severity.ERROR }));
 
-      const { circleBgClass, color, colorBgClass, expandButtonClass, icon } = card(notification({ severity: unknown }));
-
-      expect(get(icon)).toBe('lu-circle-alert');
-      expect(get(circleBgClass)).toBe('bg-rui-success-soft text-rui-success');
-      expect(get(color)).toBe('');
-      expect(get(colorBgClass)).toBe('');
+      expect(get(icon)).toBe('lu-alarm-clock');
+      expect(get(circleBgClass)).toBe('bg-rui-secondary-soft text-rui-secondary');
+      expect(get(color)).toBe('reminder');
+      expect(get(colorBgClass)).toBe('border-rui-secondary-border');
       expect(get(expandButtonClass)).toBe('to-rui-surface');
     });
 

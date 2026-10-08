@@ -1,4 +1,3 @@
-import { Priority } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -6,7 +5,7 @@ import { useStatisticsDataFetching } from './use-statistics-data-fetching';
 import '@test/i18n';
 
 const mockQueryNetValueData = vi.fn();
-const mockNotifyError = vi.fn();
+const mockLoggerError = vi.fn();
 
 vi.mock('@/modules/statistics/api/use-statistics-api', () => ({
   useStatisticsApi: vi.fn(() => ({
@@ -14,11 +13,8 @@ vi.mock('@/modules/statistics/api/use-statistics-api', () => ({
   })),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  getErrorMessage: (error: unknown): string => (error instanceof Error ? error.message : String(error)),
-  useNotifications: vi.fn(() => ({
-    notifyError: mockNotifyError,
-  })),
+vi.mock('@/modules/core/common/logging/logging', () => ({
+  logger: { error: (...args: unknown[]): void => mockLoggerError(...args) },
 }));
 
 describe('useStatisticsDataFetching', () => {
@@ -36,30 +32,18 @@ describe('useStatisticsDataFetching', () => {
       await fetchNetValue();
 
       expect(mockQueryNetValueData).toHaveBeenCalledOnce();
-      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(get(useStatisticsStore().netValueError)).toBeUndefined();
     });
 
-    it('should classify the error below the popup threshold', async () => {
-      mockQueryNetValueData.mockRejectedValue(new Error('Network error'));
-
-      const { fetchNetValue } = useStatisticsDataFetching();
-      await fetchNetValue();
-
-      expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mockNotifyError).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('Network error'),
-        { priority: Priority.NORMAL },
-      );
-    });
-
-    it('should record the reason on the store, since the notification never pops', async () => {
-      mockQueryNetValueData.mockRejectedValue(new Error('Network error'));
+    it('should record the reason on the store for the chart to show, and log it', async () => {
+      const error = new Error('Network error');
+      mockQueryNetValueData.mockRejectedValue(error);
 
       const { fetchNetValue } = useStatisticsDataFetching();
       await fetchNetValue();
 
       expect(get(useStatisticsStore().netValueError)).toBe('Network error');
+      expect(mockLoggerError).toHaveBeenCalledWith(error);
     });
 
     it('should clear a previous reason once a read succeeds', async () => {
@@ -80,7 +64,7 @@ describe('useStatisticsDataFetching', () => {
       await fetchNetValue();
 
       expect(get(useStatisticsStore().netValueError)).toBeUndefined();
-      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(mockLoggerError).not.toHaveBeenCalled();
     });
   });
 });

@@ -390,14 +390,6 @@
         }
       }
     },
-    "statistics": {
-      "net_value": {
-        "error": {
-          "message": "Échec : {message}",
-          "title": "Récupération des données de valeur nette"
-        }
-      }
-    },
     "unignore": {
       "error": {
         "description": "Échec de la désignorisation des actions sélectionnées : {error}",

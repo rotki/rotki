@@ -1,6 +1,6 @@
 import type { MessageHandler } from '../interfaces';
 import type { PremiumStatusUpdateData } from '../types/shared-types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { readPremiumStatus } from '@/modules/premium/core/premium-status';
 import { usePremium } from '@/modules/premium/use-premium';
@@ -36,9 +36,8 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
         return null;
 
       return {
-        category: NotificationCategory.DEFAULT,
+        kind: NotificationKind.ANNOUNCEMENT,
         message: t('notification_messages.premium.active.message'),
-        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('notification_messages.premium.active.title'),
       };

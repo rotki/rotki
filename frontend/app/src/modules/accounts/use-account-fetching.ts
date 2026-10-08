@@ -1,4 +1,4 @@
-import { Blockchain, Priority } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { convertBtcAccounts } from '@/modules/accounts/core/bitcoin-accounts';
 import { createAccount } from '@/modules/accounts/create-account';
@@ -18,7 +18,7 @@ export function useAccountFetching(): UseAccountFetchingReturn {
   const { queryAccounts, queryBtcAccounts } = useBlockchainAccountsApi();
   const { fetchEthStakingValidators } = useEthStaking();
   const { markFetchFailed, revisionOf, updateAccounts } = useBlockchainAccountsStore();
-  const { notifyError } = useNotifications();
+  const { notifyFailure } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   /**
@@ -38,13 +38,12 @@ export function useAccountFetching(): UseAccountFetchingReturn {
       return;
 
     logger.error(error);
-    notifyError(
+    notifyFailure(
       t('actions.get_accounts.error.title'),
       t('actions.get_accounts.error.description', {
         blockchain: chain.toUpperCase(),
         message: getErrorMessage(error),
       }),
-      { priority: Priority.NORMAL },
     );
   };
 

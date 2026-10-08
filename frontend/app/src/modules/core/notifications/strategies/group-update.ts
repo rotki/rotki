@@ -1,6 +1,6 @@
 import type { UseNotificationCooldownReturn } from '../use-notification-cooldown';
 import type { NotificationStrategy } from './types';
-import { DEFAULT_PRIORITY, displaysFor } from '@/modules/core/notifications/notification-display-policy';
+import { displaysFor } from '@/modules/core/notifications/notification-display-policy';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 /** The later of a row's date and an update's, where an undated update happened now. */
@@ -46,7 +46,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
 
       const existing = notifications[existingIndex];
       let date = laterDate(existing.date, payload.date);
-      let display = payload.display ?? displaysFor(payload.priority);
+      let display = payload.display ?? displaysFor(payload.kind);
 
       if (suppressed) {
         date = existing.date;
@@ -60,8 +60,8 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
         display,
         extras: payload.extras ?? existing.extras,
         groupCount: payload.groupCount,
+        kind: payload.kind,
         message: payload.message,
-        priority: payload.priority ?? DEFAULT_PRIORITY,
         severity: payload.severity,
         title: payload.title,
       };

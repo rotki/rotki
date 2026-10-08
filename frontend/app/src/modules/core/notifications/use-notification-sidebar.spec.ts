@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
 import { setActivePinia, storeToRefs } from 'pinia';
@@ -36,11 +36,11 @@ vi.mock('@/modules/core/notifications/use-silent-notifications', () => ({
 
 function notification(overrides: Partial<NotificationData> = {}): NotificationData {
   return {
-    category: NotificationCategory.DEFAULT,
     date: new Date('2026-03-04T05:06:07Z'),
     display: true,
     duration: 5000,
     id: 1,
+    kind: NotificationKind.RESULT,
     message: 'the message',
     read: false,
     severity: Severity.INFO,
@@ -107,7 +107,7 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
 
   describe('filtering by tab', () => {
     const error = notification({ id: 1, severity: Severity.ERROR });
-    const reminder = notification({ id: 2, severity: Severity.REMINDER });
+    const reminder = notification({ id: 2, kind: NotificationKind.REMINDER });
     const info = notification({ id: 3, severity: Severity.INFO });
 
     beforeEach(() => {

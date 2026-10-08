@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { type NotificationData, Severity } from '@rotki/common';
+import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
@@ -22,7 +22,7 @@ export const TAB_ORDER: TabCategory[] = [
 
 const TAB_FILTERS: Partial<Record<TabCategory, (item: NotificationData) => boolean>> = {
   [TabCategory.ERROR]: (item: NotificationData) => item.severity === Severity.ERROR,
-  [TabCategory.REMINDER]: (item: NotificationData) => item.severity === Severity.REMINDER,
+  [TabCategory.REMINDER]: (item: NotificationData) => item.kind === NotificationKind.REMINDER,
 };
 
 interface UseNotificationSidebarOptions {
@@ -84,7 +84,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const initialAppear = shallowRef<boolean>(false);
 
   const notificationStore = useNotificationsStore();
-  const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
+  const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
   const { markAllRead, remove } = notificationStore;
   const { show } = useConfirmStore();
   const { silent, toggle: toggleSilent } = useSilentNotifications();

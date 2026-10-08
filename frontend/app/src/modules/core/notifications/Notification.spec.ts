@@ -1,15 +1,15 @@
-import { type NotificationAction, NotificationCategory, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationAction, type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import Notification from '@/modules/core/notifications/Notification.vue';
 
 function notification(overrides: Partial<NotificationData> = {}): NotificationData {
   return {
-    category: NotificationCategory.DEFAULT,
     date: new Date('2026-03-04T05:06:07Z'),
     display: true,
     duration: 5000,
     id: 42,
+    kind: NotificationKind.RESULT,
     message: 'the message',
     read: false,
     severity: Severity.INFO,

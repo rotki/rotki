@@ -1,7 +1,6 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
-import { Priority } from '@rotki/common';
 import { fromRequest, isRequestFailure, type RequestError, type RequestFailure } from '@/modules/core/api/request-result';
 import { api } from '@/modules/core/api/rotki-api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
@@ -41,7 +40,7 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
   cancelTag?: string,
 ): UseTableDataReturn<TItem> {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
+  const { notifyFailure } = useNotifications();
 
   const collection = shallowRef<Collection<TItem>>(defaultCollectionState<TItem>());
   const isLoading = shallowRef<boolean>(false);
@@ -54,10 +53,9 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
 
     logger.error(failure.cause);
     if (status !== undefined && status >= 400) {
-      notifyError(
+      notifyFailure(
         t('error.generic.title'),
         t('error.generic.message', { code: status.toString(), message, path }),
-        { priority: Priority.NORMAL },
       );
     }
   }

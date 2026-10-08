@@ -1,4 +1,4 @@
-import { NotificationGroup, Priority, Severity } from '@rotki/common';
+import { NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { mockTranslate } from '@test/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
@@ -9,7 +9,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
 
   it('should skip non-beaconchain messages', () => {
     const result = strategy.process(
-      { message: 'some other error', severity: Severity.WARNING, title: 'test' },
+      { message: 'some other error', kind: NotificationKind.BACKEND_PROBLEM, severity: Severity.WARNING, title: 'test' },
       { getNextId: () => 1, notifications: [] },
     );
 
@@ -20,6 +20,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'Endpoint 1',
       },
@@ -42,6 +43,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old message',
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'grouped',
       }),
@@ -50,6 +52,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'Endpoint 2',
       },
@@ -63,13 +66,13 @@ describe('createBeaconchainRateLimitStrategy', () => {
     });
   });
 
-  it('should refresh the row for a new endpoint without popping, since BULK never interrupts', () => {
+  it('should refresh the row for a new endpoint without popping, since a backend problem never interrupts', () => {
     const shown = createNotification(1, {
       extras: { endpoints: ['Endpoint 1'], until: '2025-01-15T12:00:00Z' },
       group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
       groupCount: 1,
       message: 'old message',
-      priority: Priority.BULK,
+      kind: NotificationKind.BACKEND_PROBLEM,
       severity: Severity.WARNING,
       title: 'grouped',
     });
@@ -77,7 +80,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
-        priority: Priority.BULK,
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'Endpoint 2',
       },
@@ -95,6 +98,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old',
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'grouped',
       }),
@@ -103,6 +107,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
+        kind: NotificationKind.BACKEND_PROBLEM,
         severity: Severity.WARNING,
         title: 'Endpoint 1',
       },

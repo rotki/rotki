@@ -13,6 +13,7 @@ const deleteHistoricalPrice = vi.fn<() => Promise<boolean>>(async () => true);
 const fetchHistoricalPrices = vi.fn<() => Promise<HistoricalPrice[]>>(async () => []);
 const resetHistoricalPricesData = vi.fn();
 const notifyError = vi.fn();
+const notifyFailure = vi.fn();
 const showErrorMessage = vi.fn();
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
@@ -29,7 +30,7 @@ vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError, showErrorMessage }),
+  useNotifications: (): Record<string, unknown> => ({ notifyError, notifyFailure, showErrorMessage }),
 }));
 
 const wrappers: VueWrapper[] = [];
@@ -156,7 +157,8 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       fetchHistoricalPrices.mockRejectedValue(new Error('offline'));
       await refresh();
 
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(notifyFailure).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(get(items)).toEqual(rows);
     });
   });

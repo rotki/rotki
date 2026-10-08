@@ -22,10 +22,10 @@ vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   })),
 }));
 
-const { mockNotifyError } = vi.hoisted(() => ({ mockNotifyError: vi.fn() }));
+const { mockNotifyError, mockNotifyFailure } = vi.hoisted(() => ({ mockNotifyError: vi.fn(), mockNotifyFailure: vi.fn() }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
-  mockUseNotifications({ notifyError: mockNotifyError }));
+  mockUseNotifications({ notifyError: mockNotifyError, notifyFailure: mockNotifyFailure }));
 
 describe('useWhitelistedAssetOperations', () => {
   beforeEach(() => {
@@ -50,7 +50,8 @@ describe('useWhitelistedAssetOperations', () => {
       const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
       await fetchWhitelistedAssets();
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyFailure).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 

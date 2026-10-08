@@ -1,5 +1,5 @@
 import type { CsvImportResult } from '../types/status-types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { describe, expect, it } from 'vitest';
 import { createCsvImportResultHandler } from '@/modules/core/messaging/handlers/csv-import-result';
@@ -21,8 +21,7 @@ describe('createCsvImportResultHandler', () => {
     const notification = await handler.handle(result({ processed: 10, total: 10 }));
 
     expect(notification.severity).toBe(Severity.INFO);
-    expect(notification.category).toBe(NotificationCategory.DEFAULT);
-    expect(notification.priority).toBe(Priority.HIGH);
+    expect(notification.kind).toBe(NotificationKind.RESULT);
     expect(createNotification(1, notification).display).toBe(true);
   });
 

@@ -4,15 +4,29 @@ export enum Severity {
   WARNING = 'warning',
   ERROR = 'error',
   INFO = 'info',
-  REMINDER = 'reminder',
 }
 
-export enum Priority {
-  BULK,
-  NORMAL,
-  HIGH,
-  ACTION,
-}
+/**
+ * What a notification is, which decides whether it interrupts and where the drawer files it.
+ *
+ * @remarks
+ * A condition, something that stays true until the user resolves it, is never a notification:
+ * it is raised in the action center instead.
+ */
+export const NotificationKind = {
+  /** News with an action: new tokens detected, premium turned active. Pops. */
+  ANNOUNCEMENT: 'announcement',
+  /** A classified backend error or warning. Recorded, never pops. */
+  BACKEND_PROBLEM: 'backend_problem',
+  /** A background request that failed with nowhere else to show it. Recorded, never pops. */
+  FAILURE: 'failure',
+  /** A calendar reminder, acknowledged by its action. Pops. */
+  REMINDER: 'reminder',
+  /** The outcome of something the user started that has no other surface. Pops. */
+  RESULT: 'result',
+} as const;
+
+export type NotificationKind = (typeof NotificationKind)[keyof typeof NotificationKind];
 
 export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
@@ -42,14 +56,6 @@ export function notificationGroupOf(key: string): NotificationGroup | undefined 
   return Object.values(NotificationGroup).find(value => value === group);
 }
 
-export const NotificationCategory = {
-  ADDRESS_MIGRATION: 'address_migration',
-  CALENDAR_REMINDER: 'calendar_reminder',
-  DEFAULT: 'default',
-} as const;
-
-export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];
-
 export interface Message {
   readonly title: string;
   readonly description: string;
@@ -68,21 +74,20 @@ interface NotificationBase {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;
-  readonly category: NotificationCategory;
+  readonly kind: NotificationKind;
   readonly action?: NotificationAction | NotificationAction[];
   readonly group?: NotificationGroupKey;
   readonly groupCount?: number;
-  readonly priority?: Priority;
   readonly extras?: Record<string, unknown>;
 }
 
 export interface NotificationPayload extends NotificationBase {
   /**
-   * Silences a notification whose priority would otherwise pop it.
+   * Silences a notification whose kind would otherwise pop it.
    *
    * @remarks
    * Suppression only, which is why the type is `false` rather than `boolean`. Whether a
-   * notification interrupts is the dispatcher's decision, derived from `priority`, so a caller
+   * notification interrupts is the dispatcher's decision, derived from `kind`, so a caller
    * cannot promote itself into a popup by asking. It can still opt out, because a condition that
    * already has a home elsewhere in the UI should not also interrupt.
    */
@@ -112,7 +117,7 @@ export interface NotificationData extends NotificationBase {
  * What a caller hands the dispatcher.
  *
  * @remarks
- * `severity` is required: a failure posted without one used to fall back to INFO and was filed
- * as news, so the caller has to say what it is reporting.
+ * `severity` and `kind` are required: a failure posted without a severity used to fall back to
+ * INFO and was filed as news, so the caller has to say what it is reporting and what it is.
  */
-export type Notification = SemiPartial<NotificationPayload, 'title' | 'message' | 'severity'>;
+export type Notification = SemiPartial<NotificationPayload, 'title' | 'message' | 'severity' | 'kind'>;

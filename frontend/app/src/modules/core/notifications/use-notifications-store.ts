@@ -1,4 +1,4 @@
-import { type NotificationData, Priority } from '@rotki/common';
+import type { NotificationData } from '@rotki/common';
 import { orderBy } from 'es-toolkit';
 import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 
@@ -19,10 +19,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     return nextId++;
   }
 
-  const prioritized = computed<NotificationData[]>(() => {
-    const byDate = orderBy(get(data), ['date'], ['desc']);
-    return orderBy(byDate, [(n: NotificationData): Priority => n.priority ?? Priority.NORMAL], ['desc']);
-  });
+  const newestFirst = computed<NotificationData[]>(() => orderBy(get(data), ['date'], ['desc']));
 
   const count = computed<number>(() => get(data).length);
 
@@ -35,7 +32,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
    */
   const hasUnread = computed<boolean>(() => get(data).some(notification => !notification.read));
 
-  const queue = computed<NotificationData[]>(() => get(prioritized).filter(notification => notification.display));
+  const queue = computed<NotificationData[]>(() => get(newestFirst).filter(notification => notification.display));
 
   function add(payload: NotificationData[]): void {
     set(data, take([...get(data), ...payload]));
@@ -114,7 +111,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     hasUnread,
     markAllRead,
     messageOverflow,
-    prioritized,
+    newestFirst,
     queue,
     remove,
     removeMatching,

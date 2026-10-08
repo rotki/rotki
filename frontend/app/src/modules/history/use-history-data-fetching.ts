@@ -1,4 +1,3 @@
-import { Priority } from '@rotki/common';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -45,7 +44,7 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
   const store = useHistoryStore();
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi, fetchLocationLabels: fetchLocationLabelsApi } = useHistoryApi();
   const { getTransactionStatusSummary } = useHistoryEventsApi();
-  const { notifyError } = useNotifications();
+  const { notifyFailure } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   async function readAssociatedLocations(): Promise<void> {
@@ -57,10 +56,9 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
         return;
 
       logger.error(error);
-      notifyError(
+      notifyFailure(
         t('actions.history.fetch_associated_locations.error.title'),
         t('actions.history.fetch_associated_locations.error.message', { message: getErrorMessage(error) }),
-        { priority: Priority.NORMAL },
       );
     }
   }
@@ -74,10 +72,9 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
         return;
 
       logger.error(error);
-      notifyError(
+      notifyFailure(
         t('actions.history.fetch_location_labels.error.title'),
         t('actions.history.fetch_location_labels.error.message', { message: getErrorMessage(error) }),
-        { priority: Priority.NORMAL },
       );
     }
   }

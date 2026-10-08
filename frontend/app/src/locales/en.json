@@ -977,14 +977,6 @@
         }
       }
     },
-    "statistics": {
-      "net_value": {
-        "error": {
-          "message": "Failed: {message}",
-          "title": "Retrieving net value data"
-        }
-      }
-    },
     "transactions_redecode": {
       "error": {
         "not_decoded": "The transactions could not be pulled or decoded"

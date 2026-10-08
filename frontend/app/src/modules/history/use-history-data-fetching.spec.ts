@@ -1,6 +1,5 @@
 import type { LocationLabel } from '@/modules/core/common/location';
 import type { TransactionStatus, useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { Priority } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/modules/history/use-history-store';
@@ -9,7 +8,7 @@ import '@test/i18n';
 const mockFetchAssociatedLocationsApi = vi.fn();
 const mockFetchLocationLabelsApi = vi.fn();
 const mockGetTransactionStatusSummary = vi.fn();
-const mockNotifyError = vi.fn();
+const mockNotifyFailure = vi.fn();
 const mockLoggerError = vi.fn();
 const mockGetErrorMessage = vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e)));
 
@@ -27,8 +26,8 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn((): { notifyError: typeof mockNotifyError } => ({
-    notifyError: mockNotifyError,
+  useNotifications: vi.fn((): { notifyFailure: typeof mockNotifyFailure } => ({
+    notifyFailure: mockNotifyFailure,
   })),
 }));
 
@@ -74,11 +73,10 @@ describe('useHistoryDataFetching', () => {
 
       expect(mockLoggerError).toHaveBeenCalledWith(error);
       expect(mockGetErrorMessage).toHaveBeenCalledWith(error);
-      expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mockNotifyError).toHaveBeenCalledWith(
+      expect(mockNotifyFailure).toHaveBeenCalledOnce();
+      expect(mockNotifyFailure).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
-        { priority: Priority.NORMAL },
       );
     });
   });
@@ -110,11 +108,10 @@ describe('useHistoryDataFetching', () => {
 
       expect(mockLoggerError).toHaveBeenCalledWith(error);
       expect(mockGetErrorMessage).toHaveBeenCalledWith(error);
-      expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mockNotifyError).toHaveBeenCalledWith(
+      expect(mockNotifyFailure).toHaveBeenCalledOnce();
+      expect(mockNotifyFailure).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
-        { priority: Priority.NORMAL },
       );
     });
   });
@@ -148,7 +145,7 @@ describe('useHistoryDataFetching', () => {
       await fetchTransactionStatusSummary();
 
       expect(mockLoggerError).toHaveBeenCalledWith(error);
-      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(mockNotifyFailure).not.toHaveBeenCalled();
     });
   });
 

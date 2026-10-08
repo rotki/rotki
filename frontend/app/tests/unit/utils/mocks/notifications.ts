@@ -3,6 +3,7 @@ import { type Mock, vi } from 'vitest';
 export interface NotificationSpies {
   notify?: Mock;
   notifyError?: Mock;
+  notifyFailure?: Mock;
   notifyWarning?: Mock;
   notifyInfo?: Mock;
   removeMatching?: Mock;
@@ -29,6 +30,7 @@ export function mockUseNotifications(spies: NotificationSpies = {}): { useNotifi
   const resolved = {
     notify: spies.notify ?? vi.fn(),
     notifyError: spies.notifyError ?? vi.fn(),
+    notifyFailure: spies.notifyFailure ?? vi.fn(),
     notifyWarning: spies.notifyWarning ?? vi.fn(),
     notifyInfo: spies.notifyInfo ?? vi.fn(),
     removeMatching: spies.removeMatching ?? vi.fn(),

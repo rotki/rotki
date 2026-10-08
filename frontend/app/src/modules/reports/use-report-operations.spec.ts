@@ -20,6 +20,7 @@ vi.mock('@/modules/reports/use-reports-api', () => ({
 }));
 
 const mockNotifyError = vi.fn();
+const mockNotifyFailure = vi.fn();
 const mockShowErrorMessage = vi.fn();
 const mockShowSuccessMessage = vi.fn();
 
@@ -27,6 +28,7 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
+    notifyFailure: mockNotifyFailure,
     showErrorMessage: mockShowErrorMessage,
     showSuccessMessage: mockShowSuccessMessage,
   })),
@@ -61,7 +63,8 @@ describe('useReportOperations', () => {
       const { fetchReports } = useReportOperations();
       await fetchReports();
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyFailure).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 

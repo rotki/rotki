@@ -1,6 +1,6 @@
 import type { NotificationHandler } from '../interfaces';
 import type { CsvImportResult } from '../types/status-types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { groupConsecutiveNumbers } from '@/modules/core/messaging/text-utils';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 
@@ -29,9 +29,8 @@ export function createCsvImportResultHandler(t: ReturnType<typeof useI18n>['t'])
     else
       severity = Severity.INFO;
     return {
-      category: NotificationCategory.DEFAULT,
+      kind: NotificationKind.RESULT,
       message: messageBody,
-      priority: Priority.HIGH,
       severity,
       title,
     };

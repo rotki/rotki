@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { storeToRefs } from 'pinia';
@@ -35,11 +35,11 @@ vi.mock('@/modules/core/notifications/use-silent-notifications', () => ({
 
 function notification(overrides: Partial<NotificationData> = {}): NotificationData {
   return {
-    category: NotificationCategory.DEFAULT,
     date: new Date('2026-03-04T05:06:07Z'),
     display: true,
     duration: 5000,
     id: 1,
+    kind: NotificationKind.RESULT,
     message: 'the message',
     read: false,
     severity: Severity.INFO,

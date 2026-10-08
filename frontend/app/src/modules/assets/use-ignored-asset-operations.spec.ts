@@ -26,13 +26,14 @@ vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
   })),
 }));
 
-const { mockNotifyError, mockShowErrorMessage } = vi.hoisted(() => ({
+const { mockNotifyError, mockNotifyFailure, mockShowErrorMessage } = vi.hoisted(() => ({
   mockNotifyError: vi.fn(),
+  mockNotifyFailure: vi.fn(),
   mockShowErrorMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
-  mockUseNotifications({ notifyError: mockNotifyError, showErrorMessage: mockShowErrorMessage }));
+  mockUseNotifications({ notifyError: mockNotifyError, notifyFailure: mockNotifyFailure, showErrorMessage: mockShowErrorMessage }));
 
 describe('useIgnoredAssetOperations', () => {
   beforeEach(() => {
@@ -57,7 +58,8 @@ describe('useIgnoredAssetOperations', () => {
       const { fetchIgnoredAssets } = useIgnoredAssetOperations();
       await fetchIgnoredAssets();
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyFailure).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 

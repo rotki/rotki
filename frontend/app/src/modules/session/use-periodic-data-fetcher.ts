@@ -1,4 +1,3 @@
-import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -18,7 +17,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
   const store = useSessionMetadataStore();
   const { connectedNodes, coolingDownNodes, failedToConnect, lastBalanceSave, lastDataUpload } = storeToRefs(store);
 
-  const { notifyError } = useNotifications();
+  const { notifyFailure } = useNotifications();
   const { fetchPeriodicData } = useSessionApi();
 
   const check = async (): Promise<void> => {
@@ -55,12 +54,11 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
       if (isRequestCancellation(error))
         return;
 
-      notifyError(
+      notifyFailure(
         t('actions.session.periodic_query.error.title'),
         t('actions.session.periodic_query.error.message', {
           message: getErrorMessage(error),
         }),
-        { priority: Priority.NORMAL },
       );
     }
     finally {

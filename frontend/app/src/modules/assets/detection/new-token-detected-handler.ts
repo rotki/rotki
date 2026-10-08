@@ -1,6 +1,6 @@
 import type { NewDetectedToken } from '@/modules/assets/detection/types';
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
-import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { useNewlyDetectedTokens } from '@/modules/assets/detection/use-newly-detected-tokens';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
@@ -30,7 +30,7 @@ export function createNewTokenDetectedHandler(
           action: async () => router.push({ name: '/asset-manager/more/newly-detected/' }),
           label: t('notification_messages.new_detected_token.action'),
         },
-        category: NotificationCategory.DEFAULT,
+        kind: NotificationKind.ANNOUNCEMENT,
         group: NotificationGroup.NEW_DETECTED_TOKENS,
         groupCount: count,
         message: t(
@@ -41,7 +41,6 @@ export function createNewTokenDetectedHandler(
           },
           count,
         ),
-        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('notification_messages.new_detected_token.title', count),
       };

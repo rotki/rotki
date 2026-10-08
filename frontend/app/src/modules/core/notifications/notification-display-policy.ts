@@ -1,25 +1,22 @@
-import { Priority } from '@rotki/common';
+import { NotificationKind } from '@rotki/common';
 
 /**
- * The priority a notification lands on when its caller does not classify itself.
+ * Whether a notification of this kind interrupts the user with a popup.
  *
  * @remarks
- * `NORMAL` is the target model of rotki#12942: an unclassified notification is recorded in the
- * drawer rather than popped, so forgetting to classify costs a missed toast rather than an
- * unwanted interruption. Every producer in the tree was classified before this was flipped from
- * `HIGH`, so nothing relies on the default to interrupt.
+ * The single place the decision lives. A result, an announcement and a reminder are things the
+ * user should see now, so they pop; a backend problem and a background failure are recorded for
+ * the drawer and never pop. A caller may still suppress its own popup via `display: false`, which
+ * is why this answers the default rather than the final value.
  */
-export const DEFAULT_PRIORITY = Priority.NORMAL;
-
-/**
- * Whether a notification of this priority interrupts the user with a popup.
- *
- * @remarks
- * The single place the decision lives. `ACTION` is something only the user can resolve and `HIGH`
- * is the outcome of something they just did, so both interrupt; `NORMAL` and `BULK` are recorded
- * for the drawer and never pop. A caller may still suppress its own popup via `display: false`,
- * which is why this answers the default rather than the final value.
- */
-export function displaysFor(priority: Priority = DEFAULT_PRIORITY): boolean {
-  return priority >= Priority.HIGH;
+export function displaysFor(kind: NotificationKind): boolean {
+  switch (kind) {
+    case NotificationKind.ANNOUNCEMENT:
+    case NotificationKind.REMINDER:
+    case NotificationKind.RESULT:
+      return true;
+    case NotificationKind.BACKEND_PROBLEM:
+    case NotificationKind.FAILURE:
+      return false;
+  }
 }

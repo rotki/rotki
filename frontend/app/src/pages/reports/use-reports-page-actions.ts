@@ -1,6 +1,6 @@
 import type { DeepReadonly, Ref } from 'vue';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { isErr, type Result } from 'plainfp/result';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
@@ -75,7 +75,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
           end: formatDate(period.end),
           start: formatDate(period.start),
         }),
-        priority: Priority.HIGH,
+        kind: NotificationKind.RESULT,
         severity: Severity.INFO,
         title: t('profit_loss_reports.notification.title'),
       });
