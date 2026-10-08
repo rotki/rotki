@@ -148,13 +148,8 @@ export function useLatestPrices(
       title: t('task_center.group.prices'),
     });
 
-    if (isErr(outcome)) {
-      notifyError(
-        t('price_table.delete.failure.title'),
-        t('price_table.delete.failure.message', { message: outcome.error.message }),
-      );
+    if (isErr(outcome))
       return;
-    }
 
     await refreshCurrentPrices([fromAsset]);
   };

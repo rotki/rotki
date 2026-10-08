@@ -528,7 +528,6 @@
       },
       "reset": {
         "message": {
-          "failure": "会计规则重置失败：{description}",
           "success": "会计规则已成功重置为默认值"
         },
         "title": "会计规则重置"
@@ -551,7 +550,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "获取代币详情时出错：{message}",
           "timeout": "获取代币详情超时。你可以手动输入代币信息。",
           "title": "正在获取 {address} ({evmChain}) 的代币详情"
         }
@@ -1219,10 +1217,6 @@
     },
     "actions_pin": {
       "pin_section": "固定版块"
-    },
-    "auto_match": {
-      "error": "自动匹配运行失败：{error}",
-      "error_title": "自动匹配失败"
     },
     "card_list": {
       "select_all": "全选",
@@ -1913,10 +1907,6 @@
       "ignore_selected_confirm": "确定要忽略所选的 {count} 笔跨链桥交易吗？此操作会将其标记为没有对应事件。",
       "restore_selected": "恢复所选",
       "restore_selected_confirm": "确定要将所选的 {count} 笔跨链桥交易恢复到未匹配列表吗？"
-    },
-    "auto_match": {
-      "error": "跨链桥自动匹配运行失败：{error}",
-      "error_title": "跨链桥自动匹配失败"
     },
     "dialog": {
       "confirm_ignore": "忽略此交易？",

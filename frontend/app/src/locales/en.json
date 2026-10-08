@@ -550,7 +550,6 @@
       },
       "reset": {
         "message": {
-          "failure": "Accounting rules reset failed: {description}",
           "success": "Accounting rules reset to defaults successfully"
         },
         "title": "Accounting Rules Reset"
@@ -573,7 +572,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "There was an error while retrieving token details: {message}",
           "timeout": "Timed out while retrieving token details. You can enter the token information manually.",
           "title": "Retrieving token details for {address} ({evmChain})"
         }
@@ -1272,10 +1270,6 @@
     },
     "actions_pin": {
       "pin_section": "Pin Section"
-    },
-    "auto_match": {
-      "error": "Failed to run automatic matching: {error}",
-      "error_title": "Auto Match Failed"
     },
     "card_list": {
       "select_all": "Select all",
@@ -1990,10 +1984,6 @@
       "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event.",
       "restore_selected": "Restore Selected",
       "restore_selected_confirm": "Are you sure you want to restore {count} selected bridge transaction(s) to the unmatched list?"
-    },
-    "auto_match": {
-      "error": "Failed to run automatic bridge matching: {error}",
-      "error_title": "Bridge Auto Match Failed"
     },
     "dialog": {
       "confirm_ignore": "Ignore this transaction?",

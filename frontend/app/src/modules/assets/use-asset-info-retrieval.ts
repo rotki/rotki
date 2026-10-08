@@ -18,6 +18,7 @@ import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_T
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
@@ -198,6 +199,15 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   ): ComputedRef<AssetContractInfo | undefined> =>
     computed<AssetContractInfo | undefined>(() => getAssetContractInfo(toValue(identifier), toValue(options)));
 
+  /**
+   * Reads a token's details as a task.
+   *
+   * @remarks
+   * A failed task is reported only by its row in the task centre. A timeout is reported here as
+   * well, since this call cancels the task and its row then only says it was cancelled.
+   *
+   * @returns the details, or empty ones when the task failed or timed out
+   */
   const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
     const timedOut = Symbol('timed-out');
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -233,9 +243,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
         return outcome.value;
       }
       else if (isActionable(outcome.error)) {
-        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
-          message: outcome.error.message,
-        }));
+        logger.error('Failed to read the token details:', outcome.error.message);
       }
       return {};
     }

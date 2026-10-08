@@ -1,6 +1,8 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
@@ -13,6 +15,7 @@ const { spies } = vi.hoisted(() => ({
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
+    submitTask: vi.fn(),
     useIsTaskRunning: vi.fn(() => ref(false)),
     signalEventsModified: vi.fn(),
     getAssetInfo: vi.fn(() => ({ assetType: 'crypto' })),
@@ -52,6 +55,17 @@ vi.mock('@/modules/core/tasks/use-task-handler', async () => {
   return {
     ...actual,
     useTaskHandler: (): object => ({ runTask: spies.runTask }),
+  };
+});
+
+vi.mock('@/modules/task-center/use-native-task', async () => {
+  const { runSpecWith } = await import('@test/utils/mocks/native-task');
+  return {
+    ...await vi.importActual<typeof import('@/modules/task-center/use-native-task')>('@/modules/task-center/use-native-task'),
+    useNativeTask: (): object => ({
+      statusOf: (): object => ({ active: false }),
+      submitTask: spies.submitTask.mockImplementation(runSpecWith(spies.runTask)),
+    }),
   };
 });
 
@@ -244,6 +258,29 @@ describe('use-unmatched-asset-movements', () => {
 
       expect(result).toEqual({ message: 'the backend said no', success: false });
       expect(spies.showErrorMessage).toHaveBeenCalled();
+      expect(spies.signalEventsModified).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('triggerAssetMovementAutoMatching', () => {
+    it('should re-read the unmatched list and signal modified events once matching finishes', async () => {
+      spies.runTask.mockResolvedValueOnce(ok(true));
+      spies.getUnmatchedAssetMovements.mockResolvedValue([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      await useUnmatchedAssetMovements().triggerAssetMovementAutoMatching();
+
+      expect(spies.signalEventsModified).toHaveBeenCalledOnce();
+    });
+
+    it('should leave a failure to its task centre row, with no message of its own', async () => {
+      spies.runTask.mockResolvedValueOnce(err(TaskFailed({ message: 'the backend said no' })));
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      await useUnmatchedAssetMovements().triggerAssetMovementAutoMatching();
+
+      expect(spies.submitTask).toHaveBeenCalledOnce();
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });

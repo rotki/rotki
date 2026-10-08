@@ -528,7 +528,6 @@
       },
       "reset": {
         "message": {
-          "failure": "Muhasebe kuralları sıfırlanamadı: {description}",
           "success": "Muhasebe kuralları başarıyla varsayılanlara sıfırlandı"
         },
         "title": "Muhasebe kurallarını sıfırlama"
@@ -551,7 +550,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "Token ayrıntıları alınırken hata oluştu: {message}",
           "timeout": "Token ayrıntıları alınırken zaman aşımı oluştu. Token bilgilerini elle girebilirsiniz.",
           "title": "{address} ({evmChain}) için token ayrıntılarını alma"
         }
@@ -1223,10 +1221,6 @@
     },
     "actions_pin": {
       "pin_section": "Bölümü sabitle"
-    },
-    "auto_match": {
-      "error": "Otomatik eşleştirme çalıştırılamadı: {error}",
-      "error_title": "Otomatik eşleştirme başarısız oldu"
     },
     "card_list": {
       "select_all": "Tümünü seç",
@@ -1933,10 +1927,6 @@
       "ignore_selected_confirm": "Seçilen {count} köprü işlemini yok saymak istediğinizden emin misiniz? Bu eylem, bu işlemleri karşılık gelen bir olayı olmayan işlemler olarak işaretler.",
       "restore_selected": "Seçilenleri geri yükle",
       "restore_selected_confirm": "Seçilen {count} köprü işlemini eşleşmeyenler listesine geri yüklemek istediğinizden emin misiniz?"
-    },
-    "auto_match": {
-      "error": "Otomatik köprü eşleştirmesi çalıştırılamadı: {error}",
-      "error_title": "Köprü otomatik eşleştirmesi başarısız oldu"
     },
     "dialog": {
       "confirm_ignore": "Bu işlem yok sayılsın mı?",

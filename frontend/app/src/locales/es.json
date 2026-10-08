@@ -120,7 +120,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "Hubo un error al consultar los detalles del token: {message}",
           "title": "Consultando detalles del token {address} ({evmChain})"
         }
       }

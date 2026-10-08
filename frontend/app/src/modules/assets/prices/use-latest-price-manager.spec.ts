@@ -215,14 +215,14 @@ describe('useLatestPrices', () => {
       expect(spies.notifyError).not.toHaveBeenCalled();
     });
 
-    it('should report a failed delete and leave the prices as they are', async () => {
+    it('should leave a failed delete to its task centre row and leave the prices as they are', async () => {
       spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'locked' })));
 
       const { deletePrice } = useLatestPrices(t);
       await deletePrice({ fromAsset: 'ETH' });
 
-      expect(spies.notifyError).toHaveBeenCalledOnce();
-      expect(spies.notifyError.mock.calls[0][0]).toBe('price_table.delete.failure.title');
+      expect(spies.submitTask).toHaveBeenCalledOnce();
+      expect(spies.notifyError).not.toHaveBeenCalled();
       expect(api.fetchLatestPrices).not.toHaveBeenCalled();
       expect(refreshPrices).not.toHaveBeenCalled();
     });

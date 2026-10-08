@@ -209,14 +209,14 @@ describe('useGnosisPaySigning', () => {
     expect(lines).toContain('URI: https://rotki.com');
   });
 
-  it('should bail out when fetching the nonce fails actionably', async () => {
+  it('should bail out without a toast when fetching the nonce fails, leaving it to the task row', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeFailure('nonce error'));
 
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).toHaveBeenCalled();
+    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(signMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
@@ -232,7 +232,7 @@ describe('useGnosisPaySigning', () => {
     expect(signMessage).not.toHaveBeenCalled();
   });
 
-  it('should bail out when verification fails', async () => {
+  it('should bail out without a toast when verification fails, leaving it to the task row', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     runTaskResult.mockImplementationOnce(async () => makeFailure('verify failed'));
@@ -240,7 +240,7 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).toHaveBeenCalled();
+    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
 

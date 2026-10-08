@@ -218,7 +218,6 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
     else if (isActionable(outcome.error)) {
       logger.error('Failed to trigger auto match:', outcome.error);
-      showErrorMessage(t('asset_movement_matching.auto_match.error_title'), t('asset_movement_matching.auto_match.error', { error: outcome.error.message }));
     }
 
     set(triggerAutoMatchLoading, false);

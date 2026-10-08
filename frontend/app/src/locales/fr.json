@@ -178,7 +178,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "Il y a eu une erreur lors de la récupération des détails du token : {message}",
           "title": "Récupération des détails du token pour {address} ({evmChain})"
         }
       }

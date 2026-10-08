@@ -106,7 +106,7 @@ describe('useAssetRetrieval', () => {
       expect(result).toEqual(tokenDetail);
     });
 
-    it('should handle failure', async () => {
+    it('should answer empty details without a notification when the task fails, leaving it to the task row', async () => {
       runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
         return err(TaskFailed({ message: 'failed' }));
@@ -118,7 +118,7 @@ describe('useAssetRetrieval', () => {
 
       expect(result).toEqual({});
 
-      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
 
     it('should time out and cancel the task when the lookup never resolves, rather than leave the form fields disabled forever', async () => {

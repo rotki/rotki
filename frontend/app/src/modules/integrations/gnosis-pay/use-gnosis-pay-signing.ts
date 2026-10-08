@@ -108,14 +108,12 @@ Issued At: ${issuedAt}`;
   }
 
   /**
-   * Reports a failed sign-in step. A non-actionable failure (a cancelled or superseded task) is
-   * silent, since there is nothing for the user to act on.
+   * Logs a failed sign-in step. The step's row in the task centre is what reports it to the user,
+   * and a non-actionable failure (a cancelled or superseded task) is not logged either.
    */
   function reportSignInFailure(error: TaskError): void {
-    if (isActionable(error)) {
-      showErrorMessage(t('external_services.gnosispay.siwe.failed'), error.message);
+    if (isActionable(error))
       logger.error('Sign-in with Ethereum failed:', error.message);
-    }
   }
 
   async function signInWithEthereum(): Promise<void> {

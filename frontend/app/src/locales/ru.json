@@ -319,7 +319,6 @@
     "assets": {
       "erc20": {
         "error": {
-          "description": "Ошибка при получении данных токена: {message}",
           "title": "Получение данных токена для {address} ({evmChain})"
         }
       }
