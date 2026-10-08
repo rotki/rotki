@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import base64
+import functools
 import logging
 import os
 import platform
@@ -18,7 +19,7 @@ from packaging import version
 from setuptools_scm import get_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable
 
 rotki_version = get_version()
 
@@ -164,27 +165,73 @@ def env_var_to_bool(value: str | None) -> bool:
     return value.lower() in {'1', 'true', 'yes', 'on'}
 
 
+_open_log_groups: list[str] = []
+
+
+def write_workflow_command(command: str) -> None:
+    """
+    Writes a GitHub Actions workflow command on its own line.
+
+    Written directly rather than through ``echo`` in a shell, which on Windows keeps the quotes
+    around the group name. Logging goes to stderr, so both streams are flushed to keep the
+    command in order with the step's output.
+    """
+    sys.stderr.flush()
+    sys.stdout.write(f'{command}\n')
+    sys.stdout.flush()
+
+
 def log_group(name: str) -> Callable:
-    def start_group(group_name: str) -> None:
+    """
+    Wraps a build step in a collapsible log group on CI, or between banners locally.
+
+    GitHub Actions cannot nest groups, so a step called from inside another step closes the
+    outer group, runs in its own ``outer / inner`` group, and reopens the outer one when it
+    ends. The group is closed even when the step raises, and the step's return value is passed
+    through.
+    """
+    def start_group(title: str) -> None:
         if os.environ.get('CI'):
-            subprocess.call(f'echo ::group::"{group_name}"', shell=True)
+            write_workflow_command(f'::group::{title}')
         else:
-            logger.info(f'\n\n-----{group_name}-----\n\n')
+            logger.info('\n\n-----%s-----\n\n', title)
 
     def end_group() -> None:
         if os.environ.get('CI'):
-            subprocess.call('echo ::endgroup::', shell=True)
+            write_workflow_command('::endgroup::')
         else:
             logger.info('\n\n-----------------\n\n')
 
     def decorate(fn: Callable) -> Callable:
-        def wrapper(*args: Any, **kwargs: Any | None) -> None:
-            start_group(name)
-            fn(*args, **kwargs)
-            end_group()
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if _open_log_groups:
+                end_group()
+            _open_log_groups.append(name)
+            start_group(' / '.join(_open_log_groups))
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                end_group()
+                _open_log_groups.pop()
+                if _open_log_groups:
+                    start_group(' / '.join(_open_log_groups))
 
         return wrapper
     return decorate
+
+
+def run_security(step: str, *arguments: str) -> None:
+    """
+    Runs one macOS ``security`` keychain step and stops the build when it fails.
+
+    The arguments are passed without a shell, so the certificate password reaches
+    ``security`` as is. Only the step name is logged, never the command, since the
+    certificate import carries that password.
+    """
+    if subprocess.call(['security', *arguments]) != 0:  # noqa: S603
+        logger.error('keychain setup failed at: %s', step)
+        sys.exit(1)
 
 
 class Environment:
@@ -583,26 +630,26 @@ class MacPackaging:
             encoding='utf8',
         ).strip()
 
-        # Create a keychain
-        subprocess.call(f'security create-keychain -p actions {keychain}', shell=True)
+        run_security('create keychain', 'create-keychain', '-p', 'actions', keychain)
         # A new keychain auto-locks 300 s after it is unlocked, and unlocking it again does not
-        # reset that. PyInstaller re-signs rotki-core long after colibri and starling were
-        # signed, so on a slow runner its codesign waited forever on a password prompt.
+        # reset that. This runs before the cargo builds and PyInstaller signs rotki-core long
+        # after, so on a slow runner its codesign waited forever on a password prompt.
         # Allow 6 hours.
-        subprocess.call(f'security set-keychain-settings -lut 21600 {keychain}', shell=True)
+        run_security('set keychain timeout', 'set-keychain-settings', '-lut', '21600', keychain)
         # Logs "timeout=21600s", so a build log shows the setting took
         subprocess.call(f'security show-keychain-info {keychain}', shell=True)
         # Make the keychain the default so identities are found
-        subprocess.call(f'security default-keychain -s {keychain}', shell=True)
-        # Unlock the keychains
-        subprocess.call(f'security unlock-keychain -p actions {keychain}', shell=True)
-        subprocess.call(
-            f'security import {p12!s} -k {keychain} -P {csc_password} -T /usr/bin/codesign;',
-            shell=True,
+        run_security('make keychain default', 'default-keychain', '-s', keychain)
+        run_security('unlock keychain', 'unlock-keychain', '-p', 'actions', keychain)
+        run_security(
+            'import certificate',
+            'import', str(p12), '-k', keychain, '-P', csc_password, '-T', '/usr/bin/codesign',
         )
-        subprocess.call(
-            f'security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k actions {keychain}',  # noqa: E501
-            shell=True,
+        run_security(
+            'set key partition list',
+            'set-key-partition-list',
+            '-S', 'apple-tool:,apple:,codesign:,productbuild:',
+            '-s', '-k', 'actions', keychain,
         )
 
         return True
@@ -615,37 +662,6 @@ class MacPackaging:
         if self.__p12.exists():
             self.__p12.unlink(missing_ok=True)
         os.environ.pop('CSC_LINK', None)
-
-    @log_group('signing')
-    def sign(self, paths: Generator[Path]) -> None:
-        """
-        Signs all the contents of the directory created by PyInstaller
-        with the provided signing key/identity.
-        """
-        if not self.import_signing_certificates():
-            return
-
-        identify = os.environ.get('IDENTITY')
-        for path in paths:
-            if not path.is_file():
-                continue
-
-            logger.debug(f'Preparing to sign {path}')
-            sign_ret_code = subprocess.call(
-                f'codesign --force --options runtime --entitlements ./packaging/entitlements.plist --sign {identify} {path} --timestamp',  # noqa: E501
-                shell=True,
-            )
-
-            if sign_ret_code != 0:
-                logger.error(f'could not sign file {path}')
-                sys.exit(1)
-
-            verify_ret_code = subprocess.call(f'codesign --verify {path}', shell=True)
-
-            if verify_ret_code != 0:
-                logger.error(f'signature verification failed at {path}')
-                sys.exit(1)
-        self.cleanup_keychain()
 
 
 class BackendBuilder:
@@ -819,6 +835,9 @@ class BackendBuilder:
         if github_ref is not None:
             os.environ.setdefault('GITHUB_REF', github_ref)
 
+        if mac is not None:
+            mac.import_signing_certificates()
+
         self.__create_rust_binary()
         self.__create_starling_binary()
         self.__install_pyinstaller()
@@ -827,8 +846,6 @@ class BackendBuilder:
 
         if mac is not None and macos_target is not None:
             self.__check_macos_floor(macos_target)
-            backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
-            mac.sign(paths=backend_directory.glob('**/*'))
 
         if win is not None:
             self.__check_windows_resources()
@@ -912,9 +929,6 @@ class BackendBuilder:
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(backend_binary, binary_directory / binary_name)
 
-        if self.__mac is not None:
-            self.__mac.sign(binary_directory.glob('**/*'))
-
     @log_group('starling cargo build')
     def __create_starling_binary(self) -> None:
         starling_directory = self.__storage.starling_directory
@@ -953,9 +967,6 @@ class BackendBuilder:
 
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(starling_binary, binary_directory / binary_name)
-
-        if self.__mac is not None:
-            self.__mac.sign(binary_directory.glob('**/*'))
 
     @log_group('package')
     def __package(self) -> None:
