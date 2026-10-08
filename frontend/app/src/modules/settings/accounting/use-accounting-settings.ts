@@ -96,9 +96,14 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   const { submitTask } = useNativeTask();
 
+  /**
+   * Runs the export as a task.
+   *
+   * @returns null when the task did not finish: its row in the task centre reports why
+   */
   const exportAccountingRulesData = async (
     directoryPath?: string,
-  ): Promise<{ result: boolean | object; message?: string } | null> => {
+  ): Promise<boolean | object | null> => {
     const outcome = await submitTask<boolean | object>({
       id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
       kind: ActivityKind.ACCOUNTING_RULES,
@@ -113,19 +118,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
       title: t('task_center.group.accounting_rules'),
     });
 
-    if (!isErr(outcome)) {
-      return {
-        result: outcome.value,
-      };
-    }
-
-    if (!isActionable(outcome.error))
-      return null;
-
-    return {
-      message: outcome.error.message,
-      result: false,
-    };
+    return isErr(outcome) ? null : outcome.value;
   };
 
   const { appSession, getPath, openDirectory } = useInterop();
@@ -141,11 +134,9 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
           return;
       }
 
-      const response = await exportAccountingRulesData(directoryPath);
-      if (response === null)
+      const result = await exportAccountingRulesData(directoryPath);
+      if (result === null)
         return;
-
-      const { message: taskMessage, result } = response;
 
       if (appSession) {
         if (result) {
@@ -153,7 +144,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         }
         else {
           showErrorMessage(title, t('actions.accounting_rules.export.message.failure', {
-            description: taskMessage,
+            description: '',
           }));
         }
       }
@@ -217,9 +208,6 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
     if (!isActionable(outcome.error))
       return null;
 
-    showErrorMessage(title, t('actions.accounting_rules.reset.message.failure', {
-      description: outcome.error.message,
-    }));
     return { message: outcome.error.message, success: false };
   }
 

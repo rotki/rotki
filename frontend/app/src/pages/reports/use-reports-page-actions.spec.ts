@@ -258,13 +258,14 @@ describe('pages/reports/useReportsPageActions', () => {
       expect(showErrorMessage).not.toHaveBeenCalled();
     });
 
-    it('should surface an actionable failure with its message', async () => {
+    it('should leave an actionable failure to its task centre row', async () => {
       set(reportDebugData, file);
       submitTask.mockResolvedValue(err<TaskError>(TaskFailed({ message: 'bad json' })));
 
       await setup().importData();
 
-      expect(showErrorMessage).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('bad json'));
+      expect(submitTask).toHaveBeenCalledOnce();
+      expect(showErrorMessage).not.toHaveBeenCalled();
       expect(fetchReports).not.toHaveBeenCalled();
     });
 

@@ -286,7 +286,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     }
     else if (isActionable(outcome.error)) {
       logger.error('Failed to trigger bridge auto match:', outcome.error);
-      showErrorMessage(t('bridge_matching.auto_match.error_title'), t('bridge_matching.auto_match.error', { error: outcome.error.message }));
     }
 
     set(triggerAutoMatchLoading, false);

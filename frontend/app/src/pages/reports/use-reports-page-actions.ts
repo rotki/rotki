@@ -5,7 +5,7 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
+import { isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
@@ -148,9 +148,6 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     }
     else if (isCancellation(outcome.error)) {
       await fetchReports();
-    }
-    else if (isActionable(outcome.error)) {
-      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: outcome.error.message }));
     }
 
     set(importDataLoading, false);
