@@ -156,9 +156,7 @@ describe('useAssets', () => {
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
-      expect(result).toEqual({
-        done: true,
-      });
+      expect(result).toEqual(ok({ kind: 'done' }));
     });
 
     it('should complete with chain identifier', async () => {
@@ -176,23 +174,17 @@ describe('useAssets', () => {
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
-      expect(result).toEqual({
-        done: false,
-        conflicts,
-      });
+      expect(result).toEqual(ok({ conflicts, kind: 'conflicts' }));
     });
 
-    it('should handle error', async () => {
+    it('should return the failure with its reason and leave reporting it to the caller', async () => {
       whenTask(err(TaskFailed({ message: 'failed' })));
 
       const result = await store.applyUpdates(payload);
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
-      expect(result).toEqual({
-        done: false,
-      });
-
-      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+      expect(result).toEqual(err(TaskFailed({ message: 'failed' })));
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
   });
 

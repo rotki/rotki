@@ -100,7 +100,7 @@ describe('useAssetUpdateSteps', () => {
 
   describe('applyUpdate', () => {
     it('should map a completed update to done', async () => {
-      applyUpdates.mockResolvedValue({ done: true });
+      applyUpdates.mockResolvedValue(ok({ kind: 'done' }));
 
       const result = await useAssetUpdateSteps().applyUpdate(42);
 
@@ -110,19 +110,19 @@ describe('useAssetUpdateSteps', () => {
 
     it('should map conflicts to the conflicts outcome', async () => {
       const conflicts = [{ identifier: 'a' }];
-      applyUpdates.mockResolvedValue({ conflicts });
+      applyUpdates.mockResolvedValue(ok({ conflicts, kind: 'conflicts' }));
 
       const result = await useAssetUpdateSteps().applyUpdate(42);
 
       expect(result).toEqual({ ok: true, value: { conflicts, kind: 'conflicts' } });
     });
 
-    it('should map a non-completing update to an updateFailed err', async () => {
-      applyUpdates.mockResolvedValue({});
+    it('should carry the backend reason of a failed update into the unlock error', async () => {
+      applyUpdates.mockResolvedValue(err(TaskFailed({ message: 'disk full' })));
 
       const result = await useAssetUpdateSteps().applyUpdate(42);
 
-      expect(result.ok).toBe(false);
+      expect(result).toEqual(err({ kind: 'update-failed', message: 'disk full' }));
     });
   });
 

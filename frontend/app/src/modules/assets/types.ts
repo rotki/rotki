@@ -63,10 +63,15 @@ export interface AssetUpdateConflictResult {
 
 export type AssetUpdateResult = AssetUpdateConflictResult[] | boolean;
 
-export interface ApplyUpdateResult {
-  readonly done: boolean;
-  readonly conflicts?: AssetUpdateConflictResult[];
-}
+/** How a finished asset update ended: applied, or stopped on conflicts the user has to resolve. */
+export const ApplyUpdateKind = {
+  CONFLICTS: 'conflicts',
+  DONE: 'done',
+} as const;
+
+export type ApplyUpdateResult =
+  | { readonly kind: typeof ApplyUpdateKind.DONE }
+  | { readonly kind: typeof ApplyUpdateKind.CONFLICTS; readonly conflicts: AssetUpdateConflictResult[] };
 
 export interface AssetMergePayload {
   readonly sourceIdentifier: string;

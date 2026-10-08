@@ -10,6 +10,7 @@ import { useAssetUpdate } from './use-asset-update';
 const {
   applyUpdates,
   checkForUpdate,
+  notifyError,
   reload,
   restarting,
   setMessage,
@@ -19,6 +20,7 @@ const {
   return {
     applyUpdates: vi.fn(),
     checkForUpdate: vi.fn(),
+    notifyError: vi.fn(),
     reload: vi.fn(),
     restarting: ref<boolean>(false),
     setMessage: vi.fn(),
@@ -42,6 +44,10 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
   useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): Record<string, unknown> => ({ notifyError }),
+}));
+
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
@@ -61,8 +67,12 @@ function checkFails(error: TaskError): void {
   checkForUpdate.mockResolvedValue(err(error));
 }
 
-function applyReturns(result: Partial<ApplyUpdateResult>): void {
-  applyUpdates.mockResolvedValue({ done: true, ...result });
+function applyReturns(result: ApplyUpdateResult = { kind: 'done' }): void {
+  applyUpdates.mockResolvedValue(ok(result));
+}
+
+function applyFails(error: TaskError): void {
+  applyUpdates.mockResolvedValue(err(error));
 }
 
 function mountUpdate(headless = false): ReturnType<typeof useAssetUpdate> {
@@ -93,7 +103,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
     sessionStorage.clear();
     set(restarting, false);
     checkReturns({});
-    applyReturns({});
+    applyReturns();
     reload.mockResolvedValue(undefined);
   });
 
@@ -311,7 +321,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
     });
 
     it('should report it is applying only while the write is in flight', async () => {
-      let release: (result: ApplyUpdateResult) => void = () => {};
+      let release: (result: Result<ApplyUpdateResult, TaskError>) => void = () => {};
       applyUpdates.mockReturnValue(new Promise((resolve) => {
         release = resolve;
       }));
@@ -320,7 +330,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
       const pending = updateAssets();
       expect(get(status)).toBe('applying');
 
-      release({ done: true });
+      release(ok({ kind: 'done' }));
       await pending;
       expect(get(status)).toBeNull();
     });
@@ -337,7 +347,7 @@ describe('modules/shell/app/useAssetUpdate', () => {
 
   describe('a conflicting update', () => {
     it('should surface the conflicts for resolution rather than reporting success', async () => {
-      applyReturns({ conflicts: [conflict('ETH')], done: false });
+      applyReturns({ conflicts: [conflict('ETH')], kind: 'conflicts' });
       const { conflicts, modelShowConflictDialog, updateAssets } = mountUpdate();
 
       await updateAssets();
@@ -347,23 +357,40 @@ describe('modules/shell/app/useAssetUpdate', () => {
       expect(show).not.toHaveBeenCalled();
     });
 
-    it('should not open the conflict dialog when the backend reported none', async () => {
-      applyReturns({ done: false });
-      const { modelShowConflictDialog, updateAssets } = mountUpdate();
-
-      await updateAssets();
-
-      expect(get(modelShowConflictDialog)).toBe(false);
-    });
-
     it('should leave the skipped version alone when the update did not land', async () => {
       localStorage.setItem('rotki_skip_asset_db_version', '2');
-      applyReturns({ conflicts: [conflict('ETH')], done: false });
+      applyReturns({ conflicts: [conflict('ETH')], kind: 'conflicts' });
       const { skipped, updateAssets } = mountUpdate();
 
       await updateAssets();
 
       expect(get(skipped)).toBe(2);
+    });
+  });
+
+  describe('a failed update', () => {
+    it('should report the backend reason and open neither the conflicts nor the confirmation', async () => {
+      applyFails(TaskFailed({ message: 'disk full' }));
+      const { modelShowConflictDialog, updateAssets } = mountUpdate();
+
+      await updateAssets();
+
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(
+        'actions.assets.update.task.title',
+        'actions.assets.update.error.description::disk full',
+      );
+      expect(get(modelShowConflictDialog)).toBe(false);
+      expect(show).not.toHaveBeenCalled();
+    });
+
+    it('should stay quiet when the user cancelled the update', async () => {
+      applyFails(Cancelled({ message: 'cancelled' }));
+      const { updateAssets } = mountUpdate();
+
+      await updateAssets();
+
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(show).not.toHaveBeenCalled();
     });
   });
 

@@ -1,10 +1,17 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
 import { isErr } from 'plainfp/result';
+import {
+  ApplyUpdateKind,
+  type AssetUpdateConflictResult,
+  type AssetVersionUpdate,
+  type ConflictResolution,
+} from '@/modules/assets/types';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { onActionableError } from '@/modules/core/tasks/task-result';
 import { SKIP_ASSET_UPDATE_KEY, SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
 
@@ -88,6 +95,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
   const { applyUpdates, checkForUpdate } = useAssets();
   const { reload } = useBackendReload();
   const { setMessage } = useMessageStore();
+  const { notifyError } = useNotifications();
   const { restarting } = useRestartingStatus();
   const { show } = useConfirmStore();
 
@@ -192,17 +200,26 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     set(modelShowConflictDialog, false);
     const version = get(modelChanges).upToVersion;
     set(applying, true);
-    const updateResult = await applyUpdates({ resolution, version });
+    const outcome = await applyUpdates({ resolution, version });
     set(applying, false);
 
-    if (updateResult.done) {
-      set(skipped, 0);
-      showDoneConfirmation();
+    if (isErr(outcome)) {
+      onActionableError(outcome, ({ message }) => notifyError(
+        t('actions.assets.update.task.title'),
+        t('actions.assets.update.error.description', { message }),
+      ));
+      return;
     }
-    else if (updateResult.conflicts) {
+
+    const updateResult = outcome.value;
+    if (updateResult.kind === ApplyUpdateKind.CONFLICTS) {
       set(conflicts, updateResult.conflicts);
       set(modelShowConflictDialog, true);
+      return;
     }
+
+    set(skipped, 0);
+    showDoneConfirmation();
   }
 
   onMounted(async () => {
