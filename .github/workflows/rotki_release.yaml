@@ -407,9 +407,6 @@ jobs:
 
       - name: Build rotki
         id: packaging
-        env:
-          CERTIFICATE_WIN_APPLICATION: ${{ secrets.CERTIFICATE_WIN_APPLICATION }}
-          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
           uv sync --locked --no-dev --group packaging
