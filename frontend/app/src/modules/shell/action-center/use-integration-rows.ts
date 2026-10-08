@@ -5,6 +5,8 @@ import { externalLinks } from '@shared/external-links';
 import { none, type Option, some } from 'plainfp/option';
 import { getOr } from 'plainfp/records';
 import { type MessageKey, msg } from '@/message-key';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
@@ -57,12 +59,14 @@ function serviceSettings(service: string): RouteLocationRaw {
 }
 
 /**
- * The integration rows: services a query needed a key for, and sessions that expired.
+ * The integration rows: services a query needed a key for, exchange accounts whose key was
+ * refused, and sessions that expired.
  *
  * @remarks
  * A missing key leaves as soon as a key is saved for the service or the service is suppressed, and a
  * Monerium session as soon as the status reads authenticated. A Gnosis Pay session has no status to
- * read, so its row stays until a verified sign-in clears the condition.
+ * read, so its row stays until a verified sign-in clears the condition. A refused exchange key
+ * leaves once the account is saved, renamed or removed.
  */
 export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -73,6 +77,8 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
   const { update } = useSettingsOperations();
   const { suppressOption } = useSuppressOption();
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
+  const { settleDisconnected } = useExchangeKeyConditions();
 
   function hasKey(service: string): boolean {
     return isExternalServiceName(service) && getApiKey(service) !== '';
@@ -161,6 +167,21 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
     return !isSuppressed(service) && (keyRejected === true || !hasKey(service));
   }
 
+  function exchangeKeyRow(condition: RaisedConditionOf<typeof RaisedConditionKind.EXCHANGE_KEY_REJECTED>): ActionItem {
+    const { location, name } = condition;
+    const params = { exchange: toHumanReadable(location, 'capitalize'), name };
+    return createActionItem<ActionTarget, string>({
+      actionLabel: t('action_center.rows.integrations.exchange_key_rejected.action'),
+      count: 1,
+      description: t('action_center.rows.integrations.exchange_key_rejected.description', params),
+      icon: 'lu-key-round',
+      id: conditionRowId(condition),
+      urgency: ActionUrgency.DECISION,
+      target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: { location, name } } },
+      title: t('action_center.rows.integrations.exchange_key_rejected.title', params),
+    });
+  }
+
   function sessionRow(condition: RaisedCondition, service: ExternalServiceName, copy: { title: string; description: string }): ActionItem {
     return createActionItem<ActionTarget, string>({
       ...copy,
@@ -178,6 +199,8 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
     switch (condition.kind) {
       case RaisedConditionKind.MISSING_API_KEY:
         return isMissingKeyOpen(condition) ? some(missingKeyRow(condition)) : none;
+      case RaisedConditionKind.EXCHANGE_KEY_REJECTED:
+        return some(exchangeKeyRow(condition));
       case RaisedConditionKind.MONERIUM_SESSION:
         return get(moneriumAuthenticated)
           ? none
@@ -196,6 +219,8 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
         return none;
     }
   }
+
+  watch(connectedExchanges, settleDisconnected);
 
   return computed<ActionItem[]>(() => applicable(get(conditions).map(rowFor)));
 }

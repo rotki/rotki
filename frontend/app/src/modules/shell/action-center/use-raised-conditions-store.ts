@@ -1,6 +1,7 @@
 /** What a condition is about. Kebab-case, since each one prefixes the row ids it lands in. */
 export const RaisedConditionKind = {
   BINANCE_PAIRS_MISSING: 'binance-pairs-missing',
+  EXCHANGE_KEY_REJECTED: 'exchange-key-rejected',
   GNOSIS_PAY_SESSION: 'gnosis-pay-session',
   MISSING_API_KEY: 'missing-api-key',
   MONERIUM_SESSION: 'monerium-session',
@@ -41,10 +42,12 @@ export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof Rais
  * @remarks
  * The report is the evidence that the user needs this: a missing key only matters to someone whose
  * queries asked for it, so a row waits for the message rather than checking every service up front.
- * A missing key with `keyRejected` is about a key that is saved but was refused for `location`.
+ * A missing key with `keyRejected` is about a key that is saved but was refused for `location`. A
+ * rejected exchange key is about one connected account, `name` on `location`.
  */
 export type RaisedCondition =
   | { kind: typeof RaisedConditionKind.MISSING_API_KEY; service: string; location?: string; keyRejected?: boolean }
+  | { kind: typeof RaisedConditionKind.EXCHANGE_KEY_REJECTED; location: string; name: string }
   | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; cause: NoIndexersCause }
   | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION }
   | { kind: typeof RaisedConditionKind.MONERIUM_SESSION }
@@ -67,6 +70,7 @@ function conditionKey(condition: RaisedCondition): string {
     case RaisedConditionKind.NO_AVAILABLE_INDEXERS:
       return `${condition.kind}:${condition.chain}`;
     case RaisedConditionKind.BINANCE_PAIRS_MISSING:
+    case RaisedConditionKind.EXCHANGE_KEY_REJECTED:
       return `${condition.kind}:${condition.location}:${condition.name}`;
     case RaisedConditionKind.GNOSIS_PAY_SESSION:
     case RaisedConditionKind.MONERIUM_SESSION:

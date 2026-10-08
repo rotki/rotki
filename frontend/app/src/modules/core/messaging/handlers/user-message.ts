@@ -1,7 +1,5 @@
-import type { RouteLocationRaw, Router } from 'vue-router';
-import type { NotificationHandler } from '../interfaces';
+import type { MessageHandler } from '../interfaces';
 import {
-  type NotificationAction,
   NotificationCategory,
   type NotificationData,
   Priority,
@@ -18,7 +16,7 @@ import {
 } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { MESSAGE_WARNING, type UserMessageData, UserMessageKey } from '../types/base';
 import { userMessageGroup } from '../user-message-group';
-import { createNotificationHandler } from '../utils/handler-factories';
+import { createConditionalHandler } from '../utils/handler-factories';
 import { withRepeats } from '../utils/repeats';
 
 /** The AuthFailure service the backend names for rotki's own premium credentials. */
@@ -29,43 +27,45 @@ const SENTENCE = 'sentence';
 
 type AuthFields = Extract<UserMessageData, { key: typeof UserMessageKey.AUTH }>['fields'];
 
+type ProblemMessage = Exclude<UserMessageData, { key: typeof UserMessageKey.AUTH }>;
+
 /**
  * Renders a backend `add_error` / `add_warning` user message.
  *
  * @remarks
- * Messages fold into one row per family and identity (see `userMessageGroup`), which keeps a
- * count across repeats and across the ones the backend held while no client was connected. The
- * row shows the latest sentence.
+ * Rejected credentials create no notification: only the user can fix them, so they raise the
+ * action center row that asks for the fix. Premium credentials raise the premium row, an exchange
+ * account's the row for that account, and any other service's the missing key row, which stays
+ * while the service has no key.
  *
- * Only rejected credentials interrupt, because only the user can fix them, and they come with a
- * route to the keys. Rejected premium credentials instead raise the action center's premium row,
- * which already asks for a working key, so they are recorded without popping. Every other family
- * is `Priority.BULK`: recorded in the drawer, never popped.
+ * Every other family folds into one row per family and identity (see `userMessageGroup`), which
+ * keeps a count across repeats and across the ones the backend held while no client was connected.
+ * The row shows the latest sentence and is `Priority.BULK`: recorded in the drawer, never popped.
  * The bulk of the corpus is self-describing as ignorable ("Ignoring it", "Skipping balance
  * result"), and a condition that warrants an interrupt earns it by getting a structured message
  * type, not by being a longer string.
  */
-export function createUserMessageHandler(
-  t: ReturnType<typeof useI18n>['t'],
-  router: Pick<Router, 'push'>,
-): NotificationHandler<UserMessageData> {
+export function createUserMessageHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<UserMessageData> {
   const { data: notifications } = storeToRefs(useNotificationsStore());
   const { allExchanges } = storeToRefs(useLocationStore());
   const { getLocationData } = useLocations();
   const { raise } = useRaisedConditionsStore();
 
-  function isRejectedPremiumKey(data: UserMessageData): boolean {
-    return data.key === UserMessageKey.AUTH && data.fields.service === ROTKI_PREMIUM_SERVICE;
+  function raiseRejectedCredentials({ account, service }: AuthFields): void {
+    if (service === ROTKI_PREMIUM_SERVICE)
+      raise({ cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE });
+    else if (account && get(allExchanges).includes(service))
+      raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: service, name: account });
+    else
+      raise({ kind: RaisedConditionKind.MISSING_API_KEY, service });
   }
 
   function nameOf(identifier: string): string {
     return getLocationData(identifier)?.name ?? toHumanReadable(identifier, 'capitalize');
   }
 
-  function familyTitle(key: UserMessageKey): string {
+  function familyTitle(key: ProblemMessage['key']): string {
     switch (key) {
-      case UserMessageKey.AUTH:
-        return t('notification_messages.user_message.title.auth');
       case UserMessageKey.BAD_DATA:
         return t('notification_messages.user_message.title.bad_data');
       case UserMessageKey.INTERNAL:
@@ -83,39 +83,10 @@ export function createUserMessageHandler(
     }
   }
 
-  /** Who the message is about: the account whose credentials failed, or the location. */
-  function subjectOf(data: UserMessageData): string | undefined {
-    if (data.key === UserMessageKey.AUTH) {
-      const { account, service } = data.fields;
-      return account ? `${nameOf(service)} (${account})` : nameOf(service);
-    }
-    return data.subject ? nameOf(data.subject) : undefined;
-  }
-
-  function titleOf(data: UserMessageData): string {
+  function titleOf(data: ProblemMessage): string {
     const title = familyTitle(data.key);
-    const subject = subjectOf(data);
+    const subject = data.subject ? nameOf(data.subject) : undefined;
     return subject ? t('notification_messages.user_message.with_subject', { subject, title }) : title;
-  }
-
-  function credentialsRoute({ account, service }: AuthFields): RouteLocationRaw {
-    if (service === ROTKI_PREMIUM_SERVICE)
-      return { name: '/api-keys/premium/' };
-    if (get(allExchanges).includes(service))
-      return { name: '/api-keys/exchanges/', query: { location: service, ...(account && { name: account }) } };
-    return { name: '/api-keys/external/', query: { service } };
-  }
-
-  function credentialsAction(data: UserMessageData): NotificationAction | undefined {
-    if (data.key !== UserMessageKey.AUTH)
-      return undefined;
-
-    const route = credentialsRoute(data.fields);
-    return {
-      action: async () => router.push(route),
-      label: t('notification_messages.user_message.auth_action'),
-      persist: true,
-    };
   }
 
   /**
@@ -132,25 +103,24 @@ export function createUserMessageHandler(
     return data.value;
   }
 
-  return createNotificationHandler<UserMessageData>((data, { count, lastSent }) => {
+  return createConditionalHandler<UserMessageData>((data, { count, lastSent }) => {
+    if (data.key === UserMessageKey.AUTH) {
+      raiseRejectedCredentials(data.fields);
+      return null;
+    }
+
     const group = userMessageGroup(data);
     const row = get(notifications).find(notification => notification.group === group);
     const groupCount = (row?.groupCount ?? 0) + count;
     const sentence = latestSentence(data, row, lastSent);
-    const action = credentialsAction(data);
-    const hasPremiumRow = isRejectedPremiumKey(data);
-    if (hasPremiumRow)
-      raise({ cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE });
 
     return {
-      ...(action && { action }),
-      ...(hasPremiumRow && { display: false }),
       category: NotificationCategory.DEFAULT,
       extras: { [SENTENCE]: sentence },
       group,
       groupCount,
       message: withRepeats(t, sentence, groupCount),
-      priority: action ? Priority.ACTION : Priority.BULK,
+      priority: Priority.BULK,
       severity: data.verbosity === MESSAGE_WARNING ? Severity.WARNING : Severity.ERROR,
       title: titleOf(data),
     };
