@@ -1,8 +1,7 @@
 import {
+  type Notification,
   NotificationCategory,
   type NotificationData,
-  type NotificationPayload,
-  type SemiPartial,
   Severity,
 } from '@rotki/common';
 import { DEFAULT_PRIORITY, displaysFor } from '@/modules/core/notifications/notification-display-policy';
@@ -28,9 +27,9 @@ export function createNotification(
     groupCount,
     message,
     priority = DEFAULT_PRIORITY,
-    severity = Severity.INFO,
+    severity,
     title,
-  }: SemiPartial<NotificationPayload, 'title' | 'message'> = {
+  }: Notification = {
     category: NotificationCategory.DEFAULT,
     display: false,
     message: '',

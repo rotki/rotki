@@ -109,4 +109,11 @@ export interface NotificationData extends NotificationBase {
   readonly read: boolean;
 }
 
-export type Notification = SemiPartial<NotificationPayload, 'title' | 'message'>;
+/**
+ * What a caller hands the dispatcher.
+ *
+ * @remarks
+ * `severity` is required: a failure posted without one used to fall back to INFO and was filed
+ * as news, so the caller has to say what it is reporting.
+ */
+export type Notification = SemiPartial<NotificationPayload, 'title' | 'message' | 'severity'>;

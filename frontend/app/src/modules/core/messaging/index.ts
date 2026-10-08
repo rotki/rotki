@@ -93,7 +93,7 @@ export function useMessageHandling(): UseMessageHandling {
       if (isRequestCancellation(error))
         return;
       const message = handleMessageError(error, 'Message consumption failed');
-      notify({ message, priority: Priority.NORMAL, title });
+      notify({ message, priority: Priority.NORMAL, severity: Severity.ERROR, title });
     }
     finally {
       isRunning = false;

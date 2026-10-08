@@ -1,4 +1,4 @@
-import type { NotificationData, NotificationPayload, SemiPartial } from '@rotki/common';
+import type { Notification, NotificationData } from '@rotki/common';
 
 export interface NotificationStrategyContext {
   readonly notifications: NotificationData[];
@@ -15,7 +15,7 @@ export interface NotificationStrategy {
    * Return a result to commit and stop the chain, or `undefined` to pass through.
    */
   process: (
-    payload: SemiPartial<NotificationPayload, 'title' | 'message'>,
+    payload: Notification,
     context: NotificationStrategyContext,
   ) => NotificationStrategyResult | undefined;
 }

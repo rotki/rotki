@@ -87,7 +87,7 @@ describe('createUserMessageHandler', () => {
 
   it('should add every send the backend held to the count of the row it folds into', async () => {
     const { data } = storeToRefs(useNotificationsStore());
-    set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, message: 'earlier', title: 'kucoin' })]);
+    set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, message: 'earlier', severity: Severity.ERROR, title: 'kucoin' })]);
 
     const result = await createUserMessageHandler(mockT, router).handle(badData, { count: 3 });
 
@@ -101,7 +101,7 @@ describe('createUserMessageHandler', () => {
     const rowDate = new Date('2026-09-30T09:00:00Z');
     const { data } = storeToRefs(useNotificationsStore());
     set(data, [{
-      ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, message: 'newer', title: 'kucoin' }),
+      ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, message: 'newer', severity: Severity.ERROR, title: 'kucoin' }),
       date: rowDate,
     }]);
     const handler = createUserMessageHandler(mockT, router);

@@ -101,7 +101,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.load_error.message', { message: getErrorMessage(error) }), priority: Priority.NORMAL, title: t('database_backups.load_error.title') });
+      notify({ message: t('database_backups.load_error.message', { message: getErrorMessage(error) }), priority: Priority.NORMAL, severity: Severity.ERROR, title: t('database_backups.load_error.title') });
     }
     finally {
       set(loading, false);
@@ -118,7 +118,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }), priority: Priority.HIGH, title: t('database_backups.delete_error.title') });
+      notify({ message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('database_backups.delete_error.title') });
     }
   }
 
@@ -137,6 +137,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
           message: getErrorMessage(error),
         }),
         priority: Priority.HIGH,
+        severity: Severity.ERROR,
         title: t('database_backups.delete_error.title'),
       });
     }
@@ -152,7 +153,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }), priority: Priority.HIGH, title: t('database_backups.backup_error.title') });
+      notify({ message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('database_backups.backup_error.title') });
     }
     finally {
       set(saving, false);

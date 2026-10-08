@@ -8,8 +8,8 @@ describe('createNotification', () => {
   });
 
   it('should derive display from the priority of a payload that does not ask', () => {
-    const popped = createNotification(1, { message: 'm', priority: Priority.ACTION, title: 't' });
-    const stored = createNotification(2, { message: 'm', priority: Priority.BULK, title: 't' });
+    const popped = createNotification(1, { message: 'm', priority: Priority.ACTION, severity: Severity.INFO, title: 't' });
+    const stored = createNotification(2, { message: 'm', priority: Priority.BULK, severity: Severity.INFO, title: 't' });
 
     expect(popped.display).toBe(true);
     expect(stored.display).toBe(false);
@@ -20,6 +20,7 @@ describe('createNotification', () => {
       display: false,
       message: 'm',
       priority: Priority.ACTION,
+      severity: Severity.INFO,
       title: 't',
     });
 
@@ -28,6 +29,11 @@ describe('createNotification', () => {
 
   it('should record the priority it defaulted to, so the drawer sorts on the same value', () => {
     expect(createNotification(1, { message: 'm', severity: Severity.ERROR, title: 't' }).priority)
-      .toBe(createNotification(2, { message: 'm', title: 't' }).priority);
+      .toBe(createNotification(2, { message: 'm', severity: Severity.INFO, title: 't' }).priority);
+  });
+
+  it('should keep the severity the caller gave instead of filing it as news', () => {
+    expect(createNotification(1, { message: 'm', severity: Severity.ERROR, title: 't' }).severity)
+      .toBe(Severity.ERROR);
   });
 });

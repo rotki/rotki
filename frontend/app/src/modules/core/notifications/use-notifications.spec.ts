@@ -85,7 +85,7 @@ describe('useNotifications', () => {
 
   it('should leave a raw notify unclassified rather than lending it the toast door default', () => {
     const { notify } = useNotifications();
-    notify({ message: 'Message', title: 'Title' });
+    notify({ message: 'Message', severity: Severity.INFO, title: 'Title' });
 
     expect(mockNotify).toHaveBeenCalledWith(
       expect.not.objectContaining({ priority: expect.anything() }),

@@ -62,7 +62,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
         groupCount: payload.groupCount,
         message: payload.message,
         priority: payload.priority ?? DEFAULT_PRIORITY,
-        severity: payload.severity ?? existing.severity,
+        severity: payload.severity,
         title: payload.title,
       };
 
