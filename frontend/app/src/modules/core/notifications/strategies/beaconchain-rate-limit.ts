@@ -59,7 +59,7 @@ export function createBeaconchainRateLimitStrategy(
         notifications[index] = {
           ...existing,
           date: new Date(),
-          display: payload.display ?? displaysFor(payload.priority),
+          display: payload.display ?? displaysFor(payload.kind),
           extras: { endpoints, until },
           groupCount,
           message: t('notification_messages.beaconchain_rate_limited.message', {

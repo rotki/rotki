@@ -1,4 +1,5 @@
 import type { HistoryEventTypeData } from '@/modules/history/events/event-type';
+import { NotificationKind } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
 import { flushPromises } from '@vue/test-utils';
@@ -7,6 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 const getTransactionTypeMappings = vi.fn<() => Promise<HistoryEventTypeData>>();
+
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
+vi.mock('@/modules/core/notifications/use-notifications', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useNotifications: (): { notify: typeof notify } => ({ notify }),
+}));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): { getTransactionTypeMappings: typeof getTransactionTypeMappings } => ({
@@ -72,6 +80,14 @@ describe('useHistoryEventMappings', () => {
     await flushPromises();
     return result;
   }
+
+  it('should file a failed mappings fetch as a failure, which never pops, since nothing the user did started it', async () => {
+    getTransactionTypeMappings.mockRejectedValue(new Error('offline'));
+
+    await setup();
+
+    expect(notify).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: NotificationKind.FAILURE }));
+  });
 
   describe('findEventTypeData', () => {
     it('should resolve a combination that has no counterparty', async () => {

@@ -1,8 +1,7 @@
 import type { MessageHandler } from '../interfaces';
 import {
-  NotificationCategory,
   type NotificationData,
-  Priority,
+  NotificationKind,
   Severity,
   toHumanReadable,
 } from '@rotki/common';
@@ -40,7 +39,7 @@ type ProblemMessage = Exclude<UserMessageData, { key: typeof UserMessageKey.AUTH
  *
  * Every other family folds into one row per family and identity (see `userMessageGroup`), which
  * keeps a count across repeats and across the ones the backend held while no client was connected.
- * The row shows the latest sentence and is `Priority.BULK`: recorded in the drawer, never popped.
+ * The row shows the latest sentence and is a backend problem: recorded in the drawer, never popped.
  * The bulk of the corpus is self-describing as ignorable ("Ignoring it", "Skipping balance
  * result"), and a condition that warrants an interrupt earns it by getting a structured message
  * type, not by being a longer string.
@@ -115,12 +114,11 @@ export function createUserMessageHandler(t: ReturnType<typeof useI18n>['t']): Me
     const sentence = latestSentence(data, row, lastSent);
 
     return {
-      category: NotificationCategory.DEFAULT,
       extras: { [SENTENCE]: sentence },
       group,
       groupCount,
+      kind: NotificationKind.BACKEND_PROBLEM,
       message: withRepeats(t, sentence, groupCount),
-      priority: Priority.BULK,
       severity: data.verbosity === MESSAGE_WARNING ? Severity.WARNING : Severity.ERROR,
       title: titleOf(data),
     };

@@ -1,4 +1,4 @@
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
@@ -83,7 +83,7 @@ export function useMessageHandling(): UseMessageHandling {
       if (dropped > 0) {
         notify({
           message: t('actions.notifications.consume.dropped', { count: dropped }),
-          priority: Priority.NORMAL,
+          kind: NotificationKind.FAILURE,
           severity: Severity.WARNING,
           title,
         });
@@ -93,7 +93,7 @@ export function useMessageHandling(): UseMessageHandling {
       if (isRequestCancellation(error))
         return;
       const message = handleMessageError(error, 'Message consumption failed');
-      notify({ message, priority: Priority.NORMAL, severity: Severity.ERROR, title });
+      notify({ kind: NotificationKind.FAILURE, message, severity: Severity.ERROR, title });
     }
     finally {
       isRunning = false;

@@ -586,14 +586,6 @@
         }
       }
     },
-    "statistics": {
-      "net_value": {
-        "error": {
-          "message": "Ошибка: {message}",
-          "title": "Получение данных чистой стоимости"
-        }
-      }
-    },
     "unignore": {
       "error": {
         "description": "Не удалось включить выбранные действия: {error}",

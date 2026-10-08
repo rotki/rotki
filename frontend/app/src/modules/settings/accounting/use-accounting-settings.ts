@@ -9,7 +9,6 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
-import { Priority } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
@@ -47,7 +46,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notifyFailure, showErrorMessage, showSuccessMessage } = useNotifications();
 
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
@@ -60,12 +59,11 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
       logger.error(error);
       const message = getErrorMessage(error);
 
-      notifyError(
+      notifyFailure(
         t('accounting_settings.rule.fetch_error.title'),
         t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
-        { priority: Priority.NORMAL },
       );
 
       return undefined;

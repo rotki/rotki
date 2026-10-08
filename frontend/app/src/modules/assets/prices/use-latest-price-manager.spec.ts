@@ -13,7 +13,7 @@ import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    notifyError: vi.fn(),
+    notifyFailure: vi.fn(),
     showErrorMessage: vi.fn(),
     submitTask: vi.fn(),
   },
@@ -24,7 +24,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): object => ({ notifyError: spies.notifyError, showErrorMessage: spies.showErrorMessage }),
+  useNotifications: (): object => ({ notifyFailure: spies.notifyFailure, showErrorMessage: spies.showErrorMessage }),
 }));
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
@@ -184,8 +184,8 @@ describe('useLatestPrices', () => {
       const { getLatestPrices, loading } = useLatestPrices(t);
       await getLatestPrices();
 
-      expect(spies.notifyError).toHaveBeenCalledOnce();
-      expect(spies.notifyError.mock.calls[0][0]).toBe('price_table.fetch.failure.title');
+      expect(spies.notifyFailure).toHaveBeenCalledOnce();
+      expect(spies.notifyFailure.mock.calls[0][0]).toBe('price_table.fetch.failure.title');
       expect(get(loading)).toBe(false);
     });
 
@@ -212,7 +212,7 @@ describe('useLatestPrices', () => {
 
       expect(api.deleteLatestPrice).toHaveBeenCalledExactlyOnceWith('ETH');
       expect(refreshPrices).toHaveBeenCalledExactlyOnceWith(false, ['BTC', 'EUR', 'ETH']);
-      expect(spies.notifyError).not.toHaveBeenCalled();
+      expect(spies.notifyFailure).not.toHaveBeenCalled();
     });
 
     it('should leave a failed delete to its task centre row and leave the prices as they are', async () => {
@@ -222,7 +222,7 @@ describe('useLatestPrices', () => {
       await deletePrice({ fromAsset: 'ETH' });
 
       expect(spies.submitTask).toHaveBeenCalledOnce();
-      expect(spies.notifyError).not.toHaveBeenCalled();
+      expect(spies.notifyFailure).not.toHaveBeenCalled();
       expect(api.fetchLatestPrices).not.toHaveBeenCalled();
       expect(refreshPrices).not.toHaveBeenCalled();
     });

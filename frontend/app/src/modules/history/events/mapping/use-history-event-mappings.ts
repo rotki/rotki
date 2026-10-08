@@ -6,7 +6,7 @@ import type {
   HistoryEventCategoryMapping,
   HistoryEventTypeData,
 } from '@/modules/history/events/event-type';
-import { HistoryEventEntryType, Priority, Severity, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { HistoryEventEntryType, NotificationKind, Severity, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';
 import { uniqueStrings } from '@/modules/core/common/data/data';
@@ -256,7 +256,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         message: t('actions.history_events.fetch_mapping.error.description', {
           message: getErrorMessage(error),
         }),
-        priority: Priority.HIGH,
+        kind: NotificationKind.FAILURE,
         severity: Severity.ERROR,
         title: t('actions.history_events.fetch_mapping.error.title'),
       });

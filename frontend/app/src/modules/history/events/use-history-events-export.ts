@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import { type Notification, Priority, Severity } from '@rotki/common';
+import { type Notification, NotificationKind, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -81,6 +81,7 @@ export function useHistoryEventsExport(
   async function reportExport({ result }: ExportOutcome): Promise<ExportMessage | null> {
     if (appSession) {
       return {
+        kind: NotificationKind.RESULT,
         message: t('actions.history_events_export.message.success'),
         severity: Severity.INFO,
         title: t('actions.history_events_export.title'),
@@ -112,6 +113,7 @@ export function useHistoryEventsExport(
     }
     catch (error: unknown) {
       message = {
+        kind: NotificationKind.RESULT,
         message: t('actions.history_events_export.message.failure', {
           description: getErrorMessage(error),
         }),
@@ -121,7 +123,7 @@ export function useHistoryEventsExport(
     }
 
     if (message)
-      notify({ ...message, priority: Priority.HIGH });
+      notify(message);
   }
 
   function showConfirmation(): void {

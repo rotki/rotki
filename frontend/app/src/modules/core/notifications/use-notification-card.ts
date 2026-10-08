@@ -1,11 +1,16 @@
 import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
-import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationAction, type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSharedClipboard } from '@/modules/core/common/use-clipboard';
 
 /** Height in pixels beyond which the message is collapsed behind an expand arrow. */
 export const NOTIFICATION_MAX_HEIGHT = 64;
+
+const REMINDER_TONE = 'reminder';
+
+/** How a card is coloured: by its severity, or as a reminder. */
+type CardTone = Severity | typeof REMINDER_TONE;
 
 interface UseNotificationCardOptions {
   /** Measured height of the message body; drives whether the expand arrow is offered. */
@@ -21,7 +26,7 @@ interface UseNotificationCardReturn {
   buttonClicked: () => void;
   /** Soft tinted disc and glyph colour of the severity icon. */
   circleBgClass: ComputedRef<string>;
-  /** Semantic colour of the card, which is its severity and nothing else. */
+  /** Semantic colour of the card: its severity, or `reminder` for a reminder. */
   color: ComputedRef<string>;
   /** Severity-tinted border of the card, which itself stays on the plain surface. */
   colorBgClass: ComputedRef<string>;
@@ -85,34 +90,25 @@ export function useNotificationCard(
     return arrayify(action);
   });
 
+  /** A reminder is styled as one whatever its severity; anything else by its severity. */
+  const tone = computed<CardTone>(() => {
+    const { kind, severity } = toValue(notification);
+    return kind === NotificationKind.REMINDER ? REMINDER_TONE : severity;
+  });
+
   const icon = computed<RuiIcons>(() => {
-    switch (toValue(notification).severity) {
+    switch (get(tone)) {
       case Severity.ERROR:
       case Severity.INFO:
         return 'lu-circle-alert';
       case Severity.WARNING:
         return 'lu-siren';
-      case Severity.REMINDER:
+      case REMINDER_TONE:
         return 'lu-alarm-clock';
-      default:
-        return 'lu-circle-alert';
     }
   });
 
-  const color = computed<string>(() => {
-    switch (toValue(notification).severity) {
-      case Severity.ERROR:
-        return 'error';
-      case Severity.INFO:
-        return 'info';
-      case Severity.WARNING:
-        return 'warning';
-      case Severity.REMINDER:
-        return 'reminder';
-      default:
-        return '';
-    }
-  });
+  const color = computed<string>(() => get(tone));
 
   const colorBgClass = computed<string>(() => {
     switch (get(color)) {
@@ -122,7 +118,7 @@ export function useNotificationCard(
         return 'border-rui-error-border';
       case 'info':
         return 'border-rui-info-border';
-      case 'reminder':
+      case REMINDER_TONE:
         return 'border-rui-secondary-border';
       default:
         return '';
@@ -133,17 +129,15 @@ export function useNotificationCard(
   const expandButtonClass = computed<string>(() => 'to-rui-surface');
 
   const circleBgClass = computed<string>(() => {
-    switch (toValue(notification).severity) {
+    switch (get(tone)) {
       case Severity.ERROR:
         return 'bg-rui-error-soft text-rui-error';
       case Severity.INFO:
         return 'bg-rui-info-soft text-rui-info';
       case Severity.WARNING:
         return 'bg-rui-warning-soft text-rui-warning';
-      case Severity.REMINDER:
+      case REMINDER_TONE:
         return 'bg-rui-secondary-soft text-rui-secondary';
-      default:
-        return 'bg-rui-success-soft text-rui-success';
     }
   });
 

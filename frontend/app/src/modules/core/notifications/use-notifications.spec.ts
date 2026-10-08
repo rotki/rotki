@@ -1,4 +1,4 @@
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
@@ -29,39 +29,51 @@ describe('useNotifications', () => {
     vi.clearAllMocks();
   });
 
-  it('should call notify with ERROR severity for notifyError', () => {
+  it('should report an error result for notifyError', () => {
     const { notifyError } = useNotifications();
     notifyError('Error Title', 'Error message');
 
     expect(mockNotify).toHaveBeenCalledWith({
+      kind: NotificationKind.RESULT,
       message: 'Error message',
-      priority: Priority.HIGH,
       severity: Severity.ERROR,
       title: 'Error Title',
     });
   });
 
-  it('should call notify with WARNING severity for notifyWarning', () => {
+  it('should report a warning result for notifyWarning', () => {
     const { notifyWarning } = useNotifications();
     notifyWarning('Warn Title', 'Warn message');
 
     expect(mockNotify).toHaveBeenCalledWith({
+      kind: NotificationKind.RESULT,
       message: 'Warn message',
-      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: 'Warn Title',
     });
   });
 
-  it('should call notify with INFO severity for notifyInfo', () => {
+  it('should report an informational result for notifyInfo', () => {
     const { notifyInfo } = useNotifications();
     notifyInfo('Info Title', 'Info message');
 
     expect(mockNotify).toHaveBeenCalledWith({
+      kind: NotificationKind.RESULT,
       message: 'Info message',
-      priority: Priority.HIGH,
       severity: Severity.INFO,
       title: 'Info Title',
+    });
+  });
+
+  it('should record a background failure for notifyFailure', () => {
+    const { notifyFailure } = useNotifications();
+    notifyFailure('Failure Title', 'Failure message');
+
+    expect(mockNotify).toHaveBeenCalledWith({
+      kind: NotificationKind.FAILURE,
+      message: 'Failure message',
+      severity: Severity.ERROR,
+      title: 'Failure Title',
     });
   });
 
@@ -74,21 +86,12 @@ describe('useNotifications', () => {
     );
   });
 
-  it('should forward a classifying priority so the caller can opt out of a popup', () => {
-    const { notifyError } = useNotifications();
-    notifyError('Title', 'Message', { priority: Priority.NORMAL });
-
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ priority: Priority.NORMAL }),
-    );
-  });
-
-  it('should leave a raw notify unclassified rather than lending it the toast door default', () => {
+  it('should pass a raw notify through with the kind its caller gave', () => {
     const { notify } = useNotifications();
-    notify({ message: 'Message', severity: Severity.INFO, title: 'Title' });
+    notify({ kind: NotificationKind.ANNOUNCEMENT, message: 'Message', severity: Severity.INFO, title: 'Title' });
 
     expect(mockNotify).toHaveBeenCalledWith(
-      expect.not.objectContaining({ priority: expect.anything() }),
+      expect.objectContaining({ kind: NotificationKind.ANNOUNCEMENT }),
     );
   });
 

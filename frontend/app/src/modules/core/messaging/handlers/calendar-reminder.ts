@@ -1,6 +1,6 @@
 import type { NotificationHandler } from '../interfaces';
 import type { CalendarEventWithReminder } from '@/modules/calendar/types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import dayjs from 'dayjs';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
@@ -21,7 +21,7 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
     const eventTime = dayjs(timestamp * 1000);
     const isEventTime = now.isSameOrAfter(eventTime);
 
-    removeMatching(({ category, extras }) => category === NotificationCategory.CALENDAR_REMINDER && (extras?.eventId === identifier));
+    removeMatching(({ extras, kind }) => kind === NotificationKind.REMINDER && (extras?.eventId === identifier));
 
     let title = name;
     if (!isEventTime) {
@@ -62,13 +62,12 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
         },
         label: t('notification_messages.reminder.open_calendar'),
       },
-      category: NotificationCategory.CALENDAR_REMINDER,
       extras: {
         eventId: identifier,
       },
+      kind: NotificationKind.REMINDER,
       message,
-      priority: Priority.HIGH,
-      severity: Severity.REMINDER,
+      severity: Severity.INFO,
       title,
     };
   });

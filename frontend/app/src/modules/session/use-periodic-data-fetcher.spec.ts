@@ -5,7 +5,7 @@ import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-
 import '@test/i18n';
 
 const mockFetchPeriodicData = vi.fn();
-const mockNotifyError = vi.fn();
+const mockNotifyFailure = vi.fn();
 
 vi.mock('@/modules/session/api/use-session-api', () => ({
   useSessionApi: vi.fn(() => ({
@@ -16,7 +16,7 @@ vi.mock('@/modules/session/api/use-session-api', () => ({
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
-    notifyError: mockNotifyError,
+    notifyFailure: mockNotifyFailure,
   })),
 }));
 
@@ -100,7 +100,7 @@ describe('usePeriodicDataFetcher', () => {
     const { check } = usePeriodicDataFetcher();
     await check();
 
-    expect(mockNotifyError).toHaveBeenCalledOnce();
+    expect(mockNotifyFailure).toHaveBeenCalledOnce();
   });
 
   it('should prevent concurrent executions', async () => {

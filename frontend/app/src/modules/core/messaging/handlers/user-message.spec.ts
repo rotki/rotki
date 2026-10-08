@@ -1,6 +1,6 @@
 import type { MessageDelivery } from '@/modules/core/messaging/interfaces';
 import type { UserMessageData } from '@/modules/core/messaging/types/base';
-import { assert, type Notification, NotificationCategory, Priority, Severity } from '@rotki/common';
+import { assert, type Notification, NotificationKind, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -66,9 +66,9 @@ describe('createUserMessageHandler', () => {
     const result = await notificationFor(badData);
 
     expect(result).toMatchObject({
-      category: NotificationCategory.DEFAULT,
       group: userMessageGroup(badData),
       groupCount: 1,
+      kind: NotificationKind.BACKEND_PROBLEM,
       message: badData.value,
       severity: Severity.ERROR,
       title: 'notification_messages.user_message.with_subject::KuCoin, notification_messages.user_message.title.bad_data',
@@ -86,7 +86,7 @@ describe('createUserMessageHandler', () => {
 
   it('should add every send the backend held to the count of the row it folds into', async () => {
     const { data } = storeToRefs(useNotificationsStore());
-    set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, message: 'earlier', severity: Severity.ERROR, title: 'kucoin' })]);
+    set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, kind: NotificationKind.BACKEND_PROBLEM, message: 'earlier', severity: Severity.ERROR, title: 'kucoin' })]);
 
     const result = await notificationFor(badData, { count: 3 });
 
@@ -100,7 +100,7 @@ describe('createUserMessageHandler', () => {
     const rowDate = new Date('2026-09-30T09:00:00Z');
     const { data } = storeToRefs(useNotificationsStore());
     set(data, [{
-      ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, message: 'newer', severity: Severity.ERROR, title: 'kucoin' }),
+      ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, kind: NotificationKind.BACKEND_PROBLEM, message: 'newer', severity: Severity.ERROR, title: 'kucoin' }),
       date: rowDate,
     }]);
     const handler = createUserMessageHandler(mockT);
@@ -115,7 +115,7 @@ describe('createUserMessageHandler', () => {
   it.each([badData, localDb])('should keep a $key message out of the popup queue', async (message) => {
     const result = await notificationFor(message);
 
-    expect(result.priority).toBe(Priority.BULK);
+    expect(result.kind).toBe(NotificationKind.BACKEND_PROBLEM);
     expect(result.action).toBeUndefined();
     expect(createNotification(1, result).display).toBe(false);
   });

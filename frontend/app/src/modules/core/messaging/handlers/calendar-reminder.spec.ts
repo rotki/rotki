@@ -1,6 +1,6 @@
 import type { Router } from 'vue-router';
 import type { CalendarEventWithReminder } from '@/modules/calendar/types';
-import { NotificationCategory, Severity } from '@rotki/common';
+import { NotificationKind } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
 import dayjs from 'dayjs';
@@ -69,11 +69,15 @@ describe('createCalendarReminderHandler', () => {
     mockEditCalendarReminder.mockResolvedValue(undefined);
   });
 
-  it('should remove any existing reminder for the same event', async () => {
+  it('should remove the existing reminder for the same event, and nothing else', async () => {
     const handler = createCalendarReminderHandler(mockT, router);
     await handler.handle(event());
 
     expect(mockRemoveMatching).toHaveBeenCalledOnce();
+    const [matches] = mockRemoveMatching.mock.calls[0];
+    expect(matches({ extras: { eventId: 7 }, kind: NotificationKind.REMINDER })).toBe(true);
+    expect(matches({ extras: { eventId: 8 }, kind: NotificationKind.REMINDER })).toBe(false);
+    expect(matches({ extras: { eventId: 7 }, kind: NotificationKind.RESULT })).toBe(false);
   });
 
   it('should use the plain name once the event time has passed', async () => {
@@ -81,8 +85,7 @@ describe('createCalendarReminderHandler', () => {
     const notification = await handler.handle(event({ name: 'Vesting unlock', timestamp: PAST }));
 
     expect(notification.title).toBe('Vesting unlock');
-    expect(notification.category).toBe(NotificationCategory.CALENDAR_REMINDER);
-    expect(notification.severity).toBe(Severity.REMINDER);
+    expect(notification.kind).toBe(NotificationKind.REMINDER);
   });
 
   it('should prepend a relative time when the event is still upcoming', async () => {

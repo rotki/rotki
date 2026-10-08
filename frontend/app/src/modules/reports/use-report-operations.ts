@@ -2,7 +2,7 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
-import { Blockchain, Priority } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { pipe } from 'plainfp';
 import { type ResultAsync, tap } from 'plainfp/result-async';
@@ -26,7 +26,7 @@ interface UseReportOperationsReturn {
 }
 
 export function useReportOperations(): UseReportOperationsReturn {
-  const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notifyError, notifyFailure, showErrorMessage, showSuccessMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchEnsNames } = useEnsOperations();
 
@@ -59,7 +59,7 @@ export function useReportOperations(): UseReportOperationsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notifyError(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'), { priority: Priority.NORMAL });
+      notifyFailure(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'));
     }
   }
 

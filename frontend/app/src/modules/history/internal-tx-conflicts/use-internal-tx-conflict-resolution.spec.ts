@@ -1,5 +1,5 @@
 import type { ActivityContext, NativeActivitySpec, TaskOutcome } from '@/modules/task-center/use-native-task';
-import { type Notification, Priority, Severity } from '@rotki/common';
+import { type Notification, NotificationKind, Severity } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { isErr } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -203,7 +203,8 @@ describe('use-internal-tx-conflict-resolution', () => {
       expect(spies.notify).toHaveBeenCalledOnce();
       expect(spies.notify).toHaveBeenCalledWith(expect.objectContaining({
         message: 'internal_tx_conflicts.notifications.completed::2',
-        priority: Priority.NORMAL,
+        display: false,
+        kind: NotificationKind.RESULT,
         severity: Severity.INFO,
       }));
     });

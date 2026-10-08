@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/modules/session/backup';
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { getFilepath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -101,7 +101,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.load_error.message', { message: getErrorMessage(error) }), priority: Priority.NORMAL, severity: Severity.ERROR, title: t('database_backups.load_error.title') });
+      notify({ message: t('database_backups.load_error.message', { message: getErrorMessage(error) }), kind: NotificationKind.FAILURE, severity: Severity.ERROR, title: t('database_backups.load_error.title') });
     }
     finally {
       set(loading, false);
@@ -118,7 +118,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('database_backups.delete_error.title') });
+      notify({ message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }), kind: NotificationKind.RESULT, severity: Severity.ERROR, title: t('database_backups.delete_error.title') });
     }
   }
 
@@ -136,7 +136,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
           file: filepath,
           message: getErrorMessage(error),
         }),
-        priority: Priority.HIGH,
+        kind: NotificationKind.RESULT,
         severity: Severity.ERROR,
         title: t('database_backups.delete_error.title'),
       });
@@ -147,13 +147,13 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     try {
       set(saving, true);
       const filepath = await createBackup();
-      notify({ message: t('database_backups.backup.message', { filepath }), priority: Priority.HIGH, severity: Severity.INFO, title: t('database_backups.backup.title') });
+      notify({ message: t('database_backups.backup.message', { filepath }), kind: NotificationKind.RESULT, severity: Severity.INFO, title: t('database_backups.backup.title') });
 
       await loadInfo();
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({ message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('database_backups.backup_error.title') });
+      notify({ message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }), kind: NotificationKind.RESULT, severity: Severity.ERROR, title: t('database_backups.backup_error.title') });
     }
     finally {
       set(saving, false);

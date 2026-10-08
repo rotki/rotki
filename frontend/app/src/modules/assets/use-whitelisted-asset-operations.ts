@@ -1,5 +1,4 @@
 import type { ActionStatus } from '@/modules/core/common/action';
-import { Priority } from '@rotki/common';
 import { useAssetWhitelistApi } from '@/modules/assets/api/use-asset-whitelist-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
@@ -13,7 +12,7 @@ interface UseWhitelistedAssetOperationsReturn {
 }
 
 export function useWhitelistedAssetOperations(): UseWhitelistedAssetOperationsReturn {
-  const { notifyError } = useNotifications();
+  const { notifyError, notifyFailure } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { addAssetToWhitelist, getWhitelistedAssets, removeAssetFromWhitelist } = useAssetWhitelistApi();
   const { fetchIgnoredAssets } = useIgnoredAssetOperations();
@@ -25,12 +24,11 @@ export function useWhitelistedAssetOperations(): UseWhitelistedAssetOperationsRe
       set(whitelistedAssets, whitelisted);
     }
     catch (error: unknown) {
-      notifyError(
+      notifyFailure(
         t('actions.session.whitelisted_assets.error.title'),
         t('actions.session.whitelisted_assets.error.message', {
           error: getErrorMessage(error),
         }),
-        { priority: Priority.NORMAL },
       );
     }
   }

@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/modules/core/common/action';
-import { isValidEthAddress, Priority, Severity, toHumanReadable } from '@rotki/common';
+import { isValidEthAddress, NotificationKind, Severity, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -35,7 +35,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         message: t('actions.fetch_counterparties.error.description', {
           message: getErrorMessage(error),
         }),
-        priority: Priority.HIGH,
+        kind: NotificationKind.FAILURE,
         severity: Severity.ERROR,
         title: t('actions.fetch_counterparties.error.title'),
       });

@@ -23,7 +23,7 @@ const importAccountingRulesData = vi.fn();
 const uploadAccountingRulesData = vi.fn();
 const resetAccountingRules = vi.fn();
 
-const notifyError = vi.fn();
+const notifyFailure = vi.fn();
 const showErrorMessage = vi.fn();
 const showSuccessMessage = vi.fn();
 
@@ -51,7 +51,7 @@ vi.mock('@/modules/settings/api/use-accounting-api', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
-  useNotifications: (): object => ({ notifyError, showErrorMessage, showSuccessMessage }),
+  useNotifications: (): object => ({ notifyFailure, showErrorMessage, showSuccessMessage }),
 }));
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
@@ -103,7 +103,7 @@ describe('useAccountingSettings', () => {
       fetchAccountingRule.mockRejectedValue(new Error('nope'));
       const result = await useAccountingSettings().getAccountingRule(rulePayload, null);
       expect(result).toBeUndefined();
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(notifyFailure).toHaveBeenCalledOnce();
     });
   });
 
@@ -119,7 +119,7 @@ describe('useAccountingSettings', () => {
       fetchAccountingRules.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRules(rulePayload);
       expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
-      expect(notifyError).not.toHaveBeenCalled();
+      expect(notifyFailure).not.toHaveBeenCalled();
     });
   });
 
@@ -135,7 +135,7 @@ describe('useAccountingSettings', () => {
       fetchAccountingRuleConflicts.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRulesConflicts(conflictPayload);
       expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
-      expect(notifyError).not.toHaveBeenCalled();
+      expect(notifyFailure).not.toHaveBeenCalled();
     });
   });
 

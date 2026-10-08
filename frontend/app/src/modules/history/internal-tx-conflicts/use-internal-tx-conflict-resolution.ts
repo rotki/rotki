@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { err, getOr, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -191,7 +191,8 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       if (cancelled) {
         notify({
           message: t('internal_tx_conflicts.notifications.cancelled', { completed, total }),
-          priority: Priority.NORMAL,
+          display: false,
+          kind: NotificationKind.RESULT,
           severity: Severity.WARNING,
           title: t('internal_tx_conflicts.notifications.title'),
         });
@@ -199,7 +200,8 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       else if (failed === 0) {
         notify({
           message: t('internal_tx_conflicts.notifications.completed', { total }),
-          priority: Priority.NORMAL,
+          display: false,
+          kind: NotificationKind.RESULT,
           severity: Severity.INFO,
           title: t('internal_tx_conflicts.notifications.title'),
         });

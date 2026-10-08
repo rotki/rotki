@@ -930,14 +930,6 @@
         }
       }
     },
-    "statistics": {
-      "net_value": {
-        "error": {
-          "message": "失败：{message}",
-          "title": "获取净值数据"
-        }
-      }
-    },
     "transactions_redecode": {
       "error": {
         "not_decoded": "无法拉取或解码这些交易"

@@ -1,34 +1,30 @@
-import { type Notification, type NotificationData, Priority, Severity } from '@rotki/common';
+import { type Notification, type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 export { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 
-interface ToastOptions {
-  /**
-   * Classifies the notification, which is what decides whether it interrupts.
-   *
-   * @remarks
-   * `NORMAL` or `BULK` records it in the drawer without a popup; the default pops. Callers say
-   * what the notification *is* and the dispatcher decides what to do with it, so there is no way
-   * to ask for a popup directly.
-   */
-  readonly priority?: Priority;
-}
-
 interface UseNotificationsReturn {
   /**
-   * Send a raw notification with full control over all fields (action, group, category, priority, etc.).
+   * Send a raw notification with full control over all fields (kind, action, group, etc.).
    * Use this for advanced patterns that the convenience methods don't cover.
    */
   notify: (notification: Notification) => void;
-  /** Report an error, popped unless `options.priority` classifies it lower. */
-  notifyError: (title: string, message: string, options?: ToastOptions) => void;
-  /** Report a warning, popped unless `options.priority` classifies it lower. */
-  notifyWarning: (title: string, message: string, options?: ToastOptions) => void;
-  /** Report an informational outcome, popped unless `options.priority` classifies it lower. */
-  notifyInfo: (title: string, message: string, options?: ToastOptions) => void;
+  /** Report a failed result of something the user started, which pops. */
+  notifyError: (title: string, message: string) => void;
+  /** Report a result of something the user started that needs a caveat, which pops. */
+  notifyWarning: (title: string, message: string) => void;
+  /** Report a result of something the user started, which pops. */
+  notifyInfo: (title: string, message: string) => void;
+  /**
+   * Record a background request that failed with nowhere else to show it, without a popup.
+   *
+   * @remarks
+   * A stopgap: such a failure belongs where the data would have been, and moves there as each
+   * surface learns to show its own error.
+   */
+  notifyFailure: (title: string, message: string) => void;
   /** Remove the first notification matching the predicate. */
   removeMatching: (predicate: (n: NotificationData) => boolean) => void;
   /**
@@ -59,37 +55,24 @@ export function useNotifications(): UseNotificationsReturn {
   const { notify: dispatchNotify } = useNotificationDispatcher();
   const { setMessage } = useMessageStore();
 
-  /**
-   * @remarks
-   * The fallback is `HIGH` rather than `DEFAULT_PRIORITY` because the two doors into the dispatcher
-   * carry opposite assumptions. A caller reaching for `notifyError` and friends is reporting the
-   * outcome of something the user just did, so it interrupts unless it says otherwise; a raw
-   * `notify()` payload is assembled field by field, so an absent priority there means unclassified
-   * and lands on the quiet default instead.
-   */
-  function toast(severity: Severity, title: string, message: string, options?: ToastOptions): void {
-    dispatchNotify({
-      message,
-      priority: options?.priority ?? Priority.HIGH,
-      severity,
-      title,
-    });
-  }
-
   function notify(notification: Notification): void {
     dispatchNotify(notification);
   }
 
-  function notifyError(title: string, message: string, options?: ToastOptions): void {
-    toast(Severity.ERROR, title, message, options);
+  function notifyError(title: string, message: string): void {
+    dispatchNotify({ kind: NotificationKind.RESULT, message, severity: Severity.ERROR, title });
   }
 
-  function notifyWarning(title: string, message: string, options?: ToastOptions): void {
-    toast(Severity.WARNING, title, message, options);
+  function notifyWarning(title: string, message: string): void {
+    dispatchNotify({ kind: NotificationKind.RESULT, message, severity: Severity.WARNING, title });
   }
 
-  function notifyInfo(title: string, message: string, options?: ToastOptions): void {
-    toast(Severity.INFO, title, message, options);
+  function notifyInfo(title: string, message: string): void {
+    dispatchNotify({ kind: NotificationKind.RESULT, message, severity: Severity.INFO, title });
+  }
+
+  function notifyFailure(title: string, message: string): void {
+    dispatchNotify({ kind: NotificationKind.FAILURE, message, severity: Severity.ERROR, title });
   }
 
   function removeMatching(predicate: (n: NotificationData) => boolean): void {
@@ -104,5 +87,5 @@ export function useNotifications(): UseNotificationsReturn {
     setMessage({ description: description ?? title, success: false, ...(description ? { title } : {}) }, options);
   }
 
-  return { notify, notifyError, notifyInfo, notifyWarning, removeMatching, showErrorMessage, showSuccessMessage };
+  return { notify, notifyError, notifyFailure, notifyInfo, notifyWarning, removeMatching, showErrorMessage, showSuccessMessage };
 }

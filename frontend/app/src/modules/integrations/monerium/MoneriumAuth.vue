@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
-import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { type Notification, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -79,11 +79,11 @@ async function confirm(): Promise<void> {
  * the outcome of the callback, a disconnect - so they all share one group. The dispatcher then
  * replaces the entry of the previous step instead of leaving a trail of stale ones behind.
  */
-function notifyAuthStep(payload: Notification): void {
+function notifyAuthStep(payload: Omit<Notification, 'kind'>): void {
   notify({
     ...payload,
     group: NotificationGroup.MONERIUM_AUTH,
-    priority: Priority.HIGH,
+    kind: NotificationKind.RESULT,
   });
 }
 

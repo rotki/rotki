@@ -11,7 +11,7 @@ function unauthorized(): FetchError {
 const mocks = vi.hoisted(() => ({
   fetchEthStakingValidators: vi.fn(),
   getNativeAsset: vi.fn((chain: string): string => chain.toUpperCase()),
-  notifyError: vi.fn(),
+  notifyFailure: vi.fn(),
   queryAccounts: vi.fn(),
   queryBtcAccounts: vi.fn(),
   markFetchFailed: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (e: unknown): string => (e instanceof Error ? e.message : String(e)),
-  useNotifications: vi.fn(() => ({ notifyError: mocks.notifyError })),
+  useNotifications: vi.fn(() => ({ notifyFailure: mocks.notifyFailure })),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -108,7 +108,7 @@ describe('useAccountFetching', () => {
     mocks.queryAccounts.mockRejectedValue(new Error('query failed'));
     const { useAccountFetching } = await importModule();
     await useAccountFetching().fetch('eth');
-    expect(mocks.notifyError).toHaveBeenCalledOnce();
+    expect(mocks.notifyFailure).toHaveBeenCalledOnce();
     // settled, so the accounts page shows its empty state rather than loading forever
     expect(mocks.markFetchFailed).toHaveBeenCalledWith('eth');
   });
@@ -117,7 +117,7 @@ describe('useAccountFetching', () => {
     mocks.queryBtcAccounts.mockRejectedValue(new Error('btc failed'));
     const { useAccountFetching } = await importModule();
     await useAccountFetching().fetch('bch');
-    expect(mocks.notifyError).toHaveBeenCalledOnce();
+    expect(mocks.notifyFailure).toHaveBeenCalledOnce();
   });
 
   it('should stay silent when the session expired, since this runs once per chain and the toasts stack over the user menu', async () => {
@@ -126,7 +126,7 @@ describe('useAccountFetching', () => {
 
     await useAccountFetching().fetch('eth');
 
-    expect(mocks.notifyError).not.toHaveBeenCalled();
+    expect(mocks.notifyFailure).not.toHaveBeenCalled();
   });
 
   it('should still notify for a non-401 FetchError, so the guard keys on the status rather than on the path', async () => {
@@ -137,6 +137,6 @@ describe('useAccountFetching', () => {
 
     await useAccountFetching().fetch('eth');
 
-    expect(mocks.notifyError).toHaveBeenCalledOnce();
+    expect(mocks.notifyFailure).toHaveBeenCalledOnce();
   });
 });

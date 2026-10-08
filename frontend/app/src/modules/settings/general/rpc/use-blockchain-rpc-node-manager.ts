@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { type Blockchain, Priority, Severity } from '@rotki/common';
+import { type Blockchain, NotificationKind, Severity } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -191,7 +191,7 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   function notifyConnectFailures(messages: string[]): void {
     notify({
       message: messages.join('\n'),
-      priority: Priority.HIGH,
+      kind: NotificationKind.RESULT,
       severity: Severity.ERROR,
       title: t('evm_rpc_node_manager.connect_error.title', { chain: get(chainName) }),
     });

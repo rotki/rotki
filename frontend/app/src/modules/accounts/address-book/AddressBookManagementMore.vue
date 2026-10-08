@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { useAddressBookImport } from '@/modules/accounts/address-book/use-address-book-import';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -32,7 +32,7 @@ async function doImport() {
       message: t('address_book.import.import_success.message', {
         length: successEntries,
       }),
-      priority: Priority.HIGH,
+      kind: NotificationKind.RESULT,
       severity: Severity.INFO,
       title: t('address_book.import.title'),
     });

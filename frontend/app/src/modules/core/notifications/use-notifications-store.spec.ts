@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationData, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
+import { type NotificationData, NotificationGroup, NotificationKind, type NotificationPayload, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
@@ -14,7 +14,7 @@ vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
 
 function testPayload(overrides: Partial<NotificationPayload> & { message: string; title: string }): NotificationPayload {
   return {
-    category: NotificationCategory.DEFAULT,
+    kind: NotificationKind.RESULT,
     severity: Severity.INFO,
     ...overrides,
   };
@@ -77,22 +77,21 @@ describe('useNotificationsStore', () => {
     expect(get(data)[0]).toMatchObject({ message: 'keep-me' });
   });
 
-  it('should sort prioritized by priority desc then date desc', () => {
+  it('should list the newest notification first', () => {
     const store = useNotificationsStore();
-    const { prioritized } = storeToRefs(store);
+    const { newestFirst } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ message: 'normal', priority: Priority.NORMAL, title: 'normal' })),
+      createNotification(store.getNextId(), testPayload({ message: 'older', title: 'older' })),
     ]);
 
     vi.advanceTimersByTime(1000);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ message: 'action', priority: Priority.ACTION, title: 'action' })),
+      createNotification(store.getNextId(), testPayload({ message: 'newer', title: 'newer' })),
     ]);
 
-    expect(get(prioritized)[0]).toMatchObject({ message: 'action' });
-    expect(get(prioritized)[1]).toMatchObject({ message: 'normal' });
+    expect(get(newestFirst).map(({ message }) => message)).toEqual(['newer', 'older']);
   });
 
   it('should cap at 200 notifications', () => {
@@ -104,7 +103,7 @@ describe('useNotificationsStore', () => {
       vi.advanceTimersByTime(100);
       batch.push(createNotification(store.getNextId(), testPayload({
         message: `msg-${i}`,
-        priority: Priority.BULK,
+        kind: NotificationKind.BACKEND_PROBLEM,
         title: 'bulk',
       })));
     }
@@ -123,8 +122,8 @@ describe('useNotificationsStore', () => {
     const { queue } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ message: 'shown', priority: Priority.HIGH, title: 'shown' })),
-      createNotification(store.getNextId(), testPayload({ message: 'hidden', priority: Priority.NORMAL, title: 'hidden' })),
+      createNotification(store.getNextId(), testPayload({ message: 'shown', kind: NotificationKind.RESULT, title: 'shown' })),
+      createNotification(store.getNextId(), testPayload({ message: 'hidden', kind: NotificationKind.FAILURE, title: 'hidden' })),
     ]);
 
     expect(get(queue)).toHaveLength(1);
@@ -176,7 +175,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', priority: Priority.ACTION, title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', kind: NotificationKind.ANNOUNCEMENT, title: 'title' })),
     ]);
     store.displayed([9999]);
 
@@ -184,11 +183,11 @@ describe('useNotificationsStore', () => {
     expect(get(data)[0].display).toBe(true);
   });
 
-  it('should report something unread as soon as a notification arrives, whatever its priority', () => {
+  it('should report something unread as soon as a notification arrives, whatever its kind', () => {
     const store = useNotificationsStore();
     const { hasUnread } = storeToRefs(store);
 
-    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', priority: Priority.BULK, title: 'title' }))]);
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', kind: NotificationKind.BACKEND_PROBLEM, title: 'title' }))]);
 
     expect(get(hasUnread)).toBe(true);
   });
@@ -197,7 +196,7 @@ describe('useNotificationsStore', () => {
     const store = useNotificationsStore();
     const { hasUnread } = storeToRefs(store);
 
-    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', priority: Priority.HIGH, title: 'title' }))]);
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', kind: NotificationKind.RESULT, title: 'title' }))]);
     store.markAllRead();
 
     expect(get(hasUnread)).toBe(false);
@@ -219,7 +218,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', priority: Priority.ACTION, title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', kind: NotificationKind.ANNOUNCEMENT, title: 'title' })),
     ]);
     store.displayed([]);
 

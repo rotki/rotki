@@ -1,6 +1,6 @@
 import type { BankAuthChallenge, BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { NotificationKind, Severity } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
@@ -63,9 +63,8 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
         icon: 'lu-shield-check',
         label: t('actions.bank_events.authentication.action'),
       },
-      category: NotificationCategory.DEFAULT,
+      kind: NotificationKind.ANNOUNCEMENT,
       message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(location), name }),
-      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: t('actions.bank_events.authentication.title'),
     });
