@@ -274,7 +274,6 @@ from rotkehlchen.types import (
     SolanaAddress,
     SupportedBlockchain,
     Timestamp,
-    TimestampMS,
     UserNote,
 )
 
@@ -3979,7 +3978,7 @@ class OnchainHistoricalBalanceDivergenceResource(BaseMethodView):
             address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal,
-            to_timestamp: TimestampMS | None,
+            to_timestamp: Timestamp | None,
     ) -> Response:
         return self.rest_api.find_onchain_historical_balance_divergence(
             async_query=async_query,

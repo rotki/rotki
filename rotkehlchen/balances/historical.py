@@ -76,7 +76,7 @@ class HistoricalBalanceDivergenceProbe(NamedTuple):
 
 
 class HistoricalBalanceDivergenceResult(NamedTuple):
-    status: Literal['diverged', 'diverged_from_start', 'no_divergence']
+    status: Literal['diverged', 'diverged_from_start', 'no_divergence', 'no_checkpoints']
     location: Location
     address: str
     asset: Asset
@@ -361,7 +361,7 @@ class HistoricalBalancesManager:
             address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal = ZERO,
-            to_timestamp: TimestampMS | None = None,
+            to_timestamp: Timestamp | None = None,
     ) -> HistoricalBalanceDivergenceResult:
         """Find the first tracked wallet-balance event that disagrees with on-chain data.
 
@@ -369,11 +369,11 @@ class HistoricalBalancesManager:
         a point, then remain diverged because a balance-changing event is missing or incorrect.
         The database scan is narrow to one chain/address/asset wallet bucket, while remote archive
         node probes are O(log n). Transient mismatches that later resolve are outside this search.
-        When supplied, to_timestamp is an inclusive upper bound in milliseconds, so an issue can
+        When supplied, to_timestamp is an inclusive upper bound in seconds, so an issue can
         be investigated without later corrections hiding its divergence.
+        If no processed checkpoints exist, returns no_checkpoints without making archive calls.
 
         May raise:
-        - NotFoundError if no processed wallet balance metrics exist for the address/asset.
         - RemoteError if block lookup or archive balance lookup fails.
         """
         location = Location.from_chain_id(evm_chain)
@@ -382,12 +382,21 @@ class HistoricalBalancesManager:
             location=location,
             address=address,
             asset=asset,
-            to_timestamp=to_timestamp,
+            to_timestamp=(
+                None if to_timestamp is None else TimestampMS((to_timestamp + 1) * 1000 - 1)
+            ),
         )
         if len(events) == 0:
-            raise NotFoundError(
-                f'No historical wallet balance data found for {asset.identifier} at '
-                f'{address} on {location.serialize()}',
+            return HistoricalBalanceDivergenceResult(
+                status='no_checkpoints',
+                location=location,
+                address=address,
+                asset=asset,
+                total_events=0,
+                tolerance=tolerance,
+                first_diverged=None,
+                last_matching=None,
+                probes=[],
             )
 
         token = (

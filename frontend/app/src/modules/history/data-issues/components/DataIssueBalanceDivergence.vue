@@ -3,7 +3,6 @@ import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-bal
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundaryCard.vue';
 import { useDataIssueDivergence } from '@/modules/history/data-issues/use-data-issue-divergence';
-import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
@@ -137,16 +136,12 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
       :location="chain"
       @view="viewBoundary(boundary)"
     />
-    <RuiAlert
+    <p
       v-if="error"
-      type="error"
+      class="text-body-2 text-rui-text-secondary"
       data-testid="data-issue-divergence-error"
     >
-      <HistoryEventNote
-        :notes="error"
-        :chain="chain"
-        :context="{ asset: issue.asset ?? undefined }"
-      />
-    </RuiAlert>
+      {{ t('balance_divergence.search_failed') }}
+    </p>
   </section>
 </template>

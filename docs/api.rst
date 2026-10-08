@@ -16280,14 +16280,14 @@ Historical Balance Queries
           "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
           "asset": "ETH",
           "tolerance": "0.0033305072912590555",
-          "to_timestamp": 1755037590000
+          "to_timestamp": 1755037590
         }
 
     :reqjson string evm_chain: The EVM chain name (e.g., "ethereum", "optimism", "arbitrum_one")
     :reqjson string address: The EVM address whose wallet balance should be checked
     :reqjson string asset: The asset identifier (native token or ERC20 token on the specified chain)
     :reqjson string[optional] tolerance: Maximum absolute difference treated as a match. Defaults to ``"0"``.
-    :reqjson int[optional] to_timestamp: Inclusive upper bound, in **milliseconds**, for the checkpoints considered by the search. Checkpoints after it are ignored, so a divergence that a later event corrects can still be found. If omitted or ``null``, all checkpoints are considered. Note that the ``timestamp`` fields in the response are in seconds.
+    :reqjson int[optional] to_timestamp: Inclusive upper bound, in seconds, for the checkpoints considered by the search. Checkpoints after that second are ignored, so a divergence that a later event corrects can still be found. If omitted or ``null``, all checkpoints are considered.
 
     **Example Response:**
 
@@ -16343,7 +16343,7 @@ Historical Balance Queries
           "status_code": 200
         }
 
-    :resjson string status: ``"diverged"``, ``"diverged_from_start"`` or ``"no_divergence"``
+    :resjson string status: ``"diverged"``, ``"diverged_from_start"``, ``"no_divergence"`` or ``"no_checkpoints"``. The last status means there are no processed wallet balance checkpoints in the searched range; no archive queries are made and both boundary events are ``null``.
     :resjson string location: The chain/location checked
     :resjson string address: The checked EVM address
     :resjson string asset: The checked asset identifier
@@ -16357,7 +16357,7 @@ Historical Balance Queries
     :statuscode 400: Invalid request (wrong chain for asset, invalid chain, negative tolerance)
     :statuscode 401: User is not logged in
     :statuscode 403: User does not have premium access
-    :statuscode 404: Accounting refactor feature flag is disabled or no tracked historical balance data exists (up to ``to_timestamp`` if given)
+    :statuscode 404: Accounting refactor feature flag is disabled
     :statuscode 409: No archive node available for the specified chain or archive balance query failed
 
 

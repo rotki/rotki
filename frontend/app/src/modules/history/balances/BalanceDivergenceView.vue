@@ -5,7 +5,6 @@ import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundar
 import { useArchiveNodes } from '@/modules/history/balances/use-archive-nodes';
 import { useBalanceDivergence } from '@/modules/history/balances/use-balance-divergence';
 import { useDivergenceSelection } from '@/modules/history/balances/use-divergence-selection';
-import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
@@ -152,17 +151,13 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         />
       </div>
 
-      <RuiAlert
-        v-else-if="error"
-        type="error"
+      <p
+        v-if="error"
+        class="text-sm text-rui-text-secondary"
         data-testid="divergence-error"
       >
-        <HistoryEventNote
-          :notes="error"
-          :chain="modelSelectedChain"
-          :context="{ asset: modelSelectedAsset }"
-        />
-      </RuiAlert>
+        {{ t('balance_divergence.search_failed') }}
+      </p>
     </div>
   </div>
 </template>

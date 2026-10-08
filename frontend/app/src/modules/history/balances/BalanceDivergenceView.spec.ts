@@ -236,6 +236,7 @@ describe('balanceDivergenceView.vue', () => {
 
     const alert = wrapper.find('[data-testid=divergence-error]');
     expect(alert.exists()).toBe(true);
-    expect(alert.text()).toContain('No historical wallet balance data');
+    expect(alert.text()).toContain('balance_divergence.search_failed');
+    expect(wrapper.text()).not.toContain('No historical wallet balance data');
   });
 });

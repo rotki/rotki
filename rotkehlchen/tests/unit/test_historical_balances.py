@@ -59,6 +59,7 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -66,8 +67,10 @@ pytestmark = pytest.mark.accounting_update
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.types import EVM_TOKEN_KINDS_TYPE
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -83,6 +86,53 @@ def _make_balance_event(timestamp: int, amount: str = '10') -> EvmEvent:
         amount=FVal(amount),
         location_label=TEST_ADDR1,
     )
+
+
+@pytest.mark.parametrize('token_kind', [TokenKind.ERC20, TokenKind.ERC721])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_divergence_without_checkpoints_after_first_spend(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+        token_kind: EVM_TOKEN_KINDS_TYPE,
+) -> None:
+    asset = get_or_create_evm_token(
+        userdb=database,
+        evm_address=TEST_ADDR2,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=token_kind,
+        name='Test token',
+        symbol='TEST',
+        decimals=18 if token_kind == TokenKind.ERC20 else 0,
+        collectible_id='182' if token_kind == TokenKind.ERC721 else None,
+    )
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_events(cursor, [EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(1700000000123),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset,
+            amount=ONE,
+            location_label=TEST_ADDR1,
+        )])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    with patch.object(ethereum_manager.node_inquirer, 'get_historical_token_balance') as query:
+        result = HistoricalBalancesManager(database).find_onchain_balance_divergence(
+            evm_manager=ethereum_manager,
+            evm_chain=ChainID.ETHEREUM,
+            address=TEST_ADDR1,
+            asset=asset,
+            to_timestamp=Timestamp(1700000000),
+        )
+    assert result.status == 'no_checkpoints'
+    assert result.total_events == 0
+    assert result.first_diverged is None
+    assert result.last_matching is None
+    assert result.probes == []
+    query.assert_not_called()
 
 
 @pytest.mark.parametrize('rebasing_assets', [frozenset(), frozenset({A_DAI.identifier})])

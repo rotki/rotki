@@ -30,6 +30,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
     available: ref<boolean>(true),
     boundaries: ref<DivergenceBoundaryEvent[]>([]),
     canSearch: ref<boolean>(true),
+    loading: ref<boolean>(false),
     missingArchive: ref<boolean>(false),
     status: ref<HistoricalBalanceDivergenceResponse['status']>(),
     summary: ref<string>(),
@@ -44,7 +45,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
       chainName: computed<string>(() => 'Ethereum'),
       checkingArchive: ref<boolean>(false),
       error: ref<string>(),
-      loading: computed<boolean>(() => false),
+      loading: computed<boolean>(() => get(state.loading)),
       missingArchive: computed<boolean>(() => get(state.missingArchive)),
       search: vi.fn<() => Promise<void>>(),
       status: computed<HistoricalBalanceDivergenceResponse['status'] | undefined>(() => get(state.status)),
@@ -69,11 +70,9 @@ function mountDiagnostic(busy = false): ReturnType<typeof mount> {
           props: ['boundary', 'asset', 'location'],
           template: '<button data-testid="test-divergence-boundary" @click="$emit(\'view\')">{{ boundary.event.eventIdentifier }}</button>',
         },
-        HistoryEventNote: { props: ['notes'], template: '<span>{{ notes }}</span>' },
         I18nT: { template: '<span><slot name="chain" /><slot name="link" /><slot name="date" /></span>' },
         InternalLink: { template: '<a><slot /></a>' },
-        RuiAlert: { template: '<div><slot /></div>' },
-        RuiButton: { props: ['disabled', 'loading'], template: '<button :disabled="disabled"><slot /></button>' },
+        RuiButton: { props: ['disabled', 'loading'], template: '<button :disabled="disabled" :data-loading="loading"><slot /></button>' },
         RuiIcon: true,
       },
     },
@@ -89,6 +88,8 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     vi.clearAllMocks();
     set(state.available, true);
     set(state.canSearch, true);
+    set(state.loading, false);
+    set(diagnostic.checkingArchive, false);
     set(state.missingArchive, false);
     set(state.boundaries, []);
     set(state.summary, undefined);
@@ -113,6 +114,26 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     expect(diagnostic.view).toHaveBeenCalledWith(boundary);
   });
 
+  it('should neither navigate nor close the detail panel for a boundary without a group', async () => {
+    set(state.boundaries, [{ ...boundary, event: { ...boundary.event, groupIdentifier: null } }]);
+    const wrapper = mountDiagnostic();
+    await wrapper.get('[data-testid="test-divergence-boundary"]').trigger('click');
+    expect(wrapper.emitted('navigate')).toBeUndefined();
+    expect(diagnostic.view).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [true, false, 'true'],
+    [false, true, 'true'],
+    [true, true, 'true'],
+    [false, false, 'false'],
+  ])('should bind search loading %s and archive checking %s to the button', (loading, checkingArchive, expected) => {
+    set(state.loading, loading);
+    set(diagnostic.checkingArchive, checkingArchive);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.get('[data-testid="data-issue-find-divergence"]').attributes('data-loading')).toBe(expected);
+  });
+
   it('should show a settings link and disable search when an archive node is missing', () => {
     set(state.missingArchive, true);
     set(state.canSearch, false);
@@ -134,6 +155,17 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     expect(wrapper.get('[data-testid="data-issue-divergence-summary"]').text()).toBe('No persistent divergence found');
   });
 
+  it('should explain a no-checkpoints outcome without an error, boundary or mismatch advice', () => {
+    set(state.status, 'no_checkpoints');
+    set(state.summary, 'balance_divergence.no_checkpoints');
+    const wrapper = mountDiagnostic();
+    expect(wrapper.get('[data-testid="data-issue-divergence-summary"]').text()).toBe('balance_divergence.no_checkpoints');
+    expect(wrapper.find('[data-testid="test-divergence-boundary"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="data-issue-divergence-error"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="data-issue-divergence-next-step"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="data-issue-find-divergence"]').attributes('disabled')).toBeUndefined();
+  });
+
   it.each([
     ['diverged', 'data_issues.detail.divergence_next_step'],
     ['diverged_from_start', 'data_issues.detail.divergence_from_start'],
@@ -149,10 +181,13 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     expect(wrapper.find('[data-testid="data-issue-divergence-next-step"]').exists()).toBe(false);
   });
 
-  it('should show a failed search without hiding the retry action', () => {
+  it('should refer a failed search to the dock without repeating its error or hiding the result and retry action', () => {
     set(diagnostic.error, 'Archive request failed');
+    set(state.boundaries, [boundary]);
     const wrapper = mountDiagnostic();
-    expect(wrapper.get('[data-testid="data-issue-divergence-error"]').text()).toBe('Archive request failed');
+    expect(wrapper.get('[data-testid="data-issue-divergence-error"]').text()).toBe('balance_divergence.search_failed');
+    expect(wrapper.text()).not.toContain('Archive request failed');
+    expect(wrapper.get('[data-testid="test-divergence-boundary"]').text()).toBe('123');
     expect(wrapper.get('[data-testid="data-issue-find-divergence"]').attributes('disabled')).toBeUndefined();
   });
 

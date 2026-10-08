@@ -10,6 +10,7 @@ import DataIssueRemediationTimeline from '@/modules/history/data-issues/componen
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
@@ -192,7 +193,7 @@ const resolutionNote = computed<string | undefined>(() => {
       </section>
 
       <DataIssueBalanceDivergence
-        :key="`${issue.id}:${issue.tsEnd}`"
+        :key="dataIssueDivergenceKey(issue)"
         :issue="issue"
         :busy="busy"
         @navigate="emit('close')"

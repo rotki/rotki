@@ -1,37 +1,46 @@
+import type { z } from 'zod';
+import type { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
-import type { DivergenceBoundaryEvent, useBalanceDivergence } from '@/modules/history/balances/use-balance-divergence';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { PinnedNames, PinnedPanelProps } from '@/modules/session/types';
 import { createMock } from '@test/utils/create-mock';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type MaybeRefOrGetter, ref, toValue } from 'vue';
+import { effectScope, ref } from 'vue';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import { useDataIssueDivergence } from '@/modules/history/data-issues/use-data-issue-divergence';
 
-const { captureInitialResult, divergence, enabled, nodes, fetchNodes, pin } = await vi.hoisted(async () => {
-  const { computed, ref } = await import('vue');
-  const { vi } = await import('vitest');
-  return {
-    captureInitialResult: vi.fn<(initial: MaybeRefOrGetter<HistoricalBalanceDivergenceResponse | undefined>) => void>(),
-    divergence: {
-      boundaries: computed<DivergenceBoundaryEvent[]>(() => []),
-      clear: vi.fn<() => void>(),
-      error: ref<string>(),
-      find: vi.fn<ReturnType<typeof useBalanceDivergence>['find']>(),
-      loading: ref<boolean>(false),
-      navigate: vi.fn<ReturnType<typeof useBalanceDivergence>['navigate']>(),
-      result: ref<HistoricalBalanceDivergenceResponse>(),
-      summary: computed<string | undefined>(() => undefined),
-    } satisfies ReturnType<typeof useBalanceDivergence>,
-    enabled: { value: true },
-    fetchNodes: vi.fn<(chain: string) => void>(),
-    nodes: { archive: true },
-    pin: vi.fn<(props: PinnedPanelProps[typeof PinnedNames.BALANCE_DIVERGENCE]) => void>(),
-  };
-});
+const { enabled, nodes, fetchNodes, findDivergence, runTask, pin, requestNavigation, setHighlightTarget } = vi.hoisted(() => ({
+  enabled: { value: true },
+  fetchNodes: vi.fn<(chain: string) => void>(),
+  findDivergence: vi.fn<ReturnType<typeof useHistoricalBalancesApi>['findHistoricalBalanceDivergence']>(),
+  nodes: { archive: true },
+  pin: vi.fn<(props: PinnedPanelProps[typeof PinnedNames.BALANCE_DIVERGENCE]) => void>(),
+  requestNavigation: vi.fn<(request: object) => void>(),
+  runTask: vi.fn<() => Promise<Result<z.input<typeof HistoricalBalanceDivergenceResponse>, TaskError>>>(),
+  setHighlightTarget: vi.fn<(type: string, target: object) => void>(),
+}));
+
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask }));
+
+vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
+  useHistoricalBalancesApi: (): object => ({ findHistoricalBalanceDivergence: findDivergence }),
+}));
+
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: (): object => ({ getAssetField: (): string => 'ETH' }),
+}));
+
+vi.mock('@/modules/history/events/use-history-event-navigation', () => ({
+  HighlightTargetTypes: { ACCOUNTING_EVENT: 'accountingEvent' },
+  useHistoryEventNavigation: (): object => ({ requestNavigation, setHighlightTarget }),
+}));
 
 vi.mock('@/modules/shell/pinned/use-pinned-panel', () => ({
   usePinnedPanel: (): object => ({ pin }),
@@ -47,15 +56,6 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
     getEvmChainName: (chain: string): string | undefined => chain === 'eth' ? 'ethereum' : undefined,
     matchChain: (location: string): string | undefined => location === 'ethereum' ? 'eth' : undefined,
   }),
-}));
-
-vi.mock('@/modules/history/balances/use-balance-divergence', () => ({
-  useBalanceDivergence: (
-    initial: MaybeRefOrGetter<HistoricalBalanceDivergenceResponse | undefined>,
-  ): ReturnType<typeof useBalanceDivergence> => {
-    captureInitialResult(initial);
-    return divergence;
-  },
 }));
 
 vi.mock('@/modules/settings/api/use-evm-nodes-api', () => ({
@@ -80,6 +80,30 @@ function makeIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   });
 }
 
+function makeResult(overrides: Partial<z.input<typeof HistoricalBalanceDivergenceResponse>> = {}): z.input<typeof HistoricalBalanceDivergenceResponse> {
+  return {
+    address: '0x0000000000000000000000000000000000000001',
+    asset: 'ETH',
+    firstDiverged: {
+      blockNumber: 42,
+      difference: '1',
+      eventIdentifier: 123,
+      groupIdentifier: 'group-1',
+      onchainBalance: '3',
+      timestamp: 1710000000,
+      trackedBalance: '2',
+      txHash: null,
+    },
+    lastMatching: null,
+    location: 'ethereum',
+    probes: [],
+    status: 'diverged_from_start',
+    tolerance: '0',
+    totalEvents: 1,
+    ...overrides,
+  };
+}
+
 let scope = effectScope();
 
 function useDiagnostic(issue: DataIssue): ReturnType<typeof useDataIssueDivergence> {
@@ -88,31 +112,31 @@ function useDiagnostic(issue: DataIssue): ReturnType<typeof useDataIssueDivergen
   return result;
 }
 
-describe('useDataIssueDivergence bounded wallet search', () => {
+describe('useDataIssueDivergence bounded wallet search with independent view instances', () => {
   beforeEach(() => {
     scope = effectScope();
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    divergence.find.mockReset();
+    findDivergence.mockResolvedValue({ taskId: 1 });
+    runTask.mockReset();
+    runTask.mockResolvedValue(ok(makeResult()));
     enabled.value = true;
     nodes.archive = true;
-    set(divergence.loading, false);
-    set(divergence.result, undefined);
   });
 
   afterEach(() => scope.stop());
 
-  it.each([IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH])('should search %s through its timestamp in milliseconds with no manual selection', async (kind) => {
+  it.each([IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH])('should search %s through its timestamp in seconds with no manual selection', async (kind) => {
     const diagnostic = useDiagnostic(makeIssue({ kind }));
     await flushPromises();
     expect(fetchNodes).toHaveBeenCalledWith('eth');
     expect(get(diagnostic.canSearch)).toBe(true);
     await diagnostic.search();
-    expect(divergence.find).toHaveBeenCalledWith({
+    expect(findDivergence).toHaveBeenCalledWith({
       address: '0x0000000000000000000000000000000000000001',
       asset: 'ETH',
       evmChain: 'ethereum',
-      toTimestamp: 1710000000123,
+      toTimestamp: 1710000000,
     });
   });
 
@@ -128,7 +152,7 @@ describe('useDataIssueDivergence bounded wallet search', () => {
     await flushPromises();
     expect(get(diagnostic.available)).toBe(false);
     await diagnostic.search();
-    expect(divergence.find).not.toHaveBeenCalled();
+    expect(findDivergence).not.toHaveBeenCalled();
     expect(fetchNodes).not.toHaveBeenCalled();
   });
 
@@ -138,7 +162,7 @@ describe('useDataIssueDivergence bounded wallet search', () => {
     await flushPromises();
     expect(get(diagnostic.available)).toBe(false);
     await diagnostic.search();
-    expect(divergence.find).not.toHaveBeenCalled();
+    expect(findDivergence).not.toHaveBeenCalled();
   });
 
   it('should block queries without an archive node', async () => {
@@ -149,65 +173,102 @@ describe('useDataIssueDivergence bounded wallet search', () => {
     expect(get(diagnostic.missingArchive)).toBe(true);
     expect(get(diagnostic.canSearch)).toBe(false);
     await diagnostic.search();
-    expect(divergence.find).not.toHaveBeenCalled();
+    expect(findDivergence).not.toHaveBeenCalled();
   });
 
-  it('should prevent duplicate searches while a diagnostic is running', async () => {
-    const diagnostic = useDiagnostic(makeIssue());
-    await flushPromises();
-    set(divergence.loading, true);
-    expect(get(diagnostic.canSearch)).toBe(false);
-    await diagnostic.search();
-    expect(divergence.find).not.toHaveBeenCalled();
-  });
-
-  it('should pin the issue before navigating to a checkpoint', () => {
-    const issue = makeIssue();
-    const diagnostic = useDiagnostic(issue);
-    const boundary = createMock<DivergenceBoundaryEvent>({
-      event: createMock<DivergenceBoundaryEvent['event']>({ eventIdentifier: 123, groupIdentifier: 'group-1' }),
-    });
-
-    diagnostic.view(boundary);
-
-    expect(pin).toHaveBeenCalledWith({ issue });
-    expect(divergence.navigate).toHaveBeenCalledWith(boundary.event, 'ETH');
-    expect(pin.mock.invocationCallOrder[0]).toBeLessThan(divergence.navigate.mock.invocationCallOrder[0]);
-  });
-
-  it('should keep a completed result for a later view of the same issue', async () => {
-    const result = createMock<HistoricalBalanceDivergenceResponse>({ status: 'diverged' });
-    divergence.find.mockImplementation(async () => {
-      set(divergence.result, result);
-    });
-    const first = useDiagnostic(makeIssue());
-    await flushPromises();
-    await first.search();
-    set(divergence.result, undefined);
-
-    useDiagnostic(makeIssue());
-    expect(toValue(captureInitialResult.mock.lastCall?.[0])).toBe(result);
-    useDiagnostic(makeIssue({ tsEnd: 1720000000000 }));
-    expect(toValue(captureInitialResult.mock.lastCall?.[0])).toBeUndefined();
-  });
-
-  it('should show a search still running for the issue when it is viewed again', async () => {
+  it('should prevent duplicate searches and share running state with a later view', async () => {
     let finish = (): void => {};
-    divergence.find.mockImplementation(async () => new Promise<void>((resolve) => {
-      finish = resolve;
+    runTask.mockImplementationOnce(async () => new Promise((resolve) => {
+      finish = (): void => resolve(ok(makeResult()));
     }));
     const first = useDiagnostic(makeIssue());
     await flushPromises();
-    const running = first.search();
-
+    const search = first.search();
     const second = useDiagnostic(makeIssue());
     await flushPromises();
-    expect(get(second.loading)).toBe(true);
-    expect(get(second.canSearch)).toBe(false);
-
-    finish();
-    await running;
+    try {
+      expect(get(first.loading)).toBe(true);
+      expect(get(second.loading)).toBe(true);
+      expect(get(second.canSearch)).toBe(false);
+      await second.search();
+      expect(findDivergence).toHaveBeenCalledOnce();
+    }
+    finally {
+      finish();
+      await search;
+    }
     expect(get(second.loading)).toBe(false);
+  });
+
+  it('should pin the issue before navigating to a checkpoint', async () => {
+    const issue = makeIssue();
+    const diagnostic = useDiagnostic(issue);
+    await flushPromises();
+    await diagnostic.search();
+    const boundary = get(diagnostic.boundaries)[0];
+    assert(boundary);
+    diagnostic.view(boundary);
+    expect(pin).toHaveBeenCalledWith({ issue });
+    expect(setHighlightTarget).toHaveBeenCalledWith('accountingEvent', { groupIdentifier: 'group-1', identifier: 123 });
+    expect(requestNavigation).toHaveBeenCalledWith({ assetFilter: 'ETH', highlightedAccountingEvent: 123, targetGroupIdentifier: 'group-1' });
+    expect(pin.mock.invocationCallOrder[0]).toBeLessThan(requestNavigation.mock.invocationCallOrder[0]);
+  });
+
+  it('should keep completed boundaries for a later view of the same issue', async () => {
+    const first = useDiagnostic(makeIssue());
+    await flushPromises();
+    await first.search();
+    const previous = get(first.boundaries);
+    expect(previous).toHaveLength(1);
+    scope.stop();
+    scope = effectScope();
+    expect(get(useDiagnostic(makeIssue()).boundaries)).toEqual(previous);
+    expect(get(useDiagnostic(makeIssue({ tsEnd: 1720000000000 })).boundaries)).toEqual([]);
+    expect(findDivergence).toHaveBeenCalledOnce();
+  });
+
+  it.each([TaskFailed({ message: 'Archive request failed' }), Cancelled({ message: 'cancelled' })])('should preserve successful boundaries after a re-run ends with %s across reopened and pinned views', async (failure) => {
+    const first = useDiagnostic(makeIssue());
+    await flushPromises();
+    await first.search();
+    const previous = get(first.boundaries);
+    expect(previous).toHaveLength(1);
+    const pinned = useDiagnostic(makeIssue());
+    await flushPromises();
+    runTask.mockResolvedValueOnce(err(failure));
+    await first.search();
+    await flushPromises();
+    const expectedError = failure._tag === 'TaskFailed' ? 'Archive request failed' : undefined;
+    expect(get(first.boundaries)).toEqual(previous);
+    expect(get(pinned.boundaries)).toEqual(previous);
+    expect(get(pinned.error)).toBe(expectedError);
+    scope.stop();
+    scope = effectScope();
+    const reopened = useDiagnostic(makeIssue());
+    expect(get(reopened.boundaries)).toEqual(previous);
+    expect(get(reopened.error)).toBe(expectedError);
+    expect(get(useDiagnostic(makeIssue({ tsEnd: 1720000000000 })).error)).toBeUndefined();
+    await flushPromises();
+    runTask.mockResolvedValueOnce(ok(makeResult({ firstDiverged: null, status: 'no_divergence' })));
+    await reopened.search();
+    expect(get(reopened.boundaries)).toEqual([]);
+    expect(get(reopened.error)).toBeUndefined();
+    expect(get(reopened.status)).toBe('no_divergence');
+  });
+
+  it('should explain an issue with no earlier checkpoint and retain its completed status for another view', async () => {
+    runTask.mockResolvedValueOnce(ok(makeResult({ firstDiverged: null, status: 'no_checkpoints', totalEvents: 0 })));
+    const diagnostic = useDiagnostic(makeIssue());
+    await flushPromises();
+    await diagnostic.search();
+    expect(get(diagnostic.status)).toBe('no_checkpoints');
+    expect(get(diagnostic.summary)).toBe('balance_divergence.no_checkpoints');
+    expect(get(diagnostic.boundaries)).toEqual([]);
+    expect(get(diagnostic.error)).toBeUndefined();
+    const reopened = useDiagnostic(makeIssue());
+    expect(get(reopened.status)).toBe('no_checkpoints');
+    expect(get(reopened.summary)).toBe('balance_divergence.no_checkpoints');
+    expect(findDivergence).toHaveBeenCalledOnce();
   });
 
   it('should name the chain for display', () => {
@@ -221,9 +282,6 @@ describe('useDataIssueDivergence bounded wallet search', () => {
     await flushPromises();
     set(issue, makeIssue({ asset: 'other-token', tsEnd: 1700000000000 }));
     await diagnostic.search();
-    expect(divergence.find).toHaveBeenCalledWith(expect.objectContaining({
-      asset: 'other-token',
-      toTimestamp: 1700000000000,
-    }));
+    expect(findDivergence).toHaveBeenCalledWith(expect.objectContaining({ asset: 'other-token', toTimestamp: 1700000000 }));
   });
 });

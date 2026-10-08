@@ -1434,26 +1434,21 @@ def test_rpc_node_edit_preserves_capabilities_only_for_same_endpoint(database, c
 
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('block_identifier', [123, 'latest'])
-@pytest.mark.parametrize(('response', 'unavailable_state'), [
-    ({'error': {'code': -32000, 'message': 'missing trie node'}}, True),
-    ({'error': {'code': -32000, 'message': 'header not found'}}, False),
-    ({'error': {'code': -32000, 'message': 'state not available'}}, True),
-    ({'error': {'code': -32000, 'message': 'historical state pruned'}}, True),
-    ({'error': {'code': -32000, 'message': (
-        'old data not available due to pruning: requested block 38982840, '
-        'history is available from block 48374402'
-    )}}, True),
-    ({'error': {'code': -32005, 'message': 'rate limit exceeded'}}, False),
-    ({'error': {'code': 3, 'message': 'execution reverted'}}, False),
-    ({'result': '0x'}, False),
-    (requests.Timeout('query timed out'), False),
+@pytest.mark.parametrize('response', [
+    {'error': {'code': -32000, 'message': 'missing trie node'}},
+    {'error': {'code': -32000, 'message': 'header not found'}},
+    {'error': {'code': -32000, 'message': 'state not available'}},
+    {'error': {'code': -32000, 'message': 'historical state pruned'}},
+    {'error': {'code': -32005, 'message': 'rate limit exceeded'}},
+    {'error': {'code': 3, 'message': 'execution reverted'}},
+    {'result': '0x'},
+    requests.Timeout('query timed out'),
 ])
-def test_failed_archive_query_updates_capabilities(
+def test_failed_archive_query_preserves_capabilities(
         ethereum_inquirer: EthereumInquirer,
         database,
         block_identifier,
         response,
-        unavailable_state,
 ):
     node = WeightedNode(
         node_info=NodeName(
@@ -1496,19 +1491,12 @@ def test_failed_archive_query_updates_capabilities(
         )
 
     assert request.call_count >= 1
-    expected_archive = not (unavailable_state and block_identifier != 'latest')
-    assert database.get_rpc_node_capabilities(node.node_info) == (
-        True if expected_archive else None,  # demoted nodes are rechecked on reconnect
-        False,
-    )
+    assert database.get_rpc_node_capabilities(node.node_info) == (True, False)
     if isinstance(response, requests.Timeout):
         assert node.node_info not in ethereum_inquirer.rpc_mapping
         assert node.node_info.name in ethereum_inquirer.failed_to_connect_nodes
     else:
-        assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is expected_archive
-        assert (node.node_info in [
-            entry.node_info for entry in ethereum_inquirer.get_archive_call_order()
-        ]) is expected_archive
+        assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is True
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

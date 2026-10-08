@@ -30,13 +30,13 @@ interface UseDataIssueDivergenceReturn {
  * Searches the affected EVM wallet through the issue's timestamp, excluding later corrections.
  *
  * @remarks
- * The result and running state are kept in {@link useDataIssueDivergenceStore}, so a search
+ * The result, error and running state are kept in {@link useDataIssueDivergenceStore}, so a search
  * survives the drawer closing and is shared with the pinned rail showing the same issue.
  */
 export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseDataIssueDivergenceReturn {
   const { getChainName, getEvmChainName, matchChain } = useSupportedChains();
   const store = useDataIssueDivergenceStore();
-  const { results, running } = storeToRefs(store);
+  const { errors, results, running } = storeToRefs(store);
   const key = computed<string>(() => dataIssueDivergenceKey(toValue(issue)));
   const divergence = useBalanceDivergence(() => get(results).get(get(key)));
   const { pin } = usePinnedPanel(PinnedNames.BALANCE_DIVERGENCE);
@@ -61,7 +61,7 @@ export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseD
       address: current.locationLabel,
       asset: current.asset,
       evmChain,
-      toTimestamp: current.tsEnd,
+      toTimestamp: Math.floor(current.tsEnd / 1000),
     };
   });
 
@@ -76,6 +76,7 @@ export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseD
   const canSearch = computed<boolean>(() => get(available) && !get(checkingArchive)
     && get(hasArchive) && !get(loading));
   const status = computed<HistoricalBalanceDivergenceResponse['status'] | undefined>(() => get(divergence.result)?.status);
+  const error = computed<string | undefined>(() => get(errors).get(get(key)));
 
   async function search(): Promise<void> {
     const scope = get(payload);
@@ -87,6 +88,7 @@ export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseD
     try {
       await divergence.find(scope);
       store.setResult(searchKey, get(divergence.result));
+      store.setError(searchKey, get(divergence.error));
     }
     finally {
       store.setRunning(searchKey, false);
@@ -108,7 +110,7 @@ export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseD
     chain,
     chainName,
     checkingArchive,
-    error: divergence.error,
+    error,
     loading,
     missingArchive,
     search,

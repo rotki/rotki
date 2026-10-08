@@ -4166,7 +4166,7 @@ class RestAPI:
             address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal,
-            to_timestamp: TimestampMS | None = None,
+            to_timestamp: Timestamp | None = None,
     ) -> dict[str, Any]:
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
         if not evm_manager.node_inquirer.has_archive_node():
@@ -4186,8 +4186,6 @@ class RestAPI:
                 tolerance=tolerance,
                 to_timestamp=to_timestamp,
             )
-        except NotFoundError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
         except (RemoteError, DeserializationError, UnknownAsset, WrongAssetType) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 

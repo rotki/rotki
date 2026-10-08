@@ -93,7 +93,7 @@ describe('composables/api/balances/historical-balances', () => {
       expect(result.taskId).toBe(654);
     });
 
-    it('should forward the issue time boundary in milliseconds, snake-cased', async () => {
+    it('should forward the issue time boundary in seconds, snake-cased', async () => {
       let capturedBody: DefaultBodyType = null;
       server.use(
         http.post(`${backendUrl}/api/1/balances/historical/onchain/divergence`, async ({ request }) => {
@@ -106,14 +106,14 @@ describe('composables/api/balances/historical-balances', () => {
         address: '0xABC',
         asset: 'ETH',
         evmChain: 'ethereum',
-        toTimestamp: 1710000000123,
+        toTimestamp: 1710000000,
       });
       expect(capturedBody).toEqual({
         address: '0xABC',
         asset: 'ETH',
         async_query: true,
         evm_chain: 'ethereum',
-        to_timestamp: 1710000000123,
+        to_timestamp: 1710000000,
       });
     });
   });

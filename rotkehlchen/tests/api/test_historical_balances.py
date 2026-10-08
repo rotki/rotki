@@ -48,6 +48,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
@@ -590,7 +591,7 @@ def test_find_onchain_historical_balance_divergence(
                 EvmEvent(
                     tx_ref=tx_hash,
                     sequence_index=0,
-                    timestamp=ts_sec_to_ms(Timestamp(START_TS + idx)),
+                    timestamp=TimestampMS((START_TS + idx) * 1000 + 123),
                     location=Location.ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
@@ -669,7 +670,7 @@ def test_find_onchain_historical_balance_divergence(
                 'evm_chain': 'ethereum',
                 'address': user_address,
                 'asset': A_ETH.identifier,
-                'to_timestamp': (START_TS + 5) * 1000,
+                'to_timestamp': START_TS + 5,
             },
         ))
     assert bounded['status'] == 'diverged'
@@ -680,6 +681,29 @@ def test_find_onchain_historical_balance_divergence(
     assert bounded['first_diverged']['difference'] == '1'
     assert [probe['event']['block_number'] for probe in bounded['probes']] == [5, 1, 3, 4]
     assert bounded_mock.call_count == 4
+
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(
+            node_inquirer,
+            'get_historical_native_balance',
+            side_effect=AssertionError('no checkpoints should require no archive queries'),
+        ),
+    ):
+        empty = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={
+                'evm_chain': 'ethereum',
+                'address': user_address,
+                'asset': A_ETH.identifier,
+                'to_timestamp': START_TS - 1,
+            },
+        ))
+    assert empty['status'] == 'no_checkpoints'
+    assert empty['total_events'] == 0
+    assert empty['first_diverged'] is None
+    assert empty['last_matching'] is None
+    assert empty['probes'] == []
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

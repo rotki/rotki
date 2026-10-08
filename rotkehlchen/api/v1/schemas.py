@@ -5146,7 +5146,7 @@ class OnchainHistoricalBalanceDivergenceSchema(AsyncQueryArgumentSchema):
     address = EvmAddressField(required=True)
     asset = AssetField(expected_type=Asset, required=True)
     tolerance = AmountField(load_default=ZERO)
-    to_timestamp = TimestampMSField(load_default=None, allow_none=True)
+    to_timestamp = TimestampField(load_default=None, allow_none=True)
 
     @validates_schema
     def validate_schema(
