@@ -937,10 +937,21 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 ):
                     op_return_events.append(event)
                 elif (
-                    (tx.is_coinbase and direction == BtcTxIODirection.INPUT and tx_io.value == ZERO) or
-                    (tx_io.value == ZERO and tx_io.script is not None and len(tx_io.script) >= 1 and tx_io.script[:1] == OpCodes.OP_RETURN)
+                    (
+                        tx.is_coinbase and direction == BtcTxIODirection.INPUT and
+                        tx_io.value == ZERO
+                    ) or
+                    (
+                        tx_io.value == ZERO and tx_io.script is not None and
+                        tx_io.script[:1] == OpCodes.OP_RETURN and
+                        # A tracked address may spend into an op_return we can't decode (e.g. a
+                        # malformed script). That is still an error, so only skip the output
+                        # when the transaction is not tracked on its input side.
+                        not any(x.address in self.tracked_accounts_set for x in tx.inputs)
+                    )
                 ):
-                    # Expected zero-valued coinbase placeholder input or addressless OP_RETURN output
+                    # Expected zero-valued coinbase placeholder input, or a zero-valued
+                    # addressless op_return output of an untracked transaction.
                     continue
                 else:  # Unable to decode TxIO if it has no address and isn't op_return
                     log.error(f'Failed to decode {tx_io} in transaction {tx.tx_id}. Skipping.')
@@ -948,8 +959,8 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         if tx.is_coinbase:
             # A coinbase transaction pays newly minted coins. Its single input creates value
             # instead of spending it, so the outputs a tracked address receives are mining
-            # rewards. No api deserializes that input: mempool omits it and the others
-            # report a zero-value TxIO without an address.
+            # rewards. Its input is deserialized as a zero-valued placeholder without an
+            # address and is not aggregated here.
             reward_events: list[BitcoinEvent] = []
             for output_address, amount in io_totals_per_address[BtcTxIODirection.OUTPUT].items():
                 if amount == ZERO or output_address not in self.tracked_accounts_set:
@@ -960,9 +971,8 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     event_subtype=HistoryEventSubType.REWARD,
                     amount=amount,
                     notes=f'Receive {amount} {self.asset.identifier} as a mining reward',
-                    location_label=self.get_display_address(output_address),
+                    location_label=output_address,
                 ))
-            # Sequence indexes are assigned per event below and the output order is stable.
             for idx, event in enumerate(reward_events):
                 event.sequence_index = idx
             return reward_events

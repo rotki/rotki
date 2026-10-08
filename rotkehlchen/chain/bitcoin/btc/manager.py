@@ -423,15 +423,14 @@ class BitcoinManager(BitcoinCommonManager):
                     deserialize_fn=self.deserialize_tx_io_from_mempool,
                 ))
             elif (
-                vin.get('is_coinbase') is True
-                or (len(data['vin']) == 1 and vin.get('prevout') is None)
+                vin.get('is_coinbase') is True or
+                len(data['vin']) == 1
             ):
                 # Mempool coinbase input: carries no prevout. Represent it as a standard
                 # zero-valued placeholder TxIO without an address.
-                script = vin.get('scriptsig')
                 inputs.append(BtcTxIO(
                     value=ZERO,
-                    script=bytes.fromhex(script) if script is not None else None,
+                    script=bytes.fromhex(script) if (script := vin.get('scriptsig')) is not None else None,  # noqa: E501
                     address=None,
                     direction=BtcTxIODirection.INPUT,
                     io_index=position,
