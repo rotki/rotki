@@ -36,6 +36,11 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
+from rotkehlchen.tests.utils.database import (
+    SQLCIPHER_DEFAULT_KDF_ITER,
+    TEST_KDF_ITER,
+    set_sqlcipher_default_kdf_iter,
+)
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
@@ -257,6 +262,25 @@ def _asset_case_diagnostics() -> Iterator[None]:
             raise_on_non_checksummed_address,
         )
         yield
+
+
+@pytest.fixture(autouse=True)
+def _fast_sqlcipher_kdf() -> Iterator[None]:
+    """Use a tiny PBKDF2 iteration count for the databases tests create.
+
+    Every unlock of an encrypted user DB derives the key from the password, which with
+    SQLCipher's default costs ~50ms locally. A test opens several connections (user DB,
+    transient DB and up to 4 lazily created read-pool readers), so this adds up. The
+    iteration count only affects how expensive brute-forcing the password is, not the
+    encryption or any logic under test, and production code is untouched.
+
+    It must match between creating and opening a database, so tests that open a prepared
+    DB file created with the real default reset it in _use_prepared_db.
+    """
+    previous = set_sqlcipher_default_kdf_iter(TEST_KDF_ITER)
+    assert previous == SQLCIPHER_DEFAULT_KDF_ITER, 'SQLCipher default changed'
+    yield
+    set_sqlcipher_default_kdf_iter(SQLCIPHER_DEFAULT_KDF_ITER)
 
 
 @pytest.fixture(autouse=True)
