@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import { type ContextColorsType, type RuiIcons, useDismissableOverlay } from '@rotki/ui-library';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 
 const open = defineModel<boolean>({ default: false });
@@ -43,6 +43,8 @@ const URGENCY_TONES: Record<ActionUrgency, TriggerTone> = {
 };
 
 const { t } = useI18n({ useScope: 'global' });
+
+useDismissableOverlay(open, () => set(open, false));
 
 const tone = computed<TriggerTone | undefined>(() => (urgency ? URGENCY_TONES[urgency] : undefined));
 

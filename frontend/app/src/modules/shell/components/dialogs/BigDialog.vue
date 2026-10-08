@@ -164,6 +164,7 @@ function promptClose() {
     :max-width="maxWidth"
     @click:esc="promptClose()"
     @click:outside="promptClose()"
+    @dismiss="promptClose()"
   >
     <form
       novalidate

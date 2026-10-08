@@ -1,5 +1,6 @@
+import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 function createWrapper(props: { alternativeAction?: string; secondaryAction?: string } = {}): VueWrapper<InstanceType<typeof ConfirmDialog>> {
@@ -35,5 +36,33 @@ describe('modules/shell/components/dialogs/ConfirmDialog', () => {
 
     expect(wrapper.emitted('cancel')).toHaveLength(2);
     expect(wrapper.emitted('alternative')).toBeUndefined();
+  });
+
+  describe('dismissed from the overlay stack, as the back gesture does', () => {
+    function createDialog(display: boolean = true): VueWrapper<InstanceType<typeof ConfirmDialog>> {
+      return mount(ConfirmDialog, {
+        attachTo: document.body,
+        props: { alternativeAction: 'Exclude from Accounting', display, message: 'message', title: 'title' },
+      });
+    }
+
+    beforeEach(() => {
+      resetOverlayStack();
+    });
+
+    it('should cancel without taking the alternative', () => {
+      const wrapper = createDialog();
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toHaveLength(1);
+      expect(wrapper.emitted('alternative')).toBeUndefined();
+      expect(wrapper.emitted('confirm')).toBeUndefined();
+    });
+
+    it('should leave nothing to dismiss while it is not displayed', () => {
+      createDialog(false);
+
+      expect(useOverlayStack().dismissTop()).toBe(false);
+    });
   });
 });
