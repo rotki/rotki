@@ -102,7 +102,8 @@ class BitcoinTx(NamedTuple):
     @property
     def is_coinbase(self) -> bool:
         """Whether the transaction pays newly minted coins. Its single input creates value
-        instead of spending it, so explorers report a zero-value placeholder TxIO without an address.
+        instead of spending it, so explorers report a zero-value placeholder TxIO that
+        carries no address.
         A coinbase transaction strictly has exactly one input (vin_count is 1 or unset),
         whose placeholder input has zero value and no normal address.
         """

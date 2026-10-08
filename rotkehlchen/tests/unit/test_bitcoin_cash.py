@@ -5,6 +5,7 @@ import pytest
 from marshmallow import ValidationError
 
 from rotkehlchen.chain.bitcoin.bch.constants import (
+    BCH_GROUP_IDENTIFIER_PREFIX,
     BLOCKCHAIN_INFO_HASKOIN_BASE_URL,
     HASKOIN_BASE_URL,
     MELROY_BASE_URL,
@@ -16,9 +17,13 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
     legacy_to_cash_address,
     validate_bch_address_input,
 )
+from rotkehlchen.constants.assets import A_BCH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import BTCAddress
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import BTCAddress, BTCTxId, Location, TimestampMS
 from rotkehlchen.utils.network import request_get
 
 if TYPE_CHECKING:
@@ -156,3 +161,65 @@ def test_query_bch_has_transactions_and_balances(
 
         # reset health status so it tries to query health again in the next loop iteration
         bitcoin_cash_manager.last_haskoin_health = {}
+
+
+@pytest.mark.parametrize('bch_accounts', [['bitcoincash:qz6v8t9ajq79rrlnckv34am9cgp3dyuhrcj3npwtyh']])  # noqa: E501
+def test_deserialize_haskoin_real_coinbase_tx(
+        bitcoin_cash_manager: BitcoinCashManager,
+        bch_accounts: list[BTCAddress],
+) -> None:
+    """A real haskoin coinbase transaction (block 971877 of BCH) reports the coinbase input
+    as {"coinbase": true, "pkscript": null, "value": null, "address": null, ...}. It used to
+    raise a DeserializationError on its value and the whole transaction was skipped. It must
+    deserialize as a zero-valued placeholder input without an address, so decoding produces
+    the mining reward for the tracked address.
+    """
+    haskoin_raw_tx = {
+        'txid': '08941f78ae955ec536de0db409e5a1cfef980e26d0c6a62c7245e195af72fde3',
+        'size': 130,
+        'version': 1,
+        'locktime': 0,
+        'fee': 0,
+        'time': 1791383974,
+        'deleted': False,
+        'rbf': False,
+        'weight': 520,
+        'block': {'height': 971877, 'position': 0},
+        'inputs': [{
+            'coinbase': True,
+            'txid': '0000000000000000000000000000000000000000000000000000000000000000',
+            'output': 4294967295,
+            'sigscript': '0365d40e1c4d696e656420627920416e74506f6f6c383036cf00610320e88c0eca0000e4ce028d490100000000',  # noqa: E501
+            'sequence': 4294967295,
+            'pkscript': None,
+            'value': None,
+            'address': None,
+            'witness': [],
+        }],
+        'outputs': [{
+            'address': 'bitcoincash:qz6v8t9ajq79rrlnckv34am9cgp3dyuhrcj3npwtyh',
+            'value': 314805138,
+            'pkscript': '76a914b4c3acbd903c518ff3c5991af765c2031693971e88ac',
+            'spent': False,
+        }],
+    }
+    tx = bitcoin_cash_manager.deserialize_tx_from_haskoin(haskoin_raw_tx)
+    assert tx.is_coinbase is True
+    assert len(tx.inputs) == 1
+    assert tx.inputs[0].value == ZERO
+    assert tx.inputs[0].address is None
+
+    bitcoin_cash_manager.refresh_tracked_accounts()
+    assert bitcoin_cash_manager.decode_transaction(tx) == [BitcoinEvent(
+        tx_ref=BTCTxId('08941f78ae955ec536de0db409e5a1cfef980e26d0c6a62c7245e195af72fde3'),
+        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}08941f78ae955ec536de0db409e5a1cfef980e26d0c6a62c7245e195af72fde3',
+        sequence_index=0,
+        timestamp=TimestampMS(1791383974000),
+        location=Location.BITCOIN_CASH,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_BCH,
+        amount=FVal('3.14805138'),
+        location_label=bch_accounts[0],
+        notes='Receive 3.14805138 BCH as a mining reward',
+    )]

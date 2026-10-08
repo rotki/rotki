@@ -22,6 +22,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 )
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BCH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
@@ -250,11 +251,25 @@ class BitcoinCashManager(BitcoinCommonManager):
             timestamp=deserialize_timestamp(data['time']),
             block_height=deserialize_int(value=data['block']['height'], location='bch tx block height'),  # noqa: E501
             fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='bch tx fee')),
-            inputs=BtcTxIO.deserialize_list(
-                data_list=data['inputs'],
-                direction=BtcTxIODirection.INPUT,
-                deserialize_fn=self.deserialize_tx_io_from_haskoin,
-            ),
+            inputs=[
+                # A coinbase input reports the null txid with `coinbase: true` and null
+                # pkscript/value/address. Represent it as a standard zero-valued placeholder
+                # TxIO without an address.
+                BtcTxIO(
+                    value=ZERO,
+                    script=bytes.fromhex(sigscript) if (sigscript := raw_input.get('sigscript')) is not None else None,  # noqa: E501
+                    address=None,
+                    direction=BtcTxIODirection.INPUT,
+                    io_index=position,
+                ) if raw_input.get('coinbase') is True else
+                BtcTxIO.deserialize(
+                    data=raw_input,
+                    direction=BtcTxIODirection.INPUT,
+                    position=position,
+                    deserialize_fn=self.deserialize_tx_io_from_haskoin,
+                )
+                for position, raw_input in enumerate(data['inputs'])
+            ],
             outputs=BtcTxIO.deserialize_list(
                 data_list=data['outputs'],
                 direction=BtcTxIODirection.OUTPUT,
