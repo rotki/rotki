@@ -46,7 +46,7 @@ function repullTransactionsActivityId(payload: RepullingTransactionPayload): Act
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError, notifyInfo } = useNotifications();
+  const { notifyInfo } = useNotifications();
   const {
     addTransactionHash: addTransactionHashCaller,
     repullingEthStakingEvents: repullingEthStakingEventsCaller,
@@ -130,15 +130,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     if (!isErr(outcome)) {
       return outcome.value;
     }
-    if (isActionable(outcome.error)) {
+    if (isActionable(outcome.error))
       logger.error(outcome.error.message);
-      notifyError(
-        t('actions.repulling_transaction.task.title'),
-        isAddressSpecified
-          ? t('actions.repulling_transaction.error.description', messagePayload)
-          : t('actions.repulling_transaction.error.no_address_or_chain_transaction', messagePayload),
-      );
-    }
     return undefined;
   };
 
@@ -182,13 +175,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return storedEvents > 0;
     }
-    if (isErr(outcome) && isActionable(outcome.error)) {
+    if (isActionable(outcome.error))
       logger.error(outcome.error.message);
-      notifyError(
-        t('actions.repulling_exchange_events.task.title'),
-        t('actions.repulling_exchange_events.error.description', messagePayload),
-      );
-    }
     return false;
   };
 
@@ -247,13 +235,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return total > 0;
     }
-    if (isErr(outcome) && isActionable(outcome.error)) {
+    if (isActionable(outcome.error))
       logger.error(outcome.error.message);
-      notifyError(
-        t('actions.repulling_eth_staking.task.title'),
-        t('actions.repulling_eth_staking.error.description', messagePayload),
-      );
-    }
     return false;
   };
 

@@ -1,9 +1,9 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { api } from '@/modules/core/api/rotki-api';
 import { serializer } from '@/modules/core/messaging/use-dynamic-messages';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSyncApi } from '@/modules/session/api/use-sync-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
@@ -36,13 +36,6 @@ export const useSync = createSharedComposable(() => {
     if (statusOf(ActivityKind.SYNC).active)
       return;
 
-    const notifyFailure = (error: string): void => {
-      const title = t('actions.session.force_sync.error.title');
-      const message = t('actions.session.force_sync.error.message', { error });
-
-      notifyError(title, message);
-    };
-
     api.cancelAllQueued();
     api.cancel();
     const action = get(syncAction);
@@ -62,23 +55,17 @@ export const useSync = createSharedComposable(() => {
       title: t('task_center.group.sync'),
     });
 
-    if (!isErr(outcome)) {
-      if (outcome.value) {
-        const title = t('actions.session.force_sync.success.title');
-        const message = t('actions.session.force_sync.success.message');
+    if (isErr(outcome))
+      return;
 
-        notifyInfo(title, message);
+    if (!outcome.value) {
+      notifyError(t('actions.session.force_sync.error.title'), t('actions.session.force_sync.error.message', { error: '' }));
+      return;
+    }
 
-        if (action === SYNC_DOWNLOAD)
-          await logout();
-      }
-      else {
-        notifyFailure('');
-      }
-    }
-    else if (isActionable(outcome.error)) {
-      notifyFailure(outcome.error.message);
-    }
+    notifyInfo(t('actions.session.force_sync.success.title'), t('actions.session.force_sync.success.message'));
+    if (action === SYNC_DOWNLOAD)
+      await logout();
   };
 
   const clearUploadStatus = (): void => {

@@ -125,22 +125,6 @@
           "description": "Hubo un error al consultar los detalles del token: {message}",
           "title": "Consultando detalles del token {address} ({evmChain})"
         }
-      },
-      "update": {
-        "error": {
-          "description": "La actualización de la base de datos de activos falló: {message}"
-        },
-        "task": {
-          "title": "Actualizando la base de datos de activos"
-        }
-      },
-      "versions": {
-        "error": {
-          "description": "La verificación de actualización de la base de datos de activos falló: {message}"
-        },
-        "task": {
-          "title": "Verificando actualizaciones en la base de datos de activos."
-        }
       }
     },
     "balances": {

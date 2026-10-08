@@ -119,13 +119,14 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       expect(get(nodes)[0].name).toBe('first');
     });
 
-    it('should report a failure as a notification rather than a message', async () => {
+    it('should report a failure only through the inline load error', async () => {
       fetchEvmNodes.mockRejectedValue(new Error('backend is down'));
 
-      const { loadNodes, nodes } = manager();
+      const { loadError, loadNodes, nodes } = manager();
       await loadNodes();
 
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'backend is down' }));
+      expect(get(loadError)).toBe('backend is down');
+      expect(notify).not.toHaveBeenCalled();
       expect(setMessage).not.toHaveBeenCalled();
       expect(get(nodes)).toHaveLength(0);
     });

@@ -181,8 +181,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
 
     if (isOk(outcome))
       notifyInfo(title, t('oracle_prices.cache.notification.success', pair));
-    else
-      onActionableError(outcome, error => notifyError(title, t('oracle_prices.cache.notification.error', { ...pair, error: error.message })));
 
     return outcome;
   };

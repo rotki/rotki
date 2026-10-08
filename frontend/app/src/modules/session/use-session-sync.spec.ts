@@ -149,12 +149,15 @@ describe('useSync', () => {
       expect(mockNotifyInfo).not.toHaveBeenCalled();
     });
 
-    it('should notify a failure on an actionable task failure', async () => {
+    it('should leave a failed task to its dock row and keep the session', async () => {
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+      const logout = vi.fn(async (): Promise<void> => {});
 
-      await sync.forceSync(vi.fn(async (): Promise<void> => {}));
+      await sync.forceSync(logout);
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(logout).not.toHaveBeenCalled();
     });
 
     it('should stay silent on a cancelled task', async () => {
