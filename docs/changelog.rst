@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Loading Ethereum withdrawals through Blockscout works again with Blockscout v12 instances. Before, the changed pagination of v12 made the withdrawals query fail.
+* :bug:`-` Hyperliquid Core history is no longer cut off after the first page of entries, and all funding payments are now saved instead of just one. History is refetched once after upgrading to recover what was missing.
 * :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
 * :bug:`13278` Choosing Email in the Report an Issue dialog now opens your mail client in the desktop app. Before, the dialog closed without opening anything and the title and description you typed were lost. If an option cannot be opened, the dialog now stays open with your report and says so.
 * :release:`1.44.1 <2026-10-02>`

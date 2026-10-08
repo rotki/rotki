@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,8 +11,19 @@ from rotkehlchen.chain.hyperliquid.manager import (
     HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX,
     HyperliquidManager,
 )
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
-from rotkehlchen.types import SupportedBlockchain, Timestamp
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from rotkehlchen.db.dbhandler import DBHandler
+
+ADDRESS = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
 
 
 @contextmanager
@@ -19,127 +31,151 @@ def _dummy_ctx():
     yield object()
 
 
-def test_query_proprietary_history_failed_query_does_not_advance_ranges() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.user_write.side_effect = _dummy_ctx
-    manager.node_inquirer = MagicMock(database=db)
-    manager.transactions = MagicMock()
-
-    ranges = MagicMock()
-    ranges.get_location_query_ranges.return_value = [(Timestamp(0), Timestamp(10))]
-    history_db = MagicMock()
-    hyperliquid = MagicMock()
-    hyperliquid.query_history_events.side_effect = RemoteError('boom')
-
-    with (
-        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
-        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents', return_value=history_db),
-        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
-    ):
-        manager.query_proprietary_history(addresses=[address], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
-
-    history_db.add_history_events.assert_not_called()
-    ranges.update_used_query_range.assert_not_called()
-    manager.transactions.msg_aggregator.add_error.assert_called_once()
-
-
-def test_query_proprietary_history_success_stores_events_and_updates_range() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.user_write.side_effect = _dummy_ctx
-    manager.node_inquirer = MagicMock(database=db)
-    manager.transactions = MagicMock()
-
-    ranges = MagicMock()
-    ranges.get_location_query_ranges.return_value = [(Timestamp(0), Timestamp(100))]
-    history_db = MagicMock()
-    fake_events = [MagicMock()]
-    hyperliquid = MagicMock()
-    hyperliquid.query_history_events.return_value = fake_events
-
-    with (
-        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
-        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents', return_value=history_db),
-        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
-    ):
-        manager.query_proprietary_history(addresses=[address], from_timestamp=Timestamp(0), to_timestamp=Timestamp(100))  # noqa: E501
-
-    history_db.add_history_events.assert_called_once()
-    stored_events = history_db.add_history_events.call_args[1]['history']
-    assert stored_events == fake_events
-    ranges.update_used_query_range.assert_called_once()
-    update_args = ranges.update_used_query_range.call_args[1]
-    assert update_args['location_string'] == f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
-    assert update_args['queried_ranges'] == [(Timestamp(0), Timestamp(100))]
-
-
-def test_query_proprietary_history_uses_core_specific_range_key() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.user_write.side_effect = _dummy_ctx
-    manager.node_inquirer = MagicMock(database=db)
-    manager.transactions = MagicMock()
-
-    ranges = MagicMock()
-    ranges.get_location_query_ranges.return_value = []
-
-    with (
-        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
-        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents'),
-        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI'),
-    ):
-        manager.query_proprietary_history(
-            addresses=[address],
-            from_timestamp=Timestamp(10),
-            to_timestamp=Timestamp(20),
-        )
-
-    assert ranges.get_location_query_ranges.call_args[1]['location_string'] == (
-        f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
+def _event(group_identifier: str) -> HistoryEvent:
+    return HistoryEvent(
+        group_identifier=group_identifier,
+        sequence_index=0,
+        timestamp=TimestampMS(5000),
+        location=Location.HYPERLIQUID,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=ADDRESS,
     )
 
 
-def test_refetch_proprietary_history_ignores_query_ranges() -> None:
+def _batch_query(
+        *batches: list[HistoryBaseEntry],
+        error: RemoteError | None = None,
+) -> MagicMock:
+    """Mock a batch query that yields the given batches and then raises the error, if any."""
+    def query(**kwargs: Any) -> Iterator[list[HistoryBaseEntry]]:
+        yield from batches
+        if error is not None:
+            raise error
+
+    return MagicMock(side_effect=query)
+
+
+def _manager_with_db(database: DBHandler) -> tuple[HyperliquidManager, MagicMock]:
+    """Return a manager on the given database and its mocked `add_error`."""
     manager = HyperliquidManager.__new__(HyperliquidManager)
+    manager.node_inquirer = MagicMock(database=database)
+    manager.transactions = MagicMock(msg_aggregator=MagicMock(add_error=(add_error := MagicMock())))  # noqa: E501
+    return manager, add_error
 
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.user_write.side_effect = _dummy_ctx
-    manager.node_inquirer = MagicMock(database=db)
 
-    history_db = MagicMock()
-    history_db.add_history_events.return_value = 2
-    fake_events = [MagicMock(), MagicMock()]
-    hyperliquid = MagicMock()
-    hyperliquid.query_history_events.return_value = fake_events
+def _stored_group_identifiers(database: DBHandler) -> list[str]:
+    with database.conn.read_ctx() as cursor:
+        return [row[0] for row in cursor.execute(
+            'SELECT group_identifier FROM history_events ORDER BY group_identifier',
+        )]
 
-    with (
-        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges') as ranges,
-        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents', return_value=history_db),
-        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
-    ):
+
+def _queried_range(database: DBHandler) -> tuple[Timestamp, Timestamp] | None:
+    with database.conn.read_ctx() as cursor:
+        return database.get_used_query_range(
+            cursor=cursor,
+            name=f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{ADDRESS}',
+        )
+
+
+def test_query_proprietary_history_failure_midway_keeps_saved_pages_but_not_the_range(
+        database: DBHandler,
+) -> None:
+    """A failure after some pages keeps the pages saved so far, but leaves the range
+    unqueried so that the next sync queries all of it again."""
+    manager, add_error = _manager_with_db(database)
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
+        [_event('page1')],
+        error=RemoteError('boom'),
+    )
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
+
+    assert _stored_group_identifiers(database) == ['page1']
+    assert _queried_range(database) is None
+    assert add_error.call_args.args[0] == (
+        f'Failed to query Hyperliquid history for {ADDRESS}. Will retry in a future sync.'
+    )
+
+    hyperliquid.iter_history_event_batches = _batch_query([_event('page1')], [_event('page2')])
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
+
+    hyperliquid.iter_history_event_batches.assert_called_once_with(
+        address=ADDRESS,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(10),
+    )
+    assert _stored_group_identifiers(database) == ['page1', 'page2']
+    assert _queried_range(database) == (0, 10)
+    add_error.assert_called_once()
+
+
+def test_query_proprietary_history_only_queries_the_missing_ranges(database: DBHandler) -> None:
+    manager, _ = _manager_with_db(database)
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query()
+    with database.user_write() as write_cursor:
+        database.update_used_query_range(
+            write_cursor=write_cursor,
+            name=f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{ADDRESS}',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        )
+
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(5), to_timestamp=Timestamp(20))  # noqa: E501
+
+    hyperliquid.iter_history_event_batches.assert_called_once_with(
+        address=ADDRESS,
+        start_ts=Timestamp(11),
+        end_ts=Timestamp(20),
+    )
+    assert _queried_range(database) == (0, 20)
+
+
+def test_refetch_proprietary_history_ignores_query_ranges(database: DBHandler) -> None:
+    manager, _ = _manager_with_db(database)
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
+        [_event('page1'), _event('page1b')],
+        [_event('page2')],
+    )
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
         assert manager.refetch_proprietary_history(
-            address=address,
+            address=ADDRESS,
             start_ts=Timestamp(0),
             end_ts=Timestamp(100),
-        ) == 2
+        ) == 3
 
-    ranges.assert_not_called()
-    hyperliquid.query_history_events.assert_called_once_with(
-        address=address,
+    hyperliquid.iter_history_event_batches.assert_called_once_with(
+        address=ADDRESS,
         start_ts=Timestamp(0),
         end_ts=Timestamp(100),
     )
-    history_db.add_history_events.assert_called_once()
+    assert _queried_range(database) is None
+
+
+def test_refetch_proprietary_history_failure_keeps_the_refetched_pages(
+        database: DBHandler,
+) -> None:
+    manager, _ = _manager_with_db(database)
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
+        [_event('page1')],
+        error=RemoteError('boom'),
+    )
+    with (
+        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
+        pytest.raises(RemoteError),
+    ):
+        manager.refetch_proprietary_history(
+            address=ADDRESS,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(100),
+        )
+
+    assert _stored_group_identifiers(database) == ['page1']
 
 
 def test_force_refetch_transactions_also_refetches_hyperliquid_core_history() -> None:
@@ -217,7 +253,7 @@ def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
     manager.node_inquirer = MagicMock(database=db)
     manager.transactions = MagicMock()
     (ranges := MagicMock()).get_location_query_ranges.return_value = [(Timestamp(1), Timestamp(2))]
-    (hyperliquid := MagicMock()).query_history_events.side_effect = RemoteError('core history down')  # noqa: E501
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(error=RemoteError('core history down'))  # noqa: E501
     with (
         patch.object(EvmManager, 'query_transactions', side_effect=IncompleteTransactionsQuery('incomplete')),  # noqa: E501
         patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
@@ -231,5 +267,23 @@ def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
             to_timestamp=Timestamp(2),
         )
 
-    hyperliquid.query_history_events.assert_called_once()
+    hyperliquid.iter_history_event_batches.assert_called_once()
     manager.transactions.msg_aggregator.add_error.assert_called_once()
+
+
+def test_query_proprietary_history_saves_events_of_an_asset_missing_from_the_user_db(
+        database: DBHandler,
+) -> None:
+    """An event whose asset is in the global DB but not in the user DB must still be saved
+    and the range committed, instead of being skipped with its range marked as queried."""
+    manager, add_error = _manager_with_db(database)
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query([_event('a')])
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM assets WHERE identifier=?', (A_ETH.identifier,))
+
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
+
+    assert _stored_group_identifiers(database) == ['a']
+    assert _queried_range(database) == (0, 10)
+    add_error.assert_not_called()

@@ -20,7 +20,7 @@ from .tokens import HyperliquidTokens
 from .transactions import HyperliquidTransactions
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
@@ -120,23 +120,34 @@ class HyperliquidManager(EvmManager):
 
         return balances
 
-    @staticmethod
-    def _query_proprietary_history_range(
-            api: HyperliquidAPI,
-            address: ChecksumEvmAddress,
-            range_start: Timestamp,
-            range_end: Timestamp,
-    ) -> list[HistoryBaseEntry]:
-        """Query Hyperliquid core history for a single address range.
+    def _save_history_batches(
+            self,
+            history_db: DBHistoryEvents,
+            batches: Iterator[list[HistoryBaseEntry]],
+    ) -> int:
+        """Save each batch of events as soon as it is queried and return how many were new.
+
+        Each batch is written in its own transaction, so the batches saved before a failure
+        are kept. Querying them again later is harmless since duplicate events are ignored.
+        The assets of the events were resolved from the global DB, so they are added to the
+        user DB first to make sure the insertion can't fail on the foreign key.
 
         May raise:
         - RemoteError
         """
-        return api.query_history_events(
-            address=address,
-            start_ts=range_start,
-            end_ts=range_end,
-        )
+        inserted = 0
+        for events in batches:
+            with self.node_inquirer.database.user_write() as write_cursor:
+                self.node_inquirer.database.add_asset_identifiers(
+                    write_cursor=write_cursor,
+                    asset_identifiers=list({event.asset.identifier for event in events}),
+                )
+                inserted += history_db.add_history_events(
+                    write_cursor=write_cursor,
+                    history=events,
+                )
+
+        return inserted
 
     def query_proprietary_history(
             self,
@@ -144,7 +155,11 @@ class HyperliquidManager(EvmManager):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> None:
-        """Query and persist Hyperliquid core history for the given addresses."""
+        """Query and persist Hyperliquid core history for the given addresses.
+
+        A range is only marked as queried once all of its history has been queried, so a
+        range that failed midway is queried again in a future sync.
+        """
         api = HyperliquidAPI()
         ranges = DBQueryRanges(self.node_inquirer.database)
         history_db = DBHistoryEvents(self.node_inquirer.database)
@@ -161,11 +176,13 @@ class HyperliquidManager(EvmManager):
 
             for range_start, range_end in ranges_to_query:
                 try:
-                    events = self._query_proprietary_history_range(
-                        api=api,
-                        address=address,
-                        range_start=range_start,
-                        range_end=range_end,
+                    self._save_history_batches(
+                        history_db=history_db,
+                        batches=api.iter_history_event_batches(
+                            address=address,
+                            start_ts=range_start,
+                            end_ts=range_end,
+                        ),
                     )
                 except RemoteError as e:
                     log.error(
@@ -179,7 +196,6 @@ class HyperliquidManager(EvmManager):
                     continue
 
                 with self.node_inquirer.database.user_write() as write_cursor:
-                    history_db.add_history_events(write_cursor=write_cursor, history=events)
                     ranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=location_string,
@@ -194,21 +210,19 @@ class HyperliquidManager(EvmManager):
     ) -> int:
         """Force refetch Hyperliquid core history without checking/updating query ranges.
 
+        Events queried before a failure are kept.
+
         May raise:
         - RemoteError
-        - sqlcipher.IntegrityError: If the asset of an added history event does not exist.
         """
-        events = self._query_proprietary_history_range(
-            api=HyperliquidAPI(),
-            address=address,
-            range_start=start_ts,
-            range_end=end_ts,
+        return self._save_history_batches(
+            history_db=DBHistoryEvents(self.node_inquirer.database),
+            batches=HyperliquidAPI().iter_history_event_batches(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ),
         )
-        with self.node_inquirer.database.user_write() as write_cursor:
-            return DBHistoryEvents(self.node_inquirer.database).add_history_events(
-                write_cursor=write_cursor,
-                history=events,
-            )
 
     def query_transactions(
             self,
