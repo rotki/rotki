@@ -1186,6 +1186,17 @@ def test_for_spam_tokens(database: DBHandler, ethereum_inquirer: EthereumInquire
     ) is False
 
 
+def test_get_evm_tokens_underlying_tokens_match_per_token_query(globaldb):
+    """The batched underlying tokens read must equal the per-token read, order included"""
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, ignore_spam=False)
+    assert any(token.underlying_tokens for token in tokens)
+    with globaldb.conn.read_ctx() as cursor:
+        for token in tokens:
+            assert tuple(token.underlying_tokens or ()) == globaldb.fetch_underlying_tokens(
+                cursor, token.identifier,
+            )
+
+
 def test_get_evm_tokens(globaldb):
     tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)
     assert tokens and not any(token.protocol == SPAM_PROTOCOL for token in tokens)
