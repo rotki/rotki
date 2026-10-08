@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDismissableOverlay } from '@rotki/ui-library';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import SponsorshipView from '@/modules/premium/SponsorshipView.vue';
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';
@@ -8,6 +9,11 @@ import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { isXlAndDown } = useBreakpoint();
 const route = useRoute();
+
+/** Below xl the drawer slides over the page; above it, it is docked and never in the way. */
+const isCoveringPage = computed<boolean>(() => get(isXlAndDown) && get(showDrawer));
+
+useDismissableOverlay(isCoveringPage, () => set(showDrawer, false));
 
 watch(route, () => {
   if (get(showDrawer) && get(isXlAndDown))

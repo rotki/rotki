@@ -51,6 +51,19 @@ test.describe('back navigation', () => {
       await expect(shared).toHaveURL(/#\/accounts/);
     });
 
+    test('closes the action centre and stays on the page', async () => {
+      const shared = ctx.sharedPage;
+      const menu = shared.getByRole('menu');
+      await shared.getByTestId('actions-center-button').click();
+      await expect(menu).toBeVisible();
+      const url = shared.url();
+
+      await shared.goBack();
+
+      await expect(menu).toBeHidden();
+      expect(shared.url()).toBe(url);
+    });
+
     test('raises the discard prompt instead of leaving a dirty form', async () => {
       const shared = ctx.sharedPage;
       await page.visit();
