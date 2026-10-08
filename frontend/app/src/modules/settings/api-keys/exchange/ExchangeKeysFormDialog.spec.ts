@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
+import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import '@test/i18n';
 
 const { setMessage, setupExchange, validate } = vi.hoisted(() => ({
@@ -153,6 +154,26 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
 
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
+
+    it('should keep the refused key row of an account whose save failed', async () => {
+      setupExchange.mockResolvedValue(false);
+      const conditions = useRaisedConditionsStore();
+      conditions.raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'kucoin', name: 'Kucoin 1' });
+
+      await save(exchange({ mode: 'edit' }));
+
+      expect(conditions.conditions).toHaveLength(1);
+    });
+  });
+
+  it('should settle the refused key row of the account it saved, and only that one', async () => {
+    const conditions = useRaisedConditionsStore();
+    conditions.raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'kucoin', name: 'Kucoin 1' });
+    conditions.raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'kucoin', name: 'Kucoin 2' });
+
+    await save(exchange({ location: 'kucoin', mode: 'edit', name: 'Kucoin 1' }));
+
+    expect(conditions.conditions).toEqual([{ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'kucoin', name: 'Kucoin 2' }]);
   });
 
   describe('after a successful save', () => {

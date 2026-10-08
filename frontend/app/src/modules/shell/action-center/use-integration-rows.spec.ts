@@ -1,6 +1,7 @@
 import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
@@ -197,6 +198,40 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       await onConfirm();
 
       expect(update).toHaveBeenCalledWith({ suppressMissingKeyMsgServices: ['beaconchain', 'helius'] });
+    });
+  });
+
+  describe('refused exchange key rows', () => {
+    const main = { location: 'binance', name: 'main' };
+
+    function raiseRefusedKey(account: { location: string; name: string }): void {
+      useRaisedConditionsStore().raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, ...account });
+    }
+
+    it('should raise one row per refused account, opening the keys of that account', () => {
+      useConnectedExchangesStore().setConnectedExchanges([main]);
+      raiseRefusedKey(main);
+
+      const row = onlyRow();
+
+      expect(row).toMatchObject({
+        id: 'exchange-key-rejected-binance-main',
+        target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: main } },
+        title: 'action_center.rows.integrations.exchange_key_rejected.title::Binance, main',
+        urgency: ActionUrgency.DECISION,
+      });
+    });
+
+    it('should take a row down once its account is no longer connected', async () => {
+      const connected = useConnectedExchangesStore();
+      connected.setConnectedExchanges([main, { location: 'binance', name: 'other' }]);
+      raiseRefusedKey(main);
+      const result = rows();
+
+      connected.setConnectedExchanges([{ location: 'binance', name: 'other' }]);
+      await nextTick();
+
+      expect(get(result)).toEqual([]);
     });
   });
 

@@ -1,5 +1,6 @@
+import type { MessageDelivery } from '@/modules/core/messaging/interfaces';
 import type { UserMessageData } from '@/modules/core/messaging/types/base';
-import { assert, type NotificationAction, NotificationCategory, Priority, Severity } from '@rotki/common';
+import { assert, type Notification, NotificationCategory, Priority, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,22 +50,20 @@ function authFailure(service: string, account: string | null): UserMessageData {
   };
 }
 
-function singleAction(action: NotificationAction | NotificationAction[] | undefined): NotificationAction {
-  assert(action && !Array.isArray(action));
-  return action;
-}
-
 describe('createUserMessageHandler', () => {
-  const router = { push: vi.fn() };
-
   beforeEach(() => {
     setActivePinia(createCustomPinia());
-    router.push.mockReset();
     useLocationStore().$patch({ allLocations: { binance: { isExchange: true } } });
   });
 
+  async function notificationFor(message: UserMessageData, delivery?: MessageDelivery, handler = createUserMessageHandler(mockT)): Promise<Notification> {
+    const result = await handler.handle(message, delivery);
+    assert(result);
+    return result;
+  }
+
   it('should show the sentence of a first occurrence under a title naming its family and location', async () => {
-    const result = await createUserMessageHandler(mockT, router).handle(badData);
+    const result = await notificationFor(badData);
 
     expect(result).toMatchObject({
       category: NotificationCategory.DEFAULT,
@@ -77,7 +76,7 @@ describe('createUserMessageHandler', () => {
   });
 
   it('should title a message about no location by its family alone', async () => {
-    const result = await createUserMessageHandler(mockT, router).handle(localDb);
+    const result = await notificationFor(localDb);
 
     expect(result).toMatchObject({
       severity: Severity.WARNING,
@@ -89,7 +88,7 @@ describe('createUserMessageHandler', () => {
     const { data } = storeToRefs(useNotificationsStore());
     set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, message: 'earlier', severity: Severity.ERROR, title: 'kucoin' })]);
 
-    const result = await createUserMessageHandler(mockT, router).handle(badData, { count: 3 });
+    const result = await notificationFor(badData, { count: 3 });
 
     expect(result).toMatchObject({
       groupCount: 5,
@@ -104,63 +103,55 @@ describe('createUserMessageHandler', () => {
       ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, message: 'newer', severity: Severity.ERROR, title: 'kucoin' }),
       date: rowDate,
     }]);
-    const handler = createUserMessageHandler(mockT, router);
+    const handler = createUserMessageHandler(mockT);
 
-    const older = await handler.handle(badData, { count: 1, lastSent: new Date('2026-09-30T07:00:00Z') });
-    const newer = await handler.handle(badData, { count: 1, lastSent: new Date('2026-09-30T10:00:00Z') });
+    const older = await notificationFor(badData, { count: 1, lastSent: new Date('2026-09-30T07:00:00Z') }, handler);
+    const newer = await notificationFor(badData, { count: 1, lastSent: new Date('2026-09-30T10:00:00Z') }, handler);
 
     expect(older.message).toBe('notification_messages.repeated::2, newer');
     expect(newer.message).toBe(`notification_messages.repeated::2, ${badData.value}`);
   });
 
   it.each([badData, localDb])('should keep a $key message out of the popup queue', async (message) => {
-    const result = await createUserMessageHandler(mockT, router).handle(message);
+    const result = await notificationFor(message);
 
     expect(result.priority).toBe(Priority.BULK);
     expect(result.action).toBeUndefined();
     expect(createNotification(1, result).display).toBe(false);
   });
 
-  it('should interrupt for rejected credentials and route to the keys of that exchange account', async () => {
-    const result = await createUserMessageHandler(mockT, router).handle(authFailure('binance', 'main'));
+  describe('rejected credentials', () => {
+    it('should raise the row of the exchange account and create no notification', async () => {
+      const { raised } = storeToRefs(useRaisedConditionsStore());
 
-    expect(result.priority).toBe(Priority.ACTION);
-    expect(result.title).toBe('notification_messages.user_message.with_subject::Binance (main), notification_messages.user_message.title.auth');
-    await singleAction(result.action).action();
-    expect(router.push).toHaveBeenCalledWith({ name: '/api-keys/exchanges/', query: { location: 'binance', name: 'main' } });
-  });
+      const result = await createUserMessageHandler(mockT).handle(authFailure('binance', 'main'));
 
-  it('should route rejected premium credentials to the premium keys', async () => {
-    const result = await createUserMessageHandler(mockT, router).handle(authFailure('rotki_premium', null));
+      expect(result).toBeNull();
+      expect(Object.values(get(raised))).toEqual([
+        { kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'binance', name: 'main' },
+      ]);
+    });
 
-    await singleAction(result.action).action();
-    expect(router.push).toHaveBeenCalledWith({ name: '/api-keys/premium/' });
-  });
+    it('should raise the premium row for premium credentials and create no notification', async () => {
+      const { raised } = storeToRefs(useRaisedConditionsStore());
 
-  it('should raise the premium row for rejected premium credentials and not pop over it', async () => {
-    const { raised } = storeToRefs(useRaisedConditionsStore());
+      const result = await createUserMessageHandler(mockT).handle(authFailure('rotki_premium', null));
 
-    const result = await createUserMessageHandler(mockT, router).handle(authFailure('rotki_premium', null));
+      expect(result).toBeNull();
+      expect(Object.values(get(raised))).toEqual([
+        { cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE },
+      ]);
+    });
 
-    expect(Object.values(get(raised))).toEqual([
-      { cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE },
-    ]);
-    expect(createNotification(1, result).display).toBe(false);
-  });
+    it('should raise the missing key row of an external service and create no notification', async () => {
+      const { raised } = storeToRefs(useRaisedConditionsStore());
 
-  it('should leave the premium row alone for rejected credentials of anything else', async () => {
-    const { raised } = storeToRefs(useRaisedConditionsStore());
+      const result = await createUserMessageHandler(mockT).handle(authFailure('beaconchain', null));
 
-    const result = await createUserMessageHandler(mockT, router).handle(authFailure('binance', 'main'));
-
-    expect(get(raised)).toEqual({});
-    expect(createNotification(1, result).display).toBe(true);
-  });
-
-  it('should route rejected credentials of an external service to that service', async () => {
-    const result = await createUserMessageHandler(mockT, router).handle(authFailure('beaconchain', null));
-
-    await singleAction(result.action).action();
-    expect(router.push).toHaveBeenCalledWith({ name: '/api-keys/external/', query: { service: 'beaconchain' } });
+      expect(result).toBeNull();
+      expect(Object.values(get(raised))).toEqual([
+        { kind: RaisedConditionKind.MISSING_API_KEY, service: 'beaconchain' },
+      ]);
+    });
   });
 });
