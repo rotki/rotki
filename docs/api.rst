@@ -3132,8 +3132,8 @@ Decode transactions that haven't been decoded yet
           "chain": "eth"
       }
 
-   :reqjson bool ignore_cache: Defaults to false. If set to true then all events will be redecoded, not only those that have not yet been decoded.
-   :reqjson string chain: The name of the chain for which to decode transactions. The possible values are limited to the chains for which we support transaction decoding (solana, zksync lite, and all supported EVM chains except for avalanche).
+   :reqjson bool ignore_cache: Defaults to false. If set to true then all events will be redecoded, not only those that have not yet been decoded. Transactions with customized or matched events are left as they are.
+   :reqjson string chain: The name of the chain for which to decode transactions. The possible values are limited to the chains for which we support transaction decoding (solana, zksync lite, bitcoin, bitcoin cash, and all supported EVM chains except for avalanche). Bitcoin and bitcoin cash transactions are decoded from what is saved locally, without querying any explorer.
 
    **Example Response**:
 

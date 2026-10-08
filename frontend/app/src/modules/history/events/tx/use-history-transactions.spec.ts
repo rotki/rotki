@@ -127,7 +127,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { Blockchain } = await import('@rotki/common');
   return {
     useSupportedChains: vi.fn().mockReturnValue({
-      decodableTxChainsInfo: computed(() => [
+      allTxChainsInfo: computed(() => [
         {
           evmChainName: 'ethereum',
           id: Blockchain.ETH,

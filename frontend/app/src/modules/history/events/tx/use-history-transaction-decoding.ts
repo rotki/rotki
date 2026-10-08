@@ -4,10 +4,6 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { combineSettled, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import {
-  TransactionChainType,
-  TransactionChainTypeNeedDecoding,
-} from '@/modules/history/events/event-payloads';
 import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
@@ -41,7 +37,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { decodeTransactions } = useHistoryEventsApi();
   const { cancelByKind, submitTask } = useNativeTask();
   const { getUndecodedTransactionStatus, resetUndecodedTransactionsStatus } = useDecodingStatusStore();
-  const { decodableTxChainsInfo, getChainName, isBtcChains, isEvmLikeChains } = useSupportedChains();
+  const { allTxChainsInfo, getChainName } = useSupportedChains();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
   /**
@@ -83,21 +79,21 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     return outcome;
   };
 
-  const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
-    const isEvmType = type === TransactionChainType.EVM;
-    const chains = getUndecodedTransactionStatus()
-      .filter(({ chain, processed, total }) =>
-        processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),
-      )
-      .map(({ chain }) => chain);
-    // Unbounded on purpose: DECODE_LANE is what caps how many chains decode at once.
-    await Promise.all(chains.map(async chain => decodeTransactionsTask(chain)));
-  };
-
+  /**
+   * Decodes what is pending on every chain the backend reports undecoded transactions for.
+   *
+   * @remarks
+   * Every chain with transactions decodes through the same endpoint, bitcoin chains included, so
+   * the breakdown alone decides what runs. Unbounded on purpose: {@link DECODE_LANE} is what caps
+   * how many chains decode at once.
+   */
   const checkMissingEventsAndRedecode = async (): Promise<void> => {
     resetUndecodedTransactionsStatus();
     await fetchUndecodedTransactionsBreakdown();
-    await Promise.allSettled(TransactionChainTypeNeedDecoding.map(async item => checkMissingEventsAndRedecodeHandler(item)));
+    const chains = getUndecodedTransactionStatus()
+      .filter(({ processed, total }) => processed < total)
+      .map(({ chain }) => chain);
+    await Promise.allSettled(chains.map(async chain => decodeTransactionsTask(chain)));
   };
 
   /**
@@ -108,11 +104,11 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
    * This resolves the scope and then reads the shape off {@link redecodeFlow} rather than rebuilding
    * it, so what a test asserts about the declaration is what runs. The id carries the scope: a
    * scoped request identifying itself as the full run would be deduped onto a concurrent
-   * redecode-all and silently handed that broader run's promise. A request naming every decodable
+   * redecode-all and silently handed that broader run's promise. A request naming every
    * chain *is* the full run, so it takes the canonical id and dedups deliberately.
    */
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
-    const allChains = get(decodableTxChainsInfo).map(chain => chain.id);
+    const allChains = get(allTxChainsInfo).map(chain => chain.id);
     const decodeChains = chains.length > 0 ? chains : allChains;
     const coversEverything = allChains.every(chain => decodeChains.includes(chain));
     const flowId = redecodeFlow.id(coversEverything ? undefined : decodeChains);

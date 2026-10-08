@@ -199,6 +199,7 @@ class DBBitcoinTx:
             cursor: DBCursor,
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             address: BTCAddress,
+            not_queried_for: BTCAddress | None = None,
     ) -> list[BTCTxId]:
         """Get the ids of the saved transactions that have a TxIO belonging to the address.
 
@@ -206,12 +207,24 @@ class DBBitcoinTx:
         tracked, since the events of a bitcoin transaction depend on which of its addresses
         are tracked. Only the transactions already saved are found this way, so the address'
         own history still has to be queried.
+
+        If not_queried_for is given, which is the same address in the format it is tracked
+        in, the transactions already saved for it are left out. Those were decoded with the
+        address tracked, so they are not outdated.
         """
-        return [BTCTxId(x[0]) for x in cursor.execute(
+        query = (
             'SELECT DISTINCT T.tx_id FROM bitcoin_transactions AS T INNER JOIN bitcoin_tx_io '
-            'AS IO ON IO.tx_id=T.identifier WHERE T.location=? AND IO.address=?',
-            (location.serialize_for_db(), address),
-        )]
+            'AS IO ON IO.tx_id=T.identifier WHERE T.location=? AND IO.address=?'
+        )
+        bindings: list[str] = [location.serialize_for_db(), address]
+        if not_queried_for is not None:
+            query += (
+                ' AND NOT EXISTS(SELECT 1 FROM bitcointx_address_mappings AS M '
+                'WHERE M.tx_id=T.identifier AND M.address=?)'
+            )
+            bindings.append(not_queried_for)
+
+        return [BTCTxId(x[0]) for x in cursor.execute(query, bindings)]
 
     def count_undecoded_transactions(
             self,

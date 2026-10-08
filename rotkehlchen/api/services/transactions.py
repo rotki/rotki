@@ -54,6 +54,7 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.types import (
     CHAINS_WITH_NODES,
+    CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS,
@@ -62,6 +63,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAINS_WITH_TRANSACTIONS,
+    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     ExternalService,
     ListOfBlockchainAddresses,
@@ -631,9 +633,13 @@ class TransactionsService:
 
     def decode_transactions(
             self,
-            chain: CHAINS_WITH_TX_DECODING_TYPE,
+            chain: CHAINS_WITH_PENDING_TX_DECODING_TYPE,
             force_redecode: bool,
     ) -> dict[str, Any]:
+        """Decode the transactions of the chain that are pending decoding. With force_redecode
+        the chain's events are reset first, so all its saved transactions are decoded again
+        except for the ones with customized or matched events.
+        """
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         if chain.is_evmlike():
@@ -653,22 +659,25 @@ class TransactionsService:
                     DBEth2(self.rotkehlchen.data.db).redecode_block_production_events()
 
             chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain)
-            if chain.is_evm():
-                chain_manager.transactions.get_receipts_for_transactions_missing_them()  # type: ignore[attr-defined]
-                decoded_count = dbevmtx.count_hashes_not_decoded(
-                    filter_query=EvmTransactionsNotDecodedFilterQuery.make(
-                        chain_id=chain.to_chain_id(),
-                    ),
-                )
+            if chain.is_bitcoin():  # decoded from the saved transactions, without any querying
+                decoded_count = chain_manager.decode_transactions(send_ws_notifications=True)  # type: ignore[attr-defined]
             else:
-                decoded_count = DBSolanaTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
-                    filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
-                )
+                if chain.is_evm():
+                    chain_manager.transactions.get_receipts_for_transactions_missing_them()  # type: ignore[attr-defined]
+                    decoded_count = dbevmtx.count_hashes_not_decoded(
+                        filter_query=EvmTransactionsNotDecodedFilterQuery.make(
+                            chain_id=chain.to_chain_id(),
+                        ),
+                    )
+                else:
+                    decoded_count = DBSolanaTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+                        filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
+                    )
 
-            if decoded_count > 0:
-                chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]
-                    send_ws_notifications=True,
-                )
+                if decoded_count > 0:
+                    chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]
+                        send_ws_notifications=True,
+                    )
 
         return {'result': {'decoded_tx_number': decoded_count}, 'message': '', 'status_code': HTTPStatus.OK}  # noqa: E501
 
@@ -808,6 +817,21 @@ class TransactionsService:
                 tx_info[chain_name := SupportedBlockchain.SOLANA.name.lower()]['undecoded'] = undecoded_count  # noqa: E501
                 tx_info[chain_name]['total'] = cursor.execute(
                     'SELECT COUNT(*) FROM solana_transactions',
+                ).fetchone()[0]
+
+        dbbtctx = DBBitcoinTx(self.rotkehlchen.data.db)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for bitcoin_chain in SUPPORTED_BITCOIN_CHAINS:
+                if (undecoded_count := dbbtctx.count_undecoded_transactions(
+                    cursor=cursor,
+                    location=(location := Location.from_chain(bitcoin_chain)),
+                )) == 0:
+                    continue
+
+                tx_info[chain_name := bitcoin_chain.name.lower()]['undecoded'] = undecoded_count
+                tx_info[chain_name]['total'] = cursor.execute(
+                    'SELECT COUNT(*) FROM bitcoin_transactions WHERE location=?',
+                    (location.serialize_for_db(),),
                 ).fetchone()[0]
 
         return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
