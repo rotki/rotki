@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Exporting accounting rules in the browser no longer downloads a file containing only ``false`` when the export fails. A failed automatic match of asset movements or bridge transactions, accounting rules export or reset, PnL debug data import, price delete, token details lookup or Gnosis Pay sign-in is now reported only by its row in the task centre, without a second popup.
 * :bug:`-` Logging out no longer resets preferences kept on this device. The login screen now stays in your language instead of switching to English, the pinned panel keeps its width, the remembered WalletConnect wallet is kept, and newly detected tokens your own limits keep are no longer deleted.
 * :bug:`-` Going back (Alt+Left, or Cmd+Left on macOS) while a dialog, the action center or the navigation drawer is open now closes it instead of leaving the page underneath. Before, it skipped every open dialog at once and landed on whatever page was visited earlier.
 * :feature:`13289` The asset amount and value graph on the statistics page now says it shows your own holdings: the picker lists "Your assets" and the tooltip reads "Your ETH holdings" and "Value of your holdings". The footer gives the date the asset's data starts on and a toggle between snapshots and historical events as the data source, with a hint on getting more history and a link to the history events.
