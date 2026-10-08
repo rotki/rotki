@@ -1,5 +1,6 @@
+import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import ActionCenterMenu from '@/modules/core/action-center/ActionCenterMenu.vue';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 
@@ -79,5 +80,27 @@ describe('modules/core/action-center/ActionCenterMenu', () => {
     const wrapper = mountMenu({ checking, count: 0 });
 
     expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe(label);
+  });
+
+  describe('dismissed from the overlay stack, as the back gesture does', () => {
+    beforeEach(() => {
+      resetOverlayStack();
+    });
+
+    it('should close the open menu', () => {
+      const wrapper = mount(ActionCenterMenu, {
+        props: { 'count': 1, 'modelValue': true, 'onUpdate:modelValue': async (value: boolean) => wrapper.setProps({ modelValue: value }), 'urgency': ActionUrgency.DECISION },
+        slots: { default: '<div>panel</div>' },
+      });
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+    });
+
+    it('should leave nothing to dismiss while the menu is closed', () => {
+      mountMenu({ count: 1 });
+
+      expect(useOverlayStack().dismissTop()).toBe(false);
+    });
   });
 });
