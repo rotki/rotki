@@ -367,6 +367,9 @@ class Bitpanda(ExchangeWithoutApiSecret):
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 backoff_in_seconds = int(20 / retries_left)
                 retries_left -= 1
+                if retries_left == 0:
+                    raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
+
                 log.debug(
                     f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
                     f'for {backoff_in_seconds} seconds. {retries_left} retries left',
@@ -382,7 +385,6 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
             # we got it, so break
             break
-
         else:  # retries left are zero
             raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
 
