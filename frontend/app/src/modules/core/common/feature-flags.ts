@@ -23,4 +23,5 @@ export function isAccountingUpdateEnabled(): boolean {
  */
 export const ACCOUNTING_UPDATE_ROUTES: ReadonlySet<string> = new Set<RouteName>([
   '/history/data-issues/',
+  '/statistics/historical-balances/',
 ]);

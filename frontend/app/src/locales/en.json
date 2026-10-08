@@ -4101,8 +4101,59 @@
     "lt": "<"
   },
   "historical_balances": {
+    "as_of": {
+      "end_of_year": "End of {year}",
+      "label": "Balances as of",
+      "today": "Today"
+    },
+    "empty": "No balances on this day.",
+    "empty_filtered": "No balances on this day match the filters.",
+    "error": "Could not load the balances: {message}",
+    "export": {
+      "action": "Export CSV",
+      "blocked": {
+        "empty": "There are no balances to export.",
+        "loading": "The balances are still loading.",
+        "pending": "Some prices are still loading. The export is available once every price is in.",
+        "processing": "Some history events have not been processed yet. Process them first so the export is up to date."
+      }
+    },
+    "filter": {
+      "search_hint": "Search using the asset name or symbol"
+    },
+    "mode": {
+      "collection": "By collection",
+      "flat": "By asset"
+    },
     "negative_balances": {
       "view_event_tooltip": "The negative balance was detected at this event, but it doesn't necessarily mean this event is the cause. The issue might originate from an earlier event during processing."
+    },
+    "premium_description": "See what every account held on any past day, rebuilt from your history events.",
+    "price": {
+      "missing": "No price",
+      "missing_hint": "No price was found for this asset on this day, so it is left out of the total.",
+      "partial_hint": "Some assets in this collection have no price on this day, so the value covers only the priced ones.",
+      "spam": "Spam",
+      "spam_hint": "This asset is marked as spam, so it is not priced and is left out of the total."
+    },
+    "processing": {
+      "action": "Process now",
+      "done_empty": "Your history events are processed, and there were no balances on this day.",
+      "empty_message": "If you expected balances on this day, your history events may not have been processed yet.",
+      "failed": "Could not start processing: {message}",
+      "message": "Some history events have not been processed yet, so these balances may be out of date.",
+      "not_started": "Processing can't start while a profit and loss report is being generated. Try again once the report finishes."
+    },
+    "table": {
+      "locations": "Locations"
+    },
+    "total": {
+      "coverage": "Rebuilt from your history events. Holdings without history events, such as manual balances, liabilities and ETH staking validators, are not included.",
+      "filtered": "(filtered)",
+      "missing": "{count} asset has no price for this day and is left out | {count} assets have no price for this day and are left out",
+      "pending": "{count} price still loading | {count} prices still loading",
+      "spam": "{count} spam asset is not priced | {count} spam assets are not priced",
+      "title": "Total value on {date}"
     }
   },
   "history_event_action": {
@@ -4907,6 +4958,7 @@
     "statistics": "Statistics",
     "statistics_sub": {
       "graphs": "Graphs",
+      "historical_balances": "Historical Balances",
       "history_events": "Events Analysis",
       "snapshots": "Snapshots"
     },
