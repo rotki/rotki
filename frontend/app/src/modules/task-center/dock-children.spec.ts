@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from './core/types';
-import { arrangeChildren, type DockChildEntry, groupFailedLeaves } from './dock-children';
+import { arrangeChildren, type DockChildEntry } from './dock-children';
 
 function chain(name: string, status: ActivityStatus, reason?: string): Activity {
   return {
@@ -75,16 +75,6 @@ describe('arrangeChildren', () => {
     expect(describeEntries(entries)).toEqual(['failed[aura,wallet,yabir]', 'other', 'bch']);
     const group = entries[0];
     expect(group?.type === 'failed' ? group.reason : undefined).toBe(missingKey);
-  });
-
-  it('should group the failed leaves a folded job surfaces the same way', () => {
-    const entries = groupFailedLeaves([
-      chain('aura', ActivityStatus.FAILED, 'no key'),
-      chain('wallet', ActivityStatus.FAILED, 'no key'),
-      chain('other', ActivityStatus.FAILED, 'timeout'),
-    ]);
-
-    expect(describeEntries(entries)).toEqual(['failed[aura,wallet]', 'other']);
   });
 
   it('should leave a skipped child that has children of its own as a row, never folded', () => {

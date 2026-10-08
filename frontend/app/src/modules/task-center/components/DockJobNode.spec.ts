@@ -168,11 +168,11 @@ describe('dockJobNode', () => {
       expect(row.find('[data-testid=dock-sync-hint]').exists()).toBe(true);
     });
 
-    it('should surface no failed leaves while the job is still running', () => {
+    it('should surface no failed children while the job is still running', () => {
       const tree = running();
       tree[3] = { ...tree[3], status: ActivityStatus.FAILED };
 
-      expect(mountTree(tree).find('[data-testid=dock-failed-leaves]').exists()).toBe(false);
+      expect(mountTree(tree).find('[data-testid=dock-failed-children]').exists()).toBe(false);
     });
   });
 
@@ -195,25 +195,46 @@ describe('dockJobNode', () => {
       expect(mountTree(settled(ActivityStatus.CANCELLED)).find('[data-testid=activity-outcome]').attributes('aria-label')).toBe('pending_task.status.cancelled');
     });
 
-    it('should list a failed leaf with its reason under the folded job, skipping the levels between', () => {
-      const failedLeaves = mountTree(settled(ActivityStatus.COMPLETE)).find('[data-testid=dock-failed-leaves]');
+    it('should list a failed chain as one folded row under the folded job, not the accounts beneath it', () => {
+      const failedChildren = mountTree(settled(ActivityStatus.COMPLETE)).find('[data-testid=dock-failed-children]');
 
-      expect(failedLeaves.text()).toContain('0xbb');
-      expect(failedLeaves.text()).toContain('rate limited');
-      expect(failedLeaves.text()).not.toContain('0xaa');
-      expect(failedLeaves.text()).not.toContain('ethereum');
+      expect(failedChildren.text()).toContain('ethereum');
+      expect(failedChildren.find('[data-testid=dock-job-toggle]').attributes('aria-expanded')).toBe('false');
+      expect(failedChildren.text()).not.toContain('0xbb');
+      expect(failedChildren.text()).not.toContain('rate limited');
     });
 
-    it('should bubble a failed leaf\'s retry up to the panel', async () => {
-      const wrapper = mountTree(settled(ActivityStatus.COMPLETE));
+    it('should list a failed leaf that sits directly under the job with its reason, and bubble its retry up to the panel', async () => {
+      const wrapper = mountTree([
+        activity('refresh', { kind: ActivityKind.HISTORY_SYNC, status: ActivityStatus.COMPLETE, subtitle: undefined, title: 'History refresh' }),
+        activity('0xaa', { parent: id('refresh'), status: ActivityStatus.COMPLETE }),
+        activity('0xbb', { parent: id('refresh'), reason: 'rate limited', rerunnable: true, status: ActivityStatus.FAILED }),
+      ]);
+
+      const failedChildren = wrapper.find('[data-testid=dock-failed-children]');
+      expect(failedChildren.text()).toContain('0xbb');
+      expect(failedChildren.text()).toContain('rate limited');
+      expect(failedChildren.text()).not.toContain('0xaa');
 
       await wrapper.find('[data-testid=retry-activity]').trigger('click');
 
       expect(wrapper.emitted('retry')?.[0]?.[0]).toMatchObject({ id: id('0xbb') });
     });
 
-    it('should count the healthy leaves it hides, and open the job on request, each folded level surfacing its own', async () => {
-      const wrapper = mountTree(settled(ActivityStatus.COMPLETE));
+    it('should surface nothing under a folded nested parent, which lists its children only when unfolded', () => {
+      const [, ...chain] = settled(ActivityStatus.COMPLETE);
+      const wrapper = mountTree(chain.map(item => (item.id === id('ethereum') ? { ...item, parent: undefined } : item)), { depth: 1 });
+
+      expect(wrapper.find('[data-testid=dock-failed-children]').exists()).toBe(false);
+      expect(wrapper.text()).not.toContain('0xbb');
+    });
+
+    it('should count the healthy children it hides, and open the job on request', async () => {
+      const wrapper = mountTree([
+        ...settled(ActivityStatus.COMPLETE),
+        activity('gnosis', { parent: id('refresh'), status: ActivityStatus.COMPLETE }),
+        activity('0xcc', { parent: id('gnosis'), status: ActivityStatus.COMPLETE }),
+      ]);
 
       const showAll = wrapper.find('[data-testid=dock-show-all]');
       expect(showAll.text()).toBe('task_dock.panel.show_all::1');
@@ -221,14 +242,60 @@ describe('dockJobNode', () => {
       await showAll.trigger('click');
 
       expect(wrapper.find('[aria-expanded]').attributes('aria-expanded')).toBe('true');
-      expect(wrapper.text()).toContain('ethereum');
-      expect(wrapper.findAll('[data-testid=retry-activity]')).toHaveLength(1);
+      expect(wrapper.text()).toContain('gnosis');
+      expect(wrapper.find('[data-testid=dock-failed-children]').exists()).toBe(false);
+    });
+
+    it('should surface a failed account under a chain that was cancelled', () => {
+      const tree = settled(ActivityStatus.COMPLETE).map(item => (item.id === id('ethereum') ? { ...item, status: ActivityStatus.CANCELLED } : item));
+
+      expect(mountTree(tree).find('[data-testid=dock-failed-children]').text()).toContain('ethereum');
+    });
+
+    it('should surface the failures of a job the user unfolded and folded while it ran', async () => {
+      const wrapper = mountTree(running());
+      const toggle = wrapper.find('[data-testid=dock-job-toggle]');
+      await toggle.trigger('click');
+      await toggle.trigger('click');
+
+      const { children, roots } = buildTree(settled(ActivityStatus.COMPLETE), (a, b) => a.id.localeCompare(b.id));
+      await wrapper.setProps({ activity: roots[0], children });
+
+      expect(wrapper.find('[data-testid=dock-failed-children]').text()).toContain('ethereum');
+    });
+
+    it('should keep a failed chain unfolded when the user opens the whole job', async () => {
+      const wrapper = mountTree([
+        ...settled(ActivityStatus.COMPLETE),
+        activity('gnosis', { parent: id('refresh'), status: ActivityStatus.COMPLETE }),
+        activity('0xcc', { parent: id('gnosis'), status: ActivityStatus.COMPLETE }),
+      ]);
+
+      await wrapper.find('[data-testid=dock-failed-children] [data-testid=dock-job-toggle]').trigger('click');
+      expect(wrapper.text()).toContain('0xbb');
+
+      await wrapper.find('[data-testid=dock-show-all]').trigger('click');
+
+      expect(wrapper.text()).toContain('gnosis');
+      expect(wrapper.text()).toContain('0xbb');
+    });
+
+    it('should hide the failed children too once the user folds the job again', async () => {
+      const wrapper = mountTree(settled(ActivityStatus.COMPLETE));
+      const toggle = wrapper.find('[data-testid=dock-job-toggle]');
+
+      await toggle.trigger('click');
+      await toggle.trigger('click');
+
+      expect(toggle.attributes('aria-expanded')).toBe('false');
+      expect(wrapper.find('[data-testid=dock-failed-children]').exists()).toBe(false);
+      expect(wrapper.text()).not.toContain('ethereum');
     });
 
     it('should say how the job ended instead of a tally that is now always full, failures last and in the error colour', () => {
       const wrapper = mountTree(settled(ActivityStatus.COMPLETE));
 
-      const parts = wrapper.findAll('[data-testid=dock-outcome-summary] > span');
+      const parts = wrapper.find('[data-testid=dock-activity-row]').findAll('[data-testid=dock-outcome-summary] > span');
       expect(parts.map(part => part.text())).toEqual(['task_dock.panel.outcome.done::1', 'task_dock.panel.outcome.failed::1']);
       expect(parts[0]?.classes().some(name => name.startsWith('before:'))).toBe(false);
       expect(wrapper.find('[data-testid=dock-outcome-failed]').classes()).toContain('text-rui-error');
@@ -261,7 +328,7 @@ describe('dockJobNode', () => {
       expect(group.find('[data-testid=dock-skipped-names]').text()).toBe('bch, ksm');
     });
 
-    it('should fold failed accounts that share a reason into one group with one reason and one retry for all', async () => {
+    it('should fold failed accounts that share a reason into one group with one reason and one retry for all, once their chain is unfolded', async () => {
       const wrapper = mountTree([
         activity('refresh', { kind: ActivityKind.HISTORY_SYNC, status: ActivityStatus.COMPLETE, subtitle: undefined, title: 'History refresh' }),
         activity('gnosis', { parent: id('refresh'), reason: 'no API key', status: ActivityStatus.FAILED }),
@@ -269,6 +336,9 @@ describe('dockJobNode', () => {
         activity('0xbb', { parent: id('gnosis'), reason: 'no API key', rerunnable: true, status: ActivityStatus.FAILED }),
         activity('0xcc', { parent: id('gnosis'), reason: 'no API key', rerunnable: true, status: ActivityStatus.FAILED }),
       ]);
+
+      expect(wrapper.find('[data-testid=dock-failed-group]').exists()).toBe(false);
+      await wrapper.find('[data-testid=dock-failed-children] [data-testid=dock-job-toggle]').trigger('click');
 
       const group = wrapper.find('[data-testid=dock-failed-group]');
       expect(group.find('[data-testid=dock-failed-group-reason]').text()).toBe('no API key');
