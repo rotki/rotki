@@ -4,7 +4,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
-import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
+import { INDEXER_SETTINGS, ORACLE_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
 import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
@@ -232,6 +232,25 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       await nextTick();
 
       expect(get(result)).toEqual([]);
+    });
+  });
+
+  describe('set-aside oracle rows', () => {
+    it('should ask nothing of the user and open the oracle order', () => {
+      useRaisedConditionsStore().raise({ kind: RaisedConditionKind.ORACLE_PENALIZED, oracle: 'coingecko', reason: 'timeout', until: 0 });
+
+      expect(onlyRow()).toMatchObject({
+        description: 'action_center.rows.integrations.oracle_penalized.description_timeout::Coingecko',
+        id: 'oracle-penalized-coingecko',
+        target: ORACLE_SETTINGS,
+        urgency: ActionUrgency.AUTOMATIC,
+      });
+    });
+
+    it('should explain repeated failures differently from a silent oracle', () => {
+      useRaisedConditionsStore().raise({ kind: RaisedConditionKind.ORACLE_PENALIZED, oracle: 'defillama', reason: 'errors', until: 0 });
+
+      expect(onlyRow().description).toBe('action_center.rows.integrations.oracle_penalized.description_errors::Defillama');
     });
   });
 

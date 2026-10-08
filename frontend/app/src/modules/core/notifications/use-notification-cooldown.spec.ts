@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const START = new Date('2026-01-01T00:00:00.000Z').getTime();
 
-const grouped = `${NotificationGroup.ORACLE_PENALIZED}:coingecko`;
+const grouped = `${NotificationGroup.USER_MESSAGE}:coingecko`;
 
 describe('useNotificationCooldown', () => {
   let cooldown: UseNotificationCooldownReturn;
@@ -58,6 +58,6 @@ describe('useNotificationCooldown', () => {
     vi.setSystemTime(START + 30_000);
 
     expect(cooldown.shouldSuppress(grouped)).toBe(true);
-    expect(cooldown.shouldSuppress(`${NotificationGroup.ORACLE_PENALIZED}:cryptocompare`)).toBe(false);
+    expect(cooldown.shouldSuppress(`${NotificationGroup.USER_MESSAGE}:cryptocompare`)).toBe(false);
   });
 });

@@ -9,6 +9,13 @@ export const INDEXER_SETTINGS: ActionTarget = {
   to: { name: '/settings/chains/' },
 };
 
+/** The price oracle order, where an oracle that keeps failing can be moved down or out. */
+export const ORACLE_SETTINGS: ActionTarget = {
+  highlight: SettingsCategoryIds.PRICE_ORACLE,
+  kind: 'route',
+  to: { name: '/settings/oracle/' },
+};
+
 interface SuppressOptionDefinition {
   label: string;
   confirmTitle: string;
