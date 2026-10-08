@@ -1,15 +1,16 @@
-import type {
-  ApplyUpdateResult,
-  AssetDBVersion,
-  AssetMergePayload,
-  AssetUpdateCheckResult,
-  AssetUpdatePayload,
-  AssetUpdateResult,
-} from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
+import {
+  ApplyUpdateKind,
+  type ApplyUpdateResult,
+  type AssetDBVersion,
+  type AssetMergePayload,
+  type AssetUpdateCheckResult,
+  type AssetUpdatePayload,
+  type AssetUpdateResult,
+} from '@/modules/assets/types';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -27,7 +28,11 @@ interface ExportCustomAssetsResult {
 interface UseAssetsReturn {
   /** Fails when the check did not finish (failed or cancelled), so a caller never reads that as "up to date". */
   checkForUpdate: () => Promise<Result<AssetUpdateCheckResult, TaskError>>;
-  applyUpdates: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
+  /**
+   * Fails when the update did not finish, carrying the reason. The caller reports it, since only
+   * the caller knows whether the user has a surface to read it on.
+   */
+  applyUpdates: (payload: AssetUpdatePayload) => Promise<Result<ApplyUpdateResult, TaskError>>;
   mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
   importCustomAssets: (file: File) => Promise<ActionStatus>;
   /** Fails as not actionable when the export was cancelled, so a caller can stay quiet. */
@@ -86,7 +91,7 @@ export function useAssets(): UseAssetsReturn {
     });
   };
 
-  const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
+  const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<Result<ApplyUpdateResult, TaskError>> => {
     const outcome = await submitTask<AssetUpdateResult>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.UPDATE),
       kind: ActivityKind.ASSETS,
@@ -101,28 +106,9 @@ export function useAssets(): UseAssetsReturn {
       title: t('task_center.group.assets'),
     });
 
-    if (!isErr(outcome)) {
-      const updateResult = outcome.value;
-      if (typeof updateResult === 'boolean') {
-        return {
-          done: true,
-        };
-      }
-      return {
-        conflicts: updateResult,
-        done: false,
-      };
-    }
-    if (isActionable(outcome.error)) {
-      const title = t('actions.assets.update.task.title');
-      const description = t('actions.assets.update.error.description', {
-        message: outcome.error.message,
-      }).toString();
-      notifyError(title, description);
-    }
-    return {
-      done: false,
-    };
+    return mapResult(outcome, (updateResult): ApplyUpdateResult => typeof updateResult === 'boolean'
+      ? { kind: ApplyUpdateKind.DONE }
+      : { conflicts: updateResult, kind: ApplyUpdateKind.CONFLICTS });
   };
 
   const mergeAssets = async ({

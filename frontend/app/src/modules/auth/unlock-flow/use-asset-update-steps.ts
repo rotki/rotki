@@ -1,5 +1,6 @@
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { isErr } from 'plainfp/result';
+import { ApplyUpdateKind } from '@/modules/assets/types';
 import { useAssets } from '@/modules/assets/use-assets';
 import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { BackendRestartStatus, useBackendManagement } from '@/modules/shell/app/use-backend-management';
@@ -33,12 +34,13 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
 
   return {
     applyUpdate: async (upToVersion, resolution): Promise<Result<ApplyOutcome, UnlockError>> => {
-      const result = await applyUpdates({ resolution, version: upToVersion });
-      if (result.done)
-        return ok({ kind: UpdateOutcomeKind.done });
-      if (result.conflicts)
+      const outcome = await applyUpdates({ resolution, version: upToVersion });
+      if (isErr(outcome))
+        return err({ kind: UnlockErrorKind.updateFailed, message: outcome.error.message });
+      const result = outcome.value;
+      if (result.kind === ApplyUpdateKind.CONFLICTS)
         return ok({ conflicts: result.conflicts, kind: UpdateOutcomeKind.conflicts });
-      return err({ kind: UnlockErrorKind.updateFailed, message: 'the asset update did not complete' });
+      return ok({ kind: UpdateOutcomeKind.done });
     },
     checkUpdate: async (): Promise<Result<Option<UpdateChanges>, UnlockError>> => {
       if (sessionStorage.getItem('skip_update'))
