@@ -169,9 +169,12 @@ class MissingPrice(MessageClassification):
 
     `asset` is null when a lookup for a batch of assets failed as a whole, and `timestamp`
     is null for a current price.
+
+    It groups per asset, so each asset that needs a price stays visible, while the
+    timestamps of one asset fold together.
     """
     key: ClassVar = UserMessageKey.PRICE
-    group_by: ClassVar = ()  # per location: one row for every price a location lacks
+    group_by: ClassVar = ('asset',)
     asset: str | None
     timestamp: int | None
 
