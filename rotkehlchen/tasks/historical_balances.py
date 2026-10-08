@@ -105,12 +105,13 @@ DUAL_BUCKET_PROTOCOL_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
 }
 
-# Kraken staking/unstaking events are internal spot <-> staking lock state changes.
-# They don't move the asset out of the user's Kraken account, so they should not affect balances.
-KRAKEN_INTERNAL_STAKING_EVENTS: Final[EventTypeSubtypePairs] = {
+# Kraken and Hyperliquid core staking/unstaking events are internal spot <-> staking moves.
+# They don't move the asset out of the user's account, so they should not affect balances.
+INTERNAL_STAKING_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
     (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
 }
+INTERNAL_STAKING_LOCATIONS: Final = {Location.KRAKEN, Location.HYPERLIQUID}
 
 # Events that affect both sender and receiver wallet buckets.
 # Sender direction is OUT, receiver direction is IN.
@@ -204,9 +205,11 @@ class Bucket(NamedTuple):
         ):
             return []
 
-        if (
-            location == Location.KRAKEN.serialize_for_db() and
-            event_key in KRAKEN_INTERNAL_STAKING_EVENTS
+        if (  # Only exchange-side events, which have no counterparty. HyperEVM events share
+            # the hyperliquid location, but a staking deposit there has a protocol counterparty.
+            event.location in INTERNAL_STAKING_LOCATIONS and
+            event_key in INTERNAL_STAKING_EVENTS and
+            counterparty is None
         ):
             return []
 
