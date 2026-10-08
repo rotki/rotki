@@ -1,6 +1,4 @@
-import importlib
 import logging
-import pkgutil
 import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -10,6 +8,7 @@ from typing import TYPE_CHECKING, Final, Literal
 from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.chain.discovery import discover_submodules
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
@@ -27,7 +26,6 @@ from .tools import BaseDecoderTools
 from .types import CounterpartyDetails, DecodingRulesBase
 
 if TYPE_CHECKING:
-    from types import ModuleType
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.chain.solana.rpc import Signature
@@ -96,7 +94,6 @@ class TransactionDecoder[
         self.msg_aggregator = database.msg_aggregator
         self.chain_name = chain_name
         self.chain_modules_root = f'rotkehlchen.chain.{self.chain_name}.modules'
-        self.chain_modules_prefix_length = len(self.chain_modules_root)
         self.dbevents = DBHistoryEvents(self.database)
         self.base = base_tools
         self.value_asset = value_asset
@@ -117,7 +114,7 @@ class TransactionDecoder[
         # Add the built-in decoders
         self._add_builtin_decoders(self.rules)
         # Recursively check all submodules to get all decoder address mappings and rules
-        self.rules += self._recursively_initialize_decoders(self.chain_modules_root)
+        self.rules += self._initialize_decoders()
         self.undecoded_tx_query_lock = Semaphore()
 
     def get_all_counterparties(self) -> set[CounterpartyDetails]:
@@ -148,41 +145,21 @@ class TransactionDecoder[
     def _load_default_decoding_rules() -> T_DecodingRules:
         """Return a fresh rules object with all chain-specific defaults."""
 
-    def _recursively_initialize_decoders(
-            self,
-            package: str | ModuleType,
-    ) -> T_DecodingRules:
-        """Discover decoder modules under `package` and merge their rules.
+    def _initialize_decoders(self) -> T_DecodingRules:
+        """Instantiate the decoder of every module under the chain's modules root and merge
+        their rules.
         May raise:
          - ModuleLoadingError if a decoder is registered more than once
          - ImportError for unexpected import failures while loading submodules
         """
-        if isinstance(package, str):
-            package = importlib.import_module(package)
-
         rules = self._load_default_decoding_rules()
-        for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
-            full_name = package.__name__ + '.' + name
-            if full_name == __name__ or is_pkg is False:
-                continue  # skip
-
-            submodule = None
-            with suppress(ModuleNotFoundError):
-                submodule = importlib.import_module(full_name + '.decoder')
-
-            if submodule is not None:
-                # take module name, transform it and find decoder if exists
-                class_name = full_name[self.chain_modules_prefix_length:].translate({ord('.'): None})  # noqa: E501
-                parts = class_name.split('_')
-                class_name = ''.join([x.capitalize() for x in parts])
-                submodule_decoder = getattr(submodule, f'{class_name}Decoder', None)
-
-                if submodule_decoder:
-                    self._add_single_decoder(class_name=class_name, decoder_class=submodule_decoder, rules=rules)  # noqa: E501
-
-            if is_pkg:
-                recursive_results = self._recursively_initialize_decoders(full_name)
-                rules += recursive_results
+        for relative_name, submodule in discover_submodules(self.chain_modules_root, 'decoder'):
+            # transform the module path to the decoder class name and find it if it exists
+            class_name = ''.join(
+                part.capitalize() for part in relative_name.translate({ord('.'): None}).split('_')
+            )
+            if (submodule_decoder := getattr(submodule, f'{class_name}Decoder', None)):
+                self._add_single_decoder(class_name=class_name, decoder_class=submodule_decoder, rules=rules)  # noqa: E501
 
         return rules
 
