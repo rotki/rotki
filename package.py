@@ -13,13 +13,13 @@ import sys
 import urllib.request
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any
 
 from packaging import version
 from setuptools_scm import get_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable
 
 rotki_version = get_version()
 
@@ -49,10 +49,6 @@ WIN_CERTIFICATE = 'CERTIFICATE_WIN_APPLICATION'
 CERTIFICATE_KEY = 'CSC_KEY_PASSWORD'
 APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
-# Whether MacPackaging.sign() runs codesign on every file it is given. It never did while
-# log_group dropped return values, and the build is signed through PyInstaller's
-# codesign_identity and electron-builder, so turning it on is a separate decision.
-CODESIGN_EACH_FILE: Final[bool] = False
 X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
 ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
 
@@ -225,14 +221,15 @@ def log_group(name: str) -> Callable:
     return decorate
 
 
-def run_security(step: str, arguments: str) -> None:
+def run_security(step: str, *arguments: str) -> None:
     """
     Runs one macOS ``security`` keychain step and stops the build when it fails.
 
-    Only the step name is logged, never the command: the certificate import carries the
-    certificate password.
+    The arguments are passed without a shell, so the certificate password reaches
+    ``security`` as is. Only the step name is logged, never the command, since the
+    certificate import carries that password.
     """
-    if subprocess.call(f'security {arguments}', shell=True) != 0:
+    if subprocess.call(['security', *arguments]) != 0:  # noqa: S603
         logger.error('keychain setup failed at: %s', step)
         sys.exit(1)
 
@@ -633,24 +630,26 @@ class MacPackaging:
             encoding='utf8',
         ).strip()
 
-        run_security('create keychain', f'create-keychain -p actions {keychain}')
+        run_security('create keychain', 'create-keychain', '-p', 'actions', keychain)
         # A new keychain auto-locks 300 s after it is unlocked, and unlocking it again does not
-        # reset that. PyInstaller re-signs rotki-core long after colibri and starling were
-        # signed, so on a slow runner its codesign waited forever on a password prompt.
+        # reset that. This runs before the cargo builds and PyInstaller signs rotki-core long
+        # after, so on a slow runner its codesign waited forever on a password prompt.
         # Allow 6 hours.
-        run_security('set keychain timeout', f'set-keychain-settings -lut 21600 {keychain}')
+        run_security('set keychain timeout', 'set-keychain-settings', '-lut', '21600', keychain)
         # Logs "timeout=21600s", so a build log shows the setting took
         subprocess.call(f'security show-keychain-info {keychain}', shell=True)
         # Make the keychain the default so identities are found
-        run_security('make keychain default', f'default-keychain -s {keychain}')
-        run_security('unlock keychain', f'unlock-keychain -p actions {keychain}')
+        run_security('make keychain default', 'default-keychain', '-s', keychain)
+        run_security('unlock keychain', 'unlock-keychain', '-p', 'actions', keychain)
         run_security(
             'import certificate',
-            f'import {p12!s} -k {keychain} -P {csc_password} -T /usr/bin/codesign',
+            'import', str(p12), '-k', keychain, '-P', csc_password, '-T', '/usr/bin/codesign',
         )
         run_security(
             'set key partition list',
-            f'set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k actions {keychain}',  # noqa: E501
+            'set-key-partition-list',
+            '-S', 'apple-tool:,apple:,codesign:,productbuild:',
+            '-s', '-k', 'actions', keychain,
         )
 
         return True
@@ -663,37 +662,6 @@ class MacPackaging:
         if self.__p12.exists():
             self.__p12.unlink(missing_ok=True)
         os.environ.pop('CSC_LINK', None)
-
-    @log_group('signing')
-    def sign(self, paths: Generator[Path]) -> None:
-        """
-        Prepares the keychain and, when CODESIGN_EACH_FILE is on, signs every
-        file under ``paths`` with the provided signing key/identity.
-        """
-        if not self.import_signing_certificates() or not CODESIGN_EACH_FILE:
-            return
-
-        identify = os.environ.get('IDENTITY')
-        for path in paths:
-            if not path.is_file():
-                continue
-
-            logger.debug(f'Preparing to sign {path}')
-            sign_ret_code = subprocess.call(
-                f'codesign --force --options runtime --entitlements ./packaging/entitlements.plist --sign {identify} {path} --timestamp',  # noqa: E501
-                shell=True,
-            )
-
-            if sign_ret_code != 0:
-                logger.error(f'could not sign file {path}')
-                sys.exit(1)
-
-            verify_ret_code = subprocess.call(f'codesign --verify {path}', shell=True)
-
-            if verify_ret_code != 0:
-                logger.error(f'signature verification failed at {path}')
-                sys.exit(1)
-        self.cleanup_keychain()
 
 
 class BackendBuilder:
@@ -867,6 +835,9 @@ class BackendBuilder:
         if github_ref is not None:
             os.environ.setdefault('GITHUB_REF', github_ref)
 
+        if mac is not None:
+            mac.import_signing_certificates()
+
         self.__create_rust_binary()
         self.__create_starling_binary()
         self.__install_pyinstaller()
@@ -875,8 +846,6 @@ class BackendBuilder:
 
         if mac is not None and macos_target is not None:
             self.__check_macos_floor(macos_target)
-            backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
-            mac.sign(paths=backend_directory.glob('**/*'))
 
         if win is not None:
             self.__check_windows_resources()
@@ -960,9 +929,6 @@ class BackendBuilder:
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(backend_binary, binary_directory / binary_name)
 
-        if self.__mac is not None:
-            self.__mac.sign(binary_directory.glob('**/*'))
-
     @log_group('starling cargo build')
     def __create_starling_binary(self) -> None:
         starling_directory = self.__storage.starling_directory
@@ -1001,9 +967,6 @@ class BackendBuilder:
 
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(starling_binary, binary_directory / binary_name)
-
-        if self.__mac is not None:
-            self.__mac.sign(binary_directory.glob('**/*'))
 
     @log_group('package')
     def __package(self) -> None:
