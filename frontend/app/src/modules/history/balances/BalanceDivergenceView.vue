@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundaryCard.vue';
 import { useArchiveNodes } from '@/modules/history/balances/use-archive-nodes';
 import { useBalanceDivergence } from '@/modules/history/balances/use-balance-divergence';
 import { useDivergenceSelection } from '@/modules/history/balances/use-divergence-selection';
-import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
@@ -21,9 +21,15 @@ const {
 } = useDivergenceSelection();
 
 const { boundaries, clear, error, find, loading, navigate, summary } = useBalanceDivergence();
+const { getChainName } = useSupportedChains();
 
 const { hasArchiveNode, loading: archiveLoading } = useArchiveNodes(chainOptions);
 const selectedChainHasArchive = hasArchiveNode(modelSelectedChain);
+
+const selectedChainName = computed<string>(() => {
+  const chain = get(modelSelectedChain);
+  return chain ? getChainName(chain) : '';
+});
 
 const missingArchiveNode = computed<boolean>(() =>
   !!get(modelSelectedChain) && !get(archiveLoading) && !get(selectedChainHasArchive),
@@ -88,7 +94,7 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
           scope="global"
         >
           <template #chain>
-            {{ modelSelectedChain }}
+            {{ selectedChainName }}
           </template>
           <template #link>
             <InternalLink :to="{ name: '/settings/rpc/' }">
@@ -145,17 +151,13 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         />
       </div>
 
-      <RuiAlert
-        v-else-if="error"
-        type="error"
+      <p
+        v-if="error"
+        class="text-sm text-rui-text-secondary"
         data-testid="divergence-error"
       >
-        <HistoryEventNote
-          :notes="error"
-          :chain="modelSelectedChain"
-          :context="{ asset: modelSelectedAsset }"
-        />
-      </RuiAlert>
+        {{ t('balance_divergence.search_failed') }}
+      </p>
     </div>
   </div>
 </template>

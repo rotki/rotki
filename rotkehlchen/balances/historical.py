@@ -19,7 +19,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    EventMetricKey,
+    EVMTxHash,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -54,6 +61,7 @@ class HistoricalBalanceSeriesEntry(NamedTuple):
 class HistoricalBalanceDivergenceEvent(NamedTuple):
     event_identifier: int
     group_identifier: str | None
+    tx_hash: EVMTxHash | None
     timestamp: Timestamp
     block_number: int
     tracked_balance: FVal
@@ -68,7 +76,7 @@ class HistoricalBalanceDivergenceProbe(NamedTuple):
 
 
 class HistoricalBalanceDivergenceResult(NamedTuple):
-    status: Literal['diverged', 'diverged_from_start', 'no_divergence']
+    status: Literal['diverged', 'diverged_from_start', 'no_divergence', 'no_checkpoints']
     location: Location
     address: str
     asset: Asset
@@ -82,6 +90,7 @@ class HistoricalBalanceDivergenceResult(NamedTuple):
 class _TrackedBalanceEvent(NamedTuple):
     event_identifier: int
     group_identifier: str | None
+    tx_hash: EVMTxHash | None
     timestamp: Timestamp
     tracked_balance: FVal
     block_number: int | None
@@ -352,6 +361,7 @@ class HistoricalBalancesManager:
             address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal = ZERO,
+            to_timestamp: Timestamp | None = None,
     ) -> HistoricalBalanceDivergenceResult:
         """Find the first tracked wallet-balance event that disagrees with on-chain data.
 
@@ -359,9 +369,11 @@ class HistoricalBalancesManager:
         a point, then remain diverged because a balance-changing event is missing or incorrect.
         The database scan is narrow to one chain/address/asset wallet bucket, while remote archive
         node probes are O(log n). Transient mismatches that later resolve are outside this search.
+        When supplied, to_timestamp is an inclusive upper bound in seconds, so an issue can
+        be investigated without later corrections hiding its divergence.
+        If no processed checkpoints exist, returns no_checkpoints without making archive calls.
 
         May raise:
-        - NotFoundError if no processed wallet balance metrics exist for the address/asset.
         - RemoteError if block lookup or archive balance lookup fails.
         """
         location = Location.from_chain_id(evm_chain)
@@ -370,11 +382,21 @@ class HistoricalBalancesManager:
             location=location,
             address=address,
             asset=asset,
+            to_timestamp=(
+                None if to_timestamp is None else TimestampMS((to_timestamp + 1) * 1000 - 1)
+            ),
         )
         if len(events) == 0:
-            raise NotFoundError(
-                f'No historical wallet balance data found for {asset.identifier} at '
-                f'{address} on {location.serialize()}',
+            return HistoricalBalanceDivergenceResult(
+                status='no_checkpoints',
+                location=location,
+                address=address,
+                asset=asset,
+                total_events=0,
+                tolerance=tolerance,
+                first_diverged=None,
+                last_matching=None,
+                probes=[],
             )
 
         token = (
@@ -512,6 +534,7 @@ class HistoricalBalancesManager:
         divergence_event = HistoricalBalanceDivergenceEvent(
             event_identifier=event.event_identifier,
             group_identifier=event.group_identifier,
+            tx_hash=event.tx_hash,
             timestamp=event.timestamp,
             block_number=block_number,
             tracked_balance=event.tracked_balance,
@@ -800,6 +823,7 @@ class HistoricalBalancesManager:
             location: Location,
             address: ChecksumEvmAddress,
             asset: Asset,
+            to_timestamp: TimestampMS | None = None,
     ) -> list[_TrackedBalanceEvent]:
         """Load processed wallet balance checkpoints for one chain/address/asset.
 
@@ -811,13 +835,14 @@ class HistoricalBalancesManager:
                 _TrackedBalanceEvent(
                     event_identifier=event_identifier,
                     group_identifier=group_identifier,
+                    tx_hash=None if tx_ref is None else deserialize_evm_tx_hash(tx_ref),
                     timestamp=ts_ms_to_sec(TimestampMS(timestamp)),
                     tracked_balance=FVal(metric_value),
                     block_number=block_number,
                 )
-                for event_identifier, group_identifier, timestamp, metric_value, block_number in cursor.execute(  # noqa: E501
+                for event_identifier, group_identifier, tx_ref, timestamp, metric_value, block_number in cursor.execute(  # noqa: E501
                     """
-                    SELECT em.event_identifier, he.group_identifier, em.timestamp,
+                    SELECT em.event_identifier, he.group_identifier, cei.tx_ref, em.timestamp,
                     em.metric_value, et.block_number
                     FROM event_metrics em
                     JOIN history_events he ON he.identifier = em.event_identifier
@@ -825,6 +850,7 @@ class HistoricalBalancesManager:
                     LEFT JOIN evm_transactions et ON et.tx_hash = cei.tx_ref AND et.chain_id = ?
                     WHERE em.metric_key = ? AND em.location = ? AND em.location_label = ?
                     AND em.protocol IS NULL AND em.asset = ?
+                    AND (? IS NULL OR em.timestamp <= ?)
                     ORDER BY em.sort_key
                     """,
                     (
@@ -833,6 +859,8 @@ class HistoricalBalancesManager:
                         location.serialize_for_db(),
                         address,
                         asset.resolve_swapped_for().identifier,
+                        to_timestamp,
+                        to_timestamp,
                     ),
                 )
             ]

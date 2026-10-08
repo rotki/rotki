@@ -59,6 +59,7 @@ export interface HistoricalBalanceSeriesPayload {
 export const HistoricalBalanceDivergenceEvent = z.object({
   eventIdentifier: z.number(),
   groupIdentifier: z.string().nullable(),
+  txHash: z.string().nullable(),
   timestamp: z.number(),
   blockNumber: z.number(),
   trackedBalance: NumericString,
@@ -75,7 +76,7 @@ const HistoricalBalanceDivergenceProbe = z.object({
 });
 
 export const HistoricalBalanceDivergenceResponse = z.object({
-  status: z.enum(['diverged', 'diverged_from_start', 'no_divergence']),
+  status: z.enum(['diverged', 'diverged_from_start', 'no_divergence', 'no_checkpoints']),
   location: z.string(),
   address: z.string(),
   asset: z.string(),
@@ -93,4 +94,6 @@ export interface HistoricalBalanceDivergencePayload {
   address: string;
   asset: string;
   tolerance?: string;
+  /** Inclusive upper bound in seconds. */
+  toTimestamp?: number;
 }

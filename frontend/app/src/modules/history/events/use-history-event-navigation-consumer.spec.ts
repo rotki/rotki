@@ -4,7 +4,7 @@ import type { useHistoryEventsApi } from '@/modules/history/api/events/use-histo
 import type { HistoryEventNavigationRequest } from '@/modules/history/events/use-history-event-navigation';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRouterPush = vi.fn().mockResolvedValue(undefined);
 const mockRouterReplace = vi.fn().mockResolvedValue(undefined);
@@ -152,6 +152,73 @@ describe('use-history-event-navigation-consumer', () => {
           page: '3',
         },
       });
+    });
+
+    it('should keep asset-filter navigation active until the target page finishes loading', async () => {
+      mockGetHistoryEventGroupPosition.mockResolvedValue(25);
+      setupMockRoute('/history/events/', { location: 'kraken' });
+      const { useHistoryEventNavigation, useHistoryEventNavigationConsumer } = await importFresh();
+      const loading = ref<boolean>(false);
+      const navigation = scope.run(() => {
+        useHistoryEventNavigationConsumer(createPagination(10), undefined, loading);
+        return useHistoryEventNavigation();
+      });
+      assert(navigation);
+      navigation.requestNavigation({
+        assetFilter: 'ETH',
+        highlightedAccountingEvent: 123,
+        targetGroupIdentifier: 'group-1',
+      });
+      await flushPromises();
+
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', { asset: 'ETH' });
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: { asset: 'ETH', highlightedAccountingEvent: '123', limit: '10', page: '3' },
+      });
+      expect(get(navigation.isNavigating)).toBe(true);
+      await runPaginationLoadCycle(loading);
+      expect(get(navigation.isNavigating)).toBe(false);
+    });
+
+    it('should keep a newer request pending when an older asset-filter load finishes', async () => {
+      let finishPosition = (_position: number): void => {};
+      mockGetHistoryEventGroupPosition.mockResolvedValueOnce(20).mockImplementationOnce(async () =>
+        new Promise<number>((resolve) => {
+          finishPosition = resolve;
+        }));
+      const { useHistoryEventNavigation, useHistoryEventNavigationConsumer } = await importFresh();
+      const loading = ref<boolean>(false);
+      scope.run(() => useHistoryEventNavigationConsumer(createPagination(), undefined, loading));
+      const navigation = scope.run(() => useHistoryEventNavigation());
+      assert(navigation);
+      navigation.requestNavigation({ assetFilter: 'ETH', highlightedAccountingEvent: 123, targetGroupIdentifier: 'older' });
+      await flushPromises();
+      expect(mockRouterPush).toHaveBeenCalledOnce();
+
+      navigation.requestNavigation({ highlightedAccountingEvent: 456, targetGroupIdentifier: 'newer' });
+      await flushPromises();
+      const newerRequest = get(navigation.pendingNavigation);
+      assert(newerRequest);
+      try {
+        expect(mockGetHistoryEventGroupPosition).toHaveBeenLastCalledWith('newer', undefined);
+        await runPaginationLoadCycle(loading);
+        expect(get(navigation.pendingNavigation)).toBe(newerRequest);
+        expect(get(navigation.isNavigating)).toBe(true);
+        expect(mockRouterPush).toHaveBeenCalledOnce();
+      }
+      finally {
+        finishPosition(40);
+        await flushPromises();
+      }
+      expect(mockRouterPush).toHaveBeenLastCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: { highlightedAccountingEvent: '456', limit: '10', page: '5' },
+      });
+      expect(get(navigation.pendingNavigation)).toBeUndefined();
+      expect(get(navigation.isNavigating)).toBe(false);
     });
 
     it('should navigate with potential match highlight', async () => {
@@ -588,7 +655,7 @@ describe('use-history-event-navigation-consumer', () => {
       });
     });
 
-    it('should wait for the loading cycle and preserve the asset filter when navigating with an asset', async () => {
+    it('should push the asset-filter route before loading and preserve the filter after loading', async () => {
       setupMockRoute('/history/events/', {
         asset: 'ETH',
         highlightedNegativeBalanceEvent: '500',
@@ -608,10 +675,8 @@ describe('use-history-event-navigation-consumer', () => {
       });
 
       await flushPromises();
-      // Position is computed within the asset-filtered view.
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
-      // The push is deferred until the pagination refetch settles.
-      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(mockRouterPush).toHaveBeenCalledOnce();
 
       await runPaginationLoadCycle(loading);
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);

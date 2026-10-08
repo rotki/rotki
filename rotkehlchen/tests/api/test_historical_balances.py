@@ -48,6 +48,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
@@ -590,7 +591,7 @@ def test_find_onchain_historical_balance_divergence(
                 EvmEvent(
                     tx_ref=tx_hash,
                     sequence_index=0,
-                    timestamp=ts_sec_to_ms(Timestamp(START_TS + idx)),
+                    timestamp=TimestampMS((START_TS + idx) * 1000 + 123),
                     location=Location.ETHEREUM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
@@ -638,8 +639,71 @@ def test_find_onchain_historical_balance_divergence(
     assert result['first_diverged']['tracked_balance'] == '6'
     assert result['first_diverged']['onchain_balance'] == '7'
     assert result['first_diverged']['difference'] == '1'
+    assert result['last_matching']['tx_hash'] == str(tx_hashes[4])
+    assert result['first_diverged']['tx_hash'] == str(tx_hashes[5])
+    assert result['first_diverged']['group_identifier'] != result['first_diverged']['tx_hash']
     assert [probe['event']['block_number'] for probe in result['probes']] == [7, 1, 4, 5]
     assert balance_mock.call_count == 4
+
+    # A later correction must not hide the divergence when investigating an earlier issue.
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(node_inquirer, 'get_historical_native_balance', return_value=FVal(8)),
+    ):
+        latest = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={'evm_chain': 'ethereum', 'address': user_address, 'asset': A_ETH.identifier},
+        ))
+    assert latest['status'] == 'no_divergence'
+
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(
+            node_inquirer,
+            'get_historical_native_balance',
+            side_effect=[FVal(7), FVal(1), FVal(3), FVal(5)],
+        ) as bounded_mock,
+    ):
+        bounded = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={
+                'evm_chain': 'ethereum',
+                'address': user_address,
+                'asset': A_ETH.identifier,
+                'to_timestamp': START_TS + 5,
+            },
+        ))
+    assert bounded['status'] == 'diverged'
+    assert bounded['total_events'] == 5
+    assert bounded['last_matching']['block_number'] == 4
+    assert bounded['first_diverged']['block_number'] == 5
+    assert bounded['first_diverged']['tracked_balance'] == '6'
+    assert bounded['first_diverged']['difference'] == '1'
+    assert [probe['event']['block_number'] for probe in bounded['probes']] == [5, 1, 3, 4]
+    assert bounded_mock.call_count == 4
+
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(
+            node_inquirer,
+            'get_historical_native_balance',
+            side_effect=AssertionError('no checkpoints should require no archive queries'),
+        ),
+    ):
+        empty = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalancedivergenceresource'),
+            json={
+                'evm_chain': 'ethereum',
+                'address': user_address,
+                'asset': A_ETH.identifier,
+                'to_timestamp': START_TS - 1,
+            },
+        ))
+    assert empty['status'] == 'no_checkpoints'
+    assert empty['total_events'] == 0
+    assert empty['first_diverged'] is None
+    assert empty['last_matching'] is None
+    assert empty['probes'] == []
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

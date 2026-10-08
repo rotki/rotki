@@ -188,10 +188,13 @@ export function useHistoryEventNavigationConsumer(
   }
 
   /**
-   * Push the highlight route for a resolved position. An asset-filter or
-   * preserveFilters navigation changes a real filter, so it waits for the
-   * pagination refetch to settle first (otherwise the push races the refetch
-   * and the "clear highlights on filter change" watcher wipes the highlight).
+   * Push the highlight route for a resolved position.
+   *
+   * @remarks
+   * Asset-filter navigation replaces the current filters to match the position lookup, then
+   * keeps navigation active until that route's refetch settles. Otherwise the filter-change
+   * watcher can clear the highlight after navigation has already been consumed.
+   * Filter-preserving navigation waits for the existing refetch before adding its highlight.
    * Returns false when the request became stale while waiting.
    */
   async function pushHighlight(
@@ -199,7 +202,19 @@ export function useHistoryEventNavigationConsumer(
     activeRequest: HistoryEventNavigationRequest,
     highlightQuery: Record<string, string>,
   ): Promise<boolean> {
-    if ((request.preserveFilters || request.assetFilter) && groupLoading) {
+    if (request.assetFilter && !request.preserveFilters) {
+      await router.push({
+        force: true,
+        name: historyEventsName,
+        query: { limit: get(pagination).limit.toString(), ...highlightQuery },
+      });
+      await nextTick();
+      if (groupLoading)
+        await waitForFilterLoad(toRef(groupLoading));
+      return get(pendingNavigation) === activeRequest;
+    }
+
+    if (request.preserveFilters && groupLoading) {
       // until() needs a real ref, so normalize the widened input once.
       await waitForFilterLoad(toRef(groupLoading));
 
@@ -266,7 +281,8 @@ export function useHistoryEventNavigationConsumer(
       }
     }
     finally {
-      consumeNavigation();
+      if (get(pendingNavigation) === request)
+        consumeNavigation();
     }
   });
 }

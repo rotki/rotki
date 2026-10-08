@@ -3,12 +3,14 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
@@ -189,6 +191,13 @@ const resolutionNote = computed<string | undefined>(() => {
           </div>
         </div>
       </section>
+
+      <DataIssueBalanceDivergence
+        :key="dataIssueDivergenceKey(issue)"
+        :issue="issue"
+        :busy="busy"
+        @navigate="emit('close')"
+      />
 
       <section>
         <div class="text-overline text-rui-text-secondary mb-2">

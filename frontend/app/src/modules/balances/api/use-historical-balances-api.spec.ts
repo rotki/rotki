@@ -92,6 +92,30 @@ describe('composables/api/balances/historical-balances', () => {
       });
       expect(result.taskId).toBe(654);
     });
+
+    it('should forward the issue time boundary in seconds, snake-cased', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/onchain/divergence`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { task_id: 655 } });
+        }),
+      );
+      const { findHistoricalBalanceDivergence } = await getApi();
+      await findHistoricalBalanceDivergence({
+        address: '0xABC',
+        asset: 'ETH',
+        evmChain: 'ethereum',
+        toTimestamp: 1710000000,
+      });
+      expect(capturedBody).toEqual({
+        address: '0xABC',
+        asset: 'ETH',
+        async_query: true,
+        evm_chain: 'ethereum',
+        to_timestamp: 1710000000,
+      });
+    });
   });
 
   describe('fetchHistoricalBalanceSeries', () => {

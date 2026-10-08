@@ -1,10 +1,10 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { fromNullable, isSome, map as mapOption } from 'plainfp/option';
 import { isErr, map as mapResult } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import {
   type HistoricalBalanceDivergenceEvent,
@@ -27,6 +27,7 @@ interface DivergenceError {
 }
 
 interface UseBalanceDivergenceReturn {
+  result: Readonly<Ref<HistoricalBalanceDivergenceResponse | undefined>>;
   loading: Readonly<Ref<boolean>>;
   error: Readonly<Ref<string | undefined>>;
   boundaries: ComputedRef<DivergenceBoundaryEvent[]>;
@@ -37,14 +38,17 @@ interface UseBalanceDivergenceReturn {
 }
 
 /** Runs the balance divergence query as a task, exposing its state and the boundary events. */
-export function useBalanceDivergence(): UseBalanceDivergenceReturn {
+export function useBalanceDivergence(
+  initialResult?: MaybeRefOrGetter<HistoricalBalanceDivergenceResponse | undefined>,
+): UseBalanceDivergenceReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { findHistoricalBalanceDivergence } = useHistoricalBalancesApi();
   const { submitTask } = useNativeTask();
+  const { getAssetField } = useAssetInfoRetrieval();
   const { requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
 
   const loading = shallowRef<boolean>(false);
-  const result = ref<HistoricalBalanceDivergenceResponse>();
+  const result = shallowRef<HistoricalBalanceDivergenceResponse>();
   const error = ref<string>();
 
   const boundaries = computed<DivergenceBoundaryEvent[]>(() => {
@@ -75,6 +79,9 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
     if (current.status === 'no_divergence')
       return t('balance_divergence.no_divergence', { probes: current.probes.length });
 
+    if (current.status === 'no_checkpoints')
+      return t('balance_divergence.no_checkpoints');
+
     return t('balance_divergence.checked', { probes: current.probes.length });
   });
 
@@ -101,33 +108,27 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
   /**
    * Folds the divergence task into a Result: `ok(some)` on a parsed response, `ok(none)` when the
    * task was cancelled or skipped (leave the panel untouched), and `err` for actionable failures
-   * or a thrown/unparseable response.
+   * including an unparsable response.
    */
   async function run(
     payload: HistoricalBalanceDivergencePayload,
   ): Promise<Result<Option<HistoricalBalanceDivergenceResponse>, DivergenceError>> {
     const outcome = await submitTask<HistoricalBalanceDivergenceResponse>({
-      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0),
+      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0, payload.toTimestamp ?? 'latest'),
       kind: ActivityKind.HISTORICAL_BALANCES,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricalBalanceDivergenceResponse, TaskError>> => mapResult(
         await runTask<HistoricalBalanceDivergenceResponse>(
           async () => findHistoricalBalanceDivergence(payload),
         ),
-        value => value,
+        value => HistoricalBalanceDivergenceResponse.parse(value),
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.divergence'), { asset: payload.asset }),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.divergence'), { asset: getAssetField(payload.asset, 'symbol') }),
       title: t('task_center.group.historical_balances'),
     });
 
-    if (!isErr(outcome)) {
-      try {
-        return ok(some(HistoricalBalanceDivergenceResponse.parse(outcome.value)));
-      }
-      catch (error_: unknown) {
-        return err({ message: getErrorMessage(error_) });
-      }
-    }
+    if (!isErr(outcome))
+      return ok(some(outcome.value));
 
     if (isActionable(outcome.error))
       return err({ message: outcome.error.message });
@@ -137,7 +138,7 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
 
   async function find(payload: HistoricalBalanceDivergencePayload): Promise<void> {
     set(loading, true);
-    clear();
+    set(error, undefined);
 
     const outcome = await run(payload);
     set(loading, false);
@@ -152,6 +153,8 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
       set(result, found.value);
   }
 
+  watchImmediate(() => toValue(initialResult), value => set(result, value));
+
   return {
     boundaries,
     clear,
@@ -159,6 +162,7 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
     find,
     loading: readonly(loading),
     navigate,
+    result: shallowReadonly(result),
     summary,
   };
 }

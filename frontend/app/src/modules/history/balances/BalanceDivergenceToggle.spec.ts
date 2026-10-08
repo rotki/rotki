@@ -1,3 +1,5 @@
+import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
@@ -39,6 +41,17 @@ describe('balanceDivergenceToggle', () => {
     await wrapper.find('[data-testid="balance-divergence-toggle"]').trigger('click');
 
     expect(get(pinnedPanels)).toHaveLength(0);
+  });
+
+  it('should switch a panel pinned on a data issue to the manual search form', async () => {
+    const wrapper = createWrapper();
+    const visibility = useAreaVisibilityStore();
+    const { pinnedPanels } = storeToRefs(visibility);
+    visibility.pinPanel({ name: PinnedNames.BALANCE_DIVERGENCE, props: { issue: createMock<DataIssue>({ id: 1 }) } });
+
+    await wrapper.find('[data-testid="balance-divergence-toggle"]').trigger('click');
+
+    expect(get(pinnedPanels)).toEqual([{ name: PinnedNames.BALANCE_DIVERGENCE, props: {} }]);
   });
 
   it('should mark the toggle active when the panel is pinned', async () => {
