@@ -123,13 +123,24 @@ def test_funding_entries_are_identified_by_time_and_coin() -> None:
         ) for context in page}) == 2
 
 
-def test_entry_unique_id_falls_back_to_time() -> None:
+def test_entry_unique_id_falls_back_to_address_time_and_content() -> None:
     """The public _entry_unique_id always returns a non-empty string; when no
-    tid/hash is present it defensively uses the address and the entry time, which
-    includes zero hash entries that are not funding.
+    tid/hash is present it defensively uses the address, the entry time and its content,
+    which includes zero hash entries that are not funding. Distinct entries of the same
+    address and time must not share an identifier.
     """
     for entry in ({'time': 1700000000000}, {'time': 1700000000000, 'hash': ZERO_32_BYTES_HEX}):
-        assert HyperliquidAPI._entry_unique_id(entry=entry, address=ADDRESS) == f'{ADDRESS}_1700000000000'  # noqa: E501
+        assert HyperliquidAPI._entry_unique_id(entry=entry, address=ADDRESS).startswith(f'{ADDRESS}_1700000000000_')  # noqa: E501
+
+    first, second = ({'time': 1700000000000, 'hash': ZERO_32_BYTES_HEX, 'delta': {'type': 'x', 'usdc': amount}} for amount in ('1', '2'))  # noqa: E501
+    assert HyperliquidAPI._entry_unique_id(entry=first, address=ADDRESS) != HyperliquidAPI._entry_unique_id(entry=second, address=ADDRESS)  # noqa: E501
+    with patch.object(api := HyperliquidAPI(), '_query_list', side_effect=[[first, second], []]):
+        assert len({context.group_identifier for page in api._iter_entry_pages(
+            query_type='userNonFundingLedgerUpdates',
+            address=ADDRESS,
+            start_ts=Timestamp(1700000000),
+            end_ts=Timestamp(1700000001),
+        ) for context in page}) == 2
 
 
 def test_max_spot_transfer_with_unresolvable_asset_is_skipped(globaldb, caplog) -> None:

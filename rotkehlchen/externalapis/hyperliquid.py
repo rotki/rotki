@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 from collections import defaultdict
@@ -505,18 +506,24 @@ class HyperliquidAPI:
             return f'funding_{address}_{entry.get("time")}_{coin}'
         return None
 
+    @staticmethod
+    def _entry_content_id(entry: dict[str, Any]) -> str:
+        """Stable identifier derived from the whole content of an entry"""
+        return hashlib.sha256(json.dumps(entry, sort_keys=True, default=str).encode()).hexdigest()
+
     @classmethod
     def _entry_unique_id(cls, entry: dict[str, Any], address: ChecksumEvmAddress) -> str:
         """Return a stable per-entry identifier for grouping.
 
         Uses `_entry_strict_unique_id` when the API provides one; otherwise
-        falls back to the entry `time` so that consumers always get a
-        non-empty string. The fallback is defensive and not expected in
-        practice for the endpoints we consume. The address is included so that entries
-        of different tracked addresses at the same time don't share a group identifier.
+        falls back to the address, the entry `time` and a digest of the
+        entry content so that consumers always get a non-empty string. The fallback is
+        defensive and not expected in practice for the endpoints we consume. The address
+        and the content are included so that distinct entries, of the same or of different
+        tracked addresses, at the same time don't share a group identifier.
         """
         return cls._entry_strict_unique_id(entry=entry, address=address) or (
-            f'{address}_{entry.get("time")}'
+            f'{address}_{entry.get("time")}_{cls._entry_content_id(entry)}'
         )
 
     @staticmethod
@@ -830,7 +837,7 @@ class HyperliquidAPI:
                 # that partial fills of the same order at the same time, which share `oid`
                 # but have distinct `tid`s, are not collapsed. Fall back to the whole entry
                 # only when the API omits both (defensive, not expected in practice).
-                key = (entry_time, self._entry_strict_unique_id(entry=entry, address=address) or json.dumps(entry, sort_keys=True, default=str))  # noqa: E501
+                key = (entry_time, self._entry_strict_unique_id(entry=entry, address=address) or self._entry_content_id(entry))  # noqa: E501
                 if key in seen:
                     continue
 
