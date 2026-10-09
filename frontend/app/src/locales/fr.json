@@ -1334,13 +1334,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
-    "click_here": "Cliquez ici",
-    "no_connected_exchanges": "Vous n'avez aucune plateforme d'échange connectée. {0} pour configurer une Connexion à une Plateforme d'Échange.",
     "received_interest": "Intérêt reçu",
     "received_interest_history": "Historique",
-    "refresh_tooltip": "Rafraîchir les soldes d'échange en ignorant toutes les entrées mises en cache",
-    "select_exchange": "Sélectionner une Plateforme d'Échange",
-    "select_hint": "Sélectionnez une plateforme d'échange pour afficher les détails de l'actif.",
     "tabs": {
       "balances": "Soldes",
       "savings_interest_history": "Historique des intérêts d'épargne"

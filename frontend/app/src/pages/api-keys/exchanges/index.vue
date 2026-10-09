@@ -3,18 +3,19 @@ import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
 import { msg } from '@/message-key';
+import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
-import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -41,30 +42,37 @@ const route = useRoute('/api-keys/exchanges/');
 const { getExchangeName } = useLocations();
 const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
 
+// the exchange reads as logo and name on one line, like the balances pages, and the row ends on its actions
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
-  align: 'center',
-  cellClass: 'py-0 w-32',
+  // the location icon centres itself; in a left-aligned column it starts at the edge like the text beside it
+  cellClass: 'py-0 w-48 [&_[data-testid=location-icon]]:justify-start',
   key: 'location',
-  label: t('common.location'),
+  label: t('common.exchange'),
   sortable: true,
 }, {
   key: 'name',
   label: t('common.name'),
   sortable: true,
 }, {
-  cellClass: 'w-32',
+  cellClass: 'py-0 w-36',
   key: 'syncEnabled',
   label: t('exchange_settings.header.sync_enabled'),
 }, {
-  align: 'center',
-  cellClass: 'w-32',
+  align: 'end',
+  cellClass: 'py-0 w-28',
   key: 'actions',
   label: t('common.actions_text'),
 }]);
 
 useRememberTableSorting<Exchange>(TableId.EXCHANGE, sort, cols);
 
-function createNewExchange(): ExchangeFormData {
+/**
+ * A blank form, on the given exchange when it is one rotki can connect, otherwise on the first.
+ *
+ * @param location - the exchange to start on, as a link from another page names it
+ */
+function createNewExchange(location?: string): ExchangeFormData {
+  const supported = get(exchangesWithKey);
   return {
     apiKey: '',
     apiSecret: '',
@@ -74,7 +82,7 @@ function createNewExchange(): ExchangeFormData {
     krakenAccountType: 'starter',
     krakenFuturesApiKey: '',
     krakenFuturesApiSecret: '',
-    location: get(exchangesWithKey)[0],
+    location: location && supported.includes(location) ? location : supported[0],
     mode: 'add',
     name: '',
     newName: '',
@@ -104,8 +112,8 @@ function dismissSetupHint(): void {
   set(showSetupHint, false);
 }
 
-function addExchange() {
-  set(exchange, createNewExchange());
+function addExchange(location?: string): void {
+  set(exchange, createNewExchange(location));
 }
 
 function editExchange(exchangePayload: Exchange) {
@@ -139,7 +147,8 @@ watch(route, async (route) => {
   const { query } = route;
 
   if (query.add) {
-    addExchange();
+    // `?add=true&location=kraken` opens the dialog on that exchange
+    addExchange(typeof query.location === 'string' ? query.location : undefined);
     await router.replace({ query: {} });
   }
   else if (query.location && query.name) {
@@ -166,69 +175,66 @@ watch(route, async (route) => {
     <template #buttons>
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="add-exchange"
         @click="addExchange()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('exchange_settings.dialog.add.title') }}
+        {{ t('exchange_balances.add_exchange') }}
       </RuiButton>
     </template>
 
-    <RuiCard>
-      <div class="flex items-center gap-2 mb-2 min-h-8">
-        <Transition
-          enter-active-class="transition-opacity duration-300"
-          enter-from-class="opacity-0"
-          leave-active-class="transition-opacity duration-300"
-          leave-to-class="opacity-0"
+    <!-- with nothing connected, the same start as the exchange balances page, shortcuts included -->
+    <ExchangeBalancesEmpty
+      v-if="rows.length === 0"
+      @connect="addExchange($event)"
+    />
+
+    <TableFrame v-else>
+      <template #toolbar>
+        <!-- what the page is for, until an addition replaces it with what happens next -->
+        <div
+          v-if="showSetupHint"
+          class="flex items-center gap-2 flex-1 min-w-0 text-sm text-rui-text-secondary"
+          data-testid="exchange-setup-hint"
         >
-          <div
-            v-if="showSetupHint"
-            class="flex items-center gap-2 flex-1 min-w-0 text-sm text-rui-text-secondary"
-            data-testid="exchange-setup-hint"
+          <RuiIcon
+            name="lu-info"
+            size="16"
+            class="text-rui-info shrink-0"
+          />
+          <span class="min-w-0">{{ t('exchange_settings.setup_hint') }}</span>
+          <RuiButton
+            variant="text"
+            icon
+            size="sm"
+            class="shrink-0"
+            :aria-label="t('common.actions.close')"
+            @click="dismissSetupHint()"
           >
             <RuiIcon
-              name="lu-info"
-              size="16"
-              class="text-rui-info shrink-0"
+              name="lu-x"
+              size="14"
             />
-            <span class="min-w-0">{{ t('exchange_settings.setup_hint') }}</span>
-            <RuiButton
-              variant="text"
-              icon
-              size="sm"
-              class="shrink-0"
-              @click="dismissSetupHint()"
-            >
-              <RuiIcon
-                name="lu-x"
-                size="14"
-              />
-            </RuiButton>
-          </div>
-        </Transition>
-        <div class="ml-auto">
-          <HintMenuIcon>
-            <i18n-t
-              scope="global"
-              keypath="exchange_settings.subtitle"
-              tag="div"
-            >
-              <ExternalLink
-                :text="t('exchange_settings.usage_guide')"
-                :url="externalLinks.usageGuideSection.addingAnExchange"
-              />
-            </i18n-t>
-          </HintMenuIcon>
+          </RuiButton>
         </div>
-      </div>
+        <i18n-t
+          v-else
+          scope="global"
+          keypath="exchange_settings.subtitle"
+          tag="p"
+          class="flex-1 min-w-0 text-sm text-rui-text-secondary"
+        >
+          <ExternalLink
+            :text="t('exchange_settings.usage_guide')"
+            :url="externalLinks.usageGuideSection.addingAnExchange"
+          />
+        </i18n-t>
+      </template>
 
       <RuiDataTable
         v-model:sort="sort"
-        outlined
         row-attr="name"
         data-testid="exchange-table"
         :rows="rows"
@@ -236,7 +242,11 @@ watch(route, async (route) => {
         :item-class="rowClass"
       >
         <template #item.location="{ row }">
-          <LocationDisplay :identifier="row.location" />
+          <LocationDisplay
+            :identifier="row.location"
+            horizontal
+            size="24px"
+          />
         </template>
         <template #item.syncEnabled="{ row }">
           <RuiSwitch
@@ -248,7 +258,7 @@ watch(route, async (route) => {
         </template>
         <template #item.actions="{ row }">
           <RowActions
-            align="center"
+            align="end"
             :delete-tooltip="t('exchange_settings.delete.tooltip')"
             :edit-tooltip="t('exchange_settings.edit.tooltip')"
             @delete-click="showRemoveConfirmation(row)"
@@ -256,7 +266,7 @@ watch(route, async (route) => {
           />
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <ExchangeKeysFormDialog
       v-model="exchange"

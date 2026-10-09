@@ -264,11 +264,7 @@
     }
   },
   "exchange_balances": {
-    "add_exchange": "Πρόσθεση ανταλακτηρίουe",
-    "click_here": "Κάντε κλίκ εδώ",
-    "no_connected_exchanges": "Δέν έχετε συνδεδεμένα ανταλλακτήρια. You do not have any connected exchanges. {0} για να συνδέσετε ένα ανταλλακτήριο.",
-    "select_exchange": "Επιλογή ανταλλακτηρίου",
-    "select_hint": "Επιλέξτε ένα ανταλλακτήριο για να δείτε λεπτομέρεις περιουσιακών στοιχείων."
+    "add_exchange": "Πρόσθεση ανταλακτηρίουe"
   },
   "external_services": {
     "blockscout": {

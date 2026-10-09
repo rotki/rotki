@@ -14,6 +14,7 @@ import { useValuePending } from '@/modules/balances/value-pending';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -48,6 +49,11 @@ const {
    * total out, since the row it expands already shows it.
    */
   nested?: boolean;
+}>();
+
+defineSlots<{
+  /** What the table says when it has no rows and no search is narrowing it. */
+  empty?: () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -236,8 +242,35 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :asset-padding="0.1"
       />
     </template>
+    <!-- a search that matches nothing explains itself and offers the way back, rather than the generic picture -->
     <template
-      v-if="balances.length > 0 && !nested"
+      v-if="debouncedSearch.length > 0"
+      #no-data
+    >
+      <TableEmptyNotice
+        icon="lu-search-x"
+        :title="t('asset_balances.no_match.title')"
+        :description="t('asset_balances.no_match.description', { search: debouncedSearch })"
+      >
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          data-testid="asset-balances-clear-search"
+          @click="search = ''"
+        >
+          {{ t('asset_balances.no_match.clear') }}
+        </RuiButton>
+      </TableEmptyNotice>
+    </template>
+    <template
+      v-else-if="$slots.empty"
+      #no-data
+    >
+      <slot name="empty" />
+    </template>
+    <!-- a total of nothing reads as a balance of zero, so a search that matches nothing goes without one -->
+    <template
+      v-if="matches.length > 0 && !nested"
       #body.append
     >
       <RowAppend

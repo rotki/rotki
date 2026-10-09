@@ -76,7 +76,8 @@ const slotData = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <!-- each field keeps a row for its messages, so a small gap is enough between them -->
+  <div class="flex flex-col gap-2">
     <slot
       v-for="item in slotData"
       :name="item.name"

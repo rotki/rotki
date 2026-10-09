@@ -2342,9 +2342,6 @@
         "substrate": "Substrate 地址"
       }
     },
-    "exchange_balances": {
-      "refresh": "刷新 {exchange} 余额"
-    },
     "holdings": {
       "add": {
         "bank": "银行",
@@ -3122,13 +3119,8 @@
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
-    "click_here": "点击这里",
-    "no_connected_exchanges": "你还没有连接任何交易所。{0}添加交易所连接。",
     "received_interest": "已收利息",
     "received_interest_history": "历史",
-    "refresh_tooltip": "忽略缓存，刷新交易所余额",
-    "select_exchange": "选择交易所",
-    "select_hint": "选择交易所查看资产详情。",
     "tabs": {
       "balances": "余额",
       "savings_interest_history": "理财利息历史"

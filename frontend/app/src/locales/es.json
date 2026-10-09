@@ -440,8 +440,7 @@
     }
   },
   "exchange_balances": {
-    "add_exchange": "Añadir exchange",
-    "select_exchange": "Elegir exchange"
+    "add_exchange": "Añadir exchange"
   },
   "external_services": {
     "api_key": "Clave de la API",

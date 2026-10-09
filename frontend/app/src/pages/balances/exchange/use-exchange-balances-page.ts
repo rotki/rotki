@@ -16,24 +16,33 @@ export function isBinance(exchange?: string): exchange is 'binance' | 'binanceus
   return !!exchange && BINANCE_EXCHANGES.includes(exchange);
 }
 
+/** What the table shows for a Binance exchange: its balances or its savings interest history. */
+type ExchangeView = 'balances' | 'savings';
+
 interface UseExchangeBalancesPageReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;
   exchangeBalance: (exchange: string) => BigNumber;
   isExchangeLoading: ComputedRef<boolean>;
-  modelExchangeDetailTabs: Ref<number>;
-  modelSelectedExchange: Ref<string>;
-  modelSelectedTab: Ref<string | undefined>;
-  navigateToExchangeSetup: () => void;
-  openExchangeDetails: () => void;
+  modelView: Ref<ExchangeView>;
+  navigateToExchangeSetup: (location?: string) => void;
   refreshExchangeBalances: () => Promise<void>;
+  refreshInView: () => Promise<void>;
   refreshSelectedExchangeBalances: (exchangeLocation: string) => Promise<void>;
   sortedExchanges: ComputedRef<string[]>;
-  usedExchanges: ComputedRef<string[]>;
+  totalBalance: ComputedRef<BigNumber>;
 }
 
+function sum(balances: AssetBalanceWithPrice[]): BigNumber {
+  return balances.reduce((total, asset) => total.plus(asset.value), Zero);
+}
+
+/**
+ * The exchange balances page: every connected exchange together, or the one the route names.
+ *
+ * @param exchange - the exchange in the route, if any; without one the page shows all of them
+ */
 export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | undefined>): UseExchangeBalancesPageReturn {
   const router = useRouter();
-  const route = useRoute();
 
   const { useIsActive } = useTaskCenter();
   const { getExchangeBalances } = useAggregatedBalances();
@@ -41,47 +50,25 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { refreshExchangeBalance, refreshExchangeBalances: refreshConnectedExchangeBalances } = useBalanceRefresh();
 
-  /**
-   * Seeded from the route once, and only ever the initially highlighted tab: the tabs are links, so
-   * the router is what drives the page from there.
-   */
-  const modelSelectedTab = shallowRef<string | undefined>(toValue(exchange) ?? undefined);
-  const modelSelectedExchange = shallowRef<string>('');
-  const modelExchangeDetailTabs = shallowRef<number>(0);
+  const modelView = shallowRef<ExchangeView>('balances');
 
   const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
 
-  const usedExchanges = computed<string[]>(() =>
-    get(connectedExchanges)
-      .map(({ location }) => location)
-      .filter(uniqueStrings),
-  );
-
   function exchangeBalance(exchange: string): BigNumber {
-    return getExchangeBalances(exchange).reduce(
-      (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.value),
-      Zero,
-    );
+    return sum(getExchangeBalances(exchange));
   }
 
-  /**
-   * The exchanges by balance, largest first, for the desktop tabs.
-   *
-   * @remarks
-   * Sorts a copy. `sort` in place would reorder the array {@link usedExchanges} has cached, so
-   * rendering the tabs would silently reorder the mobile picker bound to it.
-   */
+  /** One entry per exchange, however many keys it has, largest balance first. */
   const sortedExchanges = computed<string[]>(() =>
-    [...get(usedExchanges)].sort((a, b) => exchangeBalance(b).minus(exchangeBalance(a)).toNumber()),
+    get(connectedExchanges)
+      .map(({ location }) => location)
+      .filter(uniqueStrings)
+      .sort((a, b) => exchangeBalance(b).minus(exchangeBalance(a)).toNumber()),
   );
 
-  const balances = computed<AssetBalanceWithPrice[]>(() => {
-    const current = toValue(exchange);
-    if (!current)
-      return [];
+  const balances = computed<AssetBalanceWithPrice[]>(() => getExchangeBalances(toValue(exchange)));
 
-    return getExchangeBalances(current);
-  });
+  const totalBalance = computed<BigNumber>(() => sum(getExchangeBalances()));
 
   async function refreshExchangeBalances(): Promise<void> {
     await Promise.all([refreshConnectedExchangeBalances(), refreshExchangeSavings(true)]);
@@ -95,50 +82,41 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
       await refreshExchangeBalance(exchangeLocation);
   }
 
-  function openExchangeDetails(): void {
-    startPromise(router.push({
-      name: '/balances/exchange/[[exchange]]',
-      params: { exchange: get(modelSelectedExchange) },
-    }));
+  /** The page's Refresh: the exchange in view, or every exchange when the page shows them all. */
+  async function refreshInView(): Promise<void> {
+    const current = toValue(exchange);
+    if (current)
+      await refreshSelectedExchangeBalances(current);
+    else
+      await refreshExchangeBalances();
   }
 
-  function navigateToExchangeSetup(): void {
+  function navigateToExchangeSetup(location?: string): void {
     startPromise(router.push({
       path: '/api-keys/exchanges',
-      query: { add: 'true' },
+      query: location ? { add: 'true', location } : { add: 'true' },
     }));
-  }
-
-  function setSelectedExchange(): void {
-    set(modelSelectedExchange, get(route).query.location);
   }
 
   onMounted(() => {
-    setSelectedExchange();
     startPromise(refreshExchangeSavings());
   });
 
-  watch(route, () => {
-    setSelectedExchange();
-  });
-
-  // A different exchange starts on its own first tab rather than inheriting the previous one's.
+  // A different exchange starts on its balances rather than inheriting the previous one's view.
   watch(() => toValue(exchange), () => {
-    set(modelExchangeDetailTabs, 0);
+    set(modelView, 'balances');
   });
 
   return {
     balances,
     exchangeBalance,
     isExchangeLoading,
-    modelExchangeDetailTabs,
-    modelSelectedExchange,
-    modelSelectedTab,
+    modelView,
     navigateToExchangeSetup,
-    openExchangeDetails,
     refreshExchangeBalances,
+    refreshInView,
     refreshSelectedExchangeBalances,
     sortedExchanges,
-    usedExchanges,
+    totalBalance,
   };
 }

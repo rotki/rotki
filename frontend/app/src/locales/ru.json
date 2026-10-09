@@ -1491,9 +1491,6 @@
         "substrate": "Substrate адрес"
       }
     },
-    "exchange_balances": {
-      "refresh": "Обновить балансы {exchange}"
-    },
     "liabilities": {
       "title": "Обязательства"
     },
@@ -1843,13 +1840,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Добавить биржу",
-    "click_here": "Нажмите здесь",
-    "no_connected_exchanges": "У вас нет подключенных бирж. {0}, чтобы настроить подключение к бирже.",
     "received_interest": "Полученные проценты",
     "received_interest_history": "История",
-    "refresh_tooltip": "Обновить балансы биржи, игнорируя кэш",
-    "select_exchange": "Выберите биржу",
-    "select_hint": "Выберите биржу для просмотра деталей актива.",
     "tabs": {
       "balances": "Балансы",
       "savings_interest_history": "История процентов по сбережениям"

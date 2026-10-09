@@ -1044,7 +1044,12 @@
     }
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the balances..."
+    "loading": "Please wait while rotki queries the balances...",
+    "no_match": {
+      "clear": "Clear search",
+      "description": "Nothing here matches \"{search}\". Try another name or symbol.",
+      "title": "No matching assets"
+    }
   },
   "asset_details_layout": {
     "tab": {
@@ -2396,9 +2401,6 @@
         "substrate": "Substrate Address"
       }
     },
-    "exchange_balances": {
-      "refresh": "Refresh {exchange} balances"
-    },
     "holdings": {
       "add": {
         "bank": "Bank",
@@ -3181,16 +3183,31 @@
   },
   "exchange_balances": {
     "add_exchange": "Add exchange",
-    "click_here": "Click here",
-    "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
+    "cards": {
+      "all": "All exchanges",
+      "label": "Exchanges"
+    },
+    "empty": {
+      "connect": "Connect an exchange",
+      "description": "rotki reads your exchange balances with a read-only API key, which stays on this machine.",
+      "popular": "Or start with",
+      "title": "No exchanges connected"
+    },
+    "empty_table": {
+      "description": "The last query found nothing here. Refresh to query the exchange again.",
+      "title": "No balances on this exchange"
+    },
     "received_interest": "Received Interest",
     "received_interest_history": "History",
-    "refresh_tooltip": "Refresh exchange balances ignoring any cached entries",
-    "select_exchange": "Select Exchange",
-    "select_hint": "Select an exchange to view asset details.",
+    "refresh_menu": {
+      "all": "Refresh all exchanges",
+      "exchange": "Refresh {exchange}",
+      "section": "One exchange",
+      "title": "More refresh options"
+    },
     "tabs": {
       "balances": "Balances",
-      "savings_interest_history": "Savings Interest History"
+      "savings_interest_history": "Savings interest history"
     }
   },
   "exchange_keys_form": {
@@ -3240,21 +3257,21 @@
       "tooltip": "Edit the exchange account"
     },
     "header": {
-      "sync_enabled": "Sync Enabled"
+      "sync_enabled": "Sync enabled"
     },
     "inputs": {
-      "access_key": "Access Key",
-      "api_key": "API Key",
-      "api_key_name": "API Key Name",
-      "api_secret": "API Secret",
+      "access_key": "Access key",
+      "api_key": "API key",
+      "api_key_name": "API key name",
+      "api_secret": "API secret",
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
-      "futures_api_key": "Futures API Key",
-      "futures_api_secret": "Futures API Secret",
-      "kraken_account": "Select the type of your Kraken account",
-      "kraken_futures_keys": "Futures Keys",
+      "futures_api_key": "API key",
+      "futures_api_secret": "API secret",
+      "kraken_account": "Account type",
+      "kraken_futures_keys": "Kraken Futures keys (optional)",
       "passphrase": "Passphrase",
-      "private_key": "Private Key",
-      "signing_key": "Signing Key"
+      "private_key": "Private key",
+      "signing_key": "Signing key"
     },
     "keys": "Keys",
     "setup_hint": "Balances are being fetched. Trades, deposits and withdrawals import when you open the History page.",

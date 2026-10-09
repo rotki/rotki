@@ -119,11 +119,12 @@ watchImmediate(currencySymbol, async () => {
 </script>
 
 <template>
+  <!-- headed sections rather than cards: the page's table frame already draws the surface around them -->
   <div class="flex flex-col gap-6">
-    <RuiCard>
-      <template #header>
+    <section class="flex flex-col gap-3">
+      <h3 class="text-base font-medium">
         {{ t('exchange_balances.received_interest') }}
-      </template>
+      </h3>
 
       <RuiDataTable
         v-model:sort="receivedTableSort"
@@ -159,11 +160,11 @@ watchImmediate(currencySymbol, async () => {
           </RowAppend>
         </template>
       </RuiDataTable>
-    </RuiCard>
-    <RuiCard>
-      <template #header>
+    </section>
+    <section class="flex flex-col gap-3">
+      <h3 class="text-base font-medium">
         {{ t('exchange_balances.received_interest_history') }}
-      </template>
+      </h3>
 
       <RuiDataTable
         v-model:sort="sort"
@@ -194,6 +195,6 @@ watchImmediate(currencySymbol, async () => {
           <DateDisplay :timestamp="row.timestamp" />
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </section>
   </div>
 </template>

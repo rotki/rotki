@@ -4,6 +4,8 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
+import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import Exchanges from '@/pages/api-keys/exchanges/index.vue';
 import '@test/i18n';
@@ -48,7 +50,7 @@ describe('exchanges page', () => {
           Teleport: { template: '<span><slot /></span>' },
           Transition: { template: '<span><slot /></span>' },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
-          HintMenuIcon: true,
+          ExchangeBalancesEmpty: true,
           ExternalLink: true,
           LocationDisplay: true,
           RowActions: true,
@@ -71,12 +73,23 @@ describe('exchanges page', () => {
     document.body.dataset.app = 'true';
     pinia = createCustomPinia();
     setActivePinia(pinia);
+    // the table, and the toolbar the hint lives in, only show once an exchange is connected
+    useConnectedExchangesStore().connectedExchanges = [{ location: 'kraken', name: 'main' }];
     vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
     wrapper?.unmount();
+  });
+
+  it('should show the empty state, with its shortcuts, while no exchange is connected', async () => {
+    useConnectedExchangesStore().connectedExchanges = [];
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.findComponent(ExchangeBalancesEmpty).exists()).toBe(true);
+    expect(wrapper.find('[data-testid=exchange-table]').exists()).toBe(false);
   });
 
   it('should not show the setup hint before an exchange is added', async () => {
