@@ -1,8 +1,15 @@
 import type { AssetMap } from '@/modules/assets/types';
+import { NotificationGroup } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): { notify: typeof notify } => ({ notify }),
+}));
 
 /** Past the cache's soft `size` of 500 and well under its `maxSize` of 5000, so nothing is evicted. */
 const DISTINCT_ASSETS = 504;
@@ -13,6 +20,25 @@ describe('modules/assets/use-asset-info-cache', () => {
     vi.resetModules();
     setActivePinia(createPinia());
     vi.mocked(useAssetInfoApi().assetMapping).mockReset();
+    notify.mockReset();
+  });
+
+  it('should collapse repeated lookup failures into one notification', async () => {
+    const cache = await getCache();
+    vi.mocked(useAssetInfoApi().assetMapping).mockRejectedValue(new Error('offline'));
+    const batch = Array.from({ length: 8 }, (_, i) => `ASSET_${i}`);
+
+    await cache.getAssetMappingHandler(batch);
+    await cache.getAssetMappingHandler(batch);
+
+    expect(notify).toHaveBeenCalledTimes(2);
+    const [first, second] = notify.mock.calls.map(([payload]) => payload);
+    expect(first).toMatchObject({ group: NotificationGroup.ASSET_MAPPINGS, groupCount: 1 });
+    expect(second).toMatchObject({ group: NotificationGroup.ASSET_MAPPINGS, groupCount: 2 });
+    // the test i18n renders `key::params`: the plural count, then the first five identifiers and the rest as a count
+    expect(second.message).toMatch(/^asset_mappings\.error\.message::2, /);
+    expect(second.message).toContain('asset_mappings.error.identifiers_more::3, ASSET_0, ASSET_1, ASSET_2, ASSET_3, ASSET_4,');
+    expect(second.message).not.toContain('ASSET_5');
   });
 
   async function getCache(): Promise<ReturnType<typeof import('./use-asset-info-cache').useAssetInfoCache>> {
