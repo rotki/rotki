@@ -157,10 +157,14 @@ class HyperliquidManager(EvmManager):
     ) -> list[HistoryBaseEntry]:
         """Drop the funding payments that are already saved as a customized legacy event.
 
-        The user may have edited any field of the legacy event and it has no coin, so it
-        can only be recognized by its timestamp and address. Each legacy event is a single
-        payment, so it is consumed by its first match and other payments made at the same
-        time are still saved.
+        The legacy event has no coin, and the original payment can't be recovered from the
+        fields the user may have edited, so it is recognized by its timestamp and address.
+        If the user edited either of them the original identity is lost, so the refetched
+        payment is saved next to the edited event. That is the safe fallback: matching on
+        other fields such as the amount could drop a different payment, which can't be
+        undone, while a duplicate can be deleted by the user. It can only happen for the
+        single payment the faulty identification ever saved. Each legacy event is consumed
+        by its first match and other payments made at the same time are still saved.
         """
         kept: list[HistoryBaseEntry] = []
         for event in events:

@@ -23,6 +23,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
@@ -334,6 +335,98 @@ def test_refetch_does_not_duplicate_a_customized_legacy_funding_event(
         ) == 2
 
     assert _stored_group_identifiers(database) == sorted([legacy_group, 'eth', 'later'])
+
+
+@pytest.mark.parametrize('data_migration_version', [28])
+def test_sync_after_migration_29_does_not_duplicate_the_customized_funding_event(
+        database: DBHandler,
+) -> None:
+    """The full flow after the upgrade: migration 29 drops the query ranges and the legacy
+    zero hash funding events that were not customized, and the next sync queries the history
+    again. The customized legacy event is kept, so the same payment in the refetched history
+    must not be saved a second time, while the removed one is saved under its own group."""
+    manager, add_error = _manager_with_db(database)
+    legacy_group = create_group_identifier_from_unique_id(
+        location=Location.HYPERLIQUID,
+        unique_id=ZERO_32_BYTES_HEX,
+    )
+
+    def funding(group_identifier: str, timestamp: int, sequence_index: int = 0) -> HistoryEvent:
+        event = _event(group_identifier)
+        event.timestamp = TimestampMS(timestamp)
+        event.sequence_index = sequence_index
+        event.notes = 'Hyperliquid funding payment'
+        return event
+
+    with database.user_write() as write_cursor:
+        history_db = DBHistoryEvents(database)
+        history_db.add_history_event(
+            write_cursor=write_cursor,
+            event=funding(legacy_group, 5000),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+        history_db.add_history_event(write_cursor=write_cursor, event=funding(legacy_group, 6000, 1))  # noqa: E501
+        write_cursor.execute(
+            'INSERT INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, 0, 10)',
+            (f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{ADDRESS}',),
+        )
+
+    run_single_migration(database=database, migration=29)
+    assert _queried_range(database) is None
+    assert _stored_group_identifiers(database) == [legacy_group]
+
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
+        [funding('btc', 5000), funding('eth', 6000)],
+    )
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
+
+    assert _stored_group_identifiers(database) == sorted([legacy_group, 'eth'])
+    assert _queried_range(database) == (0, 10)
+    add_error.assert_not_called()
+
+
+@pytest.mark.parametrize('edited_field', ['timestamp', 'location_label'])
+def test_refetch_keeps_both_if_the_legacy_event_identity_was_edited(
+        database: DBHandler,
+        edited_field: str,
+) -> None:
+    """If the user edited the timestamp or the address of the customized legacy funding
+    event its original payment can't be recognized anymore. The refetched payment is then
+    saved next to it, since a duplicate can be deleted while a dropped payment is lost."""
+    manager, _ = _manager_with_db(database)
+    legacy_group = create_group_identifier_from_unique_id(
+        location=Location.HYPERLIQUID,
+        unique_id=ZERO_32_BYTES_HEX,
+    )
+
+    def funding(group_identifier: str) -> HistoryEvent:
+        event = _event(group_identifier)
+        event.timestamp = TimestampMS(5000)
+        event.notes = 'Hyperliquid funding payment'
+        return event
+
+    setattr(
+        legacy := funding(legacy_group),
+        edited_field,
+        TimestampMS(9000) if edited_field == 'timestamp' else 'edited label',
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=legacy,
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query([funding('btc')])
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        assert manager.refetch_proprietary_history(
+            address=ADDRESS,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        ) == 1
+
+    assert _stored_group_identifiers(database) == sorted([legacy_group, 'btc'])
 
 
 def test_refetch_saves_distinct_entries_without_ids_at_the_same_time(database: DBHandler) -> None:
