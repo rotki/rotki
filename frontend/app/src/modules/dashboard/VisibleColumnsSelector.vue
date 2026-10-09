@@ -60,10 +60,7 @@ function update(value: TableColumn) {
 </script>
 
 <template>
-  <RuiMenu
-    :class-names="{ menu: 'max-w-60' }"
-    :options="{ placement: 'bottom-end' }"
-  >
+  <RuiMenu :options="{ placement: 'bottom-end' }">
     <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="t('dashboard_asset_table.select_visible_columns')"
@@ -73,27 +70,25 @@ function update(value: TableColumn) {
         <RuiIcon name="lu-ellipsis-vertical" />
       </MenuTooltipButton>
     </template>
-    <template
-      v-for="item in availableColumns"
-      :key="item.value"
-    >
-      <RuiButton
-        variant="list"
-        size="sm"
-        :model-value="item.value"
-        @click="update(item.value)"
+    <!-- sized by its labels, which wrap past 20rem rather than run out of the menu -->
+    <div class="w-max max-w-80 py-2">
+      <div class="px-4 pb-1 text-caption uppercase tracking-wide text-rui-text-secondary">
+        {{ t('dashboard_asset_table.visible_columns') }}
+      </div>
+      <div
+        v-for="item in availableColumns"
+        :key="item.value"
+        class="px-4 py-1"
       >
-        <template #prepend>
-          <RuiCheckbox
-            class="-mr-2"
-            color="primary"
-            hide-details
-            :model-value="active(item.value)"
-            @update:model-value="update(item.value)"
-          />
-        </template>
-        {{ item.text }}
-      </RuiButton>
-    </template>
+        <RuiCheckbox
+          color="primary"
+          size="sm"
+          hide-details
+          :label="item.text"
+          :model-value="active(item.value)"
+          @update:model-value="update(item.value)"
+        />
+      </div>
+    </div>
   </RuiMenu>
 </template>

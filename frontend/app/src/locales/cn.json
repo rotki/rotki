@@ -70,7 +70,6 @@
       "chain": "链"
     },
     "per_chain": "按链",
-    "refresh_tooltip": "刷新 {blockchain} 余额（忽略所有缓存）",
     "skip_queries": {
       "chain_marker": "rotki 不会在 {chain} 上查询此账户",
       "chain_skipped": "已跳过",

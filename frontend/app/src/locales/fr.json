@@ -34,8 +34,7 @@
         "redetect": "Redétecter les tokens"
       }
     },
-    "edit_tooltip": "Modifier le compte",
-    "refresh_tooltip": "Actualiser les soldes {blockchain} en ignorant toutes les entrées en cache"
+    "edit_tooltip": "Modifier le compte"
   },
   "account_form": {
     "advanced_tooltip": "Afficher les options xpub avancées | Masquer les options xpub avancées",

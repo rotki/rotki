@@ -20,8 +20,7 @@
         "redetect": "Re-detectar tokens"
       }
     },
-    "edit_tooltip": "Editar cuenta",
-    "refresh_tooltip": "Actualizar los saldos de {blockchain} ignorando cualquier entrada en caché"
+    "edit_tooltip": "Editar cuenta"
   },
   "account_form": {
     "advanced_tooltip": "Mostrar las opciones avanzadas de xpub | Ocultar las opciones avanzadas de xpub",

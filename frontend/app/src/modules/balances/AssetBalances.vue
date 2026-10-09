@@ -100,7 +100,8 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: nested ? 'py-0 text-rui-text-secondary' : 'py-0',
+    // like the dashboard's asset table: the price recedes and the value leads
+    cellClass: 'py-0 text-rui-text-secondary',
     key: 'price',
     label: t('common.price'),
     sortable: true,
@@ -112,7 +113,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: nested ? 'py-0 font-medium' : 'py-0',
+    cellClass: 'py-0 font-medium',
     class: 'text-no-wrap',
     key: 'value',
     label: t('common.value'),
@@ -133,7 +134,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalNetValue',
       label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
@@ -143,7 +144,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalCurrentGroup',
       label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
@@ -249,6 +250,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         <FiatDisplay
           :value="total"
           :loading="totalPending"
+          class="font-bold"
         />
       </RowAppend>
     </template>

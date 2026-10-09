@@ -88,7 +88,6 @@
       "chain": "Chain"
     },
     "per_chain": "Per chain",
-    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
     "row_menu": "More actions for this account",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
@@ -1878,6 +1877,10 @@
       "message": "Error importing blockchain accounts: {error}"
     },
     "last_refresh_tooltip": "Last time blockchain balances were refreshed",
+    "refresh_menu": {
+      "prices": "Refresh prices only",
+      "prices_description": "Fetch the latest prices without querying the chains"
+    },
     "solana_warning": "This is an initial Solana integration. Only a few protocols are currently supported, but more will be added over time.",
     "tabs": {
       "accounts": "Accounts",
@@ -2696,7 +2699,8 @@
     "no_assets": "No assets yet. Your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
-    "select_visible_columns": "Select visible columns"
+    "select_visible_columns": "Select visible columns",
+    "visible_columns": "Visible columns"
   },
   "data_issues": {
     "action": {
@@ -4092,7 +4096,7 @@
     }
   },
   "hide_small_balances": {
-    "apply_changes": "Apply Changes",
+    "apply_changes": "Apply changes",
     "apply_to_all": "Apply changes to other balances",
     "apply_to_all_hint": "Apply changes to Blockchain, Exchange, and Manual balances",
     "hide": "Hide small balances",
