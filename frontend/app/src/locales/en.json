@@ -848,7 +848,7 @@
       "ignored_assets": {
         "error": {
           "message": "Failed to retrieve ignored assets: {error}",
-          "title": "Querying ignored assets"
+          "title": "Couldn't load ignored assets"
         }
       },
       "kraken_account": {
@@ -1162,8 +1162,9 @@
   },
   "asset_mappings": {
     "error": {
-      "message": "Failed to retrieve the asset mappings for the following identifiers {identifiers} ({message})",
-      "title": "Caching asset mappings"
+      "identifiers_more": "{identifiers} and {count} more",
+      "message": "Failed to retrieve the asset mappings for the following identifiers {identifiers} ({message}) | Failed to retrieve the asset mappings {count} times, most recently for {identifiers} ({message})",
+      "title": "Couldn't load asset details"
     }
   },
   "asset_movement_matching": {

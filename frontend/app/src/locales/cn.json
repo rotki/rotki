@@ -844,7 +844,7 @@
       "ignored_assets": {
         "error": {
           "message": "获取已忽略资产失败：{error}",
-          "title": "查询已忽略资产"
+          "title": "无法加载已忽略资产"
         }
       },
       "kraken_account": {
@@ -1158,8 +1158,8 @@
   },
   "asset_mappings": {
     "error": {
-      "message": "无法获取以下标识符的资产映射 {identifiers}（{message}）",
-      "title": "缓存资产映射"
+      "message": "无法获取以下标识符的资产映射 {identifiers}（{message}） | 资产映射获取失败 {count} 次，最近一次为 {identifiers}（{message}）",
+      "title": "无法加载资产详情"
     }
   },
   "asset_movement_matching": {
