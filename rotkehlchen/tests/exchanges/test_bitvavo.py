@@ -1,23 +1,52 @@
-from typing import Any
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any
+from unittest.mock import call, patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.constants.assets import A_BTC, A_EUR
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_bitvavo
+from rotkehlchen.constants.assets import A_BTC, A_ETC, A_ETH, A_EUR, A_LINK, A_USDC
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.bitvavo import (
     BITVAVO_KEY_HEADER,
     BITVAVO_SIGNATURE_HEADER,
     BITVAVO_TIMESTAMP_HEADER,
+    HISTORY_MAX_ITEMS,
+    HISTORY_OVERLAP_MS,
     Bitvavo,
+    deserialize_bitvavo_timestamp,
 )
+from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import (
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events_multi_fee
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-from rotkehlchen.tests.utils.messages import consume_errors, consume_errors_and_unknown_assets
+from rotkehlchen.tests.utils.messages import (
+    consume_errors,
+    consume_errors_and_unknown_assets,
+    consume_warnings,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiSecret, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.types import (
+    ApiSecret,
+    AssetAmount,
+    ExchangeAuthCredentials,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 TIMESTAMP_MS = 1700490703564
 
@@ -207,3 +236,563 @@ def test_query_balances_remote_error(bitvavo_exchange: Bitvavo) -> None:
 
     assert balances is None
     assert msg == 'Failed to query Bitvavo balances due to a remote error: boom'
+
+
+@pytest.mark.parametrize(('value', 'expected'), [
+    ('2024-03-01T10:00:00.250Z', 1709287200250),  # trades carry milliseconds
+    ('2024-03-05T14:00:00.000Z', 1709647200000),
+    ('2021-01-01T00:00:01Z', 1609459201000),  # whole seconds, no fraction
+    ('2021-01-01T00:00:01', 1609459201000),  # no timezone given, read as UTC
+])
+def test_deserialize_timestamp(value: str, expected: int) -> None:
+    assert deserialize_bitvavo_timestamp(value) == TimestampMS(expected)
+
+
+@pytest.mark.parametrize('value', ['not a date', None, 1709287200250])
+def test_deserialize_timestamp_invalid(value: object) -> None:
+    with pytest.raises(DeserializationError):
+        deserialize_bitvavo_timestamp(value)
+
+
+def group_id(unique_id: str) -> str:
+    return create_group_identifier_from_unique_id(location=Location.BITVAVO, unique_id=unique_id)
+
+
+# Rows in the shape GET /account/history returns them, one per handled case.
+LEDGER_PAGE_1: list[dict[str, Any]] = [
+    {
+        'transactionId': 'buy-1', 'executedAt': '2024-03-01T10:00:00.250Z', 'type': 'buy',
+        'priceCurrency': 'EUR', 'priceAmount': '2500',
+        'sentCurrency': 'EUR', 'sentAmount': '100',
+        'receivedCurrency': 'ETH', 'receivedAmount': '0.04',
+        'feesCurrency': 'EUR', 'feesAmount': '0.25', 'address': None,
+    }, {
+        'transactionId': 'sell-1', 'executedAt': '2024-03-02T11:30:15.500Z', 'type': 'sell',
+        'priceCurrency': 'EUR', 'priceAmount': '45000',
+        'sentCurrency': 'BTC', 'sentAmount': '0.01',
+        'receivedCurrency': 'EUR', 'receivedAmount': '450',
+        'feesCurrency': 'EUR', 'feesAmount': '1.25', 'address': None,
+    }, {  # fiat deposit: masked IBAN as address and an explicit zero fee
+        'transactionId': 'dep-1', 'executedAt': '2024-03-03T12:00:00.000Z', 'type': 'deposit',
+        'receivedCurrency': 'EUR', 'receivedAmount': '1000',
+        'feesCurrency': 'EUR', 'feesAmount': '0', 'address': 'NL00**',
+    }, {  # crypto withdrawal: sent amount is net, fee separate
+        'transactionId': 'wd-1', 'executedAt': '2024-03-04T13:00:00.000Z', 'type': 'withdrawal',
+        'sentCurrency': 'ETH', 'sentAmount': '0.99',
+        'feesCurrency': 'ETH', 'feesAmount': '0.01', 'address': '0x1234',
+    }, {  # withdrawal without any fee fields
+        'transactionId': 'wd-2', 'executedAt': '2024-03-04T13:00:00.000Z', 'type': 'withdrawal',
+        'sentCurrency': 'EUR', 'sentAmount': '100', 'address': 'NL00**',
+    }, {
+        'transactionId': 'stk-1', 'executedAt': '2024-03-05T14:00:00.000Z', 'type': 'staking',
+        'receivedCurrency': 'BTC', 'receivedAmount': '0.00000123', 'address': None,
+    }, {
+        'transactionId': 'aff-1', 'executedAt': '2024-03-06T00:00:04.000Z', 'type': 'affiliate',
+        'receivedCurrency': 'EUR', 'receivedAmount': '1.5', 'address': None,
+    }, {
+        'transactionId': 'reb-1', 'executedAt': '2024-03-07T16:00:00.000Z', 'type': 'rebate',
+        'receivedCurrency': 'EUR', 'receivedAmount': '0.05', 'address': None,
+    }, {  # corrections booked by Bitvavo support go in both directions
+        'transactionId': 'adj-1', 'executedAt': '2024-03-08T09:00:00.000Z',
+        'type': 'manually_assigned', 'sentCurrency': 'ETC', 'sentAmount': '0.00000042',
+    }, {
+        'transactionId': 'adj-2', 'executedAt': '2024-03-08T09:00:00.000Z',
+        'type': 'manually_assigned', 'receivedCurrency': 'ETC', 'receivedAmount': '0.5',
+    }, {  # documented by Bitvavo but not handled: reported, never skipped silently
+        'transactionId': 'wc-1', 'executedAt': '2024-03-08T09:00:00.000Z',
+        'type': 'withdrawal_cancelled', 'receivedCurrency': 'ETH', 'receivedAmount': '1',
+    }, {  # a type Bitvavo does not document: reported once for both rows
+        'transactionId': 'unk-1', 'executedAt': '2024-03-08T09:00:00.000Z',
+        'type': 'margin_interest', 'sentCurrency': 'EUR', 'sentAmount': '1',
+    }, {
+        'transactionId': 'unk-2', 'executedAt': '2024-03-08T09:00:00.000Z',
+        'type': 'margin_interest', 'sentCurrency': 'EUR', 'sentAmount': '2',
+    }, {  # unknown asset: skipped with an unknown asset message
+        'transactionId': 'stk-2', 'executedAt': '2024-03-05T14:00:00.000Z', 'type': 'staking',
+        'receivedCurrency': 'NOTAREALASSET', 'receivedAmount': '1',
+    }, {  # broken row: missing the amount
+        'transactionId': 'bad-1', 'executedAt': '2024-03-05T14:00:00.000Z', 'type': 'staking',
+        'receivedCurrency': 'BTC',
+    },
+]
+LEDGER_PAGE_2: list[dict[str, Any]] = [
+    {  # crypto deposit on the second page, no address
+        'transactionId': 'dep-2', 'executedAt': '2024-03-09T10:00:00.000Z', 'type': 'deposit',
+        'receivedCurrency': 'BTC', 'receivedAmount': '0.5', 'address': None,
+    },
+]
+
+
+def expected_ledger_events() -> list[HistoryBaseEntry]:
+    a_eur, a_btc, a_eth, a_etc = (
+        a.resolve_to_asset_with_oracles() for a in (A_EUR, A_BTC, A_ETH, A_ETC)
+    )
+    return [
+        *create_swap_events_multi_fee(
+            timestamp=TimestampMS(1709287200250),
+            location=Location.BITVAVO,
+            spend=AssetAmount(asset=a_eur, amount=FVal('100')),
+            receive=AssetAmount(asset=a_eth, amount=FVal('0.04')),
+            fees=[(AssetAmount(asset=a_eur, amount=FVal('0.25')), None, None)],
+            location_label='bitvavo',
+            group_identifier=group_id('buy-1'),
+        ),
+        *create_swap_events_multi_fee(
+            timestamp=TimestampMS(1709379015500),
+            location=Location.BITVAVO,
+            spend=AssetAmount(asset=a_btc, amount=FVal('0.01')),
+            receive=AssetAmount(asset=a_eur, amount=FVal('450')),
+            fees=[(AssetAmount(asset=a_eur, amount=FVal('1.25')), None, None)],
+            location_label='bitvavo',
+            group_identifier=group_id('sell-1'),
+        ),
+        *create_asset_movement_with_fee(
+            timestamp=TimestampMS(1709467200000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=a_eur,
+            amount=FVal('1000'),
+            unique_id='dep-1',
+            extra_data={'address': 'NL00**'},
+        ),
+        *create_asset_movement_with_fee(
+            timestamp=TimestampMS(1709557200000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=a_eth,
+            amount=FVal('0.99'),
+            fee=AssetAmount(asset=a_eth, amount=FVal('0.01')),
+            unique_id='wd-1',
+            extra_data={'address': '0x1234'},
+        ),
+        *create_asset_movement_with_fee(
+            timestamp=TimestampMS(1709557200000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=a_eur,
+            amount=FVal('100'),
+            unique_id='wd-2',
+            extra_data={'address': 'NL00**'},
+        ),
+        HistoryEvent(
+            group_identifier=group_id('stk-1'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709647200000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            asset=a_btc,
+            amount=FVal('0.00000123'),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            notes='Staking reward of 0.00000123 BTC at Bitvavo',
+        ),
+        HistoryEvent(
+            group_identifier=group_id('aff-1'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709683204000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            asset=a_eur,
+            amount=FVal('1.5'),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            notes='Affiliate reward of 1.5 EUR at Bitvavo',
+        ),
+        HistoryEvent(
+            group_identifier=group_id('reb-1'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709827200000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            asset=a_eur,
+            amount=FVal('0.05'),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.CASHBACK,
+            notes='Fee rebate of 0.05 EUR at Bitvavo',
+        ),
+        HistoryEvent(
+            group_identifier=group_id('adj-1'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709888400000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            asset=a_etc,
+            amount=FVal('0.00000042'),
+            event_type=HistoryEventType.ADJUSTMENT,
+            event_subtype=HistoryEventSubType.SPEND,
+            notes='Balance correction of 0.00000042 ETC at Bitvavo',
+        ),
+        HistoryEvent(
+            group_identifier=group_id('adj-2'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709888400000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            asset=a_etc,
+            amount=FVal('0.5'),
+            event_type=HistoryEventType.ADJUSTMENT,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            notes='Balance correction of 0.5 ETC at Bitvavo',
+        ),
+        *create_asset_movement_with_fee(
+            timestamp=TimestampMS(1709978400000),
+            location=Location.BITVAVO,
+            location_label='bitvavo',
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=a_btc,
+            amount=FVal('0.5'),
+            unique_id='dep-2',
+        ),
+    ]
+
+
+def mock_ledger_pages() -> Callable[..., dict[str, Any]]:
+    def mock_api_query(endpoint: str, options: dict[str, Any]) -> dict[str, Any]:
+        assert endpoint == '/account/history'
+        page = options['page']
+        return {
+            'items': LEDGER_PAGE_1 if page == 1 else LEDGER_PAGE_2,
+            'currentPage': page,
+            'totalPages': 2,
+            'maxItems': HISTORY_MAX_ITEMS,
+        }
+    return mock_api_query
+
+
+def test_query_online_history_events(bitvavo_exchange: Bitvavo) -> None:
+    """Every handled ledger row type is dispatched to the right event shape, unhandled
+    types are skipped with a warning that names every skipped type, and the range is always
+    sent because the endpoint otherwise silently returns only the last 30 days. It starts
+    before the requested start, so that it overlaps the range queried before it.
+    """
+    with patch.object(
+        bitvavo_exchange,
+        '_api_query',
+        side_effect=mock_ledger_pages(),
+    ) as api_query:
+        events, end_ts = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert end_ts == Timestamp(1800000000)
+    assert api_query.call_args_list == [
+        call(endpoint='/account/history', options={
+            'fromDate': 1599999998000,
+            'toDate': 1800000000000,
+            'maxItems': HISTORY_MAX_ITEMS,
+            'page': page,
+        }) for page in (1, 2)
+    ]
+    assert events == expected_ledger_events()
+    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [(
+        'Skipped Bitvavo history entries of type margin_interest, withdrawal_cancelled, which '
+        'rotki does not handle yet. Check logs for details and report it to rotki.'
+    )] * 2  # one warning per type, folded into one row that names both
+    assert consume_errors_and_unknown_assets(bitvavo_exchange.msg_aggregator) == ([(
+        "Failed to deserialize a Bitvavo history entry: Missing key 'receivedAmount'. "
+        'Check logs for details. Ignoring it.'
+    )], ['NOTAREALASSET'])
+
+
+def test_query_online_history_events_into_queue(bitvavo_exchange: Bitvavo) -> None:
+    """With an event queue the events are saved through it and none are returned."""
+    queue = HistoryEventQueue(
+        database=bitvavo_exchange.db,
+        location_string='bitvavo_history_events_bitvavo',
+        query_start_ts=Timestamp(1600000000),
+    )
+    with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_ledger_pages()):
+        end_ts = bitvavo_exchange.query_online_history_events_into_queue(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+            event_queue=queue,
+        )
+
+    assert end_ts == Timestamp(1800000000)
+    assert queue.events == []
+    assert queue.saved_events == len(expected_ledger_events())
+
+
+def test_query_online_history_events_remote_error(bitvavo_exchange: Bitvavo) -> None:
+    with (
+        patch.object(bitvavo_exchange, '_api_query', side_effect=RemoteError('boom')),
+        pytest.raises(RemoteError, match='boom'),
+    ):
+        bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert consume_errors(bitvavo_exchange.msg_aggregator) == [
+        'Got remote error while querying Bitvavo history: boom',
+    ]
+
+
+def test_query_online_history_events_unexpected_data(bitvavo_exchange: Bitvavo) -> None:
+    with (
+        patch.object(bitvavo_exchange, '_api_query', return_value=[{'not': 'a page'}]),
+        pytest.raises(RemoteError, match='unexpected data'),
+    ):
+        bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+
+def test_failure_on_a_later_page_keeps_earlier_pages_and_records_no_range(
+        bitvavo_exchange: Bitvavo,
+) -> None:
+    """Pages are saved as they arrive, so a failure halfway loses nothing that was already
+    fetched, and the range is not marked as queried, so the next query fetches the rest.
+    """
+    def mock_api_query(endpoint: str, options: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
+        if options['page'] == 2:
+            raise RemoteError('page two failed')
+        return {'items': LEDGER_PAGE_1, 'currentPage': 1, 'totalPages': 2}
+
+    with (
+        patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query),
+        pytest.raises(RemoteError, match='page two failed'),
+    ):
+        bitvavo_exchange.query_history_events()
+
+    with bitvavo_exchange.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (group_id('buy-1'),),
+        ).fetchone()[0] == 3  # spend, receive and fee of the first row of page one
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{Location.BITVAVO!s}_history_events_{bitvavo_exchange.name}',),
+        ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize(('start_ts', 'from_date'), [
+    (1600000000, 1600000000000 - HISTORY_OVERLAP_MS),
+    (1, 0),
+    (0, 0),
+])
+def test_history_range_reaches_back_before_its_start(
+        bitvavo_exchange: Bitvavo,
+        start_ts: int,
+        from_date: int,
+) -> None:
+    """rotki starts a range one second after the previous one ended. A trade stamped inside
+    that last second, which Bitvavo reports in milliseconds, is only fetched when the next
+    query reaches back over it, which is why the overlap is longer than that one second.
+    The start of time is not passed as a negative value.
+    """
+    with patch.object(bitvavo_exchange, '_api_query', return_value={
+        'items': [], 'currentPage': 1, 'totalPages': 1,
+    }) as api_query:
+        bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert api_query.call_args.kwargs['options']['fromDate'] == from_date
+
+
+def test_pagination_without_a_page_count_continues_until_a_short_page(
+        bitvavo_exchange: Bitvavo,
+) -> None:
+    """A response without totalPages must not end the query after the first page, which
+    would silently drop the rest of the history.
+    """
+    def mock_api_query(endpoint: str, options: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
+        return {'items': LEDGER_PAGE_1 if options['page'] == 1 else LEDGER_PAGE_2}
+
+    with (
+        patch('rotkehlchen.exchanges.bitvavo.HISTORY_MAX_ITEMS', len(LEDGER_PAGE_1)),
+        patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query) as api_query,
+    ):
+        events, _ = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert api_query.call_count == 2
+    assert events == expected_ledger_events()
+
+
+def test_asset_symbol_resolution() -> None:
+    """Symbols that are not rotki identifiers resolve through the exchange symbol mappings,
+    the others directly, and an unknown symbol is an error instead of a guess.
+    """
+    assert asset_from_bitvavo('USDC') == A_USDC
+    assert asset_from_bitvavo('LINK') == A_LINK
+    assert asset_from_bitvavo('EUR') == A_EUR
+    assert asset_from_bitvavo('BTC') == A_BTC
+    assert asset_from_bitvavo('XRP') == Asset('XRP')
+    with pytest.raises(UnknownAsset):
+        asset_from_bitvavo('NOTAREALASSET')
+
+
+def ledger_row(ledger_type: str, side: str = 'received') -> dict[str, str]:
+    return {
+        'transactionId': f'{ledger_type}-row',
+        'executedAt': '2024-03-05T14:00:00.000Z',
+        'type': ledger_type,
+        f'{side}Currency': 'ETH',
+        f'{side}Amount': '1.5',
+    }
+
+
+@pytest.mark.parametrize(('ledger_type', 'event_type', 'event_subtype', 'notes_prefix'), [
+    ('staking', HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Staking reward'),
+    ('fixed_staking', HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Fixed staking reward'),  # noqa: E501
+    ('affiliate', HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, 'Affiliate reward'),
+    ('rebate', HistoryEventType.RECEIVE, HistoryEventSubType.CASHBACK, 'Fee rebate'),
+    ('distribution', HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, 'Distribution'),
+])
+def test_reward_ledger_types(
+        bitvavo_exchange: Bitvavo,
+        ledger_type: str,
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
+        notes_prefix: str,
+) -> None:
+    """Pins the event type and subtype of every crediting ledger type, since the pair decides
+    the default tax treatment.
+    """
+    assert bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type)) == [HistoryEvent(
+        group_identifier=group_id(f'{ledger_type}-row'),
+        sequence_index=0,
+        timestamp=TimestampMS(1709647200000),
+        location=Location.BITVAVO,
+        location_label='bitvavo',
+        asset=A_ETH,
+        amount=FVal('1.5'),
+        event_type=event_type,
+        event_subtype=event_subtype,
+        notes=f'{notes_prefix} of 1.5 ETH at Bitvavo',
+    )]
+
+
+@pytest.mark.parametrize('ledger_type', ['manually_assigned', 'manually_assigned_bitvavo'])
+@pytest.mark.parametrize(('side', 'event_subtype'), [
+    ('received', HistoryEventSubType.RECEIVE),
+    ('sent', HistoryEventSubType.SPEND),
+])
+def test_adjustment_ledger_types(
+        bitvavo_exchange: Bitvavo,
+        ledger_type: str,
+        side: str,
+        event_subtype: HistoryEventSubType,
+) -> None:
+    """Corrections follow the side Bitvavo filled, and use ADJUSTMENT so the tracked balance
+    moves, which EXCHANGE_ADJUSTMENT would not do.
+    """
+    (event,) = bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type, side=side))
+    assert (event.event_type, event.event_subtype) == (HistoryEventType.ADJUSTMENT, event_subtype)
+    assert event.amount == FVal('1.5')
+    assert event.notes == 'Balance correction of 1.5 ETH at Bitvavo'
+
+
+@pytest.mark.parametrize('ledger_type', [
+    'loan',
+    'withdrawal_cancelled',
+    'internal_transfer',
+    'external_transferred_funds',
+    'a_type_bitvavo_adds_later',
+])
+def test_unhandled_ledger_types_are_reported(bitvavo_exchange: Bitvavo, ledger_type: str) -> None:
+    assert bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type)) == []
+    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [(
+        f'Skipped Bitvavo history entries of type {ledger_type}, which rotki does not '
+        f'handle yet. Check logs for details and report it to rotki.'
+    )]
+
+
+def test_querying_the_same_range_again_saves_nothing(bitvavo_exchange: Bitvavo) -> None:
+    """Re-pulling a range must not duplicate events, or income would count twice."""
+    saved = []
+    for _ in range(2):
+        queue = HistoryEventQueue(
+            database=bitvavo_exchange.db,
+            location_string='bitvavo_history_events_bitvavo',
+            query_start_ts=Timestamp(1600000000),
+        )
+        with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_ledger_pages()):
+            bitvavo_exchange.query_online_history_events_into_queue(
+                start_ts=Timestamp(1600000000),
+                end_ts=Timestamp(1800000000),
+                event_queue=queue,
+            )
+        saved.append(queue.saved_events)
+
+    assert saved == [len(expected_ledger_events()), 0]
+
+
+@pytest.mark.parametrize('unknown_side', ['sent', 'received', 'fees'])
+def test_trade_with_an_unknown_asset_is_skipped_whole(
+        bitvavo_exchange: Bitvavo,
+        unknown_side: str,
+) -> None:
+    """Half a swap would corrupt balances, so no leg may be created when any asset of the
+    trade cannot be resolved.
+    """
+    row: dict[str, Any] = {**LEDGER_PAGE_1[0], f'{unknown_side}Currency': 'NOTAREALASSET'}
+    with patch.object(bitvavo_exchange, '_api_query', return_value={
+        'items': [row], 'currentPage': 1, 'totalPages': 1, 'maxItems': HISTORY_MAX_ITEMS,
+    }):
+        events, _ = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert events == []
+    assert consume_errors_and_unknown_assets(bitvavo_exchange.msg_aggregator) == ([], ['NOTAREALASSET'])  # noqa: E501
+
+
+def test_pagination_stops_on_an_empty_page(bitvavo_exchange: Bitvavo) -> None:
+    """An empty page ends the query even if totalPages claims there is more."""
+    def mock_api_query(endpoint: str, options: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
+        return {
+            'items': LEDGER_PAGE_2 if options['page'] == 1 else [],
+            'currentPage': options['page'],
+            'totalPages': 99,
+            'maxItems': HISTORY_MAX_ITEMS,
+        }
+
+    with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query) as api_query:
+        events, _ = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert api_query.call_count == 2
+    assert len(events) == 1
+
+
+@pytest.mark.parametrize(('override', 'expected_in_error'), [
+    ({'receivedAmount': 'not a number'}, 'Failed to deserialize value entry'),
+    ({'executedAt': 'not a date'}, 'Failed to deserialize Bitvavo timestamp from not a date'),
+])
+def test_ledger_row_with_an_unparseable_value_is_reported(
+        bitvavo_exchange: Bitvavo,
+        override: dict[str, str],
+        expected_in_error: str,
+) -> None:
+    """A row whose amount or timestamp cannot be read is reported and skipped, and the rows
+    around it are still imported.
+    """
+    with patch.object(bitvavo_exchange, '_api_query', return_value={
+        'items': [ledger_row('staking') | override, *LEDGER_PAGE_2],
+        'currentPage': 1,
+        'totalPages': 1,
+        'maxItems': HISTORY_MAX_ITEMS,
+    }):
+        events, _ = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert len(events) == 1
+    (error,) = consume_errors(bitvavo_exchange.msg_aggregator)
+    assert error.startswith('Failed to deserialize a Bitvavo history entry: ')
+    assert expected_in_error in error
