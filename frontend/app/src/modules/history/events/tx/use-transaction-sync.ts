@@ -22,7 +22,16 @@ interface TransactionSyncParams {
   accounts: ChainAddress[];
   type: TransactionChainType;
   trackProgress?: boolean;
+  toTimestamp?: number;
 }
+
+/**
+ * How far behind now a refresh ends, in seconds. It has to be at least the backend's
+ * `CHAIN_TOP_LAG`: the backend ends a sync at the earlier of the requested end and now minus that
+ * lag, so a shared end only stays the same for every request of the refresh if it is already the
+ * earlier one.
+ */
+const SYNC_END_LAG_SECONDS = 15;
 
 /** A chain activity's declared children, split by whether they decide the chain's own outcome. */
 interface ChainSubtree {
@@ -37,7 +46,7 @@ interface ChainSubtree {
  */
 interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<Result<void, TaskError>>;
-  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean, parent?: ActivityId) => Promise<Result<void, TaskError>>;
+  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean, parent?: ActivityId, toTimestamp?: number) => Promise<Result<void, TaskError>>;
   syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean, parent?: ActivityId) => Promise<Result<void, TaskError>[]>;
 }
 
@@ -101,6 +110,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     type: TransactionChainType,
     trackProgress = true,
     parent?: ActivityId,
+    toTimestamp?: number,
   ): Promise<Result<void, TaskError>> => {
     const { address, chain } = account;
     const isEvmlike = type === TransactionChainType.EVMLIKE;
@@ -111,6 +121,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     };
     const defaults: TransactionRequestPayload = {
       accounts: [blockchainAccount],
+      toTimestamp,
     };
 
     // Evmlike chains don't send websocket messages, so track status manually
@@ -176,7 +187,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     params: TransactionSyncParams,
     parent?: ActivityId,
   ): Promise<Result<void, TaskError>> => {
-    const { accounts, trackProgress = true, type } = params;
+    const { accounts, toTimestamp, trackProgress = true, type } = params;
     const chainId = chainSyncActivityId(chain);
 
     // The chain activity is submitted before its children so the parent gate applies to them, but
@@ -213,7 +224,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       title: t('task_center.group.tx_sync'),
     });
 
-    const accountWork = accounts.map(async account => syncTransactionTask(account, type, trackProgress, chainId));
+    const accountWork = accounts.map(async account => syncTransactionTask(account, type, trackProgress, chainId, toTimestamp));
 
     // Decoding is declared here rather than run at the end: it waits on every account of the chain
     // through `deps`, and completes as a no-op when they were all cancelled, so a refresh has the
@@ -234,11 +245,16 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true, parent?: ActivityId): Promise<Result<void, TaskError>[]> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
+    // One end for the whole refresh: every address request carries it, so the backend resolves its
+    // block once instead of once per request, each at a slightly different time.
+    const toTimestamp = Math.floor(Date.now() / 1000) - SYNC_END_LAG_SECONDS;
+
     // The account set is known here, synchronously, so every chain and every account below it is
     // declared in this pass. No limiter: CHAIN_SYNC_LANE caps how many chains run at once.
     return Promise.all(Object.entries(groupBy(accounts, item => item.chain))
       .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
         accounts: chainAccounts,
+        toTimestamp,
         trackProgress,
         type: getTransactionTypeFromChain(chain),
       }, parent)));
