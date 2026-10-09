@@ -15,6 +15,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
+  <!-- labelled rather than a bare icon, which read as a stray element under the form -->
   <RuiTooltip
     :open-delay="400"
     :close-delay="0"
@@ -24,18 +25,23 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiButton
         :disabled="loading"
         variant="text"
+        size="sm"
         type="button"
-        icon
+        class="-ms-1.5"
+        :aria-expanded="open"
         @click="emit('toggle')"
       >
-        <RuiIcon
-          name="lu-server"
-          :color="color"
-        />
+        <template #prepend>
+          <RuiIcon
+            name="lu-server"
+            size="16"
+            :color="color"
+          />
+        </template>
+        {{ t('login.custom_backend.toggle') }}
         <template #append>
           <RuiIcon
-            size="16"
-            class="-ml-2"
+            size="14"
             :name="open ? 'lu-chevron-up' : 'lu-chevron-down'"
           />
         </template>

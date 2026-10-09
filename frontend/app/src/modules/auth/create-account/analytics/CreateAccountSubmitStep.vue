@@ -29,7 +29,7 @@ const submitLabel = computed<string>(() =>
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <CreateAccountSubmitAnalytics
       v-model:submit-usage-analytics="submitUsageAnalytics"
       :loading="loading"

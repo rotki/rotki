@@ -15,14 +15,14 @@ const { isPackaged } = useInterop();
 </script>
 
 <template>
-  <div>
+  <!-- nothing at all in a browser outside docker, so the backend toggle beside it takes the row's start -->
+  <div v-if="isDocker || isPackaged">
     <RuiCheckbox
       v-if="isDocker"
       v-model="rememberUsername"
       :disabled="disabled || rememberPassword"
       color="primary"
       hide-details
-      class="-ml-2"
     >
       {{ t('login.remember_username') }}
     </RuiCheckbox>
@@ -36,7 +36,6 @@ const { isPackaged } = useInterop();
           :disabled="disabled"
           color="primary"
           hide-details
-          class="-ml-2"
         >
           {{ t('login.remember_password') }}
         </RuiCheckbox>

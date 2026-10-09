@@ -328,7 +328,6 @@
   "create_account": {
     "credentials": {
       "description": "Recuerda que el usuario que creas aquí está {highlight}, independientemente de la cuenta creada en la web.",
-      "highlight": "solo habilitado en la aplicación",
       "label_password": "Contraseña",
       "label_password_backup_reminder": "rotki guarda todos los datos del usuario localmente. Entiendo que si pierdo mi contraseña, perderé acceso a mis datos. He creado una copia de seguridad de la contraseña.",
       "label_password_repeat": "Repetir contraseña",
@@ -346,10 +345,6 @@
     "have_account": {
       "description": "¿Ya tienes una cuenta?",
       "log_in": "Desbloquea tu cuenta"
-    },
-    "introduction": {
-      "description": "rotki es una aplicación local que respeta tu privacidad.\n\nLas cuentas de rotki están encriptadas usando tu contraseña y {highlight}.\n\nLa cuenta que creas aquí solo es útil para la aplicación; en la web utilizamos una base de datos diferente.",
-      "highlight": "guardada en tu sistema de archivos local"
     },
     "premium": {
       "button_premium_approve": "Sí, habilitar premium",

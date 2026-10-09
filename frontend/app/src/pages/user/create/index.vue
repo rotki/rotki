@@ -4,6 +4,7 @@ import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
 import CreateAccountWizard from '@/modules/auth/create-account/CreateAccountWizard.vue';
+import { useCreateAccountSteps } from '@/modules/auth/create-account/use-create-account-steps';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
@@ -21,37 +22,10 @@ const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { navigateToUserLogin } = useAppNavigation();
 const { clearErrors, createNewAccount, error, loading } = useAccountManagement();
 
-const { t } = useI18n({ useScope: 'global' });
-
 const step = ref<number>(1);
 const mode = ref<CreateAccountMode>();
 
-const steps = computed<{ title: string; description?: string }[]>(() => {
-  const restore = get(mode) === 'restore';
-  return [
-    {
-      description: t('create_account.steps.step_1.description'),
-      title: t('create_account.steps.step_1.title'),
-    },
-    {
-      description: restore
-        ? t('create_account.steps.step_2.restore_description')
-        : t('create_account.steps.step_2.description'),
-      title: restore
-        ? t('create_account.steps.step_2.restore_title')
-        : t('create_account.steps.step_2.title'),
-    },
-    {
-      description: t('create_account.steps.step_3.description'),
-      title: restore
-        ? t('create_account.steps.step_3.restore_title')
-        : t('create_account.steps.step_3.title'),
-    },
-    {
-      title: t('create_account.steps.step_4.title'),
-    },
-  ];
-});
+const { steps } = useCreateAccountSteps(mode);
 
 onMounted(() => clearErrors());
 </script>
@@ -59,10 +33,16 @@ onMounted(() => clearErrors());
 <template>
   <section class="w-full flex flex-col flex-1 overflow-auto">
     <div class="h-full grow flex flex-col">
-      <div class="flex flex-col px-4 pt-16 lg:pt-24 grow">
+      <RotkiLogo
+        class="my-5 lg:hidden w-full max-w-110 mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
+        unique-key="1b"
+      />
+      <!-- top aligned rather than centred like login, so the heading stays put as the steps change height -->
+      <div class="flex flex-col grow px-4 pt-10 lg:pt-20 pb-6">
+        <!-- fills the height so the connection wait can centre in it, while the wizard stays at the top -->
         <div
-          class="pb-4"
           data-testid="account-management"
+          class="grow flex flex-col"
         >
           <UserHost>
             <UpgradeProgressDisplay v-if="upgradeVisible" />
@@ -79,20 +59,19 @@ onMounted(() => clearErrors());
           </UserHost>
         </div>
       </div>
-      <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
+      <!-- the side stepper shows progress on large screens -->
+      <div class="lg:hidden w-full max-w-110 mx-auto px-4">
         <RuiFooterStepper
           :model-value="step"
           :pages="steps.length"
           variant="pill"
         />
       </div>
-      <footer class="p-6 lg:p-8 flex items-center justify-between">
+      <footer class="p-6 lg:p-8 flex items-center gap-3">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
         </AccountManagementFooterText>
-        <div class="ml-4">
-          <AdaptiveFooterButton />
-        </div>
+        <AdaptiveFooterButton />
       </footer>
     </div>
   </section>

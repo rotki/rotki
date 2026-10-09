@@ -12,9 +12,20 @@ import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 import { isWebVersion, useVersionText } from '@/modules/shell/components/use-version-text';
 
+interface DetailRow {
+  label: string;
+  value: string;
+  testId?: string;
+}
+
+const emit = defineEmits<{
+  close: [];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();
-const { t } = useI18n({ useScope: 'global' });
 
 const { dataDirectory, version } = toRefs(store);
 const versionInfo = asyncComputed<SystemVersion | WebVersion>(() => getVersion());
@@ -34,17 +45,29 @@ const componentsVersion = computed(() => {
   };
 });
 
-const webVersion = computed<WebVersion | null>(() => {
-  const info = get(versionInfo);
-  return info && isWebVersion(info) ? info : null;
-});
-
-const electronVersion = computed<SystemVersion | null>(() => {
-  const info = get(versionInfo);
-  return info && !isWebVersion(info) ? info : null;
-});
-
 const frontendVersion = __APP_VERSION__;
+
+/** The plain-text rows below the data directory, in the order the copied text lists them. */
+const systemRows = computed<DetailRow[]>(() => {
+  const rows: DetailRow[] = [{ label: t('about.frontend_version'), value: frontendVersion }];
+  const info = get(versionInfo);
+  if (!info)
+    return rows;
+
+  if (isWebVersion(info)) {
+    rows.push(
+      { label: t('about.platform'), testId: 'about-web-platform', value: info.platform },
+      { label: t('about.user_agent'), testId: 'about-user-agent', value: info.userAgent },
+    );
+  }
+  else {
+    rows.push(
+      { label: t('about.platform'), testId: 'about-electron-platform', value: `${info.os} ${info.arch} ${info.osVersion}` },
+      { label: t('about.electron'), testId: 'about-electron-version', value: info.electron },
+    );
+  }
+  return rows;
+});
 
 const versionText = useVersionText(() => ({
   appVersion: get(version).version,
@@ -53,142 +76,128 @@ const versionText = useVersionText(() => ({
   system: get(versionInfo) ?? undefined,
 }));
 
-const { copy } = useClipboard({ source: versionText });
+const { copied, copy } = useClipboard({ source: versionText });
 </script>
 
 <template>
   <RuiCard
     variant="flat"
-    class="overflow-hidden"
+    no-padding
   >
     <template #custom-header>
-      <div class="p-6 bg-rui-primary text-white">
-        <RotkiLogo unique-key="00" />
-        <h4 class="text-h4">
-          {{ t('app.name') }}
-        </h4>
-        <span class="text-body-1">
-          {{ t('app.moto') }}
+      <div class="flex items-center gap-4 px-6 pt-6 pb-4">
+        <span class="rounded-full p-2.5 bg-rui-primary/20 shrink-0">
+          <RotkiLogo
+            size="2"
+            unique-key="00"
+          />
         </span>
+        <div class="grow min-w-0">
+          <h2 class="text-h5">
+            {{ t('app.name') }}
+          </h2>
+          <p class="text-body-2 text-rui-text-secondary">
+            {{ t('app.moto') }}
+          </p>
+        </div>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          class="self-start -mt-2 -me-2"
+          :aria-label="t('common.actions.close')"
+          @click="emit('close')"
+        >
+          <RuiIcon
+            name="lu-x"
+            size="20"
+          />
+        </RuiButton>
       </div>
     </template>
-    <div class="flex items-center justify-between py-2">
-      <div class="flex items-center flex-wrap gap-x-4">
-        <div class="font-bold">
-          {{ version.version }}
+
+    <div class="px-6 pb-2">
+      <div class="flex items-center gap-3 rounded-lg bg-rui-grey-100 dark:bg-rui-grey-900 px-4 py-3">
+        <div class="grow min-w-0">
+          <div class="text-caption uppercase tracking-wide text-rui-text-secondary">
+            {{ t('about.version') }}
+          </div>
+          <div class="font-medium break-all">
+            {{ version.version }}
+          </div>
         </div>
         <ExternalLink
+          class="shrink-0 text-body-2"
           :url="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
           :text="t('about.release_notes')"
         />
+        <AppUpdateIndicator />
       </div>
-      <AppUpdateIndicator />
+
+      <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2.5 text-body-2 pt-5 pb-2">
+        <dt class="text-rui-text-secondary">
+          {{ t('about.data_directory') }}
+        </dt>
+        <dd class="min-w-0 -my-1">
+          <AboutDataDirectory
+            :data-directory="dataDirectory"
+            :is-packaged="isPackaged"
+            @open-path="openPath(dataDirectory)"
+          />
+        </dd>
+        <template
+          v-for="row in systemRows"
+          :key="row.label"
+        >
+          <dt class="text-rui-text-secondary">
+            {{ row.label }}
+          </dt>
+          <dd
+            class="break-words"
+            :data-testid="row.testId"
+          >
+            {{ row.value }}
+          </dd>
+        </template>
+      </dl>
+
+      <template v-if="componentsVersion">
+        <h3 class="text-subtitle-2 border-t border-default mt-3 pt-4 mb-2">
+          {{ t('about.components.title') }}
+        </h3>
+        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2.5 text-body-2 pb-2">
+          <template v-if="componentsVersion.version">
+            <dt class="text-rui-text-secondary">
+              {{ t('about.components.version') }}
+            </dt>
+            <dd data-testid="about-components-version">
+              {{ componentsVersion.version }}
+            </dd>
+          </template>
+          <template v-if="componentsVersion.build">
+            <dt class="text-rui-text-secondary">
+              {{ t('about.components.build') }}
+            </dt>
+            <dd data-testid="about-components-build">
+              <DateDisplay :timestamp="millisecondsToSeconds(componentsVersion.build)" />
+            </dd>
+          </template>
+        </dl>
+      </template>
     </div>
-    <div class="border-t border-default mt-3 pt-4">
-      <table class="w-full">
-        <tbody>
-          <tr>
-            <td class="font-medium py-0.5 min-w-[150px]">
-              {{ t('about.data_directory') }}
-            </td>
-            <td>
-              <AboutDataDirectory
-                :data-directory="dataDirectory"
-                :is-packaged="isPackaged"
-                @open-path="openPath(dataDirectory)"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="font-medium py-0.5 min-w-[150px]">
-              {{ t('about.frontend_version') }}
-            </td>
-            <td class="text-rui-text-secondary">
-              {{ frontendVersion }}
-            </td>
-          </tr>
-          <template v-if="webVersion">
-            <tr data-testid="about-web-platform">
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.platform') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                {{ webVersion.platform }}
-              </td>
-            </tr>
-            <tr data-testid="about-user-agent">
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.user_agent') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                {{ webVersion.userAgent }}
-              </td>
-            </tr>
-          </template>
-          <template v-if="electronVersion">
-            <tr data-testid="about-electron-platform">
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.platform') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                {{ electronVersion.os }} {{ electronVersion.arch }}
-                {{ electronVersion.osVersion }}
-              </td>
-            </tr>
-            <tr data-testid="about-electron-version">
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.electron') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                {{ electronVersion.electron }}
-              </td>
-            </tr>
-          </template>
-          <template v-if="componentsVersion">
-            <tr>
-              <td colspan="2">
-                <div class="border-t border-default mt-4 pt-4 font-bold mb-2">
-                  {{ t('about.components.title') }}
-                </div>
-              </td>
-            </tr>
-            <tr
-              v-if="componentsVersion.version"
-              data-testid="about-components-version"
-            >
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.components.version') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                {{ componentsVersion.version }}
-              </td>
-            </tr>
-            <tr
-              v-if="componentsVersion.build"
-              data-testid="about-components-build"
-            >
-              <td class="font-medium py-0.5 min-w-[150px]">
-                {{ t('about.components.build') }}
-              </td>
-              <td class="text-rui-text-secondary">
-                <DateDisplay :timestamp="millisecondsToSeconds(componentsVersion.build)" />
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </div>
+
     <template #footer>
-      <div class="flex justify-end w-full">
+      <div class="flex justify-end w-full px-2 pb-2">
         <RuiButton
           color="primary"
+          variant="outlined"
           data-testid="about-copy"
           @click="copy()"
         >
           <template #prepend>
             <RuiIcon
-              size="20"
-              name="lu-copy"
+              size="18"
+              :name="copied ? 'lu-check' : 'lu-copy'"
             />
           </template>
           {{ t('about.copy_information_tooltip') }}

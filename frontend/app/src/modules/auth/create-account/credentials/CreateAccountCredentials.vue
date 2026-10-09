@@ -31,24 +31,19 @@ const isRestoreMode = computed<boolean>(() => mode === 'restore');
       v-if="isRestoreMode"
       scope="global"
       keypath="create_account.credentials.restore_description"
-      class="text-center text-rui-text-secondary whitespace-break-spaces"
-      tag="div"
+      class="text-body-1 text-rui-text-secondary"
+      tag="p"
     >
       <template #password>
         <strong>{{ t('create_account.credentials.restore_highlight') }}</strong>
       </template>
     </i18n-t>
-    <i18n-t
+    <p
       v-else
-      scope="global"
-      keypath="create_account.credentials.description"
-      class="text-center text-rui-text-secondary whitespace-break-spaces"
-      tag="div"
+      class="text-body-1 text-rui-text-secondary"
     >
-      <template #highlight>
-        <strong>{{ t('create_account.credentials.highlight') }}</strong>
-      </template>
-    </i18n-t>
+      {{ t('create_account.credentials.description') }}
+    </p>
     <CreateAccountCredentialsForm
       v-model:valid="valid"
       v-model:form="form"
@@ -56,14 +51,12 @@ const isRestoreMode = computed<boolean>(() => mode === 'restore');
       v-model:user-prompted="userPrompted"
       :loading="loading"
     />
-    <div>
-      <RuiAlert
-        v-if="isRestoreMode"
-        type="warning"
-      >
-        {{ t('create_account.credentials.password_sync_requirement') }}
-      </RuiAlert>
-    </div>
+    <RuiAlert
+      v-if="isRestoreMode"
+      type="warning"
+    >
+      {{ t('create_account.credentials.password_sync_requirement') }}
+    </RuiAlert>
     <div class="grid grid-cols-2 gap-4">
       <RuiButton
         size="lg"

@@ -47,6 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
         <template #prepend>
           <RuiIcon
             name="lu-server"
+            size="20"
             :color="color"
           />
         </template>
@@ -85,7 +86,6 @@ const { t } = useI18n({ useScope: 'global' });
 
       <RuiCheckbox
         v-model="sessionOnly"
-        class="-ml-2"
         color="primary"
         hide-details
         :disabled="saved"

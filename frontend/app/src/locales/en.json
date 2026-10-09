@@ -14,7 +14,8 @@
     "open_data_dir_tooltip": "Open the data directory",
     "platform": "Platform:",
     "release_notes": "What's new",
-    "user_agent": "User Agent:"
+    "user_agent": "User Agent:",
+    "version": "Version"
   },
   "account_balance_table": {
     "liabilities": "Liabilities"
@@ -1020,7 +1021,7 @@
   },
   "app": {
     "copyright": "© Rotki Solutions GmbH 2018-{year}",
-    "moto": "the opensource portfolio manager that protects your privacy",
+    "moto": "The open source portfolio manager that protects your privacy",
     "name": "rotki",
     "quitting": {
       "message": "Shutting down..."
@@ -2212,10 +2213,9 @@
       "restore_account": "Restore account"
     },
     "credentials": {
-      "description": "Remember that the user you create here is {highlight}, independent of the account created on the web.",
-      "highlight": "only enabled in the application",
+      "description": "Pick a profile name and a password. The password encrypts everything in this profile.",
       "label_password": "Password",
-      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
+      "label_password_backup_reminder": "I saved my password somewhere safe. Without it, my local data can't be recovered.",
       "label_password_repeat": "Repeat Password",
       "label_username": "Profile Name",
       "password_sync_requirement": "Use the same password as the database you originally backed up. You can't access the database if you input a different password.",
@@ -2242,18 +2242,20 @@
         "description": "Start fresh with a new local rotki profile.",
         "title": "Create new account"
       },
-      "description": "rotki is a local application that respects your privacy.\n\nrotki accounts are encrypted using your password and {highlight}.\n\nThe account you create here is only useful for the app, on the web we use a different database.",
-      "highlight": "saved in your local filesystem",
+      "intro": "A profile is encrypted with your password, stays on this device, and is separate from your rotki.com account. {documentation}",
       "restore": {
         "description": "Already a rotki premium user? Restore the database you previously synced to the cloud.",
         "title": "Restore from cloud sync"
       }
     },
     "premium": {
+      "account_link": "your rotki.com account",
       "button_premium_approve": "Yes, enable premium",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features?\nYou can buy premium {premiumLink}",
-      "restore_question": "Enter your rotki premium API credentials to download the database you synced from another device. You can find your credentials in your account on {premiumLink}"
+      "get_premium": "Get premium",
+      "premium_question": "Already a premium user? Enable it now with your API credentials. {premiumLink}",
+      "restore_question": "Enter your premium API credentials to download the database you synced from another device. You can find them in {premiumLink}."
     },
+    "step_progress": "Step {current} of {total}",
     "steps": {
       "step_1": {
         "description": "Choose how to get started",
@@ -2277,7 +2279,7 @@
     "title": "Create Account",
     "title_restore": "Restore Account",
     "usage_analytics": {
-      "description": "Usage analytics are optional and support product improvements. When enabled, rotki sends anonymous analytics about application use. The metrics collected may change as the product evolves while remaining anonymous. You can change this setting at any time in General Settings.",
+      "description": "Optional. Anonymous usage data helps us improve rotki. You can change this any time in General Settings.",
       "label_confirm": "Submit anonymous usage analytics"
     }
   },
@@ -4619,6 +4621,7 @@
       "label": "Backend URL",
       "placeholder": "http://localhost:4242",
       "session_only": "Save only for this session",
+      "toggle": "Backend settings",
       "tooltip": "Connect to a different rotki backend",
       "validation": {
         "non_empty": "The custom backend url cannot be empty",
@@ -4626,9 +4629,8 @@
       }
     },
     "description": {
-      "more_details": "{documentation} shows you more details about the local app and the user.",
-      "our_docs": "Our documentation",
-      "welcome": "Welcome! Please enter your details."
+      "intro": "Sign in to your local rotki profile. {documentation}",
+      "learn_more": "How profiles work"
     },
     "incomplete_upgrade_error": {
       "abort": "Abort",

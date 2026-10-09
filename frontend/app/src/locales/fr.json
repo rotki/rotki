@@ -1001,7 +1001,6 @@
   "create_account": {
     "credentials": {
       "description": "Souviens-toi que l'utilisateur que tu créés ici est {highlight}, indépendamment du compte créé sur le web.",
-      "highlight": "seulement activé dans l'application",
       "label_password": "Mot de passe",
       "label_password_backup_reminder": "rotki enregistre toutes les données utilisateur localement. Je comprends que si je perds mon mot de passe, je perds l'accès à mes données. J'ai créé une sauvegarde du mot de passe.",
       "label_password_repeat": "Répéter le mot de passe",
@@ -1019,10 +1018,6 @@
     "have_account": {
       "description": "Vous avez déjà un compte?",
       "log_in": "Déverrouiller votre compte"
-    },
-    "introduction": {
-      "description": "rotki est une application locale qui respecte votre vie privée.\n\nLes comptes rotki sont cryptés à l'aide de votre mot de passe et {highlight}.\n\nLe compte que vous créez ici n'est utile que pour l'app, sur le web nous utilisons une base de données différente.",
-      "highlight": "enregistré dans votre dossier de fichiers"
     },
     "premium": {
       "button_premium_approve": "Oui, activer premium",
@@ -1936,11 +1931,6 @@
         "non_empty": "L'URL du backend personnalisé ne peut pas être vide",
         "url": "L'entrée insérée n'est pas dans un format URL valide"
       }
-    },
-    "description": {
-      "more_details": "{documentation} vous montre plus de détails sur l'application locale et l'utilisateur.",
-      "our_docs": "Nos documentations",
-      "welcome": "Bienvenue ! Veuillez entrer vos informations."
     },
     "incomplete_upgrade_error": {
       "abort": "Abandon",

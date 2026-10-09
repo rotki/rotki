@@ -2192,7 +2192,6 @@
     },
     "credentials": {
       "description": "请注意，你在此创建的用户{highlight}，与网页上创建的账户无关。",
-      "highlight": "仅在本应用中可用",
       "label_password": "密码",
       "label_password_backup_reminder": "rotki 将所有用户数据保存在本地。我了解如果丢失密码，将无法访问我的数据。我已备份密码。",
       "label_password_repeat": "重复密码",
@@ -2221,8 +2220,6 @@
         "description": "从全新的本地 rotki 用户开始。",
         "title": "创建新账户"
       },
-      "description": "rotki 是一款尊重你隐私的本地应用。\n\nrotki 账户使用你的密码加密，并{highlight}。\n\n你在此创建的账户仅用于本应用，网页端使用的是不同的数据库。",
-      "highlight": "保存在你的本地文件系统中",
       "restore": {
         "description": "已是 rotki 高级版用户？恢复之前同步到云端的数据库。",
         "title": "从云同步恢复"
@@ -4535,11 +4532,6 @@
         "non_empty": "自定义后端 URL 不能为空",
         "url": "输入的内容不是有效的 URL 格式"
       }
-    },
-    "description": {
-      "more_details": "{documentation}提供了有关本地应用和用户的更多详细信息。",
-      "our_docs": "我们的文档",
-      "welcome": "欢迎！请输入你的信息。"
     },
     "incomplete_upgrade_error": {
       "abort": "中止",
