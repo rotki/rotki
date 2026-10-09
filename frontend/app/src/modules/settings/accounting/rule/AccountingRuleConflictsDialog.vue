@@ -53,54 +53,54 @@ onMounted(async () => {
 
 const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
   {
-    class: 'whitespace-pre-line !text-sm',
+    class: 'whitespace-pre-line text-sm!',
     key: 'eventTypeAndSubtype',
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
     )}`,
   },
   {
-    class: '!text-sm',
+    class: 'text-sm!',
     key: 'resultingCombination',
     label: t('transactions.events.form.resulting_combination.label'),
   },
   {
     cellClass: 'border-r border-default',
-    class: 'border-r border-default !text-sm',
+    class: 'border-r border-default text-sm!',
     key: 'counterparty',
     label: t('common.counterparty'),
   },
   {
-    cellClass: '!p-0',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: 'p-0!',
+    class: 'p-0 max-w-30 whitespace-normal font-medium text-sm!',
     key: 'taxable',
     label: t('accounting_settings.rule.labels.taxable'),
   },
   {
     align: 'center',
-    cellClass: '!p-0',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: 'p-0!',
+    class: 'p-0 max-w-30 whitespace-normal font-medium text-sm!',
     key: 'countEntireAmountSpend',
     label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
   },
   {
     align: 'center',
-    cellClass: '!p-0',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: 'p-0!',
+    class: 'p-0 max-w-30 whitespace-normal font-medium text-sm!',
     key: 'countCostBasisPnl',
     label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
   },
   {
     align: 'center',
-    cellClass: '!p-0',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: 'p-0!',
+    class: 'p-0 max-w-30 whitespace-normal font-medium text-sm!',
     key: 'accountingTreatment',
     label: t('accounting_settings.rule.labels.accounting_treatment'),
   },
   {
     align: 'center',
     cellClass: 'pl-0',
-    class: '!text-sm w-px',
+    class: 'text-sm! w-px',
     key: 'actions',
     label: t('accounting_settings.rule.conflicts.labels.choose_version'),
   },
@@ -122,7 +122,7 @@ function diffClass(
   remoteSetting: boolean | string | AccountingTreatment | null,
 ) {
   if (localSetting !== remoteSetting)
-    return 'bg-rui-error-lighter/[0.1]';
+    return 'bg-rui-error-lighter/10';
 
   return '';
 }
@@ -143,7 +143,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
   >
     <ScrollableDialogContent fill>
       <template #header>
-        <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
+        <div class="flex justify-end items-center gap-8 border border-default rounded-sm p-4 mb-4">
           <RuiCheckbox
             :model-value="!!modelSolveAllUsing"
             color="primary"
@@ -217,7 +217,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            :class-names="{ tooltip: 'max-w-[10rem]' }"
+            :class-names="{ tooltip: 'max-w-40' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">
@@ -237,7 +237,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            :class-names="{ tooltip: 'max-w-[10rem]' }"
+            :class-names="{ tooltip: 'max-w-40' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">
@@ -257,7 +257,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            :class-names="{ tooltip: 'max-w-[10rem]' }"
+            :class-names="{ tooltip: 'max-w-40' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">

@@ -13,7 +13,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
 <template>
   <div class="relative">
     <div
-      class="grid grid-cols-1 lg:grid-cols-5 gap-4 dark:invert-[0.9] dark:hue-rotate-[180deg]"
+      class="grid grid-cols-1 lg:grid-cols-5 gap-4 dark:invert-[0.9] dark:hue-rotate-180"
     >
       <AppImage
         class="lg:col-span-2 -m-4"

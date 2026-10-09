@@ -29,7 +29,6 @@ const {
   hideDetails = false,
   hint = '',
   label,
-  variant = 'default',
   required = false,
   source,
   successMessages = '',
@@ -48,7 +47,6 @@ const {
   errorMessages?: string[];
   label?: string;
   disabled?: boolean;
-  variant?: 'default' | 'filled' | 'outlined';
   clearable?: boolean;
   required?: boolean;
   hideDetails?: boolean;
@@ -114,7 +112,7 @@ function onUpdateModelValue(value: string): void {
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
-    :class-names="{ menu: '!min-w-full' }"
+    :class-names="{ menu: 'min-w-full!' }"
     :hint="hint"
     :label="fieldLabel"
     :clearable="clearable"
@@ -129,7 +127,6 @@ function onUpdateModelValue(value: string): void {
     auto-select-first
     :dense="dense"
     :loading="loading"
-    :variant="variant"
     :item-height="dense ? 44 : 50"
     v-bind="$attrs"
     no-filter
@@ -161,7 +158,7 @@ function onUpdateModelValue(value: string): void {
         </div>
         <AssetDetailsBase
           v-else
-          class="!py-0 pl-1"
+          class="py-0! pl-1"
           :asset="item"
           :actions="noMenu"
         />
@@ -179,7 +176,7 @@ function onUpdateModelValue(value: string): void {
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
-        :class="dense ? '!py-0 -my-0.5' : '!py-0 -my-1'"
+        :class="dense ? 'py-0! -my-0.5' : 'py-0! -my-1'"
         :asset="item"
         :display="itemDisplay"
         :actions="noMenu"

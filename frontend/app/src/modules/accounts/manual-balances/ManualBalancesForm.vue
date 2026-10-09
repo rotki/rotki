@@ -101,7 +101,6 @@ defineExpose({
     <RuiTextField
       v-model="state.label"
       data-testid="manual-balances-form-label"
-      variant="outlined"
       color="primary"
       :label="t('manual_balances_form.fields.label')"
       :error-messages="fieldErrors('label')"
@@ -120,7 +119,6 @@ defineExpose({
         v-model="state.asset"
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
-        variant="outlined"
         :source="{ chain: state.location }"
         :error-messages="fieldErrors('asset')"
         :disabled="submitting"
@@ -166,7 +164,6 @@ defineExpose({
       :label="t('common.amount')"
       :error-messages="fieldErrors('amount')"
       data-testid="manual-balances-form-amount"
-      variant="outlined"
       autocomplete="off"
       :disabled="submitting"
       @update:model-value="touch('amount')"

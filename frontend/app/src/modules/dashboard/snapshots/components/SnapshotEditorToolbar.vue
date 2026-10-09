@@ -104,7 +104,7 @@ function deleteSnapshot(): void {
             {{ t('dashboard.snapshot.detail.unsaved_changes', dirtyCount) }}
           </RuiChip>
         </template>
-        <div class="p-4 max-w-[24rem]">
+        <div class="p-4 max-w-96">
           <div class="text-subtitle-2 mb-2">
             {{ t('dashboard.snapshot.detail.changes.title') }}
           </div>

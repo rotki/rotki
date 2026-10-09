@@ -90,7 +90,7 @@ defineExpose({
       :key="query"
       class="flex items-center px-4 py-1 pr-2 transition"
       :class="{
-        'cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900': queryConfigs[query]?.enabled && !processing,
+        'cursor-pointer hover:bg-rui-grey-100 dark:hover:bg-rui-grey-900': queryConfigs[query]?.enabled && !processing,
         'opacity-50 cursor-not-allowed': !queryConfigs[query]?.enabled || processing,
       }"
       @click="queryConfigs[query]?.enabled && !processing && toggleSelect(query)"

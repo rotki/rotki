@@ -24,15 +24,16 @@ export class ManualBalancesPage {
       await tagsField.locator('[data-id=activator]').click();
       await tagsInput.fill(tag);
       await tagsInput.press('Enter');
-      await tagsField.locator('[data-id=activator] > button + span').click();
+      // close the suggestions so the next field is reachable; chips are not buttons unless clickable
+      await tagsInput.press('Escape');
     }
 
     // Handle location field as autocomplete
     const locationField = this.page.locator('[data-testid=manual-balances-form-location]');
     const locationInput = locationField.locator('input');
     await locationField.locator('[data-id=activator]').click();
-    // Use last() since there may be multiple menus, and location menu opens last
-    const locationMenu = this.page.locator('[role=menu]').last();
+    // an autocomplete's popup is a listbox; last() since the location one opens last
+    const locationMenu = this.page.locator('[role=listbox]').last();
     await locationMenu.waitFor({ state: 'visible' });
     await locationInput.fill(balance.location);
     const locationOption = locationMenu.getByText(balance.location, { exact: false }).first();

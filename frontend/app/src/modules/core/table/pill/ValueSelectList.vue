@@ -162,7 +162,7 @@ function onKeydown(event: KeyboardEvent): void {
 </script>
 
 <template>
-  <div class="flex flex-col w-[20rem]">
+  <div class="flex flex-col w-80">
     <!-- Only for multi-select: a scrolled long list needs the selections summarised. A single-select
       field would just echo its one checked row (and the bar pill), reading as a confusing mini-pill. -->
     <div
@@ -178,7 +178,7 @@ function onKeydown(event: KeyboardEvent): void {
         :data-key="chip.value"
         @click="toggle(chip.value)"
       >
-        <span class="truncate max-w-[9rem]">{{ chip.label }}</span>
+        <span class="truncate max-w-36">{{ chip.label }}</span>
         <RuiIcon
           name="lu-x"
           size="12"
@@ -188,7 +188,7 @@ function onKeydown(event: KeyboardEvent): void {
     </div>
 
     <!-- The focus ring lives on this row, not the input: the input is borderless by design, so its
-         `outline-none` needs a replacement somewhere, and the row is what reads as the field. -->
+         `outline-hidden` needs a replacement somewhere, and the row is what reads as the field. -->
     <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
       <RuiIcon
         name="lu-search"
@@ -200,7 +200,7 @@ function onKeydown(event: KeyboardEvent): void {
         ref="searchField"
         v-model="search"
         type="text"
-        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary"
+        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
         :placeholder="searchPlaceholder"
         :aria-label="searchPlaceholder"
         autocomplete="off"
@@ -223,7 +223,7 @@ function onKeydown(event: KeyboardEvent): void {
     <div
       v-if="filtered.length > 0"
       v-bind="containerProps"
-      class="max-h-[15rem] p-1"
+      class="max-h-60 p-1"
     >
       <div v-bind="wrapperProps">
         <button

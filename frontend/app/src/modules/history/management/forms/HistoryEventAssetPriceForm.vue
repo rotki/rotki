@@ -96,7 +96,6 @@ watchImmediate(pendingPriceIntent, (intent) => {
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <AmountInput
         v-model="amount"
-        variant="outlined"
         :data-testid="type ? 'sub-event-amount' : 'amount'"
         :data-key="type"
         :disabled="disabled"
@@ -108,7 +107,6 @@ watchImmediate(pendingPriceIntent, (intent) => {
       <div class="flex">
         <AssetSelect
           v-model="asset"
-          variant="outlined"
           :disabled="disabled || disableAsset"
           :data-testid="type ? 'sub-event-asset' : 'asset'"
           :data-key="type"

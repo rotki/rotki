@@ -192,7 +192,6 @@ defineExpose({
         v-if="!multiple"
         v-model="state.address"
         data-testid="account-address-field"
-        variant="outlined"
         color="primary"
         class="flex-1"
         :label="t('common.account')"
@@ -206,7 +205,6 @@ defineExpose({
         v-else
         v-model="state.userAddresses"
         data-testid="account-address-field"
-        variant="outlined"
         color="primary"
         class="flex-1"
         :min-rows="forceMultiple ? (entries.length > 1 ? 4 : 2) : 5"

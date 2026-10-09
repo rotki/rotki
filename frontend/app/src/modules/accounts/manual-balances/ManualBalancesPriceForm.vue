@@ -61,7 +61,7 @@ defineExpose({
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
         variant="outlined"
-        class="[&_fieldset]:!rounded-r-none"
+        class="[&_fieldset]:rounded-r-none!"
         :label="t('common.price')"
       />
       <AssetSelect
@@ -69,7 +69,7 @@ defineExpose({
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
         variant="outlined"
-        class="[&_fieldset]:!rounded-l-none"
+        class="[&_fieldset]:rounded-l-none!"
         :hint="t('manual_balances_form.fields.price_asset_hint')"
         :label="t('manual_balances_form.fields.price_asset')"
       />

@@ -32,13 +32,13 @@ const dot = '•';
       <div class="flex items-center justify-between text-rui-text-secondary text-sm">
         <div class="flex items-center gap-2">
           <DateDisplay
-            class="!text-xs"
+            class="text-xs!"
             :timestamp="item.timestamp"
             milliseconds
           />
           {{ dot }}
           <HashLink
-            class="text-rui-primary underline cursor-pointer !pl-0"
+            class="text-rui-primary underline cursor-pointer pl-0!"
             :text="item.hash"
             :location="item.chain"
             type="transaction"
@@ -47,15 +47,15 @@ const dot = '•';
         <RuiChip
           size="sm"
           :color="color"
-          :class-names="{ content: '!text-[9px]' }"
-          class="leading-3 uppercase !p-0.5"
+          :class-names="{ content: 'text-[9px]!' }"
+          class="leading-3 uppercase p-0.5!"
         >
           {{ item.status }}
         </RuiChip>
       </div>
       <div class="text-sm">
         <HistoryEventNote
-          class="text-sm inline-flex flex-wrap whitespace-break-spaces items-center [&_.shrink]:!text-xs"
+          class="text-sm inline-flex flex-wrap whitespace-break-spaces items-center [&_.shrink]:text-xs!"
           :notes="item.context"
           :chain="item.chain"
           :context="item.metadata"

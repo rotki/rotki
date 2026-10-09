@@ -1,18 +1,43 @@
-@import '@fontsource/roboto/300.css';
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/400-italic.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/600.css';
-@import '@fontsource/roboto/700.css';
-@import '@fontsource/roboto/900.css';
-@import '@fontsource/roboto-mono/400.css';
-@import '@fontsource/roboto-mono/500.css';
-@import '@fontsource/roboto-mono/700.css';
-@import 'flag-icons/css/flag-icons.min.css';
+@import '@fontsource/roboto/300.css' layer(base);
+@import '@fontsource/roboto/400.css' layer(base);
+@import '@fontsource/roboto/400-italic.css' layer(base);
+@import '@fontsource/roboto/500.css' layer(base);
+@import '@fontsource/roboto/600.css' layer(base);
+@import '@fontsource/roboto/700.css' layer(base);
+@import '@fontsource/roboto/900.css' layer(base);
+@import '@fontsource/roboto-mono/400.css' layer(base);
+@import '@fontsource/roboto-mono/500.css' layer(base);
+@import '@fontsource/roboto-mono/700.css' layer(base);
+@import 'flag-icons/css/flag-icons.min.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import '@rotki/ui-library/tailwind.css';
+
+@config '../tailwind.config.ts';
+
+/*
+  Classes the premium components use. They ship pre-built, so no source here names them; Tailwind 4
+  ignores the JS config's `safelist`, which used to keep them.
+*/
+@source inline('!leading-7 !leading-4 !text-center !pt-0 !transition-none lg:grid-cols-2 lg:grid-cols-5 lg:col-span-2 lg:col-span-3 -my-5 py-5 pl-6 h-32 h-[30rem] min-h-[560px] list-decimal [&_span]:!text-xs [&>span]:!text-xs [&>div>div>div]:font-normal bg-white/[0.9] dark:bg-dark-elevated/[0.9]');
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* JSON Editor (vanilla-jsoneditor) theme overrides */
 .json-editor {

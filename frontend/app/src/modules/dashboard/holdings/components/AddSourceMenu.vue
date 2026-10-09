@@ -20,7 +20,7 @@ async function add(to: RouteLocationRaw): Promise<void> {
     <template #activator="{ attrs }">
       <button
         type="button"
-        class="grid grid-cols-[10px_1fr] items-center gap-2.5 w-full px-1.5 py-1 rounded text-left text-sm text-rui-primary hover:bg-rui-primary/10"
+        class="grid grid-cols-[10px_1fr] items-center gap-2.5 w-full px-1.5 py-1 rounded-sm text-left text-sm text-rui-primary hover:bg-rui-primary/10"
         data-testid="dashboard-add-source"
         v-bind="attrs"
       >

@@ -60,7 +60,7 @@ onMounted(async () => {
           class="bg-white rounded-[0.625rem] p-3"
         >
           <div
-            class="object-contain text-rui-primary h-6 w-6 [&_svg_path]:!fill-rui-primary"
+            class="object-contain text-rui-primary h-6 w-6 [&_svg_path]:fill-rui-primary!"
             v-html="svg"
           />
         </div>

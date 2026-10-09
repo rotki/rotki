@@ -109,13 +109,13 @@ const {
             vertical
             align="end"
             color="primary"
-            class="!flex w-full"
+            class="flex! w-full"
           >
             <RuiTab
               v-for="(usedExchange, i) in sortedExchanges"
               :key="i"
               link
-              class="h-[8rem]"
+              class="h-32"
               :to="{
                 name: '/balances/exchange/[[exchange]]',
                 params: {

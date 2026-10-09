@@ -107,7 +107,6 @@ defineExpose({
     >
       <RuiRevealableTextField
         v-model.trim="currentValue"
-        variant="outlined"
         color="primary"
         class="grow"
         data-testid="service-key-api-key"

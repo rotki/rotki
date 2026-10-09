@@ -31,7 +31,6 @@ const {
         v-model="modelScrambleMultiplier"
         :label="t('frontend_settings.scramble.multiplier.label')"
         :hint="t('frontend_settings.scramble.multiplier.hint')"
-        variant="outlined"
         :disabled="!modelScrambleData"
         @update:model-value="handleMultiplierUpdate($event)"
       >

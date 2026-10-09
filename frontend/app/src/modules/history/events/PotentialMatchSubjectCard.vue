@@ -20,15 +20,15 @@ const emit = defineEmits<{
   <!-- the row being matched, as a card: at pinned width the summary table wrapped its
        own headers onto two lines and left the asset squeezed against the actions -->
   <div
-    class="flex flex-col gap-1 rounded border border-rui-warning/40 bg-rui-warning/10 p-2"
+    class="flex flex-col gap-1 rounded-sm border border-rui-warning/40 bg-rui-warning/10 p-2"
     data-testid="potential-match-subject"
   >
     <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-      <BadgeDisplay class="!normal-case">
+      <BadgeDisplay class="normal-case!">
         {{ typeLabel }}
       </BadgeDisplay>
       <LocationDisplay
-        class="[&_div]:!justify-start [&_span]:!text-caption [&_span]:!text-rui-text-secondary"
+        class="[&_div]:justify-start! [&_span]:text-caption! [&_span]:text-rui-text-secondary!"
         size="16px"
         :identifier="entry.location"
         horizontal

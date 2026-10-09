@@ -20,13 +20,13 @@
     "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": ["tailwind", "apply", "layer", "config", "variants", "responsive", "screen"]
+        "ignoreAtRules": ["apply", "layer", "config", "source", "reference", "theme", "utility", "variant", "custom-variant", "plugin"]
       }
     ],
     "at-rule-prelude-no-invalid": [
       true,
       {
-        "ignoreAtRules": ["tailwind", "apply", "layer", "config", "variants", "responsive", "screen"]
+        "ignoreAtRules": ["apply", "layer", "config", "source", "reference", "theme", "utility", "variant", "custom-variant", "plugin"]
       }
     ],
     "rule-empty-line-before": [

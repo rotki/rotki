@@ -92,7 +92,6 @@ defineExpose({
       -->
       <AssetSelect
         v-model="form.state.asset"
-        variant="outlined"
         :disabled="disableAsset"
         :source="{ nfts: nft ? 'show_only' : 'exclude', showIgnored: true }"
         data-testid="asset"
@@ -101,7 +100,6 @@ defineExpose({
       />
       <AmountInput
         v-model="form.state.amount"
-        variant="outlined"
         data-testid="amount"
         :label="t('common.amount')"
         :error-messages="form.errors('amount')"

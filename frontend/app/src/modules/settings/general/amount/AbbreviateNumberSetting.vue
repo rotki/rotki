@@ -67,7 +67,6 @@ watch(writeError, (message) => {
       :label="t('frontend_settings.abbreviate_number.minimum_digit.label')"
       key-attr="value"
       text-attr="label"
-      variant="outlined"
       :success-messages="success"
       :error-messages="error"
     />

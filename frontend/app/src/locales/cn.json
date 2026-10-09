@@ -43,7 +43,7 @@
     },
     "detect_tokens": {
       "confirmation": {
-        "message": "确定要重新检测所有链上的代币吗？这可能需要一些时间。",
+        "message": "将扫描每条链上的所有 EVM 地址，可能需要一些时间。",
         "title": "重新检测所有链上的代币"
       },
       "selection": {
@@ -65,7 +65,7 @@
       "tooltip": "账户检测已在 {chains} 上添加此地址。点击关闭。"
     },
     "edit_tooltip": "编辑账户",
-    "enter_selection_mode": "进入选择模式，批量忽略资产或标记为垃圾资产",
+    "enter_selection_mode": "在展开的账户中选择资产，以忽略它们或标记为垃圾资产",
     "exit_selection_mode": "退出选择模式",
     "filter_field_labels": {
       "account": "账户",
@@ -146,7 +146,7 @@
         "export_csv_formulas": "是否在盈亏 CSV 中导出公式？",
         "have_csv_summary": "是否在全部事件 CSV 导出中包含所有事件的汇总？"
       },
-      "title": "CSV 导出设置"
+      "title": "盈亏 CSV 导出"
     },
     "messages": {
       "cost_basis": {
@@ -294,7 +294,7 @@
         "regular": "常规规则"
       },
       "title": "会计规则",
-      "value_overwritten": "该值被以下设置覆盖：",
+      "value_overwritten": "跟随此会计设置",
       "view_events": "查看匹配此规则的事件"
     },
     "trade": {
@@ -1991,7 +1991,7 @@
   "chain_settings": {
     "chain_queries": {
       "subtitle": "两项独立控制：rotki 查询数据时包含哪些链和地址，以及检测地址活跃位置时检查哪些链。",
-      "title": "链查询与检测"
+      "title": "链"
     }
   },
   "change_password": {
@@ -2185,10 +2185,10 @@
       "restore_account": "恢复账户"
     },
     "credentials": {
-      "description": "请注意，你在此创建的用户{highlight}，与网页上创建的账户无关。",
+      "description": "选择一个配置文件名称和密码。密码会加密此配置文件中的所有内容。",
       "highlight": "仅在本应用中可用",
       "label_password": "密码",
-      "label_password_backup_reminder": "rotki 将所有用户数据保存在本地。我了解如果丢失密码，将无法访问我的数据。我已备份密码。",
+      "label_password_backup_reminder": "我已将密码保存在安全的地方。没有密码，我的本地数据将无法恢复。",
       "label_password_repeat": "重复密码",
       "label_username": "用户名",
       "password_sync_requirement": "请使用与你最初备份的数据库相同的密码。如果输入不同的密码，将无法访问该数据库。",
@@ -2224,8 +2224,8 @@
     },
     "premium": {
       "button_premium_approve": "是的，启用高级版",
-      "premium_question": "你已经是 rotki 高级版用户并希望启用高级功能吗？\n你可以在 {premiumLink} 购买高级版",
-      "restore_question": "输入你的 rotki 高级版 API 凭据，以下载从其他设备同步的数据库。你可以在 {premiumLink} 的账户中找到凭据"
+      "premium_question": "已经是高级版用户？现在使用你的 API 凭据启用。{premiumLink}",
+      "restore_question": "输入你的高级版 API 凭据，以下载从其他设备同步的数据库。你可以在 {premiumLink} 中找到它们。"
     },
     "steps": {
       "step_1": {
@@ -2250,7 +2250,7 @@
     "title": "创建账户",
     "title_restore": "恢复账户",
     "usage_analytics": {
-      "description": "使用统计为可选项，用于支持产品改进。启用后，rotki 会发送有关应用使用情况的匿名统计数据。收集的指标可能会随产品发展而变化，但始终保持匿名。你可以随时在通用设置中更改此设置。",
+      "description": "可选。匿名使用数据可帮助我们改进 rotki。你可以随时在通用设置中更改此项。",
       "label_confirm": "提交匿名使用统计"
     }
   },
@@ -2336,7 +2336,7 @@
       "behaviour": {
         "only_refresh_balances": "仅刷新余额",
         "redetect_tokens": "重新检测代币并刷新余额",
-        "title": "区块链刷新按钮行为"
+        "title": "按下刷新时"
       },
       "categories": {
         "bitcoin": "Bitcoin 地址",
@@ -2984,7 +2984,7 @@
   },
   "eth2_input": {
     "ownership": {
-      "hint": "*可选：默认为 100%",
+      "hint": "可选。默认为 100%。",
       "validation": "该值应大于 0% 且不超过 100%"
     },
     "ownership_percentage": "持有比例",
@@ -3192,10 +3192,10 @@
       "api_key_name": "API Key 名称",
       "api_secret": "API Secret",
       "experimental": "该交易所的集成处于实验阶段，可能存在一些不完善之处。如遇到问题请告知我们。",
-      "futures_api_key": "合约 API Key",
-      "futures_api_secret": "合约 API Secret",
-      "kraken_account": "选择你的 Kraken 账户类型",
-      "kraken_futures_keys": "合约密钥",
+      "futures_api_key": "API Key",
+      "futures_api_secret": "API Secret",
+      "kraken_account": "账户类型",
+      "kraken_futures_keys": "Kraken 合约密钥（可选）",
       "passphrase": "口令（Passphrase）",
       "private_key": "私钥",
       "signing_key": "签名密钥"
@@ -3778,7 +3778,7 @@
     },
     "nft_setting": {
       "allow_all_confirmation": {
-        "message": "确定要允许加载所有域名的图片吗？",
+        "message": "每张 NFT 图片都会从其托管服务器加载，该服务器可以看到你的 IP 地址。",
         "title": "允许所有域名的图片"
       },
       "label": {
@@ -3789,10 +3789,10 @@
           "allow_all": "允许所有图片",
           "only_allow_whitelisted": "只允许来自白名单域名的图片"
         },
-        "whitelist_domains": "rarible.com, opensea.com",
+        "whitelist_domains": "域名",
         "whitelisted_domain_entries": "无条目 | {count} 个唯一条目 | {count} 个唯一条目",
         "whitelisted_domains": "白名单域名",
-        "whitelisted_domains_hint": "输入一个或多个以逗号分隔的域名，点击右侧的保存按钮保存更改"
+        "whitelisted_domains_hint": "多个域名请用逗号分隔"
       },
       "messages": {
         "error": "设置 NFT 图片允许加载的域名时出错",
@@ -3930,7 +3930,7 @@
   },
   "global_search": {
     "no_actions": "未找到操作",
-    "search_placeholder": "搜索任何内容..."
+    "search_placeholder": "搜索页面、设置和资产…"
   },
   "hash_link": {
     "open_link": "在外部区块浏览器中打开"
@@ -4128,12 +4128,12 @@
   },
   "history_events_list_swap": {
     "bridge_description": "将 {fromChain} 上的 {spendAmount} {spendAsset} 跨链为 {toChain} 上的 {receiveAmount} {receiveAsset}",
-    "bridge_expanded": "关联的跨链（{count} 个事件）- 点击收起",
+    "bridge_expanded": "关联的跨链 · {count} 个事件",
     "bridge_label": "跨链桥",
     "fee_description": "{notes}，手续费：{feeText}",
-    "movement_expanded": "关联的资产转移（{count} 个事件）- 点击收起",
+    "movement_expanded": "关联的资产转移 · {count} 个事件",
     "swap_description": "用 {spendAmount} {spendAsset} 兑换 {receiveAmount} {receiveAsset}",
-    "swap_expanded": "兑换（{count} 个事件）- 点击收起"
+    "swap_expanded": "兑换 · {count} 个事件"
   },
   "history_redecode_selection": {
     "redecode": "重新解码 {total} 条链 | 重新解码 {total} 条链",
@@ -4271,7 +4271,7 @@
       "import": "从 Bittrex 导入 {0}",
       "import_types": "交易、充值和提现",
       "name": "Bittrex",
-      "warning": "* 如果 Bittrex 的 CSV 文件是在注销账户后通过邮件获取的，可能存在一些问题，需要手动处理。同一 CSV 文件中的时间戳格式可能不一致，列可能错位，整体数据也可能存在不一致。"
+      "warning": "如果 Bittrex 的 CSV 文件是在注销账户后通过邮件获取的，可能存在一些问题，需要手动处理。同一 CSV 文件中的时间戳格式可能不一致，列可能错位，整体数据也可能存在不一致。"
     },
     "blockfi": {
       "import": "从 BlockFi 导入 {0}",
@@ -4440,14 +4440,14 @@
     "refresh_tooltip": "刷新你的 Kraken 质押事件"
   },
   "kraken_staking_overview": {
-    "current": "当前",
+    "current": "当前价值",
     "earned": "累计收益",
     "hint": {
       "current": "基于当前资产价格",
       "historical": "基于资产的历史价格"
     },
-    "historical": "历史",
-    "title": "概览"
+    "historical": "到账时的价值",
+    "title": "累计收益"
   },
   "kraken_staking_received": {
     "switch": {
@@ -4469,7 +4469,7 @@
     "has_proxy_addresses": "有 {length} 个代理地址：",
     "query_historical_price": "正在查询 Liquity 历史价格（{processed}/{total}）",
     "query_staking_data": "正在查询 Liquity 质押数据（{processed}/{total}）",
-    "refresh_tooltip": "刷新质押数量和价格",
+    "refresh_tooltip": "刷新质押数量、价格和质押事件",
     "select_account": "选择账户"
   },
   "liquity_staking_events": {
@@ -4493,8 +4493,8 @@
     "total_gains_staking": "质押总收益（已领取）",
     "total_withdrawn_stability_pool": "稳定池总提取",
     "view": {
-      "hide": "收起",
-      "show": "显示更多"
+      "hide": "隐藏详情",
+      "show": "显示详情"
     }
   },
   "loan_stake": {
@@ -4605,12 +4605,12 @@
     "fields": {
       "balance_type": "余额类型",
       "create_a_custom_asset": "创建自定义资产",
-      "input_manual_price": "添加并使用手动价格",
+      "input_manual_price": "手动价格",
       "label": "标签",
       "price_asset": "计价货币",
       "price_asset_hint": "（例如 USD、EUR、ETH）",
       "tags": "标签",
-      "use_fetched_price": "使用获取的价格"
+      "use_fetched_price": "获取的价格"
     },
     "type": {
       "liability": "负债"
@@ -4676,8 +4676,8 @@
     "title": "缺失价格"
   },
   "module_activator": {
-    "hint": "* 已为所有地址启用的模块不会显示在这里",
-    "subtitle": "选择要为此账户查询的模块",
+    "hint": "已为所有地址启用的模块不会列出。",
+    "subtitle": "选择要为此账户查询的模块。",
     "title": "已启用的模块"
   },
   "module_not_active": {
@@ -4839,7 +4839,7 @@
       "custom_price": "自定义价格",
       "price_in_asset": "以资产计的价格"
     },
-    "ignore": "忽略 NFT",
+    "ignore": "已忽略",
     "refresh": "刷新余额"
   },
   "notes_menu": {
@@ -4927,7 +4927,7 @@
     "tabs": {
       "error": "错误",
       "reminder": "提醒",
-      "view_all": "查看全部"
+      "view_all": "全部"
     },
     "title": "通知",
     "view_calendar": "查看日历"
@@ -5143,7 +5143,11 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "资产数量和价值随时间的变化",
+      "change_in_period": "所选期间内",
+      "change_in_view": "缩放范围内",
       "check_problematic_event": "检查此事件及之前的事件是否存在差异",
+      "click_to_open_snapshot": "点击打开此快照",
+      "current_balances_no_snapshot": "尚无快照，显示当前余额",
       "discrepancy": {
         "amount_from_current_balance": "当前余额中的数量",
         "amount_from_last_event": "最后一个事件中的数量",
@@ -5181,22 +5185,37 @@
       "fetching_graph_daily_data": "正在获取图表每日数据（{processed}/{total}）",
       "fetching_graph_data": "正在获取图表数据",
       "history_events_no_data": "历史事件处理后没有可显示的数据。",
-      "max_visible": "最多显示资产数",
       "negative_amount_detected": "历史处理过程中检测到负数数量。",
-      "netvalue_over_time": "净值走势",
+      "net_value": "净值",
       "no_balance_snapshot_data_available": "没有可用的余额快照数据。",
+      "others": "其他",
+      "others_count": "另外 {count} 项",
       "range_selector": {
         "data_available": "有数据",
+        "end_date": "结束日期",
         "ending_date_must_before_starting_date": "结束日期不能早于开始日期。",
-        "no_entries_available_before": "在此之前没有可用条目"
+        "no_entries_available_before": "在此之前没有可用条目",
+        "start_date": "开始日期"
       },
-      "refresh_the_net_value_data": "刷新净值数据",
       "search_asset_to_see_graph": "搜索资产以查看图表",
+      "search_asset_to_see_graph_description": "选择你的一项资产，查看其数量、价格和价值随时间的变化。",
       "select_asset": "搜索资产",
+      "series": {
+        "amount": "数量",
+        "price": "价格",
+        "snapshot_amount": "快照数量",
+        "snapshot_value": "快照价值（{currency}）",
+        "value": "价值（{currency}）"
+      },
+      "show_all": "显示全部 {count} 项",
+      "show_less": "收起",
+      "snapshot_taken": "快照时间",
       "some_prices_are_missing": "由于缺少价格，部分数据点已隐藏。\n点击“获取价格”尝试获取价格。",
+      "timeframe_custom": "自定义",
+      "total": "总计",
       "value_distribution_by_asset": "按资产划分的价值分布",
       "value_distribution_by_location": "按位置划分的价值分布",
-      "visible_percentage": "仅计算可见项目的百分比："
+      "warnings": "{count} 条警告"
     },
     "theme_manager": {
       "dark_theme": "深色主题",
@@ -5340,8 +5359,8 @@
   },
   "price_form": {
     "date_non_empty": "价格日期不能为空",
-    "from_asset": "源资产",
-    "from_non_empty": "源资产不能为空",
+    "from_asset": "资产",
+    "from_non_empty": "请选择要定价的资产",
     "historic": {
       "hint": "1 {fromAsset} 价值 {price} {toAsset}"
     },
@@ -5349,8 +5368,8 @@
       "hint": "1 {fromAsset} 价值 {price} {toAsset}"
     },
     "price_non_empty": "价格不能为空",
-    "to_asset": "目标资产",
-    "to_non_empty": "目标资产不能为空",
+    "to_asset": "计价资产",
+    "to_non_empty": "请选择价格所用的资产",
     "update_price": "更新价格"
   },
   "price_management": {
@@ -5432,7 +5451,7 @@
     "disabled_items": "{num} 个已禁用的{namePluralized}",
     "item": {
       "delete": "禁用 {name} 条目",
-      "empty": "未找到价格{namePluralized}！"
+      "empty": "暂无{namePluralized}"
     }
   },
   "profit_loss_events": {
@@ -5589,9 +5608,9 @@
   },
   "queried_address_dialog": {
     "add": "添加地址",
-    "all_address_queried": "{module} 会查询你所有的以太坊地址",
+    "all_address_queried": "{module} 会查询所有以太坊地址。添加地址后将只查询这些地址。",
     "remove_tooltip": "从查询地址中移除地址",
-    "subtitle": "管理 {module} 要查询的地址",
+    "subtitle": "选择 rotki 为 {module} 查询哪些以太坊地址",
     "title": "查询的地址"
   },
   "reports_table": {
@@ -5792,13 +5811,25 @@
   },
   "staking": {
     "eth2": "ETH",
+    "hyperliquid": "Hyperliquid",
     "kraken": "Kraken",
     "lido_csm": "Lido CSM",
-    "liquity": "Liquity"
+    "liquity": "Liquity",
+    "solana": "Solana"
   },
   "staking_page": {
     "dropdown_hint": "选择一个位置以查看详情",
     "dropdown_label": "选择位置",
+    "failed_addresses": "无法加载此地址的质押信息：{addresses} | 无法加载这些地址的质押信息：{addresses}",
+    "hyperliquid": {
+      "table": {
+        "address": "地址",
+        "delegated": "已委托",
+        "empty": "你的 Hyperliquid 地址中没有质押的 HYPE。",
+        "pending_withdrawal": "待提取",
+        "undelegated": "已取消委托"
+      }
+    },
     "lido_csm": {
       "description": "追踪你在 Lido CSM 计划中注册的节点运营者，以便 rotki 直接从会计合约中获取其保证金余额。",
       "form": {
@@ -5808,7 +5839,7 @@
         "node_operator_hint": "使用 Lido 分配的数字 ID。",
         "node_operator_label": "节点运营者 ID",
         "submit": "添加节点运营者",
-        "title": "追踪节点运营者",
+        "title": "添加节点运营者",
         "validation": {
           "invalid_id": "请输入非负整数",
           "non_empty_address": "地址为必填项",
@@ -5825,13 +5856,13 @@
       "table": {
         "actions": "操作",
         "address": "地址",
-        "bond_claimable": "可领取保证金",
-        "bond_current": "当前保证金",
-        "bond_required": "所需保证金",
+        "bond_claimable": "可领取",
+        "bond_current": "保证金",
+        "bond_required": "所需",
         "description": "rotki 将使用以下配对从会计合约中读取 stETH 质押保证金。",
         "empty": "尚未追踪任何节点运营者。",
-        "keys_total": "已存入的验证者",
-        "node_operator": "节点运营者 ID",
+        "keys_total": "验证者",
+        "node_operator": "运营者",
         "not_available": "N/A",
         "operator_type": "运营者类型",
         "refresh_tooltip": "刷新 Lido CSM 指标",
@@ -5843,6 +5874,17 @@
     "page": {
       "description": "选择一个支持的位置以查看你的质押资产详情。",
       "title": "质押位置"
+    },
+    "solana": {
+      "staked": "已质押的 SOL",
+      "table": {
+        "amount": "数量",
+        "empty": "你的 Solana 地址中未找到质押账户。",
+        "not_delegated": "未委托",
+        "owner": "所有者",
+        "stake_account": "质押账户",
+        "validator": "验证者"
+      }
     }
   },
   "statistics_graph_settings": {
@@ -6090,8 +6132,10 @@
       },
       "staking": {
         "add_validator": "正在添加验证者 {validator}",
+        "hyperliquid": "正在查询 Hyperliquid 质押账户",
         "kraken": "正在查询 Kraken 质押事件",
         "performance": "正在刷新 ETH 质押表现缓存",
+        "solana": "正在查询 Solana 质押账户",
         "validators": "正在查询 ETH 验证者"
       },
       "token_detection": {
@@ -6326,7 +6370,7 @@
       "wallet_connect": "请在浏览器/钱包中签署交易。如果你在使用浏览器钱包桥接，请确保该浏览器标签页处于焦点状态。"
     },
     "wallet_mode": {
-      "label": "模式",
+      "label": "连接方式",
       "local_bridge": "本地",
       "wallet_connect": "Wallet Connect"
     },
@@ -6382,7 +6426,7 @@
           "title": "已追踪账户"
         },
         "undecoded": {
-          "action": "查看状态",
+          "action": "解码",
           "description": "在解码完成前，这些交易不会出现在你的历史和报告中。",
           "title": "未解码交易"
         },
@@ -6413,8 +6457,8 @@
     "empty_state": {
       "clear_filters": "清除筛选",
       "no_data_with_filters": "没有符合当前筛选条件的事件",
-      "no_events": "未找到事件。\n连接交易所或追踪区块链地址以同步你的历史，也可以手动添加事件。",
-      "syncing": "正在查询并解码你的历史记录。\n事件处理完成后会显示在这里。首次同步可能需要较长时间。"
+      "no_events": "未找到事件",
+      "syncing": "正在查询并解码你的历史记录"
     },
     "events": {
       "accounting_rule": {

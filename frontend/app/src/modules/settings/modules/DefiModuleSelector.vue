@@ -49,7 +49,6 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
     text-attr="name"
     auto-select-first
     clearable
-    variant="outlined"
     :item-height="52"
   >
     <template #selection="{ item }">

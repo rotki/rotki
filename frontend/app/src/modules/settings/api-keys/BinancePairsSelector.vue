@@ -158,7 +158,6 @@ onMounted(() => {
         chips
         clearable
         auto-select-first
-        variant="outlined"
         :label="t('binance_market_selector.default_label')"
         class="binance-market-selector"
         :model-value="selection"

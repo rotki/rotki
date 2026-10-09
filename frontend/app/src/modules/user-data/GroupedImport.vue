@@ -138,7 +138,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         <RuiIcon
           v-else-if="icon"
           size="28"
-          class="text-rui-light-text-secondary icon-bg !p-1"
+          class="text-rui-light-text-secondary icon-bg p-1!"
           :name="icon"
         />
         {{ label }}

@@ -116,7 +116,7 @@ watch(menuOpened, (menuOpened) => {
     v-else-if="hideMenu"
     no-padding
     no-hover
-    class="max-w-[20rem]"
+    class="max-w-80"
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
@@ -133,7 +133,7 @@ watch(menuOpened, (menuOpened) => {
     :key="asset.identifier"
     v-model="menuOpened"
     class="flex"
-    :class-names="{ menu: 'w-[16rem] max-w-[90%]' }"
+    :class-names="{ menu: 'w-64 max-w-[90%]' }"
     :options="{ placement: 'bottom-start' }"
   >
     <template #activator="{ attrs }">
@@ -148,7 +148,7 @@ watch(menuOpened, (menuOpened) => {
         <ListItem
           no-padding
           no-hover
-          class="max-w-[20rem]"
+          class="max-w-80"
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
           :loading="loading"

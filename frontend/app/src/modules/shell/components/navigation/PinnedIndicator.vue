@@ -31,7 +31,7 @@ function toggleVisibility(): void {
       class="flex items-center"
     >
       <RuiIcon
-        :class="{ '-rotate-[25deg]': visible }"
+        :class="{ 'rotate-[-25deg]': visible }"
         name="lu-pin"
       />
     </RuiBadge>

@@ -81,7 +81,7 @@ const option = computed<EChartsOption>(() => {
       v-else
       :option="option"
       autoresize
-      class="w-full h-12"
+      class="w-full h-12!"
     />
   </div>
 </template>

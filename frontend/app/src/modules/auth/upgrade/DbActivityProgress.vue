@@ -30,7 +30,7 @@ const multipleUpgrades = computed<boolean>(() => {
   <RuiCard
     v-if="progress"
     variant="flat"
-    class="max-w-[29rem] mx-auto !bg-transparent"
+    class="max-w-116 mx-auto bg-transparent!"
   >
     <template #header>
       <span class="text-h6 tracking-tight">

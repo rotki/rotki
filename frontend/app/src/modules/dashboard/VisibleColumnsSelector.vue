@@ -61,7 +61,7 @@ function update(value: TableColumn) {
 
 <template>
   <RuiMenu
-    :class-names="{ menu: 'max-w-[15rem]' }"
+    :class-names="{ menu: 'max-w-60' }"
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">

@@ -305,7 +305,6 @@ defineExpose({
 
       <RuiTextField
         v-model="name"
-        variant="outlined"
         color="primary"
         :error-messages="editMode ? form.errors('newName') : form.errors('name')"
         data-testid="name"
@@ -321,7 +320,6 @@ defineExpose({
       :label="t('exchange_settings.inputs.kraken_account')"
       key-attr="identifier"
       text-attr="label"
-      variant="outlined"
     />
 
     <RuiMenuSelect
@@ -332,7 +330,6 @@ defineExpose({
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
       text-attr="label"
-      variant="outlined"
     >
       <template #selection="{ item }">
         <GateRegionSelectorItem
@@ -356,7 +353,6 @@ defineExpose({
       :label="t('exchange_keys_form.region')"
       key-attr="identifier"
       text-attr="label"
-      variant="outlined"
     >
       <template #selection="{ item }">
         <OkxRegionSelectorItem
@@ -385,7 +381,7 @@ defineExpose({
           <RuiButton
             data-testid="toggle-edit-keys"
             variant="text"
-            class="!p-2"
+            class="p-2!"
             icon
             @click="toggleEdit()"
           >
@@ -407,7 +403,6 @@ defineExpose({
           :is="sensitiveInputComponent"
           v-model.trim="apiKeyModel"
           :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
-          variant="outlined"
           color="primary"
           :disabled="editMode && !editKeys"
           :error-messages="form.errors('apiKey')"
@@ -424,7 +419,6 @@ defineExpose({
           :is="sensitiveInputComponent"
           v-if="requiresApiSecret"
           v-model.trim="apiSecretModel"
-          variant="outlined"
           color="primary"
           :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
           :disabled="editMode && !editKeys"
@@ -443,7 +437,6 @@ defineExpose({
           v-if="requiresPassphrase"
           v-model.trim="form.state.passphrase"
           :disabled="editMode && !editKeys"
-          variant="outlined"
           color="primary"
           :error-messages="form.errors('passphrase')"
           prepend-icon="lu-key"

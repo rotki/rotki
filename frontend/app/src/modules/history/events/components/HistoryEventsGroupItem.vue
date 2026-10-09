@@ -81,7 +81,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
           <template #activator>
             <button
               type="button"
-              class="p-0.5 rounded hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors shrink-0"
+              class="p-0.5 rounded-sm hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors shrink-0"
               @click="emit('toggle-show-ignored-assets')"
             >
               <RuiIcon
@@ -114,7 +114,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
         <span
           v-if="redecoding"
           data-testid="event-redecoding"
-          class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+          class="shrink-0 px-1.5 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
         >
           {{ t('transactions.events.redecoding') }}
         </span>
@@ -160,7 +160,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
   <div
     v-else
     data-testid="history-event-group"
-    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
+    class="h-12 flex items-center gap-2.5 border-b border-default border-t-rui-grey-400! dark:border-t-rui-grey-600! pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
     :class="getHighlightClass(highlightType)"
   >
     <IgnoredInAccountingIcon
@@ -181,7 +181,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
       <template #activator>
         <button
           type="button"
-          class="p-0.5 rounded hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors"
+          class="p-0.5 rounded-sm hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors"
           @click="emit('toggle-show-ignored-assets')"
         >
           <RuiIcon
@@ -215,7 +215,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
       <span
         v-if="redecoding"
         data-testid="event-redecoding"
-        class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+        class="shrink-0 px-1.5 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
       >
         {{ t('transactions.events.redecoding') }}
       </span>

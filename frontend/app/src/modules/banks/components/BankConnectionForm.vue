@@ -69,7 +69,6 @@ defineExpose({
       :error-messages="form.errors('location')"
       key-attr="location"
       text-attr="displayName"
-      variant="outlined"
       data-testid="bank-connection-location"
       @update:model-value="selectLocation($event)"
     >
@@ -94,7 +93,6 @@ defineExpose({
 
     <RuiTextField
       v-model="name"
-      variant="outlined"
       color="primary"
       :label="t('bank_settings.form.name')"
       :hint="t('bank_settings.form.name_hint')"
@@ -109,7 +107,6 @@ defineExpose({
       <RuiRevealableTextField
         v-if="secret.secret"
         v-model="form.state.credentials[secret.slot]"
-        variant="outlined"
         color="primary"
         :label="secret.label"
         :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
@@ -119,7 +116,6 @@ defineExpose({
       <RuiTextField
         v-else
         v-model="form.state.credentials[secret.slot]"
-        variant="outlined"
         color="primary"
         :label="secret.label"
         :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"

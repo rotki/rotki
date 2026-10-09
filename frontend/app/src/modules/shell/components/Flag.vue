@@ -12,7 +12,7 @@ const flagIconClass = computed<string>(() =>
 <template>
   <span
     v-if="iso"
-    class="fi text-base rounded-sm"
+    class="fi text-base rounded-xs"
     :class="flagIconClass"
     :title="title || iso"
   />

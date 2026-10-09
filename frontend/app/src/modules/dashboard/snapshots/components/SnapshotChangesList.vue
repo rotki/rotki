@@ -143,7 +143,7 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
   <div
     v-else
     v-bind="containerProps"
-    class="max-h-[20rem]"
+    class="max-h-80"
     data-testid="snapshot-changes-list"
   >
     <div v-bind="wrapperProps">

@@ -92,7 +92,6 @@ watch(frequencyWriteError, (message) => {
       <div class="flex items-start w-full">
         <RuiTextField
           v-model="batchSize"
-          variant="outlined"
           color="primary"
           class="w-full"
           :dense="compact"
@@ -127,7 +126,6 @@ watch(frequencyWriteError, (message) => {
       <div class="flex items-start w-full">
         <RuiTextField
           v-model="frequency"
-          variant="outlined"
           color="primary"
           class="w-full"
           :dense="compact"

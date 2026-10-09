@@ -105,7 +105,7 @@ onBeforeMount(async () => {
       <RuiTabs
         :model-value="tab"
         color="primary"
-        class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
+        class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
         @update:model-value="goToTab($event)"
       >
         <RuiTab value="assets">

@@ -28,7 +28,6 @@ const filteredCounterparties = computed<string[]>(() => {
 <template>
   <RuiAutoComplete
     v-model="modelValue"
-    variant="outlined"
     clearable
     v-bind="$attrs"
     auto-select-first

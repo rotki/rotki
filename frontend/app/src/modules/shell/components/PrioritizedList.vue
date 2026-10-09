@@ -113,12 +113,11 @@ const autoCompleteHint = computed<string>(() => {
       <div
         v-if="!disableAdd"
         class="flex pb-2 gap-2 items-start border-b border-default overflow-hidden"
-        :class="variant === 'outlined' ? 'px-6' : 'px-[1px]'"
+        :class="variant === 'outlined' ? 'px-6' : 'px-px'"
       >
         <RuiAutoComplete
           v-model="selection"
           dense
-          variant="outlined"
           class="overflow-hidden py-1.5"
           :label="t('common.actions.search')"
           :no-data-text="t('prioritized_list.all_added', itemNameTr)"
@@ -194,7 +193,7 @@ const autoCompleteHint = computed<string>(() => {
     </RuiCard>
     <ActionStatusIndicator
       v-if="status && (status.success || status.error)"
-      class="mx-[1px]"
+      class="mx-px"
       :status="status"
     />
     <div v-else />

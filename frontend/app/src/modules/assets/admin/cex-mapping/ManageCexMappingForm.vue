@@ -111,7 +111,6 @@ defineExpose({
     <AssetSelect
       v-model="form.state.asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
-      variant="outlined"
       :error-messages="form.errors('asset')"
       @update:model-value="form.touch('asset')"
     />

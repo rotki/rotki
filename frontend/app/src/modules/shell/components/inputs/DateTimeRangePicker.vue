@@ -99,7 +99,6 @@ function applyQuickOption(option: QuickOption): void {
       :dense="dense"
       :allow-empty="allowEmpty"
       type="epoch"
-      variant="outlined"
       :error-messages="startErrorMessagesComputed"
     >
       <template #menu-content>
@@ -115,7 +114,6 @@ function applyQuickOption(option: QuickOption): void {
       :dense="dense"
       :allow-empty="allowEmpty"
       type="epoch"
-      variant="outlined"
       :error-messages="endErrorMessagesComputed"
     >
       <template #menu-content>

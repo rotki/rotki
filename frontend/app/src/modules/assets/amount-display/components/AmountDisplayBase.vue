@@ -65,6 +65,9 @@ const copyValue = computed<string>(() => {
   }
   return value.toFixed();
 });
+
+/** Holds the placeholder's line box: a text baseline with no visible width. */
+const ZERO_WIDTH_SPACE = '​';
 </script>
 
 <template>
@@ -74,7 +77,7 @@ const copyValue = computed<string>(() => {
         'blur': !shouldShowAmount,
         'text-rui-success': pnl && value.gt(0),
         'text-rui-error': pnl && value.lt(0),
-        'skeleton min-h-5 min-w-[3.5rem] max-w-[4rem] after:content-[\'\\200B\']': loading,
+        'relative min-w-14 max-w-16': loading,
       },
     ]"
     class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
@@ -111,6 +114,16 @@ const copyValue = computed<string>(() => {
         v-if="symbol && currencyLocation === 'after'"
         :symbol="symbol"
         :no-truncate="noTruncate"
+      />
+    </template>
+    <!--
+      While loading, a zero-width space keeps the value's line box and baseline, so nothing moves when
+      the value arrives; the bar sits inside that line, inset so stacked placeholders keep a gap.
+    -->
+    <template v-else>
+      {{ ZERO_WIDTH_SPACE }}<span
+        class="skeleton absolute inset-x-0 inset-y-1 rounded-md"
+        data-testid="amount-skeleton"
       />
     </template>
   </span>

@@ -113,14 +113,12 @@ watchDebounced(onlyExpectedAssets, () => {
           max="168"
           :label="isPinned ? t('asset_movement_matching.dialog.time_range_short') : t('asset_movement_matching.dialog.time_range_hours')"
           :class="isPinned ? 'w-28' : 'w-36'"
-          variant="outlined"
           dense
         />
         <AmountInput
           v-model="tolerancePercentage"
           type="number"
           step="0.001"
-          variant="outlined"
           hide-details
           dense
           :label="isPinned ? t('asset_movement_matching.dialog.tolerance_short') : t('asset_movement_matching.settings.amount_tolerance.label')"
@@ -136,8 +134,8 @@ watchDebounced(onlyExpectedAssets, () => {
               color="primary"
               hide-details
               size="sm"
-              class="!my-0 [&_span]:!my-0 [&_label]:!items-center"
-              :class="isPinned ? '[&_span]:!text-caption' : '[&_span]:!text-sm'"
+              class="my-0! [&_span]:my-0! [&_label]:items-center!"
+              :class="isPinned ? '[&_span]:text-caption!' : '[&_span]:text-sm!'"
             >
               {{ t('asset_movement_matching.dialog.only_expected_assets') }}
             </RuiCheckbox>
@@ -152,7 +150,7 @@ watchDebounced(onlyExpectedAssets, () => {
             <RuiButton
               :loading="loading"
               :size="isPinned ? 'sm' : 'xl'"
-              :class="isPinned ? '[&>span]:!hidden !px-2.5 !h-[38px]' : 'ml-3 [&>span]:!inline'"
+              :class="isPinned ? '[&>span]:hidden! px-2.5! h-[38px]!' : 'ml-3 [&>span]:inline!'"
               @click="emit('search')"
             >
               <template #prepend>

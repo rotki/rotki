@@ -19,7 +19,7 @@ export class ImportPage {
   async selectSource(label: string): Promise<void> {
     const select = this.page.locator('[data-testid=import-source-select]');
     await select.locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]').last();
+    const menu = this.page.locator('[role=listbox]').last();
     await menu.waitFor({ state: 'visible' });
     await select.locator('input').fill(label);
     const option = menu.getByText(label, { exact: false }).first();
@@ -40,7 +40,7 @@ export class ImportPage {
     const select = container.getByTestId('import-timezone-select');
     await select.waitFor({ state: 'visible' });
     await select.locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]').last();
+    const menu = this.page.locator('[role=listbox]').last();
     await menu.waitFor({ state: 'visible' });
     await select.locator('input').fill(timezone);
     const option = menu.getByText(timezone, { exact: true }).first();

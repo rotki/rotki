@@ -142,7 +142,6 @@ defineExpose({
         data-testid="eth-staking-entry-type"
         :options="entryTypeOptions"
         :label="t('transactions.repulling.eth_staking.type_label')"
-        variant="outlined"
         auto-select-first
         key-attr="id"
         text-attr="label"
@@ -155,7 +154,6 @@ defineExpose({
         data-testid="eth-staking-filter-mode"
         :options="filterModeOptions"
         :label="t('transactions.repulling.eth_staking.filter_by_label')"
-        variant="outlined"
         auto-select-first
         key-attr="id"
         text-attr="label"
@@ -174,7 +172,6 @@ defineExpose({
         data-testid="eth-staking-addresses"
         :options="withdrawalAddressOptions"
         :label="t('transactions.repulling.eth_staking.addresses_label')"
-        variant="outlined"
         :item-height="40"
         chips
         clearable

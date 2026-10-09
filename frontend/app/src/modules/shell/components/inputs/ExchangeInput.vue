@@ -25,7 +25,6 @@ const options = computed<string[]>(() => {
 <template>
   <RuiAutoComplete
     v-model="model"
-    variant="outlined"
     v-bind="$attrs"
     :options="options"
     :dense="dense"

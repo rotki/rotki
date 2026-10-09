@@ -25,14 +25,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <tr class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900 group">
+  <tr class="odd:bg-rui-grey-50 dark:odd:bg-rui-grey-900 group">
     <td class="pr-0 pl-2">
       <div class="flex flex-col gap-1 transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible">
         <RuiButton
           :id="`move-up-${item.identifier}`"
           size="sm"
-          class="!px-1"
-          :class="{ '!py-0.5': dense }"
+          class="px-1!"
+          :class="{ 'py-0.5!': dense }"
           :disabled="item.first"
           @click="emit('move', false)"
         >
@@ -44,8 +44,8 @@ const emit = defineEmits<{
         <RuiButton
           :id="`move-down-${item.identifier}`"
           size="sm"
-          class="!px-1"
-          :class="{ '!py-0.5': dense }"
+          class="px-1!"
+          :class="{ 'py-0.5!': dense }"
           :disabled="item.last"
           @click="emit('move', true)"
         >
@@ -76,7 +76,7 @@ const emit = defineEmits<{
             :id="`delete-${item.identifier}`"
             class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
             icon
-            :class="{ '!p-2': dense }"
+            :class="{ 'p-2!': dense }"
             variant="text"
             @click="emit('remove')"
           >

@@ -86,7 +86,7 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
             size="sm"
             :color="color"
             variant="outlined"
-            class="!h-5 !px-1.5 tabular-nums"
+            class="h-5! px-1.5! tabular-nums"
             data-testid="actions-center-row-count"
           >
             {{ item.count }}
@@ -123,8 +123,8 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
           :key="option.id"
           size="sm"
           variant="text"
-          class="!px-1.5 !py-0.5 !text-caption !text-rui-text-secondary"
-          :class="{ 'hover:!text-rui-error': option.danger }"
+          class="px-1.5! py-0.5! text-caption! text-rui-text-secondary!"
+          :class="{ 'hover:text-rui-error!': option.danger }"
           data-testid="actions-center-row-option"
           :data-key="option.id"
           @click="emit('option', option.target)"
@@ -152,7 +152,7 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
           :href="href"
           :tag="href ? 'a' : 'button'"
           :target="linkTarget"
-          class="shrink-0 !text-rui-text-secondary"
+          class="shrink-0 text-rui-text-secondary!"
           data-testid="actions-center-row-locked"
           @click="onLinkClick()"
         >

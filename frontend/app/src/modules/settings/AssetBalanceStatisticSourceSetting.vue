@@ -48,7 +48,7 @@ watchImmediate(() => asset, (asset) => {
 
 <template>
   <RuiMenu
-    :class-names="{ menu: 'min-w-[18rem] max-w-[20rem]' }"
+    :class-names="{ menu: 'min-w-72 max-w-80' }"
     :options="{ placement: 'top' }"
   >
     <template #activator="{ attrs }">

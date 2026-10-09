@@ -46,7 +46,7 @@ export class GeneralSettingsPage {
   /** The input format is a menu select, not a free-text field: pick the option by its value. */
   async selectDateInputFormat(value: string): Promise<void> {
     await this.page.locator('[data-testid=date-input-format-input]').click();
-    await this.page.locator('[role=menu]').getByText(value, { exact: true }).click();
+    await this.page.locator('[role=listbox]').getByText(value, { exact: true }).click();
   }
 
   async setThousandSeparator(value: string): Promise<void> {

@@ -63,7 +63,6 @@ syncStepValidity(parses, valid);
         v-model="state.username"
         dense
         color="primary"
-        variant="outlined"
         autofocus
         data-testid="create-account-username"
         :label="t('create_account.credentials.label_username')"
@@ -75,7 +74,6 @@ syncStepValidity(parses, valid);
         v-model="state.password"
         dense
         color="primary"
-        variant="outlined"
         data-testid="create-account-password"
         :label="t('create_account.credentials.label_password')"
         :error-messages="errors('password')"
@@ -86,7 +84,6 @@ syncStepValidity(parses, valid);
         v-model="state.passwordConfirm"
         dense
         color="primary"
-        variant="outlined"
         data-testid="create-account-password-repeat"
         :label="t('create_account.credentials.label_password_repeat')"
         :error-messages="errors('passwordConfirm')"

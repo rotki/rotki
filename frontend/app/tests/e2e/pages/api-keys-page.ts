@@ -54,7 +54,7 @@ export class ApiKeysPage {
 
     await keys.locator('[data-testid=exchange] [data-id=activator]').click();
     await keys.locator('[data-testid=exchange] input').fill(exchange);
-    await expect(this.page.locator('[role=menu] button')).toHaveCount(1);
+    await expect(this.page.locator('[role=listbox] [role=option]')).toHaveCount(1);
     await keys.locator('[data-testid=exchange] input').press('Enter');
     await keys.locator('[data-testid=name] input').fill(name);
     await keys.locator('[data-testid=api-key] input').fill(apiKey);

@@ -50,19 +50,19 @@ export function useManagedAssetTable(
     label: t('common.asset'),
     sortable: true,
   }, {
-    cellClass: '!text-nowrap py-0',
+    cellClass: 'text-nowrap! py-0',
     key: 'type',
     label: t('common.type'),
     sortable: true,
   }, {
     cellClass: 'py-0',
-    class: 'min-w-[11.375rem]',
+    class: 'min-w-45.5',
     key: 'address',
     label: t('common.address'),
     sortable: true,
   }, {
     cellClass: 'py-0',
-    class: 'min-w-[10rem]',
+    class: 'min-w-40',
     key: 'started',
     label: t('asset_table.headers.started'),
     sortable: true,

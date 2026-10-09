@@ -30,7 +30,6 @@ watch(search, (search) => {
     v-bind="$attrs"
     v-model:search-input="search"
     :options="items"
-    variant="outlined"
     custom-value
   >
     <!-- Pass on all named slots -->

@@ -46,7 +46,6 @@ const image = computed<string | undefined>(() => challenge.challengeData && chal
     <RuiTextField
       v-if="challengeNeedsResponse(challenge)"
       v-model="response"
-      variant="outlined"
       color="primary"
       :label="t('bank_settings.authentication.response')"
       :hint="showsPrompt ? challenge.prompt : undefined"

@@ -118,7 +118,6 @@ watch(decimalSource, (value) => {
 <template>
   <RuiTextField
     v-model="form.state.thousand"
-    variant="outlined"
     color="primary"
     data-testid="thousand-separator-input"
     :label="t('general_settings.amount.label.thousand_separator')"
@@ -130,7 +129,6 @@ watch(decimalSource, (value) => {
 
   <RuiTextField
     v-model="form.state.decimal"
-    variant="outlined"
     color="primary"
     data-testid="decimal-separator-input"
     :label="t('general_settings.amount.label.decimal_separator')"

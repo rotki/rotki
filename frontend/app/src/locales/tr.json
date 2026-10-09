@@ -43,7 +43,7 @@
     },
     "detect_tokens": {
       "confirmation": {
-        "message": "Tüm zincirler için tokenları yeniden tespit etmek istediğinizden emin misiniz? Bu biraz zaman alabilir.",
+        "message": "Her zincirdeki tüm EVM adreslerini tarar, bu biraz zaman alabilir.",
         "title": "Tüm zincirlerde tokenları yeniden tespit et"
       },
       "selection": {
@@ -65,7 +65,7 @@
       "tooltip": "Hesap tespiti bu adresi şu zincirlerde ekledi: {chains}. Kapatmak için tıklayın."
     },
     "edit_tooltip": "Hesabı düzenle",
-    "enter_selection_mode": "Varlıkları toplu olarak yok saymak veya spam olarak işaretlemek için seçim moduna geçin",
+    "enter_selection_mode": "Yok saymak veya spam olarak işaretlemek için genişletilmiş bir hesaptaki varlıkları seçin",
     "exit_selection_mode": "Seçim modundan çık",
     "filter_field_labels": {
       "account": "Hesap",
@@ -146,7 +146,7 @@
         "export_csv_formulas": "Formüller PnL CSV dosyasıyla birlikte dışa aktarılsın mı?",
         "have_csv_summary": "Tüm olaylar CSV dışa aktarımına tüm olayların bir özeti eklensin mi?"
       },
-      "title": "CSV dışa aktarma ayarları"
+      "title": "PnL CSV dışa aktarma"
     },
     "messages": {
       "cost_basis": {
@@ -294,7 +294,7 @@
         "regular": "Standart kurallar"
       },
       "title": "Muhasebe kuralları",
-      "value_overwritten": "Bu değer şu ayar tarafından geçersiz kılınıyor:",
+      "value_overwritten": "Bu muhasebe ayarını izler",
       "view_events": "Bu kuralla eşleşen olayları görüntüle"
     },
     "trade": {
@@ -1016,7 +1016,7 @@
   },
   "app": {
     "copyright": "© Rotki Solutions GmbH 2018-{year}",
-    "moto": "gizliliğinizi koruyan açık kaynaklı portföy yöneticisi",
+    "moto": "Gizliliğinizi koruyan açık kaynaklı portföy yöneticisi",
     "name": "rotki",
     "quitting": {
       "message": "Kapatılıyor..."
@@ -2011,7 +2011,7 @@
   "chain_settings": {
     "chain_queries": {
       "subtitle": "Birbirinden bağımsız iki denetim: rotki'nin veri için hangi zincirleri ve adresleri sorguladığı ve bir adresin nerede etkin olduğunu tespit ederken hangi zincirleri kontrol ettiği.",
-      "title": "Zincir sorguları ve tespit"
+      "title": "Zincirler"
     }
   },
   "change_password": {
@@ -2205,10 +2205,10 @@
       "restore_account": "Hesabı geri yükle"
     },
     "credentials": {
-      "description": "Unutmayın: burada oluşturduğunuz kullanıcı {highlight} ve web'de oluşturulan hesaptan bağımsızdır.",
+      "description": "Bir profil adı ve parola seçin. Parola bu profildeki her şeyi şifreler.",
       "highlight": "yalnızca uygulamada geçerlidir",
       "label_password": "Parola",
-      "label_password_backup_reminder": "rotki tüm kullanıcı verilerini yerel olarak saklar. Parolamı kaybedersem verilerime erişimimi de kaybedeceğimi anlıyorum. Parolamın yedeğini aldım.",
+      "label_password_backup_reminder": "Parolamı güvenli bir yere kaydettim. Parolam olmadan yerel verilerim kurtarılamaz.",
       "label_password_repeat": "Parola (tekrar)",
       "label_username": "Profil adı",
       "password_sync_requirement": "Başlangıçta yedeklediğiniz veritabanıyla aynı parolayı kullanın. Farklı bir parola girerseniz veritabanına erişemezsiniz.",
@@ -2244,8 +2244,8 @@
     },
     "premium": {
       "button_premium_approve": "Evet, Premium'u etkinleştir",
-      "premium_question": "Zaten rotki Premium kullanıcısı mısınız ve Premium özellikleri etkinleştirmek mi istiyorsunuz?\nPremium satın alabileceğiniz sayfa {premiumLink}",
-      "restore_question": "Başka bir cihazdan senkronize ettiğiniz veritabanını indirmek için rotki Premium API kimlik bilgilerinizi girin. Kimlik bilgilerinizi bulabileceğiniz hesap sayfanız {premiumLink}"
+      "premium_question": "Zaten Premium kullanıcısı mısınız? API kimlik bilgilerinizle şimdi etkinleştirin. {premiumLink}",
+      "restore_question": "Başka bir cihazdan senkronize ettiğiniz veritabanını indirmek için Premium API kimlik bilgilerinizi girin. Bunları {premiumLink} içinde bulabilirsiniz."
     },
     "steps": {
       "step_1": {
@@ -2270,7 +2270,7 @@
     "title": "Hesap oluştur",
     "title_restore": "Hesabı geri yükle",
     "usage_analytics": {
-      "description": "Kullanım analitiği isteğe bağlıdır ve ürünün geliştirilmesine katkı sağlar. Etkinleştirildiğinde rotki, uygulamanın kullanımıyla ilgili anonim analitik veriler gönderir. Toplanan ölçümler ürün geliştikçe değişebilir, ancak her zaman anonim kalır. Bu ayarı istediğiniz zaman Genel ayarlar bölümünden değiştirebilirsiniz.",
+      "description": "İsteğe bağlı. Anonim kullanım verileri rotki'yi geliştirmemize yardımcı olur. Bunu istediğiniz zaman Genel ayarlar bölümünden değiştirebilirsiniz.",
       "label_confirm": "Anonim kullanım analitiği gönder"
     }
   },
@@ -2356,7 +2356,7 @@
       "behaviour": {
         "only_refresh_balances": "Yalnızca bakiyeleri yenile",
         "redetect_tokens": "Tokenları yeniden tespit et ve bakiyeleri yenile",
-        "title": "Blokzincir yenileme düğmesinin davranışı"
+        "title": "Yenile'ye bastığınızda"
       },
       "categories": {
         "bitcoin": "Bitcoin adresi",
@@ -3008,7 +3008,7 @@
   },
   "eth2_input": {
     "ownership": {
-      "hint": "*İsteğe bağlı: Varsayılan değer %100",
+      "hint": "İsteğe bağlı. Varsayılan değer %100.",
       "validation": "Değer > %0 ve <= %100 olmalıdır"
     },
     "ownership_percentage": "Sahiplik yüzdesi",
@@ -3216,10 +3216,10 @@
       "api_key_name": "API anahtarı adı",
       "api_secret": "API gizli anahtarı",
       "experimental": "Bu borsanın entegrasyonu deneyseldir ve bazı eksikliklerle karşılaşabilirsiniz. Herhangi bir sorunla karşılaşırsanız lütfen bize bildirin.",
-      "futures_api_key": "Vadeli işlem API anahtarı",
-      "futures_api_secret": "Vadeli işlem API gizli anahtarı",
-      "kraken_account": "Kraken hesabınızın türünü seçin",
-      "kraken_futures_keys": "Vadeli işlem anahtarları",
+      "futures_api_key": "API anahtarı",
+      "futures_api_secret": "API gizli anahtarı",
+      "kraken_account": "Hesap türü",
+      "kraken_futures_keys": "Kraken vadeli işlem anahtarları (isteğe bağlı)",
       "passphrase": "Parola ifadesi",
       "private_key": "Özel anahtar",
       "signing_key": "İmzalama anahtarı"
@@ -3802,7 +3802,7 @@
     },
     "nft_setting": {
       "allow_all_confirmation": {
-        "message": "Tüm alan adlarından gelen görsellere izin vermek istediğinizden emin misiniz?",
+        "message": "Her NFT görseli onu barındıran sunucudan yüklenir ve bu sunucu IP adresinizi görebilir.",
         "title": "Tüm alan adlarından gelen görsellere izin ver"
       },
       "label": {
@@ -3813,10 +3813,10 @@
           "allow_all": "Tüm görsellere izin ver",
           "only_allow_whitelisted": "Yalnızca izin listesindeki alan adlarından gelen görsellere izin ver"
         },
-        "whitelist_domains": "rarible.com, opensea.com",
+        "whitelist_domains": "Alan adları",
         "whitelisted_domain_entries": "kayıt yok | {count} benzersiz kayıt | {count} benzersiz kayıt",
         "whitelisted_domains": "İzin listesindeki alan adları",
-        "whitelisted_domains_hint": "Tek bir alan adı veya virgülle ayrılmış birden fazla alan adı girin. Değişiklikleri kaydetmek için sağdaki kaydet düğmesine basın"
+        "whitelisted_domains_hint": "Birden fazla alan adını virgülle ayırın"
       },
       "messages": {
         "error": "NFT görsellerinin gösterimi için izin verilen alan adları ayarlanırken hata oluştu",
@@ -3954,7 +3954,7 @@
   },
   "global_search": {
     "no_actions": "Eylem bulunamadı",
-    "search_placeholder": "Herhangi bir şey arayın..."
+    "search_placeholder": "Sayfalarda, ayarlarda ve varlıklarda arayın…"
   },
   "hash_link": {
     "open_link": "Harici blok gezgininde aç"
@@ -4207,12 +4207,12 @@
   },
   "history_events_list_swap": {
     "bridge_description": "{fromChain} zincirindeki {spendAmount} {spendAsset}, {toChain} zincirinde {receiveAmount} {receiveAsset} olarak köprülendi",
-    "bridge_expanded": "Bağlantılı köprü ({count} olay) - daraltmak için tıklayın",
+    "bridge_expanded": "Bağlantılı köprü · {count} olay",
     "bridge_label": "Köprü",
     "fee_description": "{notes}, ücret: {feeText}",
-    "movement_expanded": "Bağlantılı hareket ({count} olay) - daraltmak için tıklayın",
+    "movement_expanded": "Bağlantılı hareket · {count} olay",
     "swap_description": "{spendAmount} {spendAsset}, {receiveAmount} {receiveAsset} karşılığında takas edildi",
-    "swap_expanded": "Takas ({count} olay) - daraltmak için tıklayın"
+    "swap_expanded": "Takas · {count} olay"
   },
   "history_redecode_selection": {
     "redecode": "{total} zinciri yeniden çözümle | {total} zinciri yeniden çözümle",
@@ -4350,7 +4350,7 @@
       "import": "Bittrex'ten {0} içe aktar",
       "import_types": "alım satım, yatırma ve çekme kayıtlarını",
       "name": "Bittrex",
-      "warning": "* Hesabınızı kapattıktan sonra e-postayla aldığınız Bittrex CSV dosyasında manuel müdahale gerektirebilecek bazı sorunlar olabilir. Zaman damgası biçimi aynı CSV dosyası içinde değişebilir, sütunlar kaymış olabilir ve genel olarak tüm verilerde tutarsızlıklar bulunabilir."
+      "warning": "Hesabınızı kapattıktan sonra e-postayla aldığınız Bittrex CSV dosyasında manuel müdahale gerektirebilecek bazı sorunlar olabilir. Zaman damgası biçimi aynı CSV dosyası içinde değişebilir, sütunlar kaymış olabilir ve genel olarak tüm verilerde tutarsızlıklar bulunabilir."
     },
     "blockfi": {
       "import": "BlockFi'den {0} içe aktar",
@@ -4519,14 +4519,14 @@
     "refresh_tooltip": "Kraken staking olaylarınızı yenile"
   },
   "kraken_staking_overview": {
-    "current": "güncel",
+    "current": "Güncel değer",
     "earned": "Toplam kazanç",
     "hint": {
       "current": "Varlıkların güncel fiyatına göre",
       "historical": "Varlıkların geçmiş fiyatına göre"
     },
-    "historical": "geçmiş",
-    "title": "Genel bakış"
+    "historical": "Alındığı andaki değer",
+    "title": "Toplam kazanç"
   },
   "kraken_staking_received": {
     "switch": {
@@ -4548,7 +4548,7 @@
     "has_proxy_addresses": "{length} proxy adresine sahip:",
     "query_historical_price": "Liquity geçmiş fiyatları sorgulanıyor ({processed}/{total})",
     "query_staking_data": "Liquity staking verileri sorgulanıyor ({processed}/{total})",
-    "refresh_tooltip": "Stake edilen miktarları ve fiyatları yenile",
+    "refresh_tooltip": "Stake edilen miktarları, fiyatları ve staking olaylarını yenile",
     "select_account": "Hesap seçin"
   },
   "liquity_staking_events": {
@@ -4572,8 +4572,8 @@
     "total_gains_staking": "Staking toplam kazancı (talep edilen)",
     "total_withdrawn_stability_pool": "Stability Pool'dan çekilen toplam miktar",
     "view": {
-      "hide": "Daha az göster",
-      "show": "Daha fazla göster"
+      "hide": "Ayrıntıları gizle",
+      "show": "Ayrıntıları göster"
     }
   },
   "loan_stake": {
@@ -4685,12 +4685,12 @@
     "fields": {
       "balance_type": "Bakiye türü",
       "create_a_custom_asset": "Özel varlık oluştur",
-      "input_manual_price": "Manuel fiyat ekle ve kullan",
+      "input_manual_price": "Manuel fiyat",
       "label": "Ad",
-      "price_asset": "para birimi cinsinden",
+      "price_asset": "Para birimi",
       "price_asset_hint": "(ör. USD, EUR, ETH)",
       "tags": "Etiketler",
-      "use_fetched_price": "Getirilen fiyatı kullan"
+      "use_fetched_price": "Getirilen fiyat"
     },
     "type": {
       "liability": "Borç"
@@ -4798,8 +4798,8 @@
     "title": "Eksik fiyatlar"
   },
   "module_activator": {
-    "hint": "* Tüm adresler için etkinleştirilen modüller burada görünmez",
-    "subtitle": "Bu hesap için hangi modüllerin sorgulanacağını seçin",
+    "hint": "Tüm adresler için etkin olan modüller listelenmez.",
+    "subtitle": "Bu hesap için hangi modüllerin sorgulanacağını seçin.",
     "title": "Etkin modüller"
   },
   "module_not_active": {
@@ -4962,7 +4962,7 @@
       "custom_price": "Özel fiyat",
       "price_in_asset": "Varlık cinsinden fiyat"
     },
-    "ignore": "NFT'yi yok say",
+    "ignore": "Yok sayıldı",
     "refresh": "Bakiyeleri yenile"
   },
   "notes_menu": {
@@ -5065,7 +5065,7 @@
     "tabs": {
       "error": "Hata",
       "reminder": "Hatırlatıcı",
-      "view_all": "Tümünü görüntüle"
+      "view_all": "Tümü"
     },
     "title": "Bildirimler",
     "view_calendar": "Takvimi görüntüle"
@@ -5281,7 +5281,11 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Zaman içinde varlık miktarı ve değeri",
+      "change_in_period": "seçilen dönemde",
+      "change_in_view": "yakınlaştırılan aralıkta",
       "check_problematic_event": "Bu ve önceki olaylarda tutarsızlık olup olmadığını kontrol edin",
+      "click_to_open_snapshot": "Bu anlık görüntüyü açmak için tıklayın",
+      "current_balances_no_snapshot": "Henüz anlık görüntü olmadığı için güncel bakiyeler",
       "discrepancy": {
         "amount_from_current_balance": "Güncel bakiyedeki miktar",
         "amount_from_last_event": "Son olaydaki miktar",
@@ -5319,22 +5323,37 @@
       "fetching_graph_daily_data": "Grafik için günlük veriler getiriliyor ({processed}/{total})",
       "fetching_graph_data": "Grafik verileri getiriliyor",
       "history_events_no_data": "Geçmiş olaylarının işlenmesinden gösterilebilecek veri yok.",
-      "max_visible": "Gösterilecek en fazla varlık sayısı",
       "negative_amount_detected": "Geçmiş veriler işlenirken negatif miktar tespit edildi.",
-      "netvalue_over_time": "Zaman içinde net değer",
+      "net_value": "Net değer",
       "no_balance_snapshot_data_available": "Bakiye anlık görüntüsü verisi yok.",
+      "others": "Diğerleri",
+      "others_count": "{count} tane daha",
       "range_selector": {
         "data_available": "Veri mevcut",
+        "end_date": "Bitiş tarihi",
         "ending_date_must_before_starting_date": "Bitiş tarihi başlangıç tarihinden önce olamaz.",
-        "no_entries_available_before": "Şu tarihten önce kayıt yok:"
+        "no_entries_available_before": "Şu tarihten önce kayıt yok:",
+        "start_date": "Başlangıç tarihi"
       },
-      "refresh_the_net_value_data": "Net değer verilerini yenile",
       "search_asset_to_see_graph": "Grafiği görmek için bir varlık arayın",
+      "search_asset_to_see_graph_description": "Miktarının, fiyatının ve değerinin zaman içinde nasıl değiştiğini görmek için varlıklarınızdan birini seçin.",
       "select_asset": "Varlık ara",
+      "series": {
+        "amount": "Miktar",
+        "price": "Fiyat",
+        "snapshot_amount": "Anlık görüntü miktarı",
+        "snapshot_value": "{currency} cinsinden anlık görüntü değeri",
+        "value": "{currency} cinsinden değer"
+      },
+      "show_all": "{count} öğenin tümünü göster",
+      "show_less": "Daha az göster",
+      "snapshot_taken": "Anlık görüntü tarihi",
       "some_prices_are_missing": "Fiyatlar eksik olduğu için bazı noktalar gizlendi.\nFiyatları almayı denemek için \"Fiyatları getir\" düğmesine tıklayın.",
+      "timeframe_custom": "Özel",
+      "total": "Toplam",
       "value_distribution_by_asset": "Varlığa göre değer dağılımı",
       "value_distribution_by_location": "Konuma göre değer dağılımı",
-      "visible_percentage": "Yalnızca görünür öğelerin yüzdesi:"
+      "warnings": "{count} uyarı | {count} uyarı"
     },
     "theme_manager": {
       "dark_theme": "Koyu tema",
@@ -5478,8 +5497,8 @@
   },
   "price_form": {
     "date_non_empty": "Fiyat tarihi boş bırakılamaz",
-    "from_asset": "Kaynak varlık",
-    "from_non_empty": "Kaynak varlık boş bırakılamaz",
+    "from_asset": "Varlık",
+    "from_non_empty": "Fiyatlandırılacak varlığı seçin",
     "historic": {
       "hint": "1 {fromAsset}, {price} {toAsset} değerindeydi"
     },
@@ -5487,8 +5506,8 @@
       "hint": "1 {fromAsset}, {price} {toAsset} değerinde"
     },
     "price_non_empty": "Fiyat boş bırakılamaz",
-    "to_asset": "Hedef varlık",
-    "to_non_empty": "Hedef varlık boş bırakılamaz",
+    "to_asset": "Fiyat birimi",
+    "to_non_empty": "Fiyatın birimi olan varlığı seçin",
     "update_price": "Fiyatı güncelle"
   },
   "price_management": {
@@ -5570,7 +5589,7 @@
     "disabled_items": "{num} devre dışı {namePluralized}",
     "item": {
       "delete": "{name} kaydını devre dışı bırak",
-      "empty": "Hiç {namePluralized} bulunamadı!"
+      "empty": "Henüz {namePluralized} yok"
     }
   },
   "profit_loss_events": {
@@ -5727,9 +5746,9 @@
   },
   "queried_address_dialog": {
     "add": "Adres ekle",
-    "all_address_queried": "Tüm Ethereum adresleriniz {module} modülü için sorgulanıyor",
+    "all_address_queried": "{module} modülü için tüm Ethereum adresleri sorgulanıyor. Yalnızca belirli adresleri sorgulamak için onları ekleyin.",
     "remove_tooltip": "Adresi sorgulanan adreslerden kaldır",
-    "subtitle": "{module} modülü için sorgulanacak adresleri yönetin",
+    "subtitle": "rotki'nin {module} modülü için sorgulayacağı Ethereum adreslerini seçin",
     "title": "Sorgulanan adresler"
   },
   "reports_table": {
@@ -5930,13 +5949,25 @@
   },
   "staking": {
     "eth2": "ETH",
+    "hyperliquid": "Hyperliquid",
     "kraken": "Kraken",
     "lido_csm": "Lido CSM",
-    "liquity": "Liquity"
+    "liquity": "Liquity",
+    "solana": "Solana"
   },
   "staking_page": {
     "dropdown_hint": "Daha fazla ayrıntı görmek için bir konum seçin",
     "dropdown_label": "Konum seçin",
+    "failed_addresses": "Bu adresin staking bilgileri yüklenemedi: {addresses} | Bu adreslerin staking bilgileri yüklenemedi: {addresses}",
+    "hyperliquid": {
+      "table": {
+        "address": "Adres",
+        "delegated": "Delege edilen",
+        "empty": "Hyperliquid adreslerinizde stake edilmiş HYPE yok.",
+        "pending_withdrawal": "Bekleyen çekim",
+        "undelegated": "Delegasyonu kaldırılan"
+      }
+    },
     "lido_csm": {
       "description": "rotki'nin teminat bakiyelerini doğrudan muhasebe sözleşmesinden alabilmesi için Lido CSM programına kaydettiğiniz düğüm operatörlerini takip edin.",
       "form": {
@@ -5946,7 +5977,7 @@
         "node_operator_hint": "Lido tarafından atanan sayısal ID'yi kullanın.",
         "node_operator_label": "Düğüm operatörü ID'si",
         "submit": "Düğüm operatörü ekle",
-        "title": "Bir düğüm operatörünü takip et",
+        "title": "Bir düğüm operatörü ekle",
         "validation": {
           "invalid_id": "Negatif olmayan bir tam sayı girin",
           "non_empty_address": "Adres gereklidir",
@@ -5963,13 +5994,13 @@
       "table": {
         "actions": "Eylemler",
         "address": "Adres",
-        "bond_claimable": "Talep edilebilir teminat",
-        "bond_current": "Mevcut teminat",
-        "bond_required": "Gerekli teminat",
+        "bond_claimable": "Talep edilebilir",
+        "bond_current": "Teminat",
+        "bond_required": "Gerekli",
         "description": "rotki, stETH staking teminatını muhasebe sözleşmesinden okumak için aşağıdaki eşleştirmeleri kullanacak.",
         "empty": "Henüz takip edilen düğüm operatörü yok.",
-        "keys_total": "Yatırılan doğrulayıcılar",
-        "node_operator": "Düğüm operatörü ID'si",
+        "keys_total": "Doğrulayıcılar",
+        "node_operator": "Operatör",
         "not_available": "Yok",
         "operator_type": "Operatör türü",
         "refresh_tooltip": "Lido CSM metriklerini yenile",
@@ -5981,6 +6012,17 @@
     "page": {
       "description": "Stake ettiğiniz varlıklar hakkında daha fazla bilgi görmek için desteklenen konumlardan birini seçin.",
       "title": "Staking konumları"
+    },
+    "solana": {
+      "staked": "Stake edilen SOL",
+      "table": {
+        "amount": "Miktar",
+        "empty": "Solana adreslerinizde stake hesabı bulunamadı.",
+        "not_delegated": "Delege edilmemiş",
+        "owner": "Sahip",
+        "stake_account": "Stake hesabı",
+        "validator": "Doğrulayıcı"
+      }
     }
   },
   "statistics_graph_settings": {
@@ -6228,8 +6270,10 @@
       },
       "staking": {
         "add_validator": "{validator} doğrulayıcısı ekleniyor",
+        "hyperliquid": "Hyperliquid staking hesapları sorgulanıyor",
         "kraken": "Kraken staking olayları sorgulanıyor",
         "performance": "ETH staking performans önbelleği yenileniyor",
+        "solana": "Solana stake hesapları sorgulanıyor",
         "validators": "ETH doğrulayıcıları sorgulanıyor"
       },
       "token_detection": {
@@ -6464,7 +6508,7 @@
       "wallet_connect": "İşlemi imzalamak için tarayıcınızı / cüzdanınızı kontrol edin. Tarayıcı cüzdanı köprüsü kullanıyorsanız tarayıcı sekmesinin odakta olduğundan emin olun."
     },
     "wallet_mode": {
-      "label": "Mod",
+      "label": "Bağlantı yolu",
       "local_bridge": "Yerel",
       "wallet_connect": "Wallet Connect"
     },
@@ -6520,7 +6564,7 @@
           "title": "Takip edilen hesaplar"
         },
         "undecoded": {
-          "action": "Durumu görüntüle",
+          "action": "Çözümle",
           "description": "Çözümlenene kadar geçmişinizde ve raporlarınızda yer almazlar.",
           "title": "Çözümlenmemiş işlemler"
         },
@@ -6551,8 +6595,8 @@
     "empty_state": {
       "clear_filters": "Filtreleri temizle",
       "no_data_with_filters": "Mevcut filtrelerle eşleşen olay yok",
-      "no_events": "Olay bulunamadı.\nGeçmişinizi senkronize etmek için bir borsa bağlayın veya bir blokzincir adresini takip edin ya da manuel olarak bir olay ekleyin.",
-      "syncing": "Geçmişiniz sorgulanıyor ve çözümleniyor.\nOlaylar işlendikçe burada görünecek. İlk senkronizasyon biraz zaman alabilir."
+      "no_events": "Olay bulunamadı",
+      "syncing": "Geçmişiniz sorgulanıyor ve çözümleniyor"
     },
     "events": {
       "accounting_rule": {

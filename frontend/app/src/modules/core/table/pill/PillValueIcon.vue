@@ -83,7 +83,7 @@ const iconValue = computed<string>(() => valueDisplay?.source ?? value);
        tag's foreground, which is what keeps a light tag visible on a light pill. -->
   <span
     v-else-if="swatch"
-    class="rounded-sm border shrink-0"
+    class="rounded-xs border shrink-0"
     :style="{ backgroundColor: swatch.background, borderColor: swatch.foreground, height: size, width: size }"
   />
   <AssetIcon

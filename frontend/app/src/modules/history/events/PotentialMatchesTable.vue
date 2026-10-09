@@ -47,7 +47,7 @@ function toggle(row: PotentialMatchRow): void {
 }
 
 function getRowClass(row: PotentialMatchRow): string {
-  return row.entry.identifier === highlightedIdentifier ? '!bg-rui-success/15' : '';
+  return row.entry.identifier === highlightedIdentifier ? 'bg-rui-success/15!' : '';
 }
 </script>
 

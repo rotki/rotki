@@ -41,7 +41,7 @@ watchEffect(() => {
 
 <template>
   <div
-    class="min-h-[1.25rem] text-caption"
+    class="min-h-5 text-caption"
     :class="{
       'text-rui-success': displayedType === Status.SUCCESS,
       'text-rui-error': displayedType === Status.ERROR,

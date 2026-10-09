@@ -61,7 +61,6 @@ defineExpose({ focus });
     v-if="usePlainField"
     ref="inputRef"
     v-model="username"
-    variant="outlined"
     color="primary"
     autocomplete="username"
     :label="t('login.label_username')"
@@ -85,7 +84,6 @@ defineExpose({ focus });
     auto-select-first
     :hide-no-data="savedUsernames.length > 0"
     clearable
-    variant="outlined"
     :item-height="38"
     dense
   >

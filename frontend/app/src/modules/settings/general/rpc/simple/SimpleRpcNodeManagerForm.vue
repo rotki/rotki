@@ -68,7 +68,6 @@ defineExpose({
 <template>
   <RuiTextField
     v-model="form.state.value"
-    variant="outlined"
     color="primary"
     class="pt-2"
     :label="t('general_settings.labels.node_rpc_endpoint')"

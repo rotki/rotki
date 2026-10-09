@@ -260,10 +260,10 @@ EVENT_CATEGORY_DETAILS = {
         icon='lu-scale',
     )}, EventCategory.DONATE: {DEFAULT: EventCategoryDetails(
         label='donate',
-        icon='lu-donate-fill',
+        icon='lu-hand-heart',
     )}, EventCategory.RECEIVE_DONATION: {DEFAULT: EventCategoryDetails(
         label='receive donation',
-        icon='lu-receive-donation-fill',
+        icon='lu-heart-handshake',
     )}, EventCategory.RENEW: {DEFAULT: EventCategoryDetails(
         label='renew',
         icon='lu-refresh-cw',
@@ -441,6 +441,6 @@ ACCOUNTING_EVENTS_ICONS = {
     AccountingEventType.LOAN: 'lu-handshake',
     AccountingEventType.PREFORK_ACQUISITION: 'lu-git-branch',
     AccountingEventType.STAKING: 'lu-layers',
-    AccountingEventType.HISTORY_EVENT: 'lu-history-events-fill',
+    AccountingEventType.HISTORY_EVENT: 'lu-history-events',
     AccountingEventType.TRANSACTION_EVENT: 'lu-arrow-left-right',
 }

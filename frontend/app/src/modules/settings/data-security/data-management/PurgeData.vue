@@ -39,7 +39,6 @@ const {
     <div class="flex flex-col gap-4">
       <RuiAutoComplete
         v-model="modelSource"
-        variant="outlined"
         :label="t('purge_selector.label')"
         :options="purgeable"
         text-attr="text"
@@ -70,7 +69,6 @@ const {
       <RuiAutoComplete
         v-if="modelSource === Purgeable.CENTRALIZED_EXCHANGES"
         v-model="modelCentralizedExchangeDataType"
-        variant="outlined"
         label="Data type"
         :options="centralizedExchangePurgeTypeOptions"
         text-attr="text"

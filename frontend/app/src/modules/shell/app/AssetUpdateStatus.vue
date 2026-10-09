@@ -24,7 +24,7 @@ const message = computed<string>(() => {
 </script>
 
 <template>
-  <div class="max-w-[27.5rem] mx-auto flex flex-col items-center gap-4 py-12 text-center">
+  <div class="max-w-110 mx-auto flex flex-col items-center gap-4 py-12 text-center">
     <RuiProgress
       color="primary"
       variant="indeterminate"

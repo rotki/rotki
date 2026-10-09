@@ -139,9 +139,8 @@ defineExpose({
           v-model="model"
           :disabled="!address || loading"
           raw-input
-          variant="outlined"
           :style="{ fontSize: dynamicFontSize }"
-          class="font-bold text-center w-full outline-none bg-transparent placeholder:text-rui-grey-300 dark:placeholder:text-rui-grey-800"
+          class="font-bold text-center w-full outline-hidden bg-transparent placeholder:text-rui-grey-300 dark:placeholder:text-rui-grey-800"
           placeholder="0"
         />
         <AmountInput
@@ -149,9 +148,8 @@ defineExpose({
           v-model="fiatValue"
           :disabled="!address || loading"
           raw-input
-          variant="outlined"
           :style="{ fontSize: dynamicFontSize }"
-          class="font-bold text-center w-full outline-none bg-transparent placeholder:text-rui-grey-300 dark:placeholder:text-rui-grey-800"
+          class="font-bold text-center w-full outline-hidden bg-transparent placeholder:text-rui-grey-300 dark:placeholder:text-rui-grey-800"
           :placeholder="fiatValuePlaceholder"
         />
       </div>

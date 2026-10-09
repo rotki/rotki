@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <div
     v-if="status && (status.success || status.error)"
-    class="action-status-indicator min-h-[3rem]"
+    class="action-status-indicator min-h-12"
   >
     <RuiAlert
       class="mb-0"

@@ -172,7 +172,7 @@ function promptClose() {
       <RuiCard
         :divide="divide"
         data-testid="bottom-dialog"
-        class="!rounded-b-none"
+        class="rounded-b-none!"
       >
         <template #custom-header>
           <div class="m-4">

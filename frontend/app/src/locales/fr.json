@@ -1851,14 +1851,14 @@
     "refresh_tooltip": "Rafraîchir vos événements de mise en jeu Kraken"
   },
   "kraken_staking_overview": {
-    "current": "actuel",
+    "current": "Valeur actuelle",
     "earned": "Total gagné",
     "hint": {
       "current": "Sur la base du prix actuel des actifs",
       "historical": "Sur la base du prix historique des actifs"
     },
-    "historical": "historique",
-    "title": "Aperçu"
+    "historical": "Valeur à la réception",
+    "title": "Total gagné"
   },
   "kraken_staking_received": {
     "switch": {
@@ -2270,19 +2270,15 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Quantité et valeur de l'actif dans le temps",
-      "max_visible": "Nombre maximum d'actifs à afficher",
-      "netvalue_over_time": "Valeur nette dans le temps",
       "no_balance_snapshot_data_available": "Aucune donnée de snapshot de solde disponible.",
       "range_selector": {
         "data_available": "Données disponibles",
         "ending_date_must_before_starting_date": "La date de fin ne peut pas être antérieure à la date de début.",
         "no_entries_available_before": "Aucune entrée disponible avant"
       },
-      "refresh_the_net_value_data": " Rafraîchir les données de valeur nette",
       "select_asset": "Rechercher un actif",
       "value_distribution_by_asset": "Répartition de la valeur par actif",
-      "value_distribution_by_location": "Répartition de la valeur par emplacement",
-      "visible_percentage": "% des éléments visibles uniquement:"
+      "value_distribution_by_location": "Répartition de la valeur par emplacement"
     },
     "theme_manager": {
       "dark_theme": "Thème Sombre",

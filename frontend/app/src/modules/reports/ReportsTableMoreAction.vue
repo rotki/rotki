@@ -14,13 +14,13 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiMenu
-    :class-names="{ menu: 'max-w-[15rem]' }"
+    :class-names="{ menu: 'max-w-60' }"
     :options="{ placement: 'bottom-end' }"
     close-on-content-click
   >
     <template #activator="{ attrs }">
       <RuiButton
-        class="!p-2"
+        class="p-2!"
         icon
         variant="text"
         v-bind="attrs"

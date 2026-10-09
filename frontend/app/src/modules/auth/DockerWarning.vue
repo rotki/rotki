@@ -18,7 +18,7 @@ function proceed(): void {
 </script>
 
 <template>
-  <div class="max-w-[32rem] mx-auto">
+  <div class="max-w-128 mx-auto">
     <RuiAlert
       type="warning"
       :title="t('docker_warning.heading')"
@@ -38,7 +38,7 @@ function proceed(): void {
           <p class="mb-1">
             {{ t('docker_warning.command_hint') }}
           </p>
-          <div class="flex items-center gap-2 pl-2 rounded bg-rui-grey-100 dark:bg-rui-grey-900">
+          <div class="flex items-center gap-2 pl-2 rounded-sm bg-rui-grey-100 dark:bg-rui-grey-900">
             <code class="font-mono text-xs break-all grow">{{ SESSION_KEY_COMMAND }}</code>
             <CopyButton
               size="sm"

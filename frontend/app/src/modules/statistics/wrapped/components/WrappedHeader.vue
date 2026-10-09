@@ -10,7 +10,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="py-8 w-full rounded-lg flex flex-col items-center bg-gradient-to-b from-transparent to-rui-primary/[0.05]">
+  <div class="py-8 w-full rounded-lg flex flex-col items-center bg-linear-to-b from-transparent to-rui-primary/5">
     <RotkiLogo
       :size="3"
       class="mb-4"

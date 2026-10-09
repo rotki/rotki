@@ -36,14 +36,14 @@ const { isMdAndUp } = useBreakpoint();
   <div
     :data-testid="isMovement ? 'movement-collapse' : 'swap-collapse'"
     :data-event-id="subgroupId"
-    class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-gradient-to-b from-rui-grey-300 to-transparent dark:from-rui-grey-900 group/row relative mx-2 rounded-t-2xl mt-[3px]"
+    class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-linear-to-b from-rui-grey-300 to-transparent dark:from-rui-grey-900 group/row relative mx-2 rounded-t-2xl mt-[3px]"
   >
     <!-- Collapse button (absolute top-left like expand) -->
     <RuiButton
       size="sm"
       icon
       color="primary"
-      class="size-5 z-[6]"
+      class="size-5 z-6"
       @click="emit('collapse')"
     >
       <RuiIcon
@@ -68,7 +68,7 @@ const { isMdAndUp } = useBreakpoint();
         <RuiButton
           v-if="canUnlink"
           data-testid="collapse-unlink"
-          class="!h-6 [&>span]:!hidden md:[&>span]:!inline"
+          class="h-6! [&>span]:hidden! md:[&>span]:inline!"
           variant="text"
           size="sm"
           color="warning"

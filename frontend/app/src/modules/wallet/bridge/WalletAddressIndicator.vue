@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
         />
         <HashLink
           v-if="connectedAddress"
-          class="!pl-0 flex-1"
+          class="pl-0! flex-1"
           :location="chain"
           :text="connectedAddress"
           copy-only

@@ -154,7 +154,6 @@ defineExpose({
           :error-messages="form.errors('assetType')"
           key-attr="key"
           text-attr="label"
-          variant="outlined"
         />
       </div>
 
@@ -169,7 +168,6 @@ defineExpose({
             auto-select-first
             key-attr="name"
             text-attr="label"
-            variant="outlined"
           >
             <template #selection="{ item }">
               <ChainDisplay
@@ -195,7 +193,6 @@ defineExpose({
             :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
-            variant="outlined"
           />
         </div>
         <div
@@ -205,7 +202,6 @@ defineExpose({
           <RuiTextField
             v-model="form.state.address"
             class="flex-1"
-            variant="outlined"
             color="primary"
             :loading="fetching"
             :error-messages="form.errors('address')"
@@ -233,7 +229,6 @@ defineExpose({
             v-model="form.state.collectibleId"
             data-testid="collectible-id-input"
             class="sm:w-1/4"
-            variant="outlined"
             color="primary"
             type="number"
             :label="t('asset_form.labels.collectible_id')"
@@ -256,7 +251,6 @@ defineExpose({
             :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
-            variant="outlined"
           />
         </div>
         <div
@@ -265,7 +259,6 @@ defineExpose({
         >
           <RuiTextField
             v-model="form.state.address"
-            variant="outlined"
             color="primary"
             :loading="fetching"
             :error-messages="form.errors('address')"
@@ -283,7 +276,6 @@ defineExpose({
       >
         <RuiTextField
           v-model="form.state.address"
-          variant="outlined"
           color="primary"
           :error-messages="form.errors('address')"
           :label="t('common.address')"
@@ -297,7 +289,6 @@ defineExpose({
           v-model="form.state.name"
           data-testid="name-input"
           class="md:col-span-2"
-          variant="outlined"
           color="primary"
           :error-messages="form.errors('name')"
           :label="t('common.name')"
@@ -309,7 +300,6 @@ defineExpose({
           v-model="form.state.symbol"
           :class="isTokenRequiresAddress ? 'md:col-span-1' : 'md:col-span-2'"
           data-testid="symbol-input"
-          variant="outlined"
           color="primary"
           :error-messages="form.errors('symbol')"
           :label="t('asset_form.labels.symbol')"
@@ -322,7 +312,6 @@ defineExpose({
         >
           <RuiTextField
             v-model="decimalsModel"
-            variant="outlined"
             color="primary"
             min="0"
             max="18"
@@ -361,7 +350,6 @@ defineExpose({
             <div class="p-4">
               <DateTimePicker
                 v-model="startedModel"
-                variant="outlined"
                 :label="t('asset_form.labels.started')"
                 :error-messages="form.errors('started')"
                 type="epoch"
@@ -371,7 +359,6 @@ defineExpose({
                 <RuiTextField
                   v-if="isEvmToken"
                   v-model="form.state.protocol"
-                  variant="outlined"
                   color="primary"
                   clearable
                   :label="t('common.protocol')"
@@ -381,7 +368,6 @@ defineExpose({
                 />
                 <AssetSelect
                   v-model="form.state.swappedFor"
-                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
                   :error-messages="form.errors('swappedFor')"
@@ -390,7 +376,6 @@ defineExpose({
                 <AssetSelect
                   v-if="!isEvmToken && form.state.assetType"
                   v-model="form.state.forked"
-                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.forked')"
                   :error-messages="form.errors('forked')"

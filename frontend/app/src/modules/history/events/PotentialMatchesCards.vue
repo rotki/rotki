@@ -46,7 +46,7 @@ function eventLabel(row: PotentialMatchRow): string {
   <ScrollableDialogContent fill>
     <div
       v-if="matches.length === 0"
-      class="flex items-center justify-center py-8 border border-default rounded text-body-2 text-rui-text-secondary"
+      class="flex items-center justify-center py-8 border border-default rounded-sm text-body-2 text-rui-text-secondary"
       data-testid="potential-matches-empty"
     >
       <RuiProgress
@@ -68,10 +68,10 @@ function eventLabel(row: PotentialMatchRow): string {
       <div
         v-for="row in matches"
         :key="row.entry.identifier"
-        class="flex flex-col gap-1 rounded border p-2 cursor-pointer transition-all"
+        class="flex flex-col gap-1 rounded-sm border p-2 cursor-pointer transition-all"
         :class="[
           isSelected(row) ? 'border-rui-primary bg-rui-primary/5' : 'border-default hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900',
-          { '!bg-rui-success/15': row.entry.identifier === highlightedIdentifier },
+          { 'bg-rui-success/15!': row.entry.identifier === highlightedIdentifier },
         ]"
         data-testid="potential-match"
         :data-key="row.entry.identifier"
@@ -129,7 +129,7 @@ function eventLabel(row: PotentialMatchRow): string {
             />
             <RuiButton
               size="sm"
-              class="!h-[30px] !py-0 min-w-24"
+              class="h-[30px]! py-0! min-w-24"
               :color="isSelected(row) ? 'success' : 'primary'"
               :variant="isSelected(row) ? 'default' : 'outlined'"
               data-testid="potential-match-select"

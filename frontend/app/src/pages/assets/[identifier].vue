@@ -94,7 +94,7 @@ const {
             :display-mode="contractInfo.location ? 'link' : 'copy'"
             hide-text
             size="18"
-            class="[&_a]:!p-2.5"
+            class="[&_a]:p-2.5!"
           />
 
           <AssetExternalLinks

@@ -36,7 +36,7 @@ const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
       <RuiTabs
         v-model="tab"
         color="primary"
-        class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
+        class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
       >
         <RuiTab>{{ t('asset_details_layout.tab.breakdown') }}</RuiTab>
         <RuiTab>{{ t('asset_details_layout.tab.per_location') }}</RuiTab>

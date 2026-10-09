@@ -76,7 +76,7 @@ watch(visible, (isVisible, wasVisible) => {
 <template>
   <RuiMenu
     v-model="visible"
-    :class-names="{ menu: 'w-[22rem]' }"
+    :class-names="{ menu: 'w-88' }"
     :options="{ placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
@@ -99,7 +99,6 @@ watch(visible, (isVisible, wasVisible) => {
     <div class="border-b border-default p-3">
       <RuiTextField
         v-model="filter"
-        variant="outlined"
         dense
         autofocus
         hide-details

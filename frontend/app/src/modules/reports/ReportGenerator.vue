@@ -65,7 +65,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RuiCard :class-names="{ content: '!pt-0' }">
+  <RuiCard :class-names="{ content: 'pt-0!' }">
     <template #custom-header>
       <div class="flex justify-between px-4 py-2">
         <CardTitle>

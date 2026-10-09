@@ -123,7 +123,7 @@ function reset() {
       v-if="detectedChainNames.length > 0"
       :open-delay="200"
       :close-delay="0"
-      :class-names="{ tooltip: 'max-w-[20rem]' }"
+      :class-names="{ tooltip: 'max-w-80' }"
     >
       <template #activator>
         <RuiChip
@@ -147,7 +147,7 @@ function reset() {
     >
       <RuiTooltip
         :close-delay="0"
-        :class-names="{ tooltip: '!-ml-1' }"
+        :class-names="{ tooltip: '-ml-1!' }"
       >
         <template #activator>
           <div class="relative -ml-2 z-[0] hover:z-[1]">

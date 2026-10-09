@@ -29,7 +29,7 @@ function onMissingAssetClick(item: AssetBalanceWithPrice): void {
 
   <div
     v-else
-    class="[&_.text-caption]:!leading-4"
+    class="[&_.text-caption]:leading-4!"
   >
     <AssetDetails
       :asset="asset.asset"

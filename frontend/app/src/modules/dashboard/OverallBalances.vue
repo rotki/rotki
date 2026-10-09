@@ -131,7 +131,7 @@ onMounted(() => {
         />
         <div
           v-if="isBusy"
-          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
+          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/80 dark:bg-dark-elevated/90 z-6"
         >
           <RuiProgress
             circular
@@ -144,7 +144,7 @@ onMounted(() => {
         </div>
         <div
           v-else-if="netValueError"
-          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center px-4 text-center bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
+          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center px-4 text-center bg-white/80 dark:bg-dark-elevated/90 z-6"
           data-testid="net-value-error"
         >
           <div class="text-rui-text-secondary text-caption">

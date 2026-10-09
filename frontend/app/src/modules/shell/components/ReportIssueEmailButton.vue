@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
       variant="outlined"
       color="primary"
       size="lg"
-      class="!rounded-r-none !border-r-0"
+      class="rounded-r-none! border-r-0!"
       :disabled="!isFormValid"
       data-testid="submit-email"
       @click="emit('submit-email')"
@@ -38,7 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
           variant="outlined"
           color="primary"
           size="lg"
-          class="!rounded-l-none !px-2 -ml-[1px]"
+          class="rounded-l-none! px-2! -ml-px"
           v-bind="attrs"
         >
           <RuiIcon name="lu-chevron-down" />

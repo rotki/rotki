@@ -18,7 +18,6 @@ const { t } = useI18n({ useScope: 'global' });
     clearable
     data-testid="account-label-field"
     color="primary"
-    variant="outlined"
     :label="t('common.name')"
     :disabled="disabled"
   />

@@ -122,7 +122,6 @@ async function reset(): Promise<void> {
       v-bind="$attrs"
       v-model="form.state.value"
       type="number"
-      variant="outlined"
       color="primary"
       class="w-full"
       :label="label"

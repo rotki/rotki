@@ -130,7 +130,6 @@ watch(whitelistWriteError, (message) => {
         :error-messages="whitelistError"
         :disabled="renderAllNftImages === 'all'"
         class="flex-1"
-        variant="outlined"
         clearable
         data-testid="nft-whitelist-input"
       />

@@ -39,7 +39,7 @@ const chainItems = computed<Array<[string, BigNumber]>>(() => {
       <span>{{ index + 1 }}.</span>
       <ChainDisplay
         dense
-        class="[&>div:first-child]:!w-auto"
+        class="[&>div:first-child]:w-auto!"
         :chain="getChain(item[0].toLowerCase())"
       />
     </template>

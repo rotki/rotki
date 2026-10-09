@@ -74,7 +74,7 @@ export class ChainsSettingsPage {
       return;
     }
 
-    const menu = this.page.locator('[role=menu]');
+    const menu = this.page.locator('[role=listbox]');
     if (!await menu.isVisible()) {
       await field.locator('[data-id=activator]').click();
       await menu.waitFor({ state: 'visible' });

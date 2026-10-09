@@ -16,7 +16,7 @@ function toggleVisibility(): void {
     @click="toggleVisibility()"
   >
     <RuiIcon
-      :class="{ '-rotate-[25deg]': visible }"
+      :class="{ 'rotate-[-25deg]': visible }"
       name="lu-circle-question-mark"
     />
   </MenuTooltipButton>

@@ -95,7 +95,7 @@ watchImmediate(show, (value) => {
     v-model="show"
     :max-width="700"
   >
-    <RuiCard :class-names="{ content: '!pt-0' }">
+    <RuiCard :class-names="{ content: 'pt-0!' }">
       <template #header>
         {{ t('transactions.actions.redecode_events') }}
       </template>
@@ -112,7 +112,7 @@ watchImmediate(show, (value) => {
       <!-- Indexer order section for EVM events (only when showIndexerOptions is true) -->
       <SettingsItem
         v-if="showIndexerOptions && isEvmEvent"
-        class="!py-0 !border-0"
+        class="py-0! border-0!"
       >
         <template #title>
           {{ t('transactions.events.confirmation.reset.indexer_order_title') }}

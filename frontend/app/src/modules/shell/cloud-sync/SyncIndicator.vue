@@ -40,7 +40,6 @@ const {
     <RuiMenu
       id="balances-saved-dropdown"
       v-model="modelVisible"
-      :class-names="{ menu: 'z-[215]' }"
       :persistent="modelSyncSettingMenuOpen"
     >
       <template #activator="{ attrs }">

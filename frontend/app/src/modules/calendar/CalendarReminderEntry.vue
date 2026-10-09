@@ -39,18 +39,16 @@ onMounted(() => {
       v-model="amount"
       :label="t('calendar.reminder.labels.amount')"
       integer
-      variant="outlined"
       :error-messages="errorMessages"
       dense
       data-testid="reminder-amount"
       @blur="emit('commit')"
     />
-    <div class="w-[10rem]">
+    <div class="w-40">
       <RuiMenuSelect
         v-model="unit"
         :label="t('calendar.reminder.labels.unit')"
         :options="unitOptions"
-        variant="outlined"
         key-attr="key"
         text-attr="label"
         dense
@@ -67,7 +65,7 @@ onMounted(() => {
         icon
         color="error"
         variant="text"
-        class="!p-2"
+        class="p-2!"
         data-testid="reminder-delete"
         @click="emit('delete')"
       >

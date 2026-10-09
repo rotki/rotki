@@ -27,9 +27,9 @@ const { isLgAndDown } = useBreakpoint();
           premium
         >
           <RuiButton
-            :class="{ '[&_span]:!hidden lg:[&_span]:!block': hideOnSmallScreen }"
+            :class="{ '[&_span]:hidden! lg:[&_span]:block!': hideOnSmallScreen }"
             :rounded="false"
-            class="lg:!py-2"
+            class="lg:py-2!"
             color="primary"
             data-testid="get-premium-button"
           >

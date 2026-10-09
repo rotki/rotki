@@ -34,7 +34,7 @@ const headers = computed<DataTableColumn<Tag>[]>(() => [
     sortable: true,
   },
   {
-    cellClass: 'w-1/2 !text-sm !text-rui-text-secondary',
+    cellClass: 'w-1/2 text-sm! text-rui-text-secondary!',
     key: 'description',
     label: t('common.description'),
     sortable: true,

@@ -64,7 +64,7 @@ const { t } = useI18n({ useScope: 'global' });
             variant="text"
             icon
             size="sm"
-            class="!p-2"
+            class="p-2!"
             v-bind="attrs"
           >
             <RuiIcon

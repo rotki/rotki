@@ -155,7 +155,7 @@ describe('tradeRecipientAddress', () => {
       set(recipientApi.valid, false);
       await nextTick();
 
-      expect(wrapper.find('[data-testid=recipient-field]').classes()).toContain('!border-rui-error');
+      expect(wrapper.find('[data-testid=recipient-field]').classes()).toContain('border-rui-error!');
     });
   });
 

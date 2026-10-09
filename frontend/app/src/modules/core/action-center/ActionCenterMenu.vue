@@ -37,9 +37,9 @@ interface TriggerTone {
 
 /** Matches the row colours, so the trigger never sounds more alarmed than the rows it opens. */
 const URGENCY_TONES: Record<ActionUrgency, TriggerTone> = {
-  [ActionUrgency.AUTOMATIC]: { badgeColor: 'secondary', icon: 'lu-list-todo', textClass: '!text-rui-text-secondary' },
-  [ActionUrgency.DECISION]: { badgeColor: 'warning', icon: 'lu-triangle-alert', textClass: '!text-rui-warning' },
-  [ActionUrgency.TODO]: { badgeColor: 'info', icon: 'lu-list-todo', textClass: '!text-rui-info' },
+  [ActionUrgency.AUTOMATIC]: { badgeColor: 'secondary', icon: 'lu-list-todo', textClass: 'text-rui-text-secondary!' },
+  [ActionUrgency.DECISION]: { badgeColor: 'warning', icon: 'lu-triangle-alert', textClass: 'text-rui-warning!' },
+  [ActionUrgency.TODO]: { badgeColor: 'info', icon: 'lu-list-todo', textClass: 'text-rui-info!' },
 };
 
 const { t } = useI18n({ useScope: 'global' });
@@ -79,7 +79,7 @@ const icon = computed<RuiIcons>(() => {
   <RuiMenu
     v-model="open"
     :options="{ placement: 'bottom-end' }"
-    :class-names="{ menu: 'w-[36rem] max-w-[90vw]' }"
+    :class-names="{ menu: 'w-144 max-w-[90vw]' }"
   >
     <template #activator="{ attrs }">
       <RuiTooltip
@@ -91,7 +91,7 @@ const icon = computed<RuiIcons>(() => {
             variant="text"
             icon
             size="lg"
-            :class="tone?.textClass ?? '!text-rui-text-secondary'"
+            :class="tone?.textClass ?? 'text-rui-text-secondary!'"
             data-testid="actions-center-button"
             :aria-label="tooltip"
             v-bind="attrs"

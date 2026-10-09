@@ -55,7 +55,7 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
 </script>
 
 <template>
-  <div class="flex flex-col min-w-[16rem]">
+  <div class="flex flex-col min-w-64">
     <div
       v-if="showOperators"
       class="p-3 pb-2"

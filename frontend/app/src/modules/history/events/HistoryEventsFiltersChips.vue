@@ -118,7 +118,7 @@ const {
             v-if="isAutoFixable && !hasDuplicateChanges"
             size="sm"
             variant="text"
-            class="!py-0 underline !text-xs gap-1"
+            class="py-0! underline text-xs! gap-1"
             color="primary"
             :loading="fixLoading"
             data-testid="duplicate-fix-all"
@@ -149,7 +149,7 @@ const {
           size="sm"
           variant="text"
           color="secondary"
-          class="!py-0 underline"
+          class="py-0! underline"
           data-testid="duplicate-refresh"
           @click="refreshDuplicateView()"
         >

@@ -16,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTooltip
       :options="{ placement: 'right' }"
       :open-delay="700"
-      :class-names="{ tooltip: 'max-w-[16rem]' }"
+      :class-names="{ tooltip: 'max-w-64' }"
     >
       <template #activator>
         <RuiIcon
@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       :disabled="disabled"
       :loading="loading"
-      class="-mr-3 !py-[0.625rem] rounded-l-none"
+      class="-mr-3 py-2.5! rounded-l-none"
       size="sm"
       color="primary"
       @click="emit('refresh')"

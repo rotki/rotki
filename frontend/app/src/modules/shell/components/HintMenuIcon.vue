@@ -10,7 +10,7 @@ defineSlots<{
 
 <template>
   <RuiMenu
-    :class-names="{ menu: 'max-w-[25rem]' }"
+    :class-names="{ menu: 'max-w-100' }"
     v-bind="$attrs"
   >
     <template #activator="{ attrs }">

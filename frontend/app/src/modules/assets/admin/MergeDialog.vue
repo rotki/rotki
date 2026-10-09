@@ -131,7 +131,6 @@ watch(display, (isDisplayed) => {
           v-model="form.state.sourceIdentifier"
           :label="t('merge_dialog.source.label')"
           :error-messages="form.errors('sourceIdentifier')"
-          variant="outlined"
           color="primary"
           :disabled="submitting"
           :hint="t('merge_dialog.source_hint')"
@@ -145,7 +144,6 @@ watch(display, (isDisplayed) => {
         <AssetSelect
           v-model="form.state.targetIdentifier"
           v-model:asset="target"
-          variant="outlined"
           :error-messages="form.errors('targetIdentifier')"
           :label="t('merge_dialog.target.label')"
           :disabled="submitting"

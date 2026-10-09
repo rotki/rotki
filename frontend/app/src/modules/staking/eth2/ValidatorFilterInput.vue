@@ -39,7 +39,6 @@ const { t } = useI18n({ useScope: 'global' });
     key-attr="publicKey"
     text-attr="index"
     :item-height="68"
-    variant="outlined"
     :label="t('validator_filter_input.label')"
   >
     <template #item="{ item }">

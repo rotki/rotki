@@ -52,20 +52,20 @@ const { t } = useI18n({ useScope: 'global' });
 
     <template #header="{ item }">
       <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        <BadgeDisplay class="!normal-case">
+        <BadgeDisplay class="normal-case!">
           {{ item.typeLabel }}
         </BadgeDisplay>
         <RuiChip
           v-if="item.resolvedAsExternal"
           size="sm"
           color="info"
-          class="!py-0"
+          class="py-0!"
           data-testid="unmatched-row-resolved"
         >
           {{ item.resolvedLabel }}
         </RuiChip>
         <LocationDisplay
-          class="[&_div]:!justify-start [&_span]:!text-caption [&_span]:!text-rui-text-secondary"
+          class="[&_div]:justify-start! [&_span]:text-caption! [&_span]:text-rui-text-secondary!"
           size="16px"
           :identifier="item.location"
           horizontal
@@ -80,7 +80,7 @@ const { t } = useI18n({ useScope: 'global' });
             <RuiChip
               size="sm"
               color="warning"
-              class="!py-0"
+              class="py-0!"
             >
               {{ t('asset_movement_matching.fiat_hint.label') }}
             </RuiChip>
@@ -98,7 +98,7 @@ const { t } = useI18n({ useScope: 'global' });
     <template #warning="{ item }">
       <div
         v-if="item.untrackedDestination"
-        class="flex items-start gap-1.5 rounded px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
+        class="flex items-start gap-1.5 rounded-sm px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
         data-testid="unmatched-card-untracked-reason"
       >
         <RuiIcon
@@ -118,7 +118,7 @@ const { t } = useI18n({ useScope: 'global' });
           </i18n-t>
           <HashLink
             v-if="item.destinationAddress"
-            class="[&_span]:!text-caption"
+            class="[&_span]:text-caption!"
             :text="item.destinationAddress"
           />
         </div>

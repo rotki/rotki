@@ -33,7 +33,7 @@ function getButtonText(): string {
       :size="size"
       :variant="variant"
       :color="color"
-      :class="{ '!w-full': fullWidth }"
+      :class="{ 'w-full!': fullWidth }"
       :loading="loading"
       :disabled="disabled"
       @click="emit('click')"

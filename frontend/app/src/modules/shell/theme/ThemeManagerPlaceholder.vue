@@ -8,7 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div class="relative">
-    <div class="grid lg:grid-cols-2 gap-4 dark:invert-[0.95] dark:hue-rotate-[180deg]">
+    <div class="grid lg:grid-cols-2 gap-4 dark:invert-[0.95] dark:hue-rotate-180">
       <AppImage
         :src="getPublicPlaceholderImagePath('theme_manager.png')"
         class="-m-2"

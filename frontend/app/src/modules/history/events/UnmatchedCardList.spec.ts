@@ -141,7 +141,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
   it('should highlight the card a deep link points at', () => {
     const wrapper = mountList(createItems(3), 'item-1');
 
-    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-1"]').classes()).toContain('!bg-rui-warning/15');
-    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-0"]').classes()).not.toContain('!bg-rui-warning/15');
+    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-1"]').classes()).toContain('bg-rui-warning/15!');
+    expect(wrapper.find('[data-testid=unmatched-card][data-key="item-0"]').classes()).not.toContain('bg-rui-warning/15!');
   });
 });

@@ -97,7 +97,7 @@ onMounted(async () => {
         {{ t('premium_components.statistics.failed_daily_prices.rate_limited.title') }}
       </RuiTab>
     </RuiTabs>
-    <div class="!max-h-[calc(100vh-18rem)] overflow-auto px-4 pt-3 pb-4">
+    <div class="max-h-[calc(100vh-18rem)]! overflow-auto px-4 pt-3 pb-4">
       <RuiTabItems
         v-model="tab"
         class="overflow-y-auto"
@@ -130,7 +130,6 @@ onMounted(async () => {
                 dense
                 :disabled="row.useRefreshedHistoricalPrice"
                 :label="t('profit_loss_report.actionable.missing_prices.input_price')"
-                variant="outlined"
                 :success-messages="row.saved ? [t('profit_loss_report.actionable.missing_prices.price_is_saved')] : []"
                 :error-messages="errorMessages[row.time]"
                 data-testid="missing-daily-price-input"

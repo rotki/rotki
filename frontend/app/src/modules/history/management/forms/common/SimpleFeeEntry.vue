@@ -60,7 +60,6 @@ watchImmediate(() => location, (newLocation) => {
       <div class="grow grid md:grid-cols-2 gap-4">
         <AmountInput
           v-model="modelValue.amount"
-          variant="outlined"
           data-testid="fee-amount"
           :disabled="disabled"
           :label="t('common.amount')"
@@ -69,7 +68,6 @@ watchImmediate(() => location, (newLocation) => {
         />
         <AssetSelect
           v-model="modelValue.asset"
-          variant="outlined"
           :disabled="disabled"
           data-testid="fee-asset"
           :source="{ chain, showIgnored: true }"

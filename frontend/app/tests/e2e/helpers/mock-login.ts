@@ -82,7 +82,7 @@ export async function submitLogin(page: Page, username = 'alice', password = 'a-
   const activator = usernameField.locator('[data-id=activator]');
   if (await activator.count() > 0) {
     await activator.click();
-    const menu = page.locator('[role=menu]');
+    const menu = page.locator('[role=listbox]');
     await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
     await usernameInput.fill(username);
     const option = menu.getByText(username, { exact: true });

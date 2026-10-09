@@ -11,9 +11,9 @@ export type DuplicateHandlingStatus = (typeof DuplicateHandlingStatus)[keyof typ
 export type HighlightType = ContextColorsType;
 
 const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {
-  error: '!bg-rui-error/15',
-  success: '!bg-rui-success/15',
-  warning: '!bg-rui-warning/15',
+  error: 'bg-rui-error/15!',
+  success: 'bg-rui-success/15!',
+  warning: 'bg-rui-warning/15!',
 };
 
 export function getHighlightClass(highlightType?: HighlightType): string | undefined {

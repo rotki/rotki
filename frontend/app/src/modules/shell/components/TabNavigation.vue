@@ -25,7 +25,7 @@ function getTabKey(route: RouteLocationRaw): string {
       color="primary"
       class="border-default"
       :class="{
-        'border rounded bg-white dark:bg-rui-grey-900 flex max-w-min mx-auto mb-5': !plain,
+        'border rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min mx-auto mb-5': !plain,
         'border-b': plain,
       }"
     >

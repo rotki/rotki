@@ -155,7 +155,7 @@ onMounted(() => {
                   :variant="activeStrategyForAll.local ? 'default' : 'outlined'"
                   value="local"
                   color="primary"
-                  class="!rounded-r-none"
+                  class="rounded-r-none!"
                   @click="setResolution('local')"
                 >
                   {{ t('conflict_dialog.keep_local') }}
@@ -173,7 +173,7 @@ onMounted(() => {
                   :variant="activeStrategyForAll.remote ? 'default' : 'outlined'"
                   color="primary"
                   value="remote"
-                  class="!rounded-l-none"
+                  class="rounded-l-none!"
                   @click="setResolution('remote')"
                 >
                   {{ t('conflict_dialog.keep_remote') }}

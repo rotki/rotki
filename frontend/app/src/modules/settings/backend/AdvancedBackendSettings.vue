@@ -37,7 +37,6 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="maxLogSize"
       data-testid="max-log-size-input"
       class="mb-4"
-      variant="outlined"
       color="primary"
       :hint="
         !!fileConfig.maxSizeInMbAllLogs
@@ -61,7 +60,6 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTextField
       v-model="maxLogFiles"
       data-testid="max-log-files-input"
-      variant="outlined"
       color="primary"
       class="mb-4"
       :hint="t('backend_settings.max_log_files.hint')"
@@ -87,7 +85,6 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTextField
       v-model="sqliteInstructions"
       data-testid="sqlite-instructions-input"
-      variant="outlined"
       color="primary"
       class="mb-4"
       :hint="

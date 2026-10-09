@@ -62,15 +62,15 @@ function choose(source: SourceTotal): void {
       >
         <button
           type="button"
-          class="grid grid-cols-[10px_1fr_auto_4.5rem] items-center gap-2.5 w-full px-1.5 py-1 rounded text-left text-sm hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
-          :class="{ '!bg-rui-primary/10': selectedKind === source.kind }"
+          class="grid grid-cols-[10px_1fr_auto_4.5rem] items-center gap-2.5 w-full px-1.5 py-1 rounded-sm text-left text-sm hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
+          :class="{ 'bg-rui-primary/10!': selectedKind === source.kind }"
           :aria-pressed="source.kind === ExtraKind.NFT ? undefined : selectedKind === source.kind"
           :data-kind="source.kind"
           data-testid="dashboard-source-legend-row"
           @click="choose(source)"
         >
           <span
-            class="size-2.5 rounded-sm"
+            class="size-2.5 rounded-xs"
             :class="SOURCE_KIND_COLOR[source.kind]"
           />
           <span class="flex items-center gap-1 truncate">
@@ -108,7 +108,7 @@ function choose(source: SourceTotal): void {
       >
         <button
           type="button"
-          class="grid grid-cols-[10px_1fr_auto_4.5rem] items-center gap-2.5 w-full px-1.5 py-1 rounded text-left text-sm hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
+          class="grid grid-cols-[10px_1fr_auto_4.5rem] items-center gap-2.5 w-full px-1.5 py-1 rounded-sm text-left text-sm hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
           data-testid="dashboard-source-legend-liabilities"
           @click="emit('jump', 'liabilities')"
         >

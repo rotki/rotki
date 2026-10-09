@@ -48,7 +48,7 @@ export class HistoryEventsPage {
   async selectEntryType(type: string): Promise<void> {
     const activator = this.page.locator('[data-testid=entry-type] [data-id=activator]');
     await activator.click();
-    const menu = this.page.locator('[role=menu]');
+    const menu = this.page.locator('[role=listbox]');
     await menu.waitFor({ state: 'visible' });
     const pattern = new RegExp(`^${type}$`, 'i');
     await this.highlightMenuOption(activator, menu, pattern);
@@ -95,13 +95,14 @@ export class HistoryEventsPage {
     await input.press('Tab');
     // Tab does not always close the calendar popover, which would intercept the next click.
     await input.press('Escape');
-    await this.page.locator('[role=menu] h3').waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
+    // the picker popup is a dialog holding the calendar; waiting on a `menu` matched nothing and passed at once
+    await this.page.locator('[role=dialog] [data-id=header-title]').waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
   private async selectAutocompleteOption(dataTestid: string, value: string): Promise<void> {
     const field = this.page.locator(`[data-testid=${dataTestid}]`);
     await field.locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]').last();
+    const menu = this.page.locator('[role=listbox]').last();
     await menu.waitFor({ state: 'visible' });
     await field.locator('input').fill(value);
     const option = menu.getByText(value, { exact: false }).first();
@@ -114,7 +115,7 @@ export class HistoryEventsPage {
   async selectAction(eventType: string, eventSubtype: string): Promise<void> {
     const picker = this.page.locator('[data-testid=event-action-picker]');
     await picker.locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]').last();
+    const menu = this.page.locator('[role=listbox]').last();
     await menu.waitFor({ state: 'visible' });
     const row = menu.locator(`[data-event-types~="${eventType}:${eventSubtype}"]`);
     await row.waitFor({ state: 'visible' });

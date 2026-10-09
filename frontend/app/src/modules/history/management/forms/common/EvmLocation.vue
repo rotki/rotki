@@ -31,7 +31,6 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTextField
       v-model="address"
       clearable
-      variant="outlined"
       data-testid="address"
       :label="t('transactions.events.form.contract_address.label')"
       :error-messages="errorMessages.address"

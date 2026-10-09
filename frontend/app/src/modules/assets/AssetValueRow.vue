@@ -69,7 +69,7 @@ function showDeleteConfirmation() {
               <RuiButton
                 variant="text"
                 icon
-                class="!p-2"
+                class="p-2!"
                 :loading="refreshingPrices"
                 @click="refreshPrice(identifier)"
               >

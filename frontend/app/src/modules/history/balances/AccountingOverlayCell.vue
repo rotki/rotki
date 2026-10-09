@@ -174,7 +174,7 @@ const placeholder = computed<string | undefined>(() => {
             variant="text"
             icon
             size="sm"
-            class="!p-0.5 shrink-0"
+            class="p-0.5! shrink-0"
             :aria-label="t('accounting_overlay.show_breakdown')"
             v-bind="attrs"
           >

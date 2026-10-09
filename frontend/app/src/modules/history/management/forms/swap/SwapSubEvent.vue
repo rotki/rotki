@@ -116,7 +116,6 @@ const userNotesLabel = computed<string>(() => {
             prepend-icon="lu-sticky-note"
             data-testid="swap-sub-event-notes"
             :data-key="type"
-            variant="outlined"
             color="primary"
             :disabled="disabled"
             max-rows="5"

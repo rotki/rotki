@@ -231,13 +231,13 @@ export class AssetsManagerPage {
 
     // Select a chain first
     await chainInput.click();
-    const menuContent = this.page.locator('[role="menu"]');
+    const menuContent = this.page.locator('[role="listbox"]');
     await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
-    await menuContent.locator('button[type="button"]').first().click();
+    await menuContent.locator('[role="option"]').first().click();
 
     await tokenInput.click();
     await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
-    await menuContent.locator('button[type="button"]').first().click();
+    await menuContent.locator('[role="option"]').first().click();
 
     await addressInput.fill(address);
 
@@ -279,7 +279,7 @@ export class AssetsManagerPage {
     await expect(typeInput).toBeVisible({ timeout: TIMEOUT_MEDIUM });
 
     await typeInput.click();
-    await this.page.locator('[role="menu"] button[type="button"]').filter({ hasText: 'Own chain' }).click();
+    await this.page.locator('[role="listbox"] [role="option"]').filter({ hasText: 'Own chain' }).click();
 
     await nameInput.clear();
     await nameInput.fill(`NAME ${uniqueId}`);

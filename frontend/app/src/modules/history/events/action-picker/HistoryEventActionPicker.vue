@@ -208,7 +208,6 @@ function onUpdate(verbKey: string | undefined): void {
     :items="displayRows"
     key-attr="verbKey"
     text-attr="label"
-    variant="outlined"
     :category-of="categoryLabelOf"
     :label="triggerLabel"
     :placeholder="t('history_event_action.picker.placeholder')"

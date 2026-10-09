@@ -51,7 +51,7 @@ function handleDelete(): void {
           <RuiIcon
             name="lu-trash-2"
             size="16"
-            class="!text-rui-grey-400"
+            class="text-rui-grey-400!"
           />
         </template>
       </RuiButton>

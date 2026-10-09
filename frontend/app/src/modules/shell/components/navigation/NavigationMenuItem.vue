@@ -64,10 +64,10 @@ onMounted(() => {
 <template>
   <div ref="outer">
     <div
-      class="flex items-center grow rounded px-3 py-0 text-rui-text hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 transition cursor-pointer"
+      class="flex items-center grow rounded-sm px-3 py-0 text-rui-text hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 transition cursor-pointer"
       :class="{
-        'bg-rui-primary font-bold text-white hover:!bg-rui-primary': active && !parent,
-        'font-medium bg-transparent !text-rui-primary': active && parent,
+        'bg-rui-primary font-bold text-white hover:bg-rui-primary!': active && !parent,
+        'font-medium bg-transparent text-rui-primary!': active && parent,
         'pl-12 pr-0 text-sm': subMenu && !mini,
         'px-0 justify-center': mini,
         'pl-3': mini && subMenu,

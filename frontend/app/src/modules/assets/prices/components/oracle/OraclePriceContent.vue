@@ -71,7 +71,7 @@ const headers = computed<DataTableColumn<OraclePriceEntry>[]>(() => [
     label: t('common.datetime'),
   },
   {
-    class: 'w-[3rem]',
+    class: 'w-12',
     key: 'actions',
     label: '',
   },
@@ -155,7 +155,7 @@ onMounted(async () => {
         </RuiTooltip>
         <PillFilterBar
           v-model:matches="filter"
-          class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+          class="flex-1 min-w-48 md:min-w-96"
           :fields="fields"
           :labels="pillLabels"
         />

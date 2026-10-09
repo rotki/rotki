@@ -105,7 +105,6 @@ defineExpose({
 
     <RuiTextField
       v-model="state.txRef"
-      variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
       data-testid="tx-ref"
@@ -136,7 +135,6 @@ defineExpose({
     <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
         v-model="state.sequenceIndex"
-        variant="outlined"
         integer
         data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
@@ -159,7 +157,6 @@ defineExpose({
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-testid="notes"
-      variant="outlined"
       color="primary"
       max-rows="5"
       min-rows="3"
@@ -184,7 +181,6 @@ defineExpose({
         <div class="py-2">
           <RuiTextField
             v-model="state.groupIdentifier"
-            variant="outlined"
             color="primary"
             data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"

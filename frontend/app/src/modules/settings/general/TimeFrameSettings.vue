@@ -148,7 +148,7 @@ async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
       'text-rui-success': !!message.success,
       'text-rui-error': !!message.error,
     }"
-    class="text-caption pt-1 pl-3 min-h-[1.5rem]"
+    class="text-caption pt-1 pl-3 min-h-6"
   >
     <div v-if="text">
       {{ text }}

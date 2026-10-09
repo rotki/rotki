@@ -27,7 +27,7 @@ function retryAll(): void {
 
 <template>
   <div
-    class="flex flex-col rounded bg-rui-error/5"
+    class="flex flex-col rounded-sm bg-rui-error/5"
     data-testid="dock-failed-group"
   >
     <div class="flex items-start gap-2.5 py-1.5 px-1">

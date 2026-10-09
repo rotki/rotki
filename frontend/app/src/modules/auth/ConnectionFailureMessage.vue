@@ -58,7 +58,7 @@ onBeforeMount(() => {
 <template>
   <RuiCard
     variant="flat"
-    class="max-w-[27.5rem] mx-auto !bg-transparent"
+    class="max-w-110 mx-auto bg-transparent!"
   >
     <template #header>
       {{ t('connection_failure.title') }}

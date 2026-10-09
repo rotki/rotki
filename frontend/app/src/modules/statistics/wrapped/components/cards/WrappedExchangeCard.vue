@@ -37,7 +37,7 @@ const exchangeItems = computed<Array<[string, BigNumber]>>(() => {
       <span>{{ index + 1 }}.</span>
       <LocationDisplay
         horizontal
-        class="[&_span]:!text-rui-text"
+        class="[&_span]:text-rui-text!"
         :identifier="item[0]"
         size="20px"
       />

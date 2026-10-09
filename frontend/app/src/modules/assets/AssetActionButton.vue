@@ -22,7 +22,7 @@ const emit = defineEmits<{
       <RuiButton
         variant="text"
         :color="color"
-        class="!py-0.5"
+        class="py-0.5!"
         size="sm"
         :data-testid="dataTestid"
         @click="emit('click')"

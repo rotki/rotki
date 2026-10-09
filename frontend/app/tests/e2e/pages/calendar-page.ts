@@ -124,9 +124,9 @@ export class CalendarPage {
     const input = row.locator('input');
     await this.fillAmount(input, amount);
 
-    // RuiMenuSelect opens a teleported menu rather than a native select.
+    // RuiMenuSelect opens a teleported listbox rather than a native select.
     await this.page.getByTestId('reminder-unit').last().locator('[data-id=activator]').click();
-    const menu = this.page.locator('[role=menu]');
+    const menu = this.page.locator('[role=listbox]');
     await menu.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     const option = menu.getByText(new RegExp(`^${unit}$`, 'i'));
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });

@@ -76,10 +76,9 @@ watch(writeError, (message) => {
     <div class="flex items-start w-full">
       <RuiTextField
         v-model="form.state.value"
-        variant="outlined"
         color="primary"
         data-testid="date-display-format-input"
-        class="flex-grow"
+        class="grow"
         :label="t('general_settings.labels.date_display_format')"
         type="text"
         :success-messages="success"

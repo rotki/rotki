@@ -120,7 +120,7 @@ defineExpose({
     <div class="flex gap-2">
       <ChainSelect
         v-model="form.state.blockchain"
-        class="max-w-[20rem]"
+        class="max-w-80"
         data-testid="tx-blockchain"
         :items="chainOptions"
         :error-messages="form.errors('blockchain')"
@@ -146,7 +146,6 @@ defineExpose({
       v-model="form.state.txRef"
       data-testid="tx-ref"
       :label="`${t('common.tx_hash')} / ${t('common.signature')}`"
-      variant="outlined"
       color="primary"
       :error-messages="form.errors('txRef')"
       @update:model-value="form.touch('txRef')"

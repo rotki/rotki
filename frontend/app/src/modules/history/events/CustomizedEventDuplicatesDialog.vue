@@ -57,7 +57,7 @@ onBeforeMount(async () => {
     max-width="1000"
   >
     <RuiCard
-      :class-names="{ content: '!py-0' }"
+      :class-names="{ content: 'py-0!' }"
       divide
     >
       <template #custom-header>
@@ -86,7 +86,7 @@ onBeforeMount(async () => {
             v-if="autoFixCount > 0"
             color="primary"
             size="sm"
-            class="ml-2 !px-0.5 !py-0"
+            class="ml-2 px-0.5! py-0!"
           >
             {{ autoFixCount }}
           </RuiChip>
@@ -97,7 +97,7 @@ onBeforeMount(async () => {
             v-if="manualReviewCount > 0"
             color="warning"
             size="sm"
-            class="ml-2 !px-0.5 !py-0"
+            class="ml-2 px-0.5! py-0!"
           >
             {{ manualReviewCount }}
           </RuiChip>
@@ -108,7 +108,7 @@ onBeforeMount(async () => {
             v-if="ignoredCount > 0"
             color="secondary"
             size="sm"
-            class="ml-2 !px-0.5 !py-0"
+            class="ml-2 px-0.5! py-0!"
           >
             {{ ignoredCount }}
           </RuiChip>
@@ -200,7 +200,7 @@ onBeforeMount(async () => {
               v-if="modelSelectedAutoFix.length > 0"
               size="sm"
               color="primary"
-              class="ml-2 !py-0"
+              class="ml-2 py-0!"
             >
               {{ modelSelectedAutoFix.length }}
             </RuiChip>
@@ -243,7 +243,7 @@ onBeforeMount(async () => {
               v-if="modelSelectedManualReview.length > 0"
               size="sm"
               color="primary"
-              class="ml-2 !py-0"
+              class="ml-2 py-0!"
             >
               {{ modelSelectedManualReview.length }}
             </RuiChip>
@@ -272,7 +272,7 @@ onBeforeMount(async () => {
               v-if="modelSelectedIgnored.length > 0"
               size="sm"
               color="primary"
-              class="ml-2 !py-0"
+              class="ml-2 py-0!"
             >
               {{ modelSelectedIgnored.length }}
             </RuiChip>

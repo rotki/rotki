@@ -145,7 +145,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
 
 <template>
   <RuiCard
-    class="!rounded-xl"
+    class="rounded-xl!"
     no-padding
   >
     <div class="p-6 flex flex-col gap-6 border-b border-default">
@@ -244,7 +244,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
         v-else-if="warnUntrackedAddress"
         color="primary"
         size="lg"
-        class="!w-full"
+        class="w-full!"
         data-testid="track-action"
         @click="trackAddress()"
       >
@@ -254,7 +254,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
         v-else-if="wrongNetwork"
         color="primary"
         size="lg"
-        class="!w-full"
+        class="w-full!"
         data-testid="switch-network-action"
         @click="switchToSelectedChain()"
       >
@@ -264,7 +264,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
         v-else
         color="primary"
         size="lg"
-        class="!w-full"
+        class="w-full!"
         :disabled="!valid || estimatingGas || !assetBalance"
         :loading="preparing"
         data-testid="send-action"

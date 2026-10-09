@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div
-    class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
+    class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-2 flex items-center justify-between gap-4"
     :class="isPinned ? 'py-2' : 'p-4'"
   >
     <div

@@ -82,7 +82,7 @@ onMounted(async () => {
           <template #filter>
             <BlockchainAccountSelector
               v-model="accounts"
-              class="md:w-[24rem]"
+              class="md:w-96"
               :source="{ multichain: true }"
               :field="{ dense: true }"
             />

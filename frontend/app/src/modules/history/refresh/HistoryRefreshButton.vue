@@ -28,7 +28,7 @@ function confirmRefresh() {
     variant="outlined"
     color="primary"
     size="lg"
-    :class="{ '!outline-rui-text-disabled': processing }"
+    :class="{ 'outline-rui-text-disabled!': processing }"
   >
     <RuiTooltip :open-delay="400">
       <template #activator>
@@ -36,7 +36,7 @@ function confirmRefresh() {
           :disabled="processing"
           variant="outlined"
           color="primary"
-          class="rounded-r-none !outline-none border-r border-rui-primary/[0.5] disabled:!border-rui-text-disabled [&>span]:!hidden lg:[&>span]:!inline"
+          class="rounded-r-none outline-hidden! border-r border-rui-primary/50 disabled:border-rui-text-disabled! [&>span]:hidden! lg:[&>span]:inline!"
           @click="confirmRefresh()"
         >
           <template #prepend>
