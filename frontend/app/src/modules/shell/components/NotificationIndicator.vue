@@ -56,7 +56,7 @@ function click(): void {
       @click="click()"
     >
       <RuiIcon
-        :class="{ '-rotate-[25deg]': visible }"
+        :class="{ 'rotate-[-25deg]': visible }"
         :name="silent ? 'lu-bell-off' : 'lu-bell'"
         data-testid="notification-indicator-icon"
       />

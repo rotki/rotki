@@ -48,14 +48,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 flex items-center gap-3">
+  <div class="p-4 flex items-center gap-2">
     <RuiTextField
       v-model="modelSearch"
       color="primary"
-      dense
       class="flex-1"
       prepend-icon="lu-search"
       :label="t('notes_menu.search')"
+      label-placement="hidden"
+      :placeholder="t('notes_menu.search_placeholder')"
       clearable
       hide-details
       data-testid="notes-search"
@@ -63,7 +64,6 @@ onMounted(async () => {
 
     <RuiButton
       color="primary"
-      class="py-2"
       :disabled="showUpgradeRow"
       data-testid="notes-add"
       @click="addNote()"
@@ -71,6 +71,7 @@ onMounted(async () => {
       <template #prepend>
         <RuiIcon name="lu-plus" />
       </template>
+      {{ t('notes_menu.add') }}
     </RuiButton>
   </div>
 
@@ -256,9 +257,54 @@ onMounted(async () => {
 
     <div
       v-else-if="!error"
-      class="text-2xl font-light mt-8 text-center text-rui-text"
+      class="flex flex-col items-center text-center gap-2 px-6 py-12"
+      data-testid="notes-empty"
     >
-      {{ t('notes_menu.empty_notes') }}
+      <div class="size-12 mb-2 rounded-full bg-rui-primary-soft flex items-center justify-center">
+        <RuiIcon
+          :name="modelSearch ? 'lu-search-x' : 'lu-notebook-pen'"
+          size="24"
+          class="text-rui-primary"
+        />
+      </div>
+      <template v-if="modelSearch">
+        <div class="text-base font-medium text-rui-text">
+          {{ t('notes_menu.no_match.title', { search: modelSearch }) }}
+        </div>
+        <div class="text-sm text-rui-text-secondary max-w-64">
+          {{ t('notes_menu.no_match.description') }}
+        </div>
+        <RuiButton
+          variant="text"
+          color="primary"
+          class="mt-2"
+          data-testid="notes-clear-search"
+          @click="modelSearch = ''"
+        >
+          {{ t('notes_menu.no_match.action') }}
+        </RuiButton>
+      </template>
+      <template v-else>
+        <div class="text-base font-medium text-rui-text">
+          {{ t('notes_menu.empty.title') }}
+        </div>
+        <div class="text-sm text-rui-text-secondary max-w-64">
+          {{ t('notes_menu.empty.description') }}
+        </div>
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          class="mt-2"
+          :disabled="showUpgradeRow"
+          data-testid="notes-empty-add"
+          @click="addNote()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-plus" />
+          </template>
+          {{ t('notes_menu.empty.action') }}
+        </RuiButton>
+      </template>
     </div>
   </div>
 
@@ -273,6 +319,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+@reference 'tailwindcss';
+
 .note-list-move,
 .note-list-enter-active,
 .note-list-leave-active {

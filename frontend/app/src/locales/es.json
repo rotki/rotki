@@ -379,7 +379,6 @@
     }
   },
   "currency_drop_down": {
-    "hint": "Seleccionar como la divisa principal",
     "profit_currency": "Divisa de ganancias ({currency})"
   },
   "dashboard": {
@@ -681,7 +680,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Limpiar todas las notificaciones",
-    "no_messages": "Sin mensajes",
     "title": "Notificaciones"
   },
   "overall_balances": {

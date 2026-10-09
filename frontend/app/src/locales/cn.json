@@ -2290,7 +2290,6 @@
     "zar": "南非兰特"
   },
   "currency_drop_down": {
-    "hint": "设为主货币",
     "profit_currency": "盈亏计价货币 ({currency})"
   },
   "customized_event_duplicates": {
@@ -4860,7 +4859,6 @@
       "add_title": "添加笔记",
       "edit_title": "编辑笔记"
     },
-    "empty_notes": "暂无笔记",
     "labels": {
       "content": "写点笔记...",
       "title": "标题"
@@ -4931,7 +4929,6 @@
       "title": "清除当前通知"
     },
     "message_overflow": "收到的通知总数已超过 200 条上限，较早的通知已被移除。",
-    "no_messages": "没有消息！",
     "silent": {
       "off": "静默通知弹窗",
       "on": "弹窗已静默，点击重新允许"

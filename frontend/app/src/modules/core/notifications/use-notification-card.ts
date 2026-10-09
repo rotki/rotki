@@ -19,11 +19,11 @@ interface UseNotificationCardReturn {
   actions: ComputedRef<NotificationAction[]>;
   /** Toggles the message between collapsed and expanded. */
   buttonClicked: () => void;
-  /** Background of the severity circle. */
+  /** Soft tinted disc and glyph colour of the severity icon. */
   circleBgClass: ComputedRef<string>;
   /** Semantic colour of the card, which is its severity and nothing else. */
   color: ComputedRef<string>;
-  /** Tinted card background matching {@link UseNotificationCardReturn.color}. */
+  /** Severity-tinted border of the card, which itself stays on the plain surface. */
   colorBgClass: ComputedRef<string>;
   /** Puts the message on the clipboard, resolving the i18n parameters first. */
   copy: () => Promise<void>;
@@ -117,45 +117,33 @@ export function useNotificationCard(
   const colorBgClass = computed<string>(() => {
     switch (get(color)) {
       case 'warning':
-        return '!bg-rui-warning/10';
+        return 'border-rui-warning-border';
       case 'error':
-        return '!bg-rui-error/10';
+        return 'border-rui-error-border';
       case 'info':
-        return '!bg-rui-info/10';
+        return 'border-rui-info-border';
       case 'reminder':
-        return '!bg-rui-secondary/10';
+        return 'border-rui-secondary-border';
       default:
         return '';
     }
   });
 
-  const expandButtonClass = computed<string>(() => {
-    switch (get(color)) {
-      case 'warning':
-        return '!to-rui-warning/10';
-      case 'error':
-        return '!to-rui-error/10';
-      case 'info':
-        return '!to-rui-info/10';
-      case 'reminder':
-        return '!to-rui-secondary/10';
-      default:
-        return '';
-    }
-  });
+  // the card is on the surface in every severity, so the clamped message fades into it
+  const expandButtonClass = computed<string>(() => 'to-rui-surface');
 
   const circleBgClass = computed<string>(() => {
     switch (toValue(notification).severity) {
       case Severity.ERROR:
-        return 'bg-rui-error';
+        return 'bg-rui-error-soft text-rui-error';
       case Severity.INFO:
-        return 'bg-rui-info';
+        return 'bg-rui-info-soft text-rui-info';
       case Severity.WARNING:
-        return 'bg-rui-warning';
+        return 'bg-rui-warning-soft text-rui-warning';
       case Severity.REMINDER:
-        return 'bg-rui-secondary';
+        return 'bg-rui-secondary-soft text-rui-secondary';
       default:
-        return 'bg-rui-success';
+        return 'bg-rui-success-soft text-rui-success';
     }
   });
 
@@ -167,7 +155,7 @@ export function useNotificationCard(
     if (!get(showExpandArrow))
       return {};
 
-    const usedHeight = get(expanded) ? toValue(height) + 24 : NOTIFICATION_MAX_HEIGHT;
+    const usedHeight = get(expanded) ? toValue(height) : NOTIFICATION_MAX_HEIGHT;
     return {
       height: `${usedHeight}px`,
     };

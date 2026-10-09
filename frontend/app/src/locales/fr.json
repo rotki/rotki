@@ -1074,7 +1074,6 @@
     "zar": "Rand sud-africain"
   },
   "currency_drop_down": {
-    "hint": "Sélectionner comme devise principale",
     "profit_currency": "Devise du profit ({currency})"
   },
   "dashboard": {
@@ -2184,7 +2183,6 @@
       "add_title": "Ajouter une note",
       "edit_title": "Modifier la note"
     },
-    "empty_notes": "Aucune note trouvée/enregistrée",
     "labels": {
       "content": "Prendre une note...",
       "title": "Titre"
@@ -2228,8 +2226,7 @@
     "confirmation": {
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"
-    },
-    "no_messages": "Aucun message !"
+    }
   },
   "overall_balances": {
     "loading": "CHARGMENT",

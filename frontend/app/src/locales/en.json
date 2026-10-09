@@ -2311,8 +2311,9 @@
     "zar": "South African Rand"
   },
   "currency_drop_down": {
-    "hint": "Select as the main currency",
-    "profit_currency": "Profit Currency ({currency})"
+    "profit_currency": "Profit Currency ({currency})",
+    "search_placeholder": "Search currencies",
+    "title": "Main currency"
   },
   "customized_event_duplicates": {
     "actions": {
@@ -3966,8 +3967,14 @@
     }
   },
   "global_search": {
+    "asset_search_unavailable": "Asset search is unavailable right now",
+    "hints": {
+      "close": "close",
+      "navigate": "navigate",
+      "open": "open"
+    },
     "no_actions": "No actions found",
-    "search_placeholder": "Search anything..."
+    "search_placeholder": "Search pages, settings and assets…"
   },
   "hash_link": {
     "open_link": "Open in external block explorer"
@@ -4979,23 +4986,34 @@
     "refresh": "Refresh the balances"
   },
   "notes_menu": {
+    "add": "Add note",
     "delete_confirmation": "Are you sure you want to delete this note?",
     "dialog": {
       "add_title": "Add note",
       "edit_title": "Edit note"
     },
-    "empty_notes": "No notes found/saved",
+    "empty": {
+      "action": "Add a note",
+      "description": "Keep reminders and context next to your data. Notes are saved with your account.",
+      "title": "No notes yet"
+    },
     "labels": {
       "content": "Take a note...",
       "title": "Title"
     },
     "last_updated": "Last updated: {datetime}",
+    "no_match": {
+      "action": "Clear search",
+      "description": "Try different words, or clear the search to see all your notes.",
+      "title": "No notes match \"{search}\""
+    },
     "rules": {
       "content": {
         "non_empty": "Please fill the note"
       }
     },
     "search": "Search",
+    "search_placeholder": "Search notes",
     "tabs": {
       "general": "General",
       "in_this_page": "In \"{page}\" ",
@@ -5069,8 +5087,18 @@
       "message": "This action will clear all the active notifications. Do you want to proceed?",
       "title": "Clear active notifications"
     },
+    "empty": {
+      "description": "Sync results, alerts and errors show up here as they happen.",
+      "title": "You're all caught up"
+    },
+    "empty_tab": {
+      "description": "Switch to All to see the rest of your notifications.",
+      "error": "No errors",
+      "reminder": "No reminders"
+    },
     "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed.",
-    "no_messages": "No messages!",
+    "show_less": "Show less",
+    "show_more": "Show more",
     "silent": {
       "off": "Silence notification popups",
       "on": "Popups silenced. Click to allow them again"
@@ -5078,7 +5106,7 @@
     "tabs": {
       "error": "Error",
       "reminder": "Reminder",
-      "view_all": "View All"
+      "view_all": "All"
     },
     "title": "Notifications",
     "view_calendar": "View Calendar"

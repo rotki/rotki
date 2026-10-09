@@ -66,6 +66,15 @@ function calculateFontSize(symbol: string, small = false) {
   return `${2.4 - length * 0.4}em`;
 }
 
+/** Fits a symbol into the list's 32px tile: one character at 1rem, each further one a step smaller. */
+function symbolSize(symbol: string): string {
+  return `${Math.max(0.625, 1 - (symbol.length - 1) * 0.2)}rem`;
+}
+
+function isCurrent(item: Currency): boolean {
+  return item.tickerSymbol === get(currency).tickerSymbol;
+}
+
 watch(visible, (isVisible, wasVisible) => {
   if (!isVisible && wasVisible) {
     set(filter, '');
@@ -96,7 +105,10 @@ watch(visible, (isVisible, wasVisible) => {
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>
     </template>
-    <div class="border-b border-default p-3">
+    <div class="border-b border-rui-divider p-3">
+      <div class="text-sm font-medium text-rui-text mb-2">
+        {{ t('currency_drop_down.title') }}
+      </div>
       <RuiTextField
         v-model="filter"
         dense
@@ -105,28 +117,40 @@ watch(visible, (isVisible, wasVisible) => {
         clearable
         color="primary"
         :label="t('common.actions.filter')"
-        prepend-inner-icon="mdi-magnify"
+        label-placement="hidden"
+        :placeholder="t('currency_drop_down.search_placeholder')"
+        prepend-icon="lu-search"
         @keyup.enter="selectFirst()"
       />
     </div>
-    <div class="max-h-[25rem] overflow-auto">
+    <div class="max-h-100 overflow-auto py-1">
       <ListItem
         v-for="item in filteredCurrencies"
         :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
         :key="item.tickerSymbol"
-        size="lg"
         :title="item.name"
-        :subtitle="t('currency_drop_down.hint')"
+        :class="{ 'bg-rui-primary-subtle': isCurrent(item) }"
+        :aria-current="isCurrent(item) || undefined"
         @click="onSelected(item)"
       >
         <template #avatar>
           <div
-            class="font-bold text-rui-primary"
-            :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+            class="size-8 rounded-rui-sm bg-rui-surface-muted text-rui-text font-semibold flex items-center justify-center"
+            :style="{ fontSize: symbolSize(item.unicodeSymbol) }"
           >
             {{ item.unicodeSymbol }}
           </div>
         </template>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-sm font-medium text-rui-text truncate">{{ item.name }}</span>
+          <span class="text-xs text-rui-text-secondary">{{ item.tickerSymbol }}</span>
+          <RuiIcon
+            v-if="isCurrent(item)"
+            name="lu-check"
+            size="16"
+            class="ms-auto shrink-0 text-rui-primary"
+          />
+        </div>
       </ListItem>
     </div>
   </RuiMenu>
