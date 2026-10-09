@@ -156,6 +156,7 @@ class UserMessageFeature(StrEnum):
     VAULT_COLLATERAL_TYPE = auto()
     EXCHANGE_STRATEGY = auto()
     ASSET_UPDATE_SCHEMA = auto()
+    LEDGER_ENTRY_TYPE = auto()
 
 
 class ProgressUpdateSubType(StrEnum):

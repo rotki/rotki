@@ -136,6 +136,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);
 /* CoinEx */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);
+/* Bitvavo */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x83', 67);
 """
 
 # Custom enum table for Balance categories (asset/liability)

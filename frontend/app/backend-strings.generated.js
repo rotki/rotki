@@ -185,6 +185,7 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.bitpanda',
   'backend_mappings.trade_location.bitstamp',
   'backend_mappings.trade_location.bittrex',
+  'backend_mappings.trade_location.bitvavo',
   'backend_mappings.trade_location.blockchain',
   'backend_mappings.trade_location.blockfi',
   'backend_mappings.trade_location.bybit',
