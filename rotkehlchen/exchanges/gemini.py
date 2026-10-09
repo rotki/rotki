@@ -229,7 +229,8 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                cancellable_sleep(retry_limit / retries_left)
+                if retries_left > 1:
+                    cancellable_sleep(retry_limit / retries_left)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint

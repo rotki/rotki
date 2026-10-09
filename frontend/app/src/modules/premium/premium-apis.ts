@@ -21,6 +21,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import { rankOwnedAssets } from '@/modules/premium/rank-owned-assets';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
@@ -57,6 +58,7 @@ export function statisticsApi(): StatisticsApi {
     queryTimedHistoricalBalancesData,
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
+  const { getBalances } = useAggregatedBalances();
 
   const { cancelByPrefix } = useNativeTask();
   const { useIsActivePrefix } = useTaskCenter();
@@ -82,7 +84,7 @@ export function statisticsApi(): StatisticsApi {
     netValue: startingDate => useNetValue(startingDate),
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
-      return owned.filter(asset => !isAssetIgnored(asset));
+      return rankOwnedAssets(owned.filter(asset => !isAssetIgnored(asset)), getBalances(true, false));
     },
     queryHistoricalAssetPrices: fetchHistoricalAssetPrice,
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {

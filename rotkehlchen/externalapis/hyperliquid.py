@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 from collections import defaultdict
@@ -9,6 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
@@ -67,8 +69,13 @@ def asset_from_hyperliquid(symbol: str) -> Asset:
         return symbol_to_asset_or_token(symbol)
 
 
-HYPERLIQUID_MAX_HISTORY_PAGES: Final = 500
+# Time range responses hold at most 500 entries per the docs. Observed caps are 500 for
+# funding and 2000 for fills and ledger updates, so a page shorter than this was not cut off.
+HYPERLIQUID_MIN_PAGE_CAP: Final = 500
+# The REST weight limit is per minute, so keep retrying rate limited requests for that long.
+HYPERLIQUID_RATE_LIMIT_WINDOW: Final = 60
 USDC_SYMBOL: Final = 'USDC'
+HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
 
 
 class FundingDelta(TypedDict):
@@ -191,19 +198,24 @@ class HyperliquidAPI:
 
         return self._discovered_dex_names
 
-    def _post_info(self, payload: dict[str, Any]) -> Any:
+    def _post_info(self, payload: dict[str, Any], wait_for_rate_limit: bool = False) -> Any:
         """Query hyperliquid info endpoint.
+
+        A rate limited request is retried with a growing backoff up to the configured query
+        retry limit. With `wait_for_rate_limit` it keeps retrying for at least the length of
+        the rate limit window, so that the queries of a long history can wait for the window
+        to free up instead of failing the whole range. Paging a large account easily goes
+        over the per minute weight limit, since history queries also cost per item returned.
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
 
         May raise:
             - RemoteError
         """
         cached_settings = CachedSettings()
-        retries_left = max(1, cached_settings.get_query_retry_limit())
-        retries_num = retries_left
         timeout = cached_settings.get_timeout_tuple()
-        backoff = 1
-        while retries_left > 0:
-            retries_left -= 1
+        min_attempts = max(1, cached_settings.get_query_retry_limit())
+        backoff = slept = attempts = 0
+        while True:
             try:
                 response = self.session.post(
                     url=f'{self.base_url}/info',
@@ -214,29 +226,28 @@ class HyperliquidAPI:
                 raise RemoteError(f'Failed to query hyperliquid info due to {e}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if retries_left == 0:
+                attempts += 1
+                if attempts >= min_attempts and (
+                    not wait_for_rate_limit or slept >= HYPERLIQUID_RATE_LIMIT_WINDOW
+                ):
                     raise RemoteError(
                         f'Hyperliquid API request {response.url} failed with HTTP status code '
-                        f'{response.status_code} and text {response.text} after '
-                        f'{retries_num} retries '
-                        f'for payload {payload}',
+                        f'{response.status_code} and text {response.text} after waiting '
+                        f'{slept} seconds for the rate limit for payload {payload}',
                     )
 
-                retry_after_header = response.headers.get('retry-after')
-                if retry_after_header is not None:
-                    try:
-                        sleep_seconds = max(1, int(retry_after_header))
-                    except ValueError:
-                        sleep_seconds = backoff
-                else:
+                backoff = max(1, backoff * 2)
+                try:
+                    sleep_seconds = max(1, int(response.headers['retry-after']))
+                except (KeyError, ValueError):
                     sleep_seconds = backoff
 
                 log.debug(
                     f'Hyperliquid API request {response.url} got rate limited. Sleeping for '
-                    f'{sleep_seconds} seconds. We have {retries_left} tries left.',
+                    f'{sleep_seconds} seconds after {slept} seconds already waited.',
                 )
                 cancellable_sleep(sleep_seconds)
-                backoff *= 2
+                slept += sleep_seconds
                 continue
 
             if response.status_code != HTTPStatus.OK:
@@ -254,8 +265,6 @@ class HyperliquidAPI:
 
             return data
 
-        raise AssertionError('unreachable')
-
     def _query_dict(self, payload: dict[str, Any], query_name: str) -> dict[str, Any]:
         """Query `/info` and enforce a dictionary response.
 
@@ -270,13 +279,21 @@ class HyperliquidAPI:
 
         return result
 
-    def _query_list(self, payload: dict[str, Any], query_name: str) -> list[dict[str, Any]]:
+    def _query_list(
+            self,
+            payload: dict[str, Any],
+            query_name: str,
+            wait_for_rate_limit: bool = False,
+    ) -> list[dict[str, Any]]:
         """Query `/info` and enforce a list response of dictionaries.
 
         May raise:
             - RemoteError
         """
-        if not isinstance((result := self._post_info(payload)), list):
+        if not isinstance(
+            (result := self._post_info(payload, wait_for_rate_limit=wait_for_rate_limit)),
+            list,
+        ):
             raise RemoteError(
                 f'Hyperliquid {query_name} returned malformed response type '
                 f'{type(result).__name__}: {result!s}',
@@ -457,8 +474,11 @@ class HyperliquidAPI:
         return usdc_hold
 
     @staticmethod
-    def _entry_strict_unique_id(entry: dict[str, Any]) -> str | None:
-        """Return the API-provided per-entry identifier, or None if missing.
+    def _entry_strict_unique_id(
+            entry: dict[str, Any],
+            address: ChecksumEvmAddress,
+    ) -> str | None:
+        """Return the identifier of an entry of the given user, or None if missing.
 
         Per Hyperliquid API docs:
         - Fills include a `tid` (trade id) that is unique per fill
@@ -467,25 +487,44 @@ class HyperliquidAPI:
           so it must NOT be used alone for per-fill uniqueness
         - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
 
-        Returns None only when the entry has neither tid nor hash, which is
-        not expected for the endpoints we consume.
+        Funding entries are not transactions and all have the zero hash. A
+        user gets one funding payment per coin at a time, and every user gets
+        them at the same times, so they are identified by the user, time and coin.
+
+        Returns None only when the entry has none of these, which is not
+        expected for the endpoints we consume.
         """
         if isinstance((tid := entry.get('tid')), int | str):
             return str(tid)
-        if isinstance((entry_hash := entry.get('hash')), str):
+        if isinstance((entry_hash := entry.get('hash')), str) and entry_hash != ZERO_32_BYTES_HEX:
             return entry_hash
+        if (
+            isinstance((delta := entry.get('delta')), dict) and
+            delta.get('type') == 'funding' and
+            isinstance((coin := delta.get('coin')), str)
+        ):
+            return f'funding_{address}_{entry.get("time")}_{coin}'
         return None
 
+    @staticmethod
+    def _entry_content_id(entry: dict[str, Any]) -> str:
+        """Stable identifier derived from the whole content of an entry"""
+        return hashlib.sha256(json.dumps(entry, sort_keys=True, default=str).encode()).hexdigest()
+
     @classmethod
-    def _entry_unique_id(cls, entry: dict[str, Any]) -> str:
+    def _entry_unique_id(cls, entry: dict[str, Any], address: ChecksumEvmAddress) -> str:
         """Return a stable per-entry identifier for grouping.
 
         Uses `_entry_strict_unique_id` when the API provides one; otherwise
-        falls back to the entry `time` so that consumers always get a
-        non-empty string. The fallback is defensive and not expected in
-        practice for the endpoints we consume.
+        falls back to the address, the entry `time` and a digest of the
+        entry content so that consumers always get a non-empty string. The fallback is
+        defensive and not expected in practice for the endpoints we consume. The address
+        and the content are included so that distinct entries, of the same or of different
+        tracked addresses, at the same time don't share a group identifier.
         """
-        return cls._entry_strict_unique_id(entry) or str(entry.get('time'))
+        return cls._entry_strict_unique_id(entry=entry, address=address) or (
+            f'{address}_{entry.get("time")}_{cls._entry_content_id(entry)}'
+        )
 
     @staticmethod
     def _entry_group_identifier(unique_id: str) -> str:
@@ -498,6 +537,7 @@ class HyperliquidAPI:
     def _entry_context(
             self,
             entry: dict[str, Any],
+            address: ChecksumEvmAddress,
             entry_time: int | None = None,
     ) -> EntryContext | None:
         """Build normalized context for a raw hyperliquid history entry."""
@@ -507,7 +547,7 @@ class HyperliquidAPI:
             except DeserializationError:
                 return None
 
-        unique_id = self._entry_unique_id(entry)
+        unique_id = self._entry_unique_id(entry=entry, address=address)
         return EntryContext(
             entry=entry,
             timestamp=TimestampMS(entry_time),
@@ -570,17 +610,16 @@ class HyperliquidAPI:
         This stays as a lazy in-memory cache on purpose: the metadata is only needed
         when parsing spot fills, and keeping constructor setup free of API calls avoids
         network I/O when a caller only needs balances or DEX discovery.
+
+        Nothing is cached on failure, since without it spot fills can't be resolved.
+
+        May raise:
+            - RemoteError
         """
         if self._spot_market_to_base_symbol is not None:
             return
 
-        try:
-            data = self._query_dict(payload={'type': 'spotMeta'}, query_name='spotMeta')
-        except RemoteError as e:
-            log.error(f'Failed to query hyperliquid spot metadata due to {e}')
-            self._spot_market_to_base_symbol = {}
-            return
-
+        data = self._query_dict(payload={'type': 'spotMeta'}, query_name='spotMeta')
         token_index_to_symbol: dict[int, str] = {}
         for entry in data.get('tokens', []):
             try:
@@ -630,7 +669,11 @@ class HyperliquidAPI:
         return asset_from_hyperliquid(token_name)
 
     def _get_spot_market_base_symbol(self, market: int) -> str | None:
-        """Return a spot market base symbol, populating the metadata cache if needed."""
+        """Return a spot market base symbol, populating the metadata cache if needed.
+
+        May raise:
+            - RemoteError
+        """
         self._populate_spot_market_cache()
         if self._spot_market_to_base_symbol is None:
             return None
@@ -652,131 +695,167 @@ class HyperliquidAPI:
         """Deserialize a numeric value coming from Hyperliquid payloads."""
         return deserialize_fval(value=value, name=name, location='hyperliquid')
 
-    def _iter_entries_by_time(
+    def _query_history_page(
             self,
-            query_type: Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime'],
+            query_type: HistoryQueryType,
+            address: ChecksumEvmAddress,
+            start_ms: int,
+            end_ms: int,
+    ) -> list[tuple[TimestampMS, dict[str, Any]]]:
+        """Query one page of a user history endpoint and return its entries with their time.
+
+        Both `startTime` and `endTime` are inclusive.
+
+        May raise:
+            - RemoteError: If the query fails, an entry is outside of the requested range, or
+            an entry has an unreadable time. Skipping such an entry would shrink a capped page
+            below the cap, so it would be taken for the last page and the rest of the range
+            would never be queried.
+        """
+        page: list[tuple[TimestampMS, dict[str, Any]]] = []
+        for entry in self._query_list(
+            payload={'type': query_type, 'user': address, 'startTime': start_ms, 'endTime': end_ms},  # noqa: E501
+            query_name=query_type,
+            wait_for_rate_limit=True,
+        ):
+            try:
+                entry_time = deserialize_timestamp_ms_from_intms(entry['time'])
+            except (DeserializationError, KeyError) as e:
+                raise RemoteError(
+                    f'Hyperliquid {query_type} for {address} returned an entry with an '
+                    f'unreadable time: {entry}',
+                ) from e
+
+            if not start_ms <= entry_time <= end_ms:
+                raise RemoteError(
+                    f'Hyperliquid {query_type} for {address} returned an entry at '
+                    f'{entry_time} outside of the requested range {start_ms}-{end_ms}',
+                )
+            page.append((entry_time, entry))
+
+        return page
+
+    def _ensure_nothing_before_first_page(
+            self,
+            query_type: HistoryQueryType,
+            address: ChecksumEvmAddress,
+            range_start: int,
+            oldest: int,
+    ) -> None:
+        """Check that a first page that may have been cut off holds the oldest entries.
+
+        Paging forward relies on the API returning the oldest entries of a range. If it ever
+        returned the newest ones instead, the history before the first page would be missed.
+
+        May raise:
+            - RemoteError: If there are entries in the range before the first page.
+        """
+        if len(self._query_history_page(
+            query_type=query_type,
+            address=address,
+            start_ms=range_start,
+            end_ms=oldest - 1,
+        )) != 0:
+            raise RemoteError(
+                f'Hyperliquid {query_type} for {address} did not return the oldest entries '
+                f'from {range_start}. Paging forward would miss history',
+            )
+
+    def _iter_entry_pages(
+            self,
+            query_type: HistoryQueryType,
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Iterator[EntryContext]:
-        """Query a user history endpoint in pages and iterate unique entries.
+    ) -> Iterator[list[EntryContext]]:
+        """Query a user history endpoint in pages and iterate the new entries of each page.
 
-        The API caps each response, so this method paginates backwards by lowering
-        `endTime` to the oldest item on the previous page when we made progress
-        past that millisecond — per-entry dedup keeps overlapping boundary entries
-        from yielding twice. Once a millisecond is fully drained (the next page
-        returned only duplicates) we advance past it. If the page cap truncates
-        entries at a single millisecond beyond what one extra query can recover
-        we log a warning, since the API exposes no within-millisecond cursor.
+        The API caps each response and returns the oldest entries of the requested range,
+        with no parameter to change the order. As the docs say, the next page starts at the
+        newest timestamp of the previous one. That millisecond is queried again since the
+        cap may have cut it in the middle, and the entries already seen are dropped. The
+        order of the entries inside a page is not relied upon.
+
+        A page shorter than the smallest cap was not cut off, so it is the last one and no
+        further request is made. A full page that is all in one millisecond can't be paged
+        further, since the API has no cursor within a millisecond. Then we move past it and
+        warn that entries may be missing. Either way `startTime` grows with every page, so the
+        loop ends.
+
+        If the first page may have been cut off, check that nothing older than it exists in
+        the range. That would mean the API returns the newest entries of a range, so paging
+        forward would miss history.
+
+        The range covers the whole `end_ts` second, since the next queried range starts at
+        the second after it.
 
         A single request covers the first perp dex, all HIP-3 builder-deployed perp
         dexs, and spot: Hyperliquid's history endpoints do not accept a `dex` param
         and return mixed results (HIP-3 entries use `{dex}:{coin}` notation, spot
         uses `@{index}`). See:
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#pagination
         - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-a-users-fills-by-time
         - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-a-users-funding-history-or-non-funding-ledger-updates
 
         May raise:
             - RemoteError
         """
-        start_ms = ts_sec_to_ms(start_ts)
-        end_ms = ts_sec_to_ms(end_ts)
-        cursor_end = end_ms
-        page = 0
-        seen: set[str] = set()
-
-        while cursor_end >= start_ms and page < HYPERLIQUID_MAX_HISTORY_PAGES:
-            page += 1
-            # The API returns a bounded page, so keep `startTime` fixed and move
-            # `endTime` backwards until we cover the requested range.
-            payload: dict[str, Any] = {
-                'type': query_type,
-                'user': address,
-                'startTime': start_ms,
-                'endTime': cursor_end,
-            }
-
-            page_entries = self._query_list(payload=payload, query_name=query_type)
-            if len(page_entries) == 0:
+        cursor: int = (range_start := ts_sec_to_ms(start_ts))
+        end_ms = ts_sec_to_ms(Timestamp(end_ts + 1)) - 1
+        # Keys of the entries already yielded. Only entries at the cursor millisecond can be
+        # returned again, so the others are dropped after every page.
+        seen: set[tuple[TimestampMS, str]] = set()
+        while cursor <= end_ms:
+            if len(page := self._query_history_page(
+                query_type=query_type,
+                address=address,
+                start_ms=cursor,
+                end_ms=end_ms,
+            )) == 0:
                 break
 
-            oldest_time = cursor_end
-            new_yields = 0
-            for entry in page_entries:
-                try:
-                    entry_time_ms = deserialize_timestamp_ms_from_intms(entry['time'])
-                except (DeserializationError, KeyError) as e:
-                    log.error(
-                        f'Skipping hyperliquid {query_type} entry {entry} for {address} '
-                        f'due to unreadable time field: {e}',
-                    )
-                    continue
-
-                oldest_time = min(oldest_time, entry_time_ms)
-
-                # Dedup entries across overlapping pages. Prefer the stable
-                # per-entry identifier (tid for fills, hash otherwise) so that
-                # partial fills of the same order at the same timestamp — which
-                # share `oid` but have distinct `tid`s — are not collapsed. Fall
-                # back to a JSON hash of the entry only when the API omits both
-                # tid and hash (defensive; not expected in practice).
-                if (entry_uid := self._entry_strict_unique_id(entry)) is not None:
-                    dedup_key = f'{entry_time_ms}:{entry_uid}'
-                else:
-                    dedup_key = (
-                        f'{entry_time_ms}:'
-                        f'{json.dumps(entry, sort_keys=True, default=str)}'
-                    )
-
-                if dedup_key in seen:
-                    continue
-                seen.add(dedup_key)
-
-                if (
-                    context := self._entry_context(
-                        entry=entry,
-                        entry_time=entry_time_ms,
-                    )
-                ) is None:
-                    continue
-                yield context
-                new_yields += 1
-
-            # Advance the cursor backwards. The API caps each response, so the
-            # entries at the oldest millisecond on a page may have been
-            # truncated. If we yielded new entries and made progress past that
-            # boundary (oldest_time < cursor_end), keep the boundary inclusive
-            # on the next query so any truncated entries at oldest_time are
-            # captured — per-entry dedup keeps overlap from yielding twice.
-            # Otherwise we've drained that millisecond (or got stuck on it) and
-            # have to advance past, accepting any extras the page cap dropped.
-            if new_yields > 0 and oldest_time < cursor_end:
-                cursor_end = TimestampMS(oldest_time)
-                continue
-
-            if new_yields > 0:
-                # Full page at the cursor boundary: there may be more entries
-                # at this exact millisecond that the page cap dropped and the
-                # API has no within-millisecond cursor for us to recover them.
-                log.warning(
-                    f'Hyperliquid {query_type} for {address} returned a full '
-                    f'page of new entries at {oldest_time}ms. Some entries at '
-                    f'that millisecond may be missing from this sync.',
+            oldest = min(entry_time for entry_time, _ in page)
+            newest = max(entry_time for entry_time, _ in page)
+            may_be_cut = len(page) >= HYPERLIQUID_MIN_PAGE_CAP
+            if may_be_cut and cursor == range_start and oldest > range_start:
+                self._ensure_nothing_before_first_page(
+                    query_type=query_type,
+                    address=address,
+                    range_start=range_start,
+                    oldest=oldest,
                 )
 
-            if oldest_time == 0:
-                break  # avoid wrapping below zero
-            cursor_end = TimestampMS(oldest_time - 1)
+            contexts: list[EntryContext] = []
+            for entry_time, entry in page:
+                # Prefer the stable per-entry identifier (tid for fills, hash otherwise) so
+                # that partial fills of the same order at the same time, which share `oid`
+                # but have distinct `tid`s, are not collapsed. Fall back to the whole entry
+                # only when the API omits both (defensive, not expected in practice).
+                key = (entry_time, self._entry_strict_unique_id(entry=entry, address=address) or self._entry_content_id(entry))  # noqa: E501
+                if key in seen:
+                    continue
 
-        if page >= HYPERLIQUID_MAX_HISTORY_PAGES and cursor_end >= start_ms:
-            # We exhausted the page budget with some range left to cover, so some
-            # older history may be missing from this sync.
-            log.warning(
-                f'Hyperliquid {query_type} query for {address} reached the '
-                f'{HYPERLIQUID_MAX_HISTORY_PAGES} page cap with {cursor_end - start_ms}ms '
-                f'of the requested range still uncovered. '
-                f'Some older history entries may be missing from this sync.',
-            )
+                seen.add(key)
+                if (context := self._entry_context(entry=entry, address=address, entry_time=entry_time)) is not None:  # noqa: E501
+                    contexts.append(context)
+
+            if len(contexts) != 0:
+                yield contexts
+
+            if not may_be_cut:
+                break
+
+            if newest > cursor:
+                cursor = newest
+            else:
+                log.warning(
+                    'Hyperliquid %s for %s returned a full page of entries at %sms. Some '
+                    'entries at that millisecond may be missing from this sync.',
+                    query_type, address, cursor,
+                )
+                cursor += 1
+
+            seen = {key for key in seen if key[0] == cursor}
 
     def _parse_funding_entry(self, context: EntryContext) -> ParsedFundingEntry | None:
         """Parse a `userFunding` entry into a normalized funding payload."""
@@ -925,17 +1004,11 @@ class HyperliquidAPI:
     def _create_funding_events(
             self,
             address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
+            contexts: list[EntryContext],
     ) -> list[HistoryBaseEntry]:
-        """Convert funding entries in the requested range to rotki history events."""
+        """Convert a page of funding entries to rotki history events."""
         events: list[HistoryBaseEntry] = []
-        for context in self._iter_entries_by_time(
-            query_type='userFunding',
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        ):
+        for context in contexts:
             if (parsed := self._parse_funding_entry(context)) is None:
                 continue
 
@@ -958,17 +1031,11 @@ class HyperliquidAPI:
     def _create_ledger_events(
             self,
             address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
+            contexts: list[EntryContext],
     ) -> list[HistoryBaseEntry]:
-        """Convert ledger updates in the requested range to rotki events."""
+        """Convert a page of ledger updates to rotki events."""
         events: list[HistoryBaseEntry] = []
-        for context in self._iter_entries_by_time(
-            query_type='userNonFundingLedgerUpdates',
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        ):
+        for context in contexts:
             if (parsed := self._parse_ledger_entry(context)) is None:
                 continue
 
@@ -1044,17 +1111,11 @@ class HyperliquidAPI:
     def _create_fill_events(
             self,
             address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
+            contexts: list[EntryContext],
     ) -> list[HistoryBaseEntry]:
-        """Convert fill entries in the requested range to swap or trade events."""
+        """Convert a page of fill entries to swap or trade events."""
         events: list[HistoryBaseEntry] = []
-        for context in self._iter_entries_by_time(
-            query_type='userFillsByTime',
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        ):
+        for context in contexts:
             if (parsed := self._parse_fill_entry(context)) is None:
                 continue
 
@@ -1154,13 +1215,13 @@ class HyperliquidAPI:
 
         return events
 
-    def query_history_events(
+    def iter_history_event_batches(
             self,
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[HistoryBaseEntry]:
-        """Query Hyperliquid Core history entries and convert them to rotki events.
+    ) -> Iterator[list[HistoryBaseEntry]]:
+        """Query Hyperliquid Core history entries and yield the rotki events of each page.
 
         Includes ledger updates, funding payments, and fills. A single request
         per endpoint covers the first perp dex, all HIP-3 builder-deployed perp
@@ -1172,19 +1233,20 @@ class HyperliquidAPI:
         References:
         - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-a-users-fills-by-time
         - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-a-users-funding-history-or-non-funding-ledger-updates
+
+        May raise:
+            - RemoteError
         """
-        self._populate_spot_market_cache()
-        history: list[HistoryBaseEntry] = []
-        history.extend(self._create_ledger_events(
-            address=address, start_ts=start_ts, end_ts=end_ts,
-        ))
-        history.extend(self._create_funding_events(
-            address=address, start_ts=start_ts, end_ts=end_ts,
-        ))
-        history.extend(self._create_fill_events(
-            address=address, start_ts=start_ts, end_ts=end_ts,
-        ))
-        history.sort(
-            key=lambda event: (event.timestamp, event.group_identifier, event.sequence_index),
-        )
-        return history
+        query_type: HistoryQueryType
+        for query_type, create_events in (
+            ('userNonFundingLedgerUpdates', self._create_ledger_events),
+            ('userFunding', self._create_funding_events),
+            ('userFillsByTime', self._create_fill_events),
+        ):
+            for contexts in self._iter_entry_pages(
+                query_type=query_type,
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ):
+                yield create_events(address=address, contexts=contexts)

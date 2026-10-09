@@ -1,17 +1,20 @@
 import logging
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
+from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
@@ -23,7 +26,7 @@ from .tokens import HyperliquidTokens
 from .transactions import HyperliquidTransactions
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
@@ -123,23 +126,91 @@ class HyperliquidManager(EvmManager):
 
         return balances
 
+    def _query_legacy_funding_events(self) -> Counter[tuple[int, str | None]]:
+        """Count the customized funding events under the zero hash by (timestamp, address).
+
+        This exists only as a side effect of the faulty funding identification, which gave every
+        payment the group of the zero hash. Migration 29 removes that event, but has to keep
+        it when the user customized it, and it can't be moved to its correct group since it has
+        no coin. Querying the history again would insert that payment a second time under its
+        own group identifier, so it is looked up here once, which is a single query that
+        returns nothing for most users, instead of once per event.
+        """
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            return Counter(cursor.execute(
+                'SELECT E.timestamp, E.location_label FROM history_events E INNER JOIN '
+                'history_events_mappings M ON M.parent_identifier=E.identifier AND '
+                'M.name=? AND M.value=? WHERE E.group_identifier=? AND E.location=?',
+                (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    create_group_identifier_from_unique_id(
+                        location=Location.HYPERLIQUID,
+                        unique_id=ZERO_32_BYTES_HEX,
+                    ),
+                    Location.HYPERLIQUID.serialize_for_db(),
+                ),
+            ))
+
     @staticmethod
-    def _query_proprietary_history_range(
-            api: HyperliquidAPI,
-            address: ChecksumEvmAddress,
-            range_start: Timestamp,
-            range_end: Timestamp,
+    def _drop_legacy_funding_events(
+            events: list[HistoryBaseEntry],
+            legacy_funding: Counter[tuple[int, str | None]],
     ) -> list[HistoryBaseEntry]:
-        """Query Hyperliquid core history for a single address range.
+        """Drop the funding payments that are already saved as a customized legacy event.
+
+        The legacy event has no coin, and the original payment can't be recovered from the
+        fields the user may have edited, so it is recognized by its timestamp and address.
+        If the user edited either of them the original identity is lost, so the refetched
+        payment is saved next to the edited event. That is the safe fallback: matching on
+        other fields such as the amount could drop a different payment, which can't be
+        undone, while a duplicate can be deleted by the user. It can only happen for the
+        single payment the faulty identification ever saved. Each legacy event is consumed
+        by its first match and other payments made at the same time are still saved.
+        """
+        kept: list[HistoryBaseEntry] = []
+        for event in events:
+            if (
+                event.notes == 'Hyperliquid funding payment' and
+                legacy_funding[key := (event.timestamp, event.location_label)] > 0
+            ):
+                legacy_funding[key] -= 1
+            else:
+                kept.append(event)
+
+        return kept
+
+    def _save_history_batches(
+            self,
+            history_db: DBHistoryEvents,
+            batches: Iterator[list[HistoryBaseEntry]],
+    ) -> int:
+        """Save each batch of events as soon as it is queried and return how many were new.
+
+        Each batch is written in its own transaction, so the batches saved before a failure
+        are kept. Querying them again later is harmless since duplicate events are ignored.
+        The assets of the events were resolved from the global DB, so they are added to the
+        user DB first to make sure the insertion can't fail on the foreign key.
 
         May raise:
         - RemoteError
         """
-        return api.query_history_events(
-            address=address,
-            start_ts=range_start,
-            end_ts=range_end,
-        )
+        inserted = 0
+        legacy_funding = self._query_legacy_funding_events()
+        for batch in batches:
+            events = self._drop_legacy_funding_events(batch, legacy_funding) if legacy_funding.total() != 0 else batch  # noqa: E501
+
+            with self.node_inquirer.database.user_write() as write_cursor:
+                self.node_inquirer.database.add_asset_identifiers(
+                    write_cursor=write_cursor,
+                    asset_identifiers=list({event.asset.identifier for event in events}),
+                )
+                inserted += history_db.add_history_events(
+                    write_cursor=write_cursor,
+                    history=events,
+                )
+
+        return inserted
 
     def query_proprietary_history(
             self,
@@ -147,7 +218,11 @@ class HyperliquidManager(EvmManager):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> None:
-        """Query and persist Hyperliquid core history for the given addresses."""
+        """Query and persist Hyperliquid core history for the given addresses.
+
+        A range is only marked as queried once all of its history has been queried, so a
+        range that failed midway is queried again in a future sync.
+        """
         api = HyperliquidAPI()
         ranges = DBQueryRanges(self.node_inquirer.database)
         history_db = DBHistoryEvents(self.node_inquirer.database)
@@ -164,11 +239,13 @@ class HyperliquidManager(EvmManager):
 
             for range_start, range_end in ranges_to_query:
                 try:
-                    events = self._query_proprietary_history_range(
-                        api=api,
-                        address=address,
-                        range_start=range_start,
-                        range_end=range_end,
+                    self._save_history_batches(
+                        history_db=history_db,
+                        batches=api.iter_history_event_batches(
+                            address=address,
+                            start_ts=range_start,
+                            end_ts=range_end,
+                        ),
                     )
                 except RemoteError as e:
                     log.error(
@@ -187,7 +264,6 @@ class HyperliquidManager(EvmManager):
                     continue
 
                 with self.node_inquirer.database.user_write() as write_cursor:
-                    history_db.add_history_events(write_cursor=write_cursor, history=events)
                     ranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=location_string,
@@ -202,21 +278,19 @@ class HyperliquidManager(EvmManager):
     ) -> int:
         """Force refetch Hyperliquid core history without checking/updating query ranges.
 
+        Events queried before a failure are kept.
+
         May raise:
         - RemoteError
-        - sqlcipher.IntegrityError: If the asset of an added history event does not exist.
         """
-        events = self._query_proprietary_history_range(
-            api=HyperliquidAPI(),
-            address=address,
-            range_start=start_ts,
-            range_end=end_ts,
+        return self._save_history_batches(
+            history_db=DBHistoryEvents(self.node_inquirer.database),
+            batches=HyperliquidAPI().iter_history_event_batches(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ),
         )
-        with self.node_inquirer.database.user_write() as write_cursor:
-            return DBHistoryEvents(self.node_inquirer.database).add_history_events(
-                write_cursor=write_cursor,
-                history=events,
-            )
 
     def query_transactions(
             self,

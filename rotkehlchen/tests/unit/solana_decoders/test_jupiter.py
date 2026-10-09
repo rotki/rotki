@@ -1024,3 +1024,50 @@ def test_repay_native(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('7s1da8DduuBFqGra5bJBjpnvL5E9mGzCuMk1Qkh4or2Z'),
     )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['8kBY5f8ERjVoVfuKudegwdaZyP55nnwwFomVdFvTQXsQ']])
+def test_swap_native_sol_funded_with_rent(
+        solana_inquirer: SolanaInquirer,
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """Swap native SOL via a temporary WSOL account that is funded with a single transfer of the
+    swap amount plus rent, without a SyncNative instruction, and closed after the swap.
+    Regression test for https://github.com/rotki/rotki/issues/13329
+    """
+    signature = deserialize_tx_signature('2LRHqb4QrzYArAAam976weHmUiKpfKJ9po2Uk4afvmHDVAxNw41fvLjsfjmLPENDCzwvd1efF3gXC5Q7shHFky7t')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1730981797000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal('0.000032583'),
+        location_label=(user_address := solana_accounts[0]),
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_SOL,
+        amount=FVal(spend_amount := '0.88'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} SOL in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:emg3HX1AekQ4hXQc22KGYPEyJLyHgiPzu9tGsTdpump'),
+        amount=FVal(receive_amount := '7499366.35527'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} LIGMA as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    )]

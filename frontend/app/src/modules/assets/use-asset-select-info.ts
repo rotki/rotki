@@ -47,7 +47,7 @@ export const MAX_PARALLEL_ASSET_BATCHES = 4;
  *
  * Results keep the order of the input regardless of the order they complete in.
  */
-async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+export async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = Array.from({ length: items.length });
   let next = 0;
 

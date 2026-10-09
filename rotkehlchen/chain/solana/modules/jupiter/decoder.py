@@ -146,14 +146,17 @@ class JupiterDecoder(SolanaDecoderInterface):
             else:
                 other_events.append(event)
 
-        if wrapping_ata is not None:
+        if len(native_wsol_atas) != 0:
+            # Drop the native SOL transfer funding the WSOL account, since the swap spend event
+            # already accounts for it. The account may be funded along with its rent and without
+            # a SyncNative, in which case it's only detected as the unwrapping ata when closed.
             unrelated_events = [
                 event for event in unrelated_events
                 if not (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == A_SOL and
-                    event.address == wrapping_ata
+                    event.address in native_wsol_atas
                 )
             ]
 

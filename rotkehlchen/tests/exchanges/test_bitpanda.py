@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from typing import Final
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
@@ -8,6 +8,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BEST, A_ETH, A_EUR, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -18,6 +19,24 @@ from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+
+@pytest.mark.parametrize('db_settings', [{'query_retry_limit': 3}])
+def test_rate_limit_does_not_sleep_after_last_attempt(mock_bitpanda) -> None:
+    with (
+        patch.object(
+            mock_bitpanda.session,
+            'get',
+            return_value=MockResponse(HTTPStatus.TOO_MANY_REQUESTS, ''),
+        ) as request_mock,
+        patch('rotkehlchen.exchanges.bitpanda.cancellable_sleep') as sleep_mock,
+        pytest.raises(RemoteError, match='Ran out of retries'),
+    ):
+        mock_bitpanda._api_query(endpoint='wallets')
+
+    assert request_mock.call_count == 3
+    assert sleep_mock.call_args_list == [call(6), call(10)]
+
 
 WALLETS_RESPONSE = """{"data":[
 {"type":"wallet","attributes":{"cryptocoin_id":"1","cryptocoin_symbol":"BTC","balance":"0.00000000","is_default":true,"name":"BTC Wallet","pending_transactions_count":0,"deleted":false,"is_index":false},"id":"b52800aa-61f6-4251-a970-e53a864ebeaa"},

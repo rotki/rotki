@@ -1,5 +1,5 @@
 import { SUPPORT_EMAIL } from '@shared/external-links';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, type Ref } from 'vue';
 import ReportIssueDialog from '@/modules/shell/components/ReportIssueDialog.vue';
@@ -166,8 +166,24 @@ describe('reportIssueDialog', () => {
       await fillDraft(wrapper);
 
       await wrapper.find('[data-testid=report-issue-github]').trigger('click');
+      await flushPromises();
 
       expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    /** Without a mail client, or when the main process refuses the url, the report must survive. */
+    it('should keep the dialog and the draft when the route fails to open', async () => {
+      openUrl.mockRejectedValueOnce(new Error('Requested to open untrusted URL'));
+      const wrapper = createWrapper();
+      await fillDraft(wrapper, 'a crash', 'it happened twice');
+
+      await wrapper.find('[data-testid=stub-mailto]').trigger('click');
+      await flushPromises();
+
+      expect(close).not.toHaveBeenCalled();
+      expect(wrapper.findComponent({ name: 'RuiTextField' }).props('modelValue')).toBe('a crash');
+      expect(wrapper.findComponent({ name: 'RuiTextArea' }).props('modelValue')).toBe('it happened twice');
+      expect(wrapper.find('[data-testid=report-issue-open-error]').exists()).toBe(true);
     });
 
     /** Reopening starts a fresh report rather than the last one the user walked away from. */

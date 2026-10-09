@@ -54,6 +54,11 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`13329` Jupiter swaps from native SOL that fund the temporary wrapped SOL account in a single transfer no longer count the swapped SOL twice. Before, the funding transfer was kept as an extra SOL spend next to the swap.
+* :bug:`-` Loading Ethereum withdrawals through Blockscout works again with Blockscout v12 instances. Before, the changed pagination of v12 made the withdrawals query fail.
+* :bug:`-` Hyperliquid Core history is no longer cut off after the first page of entries, and all funding payments are now saved instead of just one. History is refetched once after upgrading to recover what was missing.
+* :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
+* :bug:`13278` Choosing Email in the Report an Issue dialog now opens your mail client in the desktop app. Before, the dialog closed without opening anything and the title and description you typed were lost. If an option cannot be opened, the dialog now stays open with your report and says so.
 * :release:`1.44.1 <2026-10-02>`
 * :bug:`-` Asset icons that were downloaded after an earlier failed lookup are shown again. Before, the empty file left by the failed lookup could hide the downloaded icon, and a lookup that failed only due to rate limiting marked the icon as missing for 12 hours.
 * :bug:`-` Logging out while balances are still loading after login, then logging back in, no longer leaves "All balances" running with no end. Before, the new session never queried all balances, so that day's balance snapshot was not saved.

@@ -9,6 +9,7 @@ import { uniqueObjects } from '@/modules/core/common/data/data';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useAssetAllowList } from '@/modules/shell/components/inputs/use-asset-allow-list';
 
 type Asset = AssetInfoWithId | NftAsset;
 
@@ -40,7 +41,11 @@ interface UseAssetSearchOptions {
   chain?: MaybeRefOrGetter<string | undefined>;
   /** When true, ignored assets stay in the options. */
   showIgnored?: MaybeRefOrGetter<boolean>;
-  /** Restricts the options to this allow-list of identifiers. */
+  /**
+   * Restricts the options to this allow-list of identifiers. A non-empty list makes the picker a
+   * closed list: every listed asset is offered on open, in this order, and typing filters them
+   * locally instead of searching remotely.
+   */
   items?: MaybeRefOrGetter<string[]>;
   /** Removes these identifiers from the options. */
   excludes?: MaybeRefOrGetter<string[]>;
@@ -83,9 +88,13 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
   const loading = shallowRef<boolean>(false);
   let pending: AbortController | null = null;
 
+  const allowList = useAssetAllowList(items);
+
   const visibleAssets = computed<AssetInfoWithId[]>(() => {
-    const knownAssets = get(assets);
     const currentValue = get(modelValue);
+    const knownAssets = get(allowList.restricted)
+      ? allowList.filterAllowed(get(modelSearch), currentValue)
+      : get(assets);
     const ignoredVisible = toValue(showIgnored) ?? false;
     const includeList = toValue(items) ?? [];
     const excludeList = toValue(excludes) ?? [];
@@ -190,8 +199,9 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     }
   }
 
+  /** Puts the selected value in the options. A closed list already holds every selectable asset. */
   async function checkValue(): Promise<void> {
-    if (!get(modelValue))
+    if (!get(modelValue) || get(allowList.restricted))
       return;
 
     await addSelectedToOptions();
@@ -218,14 +228,27 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
       onSelectionLost?.();
   });
 
+  // Lifting the allow-list leaves the remote search's options without the selection.
+  watch(allowList.restricted, async (restricted) => {
+    if (!restricted)
+      await checkValue();
+  });
+
   watch(modelSearch, (value) => {
+    if (get(allowList.restricted))
+      return;
+
     if (value)
       set(loading, true);
     else if (!pending)
       set(loading, false);
   });
 
+  /** Searches remotely, unless an allow-list makes the options a closed list filtered locally. */
   async function runSearch(keyword: string): Promise<void> {
+    if (get(allowList.restricted))
+      return;
+
     abortPending();
     set(error, '');
     pending = new AbortController();
@@ -315,9 +338,9 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
   });
 
   return {
-    error: readonly(error),
+    error: computed<string>(() => get(allowList.error) || get(error)),
     getVisibleAsset,
-    loading: readonly(loading),
+    loading: computed<boolean>(() => get(allowList.loading) || get(loading)),
     modelSearch,
     preload,
     visibleAssets,
