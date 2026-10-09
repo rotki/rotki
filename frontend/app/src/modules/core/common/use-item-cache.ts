@@ -11,8 +11,10 @@ const CACHE_HARD_SIZE = 5000;
 const DEBOUNCE_TIME = 800;
 /** Minimum gap (ms) between hard-cap warnings so the warning can't itself spam. */
 const WARN_THROTTLE = 5000;
-/** How long (ms) a failed batch's keys are held back before a retry, to avoid hammering a down backend. */
+/** How long (ms) a failed batch's keys are held back before the first retry; each further failure doubles it. */
 const FAILURE_BACKOFF = 5000;
+/** Failed fetches of a key before it is held back for the full expiry instead of retried within seconds. */
+const MAX_FAILED_ATTEMPTS = 3;
 
 interface CacheOptions<T = unknown> {
   /** Debounce interval in ms before a queued batch is fetched. Defaults to 800. */
@@ -99,6 +101,8 @@ export function createItemCache<T>(
   // Transient in-flight state — intentionally factory-local, reset on re-init.
   const pendingKeys = new Set<string>();
   const batch = new Set<string>();
+  /** Consecutive failed fetches per key, cleared when a fetch succeeds. */
+  const failedAttempts = new Map<string, number>();
   let lastWarn = 0;
 
   /** Subscribes the current reactive effect (if any) to `key`'s changes. */
@@ -201,6 +205,7 @@ export function createItemCache<T>(
 
     for (const key of keys) {
       pendingKeys.delete(key);
+      failedAttempts.delete(key);
       removeEntry(key); // clears value + recent + unknown and bumps the key
     }
     triggerRef(cache);
@@ -237,6 +242,7 @@ export function createItemCache<T>(
   async function processBatch(keys: string[]): Promise<void> {
     try {
       const batchResult = await fetch(keys);
+      for (const key of keys) failedAttempts.delete(key);
       for (const { item, key } of batchResult()) {
         if (item) {
           put(key, item);
@@ -253,9 +259,13 @@ export function createItemCache<T>(
     }
     catch (error) {
       logger.error(error);
-      // Back the keys off so a down backend is not retried on every debounce tick.
-      const retryAt = Date.now() + FAILURE_BACKOFF;
-      for (const key of keys) markUnknown(key, retryAt);
+      // A down backend is retried a few times with a doubling wait, then once per expiry, not every debounce tick
+      const now = Date.now();
+      for (const key of keys) {
+        const attempt = (failedAttempts.get(key) ?? 0) + 1;
+        failedAttempts.set(key, attempt);
+        markUnknown(key, now + (attempt >= MAX_FAILED_ATTEMPTS ? expiry : FAILURE_BACKOFF * 2 ** (attempt - 1)));
+      }
     }
     finally {
       // Clear pending and notify each key's readers (its resolved state changed).
@@ -363,6 +373,7 @@ export function createItemCache<T>(
     triggerRef(cache);
     pendingKeys.clear();
     batch.clear();
+    failedAttempts.clear();
     recent.clear();
     unknown.clear();
     lastWarn = 0;
