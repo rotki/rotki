@@ -144,6 +144,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BITCOIN_LOCATIONS,
+    CHAINS_WITH_PENDING_TX_DECODING,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TX_DECODING,
@@ -501,7 +502,7 @@ class TransactionDecodingSchema(AsyncQueryArgumentSchema):
 
 
 class PendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    chain = BlockchainField(required=True, allow_only=CHAINS_WITH_TX_DECODING)
+    chain = BlockchainField(required=True, allow_only=CHAINS_WITH_PENDING_TX_DECODING)
 
 
 class BaseStakingQuerySchema(

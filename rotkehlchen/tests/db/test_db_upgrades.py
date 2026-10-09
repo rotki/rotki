@@ -5022,6 +5022,60 @@ def test_upgrade_db_53_to_54(
                     (identifier, 42, 0),
                 )
 
+        # bitcoin transactions whose mining rewards have to be decoded again. Each one is
+        # (location, tx id, inputs as (value, address), vin count, state of its event, whether
+        # it should stay marked as decoded).
+        write_cursor.executemany(
+            'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                ('last_btc_tx_block_bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w', '800000'),  # noqa: E501
+                ('last_bch_tx_block_bitcoincash:qpplh9lgfq0p5w7u4f5sq4kyv2r3hrz8qqfczq9dj8', '700000'),  # noqa: E501
+                (unrelated_cache_key := 'last_btcXtxXblockX1', '1'),
+            ],
+        )
+        bitcoin_txs: list[tuple[str, str, list[tuple[int, str | None]], int | None, int | None, bool]] = [  # noqa: E501
+            ('q', 'aa' * 32, [(0, None)], 1, None, False),  # blockchain.info style coinbase
+            ('q', 'bb' * 32, [(5000, 'bc1qsender')], 1, None, True),  # ordinary transaction
+            ('q', 'cc' * 32, [(0, None)], None, 1, True),  # coinbase with a customized event
+            ('r', 'cc' * 32, [(0, None)], None, None, False),  # same id in bch, not customized
+            ('q', 'dd' * 32, [(0, None)], 1, 3, True),  # coinbase with a matched event
+            ('q', 'ee' * 32, [(0, None)], 2, None, True),  # only one of its two inputs is saved
+            ('r', 'ff' * 32, [], 1, None, True),  # has one input that is not saved
+            ('q', '11' * 32, [], None, None, False),  # mempool style coinbase, saved without its input  # noqa: E501
+            ('q', '22' * 32, [], None, 1, True),  # the same, with a customized event
+        ]
+        bitcoin_tx_db_ids, bitcoin_event_ids = [], []
+        for idx, (location, tx_id, inputs, vin_count, event_state, _) in enumerate(bitcoin_txs):
+            write_cursor.execute(
+                'INSERT INTO bitcoin_transactions(location, tx_id, timestamp, block_height, fee, '
+                'vin_count, vout_count) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (location, tx_id, 1700000000, 800000, 0, vin_count, 1),
+            )
+            bitcoin_tx_db_ids.append(tx_db_id := write_cursor.lastrowid)
+            write_cursor.executemany(
+                'INSERT INTO bitcoin_tx_io(tx_id, direction, io_index, value, address, script) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                [(tx_db_id, 1, io_idx, value, address, None) for io_idx, (value, address) in enumerate(inputs)] +  # noqa: E501
+                [(tx_db_id, 2, 0, 312500000, 'bc1qminer', None)],
+            )
+            write_cursor.execute('INSERT INTO bitcoin_tx_mappings(tx_id, value) VALUES (?, 0)', (tx_db_id,))  # noqa: E501
+            write_cursor.execute(
+                'INSERT INTO history_events(entry_type, group_identifier, sequence_index, '
+                'timestamp, location, location_label, asset, amount, notes, type, subtype) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (11, f'bitcoin_test_{idx}', 0, 1700000000000, location, 'bc1qminer', 'ETH', '3.125', None, 'receive', 'none'),  # noqa: E501
+            )
+            bitcoin_event_ids.append(identifier := write_cursor.lastrowid)
+            write_cursor.execute(
+                'INSERT INTO chain_events_info(identifier, tx_ref) VALUES (?, ?)',
+                (identifier, bytes.fromhex(tx_id)),
+            )
+            if event_state is not None:
+                write_cursor.execute(
+                    "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES (?, 'state', ?)",  # noqa: E501
+                    (identifier, event_state),
+                )
+
     db_v53.logout()
     db = _init_db_with_target_version(
         target_version=54,
@@ -5057,6 +5111,28 @@ def test_upgrade_db_53_to_54(
         assert cursor.execute(
             'SELECT COUNT(*) FROM rpc_nodes WHERE is_archive IS NOT NULL OR is_pruned IS NOT NULL',
         ).fetchone()[0] == 0
+        # the bitcoin query checkpoints are gone, so the full history is pulled again
+        assert cursor.execute(
+            "SELECT name FROM key_value_cache WHERE name LIKE 'last_b%'",
+        ).fetchall() == [(unrelated_cache_key,)]
+        # the coinbase transactions saved without an input got it, and nothing else changed
+        assert cursor.execute(
+            'SELECT tx_id, io_index, value, address, script FROM bitcoin_tx_io WHERE direction=1 ORDER BY tx_id',  # noqa: E501
+        ).fetchall() == [
+            (tx_db_id, io_idx, value, address, None)
+            for tx_db_id, bitcoin_tx in zip(bitcoin_tx_db_ids, bitcoin_txs, strict=True)
+            for io_idx, (value, address) in enumerate(bitcoin_tx[2] or ([(0, None)] if bitcoin_tx[3] is None else []))  # noqa: E501
+        ]
+        # only the saved coinbase transactions without customized or matched events are
+        # pending decoding, and no event was touched
+        assert {row[0] for row in cursor.execute('SELECT tx_id FROM bitcoin_tx_mappings WHERE value=0')} == {  # noqa: E501
+            tx_db_id for tx_db_id, bitcoin_tx in zip(bitcoin_tx_db_ids, bitcoin_txs, strict=True)
+            if bitcoin_tx[5]
+        }
+        assert cursor.execute(
+            f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({",".join("?" * len(bitcoin_event_ids))})',  # noqa: E501
+            bitcoin_event_ids,
+        ).fetchone()[0] == len(bitcoin_event_ids)
         assert db.get_setting(cursor, 'version') == 54
 
     db.logout()

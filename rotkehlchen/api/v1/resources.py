@@ -239,6 +239,7 @@ from rotkehlchen.serialization.schemas import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     CHAINS_WITH_TX_DECODING_TYPE,
@@ -840,7 +841,7 @@ class TransactionsDecodingResource(BaseMethodView):
             self,
             async_query: bool,
             ignore_cache: bool,
-            chain: CHAINS_WITH_TX_DECODING_TYPE,
+            chain: CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     ) -> Response:
         return self.rest_api.decode_transactions(
             async_query=async_query,

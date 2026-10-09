@@ -151,4 +151,51 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         )
         write_cursor.execute('DROP TABLE asset_symbols')
 
+    @progress_step(description='Mark Bitcoin and Bitcoin Cash mining rewards to be decoded again.')
+    def _reset_bitcoin_coinbase_transactions(write_cursor: DBCursor) -> None:
+        """Coinbase transactions are since this version decoded as mining rewards, which
+        takes their zero-valued addressless coinbase input to recognize them. What was
+        queried before is in one of three states:
+
+        - Saved with that input, as blockchain.info returns it. Nothing is missing, so they
+          only need to be decoded again.
+        - Saved without any input, as the mempool-like explorers were deserialized before
+          this version was released. Those return whole transactions and leave the input
+          count unset, and any other transaction has at least one input, so a transaction
+          saved like that can only be a coinbase one. The input is added here and they are
+          decoded again.
+        - Not saved at all, since the response of blockcypher for bitcoin and of haskoin for
+          bitcoin cash failed to deserialize. Haskoin is the main bitcoin cash explorer and
+          blockcypher is what bitcoin falls back to whenever blockchain.info fails, which
+          leaves no trace of having happened. So the per-address last queried block of both
+          chains is reset and the next transaction query pulls the full history again.
+
+        Transactions with customized or matched events stay marked as decoded, same as
+        when redecoding a chain.
+        """
+        write_cursor.execute(
+            "DELETE FROM key_value_cache WHERE "
+            "name LIKE 'last\\_btc\\_tx\\_block\\_%' ESCAPE '\\' OR "
+            "name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
+        )
+        write_cursor.execute(
+            'INSERT INTO bitcoin_tx_io(tx_id, direction, io_index, value, address, script) '
+            'SELECT T.identifier, 1, 0, 0, NULL, NULL FROM bitcoin_transactions T '
+            'WHERE T.vin_count IS NULL AND NOT EXISTS('
+            'SELECT 1 FROM bitcoin_tx_io WHERE tx_id=T.identifier AND direction=1)',  # inputs
+        )
+        write_cursor.execute(
+            'DELETE FROM bitcoin_tx_mappings WHERE value=0 AND tx_id IN ('  # 0 is TX_DECODED
+            'SELECT T.identifier FROM bitcoin_transactions T WHERE '
+            '(T.vin_count IS NULL OR T.vin_count=1) AND '
+            '(SELECT COUNT(*) FROM bitcoin_tx_io WHERE tx_id=T.identifier AND direction=1)=1 AND '  # inputs  # noqa: E501
+            'EXISTS(SELECT 1 FROM bitcoin_tx_io WHERE tx_id=T.identifier AND direction=1 '
+            'AND value=0 AND address IS NULL) AND '
+            'NOT EXISTS(SELECT 1 FROM chain_events_info C '
+            'INNER JOIN history_events H ON H.identifier=C.identifier '
+            'INNER JOIN history_events_mappings M ON M.parent_identifier=C.identifier '
+            "WHERE lower(hex(C.tx_ref))=T.tx_id AND H.location=T.location AND M.name='state' "
+            'AND M.value IN (1, 3)))',  # customized, matched
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
