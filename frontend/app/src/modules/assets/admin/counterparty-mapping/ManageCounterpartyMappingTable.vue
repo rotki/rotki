@@ -61,7 +61,7 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
       </HintMenuIcon>
       <PillFilterBar
         v-model:matches="filtersModel"
-        class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+        class="flex-1 min-w-48 md:min-w-96"
         :fields="fields"
         :labels="pillLabels"
       />

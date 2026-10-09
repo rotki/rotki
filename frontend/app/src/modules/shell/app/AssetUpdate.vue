@@ -48,7 +48,7 @@ const {
       />
       <AssetUpdateInlineConfirm
         v-if="inlineConfirm"
-        class="max-w-[32rem] mx-auto"
+        class="max-w-128 mx-auto"
         :remote-version="modelChanges.upToVersion"
         @confirm="updateComplete()"
       />
@@ -70,7 +70,7 @@ const {
       </RuiDialog>
       <AssetUpdateMessage
         v-else
-        class="max-w-[32rem] mx-auto"
+        class="max-w-128 mx-auto"
         :headless="headless"
         :versions="modelChanges"
         @update:versions="modelChanges = $event"

@@ -221,7 +221,7 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
           <RuiButton
             variant="text"
             icon
-            class="!p-2"
+            class="p-2!"
             @click="formatHelp = true"
           >
             <RuiIcon name="lu-info" />

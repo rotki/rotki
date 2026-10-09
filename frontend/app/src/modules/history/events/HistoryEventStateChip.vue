@@ -17,7 +17,7 @@ const config = computed(() => stateConfigs[state]);
       <RuiChip
         size="sm"
         :color="config.color"
-        class="!p-0.5"
+        class="p-0.5!"
       >
         <RuiIcon
           :name="config.icon"

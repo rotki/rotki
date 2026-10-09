@@ -56,8 +56,7 @@
       "tooltip": {
         "disabled": "已在 设置 → 链 中跳过，rotki 不会查询该链",
         "last_detected": "上次检测：{time}",
-        "redetect": "重新检测代币",
-        "redetect_all": "重新检测所有地址的代币"
+        "redetect": "重新检测代币"
       }
     },
     "detected": {
@@ -66,13 +65,11 @@
     },
     "edit_tooltip": "编辑账户",
     "enter_selection_mode": "进入选择模式，批量忽略资产或标记为垃圾资产",
-    "exit_selection_mode": "退出选择模式",
     "filter_field_labels": {
       "account": "账户",
       "chain": "链"
     },
     "per_chain": "按链",
-    "refresh_tooltip": "刷新 {blockchain} 余额（忽略所有缓存）",
     "skip_queries": {
       "chain_marker": "rotki 不会在 {chain} 上查询此账户",
       "chain_skipped": "已跳过",
@@ -1819,8 +1816,7 @@
     "evm_detection": {
       "found": "已在 {count} 条链上添加 | 已在 {count} 条链上添加",
       "none": "未发现新链",
-      "title": "检测 EVM 账户",
-      "tooltip": "检测所有已登记 EVM 账户在其他 EVM 链上的活动，并进行登记。"
+      "title": "检测 EVM 账户"
     },
     "export_blockchain_accounts": "导出区块链账户",
     "filter": {
@@ -1847,8 +1843,7 @@
     "validator_index_label": "以太坊验证者 No. {index}",
     "validators": {
       "auto_detection_info": "验证者会根据 ETH 质押存入自动检测。请将存入地址添加为以太坊账户，解码其历史事件，然后点击刷新以更新列表。",
-      "consolidated": "已合并至：",
-      "selected": "已选择 {count} 个验证者"
+      "consolidated": "已合并至："
     }
   },
   "bridge_matching": {
@@ -2192,7 +2187,6 @@
     },
     "credentials": {
       "description": "请注意，你在此创建的用户{highlight}，与网页上创建的账户无关。",
-      "highlight": "仅在本应用中可用",
       "label_password": "密码",
       "label_password_backup_reminder": "rotki 将所有用户数据保存在本地。我了解如果丢失密码，将无法访问我的数据。我已备份密码。",
       "label_password_repeat": "重复密码",
@@ -2221,8 +2215,6 @@
         "description": "从全新的本地 rotki 用户开始。",
         "title": "创建新账户"
       },
-      "description": "rotki 是一款尊重你隐私的本地应用。\n\nrotki 账户使用你的密码加密，并{highlight}。\n\n你在此创建的账户仅用于本应用，网页端使用的是不同的数据库。",
-      "highlight": "保存在你的本地文件系统中",
       "restore": {
         "description": "已是 rotki 高级版用户？恢复之前同步到云端的数据库。",
         "title": "从云同步恢复"
@@ -2290,7 +2282,6 @@
     "zar": "南非兰特"
   },
   "currency_drop_down": {
-    "hint": "设为主货币",
     "profit_currency": "盈亏计价货币 ({currency})"
   },
   "customized_event_duplicates": {
@@ -2350,9 +2341,6 @@
         "solana": "Solana 地址",
         "substrate": "Substrate 地址"
       }
-    },
-    "exchange_balances": {
-      "refresh": "刷新 {exchange} 余额"
     },
     "holdings": {
       "add": {
@@ -3131,13 +3119,8 @@
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
-    "click_here": "点击这里",
-    "no_connected_exchanges": "你还没有连接任何交易所。{0}添加交易所连接。",
     "received_interest": "已收利息",
     "received_interest_history": "历史",
-    "refresh_tooltip": "忽略缓存，刷新交易所余额",
-    "select_exchange": "选择交易所",
-    "select_hint": "选择交易所查看资产详情。",
     "tabs": {
       "balances": "余额",
       "savings_interest_history": "理财利息历史"
@@ -4537,11 +4520,6 @@
         "url": "输入的内容不是有效的 URL 格式"
       }
     },
-    "description": {
-      "more_details": "{documentation}提供了有关本地应用和用户的更多详细信息。",
-      "our_docs": "我们的文档",
-      "welcome": "欢迎！请输入你的信息。"
-    },
     "incomplete_upgrade_error": {
       "abort": "中止",
       "question": "是否从最新备份恢复？",
@@ -4860,7 +4838,6 @@
       "add_title": "添加笔记",
       "edit_title": "编辑笔记"
     },
-    "empty_notes": "暂无笔记",
     "labels": {
       "content": "写点笔记...",
       "title": "标题"
@@ -4931,7 +4908,6 @@
       "title": "清除当前通知"
     },
     "message_overflow": "收到的通知总数已超过 200 条上限，较早的通知已被移除。",
-    "no_messages": "没有消息！",
     "silent": {
       "off": "静默通知弹窗",
       "on": "弹窗已静默，点击重新允许"

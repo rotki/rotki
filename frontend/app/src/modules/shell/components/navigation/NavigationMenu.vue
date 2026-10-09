@@ -13,7 +13,7 @@ const { menuItems } = useNavigationMenu();
 <template>
   <div
     class="p-3"
-    :class="{ '!p-0': isMini }"
+    :class="{ 'p-0!': isMini }"
   >
     <template
       v-for="(navItem, i) in menuItems"

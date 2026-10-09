@@ -207,28 +207,26 @@ onMounted(() => {
     enter-from-class="translate-y-5 opacity-0"
     enter-to-class="translate-y-0 opacity-1"
     enter-active-class="transform duration-300"
-    leave-from-class="-translate-y-0 opacity-1"
+    leave-from-class="translate-y-0 opacity-1"
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
     <div>
-      <div class="max-w-[27.5rem] mx-auto">
-        <h4 class="text-h4 mb-3">
+      <div class="max-w-110 mx-auto">
+        <!-- the page's task, so its main heading; the welcome panel beside it is secondary -->
+        <h1 class="text-h4 mb-2">
           {{ t('login.title') }}
-        </h4>
+        </h1>
 
         <div class="text-body-1 text-rui-text-secondary mb-8">
-          <p class="mb-3">
-            {{ t('login.description.welcome') }}
-          </p>
           <i18n-t
             scope="global"
-            keypath="login.description.more_details"
+            keypath="login.description.intro"
             tag="p"
           >
             <template #documentation>
               <ExternalLink
-                :text="t('login.description.our_docs')"
+                :text="t('login.description.learn_more')"
                 :url="externalLinks.usageGuide"
               />
             </template>
@@ -257,7 +255,6 @@ onMounted(() => {
             <RuiRevealableTextField
               ref="passwordRef"
               v-model="state.password"
-              variant="outlined"
               color="primary"
               autocomplete="current-password"
               :error-messages="fieldErrors('password')"
@@ -269,7 +266,7 @@ onMounted(() => {
               @update:model-value="touch('password')"
             />
 
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2">
               <LoginRememberOptions
                 v-model:remember-username="rememberUsername"
                 v-model:remember-password="rememberPassword"
@@ -338,7 +335,7 @@ onMounted(() => {
       </div>
       <div
         v-if="errors.length > 0"
-        class="mt-8 max-w-[41.25rem] mx-auto"
+        class="mt-8 max-w-165 mx-auto"
       >
         <RuiAlert
           v-if="hasServerError"

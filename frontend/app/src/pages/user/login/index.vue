@@ -100,11 +100,15 @@ onMounted(startLoginScreen);
   <section class="w-full flex flex-col flex-1 overflow-auto">
     <div class="h-full grow flex flex-col">
       <RotkiLogo
-        class="my-5 lg:hidden max-w-[27.5rem] mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
+        class="my-5 lg:hidden w-full max-w-110 mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
         unique-key="0"
       />
-      <div class="flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6">
-        <div data-testid="account-management">
+      <div class="flex flex-col max-w-full grow px-4 pt-10 pb-6">
+        <!-- fills the height so the connection wait can centre in it; the form centres only on large screens -->
+        <div
+          data-testid="account-management"
+          class="grow flex flex-col lg:justify-center"
+        >
           <UserHost>
             <LoginForm
               v-if="!showStage"
@@ -126,13 +130,11 @@ onMounted(startLoginScreen);
           </UserHost>
         </div>
       </div>
-      <footer class="p-6 lg:p-8 flex items-center justify-between">
+      <footer class="p-6 lg:p-8 flex items-center gap-3">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
         </AccountManagementFooterText>
-        <div class="ml-4">
-          <AdaptiveFooterButton />
-        </div>
+        <AdaptiveFooterButton />
       </footer>
     </div>
   </section>
@@ -143,10 +145,11 @@ onMounted(startLoginScreen);
         unique-key="0"
       />
     </span>
-    <h2 class="text-h3 font-light xl:text-h2 mb-6">
+    <!-- a welcome beside the form, so it stays below the form's own heading -->
+    <h2 class="text-h4 mb-3">
       {{ header.header }}
     </h2>
-    <p class="text-body-2">
+    <p class="text-body-1 text-rui-text-secondary">
       {{ header.text }}
     </p>
     <NewReleaseChangelog

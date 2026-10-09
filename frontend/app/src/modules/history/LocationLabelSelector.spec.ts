@@ -51,7 +51,7 @@ describe('locationLabelSelector', () => {
   it('should constrain the dropdown menu to the field width, which the full address would otherwise stretch past it', () => {
     const wrapper = createWrapper();
 
-    expect(wrapper.find('[data-testid=autocomplete]').attributes('data-menu-class')).toBe('!min-w-full');
+    expect(wrapper.find('[data-testid=autocomplete]').attributes('data-menu-class')).toBe('min-w-full!');
   });
 
   it('should render the selection compactly and the dropdown item in full, as the dense binding decides between them', () => {

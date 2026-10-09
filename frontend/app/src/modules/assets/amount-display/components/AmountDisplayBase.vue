@@ -74,7 +74,7 @@ const copyValue = computed<string>(() => {
         'blur': !shouldShowAmount,
         'text-rui-success': pnl && value.gt(0),
         'text-rui-error': pnl && value.lt(0),
-        'skeleton min-h-5 min-w-[3.5rem] max-w-[4rem] after:content-[\'\\200B\']': loading,
+        'skeleton min-h-5 min-w-14 max-w-16 after:content-[\'\\200B\']': loading,
       },
     ]"
     class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"

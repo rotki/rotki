@@ -1,7 +1,8 @@
 import type { Config } from 'tailwindcss';
-import type { PluginAPI } from 'tailwindcss/types/config';
-import generated from '@rotki/ui-library/theme';
 import plugin from 'tailwindcss/plugin';
+
+/** Tailwind 4 no longer exports the plugin API type, so it is taken from the plugin function. */
+type PluginAPI = Parameters<Parameters<typeof plugin>[0]>[0];
 
 interface VariantValue {
   value: string;
@@ -22,9 +23,6 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
         '@apply h-[calc(100vh-3.5rem)] mt-14': {},
       },
     },
-    'aside': {
-      '@apply max-w-[100vw] !top-[3.5rem] md:!top-[4rem] max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)]': {},
-    },
     'input::-webkit-outer-spin-button, input::-webkit-inner-spin-button': {
       '@apply appearance-none': {},
     },
@@ -35,7 +33,7 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
       '@apply pl-6': {},
     },
     'a': {
-      '@apply cursor-pointer text-rui-blue-800 dark:text-rui-blue-600': {},
+      '@apply cursor-pointer text-rui-link': {},
     },
   });
   pluginAPI.addComponents({
@@ -78,7 +76,7 @@ const containerQueryPlugin = plugin((pluginAPI: PluginAPI) => {
 
   pluginAPI.matchUtilities({
     '@container': (value: string, { modifier }: { modifier: string | null }) => ({
-      'container-name': modifier,
+      ...(modifier ? { 'container-name': modifier } : {}),
       'container-type': value,
     }),
   }, {
@@ -140,8 +138,6 @@ const containerQueryPlugin = plugin((pluginAPI: PluginAPI) => {
 });
 
 export default {
-  mode: 'jit',
-  darkMode: 'class',
   content: [
     './src/components/**/*.vue',
     './src/layouts/**/*.vue',
@@ -177,30 +173,5 @@ export default {
       },
     },
   },
-  // Classes for premium components
-  safelist: [
-    '!leading-7',
-    'lg:grid-cols-2',
-    '-my-5',
-    'py-5',
-    'h-32',
-    'lg:grid-cols-5',
-    'lg:col-span-3',
-    'lg:col-span-2',
-    'pl-6',
-    '[&_span]:!text-xs',
-    '!text-center',
-    '[&>div>div>div]:font-normal',
-    'bg-white/[0.9]',
-    'dark:bg-dark-elevated/[0.9]',
-    'list-decimal',
-    '!leading-4',
-    'lg:col-span-2',
-    'min-h-[560px]',
-    '!pt-0',
-    'h-[30rem]',
-    '[&>span]:!text-xs',
-    '!transition-none',
-  ],
-  plugins: [generated, componentsPlugin, containerQueryPlugin],
+  plugins: [componentsPlugin, containerQueryPlugin],
 } satisfies Config;

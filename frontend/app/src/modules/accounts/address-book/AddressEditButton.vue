@@ -41,7 +41,7 @@ function openAddressBookForm() {
           <RuiIcon
             name="lu-pencil"
             size="16"
-            class="!text-rui-grey-400"
+            class="text-rui-grey-400!"
           />
         </template>
       </RuiButton>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
@@ -22,30 +21,29 @@ const name = computed(() => {
 
   return getChainName(chain);
 });
-
-const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockchain.BASE, Blockchain.OPTIMISM];
 </script>
 
 <template>
+  <!-- `inline` keeps the avatar box at the icon's 24px, so an option is as tall as ChainSelect's item-height says -->
   <ListItem
     size="sm"
+    inline
     :title="name"
     no-padding
     no-hover
-    class="!py-0"
+    class="py-0!"
     :blur-content="!shouldShowAmount"
   >
     <template #avatar>
+      <!-- one mark for "every chain", not four logos too small to read -->
       <div
         v-if="chain === 'all'"
-        class="grid grid-cols-2 gap-0.5 icon-bg"
+        class="rounded-full bg-rui-primary/10 text-rui-primary flex items-center justify-center"
+        :class="dense ? 'size-5' : 'size-6'"
       >
-        <ChainIcon
-          v-for="item in evmChainsRepresentative"
-          :key="item"
-          :size="dense ? '9px' : '13px'"
-          class="!p-0"
-          :chain="item"
+        <RuiIcon
+          name="lu-layers"
+          :size="dense ? 12 : 14"
         />
       </div>
 
@@ -53,13 +51,13 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
         v-else-if="evmChain"
         class="icon-bg"
         :chain="chain"
-        :size="dense ? '20px' : '26px'"
+        :size="dense ? '20px' : '24px'"
       />
 
       <ChainIcon
         v-else
         :chain="chain"
-        :size="dense ? '20px' : '26px'"
+        :size="dense ? '20px' : '24px'"
       />
     </template>
   </ListItem>

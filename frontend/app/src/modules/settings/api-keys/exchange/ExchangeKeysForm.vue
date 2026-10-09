@@ -160,12 +160,40 @@ const name = computed<string>({
  */
 const defaultHistoryStart = Math.floor(Date.now() / 1000);
 
+/**
+ * Takes a picked history start into the form.
+ *
+ * @remarks
+ * The picker writes back the default it was shown, which is not a date the user chose. Taking it
+ * would leave a dialog the user has not touched counting as dirty, prompting to discard on close.
+ *
+ * @param value - the start the picker now holds, in seconds
+ */
+function setHistoryStart(value: number): void {
+  if (form.state.binanceHistoryStartTs === undefined && value === defaultHistoryStart)
+    return;
+  form.state.binanceHistoryStartTs = value;
+}
+
 const binanceHistoryStartTsModel = computed<number>({
   get: () => form.state.binanceHistoryStartTs ?? defaultHistoryStart,
-  set: (value: number) => {
-    form.state.binanceHistoryStartTs = value;
-  },
+  set: setHistoryStart,
 });
+
+/**
+ * Takes the picked market pairs into the form.
+ *
+ * @remarks
+ * The picker reports its empty starting selection once the markets load. Taking that as a change
+ * would leave a dialog the user has not touched counting as dirty, prompting to discard on close.
+ *
+ * @param markets - the pairs the picker now holds
+ */
+function onBinanceMarkets(markets: string[]): void {
+  if (markets.length === 0 && form.state.binanceMarkets === undefined)
+    return;
+  form.state.binanceMarkets = markets;
+}
 
 function suggestedName(exchange: string): string {
   const location = getLocationData(exchange);
@@ -291,7 +319,7 @@ defineExpose({
 <template>
   <div
     data-testid="exchange-keys"
-    class="flex flex-col gap-4"
+    class="flex flex-col gap-2"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <ExchangeInput
@@ -385,7 +413,7 @@ defineExpose({
           <RuiButton
             data-testid="toggle-edit-keys"
             variant="text"
-            class="!p-2"
+            class="p-2!"
             icon
             @click="toggleEdit()"
           >
@@ -455,38 +483,49 @@ defineExpose({
       </template>
     </ExchangeKeysFormStructure>
 
-    <RuiAlert
-      v-if="isBinance"
-      data-testid="binance-warning"
-      type="warning"
-    >
-      {{ t('exchange_keys_form.binance_markets_required') }}
-      <div
-        v-if="showBinanceHistoryImport"
-        class="mt-2"
+    <!-- the warning is about the market pairs, so the pair picker sits right under it -->
+    <template v-if="isBinance">
+      <RuiAlert
+        data-testid="binance-warning"
+        type="warning"
       >
-        <i18n-t
-          keypath="exchange_keys_form.binance_history_import.description"
-          scope="global"
-          tag="span"
-        >
-          <template #csvImport>
-            <InternalLink
-              :to="{
-                name: '/import/',
-                query: { source: 'binance' },
-              }"
-            >
-              {{ t('exchange_keys_form.binance_history_import.link') }}
-            </InternalLink>
-          </template>
-        </i18n-t>
-        <BinanceHistoryStartDate
-          v-model="binanceHistoryStartTsModel"
-          :error-messages="form.errors('binanceHistoryStartTs')"
-        />
-      </div>
-    </RuiAlert>
+        {{ t('exchange_keys_form.binance_markets_required') }}
+      </RuiAlert>
+      <BinancePairsSelector
+        :name="modelValue.name"
+        :edit="editMode"
+        :location="modelValue.location"
+        :error-messages="form.errors('binanceMarkets')"
+        @update:selection="onBinanceMarkets($event)"
+      />
+    </template>
+    <!-- a field of its own rather than a control inside the warning, with the reason for it above -->
+    <div
+      v-if="isBinance && showBinanceHistoryImport"
+      class="flex flex-col gap-3"
+    >
+      <i18n-t
+        keypath="exchange_keys_form.binance_history_import.description"
+        scope="global"
+        tag="p"
+        class="text-sm text-rui-text-secondary"
+      >
+        <template #csvImport>
+          <InternalLink
+            :to="{
+              name: '/import/',
+              query: { source: 'binance' },
+            }"
+          >
+            {{ t('exchange_keys_form.binance_history_import.link') }}
+          </InternalLink>
+        </template>
+      </i18n-t>
+      <BinanceHistoryStartDate
+        v-model="binanceHistoryStartTsModel"
+        :error-messages="form.errors('binanceHistoryStartTs')"
+      />
+    </div>
     <KrakenFuturesKeys
       v-if="isKraken"
       v-model:api-key="form.state.krakenFuturesApiKey"
@@ -495,14 +534,6 @@ defineExpose({
       :edit-mode="editMode"
       :key-errors="form.errors('krakenFuturesApiKey')"
       :secret-errors="form.errors('krakenFuturesApiSecret')"
-    />
-    <BinancePairsSelector
-      v-if="isBinance"
-      :name="modelValue.name"
-      :edit="editMode"
-      :location="modelValue.location"
-      :error-messages="form.errors('binanceMarkets')"
-      @update:selection="form.state.binanceMarkets = $event"
     />
   </div>
 

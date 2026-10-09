@@ -120,7 +120,7 @@ defineExpose({
     <div class="flex gap-2">
       <ChainSelect
         v-model="form.state.blockchain"
-        class="max-w-[20rem]"
+        class="max-w-80"
         data-testid="tx-blockchain"
         :items="chainOptions"
         :error-messages="form.errors('blockchain')"

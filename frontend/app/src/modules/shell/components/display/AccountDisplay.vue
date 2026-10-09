@@ -43,7 +43,7 @@ const aliasName = computed<string | null>(() => {
     :open-delay="400"
     :disabled="noTruncate && !aliasName"
     class="flex items-center flex-nowrap gap-2"
-    :class-names="{ tooltip: '[&_*]:font-mono' }"
+    :class-names="{ tooltip: '**:font-mono' }"
   >
     <template #activator>
       <div
@@ -82,7 +82,7 @@ const aliasName = computed<string | null>(() => {
 
       <div
         :class="{ blur: !shouldShowAmount }"
-        class="text-no-wrap [&_*]:font-mono text-xs"
+        class="text-no-wrap **:font-mono text-xs"
       >
         <div v-if="aliasName">
           {{ aliasName }}

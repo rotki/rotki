@@ -338,9 +338,10 @@ function focusInput(event: MouseEvent): void {
 
 <template>
   <!-- py-1 rather than py-1.5: the bar sits next to buttons on most of its screens, and at 43px it
-       was the tallest control in every one of those rows. -->
+       was the tallest control in every one of those rows. It paints its own surface, being a field,
+       so it reads as one on the page background as well as inside a card. -->
   <div
-    class="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md border transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
+    class="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md border bg-rui-surface transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
     :class="{ 'opacity-50': disabled }"
     data-testid="pill-bar"
     @click="focusInput($event)"
@@ -396,12 +397,12 @@ function focusInput(event: MouseEvent): void {
       disable-auto-focus
       persist-on-activator-click
       full-width
-      class="flex-1 min-w-[8rem]"
+      class="flex-1 min-w-32"
     >
       <template #activator="{ attrs }">
         <div
           v-bind="attrs"
-          class="flex-1 min-w-[8rem]"
+          class="flex-1 min-w-32"
         >
           <input
             ref="narrowInput"
@@ -416,7 +417,7 @@ function focusInput(event: MouseEvent): void {
             :disabled="disabled"
             autocomplete="off"
             spellcheck="false"
-            class="w-full min-w-0 bg-transparent py-1 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary"
+            class="w-full min-w-0 bg-transparent py-1 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
             data-testid="pill-narrow-input"
             @input="narrowOpen = true"
             @keydown="onNarrowKeydown($event)"

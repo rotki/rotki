@@ -114,7 +114,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
               vertical
               indicator-position="start"
               color="primary"
-              class="!h-auto"
+              class="h-auto!"
             >
               <RuiTab
                 v-for="option in evmRailOptions"
@@ -135,7 +135,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
               vertical
               indicator-position="start"
               color="primary"
-              class="!h-auto"
+              class="h-auto!"
             >
               <RuiTab
                 v-for="option in otherRailOptions"

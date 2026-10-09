@@ -122,8 +122,8 @@ function createWrapper(): VueWrapper<any> {
   });
 }
 
-function deleteButton(wrapper: VueWrapper<any>): VueWrapper<any> {
-  return wrapper.findAllComponents({ name: 'RuiButton' })[0];
+function deleteButton(wrapper: VueWrapper<any>): ReturnType<VueWrapper<any>['find']> {
+  return wrapper.find('[data-testid=validators-delete-selected]');
 }
 
 describe('ethStakingValidators', () => {
@@ -136,9 +136,10 @@ describe('ethStakingValidators', () => {
     set(rows, { data: [validator(1), validator(2)], found: 2, limit: 10, total: 2 });
   });
 
+  /** The bulk delete lives in the selection bar, which only shows while validators are picked. */
   describe('deleting the selection', () => {
     it('should offer no delete while nothing is selected', () => {
-      expect(deleteButton(createWrapper()).props('disabled')).toBe(true);
+      expect(deleteButton(createWrapper()).exists()).toBe(false);
     });
 
     it('should offer it once validators are picked', async () => {
@@ -147,7 +148,7 @@ describe('ethStakingValidators', () => {
       set(modelSelected, ['1']);
       await nextTick();
 
-      expect(deleteButton(wrapper).props('disabled')).toBe(false);
+      expect(deleteButton(wrapper).exists()).toBe(true);
     });
 
     /** The selection is a list of keys, so the rows on screen are what resolves it. */
@@ -166,8 +167,7 @@ describe('ethStakingValidators', () => {
       set(modelSelected, ['1']);
       await nextTick();
 
-      const clear = wrapper.findAllComponents({ name: 'RuiButton' })[1];
-      await clear.trigger('click');
+      await wrapper.find('[data-testid=table-selection-clear]').trigger('click');
 
       expect(get(modelSelected)).toEqual([]);
     });

@@ -59,7 +59,7 @@ const { t } = useI18n({ useScope: 'global' });
             <RuiChip
               size="sm"
               color="error"
-              class="!p-0 !bg-rui-error-darker"
+              class="p-0! bg-rui-error-darker!"
             >
               {{ actionableItemsLength.toString() }}
             </RuiChip>

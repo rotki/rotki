@@ -23,7 +23,7 @@ const { isMdAndUp } = useBreakpoint();
         variant="text"
         icon
         size="sm"
-        class="!p-2"
+        class="p-2!"
         v-bind="attrs"
       >
         <RuiIcon
@@ -32,7 +32,7 @@ const { isMdAndUp } = useBreakpoint();
         />
       </RuiButton>
     </template>
-    <div class="p-4 w-[18rem] max-w-[calc(100vw-1rem)]">
+    <div class="p-4 w-72 max-w-[calc(100vw-1rem)]">
       <div>
         <div class="text-body-1 font-medium mb-3">
           {{ t('sync_indicator.setting.title') }}

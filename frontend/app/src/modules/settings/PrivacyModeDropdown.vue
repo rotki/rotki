@@ -53,7 +53,7 @@ async function updateScramble(value: boolean): Promise<void> {
     <RuiMenu
       v-model="showPrivacyModeMenu"
       data-testid="privacy-menu-content"
-      :class-names="{ menu: 'w-[22rem]' }"
+      :class-names="{ menu: 'w-88' }"
       :options="{ placement: 'bottom-end' }"
       :persistent="settingMenuOpen"
     >
@@ -76,7 +76,7 @@ async function updateScramble(value: boolean): Promise<void> {
           </RuiBadge>
         </MenuTooltipButton>
         <RuiButton
-          class="p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem] !bg-rui-grey-100 !absolute dark:text-white dark:!bg-black"
+          class="p-0 z-10 right-0 text-black top-7.5 w-4 h-4 lg:top-8 lg:w-4.5 lg:h-4.5 bg-rui-grey-100! absolute! dark:text-white dark:bg-black!"
           icon
           variant="text"
           v-bind="{ ...attrs, 'data-testid': 'privacy-menu' }"
@@ -91,7 +91,7 @@ async function updateScramble(value: boolean): Promise<void> {
       <div class="absolute right-4 top-4">
         <RuiMenu
           v-model="settingMenuOpen"
-          :class-names="{ menu: 'w-[20rem]' }"
+          :class-names="{ menu: 'w-80' }"
           :options="{ placement: 'bottom-end' }"
           :close-on-content-click="false"
         >
@@ -142,8 +142,8 @@ async function updateScramble(value: boolean): Promise<void> {
           hide-details
           :tick-size="12"
           :class-names="{
-            slider: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
-            tick: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+            slider: 'bg-rui-grey-200! dark:bg-rui-grey-800!',
+            tick: 'bg-rui-grey-200! dark:bg-rui-grey-800!',
           }"
           vertical
           @update:model-value="changePrivacyMode($event)"
@@ -153,7 +153,7 @@ async function updateScramble(value: boolean): Promise<void> {
             v-for="(label, index) in labels"
             :key="label.title"
             class="flex flex-col flex-1 justify-center gap-0.5 pl-4 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600"
-            :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': privacyMode >= index }"
+            :class="{ 'text-rui-primary! dark:text-rui-primary-lighter!': privacyMode >= index }"
             data-testid="privacy-mode-option"
             :data-mode="index"
             @click="changePrivacyMode(index)"
@@ -197,7 +197,7 @@ async function updateScramble(value: boolean): Promise<void> {
               :disabled="!modelScrambleData"
               variant="text"
               type="button"
-              class="-mr-2 !p-2"
+              class="-mr-2 p-2!"
               data-testid="privacy-mode-scramble-random-multiplier"
               icon
               @click="handleMultiplierUpdate(randomMultiplier())"

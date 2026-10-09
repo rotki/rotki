@@ -70,7 +70,7 @@ watch(width, (newWidth) => {
   >
     <div
       ref="floatingRef"
-      class="fixed z-[7] top-14 md:top-16 shadow-sm overflow-hidden"
+      class="fixed z-rui-floating top-14 md:top-16 shadow-xs overflow-hidden"
       :style="{ width: `${dashboardWidth}px` }"
     >
       <DynamicMessageDisplay

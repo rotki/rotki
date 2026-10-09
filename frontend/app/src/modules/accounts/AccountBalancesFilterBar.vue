@@ -75,7 +75,7 @@ function applyView(view: SavedView): void {
 <template>
   <PillFilterBar
     v-model:params="pillParams"
-    class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+    class="flex-1 min-w-48 md:min-w-96"
     :fields="fields"
     :labels="pillLabels"
   >

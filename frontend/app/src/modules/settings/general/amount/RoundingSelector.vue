@@ -54,7 +54,7 @@ const selections: { value: RoundingMode; text: string; description: string }[] =
     >
       <template #item="{ item }">
         <ListItem
-          class="!py-0 !gap-0 leading-none"
+          class="py-0! gap-0! leading-none"
           no-hover
           no-padding
           :title="item.text"

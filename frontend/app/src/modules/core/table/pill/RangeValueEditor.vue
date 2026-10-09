@@ -125,7 +125,7 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 p-3 min-w-[16rem]">
+  <div class="flex flex-col gap-3 p-3 min-w-64">
     <!-- A little more space under the chips than between the fields, so the operator reads as
          choosing the shape of the filter rather than as another field in the list. -->
     <RuiButtonGroup

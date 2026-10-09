@@ -67,7 +67,7 @@ async function onAdded(asset: string): Promise<void> {
 
       <div
         v-if="identifiers.length > 0"
-        class="border border-rui-grey-300 dark:border-rui-grey-800 rounded overflow-hidden divide-y divide-rui-grey-200 dark:divide-rui-grey-800 max-h-[22.5rem] overflow-y-auto"
+        class="border border-rui-grey-300 dark:border-rui-grey-800 rounded-sm overflow-hidden divide-y divide-rui-grey-200 dark:divide-rui-grey-800 max-h-90 overflow-y-auto"
         data-testid="missing-prices-list"
       >
         <div
@@ -79,7 +79,7 @@ async function onAdded(asset: string): Promise<void> {
             :asset="asset"
             :display="{ dense: true }"
             :actions="{ hideMenu: true }"
-            class="min-w-0 max-w-[17.5rem]"
+            class="min-w-0 max-w-70"
           />
           <RuiButton
             size="sm"

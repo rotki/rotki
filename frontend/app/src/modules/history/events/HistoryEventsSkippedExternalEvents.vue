@@ -17,8 +17,8 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
   },
   {
     align: 'end',
-    cellClass: '!pr-12',
-    class: '!pr-12',
+    cellClass: 'pr-12!',
+    class: 'pr-12!',
     key: 'number',
     label: t('transactions.events.skipped.headers.number'),
   },

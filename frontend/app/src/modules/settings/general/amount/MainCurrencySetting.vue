@@ -60,7 +60,7 @@ function calculateFontSize(symbol: string): string {
         :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
         no-hover
         no-padding
-        class="!py-0"
+        class="py-0!"
         :title="item.name"
         :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
       >

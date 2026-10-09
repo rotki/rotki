@@ -35,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
           thickness="16"
           :value="percentage"
           color="primary"
-          class="w-full rounded overflow-hidden"
+          class="w-full rounded-sm overflow-hidden"
         />
       </template>
       <RuiProgress

@@ -6,7 +6,6 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { sum } from '@/modules/core/common/display/balances';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useSetting } from '@/modules/settings/use-setting';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 interface AccountAssetBalancesProps {
@@ -27,46 +26,40 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const currencySymbol = useSetting('currencySymbol');
-
 const totalValue = computed<BigNumber>(() => sum(assets));
 
 const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
-  cellClass: 'py-1',
+  cellClass: 'py-0.5',
   class: 'text-no-wrap w-full',
   key: 'asset',
   label: t('common.asset'),
   sortable: true,
 }, {
-  cellClass: 'py-1',
-  class: 'text-no-wrap w-full',
+  cellClass: 'py-0.5',
+  class: 'text-no-wrap',
   key: 'perProtocol',
   label: t('common.location'),
   sortable: true,
 }, {
   align: 'end',
-  cellClass: 'py-1',
+  cellClass: 'py-0.5',
   class: 'text-no-wrap',
   key: 'price',
-  label: t('common.price_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.price'),
   sortable: true,
 }, {
   align: 'end',
-  cellClass: 'py-1',
+  cellClass: 'py-0.5',
   class: 'text-no-wrap',
   key: 'amount',
   label: t('common.amount'),
   sortable: true,
 }, {
   align: 'end',
-  cellClass: 'py-1',
+  cellClass: 'py-0.5',
   class: 'text-no-wrap',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 
@@ -77,7 +70,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
   <RuiCard
     :no-padding="flat"
     :variant="flat ? 'flat' : 'outlined'"
-    class="!rounded-xl my-2"
+    class="rounded-xl!"
   >
     <template
       v-if="!flat && title"
@@ -93,10 +86,13 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       :empty="{ description: t('data_table.no_data') }"
       row-attr="asset"
       outlined
+      dense
     >
       <template #item.asset="{ row }">
+        <!-- always inside an expanded row, so it runs denser than the rows around it -->
         <AssetDetails
           :asset="row.asset"
+          :display="{ dense: true, inline: true, size: '24px' }"
         />
       </template>
       <template #item.perProtocol="{ row }">
@@ -124,7 +120,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
         <RowAppend
           :label-colspan="selectionMode ? 5 : 4"
           :label="t('common.total')"
-          class="[&>td]:p-4"
+          class="[&>td]:px-4 [&>td]:py-2"
         >
           <FiatDisplay :value="totalValue" />
         </RowAppend>

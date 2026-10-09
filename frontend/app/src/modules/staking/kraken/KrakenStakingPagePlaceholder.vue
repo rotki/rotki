@@ -9,7 +9,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="relative">
     <AppImage
-      class="-m-2 -mt-4 dark:invert-[0.9] dark:hue-rotate-[180deg] [&>img]:w-full"
+      class="-m-2 -mt-4 dark:invert-[0.9] dark:hue-rotate-180 [&>img]:w-full"
       :src="getPublicPlaceholderImagePath('kraken_staking.png')"
     />
 

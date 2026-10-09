@@ -25,7 +25,6 @@ const {
   actions,
   buttonClicked,
   circleBgClass,
-  color,
   colorBgClass,
   copy,
   doAction,
@@ -45,22 +44,21 @@ const {
     :class="[
       colorBgClass,
       {
-        '!rounded-none': popup,
+        'rounded-none!': popup,
       },
     ]"
-    class="!p-2 !pb-1.5 max-w-[400px]"
+    class="p-2! pb-1.5! max-w-[400px]"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
     data-id="notification"
   >
     <div class="flex pb-1 items-center overflow-hidden">
       <div
-        class="mr-3 ml-1 my-0 rounded-full p-2"
+        class="mr-3 ml-1 my-0 rounded-full p-1.5"
         :class="circleBgClass"
       >
         <RuiIcon
-          size="20"
-          class="text-white"
+          size="18"
           :name="icon"
         />
       </div>
@@ -81,17 +79,16 @@ const {
         data-id="notification_dismiss"
         variant="text"
         icon
-        class="!p-2"
+        class="p-2!"
         @click="dismiss(notification.id)"
       >
         <RuiIcon name="lu-x" />
       </RuiButton>
     </div>
     <div
-      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group overflow-hidden whitespace-pre-line relative transition-all"
+      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 group overflow-hidden whitespace-pre-line relative transition-all"
       :class="{
         'cursor-pointer': showExpandArrow && !expanded,
-        'pb-6': showExpandArrow && expanded,
       }"
       :style="messageWrapperStyle"
       @click="messageClicked()"
@@ -106,30 +103,32 @@ const {
           {{ notification.message }}
         </div>
       </div>
+      <!-- only a cue that the message goes on; the Show more button below opens it -->
       <div
-        v-if="showExpandArrow"
-        class="bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full"
-        :class="color ? 'dark:to-[#363636]' : 'dark:to-dark-elevated'"
-      >
-        <RuiButton
-          :class="[
-            expandButtonClass,
-            color ? 'dark:to-[#363636]' : 'dark:to-dark-elevated',
-          ]"
-          class="!p-0.5 w-full bg-gradient-to-b from-transparent to-white rounded-none !bg-transparent"
-          hide-focus-indicator
-          @click.stop="buttonClicked()"
-        >
-          <RuiIcon
-            :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
-            :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
-            class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
-            size="20"
-          />
-        </RuiButton>
-      </div>
+        v-if="showExpandArrow && !expanded"
+        class="pointer-events-none h-8 bg-linear-to-b from-transparent absolute bottom-0 inset-x-0"
+        :class="expandButtonClass"
+      />
     </div>
     <div class="flex mt-1 gap-x-2 gap-y-0.5 flex-wrap mx-0.5 max-w-full overflow-auto">
+      <RuiButton
+        v-if="showExpandArrow"
+        color="primary"
+        variant="text"
+        size="sm"
+        class="order-last ms-auto"
+        :aria-expanded="expanded"
+        data-id="notification_expand"
+        @click="buttonClicked()"
+      >
+        {{ expanded ? t('notification_sidebar.show_less') : t('notification_sidebar.show_more') }}
+        <template #append>
+          <RuiIcon
+            :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+            size="16"
+          />
+        </template>
+      </RuiButton>
       <RuiButton
         v-for="(action, index) in actions"
         :key="index"

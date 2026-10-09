@@ -2,7 +2,6 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { assetLocationParams } from '@/modules/assets/asset-location-fields';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetLocationFields } from '@/modules/assets/use-asset-location-fields';
@@ -39,7 +38,6 @@ const valuePending = computed<boolean>(() => isPricePending(identifier));
 
 const {
   assetLocations,
-  currencySymbol,
   detailsLoading,
   matchChain,
   totalValue,
@@ -112,9 +110,7 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
   }, {
     align: 'end',
     key: 'value',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol) ?? CURRENCY_USD,
-    }),
+    label: t('common.value'),
     sortable: true,
   }, {
     align: 'end',

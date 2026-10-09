@@ -112,9 +112,9 @@ defineExpose({
       ref="wrapper"
       class="p-4 border border-rui-grey-300 dark:border-rui-grey-800 rounded-md w-full relative border-dashed transition"
       :class="{
-        '!border-rui-primary bg-rui-primary/[0.08]': isOverDropZone,
-        '!border-rui-error !border-solid bg-rui-error/[0.08]': error,
-        '!border-rui-success !border-solid bg-rui-success/[0.08]': uploaded,
+        'border-rui-primary! bg-rui-primary/8': isOverDropZone,
+        'border-rui-error! border-solid! bg-rui-error/8': error,
+        'border-rui-success! border-solid! bg-rui-success/8': uploaded,
       }"
     >
       <div
@@ -123,7 +123,7 @@ defineExpose({
           'opacity-0': loading,
         }"
       >
-        <div class="h-10 bg-rui-primary/[0.12] rounded-full flex items-center justify-center max-w-full overflow-hidden">
+        <div class="h-10 bg-rui-primary/12 rounded-full flex items-center justify-center max-w-full overflow-hidden">
           <div class="w-10 h-10 min-w-[10] flex items-center justify-center">
             <RuiIcon
               name="lu-file-up"
@@ -138,12 +138,12 @@ defineExpose({
             >
               <div class="flex-1 overflow-hidden">
                 <div
-                  class="text-subtitle-1 !text-sm !leading-5 text-truncate"
+                  class="text-subtitle-1 text-sm! leading-5! text-truncate"
                   :title="file.name"
                 >
                   {{ file.name }}
                 </div>
-                <div class="text-rui-text-secondary text-xs !leading-3">
+                <div class="text-rui-text-secondary text-xs leading-3!">
                   {{ size(file.size) }}
                 </div>
               </div>
@@ -172,7 +172,7 @@ defineExpose({
             <template #button>
               <RuiButton
                 variant="text"
-                class="!py-0 px-0.5 -ml-0.5 underline !text-base"
+                class="py-0! px-0.5 -ml-0.5 underline text-base!"
                 color="primary"
                 @click="clickSelect()"
               >

@@ -138,7 +138,8 @@ defineExpose({
       @update:selection="selectedModules = $event"
     />
 
-    <div class="flex flex-col gap-4">
+    <!-- 8px on top of each field's 24px hint line: 32px from one field to the next label -->
+    <div class="flex flex-col gap-2">
       <AddressInput
         ref="address"
         v-model:addresses="addresses"

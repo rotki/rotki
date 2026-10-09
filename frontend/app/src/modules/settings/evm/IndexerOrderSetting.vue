@@ -74,7 +74,7 @@ async function navigateToApiKeys(): Promise<void> {
         <RuiTabs
           v-model="modelActiveTab"
           color="primary"
-          class="flex-1 !h-auto overflow-hidden"
+          class="flex-1 h-auto! overflow-hidden"
           data-testid="indexer-tabs"
         >
           <RuiTab

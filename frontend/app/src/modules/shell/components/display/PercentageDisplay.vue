@@ -20,11 +20,8 @@ const displayValue = computed<string>(() => {
 });
 
 const assetStyle = computed<Record<string, string | undefined>>(() => {
-  if (!assetPadding) {
-    return {
-      'max-width': '0ch',
-    };
-  }
+  if (!assetPadding)
+    return {};
   return {
     'text-align': 'start',
     'width': `${assetPadding + 1}ch`,

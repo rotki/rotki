@@ -41,7 +41,7 @@ defineSlots<{
       <RuiButton
         variant="text"
         color="primary"
-        class="!inline !text-[1em] !p-0 !px-0.5 !-mx-0.5 !font-[inherit] [&_span]:underline"
+        class="inline! text-[1em]! p-0! px-0.5! -mx-0.5! font-[inherit]! [&_span]:underline"
       >
         <slot />
       </RuiButton>

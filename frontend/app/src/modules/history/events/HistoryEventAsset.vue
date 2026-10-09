@@ -64,7 +64,7 @@ watch(menuOpened, (menuOpened) => {
   <RuiMenu
     v-model="menuOpened"
     class="flex"
-    :class-names="{ menu: 'w-[16rem] max-w-[90%] z-[100]', wrapper: 'w-full' }"
+    :class-names="{ menu: 'w-64 max-w-[90%] z-100', wrapper: 'w-full' }"
     :disabled="disableOptions"
     :options="{
       placement: 'bottom-start',
@@ -126,12 +126,12 @@ watch(menuOpened, (menuOpened) => {
 
         <div
           v-if="!disableOptions"
-          class="-my-2 pr-2 h-[calc(100%+1rem)] flex items-center opacity-0 group-hover/asset:opacity-100 z-[1] absolute right-0"
+          class="-my-2 pr-2 h-[calc(100%+1rem)] flex items-center opacity-0 group-hover/asset:opacity-100 z-1 absolute right-0"
         >
           <RuiButton
             variant="text"
             icon
-            :class="!dense ? '!p-2' : 'p-0'"
+            :class="!dense ? 'p-2!' : 'p-0'"
             @click.stop="openMenuHandler($event)"
           >
             <RuiIcon

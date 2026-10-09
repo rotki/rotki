@@ -55,10 +55,10 @@ const limits = [10, 25, 50, 100];
 </script>
 
 <template>
-  <div class="relative flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-white dark:bg-dark-elevated/[0.9] sticky top-0 z-5">
+  <div class="relative flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-white dark:bg-dark-elevated/90 sticky top-0 z-5">
     <RuiProgress
       v-if="loading"
-      class="!absolute -bottom-0.5 left-0 w-full pointer-events-none"
+      class="absolute! -bottom-0.5 left-0 w-full pointer-events-none"
       color="primary"
       variant="indeterminate"
       thickness="2"
@@ -111,7 +111,7 @@ const limits = [10, 25, 50, 100];
           :options="limits"
           dense
           hide-details
-          :class-names="{ label: '!text-xs' }"
+          :class-names="{ label: 'text-xs!' }"
           class="w-18"
         />
       </div>

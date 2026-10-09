@@ -47,6 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
         <template #prepend>
           <RuiIcon
             name="lu-server"
+            size="20"
             :color="color"
           />
         </template>
@@ -55,7 +56,7 @@ const { t } = useI18n({ useScope: 'global' });
             v-if="!saved"
             :disabled="loading"
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('save')"
@@ -69,7 +70,7 @@ const { t } = useI18n({ useScope: 'global' });
           <RuiButton
             v-else
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('clear')"
@@ -85,7 +86,6 @@ const { t } = useI18n({ useScope: 'global' });
 
       <RuiCheckbox
         v-model="sessionOnly"
-        class="-ml-2"
         color="primary"
         hide-details
         :disabled="saved"

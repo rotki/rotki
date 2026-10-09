@@ -50,7 +50,7 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     <template #item="{ disabled, item }">
       <LocationIcon
         :id="`balance-location__${item.identifier}`"
-        class="!justify-start"
+        class="justify-start!"
         :class="{ 'opacity-40': disabled }"
         horizontal
         :item="item.identifier"
@@ -58,7 +58,7 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     </template>
     <template #selection="{ item }">
       <LocationIcon
-        class="!justify-start pr-2"
+        class="justify-start! pr-2"
         horizontal
         :item="item.identifier"
       />

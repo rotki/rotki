@@ -24,7 +24,7 @@ const label = computed<string>(() => isMatching.value
 
 <template>
   <div
-    class="flex flex-col gap-3 rounded border border-default border-l-[3px] p-4 text-sm"
+    class="flex flex-col gap-3 rounded-sm border border-default border-l-[3px] p-4 text-sm"
     :class="isMatching ? 'border-l-rui-success' : 'border-l-rui-warning'"
     data-testid="divergence-boundary"
     :data-key="boundary.key"

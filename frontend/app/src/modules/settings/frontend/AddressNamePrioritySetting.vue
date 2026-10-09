@@ -81,7 +81,7 @@ watch(writeError, (message) => {
   </RuiCard>
 
   <ActionStatusIndicator
-    class="mx-[1px] mt-4"
+    class="mx-px mt-4"
     :status="{ error, success }"
   />
 </template>

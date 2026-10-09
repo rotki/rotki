@@ -60,7 +60,7 @@ const columns = computed<DataTableColumn<UnmatchedBridgeRow>[]>(() => [
 function getRowClass(row: UnmatchedBridgeRow): string {
   const classes = ['transition-all'];
   if (row.groupIdentifier === highlightedGroupIdentifier) {
-    classes.push('!bg-rui-warning/15');
+    classes.push('bg-rui-warning/15!');
   }
   return classes.join(' ');
 }
@@ -98,7 +98,7 @@ function getRowClass(row: UnmatchedBridgeRow): string {
       </template>
       <template #item.direction="{ row }">
         <div class="flex flex-col items-start gap-1">
-          <BadgeDisplay class="!normal-case">
+          <BadgeDisplay class="normal-case!">
             {{ row.directionLabel }}
           </BadgeDisplay>
           <UnmatchedUntrackedBadge

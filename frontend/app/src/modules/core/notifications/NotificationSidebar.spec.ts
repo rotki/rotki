@@ -98,10 +98,11 @@ describe('modules/core/notifications/NotificationSidebar.vue', () => {
     expect(remaining[0].text()).toContain('second');
   });
 
-  it('should offer nothing to clear while the list is empty', () => {
+  it('should show the caught-up state and nothing to clear while the list is empty', () => {
     const wrapper = createWrapper();
 
-    expect(wrapper.find('[data-testid=clear-notifications]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=clear-notifications]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=notifications-empty]').text()).toContain('notification_sidebar.empty.title');
   });
 
   it('should allow clearing once there is something to clear', async () => {
@@ -109,6 +110,7 @@ describe('modules/core/notifications/NotificationSidebar.vue', () => {
     await nextTick();
 
     expect(wrapper.find('[data-testid=clear-notifications]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-testid=notifications-empty]').exists()).toBe(false);
   });
 
   it('should toggle silent mode from its button', async () => {

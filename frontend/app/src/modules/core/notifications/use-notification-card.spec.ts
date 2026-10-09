@@ -76,10 +76,10 @@ describe('modules/core/notifications/useNotificationCard', () => {
 
   describe('severity styling', () => {
     it.each([
-      [Severity.ERROR, 'lu-circle-alert', 'bg-rui-error'],
-      [Severity.INFO, 'lu-circle-alert', 'bg-rui-info'],
-      [Severity.WARNING, 'lu-siren', 'bg-rui-warning'],
-      [Severity.REMINDER, 'lu-alarm-clock', 'bg-rui-secondary'],
+      [Severity.ERROR, 'lu-circle-alert', 'bg-rui-error-soft text-rui-error'],
+      [Severity.INFO, 'lu-circle-alert', 'bg-rui-info-soft text-rui-info'],
+      [Severity.WARNING, 'lu-siren', 'bg-rui-warning-soft text-rui-warning'],
+      [Severity.REMINDER, 'lu-alarm-clock', 'bg-rui-secondary-soft text-rui-secondary'],
     ])('should pick the icon and circle for %s', (severity, expectedIcon, expectedCircle) => {
       const { circleBgClass, icon } = card(notification({ severity }));
 
@@ -88,10 +88,11 @@ describe('modules/core/notifications/useNotificationCard', () => {
     });
 
     it.each([
-      [Severity.ERROR, 'error', '!bg-rui-error/10', '!to-rui-error/10'],
-      [Severity.INFO, 'info', '!bg-rui-info/10', '!to-rui-info/10'],
-      [Severity.WARNING, 'warning', '!bg-rui-warning/10', '!to-rui-warning/10'],
-      [Severity.REMINDER, 'reminder', '!bg-rui-secondary/10', '!to-rui-secondary/10'],
+      // the card stays on the surface and only its border takes the severity, so the fade always targets the surface
+      [Severity.ERROR, 'error', 'border-rui-error-border', 'to-rui-surface'],
+      [Severity.INFO, 'info', 'border-rui-info-border', 'to-rui-surface'],
+      [Severity.WARNING, 'warning', 'border-rui-warning-border', 'to-rui-surface'],
+      [Severity.REMINDER, 'reminder', 'border-rui-secondary-border', 'to-rui-surface'],
     ])('should derive the colour classes for %s', (severity, expectedColor, expectedBg, expectedButton) => {
       const { color, colorBgClass, expandButtonClass } = card(notification({ severity }));
 
@@ -107,10 +108,10 @@ describe('modules/core/notifications/useNotificationCard', () => {
       const { circleBgClass, color, colorBgClass, expandButtonClass, icon } = card(notification({ severity: unknown }));
 
       expect(get(icon)).toBe('lu-circle-alert');
-      expect(get(circleBgClass)).toBe('bg-rui-success');
+      expect(get(circleBgClass)).toBe('bg-rui-success-soft text-rui-success');
       expect(get(color)).toBe('');
       expect(get(colorBgClass)).toBe('');
-      expect(get(expandButtonClass)).toBe('');
+      expect(get(expandButtonClass)).toBe('to-rui-surface');
     });
 
     it('should keep colour on severity when the notification carries an action', () => {
@@ -120,8 +121,8 @@ describe('modules/core/notifications/useNotificationCard', () => {
       }));
 
       expect(get(color)).toBe('error');
-      expect(get(colorBgClass)).toBe('!bg-rui-error/10');
-      expect(get(circleBgClass)).toBe('bg-rui-error');
+      expect(get(colorBgClass)).toBe('border-rui-error-border');
+      expect(get(circleBgClass)).toBe('bg-rui-error-soft text-rui-error');
     });
   });
 
@@ -226,7 +227,8 @@ describe('modules/core/notifications/useNotificationCard', () => {
       const { buttonClicked, messageWrapperStyle } = card();
       buttonClicked();
 
-      expect(get(messageWrapperStyle)).toEqual({ height: '224px' });
+      // the Show more button sits in the actions row, so the message needs no room for it
+      expect(get(messageWrapperStyle)).toEqual({ height: '200px' });
     });
 
     it('should expand when the collapsed message is clicked', () => {

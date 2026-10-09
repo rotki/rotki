@@ -2,6 +2,7 @@ import type { SearchItem } from '@/modules/shell/layout/use-global-search';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';
+import GlobalSearchFooter from '@/modules/shell/components/GlobalSearchFooter.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
 const { assetSearchError, currentPath, isMac, performSearch, push, resolve } = await vi.hoisted(async () => {
@@ -256,7 +257,15 @@ describe('globalSearch', () => {
 
       const error = wrapper.find('[data-testid=auto-complete-dropdown] [data-testid=global-search-asset-error]');
       expect(error.exists()).toBe(true);
-      expect(error.text()).toContain('asset_search.error.message');
+      // a short note in place; the technical reason waits in its tooltip
+      expect(error.text()).toContain('global_search.asset_search_unavailable');
+      expect(wrapper.findComponent(GlobalSearchFooter).props('assetSearchError')).toBe('rejected');
+    });
+
+    it('should always show the key hints in the footer', async () => {
+      const wrapper = await mountReady();
+
+      expect(wrapper.find('[data-testid=auto-complete-dropdown] [data-testid=global-search-hints]').exists()).toBe(true);
     });
 
     it('should show no error while the asset search succeeds', async () => {

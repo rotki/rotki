@@ -101,7 +101,7 @@ onMounted(() => {
       />
       <AssetDetails
         v-else
-        class="[&>div]:!py-0 -my-[0.375rem]"
+        class="[&>div]:py-0! -my-1.5"
         :asset="item"
         :display="{ dense: true, size: '26px' }"
         :actions="{ hideMenu: true }"

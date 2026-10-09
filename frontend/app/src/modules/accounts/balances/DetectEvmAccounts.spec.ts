@@ -95,16 +95,4 @@ describe('modules/accounts/balances/DetectEvmAccounts', () => {
 
     expect(label()).toBe('blockchain_balances.evm_detection.title');
   });
-
-  it('should reserve the width of every label, so an outcome never resizes the button', async () => {
-    wrapper = createWrapper();
-
-    const reserved = wrapper.findAll('[aria-hidden=true]').map(element => element.text());
-
-    expect(reserved).toEqual([
-      'blockchain_balances.evm_detection.title',
-      'blockchain_balances.evm_detection.none',
-      'blockchain_balances.evm_detection.found::99',
-    ]);
-  });
 });

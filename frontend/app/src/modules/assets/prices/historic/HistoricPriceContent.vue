@@ -34,7 +34,7 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     sortable: true,
   },
   {
-    cellClass: '!text-xs !text-rui-text-secondary',
+    cellClass: 'text-xs! text-rui-text-secondary!',
     key: 'wasWorth',
     label: '',
   },
@@ -50,7 +50,7 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     sortable: true,
   },
   {
-    cellClass: '!text-xs !text-rui-text-secondary',
+    cellClass: 'text-xs! text-rui-text-secondary!',
     key: 'on',
     label: '',
   },
@@ -60,7 +60,7 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     sortable: true,
   },
   {
-    class: 'w-[3rem]',
+    class: 'w-12',
     key: 'actions',
     label: '',
   },

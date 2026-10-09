@@ -39,7 +39,7 @@ const { t } = useI18n({ useScope: 'global' });
         </RuiButtonGroup>
       </div>
     </template>
-    <div class="p-4 py-0 max-h-[11rem]">
+    <div class="p-4 py-0 max-h-44">
       <div
         v-for="item in received"
         :key="item.asset"

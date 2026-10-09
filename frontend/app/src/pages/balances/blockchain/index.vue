@@ -2,18 +2,15 @@
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
-import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
-import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BlockchainBalanceFilter from '@/modules/balances/BlockchainBalanceFilter.vue';
-import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
+import BlockchainBalancesRefreshButton from '@/modules/balances/BlockchainBalancesRefreshButton.vue';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
-import SummaryCardRefreshMenu from '@/modules/balances/SummaryCardRefreshMenu.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
@@ -38,10 +35,8 @@ const { t } = useI18n({ useScope: 'global' });
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
-const { isInitialLoading, isRefreshing } = useBalanceStatus();
+const { isInitialLoading } = useBalanceStatus();
 const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
-const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
-const { handleBlockchainRefresh } = useBalanceRefresh();
 
 const aggregatedBalances = useBlockchainBalances(chainsFilter);
 
@@ -65,51 +60,37 @@ onMounted(async () => {
   >
     <template #buttons>
       <BlockchainBalanceStalenessIndicator class="self-center" />
-      <PriceRefresh />
+      <BlockchainBalancesRefreshButton />
       <HideSmallBalances :source="BalanceSource.BLOCKCHAIN" />
     </template>
 
-    <div class="flex flex-col gap-8">
-      <RuiCard>
-        <div class="pb-6 flex flex-wrap xl:flex-nowrap justify-between gap-2 items-center">
-          <div class="flex items-center gap-2">
-            <SummaryCardRefreshMenu
-              data-testid="blockchain-balances-refresh-menu"
-              :disabled="refreshDisabled"
-              :loading="isDetectingTokens || isRefreshing"
-              :tooltip="t('account_balances.refresh_tooltip')"
-              @refresh="handleBlockchainRefresh()"
-            >
-              <template #refreshMenu>
-                <BlockchainBalanceRefreshBehaviourMenu />
-              </template>
-            </SummaryCardRefreshMenu>
-          </div>
-          <BlockchainBalanceFilter
-            v-model:chains="chainsFilter"
-            v-model:search="search"
-            class="order-3 xl:order-1 grow w-full xl:w-auto xl:ml-6"
-          />
-          <VisibleColumnsSelector
-            class="order-2"
-            :group="tableType"
-            :group-label="t('blockchain_balances.group_label')"
-          />
-        </div>
-
-        <AssetBalances
-          data-testid="blockchain-asset-balances"
-          :loading="isInitialLoading"
-          :balances="aggregatedBalances"
-          :search="search"
-          :breakdown="{
-            scope: { chains: chainsFilter },
-          }"
-          :visible-columns="dashboardTablesVisibleColumns[tableType]"
-          show-per-protocol
-          sticky-header
+    <!-- a frame rather than a card: the card's scrolling content would hold the sticky pagination bar -->
+    <TableFrame>
+      <template #toolbar>
+        <BlockchainBalanceFilter
+          v-model:chains="chainsFilter"
+          v-model:search="search"
+          class="flex-1 min-w-48 md:min-w-96"
         />
-      </RuiCard>
-    </div>
+        <VisibleColumnsSelector
+          :group="tableType"
+          :group-label="t('blockchain_balances.group_label')"
+          size="sm"
+        />
+      </template>
+
+      <AssetBalances
+        data-testid="blockchain-asset-balances"
+        :loading="isInitialLoading"
+        :balances="aggregatedBalances"
+        :search="search"
+        :breakdown="{
+          scope: { chains: chainsFilter },
+        }"
+        :visible-columns="dashboardTablesVisibleColumns[tableType]"
+        show-per-protocol
+        sticky-header
+      />
+    </TableFrame>
   </TablePageLayout>
 </template>

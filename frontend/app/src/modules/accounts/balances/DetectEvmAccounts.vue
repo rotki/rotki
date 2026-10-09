@@ -20,20 +20,7 @@ const { detectEvmAccounts } = useEvmAccountDetection();
 
 const { start: clearOutcomeLater, stop: keepOutcome } = useTimeoutFn(() => set(outcome, undefined), OUTCOME_DURATION, { immediate: false });
 
-/** A count wide enough to reserve room for any realistic number of chains. */
-const WIDEST_COUNT = 99;
-
 const label = computed<string>(() => get(outcome) ?? t('blockchain_balances.evm_detection.title'));
-
-/**
- * Invisible copies of every label the button can carry, sharing one grid cell with the visible
- * label, so the button always has the width of the longest and a run never shifts the toolbar.
- */
-const sizers = computed<string[]>(() => [
-  t('blockchain_balances.evm_detection.title'),
-  t('blockchain_balances.evm_detection.none'),
-  t('blockchain_balances.evm_detection.found', { count: WIDEST_COUNT }, WIDEST_COUNT),
-]);
 
 /**
  * Counts chains, not (chain, address) pairs: a user thinks of one address added on five chains.
@@ -60,42 +47,37 @@ watch(lastRun, (found) => {
 </script>
 
 <template>
-  <RuiTooltip
-    :options="{ placement: 'right' }"
-    :open-delay="400"
-    :class-names="{ tooltip: 'max-w-[16rem]' }"
+  <!-- an entry of the Refresh menu: the label turns into the run's outcome, the line below explains it -->
+  <RuiButton
+    variant="list"
+    :disabled="isEvmAccountsDetecting"
+    data-testid="detect-evm-accounts"
+    @click="detectEvmAccounts()"
   >
-    <template #activator>
-      <RuiButton
-        color="primary"
-        size="xl"
-        :loading="isEvmAccountsDetecting"
-        :disabled="isEvmAccountsDetecting"
-        data-testid="detect-evm-accounts"
-        @click="detectEvmAccounts()"
-      >
-        <template #prepend>
-          <RuiIcon :name="outcome ? 'lu-check' : 'lu-radar'" />
-        </template>
-        <span class="grid">
-          <span
-            v-for="sizer in sizers"
-            :key="sizer"
-            class="[grid-area:1/1] invisible"
-            aria-hidden="true"
-          >
-            {{ sizer }}
-          </span>
-          <span
-            class="[grid-area:1/1] text-center"
-            aria-live="polite"
-            data-testid="detect-evm-accounts-label"
-          >
-            {{ label }}
-          </span>
-        </span>
-      </RuiButton>
+    <template #prepend>
+      <RuiProgress
+        v-if="isEvmAccountsDetecting"
+        variant="indeterminate"
+        circular
+        size="18"
+        thickness="2"
+      />
+      <RuiIcon
+        v-else
+        size="18"
+        :name="outcome ? 'lu-check' : 'lu-radar'"
+      />
     </template>
-    {{ t('blockchain_balances.evm_detection.tooltip') }}
-  </RuiTooltip>
+    <span class="flex flex-col items-start text-left">
+      <span
+        aria-live="polite"
+        data-testid="detect-evm-accounts-label"
+      >
+        {{ label }}
+      </span>
+      <span class="text-caption font-normal text-rui-text-secondary whitespace-normal">
+        {{ t('blockchain_balances.evm_detection.description') }}
+      </span>
+    </span>
+  </RuiButton>
 </template>

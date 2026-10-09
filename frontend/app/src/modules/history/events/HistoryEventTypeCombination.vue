@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div
       class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full relative"
       :class="{
-        '!bg-rui-primary-lighter/[0.7] dark:!bg-rui-primary-lighter !text-rui-primary': highlight,
+        'bg-rui-primary-lighter/70! dark:bg-rui-primary-lighter! text-rui-primary!': highlight,
       }"
     >
       <RuiIcon

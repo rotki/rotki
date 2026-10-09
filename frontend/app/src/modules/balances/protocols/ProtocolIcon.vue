@@ -32,8 +32,8 @@ const { t } = useI18n({ useScope: 'global' });
   >
     <template #activator>
       <div
-        class="rounded-full overflow-hidden size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700"
-        :class="{ relative: isProxy }"
+        class="rounded-full overflow-hidden size-8 flex items-center justify-center ring-2 ring-rui-surface"
+        :class="{ 'relative': isProxy, 'bg-white': protocolData?.type === 'image', 'bg-rui-surface': protocolData?.type !== 'image' }"
       >
         <RuiIcon
           v-if="protocolData?.type === 'icon'"

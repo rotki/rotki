@@ -25,7 +25,7 @@ export function useRowHighlight<T>(
   const {
     baseClass = 'transition-colors duration-1000',
     duration = 2500,
-    highlightClass = 'bg-rui-primary/[0.08]',
+    highlightClass = 'bg-rui-primary/8',
   } = options;
 
   const highlighted = ref<string>();

@@ -48,7 +48,8 @@ function toggle(): void {
 </script>
 
 <template>
-  <div class="flex items-center gap-2 text-subtitle-2 pb-4">
+  <!-- a heading for the optional second key pair, set apart from the main keys above it -->
+  <div class="flex items-center gap-2 min-h-9 pt-2 text-subtitle-2">
     {{ t('exchange_settings.inputs.kraken_futures_keys') }}
     <RuiTooltip
       v-if="editMode"
@@ -59,7 +60,7 @@ function toggle(): void {
         <RuiButton
           data-testid="toggle-edit-futures-keys"
           variant="text"
-          class="!p-2"
+          class="p-2!"
           icon
           @click="toggle()"
         >

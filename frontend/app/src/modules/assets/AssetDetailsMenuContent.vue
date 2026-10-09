@@ -111,9 +111,9 @@ defineExpose({
         <div
           v-if="confirm"
           key="confirm"
-          class="w-full flex items-center gap-2 justify-between text-rui-text-secondary pl-1 py-[1px]"
+          class="w-full flex items-center gap-2 justify-between text-rui-text-secondary pl-1 py-px"
         >
-          <div class="text-rui-warning text-xs leading-[1]">
+          <div class="text-rui-warning text-xs leading-none">
             {{ confirmMessage() }}
           </div>
           <div class="flex gap-1">
@@ -153,7 +153,7 @@ defineExpose({
             variant="text"
             color="primary"
             size="sm"
-            class="!py-0.5"
+            class="py-0.5!"
             @click="navigateToDetails()"
           >
             {{ t('assets.go_to_asset_detail') }}
@@ -225,7 +225,7 @@ defineExpose({
       <div
         class="pt-2 pb-1 px-1 border-t border-default"
       >
-        <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+        <div class="text-[10px]! leading-none! text-caption text-rui-text-secondary uppercase">
           {{ t('transactions.events.form.contract_address.label') }}
         </div>
 
@@ -242,7 +242,7 @@ defineExpose({
         v-if="contractInfo.nftId"
         class="pt-2 pb-1 px-1 border-t border-default"
       >
-        <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+        <div class="text-[10px]! leading-none! text-caption text-rui-text-secondary uppercase">
           {{ t('nft_balance_table.token_id') }}
         </div>
 
@@ -255,7 +255,7 @@ defineExpose({
       v-if="iconOnly"
       class="pt-2 pb-1 px-1 border-t border-default"
     >
-      <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+      <div class="text-[10px]! leading-none! text-caption text-rui-text-secondary uppercase">
         {{ t('common.name') }}
       </div>
 

@@ -16,9 +16,10 @@ const message = computed<string>(() => {
 </script>
 
 <template>
+  <!-- grows into the page's column, so the wait sits mid-screen whatever the form's alignment -->
   <div
     v-if="!connected"
-    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
+    class="grow w-full max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
     <RuiProgress
       color="primary"

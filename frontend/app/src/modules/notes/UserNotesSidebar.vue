@@ -43,6 +43,7 @@ watch(locationName, (locationName) => {
 
   <RuiNavigationDrawer
     v-model="display"
+    below-app-bar
     width="460px"
     temporary
     :stateless="openDialog"
@@ -82,7 +83,7 @@ watch(locationName, (locationName) => {
       </RuiTabs>
 
       <RuiButton
-        class="!p-2"
+        class="p-2!"
         variant="text"
         icon
         @click="display = false"

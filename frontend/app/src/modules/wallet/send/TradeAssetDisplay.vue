@@ -141,7 +141,7 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
               icon
               variant="text"
               size="sm"
-              class="!p-1"
+              class="p-1!"
               @click.stop="emit('refresh')"
             >
               <RuiIcon

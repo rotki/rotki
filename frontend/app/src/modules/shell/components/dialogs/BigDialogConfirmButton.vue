@@ -23,7 +23,7 @@ const { primary, hasErrors = false, actionDisabled = false, loading = false, err
     >
       <RuiChip
         size="sm"
-        class="!py-0 !px-0.5 !bg-rui-error-darker"
+        class="py-0! px-0.5! bg-rui-error-darker!"
         color="error"
       >
         {{ errorCount }}

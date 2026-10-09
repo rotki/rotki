@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 p-3 w-[20rem]">
+  <div class="flex flex-col gap-3 p-3 w-80">
     <RuiButtonGroup
       v-if="showOperators"
       :model-value="filter.op"
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
           size="16px"
           class="shrink-0"
         />
-        <span class="truncate max-w-[10rem] font-mono">{{ chipLabel(value) }}</span>
+        <span class="truncate max-w-40 font-mono">{{ chipLabel(value) }}</span>
         <RuiIcon
           name="lu-x"
           size="12"

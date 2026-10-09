@@ -17,20 +17,19 @@ const options = [
 </script>
 
 <template>
-  <div class="p-2">
-    <div class="font-bold uppercase p-2 text-sm">
-      {{ t('dashboard.blockchain_balances.behaviour.title') }}:
+  <!-- a menu section, headed like the menu's other sections -->
+  <div class="px-4 pt-2 pb-3">
+    <div class="pb-2 text-caption uppercase tracking-wide text-rui-text-secondary">
+      {{ t('dashboard.blockchain_balances.behaviour.title') }}
     </div>
-    <div class="pb-2 px-3">
-      <SettingSelect
-        control="radio"
-        setting="blockchainRefreshButtonBehaviour"
-        class="mt-0"
-        hide-details
-        key-attr="value"
-        text-attr="label"
-        :options="options"
-      />
-    </div>
+    <SettingSelect
+      control="radio"
+      setting="blockchainRefreshButtonBehaviour"
+      size="sm"
+      hide-details
+      key-attr="value"
+      text-attr="label"
+      :options="options"
+    />
   </div>
 </template>

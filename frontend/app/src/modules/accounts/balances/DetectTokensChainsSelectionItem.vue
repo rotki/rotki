@@ -45,7 +45,7 @@ const isDetectingChain = useIsDetecting(() => item.id);
       v-if="allowRedetect"
       variant="text"
       color="primary"
-      class="flex !px-4 !py-2"
+      class="flex px-4! py-2!"
       size="sm"
       :loading="isDetectingChain"
       @click.prevent.stop="emit('detect', item.id)"

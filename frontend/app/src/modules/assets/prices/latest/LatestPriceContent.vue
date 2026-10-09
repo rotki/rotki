@@ -33,7 +33,7 @@ const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
     sortable: true,
   },
   {
-    cellClass: '!text-xs !text-rui-text-secondary',
+    cellClass: 'text-xs! text-rui-text-secondary!',
     key: 'isWorth',
     label: '',
   },
@@ -56,7 +56,7 @@ const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
   },
   {
     align: 'end',
-    class: 'w-[3rem]',
+    class: 'w-12',
     key: 'actions',
     label: '',
   },

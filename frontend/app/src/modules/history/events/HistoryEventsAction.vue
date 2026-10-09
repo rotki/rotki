@@ -120,7 +120,7 @@ function redecodeWithOptions(target: DecodableEventType): void {
     </RuiButton>
     <RuiMenu
       v-model="showMenu"
-      :class-names="{ menu: 'max-w-[15rem] z-[100]' }"
+      :class-names="{ menu: 'max-w-60 z-100' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
@@ -129,7 +129,7 @@ function redecodeWithOptions(target: DecodableEventType): void {
           variant="text"
           icon
           size="sm"
-          class="!p-2"
+          class="p-2!"
           data-testid="event-actions-menu"
           v-bind="attrs"
         >

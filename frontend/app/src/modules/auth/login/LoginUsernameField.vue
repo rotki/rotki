@@ -81,7 +81,7 @@ defineExpose({ focus });
     :disabled="disabled"
     :error-messages="errorMessages"
     data-testid="username-input"
-    class="mb-2 [&_[data-id=activator]]:bg-transparent"
+    class="mb-2 **:data-[id=activator]:bg-transparent"
     auto-select-first
     :hide-no-data="savedUsernames.length > 0"
     clearable

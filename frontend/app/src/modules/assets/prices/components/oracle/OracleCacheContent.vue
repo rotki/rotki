@@ -75,7 +75,7 @@ const columns = computed<DataTableColumn<OracleCacheMeta & { id: number }>[]>(()
     label: t('oracle_prices.cache.headers.to_date'),
   },
   {
-    class: 'w-[3rem]',
+    class: 'w-12',
     key: 'actions',
     label: '',
   },
@@ -187,7 +187,7 @@ defineExpose({
       <div class="flex flex-col md:flex-row md:items-center gap-4">
         <RuiAutoComplete
           v-model="cacheSource"
-          class="md:w-[14rem]"
+          class="md:w-56"
           dense
           :label="t('oracle_prices.cache.dialog.source')"
           variant="outlined"

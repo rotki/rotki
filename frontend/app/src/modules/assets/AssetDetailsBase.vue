@@ -39,6 +39,7 @@ const shouldShowAmount = useSetting('shouldShowAmount');
 const loading = isPending(() => asset.identifier);
 
 const dense = computed<boolean>(() => display?.dense ?? false);
+const inline = computed<boolean>(() => display?.inline ?? false);
 const iconOnly = computed<boolean>(() => display?.iconOnly ?? false);
 const size = computed<string>(() => display?.size ?? '30px');
 const optimizeForVirtualScroll = computed<boolean>(() => display?.optimizeForVirtualScroll ?? false);
@@ -116,9 +117,10 @@ watch(menuOpened, (menuOpened) => {
     v-else-if="hideMenu"
     no-padding
     no-hover
-    class="max-w-[20rem]"
+    class="max-w-80"
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
+    :inline="inline"
     :loading="loading"
     :blur-content="!shouldShowAmount"
     :title="title"
@@ -133,7 +135,7 @@ watch(menuOpened, (menuOpened) => {
     :key="asset.identifier"
     v-model="menuOpened"
     class="flex"
-    :class-names="{ menu: 'w-[16rem] max-w-[90%]' }"
+    :class-names="{ menu: 'w-64 max-w-[90%]' }"
     :options="{ placement: 'bottom-start' }"
   >
     <template #activator="{ attrs }">
@@ -148,9 +150,10 @@ watch(menuOpened, (menuOpened) => {
         <ListItem
           no-padding
           no-hover
-          class="max-w-[20rem]"
+          class="max-w-80"
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
+          :inline="inline"
           :loading="loading"
           :blur-content="!shouldShowAmount"
           :title="title"
@@ -164,13 +167,14 @@ watch(menuOpened, (menuOpened) => {
         <RuiButton
           variant="text"
           icon
-          class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
+          class="opacity-0 group-hover:opacity-100 mr-2"
+          :class="inline ? 'p-1!' : 'p-2!'"
           v-bind="attrs"
           @click.stop="openMenuHandler($event)"
         >
           <RuiIcon
             name="lu-ellipsis-vertical"
-            size="20"
+            :size="inline ? 16 : 20"
           />
         </RuiButton>
       </div>

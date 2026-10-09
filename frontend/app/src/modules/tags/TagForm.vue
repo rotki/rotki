@@ -57,7 +57,7 @@ defineExpose({
         </div>
       </template>
       <TagIcon
-        class="min-w-[7rem] min-h-8"
+        class="min-w-28 min-h-8"
         :tag="form.state"
       />
       <RuiButton

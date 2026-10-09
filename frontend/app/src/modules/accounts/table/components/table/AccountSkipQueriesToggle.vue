@@ -30,17 +30,23 @@ const color = computed<'error' | 'warning' | undefined>(() => {
 
 const allSkipped = computed<boolean>(() => get(state) === SkipState.ALL);
 
+/** Whether the per-chain list under the entry is open; a single chain has no list to open. */
+const expanded = ref<boolean>(false);
+
 /**
- * Inert rather than `disabled` while locked, so the tooltip explaining why still opens.
+ * Inert rather than `disabled` while locked, so the line explaining why stays readable.
  *
  * @remarks
- * A natively disabled button dispatches no mouse events, and the tooltip listens on a wrapper drawn
- * tightly around it, so disabling the one state that exists to be explained is what hides the
- * explanation. Opening the menu is already blocked on `locked`, and this covers the click.
+ * A single chain toggles at once; several open their list in place, under the entry, rather than in
+ * a second menu stacked on the row's actions menu.
  */
 function activate(): void {
-  if (get(locked) || get(perChain))
+  if (get(locked))
     return;
+  if (get(perChain)) {
+    set(expanded, !get(expanded));
+    return;
+  }
   startPromise(toggleAll());
 }
 
@@ -58,38 +64,44 @@ const tooltip = computed<string>(() => {
 </script>
 
 <template>
-  <RuiMenu
-    :disabled="!perChain || locked"
-    :options="{ placement: 'bottom-end' }"
-  >
-    <template #activator="{ attrs }">
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
+  <!-- an entry of the row's actions menu; a skipped state keeps its colour so the menu shows it too -->
+  <div>
+    <RuiButton
+      variant="list"
+      data-testid="account-skip-queries"
+      :disabled="disabled || pending"
+      :aria-disabled="locked || undefined"
+      :aria-expanded="perChain && !locked ? expanded : undefined"
+      :class="{ 'opacity-50 cursor-not-allowed': locked, 'text-rui-error': color === 'error', 'text-rui-warning': color === 'warning' }"
+      @click="activate()"
+    >
+      <template #prepend>
+        <RuiIcon
+          size="18"
+          name="lu-ban"
+        />
+      </template>
+      <span class="flex flex-col items-start text-left grow">
+        <span>{{ t('account_balances.skip_queries.title') }}</span>
+        <span class="text-caption font-normal text-rui-text-secondary whitespace-normal">
+          {{ tooltip }}
+        </span>
+      </span>
+      <template
+        v-if="perChain && !locked"
+        #append
       >
-        <template #activator>
-          <RuiButton
-            v-bind="perChain ? attrs : {}"
-            variant="text"
-            icon
-            data-testid="account-skip-queries"
-            :disabled="disabled || pending"
-            :aria-disabled="locked || undefined"
-            :class="{ 'opacity-50 cursor-not-allowed': locked }"
-            :color="color"
-            @click="activate()"
-          >
-            <RuiIcon
-              size="16"
-              name="lu-ban"
-            />
-          </RuiButton>
-        </template>
-        {{ tooltip }}
-      </RuiTooltip>
-    </template>
+        <RuiIcon
+          size="16"
+          :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+        />
+      </template>
+    </RuiButton>
 
-    <div class="min-w-[16rem]">
+    <div
+      v-if="perChain && expanded && !locked"
+      class="pl-4"
+    >
       <RuiButton
         variant="list"
         size="sm"
@@ -140,5 +152,5 @@ const tooltip = computed<string>(() => {
         </div>
       </RuiButton>
     </div>
-  </RuiMenu>
+  </div>
 </template>

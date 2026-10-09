@@ -40,7 +40,7 @@ const activeItem = computed<DashboardMessage>(() => messages[get(step) - 1]);
             <ExternalLink
               v-if="activeItem.action"
               color="primary"
-              class="text-left md:text-center !ms-1"
+              class="text-left md:text-center ms-1!"
               :url="activeItem.action?.url"
             >
               {{ activeItem.action.text }}

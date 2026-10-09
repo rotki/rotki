@@ -8,7 +8,7 @@ import { getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
+import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
@@ -32,10 +32,14 @@ const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expandedIds = defineModel<string[]>('expandedIds', { required: true });
 
-const { accounts, category, group } = defineProps<{
+const { accounts, category, fetching = false, framed = false, group } = defineProps<{
   accounts: Collection<T>;
   category: string;
   group?: 'evm' | 'xpub';
+  /** Sits in a TableFrame, which draws the border, so the table leaves its own outline off. */
+  framed?: boolean;
+  /** The page is still being fetched: with no rows yet, the table shows loading rather than its empty state. */
+  fetching?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -43,13 +47,18 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-defineSlots<{
+const slots = defineSlots<{
   details: (props: { row: T }) => any;
+  /** Replaces the generic empty text, unless the fetch failed: that shows its own message. */
+  empty?: () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const emptyState = useTableEmptyState();
+const fetchError = useTableFetchError();
+/** A failed fetch is not something adding an account or clearing filters would fix. */
+const showEmptySlot = computed<boolean>(() => !!slots.empty && !(fetchError && get(fetchError)));
 
 const { createColumns, initializeTableSorting } = useAccountTableConfig<T>();
 const {
@@ -66,7 +75,7 @@ const {
 
 const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
-const { confirmDelete, edit } = useAccountOperations<T>({
+const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
   onRefresh: () => emit('refresh'),
 });
@@ -86,23 +95,25 @@ defineExpose({
 </script>
 
 <template>
+  <!-- `expanded` only while some row expands: any bound array makes the table append its own empty expand column -->
   <RuiDataTable
     v-bind="$attrs"
-    v-model:expanded="expanded"
     v-model:sort.external="sort"
     v-model:pagination.external="pagination"
     v-model:collapsed="collapsed"
+    :expanded="anyExpansion ? expanded : undefined"
     :cols="cols"
     :rows="rows"
-    :loading="group && isInitialLoading"
+    :loading="(group && isInitialLoading) || (fetching && accounts.data.length === 0)"
     row-attr="id"
     :empty="emptyState"
     :loading-text="t('account_balances.data_table.loading')"
     data-testid="account-table"
     single-expand
-    outlined
+    :outlined="!framed"
     sticky-header
     dense
+    @update:expanded="expanded = $event ?? []"
   >
     <template #item.label="{ row }">
       <LabeledAddressDisplay
@@ -120,7 +131,7 @@ defineExpose({
     <template #item.tags="{ row }">
       <TagDisplay
         :tags="row.tags"
-        class="!mt-0"
+        class="mt-0!"
         small
       />
     </template>
@@ -145,11 +156,12 @@ defineExpose({
         :account-operation="accountOperation"
         :is-section-loading="isSectionLoading"
         @edit="edit(group, row)"
-        @delete="confirmDelete($event)"
+        @delete="deleteAccount($event)"
       />
     </template>
+    <!-- no total under an empty table: there is nothing to add up -->
     <template
-      v-if="totalValue"
+      v-if="totalValue && accounts.data.length > 0"
       #body.append
     >
       <RowAppend
@@ -157,7 +169,7 @@ defineExpose({
         :left-patch-colspan="anyExpansion ? 1 : 0"
         :label-colspan="group && group === 'evm' ? 4 : 2"
         :is-mobile="false"
-        class-name="[&>td]:p-4 text-sm"
+        class-name="[&>td]:px-4 [&>td]:h-11 text-sm"
       >
         <template #custom-columns>
           <td class="text-end">
@@ -194,6 +206,12 @@ defineExpose({
         :is-section-loading="isSectionLoading"
         @toggle="toggle()"
       />
+    </template>
+    <template
+      v-if="showEmptySlot"
+      #no-data
+    >
+      <slot name="empty" />
     </template>
   </RuiDataTable>
 </template>

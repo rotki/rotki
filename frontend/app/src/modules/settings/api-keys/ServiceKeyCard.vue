@@ -106,7 +106,7 @@ defineExpose({
   <RuiCard
     no-padding
     class="h-full"
-    :class="{ '!border-rui-success/50 bg-rui-success/5 dark:bg-rui-success/5': keySet }"
+    :class="{ 'border-rui-success/50! bg-rui-success/5 dark:bg-rui-success/5': keySet }"
     :class-names="{ content: 'h-full flex flex-col' }"
   >
     <div class="grow">
@@ -117,7 +117,7 @@ defineExpose({
           :class="{ 'rounded-full overflow-hidden': roundedIcon }"
         />
       </div>
-      <RuiCardHeader class="!px-6">
+      <RuiCardHeader class="px-6!">
         <template #header>
           {{ title }}
         </template>
@@ -142,7 +142,7 @@ defineExpose({
     <div
       v-else
       class="px-6 py-4 border-t border-default"
-      :class="{ '!border-rui-success/20': keySet }"
+      :class="{ 'border-rui-success/20!': keySet }"
     >
       <RuiButton
         variant="outlined"

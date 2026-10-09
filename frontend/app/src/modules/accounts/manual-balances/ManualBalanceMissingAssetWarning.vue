@@ -8,7 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiChip
         color="warning"
         size="sm"
-        class="[&_[class*=prepend]]:bg-rui-warning-darker my-4 !cursor-pointer"
+        class="**:[[class*=prepend]]:bg-rui-warning-darker my-4 cursor-pointer!"
       >
         <template #prepend>
           <RuiIcon

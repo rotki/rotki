@@ -141,7 +141,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
             v-if="totalValue"
             label-colspan="4"
             :label="t('common.total')"
-            class="[&>td]:p-4"
+            class="[&>td]:px-4 [&>td]:py-2"
             :right-patch-colspan="2"
           >
             <FiatDisplay :value="totalValue" />

@@ -41,19 +41,22 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
     :assets="assets"
     :loading="loading"
   />
+  <!-- icon, then the amount in the slot where a stack shows its "+N", so the icons line up down the column -->
   <div
     v-else-if="assets.length === 1"
-    class="flex items-center gap-3 justify-end"
+    class="flex items-center justify-end text-body-2"
   >
-    <ValueDisplay :value="assets[0].amount" />
     <AssetIcon
       flat
       :identifier="assets[0].asset"
       :resolution-options="{ collectionParent: false }"
-      size="30px"
-      padding="1px"
-      class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
+      size="24px"
+      padding="0px"
+      class="[&_.icon-bg]:rounded-full! [&_.icon-bg]:overflow-hidden! cursor-pointer"
       @click="navigateToAsset(assets[0])"
     />
+    <span class="ml-1.5 min-w-8 text-start whitespace-nowrap">
+      <ValueDisplay :value="assets[0].amount" />
+    </span>
   </div>
 </template>

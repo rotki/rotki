@@ -63,6 +63,13 @@ const mappedOptions = computed<ChainInfo[]>(() => {
 
   return chains;
 });
+
+/** "All supported chains" sits apart, above a "Chains" header, so it doesn't read as one more chain. */
+const groupBy = computed<((item: ChainInfo) => string) | undefined>(() => {
+  if (!items.includes('all'))
+    return undefined;
+  return (item: ChainInfo): string => (item.id === 'all' ? '' : t('common.chain'));
+});
 </script>
 
 <template>
@@ -76,9 +83,19 @@ const mappedOptions = computed<ChainInfo[]>(() => {
     variant="outlined"
     auto-select-first
     text-attr="name"
-    :item-height="dense ? 48 : 56"
+    :item-height="dense ? 40 : 48"
+    :group-by="groupBy"
+    :class-names="{ menu: 'max-h-96' }"
     v-bind="{ ...$attrs, keyAttr: 'id' as any }"
   >
+    <template #group-header="{ group }">
+      <div
+        v-if="group"
+        class="px-3 pt-3 pb-1 text-xs font-medium text-rui-text-secondary border-t border-rui-divider"
+      >
+        {{ group }}
+      </div>
+    </template>
     <template #selection="{ item }">
       <ChainDisplay
         :class="{ '-my-1': dense }"

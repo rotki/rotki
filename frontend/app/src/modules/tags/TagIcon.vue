@@ -20,11 +20,12 @@ const shouldShowAmount = useSetting('shouldShowAmount');
     class="flex items-center overflow-hidden"
     :class="{ blur: !shouldShowAmount }"
   >
+    <!-- a small pill in the body font; the colours stay the user's -->
     <RuiChip
-      class="font-medium !rounded-md shrink-0"
+      class="font-medium shrink-0"
+      :class="{ 'h-5! px-2! text-xs!': small }"
       data-testid="tag"
-      tile
-      :class-names="{ content: 'flex font-mono' }"
+      :class-names="{ content: 'flex' }"
       :size="small ? 'sm' : 'md'"
       :bg-color="`#${tag.backgroundColor}`"
       :text-color="`#${tag.foregroundColor}`"

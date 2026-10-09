@@ -14,8 +14,8 @@ import { useValuePending } from '@/modules/balances/value-pending';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -51,6 +51,11 @@ const {
   nested?: boolean;
 }>();
 
+defineSlots<{
+  /** What the table says when it has no rows and no search is narrowing it. */
+  empty?: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
@@ -63,7 +68,6 @@ const debouncedSearch = refDebounced(search, 200);
 
 const { getAssetInfo } = useAssetSelectInfo();
 const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances, debouncedSearch);
-const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { isTotalPending, isValuePending } = useValuePending();
@@ -102,11 +106,10 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: nested ? 'py-0 text-rui-text-secondary' : 'py-0',
+    // like the dashboard's asset table: the price recedes and the value leads
+    cellClass: 'py-0 text-rui-text-secondary',
     key: 'price',
-    label: nested
-      ? t('common.price')
-      : t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.price'),
     sortable: true,
   }, {
     align: 'end',
@@ -116,12 +119,10 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    cellClass: nested ? 'py-0 font-medium' : 'py-0',
+    cellClass: 'py-0 font-medium',
     class: 'text-no-wrap',
     key: 'value',
-    label: nested
-      ? t('common.value')
-      : t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   }];
 
@@ -139,7 +140,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalNetValue',
       label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
@@ -149,7 +150,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
       align: 'end',
-      cellClass: 'py-0',
+      cellClass: 'py-0 text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'percentageOfTotalCurrentGroup',
       label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
@@ -195,9 +196,11 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
     dense
   >
     <template #item.asset="{ row }">
+      <!-- nested in another row, it runs denser than the rows around it rather than taller -->
       <AssetDetails
         :asset="row.asset"
         :resolution="{ isCollectionParent: !!row.breakdown }"
+        :display="nested ? { dense: true, inline: true, size: '24px' } : undefined"
       />
     </template>
     <template #item.perProtocol="{ row }">
@@ -239,8 +242,35 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :asset-padding="0.1"
       />
     </template>
+    <!-- a search that matches nothing explains itself and offers the way back, rather than the generic picture -->
     <template
-      v-if="balances.length > 0 && !nested"
+      v-if="debouncedSearch.length > 0"
+      #no-data
+    >
+      <TableEmptyNotice
+        icon="lu-search-x"
+        :title="t('asset_balances.no_match.title')"
+        :description="t('asset_balances.no_match.description', { search: debouncedSearch })"
+      >
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          data-testid="asset-balances-clear-search"
+          @click="search = ''"
+        >
+          {{ t('asset_balances.no_match.clear') }}
+        </RuiButton>
+      </TableEmptyNotice>
+    </template>
+    <template
+      v-else-if="$slots.empty"
+      #no-data
+    >
+      <slot name="empty" />
+    </template>
+    <!-- a total of nothing reads as a balance of zero, so a search that matches nothing goes without one -->
+    <template
+      v-if="matches.length > 0 && !nested"
       #body.append
     >
       <RowAppend
@@ -248,11 +278,12 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"
-        class-name="[&>td]:p-4 text-sm"
+        class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
       >
         <FiatDisplay
           :value="total"
           :loading="totalPending"
+          class="font-bold"
         />
       </RowAppend>
     </template>

@@ -36,7 +36,7 @@ const { costBasisMethodData } = useCostBasisMethod();
       <ListItem
         no-padding
         no-hover
-        class="!py-0"
+        class="py-0!"
         :title="item.identifier.toUpperCase()"
         :subtitle="item.label"
       />

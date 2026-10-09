@@ -101,22 +101,30 @@ watch(() => form.state.hide, resetThresholdForHiding);
 <template>
   <RuiMenu v-model="open">
     <template #activator="{ attrs }">
-      <RuiButton
-        v-bind="attrs"
-        icon
-        variant="text"
-        size="lg"
+      <!-- the header buttons' 36px with a 20px glyph, neutral like the other view options; the icon reads as filtering, not app settings -->
+      <RuiTooltip
+        :options="{ placement: 'bottom' }"
+        :open-delay="250"
+        :close-delay="0"
       >
-        <RuiIcon
-          color="primary"
-          name="lu-settings"
-        />
-      </RuiButton>
+        <template #activator>
+          <RuiButton
+            v-bind="attrs"
+            variant="text"
+            icon
+            class="text-rui-text-secondary!"
+            data-testid="hide-small-balances"
+            :aria-label="t('hide_small_balances.hide')"
+          >
+            <RuiIcon name="lu-sliders-horizontal" />
+          </RuiButton>
+        </template>
+        {{ t('hide_small_balances.hide') }}
+      </RuiTooltip>
     </template>
-    <div class="p-3 pt-4 flex flex-col gap-3">
+    <div class="w-96 max-w-full p-4 flex flex-col gap-4">
       <RuiSwitch
         v-model="form.state.hide"
-        class="mb-2"
         size="sm"
         data-testid="hide-small-balances-toggle"
         :label="t('hide_small_balances.hide')"
@@ -154,12 +162,12 @@ watch(() => form.state.hide, resetThresholdForHiding);
           :label="t('hide_small_balances.apply_to_all')"
         />
         <HintMenuIcon>
-          <div class="text-sm max-w-32">
+          <div class="text-sm max-w-56">
             {{ t('hide_small_balances.apply_to_all_hint') }}
           </div>
         </HintMenuIcon>
       </div>
-      <div class="flex justify-end mt-4">
+      <div class="flex justify-end">
         <RuiButton
           :loading="loading"
           color="primary"

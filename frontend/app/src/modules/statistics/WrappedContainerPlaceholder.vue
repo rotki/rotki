@@ -12,7 +12,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
 <template>
   <div class="flex flex-col gap-6 py-4 px-2 relative">
-    <div class="py-8 w-full rounded-lg flex flex-col items-center bg-gradient-to-b from-transparent to-rui-primary/[0.05]">
+    <div class="py-8 w-full rounded-lg flex flex-col items-center bg-linear-to-b from-transparent to-rui-primary/5">
       <RotkiLogo
         :size="3"
         class="mb-4"
@@ -27,7 +27,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
     <div class="relative">
       <AppImage
-        class="dark:invert-[0.89] dark:hue-rotate-[180deg] -m-4"
+        class="dark:invert-[0.89] dark:hue-rotate-180 -m-4"
         :src="getPublicPlaceholderImagePath('history_events_wrapped.png')"
       />
 

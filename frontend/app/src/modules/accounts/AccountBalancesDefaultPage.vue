@@ -53,7 +53,6 @@ onMounted(async () => {
         data-testid="blockchain-account-refresh"
         variant="outlined"
         color="primary"
-        size="lg"
         :disabled="refreshDisabled"
         :loading="isSectionLoading"
         @click="table?.refreshClick()"
@@ -66,7 +65,6 @@ onMounted(async () => {
       <RuiButton
         data-testid="add-blockchain-account"
         color="primary"
-        size="lg"
         @click="createNewBlockchainAccount()"
       >
         <template #prepend>
@@ -82,6 +80,7 @@ onMounted(async () => {
         ref="table"
         :category="category"
         @edit="account = $event"
+        @add="createNewBlockchainAccount()"
       />
 
       <AccountDialog

@@ -102,7 +102,7 @@ const affectedIndex = computed<number>(() => {
       <div
         v-for="(bucket, i) in buckets"
         :key="i"
-        class="flex items-center justify-between gap-6 text-sm -mx-1.5 px-1.5 py-0.5 rounded"
+        class="flex items-center justify-between gap-6 text-sm -mx-1.5 px-1.5 py-0.5 rounded-sm"
         :class="i === affectedIndex
           ? 'bg-rui-primary/5 ring-1 ring-inset ring-rui-primary/20'
           : undefined"

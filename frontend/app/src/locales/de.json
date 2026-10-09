@@ -24,8 +24,7 @@
         "redetect": "Neuerfassung Tokens"
       }
     },
-    "edit_tooltip": "Konto ändern",
-    "refresh_tooltip": "Aktualisierung der {blockchain} Salden - gecachte Einträge werden ignoriert"
+    "edit_tooltip": "Konto ändern"
   },
   "account_form": {
     "advanced_tooltip": "Zeige erweiterte xpub Optionen | Verstecke erweiterte xpub Optionen",

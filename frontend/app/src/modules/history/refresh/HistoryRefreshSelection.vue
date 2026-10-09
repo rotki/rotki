@@ -71,7 +71,7 @@ function toggleSelectAll(): void {
 <template>
   <RuiMenu
     v-model="open"
-    class="!border-0"
+    class="border-0!"
     :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
@@ -79,7 +79,7 @@ function toggleSelectAll(): void {
         variant="outlined"
         color="primary"
         size="lg"
-        class="px-3 rounded-l-none !outline-none"
+        class="px-3 rounded-l-none outline-hidden!"
         :disabled="disabled"
         data-testid="refresh-selection-toggle"
         v-bind="attrs"

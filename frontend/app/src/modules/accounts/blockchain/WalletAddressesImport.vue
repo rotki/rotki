@@ -37,21 +37,25 @@ async function importAddresses() {
   <DefineButton #default="{ buttonDisabled, onClick }">
     <RuiTooltip :disabled="disabled">
       <template #activator>
+        <!-- level with the field box: the label above it takes the first 24px -->
         <RuiButton
           variant="outlined"
           color="primary"
-          class="min-h-[3.5rem] relative"
+          class="mt-6 size-9 px-0 relative"
           :class="{ 'opacity-50': buttonDisabled || disabled }"
           :disabled="buttonDisabled || disabled"
           @click="onClick?.()"
         >
-          <RuiIcon name="lu-wallet-minimal" />
+          <RuiIcon
+            name="lu-wallet-minimal"
+            size="18"
+          />
           <template #append>
-            <div class="absolute w-4 h-4 bg-current rounded-full text-primary right-2 bottom-2 flex items-center justify-center">
+            <div class="absolute size-3.5 bg-current rounded-full text-rui-primary right-0.5 bottom-0.5 flex items-center justify-center">
               <RuiIcon
                 name="lu-download"
                 class="text-white"
-                size="10"
+                size="9"
               />
             </div>
           </template>

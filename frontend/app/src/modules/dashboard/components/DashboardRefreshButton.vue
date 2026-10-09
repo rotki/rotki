@@ -99,7 +99,7 @@ function choose(action: DashboardRefreshAction): void {
       >
         <template #activator>
           <RuiButton
-            class="!outline-0 rounded-r-none"
+            class="outline-0! rounded-r-none"
             variant="outlined"
             color="primary"
             size="sm"
@@ -127,7 +127,7 @@ function choose(action: DashboardRefreshAction): void {
       >
         <template #activator="{ attrs }">
           <RuiButton
-            class="!outline-0 !rounded-l-none !rounded-r"
+            class="outline-0! rounded-l-none! rounded-r!"
             icon
             variant="outlined"
             color="primary"
@@ -148,7 +148,7 @@ function choose(action: DashboardRefreshAction): void {
             v-for="item in modeItems"
             :key="item.action.kind"
             variant="list"
-            class="!py-2"
+            class="py-2!"
             :data-testid="testIdOf(item.action)"
             @click="choose(item.action)"
           >
@@ -166,7 +166,7 @@ function choose(action: DashboardRefreshAction): void {
               v-for="item in sourceItems"
               :key="testIdOf(item.action)"
               variant="list"
-              class="!py-2 !font-normal"
+              class="py-2! font-normal!"
               :data-testid="testIdOf(item.action)"
               @click="choose(item.action)"
             >

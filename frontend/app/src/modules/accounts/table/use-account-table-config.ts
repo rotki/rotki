@@ -2,13 +2,10 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseAccountTableConfigReturn<T extends BlockchainAccountBalance> {
   createColumns: (group: 'evm' | 'xpub' | undefined, anyExpansion: boolean) => DataTableColumn<AccountDataRow<T>>[];
-  currencySymbol: Readonly<Ref<SupportedCurrency>>;
   initializeTableSorting: (sort: Ref<DataTableSortData<T>>, cols: ComputedRef<DataTableColumn<AccountDataRow<T>>[]>) => void;
 }
 
@@ -16,34 +13,33 @@ export function useAccountTableConfig<
   T extends BlockchainAccountBalance,
 >(): UseAccountTableConfigReturn<T> {
   const { t } = useI18n({ useScope: 'global' });
-  const currencySymbol = useSetting('currencySymbol');
 
   function createColumns(
     group: 'evm' | 'xpub' | undefined,
     anyExpansion: boolean,
   ): DataTableColumn<AccountDataRow<T>>[] {
-    const currency = { symbol: get(currencySymbol) };
-
     return [...(anyExpansion
       ? [{
-          cellClass: '!py-0 !pr-0 !pl-3',
-          class: '!py-0 !pr-0 !pl-3',
+          cellClass: 'py-0! pr-0! pl-3!',
+          class: 'py-0! pr-0! pl-3!',
           key: 'expand',
           label: '',
           sortable: false,
         }]
       : []), ...(group
       ? [{
-          cellClass: 'py-0 !px-3',
-          class: '!px-3',
+          cellClass: 'py-0 px-3!',
+          // the account takes the auto layout's spare width, so the columns after it sit together
+          class: 'px-3! w-full',
           key: 'label',
           label: t('common.account'),
           sortable: true,
         }]
       : []), ...(group !== 'xpub'
       ? [{
-          cellClass: 'py-0 !pr-0',
-          class: '!pr-0',
+          cellClass: 'py-0 pr-0!',
+          // without an account column, the chain column takes the auto layout's spare width
+          class: group ? 'pr-0!' : 'pr-0! w-full',
           key: 'chain',
           label: t('common.chain'),
           sortable: false,
@@ -57,19 +53,20 @@ export function useAccountTableConfig<
         }]
       : []), {
       align: 'end',
-      cellClass: 'py-0 !pr-0 !pl-2',
-      class: '!pr-0 !pl-2',
+      cellClass: 'py-0 pr-0! pl-2!',
+      class: 'pr-0! pl-2!',
       key: 'assets',
       label: t('common.assets'),
     }, {
       align: 'end',
       cellClass: 'py-0',
       key: 'value',
-      label: t('common.value_in_symbol', currency),
+      // the cells carry the currency symbol, so the header leaves it out
+      label: t('common.value'),
       sortable: true,
     }, {
       align: 'end',
-      cellClass: '!p-0',
+      cellClass: 'p-0!',
       key: 'actions',
       label: t('common.actions_text'),
     }];
@@ -84,7 +81,6 @@ export function useAccountTableConfig<
 
   return {
     createColumns,
-    currencySymbol,
     initializeTableSorting,
   };
 }

@@ -136,8 +136,8 @@ watchDebounced(onlyExpectedAssets, () => {
               color="primary"
               hide-details
               size="sm"
-              class="!my-0 [&_span]:!my-0 [&_label]:!items-center"
-              :class="isPinned ? '[&_span]:!text-caption' : '[&_span]:!text-sm'"
+              class="my-0! [&_span]:my-0! [&_label]:items-center!"
+              :class="isPinned ? '[&_span]:text-caption!' : '[&_span]:text-sm!'"
             >
               {{ t('asset_movement_matching.dialog.only_expected_assets') }}
             </RuiCheckbox>
@@ -152,7 +152,7 @@ watchDebounced(onlyExpectedAssets, () => {
             <RuiButton
               :loading="loading"
               :size="isPinned ? 'sm' : 'xl'"
-              :class="isPinned ? '[&>span]:!hidden !px-2.5 !h-[38px]' : 'ml-3 [&>span]:!inline'"
+              :class="isPinned ? '[&>span]:hidden! px-2.5! h-[38px]!' : 'ml-3 [&>span]:inline!'"
               @click="emit('search')"
             >
               <template #prepend>

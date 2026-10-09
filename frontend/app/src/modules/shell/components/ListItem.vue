@@ -1,6 +1,8 @@
 <script setup lang="ts">
-const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false, blurContent = false } = defineProps<{
+const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false, blurContent = false, inline = false } = defineProps<{
   size?: 'sm' | 'md' | 'lg';
+  /** Title and subtitle on one line, for rows that must stay a single line tall. */
+  inline?: boolean;
   title?: string;
   subtitle?: string;
   noPadding?: boolean;
@@ -17,7 +19,9 @@ defineSlots<{
 }>();
 
 const avatarSizeClasses = computed<string>(() => {
-  if (size === 'md')
+  if (inline)
+    return 'w-6 h-6';
+  else if (size === 'md')
     return 'w-10 h-10';
   else if (size === 'lg')
     return 'w-12 h-12';
@@ -28,11 +32,12 @@ const avatarSizeClasses = computed<string>(() => {
 
 <template>
   <div
-    class="flex items-center py-2 gap-2 cursor-pointer"
+    class="flex items-center gap-2 cursor-pointer"
     :class="[
+      inline ? 'py-0.5' : 'py-2',
       {
-        '!px-4': !noPadding,
-        'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
+        'px-4!': !noPadding,
+        'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800': !noHover,
       },
     ]"
   >
@@ -51,8 +56,8 @@ const avatarSizeClasses = computed<string>(() => {
       />
     </div>
     <div
-      class="flex-1 flex flex-col text-truncate leading-[1.25em]"
-      :class="{ blur: blurContent }"
+      class="flex-1 flex text-truncate leading-[1.25em]"
+      :class="{ 'blur': blurContent, 'flex-col': !inline, 'items-baseline gap-1.5': inline }"
     >
       <template v-if="loading">
         <RuiSkeletonLoader class="mt-[3px] mb-1.5 w-8" />

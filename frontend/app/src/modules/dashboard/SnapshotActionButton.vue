@@ -35,13 +35,13 @@ async function forceSaveAndClose(): Promise<void> {
         size="sm"
         custom-color
         v-bind="attrs"
-        class="!p-2"
+        class="p-2!"
         data-testid="snapshot-action"
       >
         <RuiIcon name="lu-git-commit-vertical" />
       </MenuTooltipButton>
     </template>
-    <div class="p-4 md:w-[16rem] w-full">
+    <div class="p-4 md:w-64 w-full">
       <div class="font-medium">
         {{ t('snapshot_action_button.snapshot_title') }}
       </div>
@@ -74,7 +74,7 @@ async function forceSaveAndClose(): Promise<void> {
 
         <RuiTooltip
           :open-delay="400"
-          :class-names="{ tooltip: 'max-w-[16rem]' }"
+          :class-names="{ tooltip: 'max-w-64' }"
         >
           <template #activator>
             <RuiIcon
@@ -90,7 +90,7 @@ async function forceSaveAndClose(): Promise<void> {
       <RuiTooltip
         class="mt-2"
         :open-delay="400"
-        :class-names="{ tooltip: 'max-w-[16rem]' }"
+        :class-names="{ tooltip: 'max-w-64' }"
       >
         <template #activator>
           <SettingSwitch

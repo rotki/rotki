@@ -85,7 +85,7 @@ const { t } = useI18n({ useScope: 'global' });
               location="gnosis"
             />
           </div>
-          <div class="relative ml-[5.25rem]">
+          <div class="relative ml-21">
             <div class="absolute border-l border-default flex h-[calc(100%-0.75rem)]" />
             <div
               v-for="adminAddress in adminAddresses"

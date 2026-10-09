@@ -5,6 +5,7 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import GlobalSearchFooter from '@/modules/shell/components/GlobalSearchFooter.vue';
 import GlobalSearchItemTexts from '@/modules/shell/components/GlobalSearchItemTexts.vue';
 import { type SearchItem, useGlobalSearch } from '@/modules/shell/layout/use-global-search';
 
@@ -26,6 +27,9 @@ const loading = ref<boolean>(false);
 const visibleItems = ref<SearchItem[]>([]);
 
 const key = '/';
+
+/** The shortcut as the platform writes it: Command on macOS, Control elsewhere. */
+const shortcutLabel = computed<string>(() => `${get(isMac) ? '⌘' : 'Ctrl'} ${key}`);
 
 function change(index?: number): void {
   if (!isDefined(index))
@@ -86,10 +90,11 @@ onBeforeMount(async () => {
 </script>
 
 <template>
+  <!-- a command palette sits high, near where the eye already is, rather than centred -->
   <RuiDialog
     v-model="open"
-    max-width="800"
-    :class-names="{ content: 'mt-[16rem] !top-0 pb-2' }"
+    max-width="720"
+    :class-names="{ content: 'top-[12vh] translate-y-0' }"
   >
     <template #activator="{ attrs }">
       <div
@@ -98,7 +103,7 @@ onBeforeMount(async () => {
       >
         <div
           v-if="!isMini"
-          class="flex items-center gap-2 justify-between rounded-lg px-3 py-2 bg-rui-grey-100 dark:bg-rui-grey-800 cursor-pointer border border-rui-grey-300 hover:border-rui-grey-400 dark:border-rui-grey-700 dark:hover:border-rui-grey-600 text-rui-text-secondary opacity-70"
+          class="flex items-center gap-2 rounded-rui-control px-3 h-9 bg-rui-surface-muted border border-rui-divider hover:border-rui-outline text-rui-text-secondary text-sm cursor-pointer transition-colors"
           role="button"
           v-bind="attrs"
         >
@@ -106,22 +111,21 @@ onBeforeMount(async () => {
             name="lu-search"
             size="16"
           />
-          <span class="flex-1 ml-1">{{ t('common.actions.search') }}</span>
-          <RuiIcon
-            name="lu-command"
-            size="14"
-          />
-          {{ key }}
+          <span class="flex-1">{{ t('common.actions.search') }}</span>
+          <kbd class="inline-flex items-center gap-0.5 rounded-rui-sm border border-rui-divider bg-rui-surface px-1.5 h-5 text-xs font-sans text-rui-text-secondary">
+            {{ shortcutLabel }}
+          </kbd>
         </div>
         <RuiButton
           v-else
           variant="text"
-          class="p-2 w-full mb-3 border border-rui-grey-200 dark:border-rui-grey-700 !bg-rui-grey-100 hover:!bg-rui-grey-200 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 rounded-lg"
+          icon
+          class="mb-3"
+          :aria-label="t('common.actions.search')"
           v-bind="attrs"
         >
           <RuiIcon
             name="lu-search"
-            class="opacity-60"
             size="18"
           />
         </RuiButton>
@@ -130,7 +134,6 @@ onBeforeMount(async () => {
     <RuiCard
       variant="flat"
       no-padding
-      rounded="sm"
       :class-names="{ content: 'overflow-hidden' }"
     >
       <RuiAutoComplete
@@ -141,11 +144,14 @@ onBeforeMount(async () => {
         :no-data-text="t('global_search.no_actions')"
         hide-details
         :loading="loading"
-        :item-height="50"
+        :item-height="44"
         :options="visibleItems"
         text-attr="text"
         key-attr="value"
-        label=""
+        :label="t('common.actions.search')"
+        label-placement="hidden"
+        prepend-icon="lu-search"
+        hide-arrow
         auto-select-first
         :placeholder="t('global_search.search_placeholder')"
         @update:model-value="change($event)"
@@ -154,18 +160,17 @@ onBeforeMount(async () => {
           <span />
         </template>
         <template #item="{ item }">
-          <div class="flex items-center text-body-2 w-full">
-            <AssetIcon
-              v-if="item.asset"
-              class="-my-1"
-              size="30px"
-              :identifier="item.asset"
-            />
-            <template v-else>
+          <div class="flex items-center gap-3 text-sm w-full min-w-0">
+            <div class="size-6 shrink-0 flex items-center justify-center text-rui-text-secondary">
+              <AssetIcon
+                v-if="item.asset"
+                size="24px"
+                :identifier="item.asset"
+              />
               <LocationIcon
-                v-if="item.location"
+                v-else-if="item.location"
                 icon
-                size="26px"
+                size="20px"
                 :item="item.location.identifier"
               />
               <AppImage
@@ -173,64 +178,47 @@ onBeforeMount(async () => {
                 class="icon-bg"
                 :src="item.image"
                 fit="contain"
-                size="26px"
+                size="20px"
               />
               <RuiIcon
                 v-else-if="item.icon"
                 :name="item.icon"
-                size="26px"
+                size="20"
               />
-            </template>
+            </div>
             <GlobalSearchItemTexts
               :texts="item.texts"
               :text="item.text"
             />
-            <div class="grow" />
             <div
-              v-if="item.price"
-              class="text-right -my-6"
+              v-if="item.price || item.total"
+              class="ms-auto shrink-0 flex items-center gap-4 text-right"
             >
-              <div class="text-caption">
-                {{ t('common.price') }}:
+              <div v-if="item.price">
+                <div class="text-xs text-rui-text-secondary">
+                  {{ t('common.price') }}
+                </div>
+                <FiatDisplay
+                  :price-asset="item.asset"
+                  :value="item.price"
+                  class="font-medium"
+                />
               </div>
-              <FiatDisplay
-                :price-asset="item.asset"
-                :value="item.price"
-                class="font-bold"
-              />
-            </div>
-            <div
-              v-if="item.total"
-              class="text-right -my-4"
-            >
-              <div class="text-caption">
-                {{ t('common.total') }}:
+              <div v-if="item.total">
+                <div class="text-xs text-rui-text-secondary">
+                  {{ t('common.total') }}
+                </div>
+                <FiatDisplay
+                  :value="item.total"
+                  class="font-medium"
+                />
               </div>
-              <FiatDisplay
-                :value="item.total"
-                class="font-bold"
-              />
             </div>
           </div>
         </template>
         <!-- In the dropdown's footer: below the input the open dropdown would cover it. -->
-        <template
-          v-if="assetSearchError"
-          #footer
-        >
-          <div
-            class="flex items-center gap-1.5 px-4 py-2 text-caption text-rui-error border-t border-default"
-            role="status"
-            aria-live="polite"
-            data-testid="global-search-asset-error"
-          >
-            <RuiIcon
-              name="lu-circle-alert"
-              size="14"
-              class="shrink-0"
-            />
-            {{ t('asset_search.error.message', { message: assetSearchError }) }}
-          </div>
+        <template #footer>
+          <GlobalSearchFooter :asset-search-error="assetSearchError" />
         </template>
       </RuiAutoComplete>
     </RuiCard>

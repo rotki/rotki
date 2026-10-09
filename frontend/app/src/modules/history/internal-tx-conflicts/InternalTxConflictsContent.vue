@@ -87,7 +87,7 @@ const headers = computed<DataTableColumn<InternalTxConflict>[]>(() => {
   if (compact) {
     return [
       { key: 'selection', label: '', sortable: false },
-      { key: 'chain', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
+      { key: 'chain', label: '', sortable: true, cellClass: 'p-1!', class: 'p-1!' },
       { key: 'txHash', label: t('internal_tx_conflicts.columns.tx_hash'), sortable: true },
       { key: 'timestamp', label: t('internal_tx_conflicts.columns.timestamp'), sortable: true },
       { key: 'actions', label: '' },
@@ -96,7 +96,7 @@ const headers = computed<DataTableColumn<InternalTxConflict>[]>(() => {
 
   return [
     { key: 'selection', label: '', sortable: false },
-    { key: 'chain', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
+    { key: 'chain', label: '', sortable: true, cellClass: 'p-1!', class: 'p-1!' },
     { key: 'txHash', label: t('internal_tx_conflicts.columns.tx_hash'), sortable: true },
     { key: 'timestamp', label: t('internal_tx_conflicts.columns.timestamp'), sortable: true },
     { key: 'reason', label: t('internal_tx_conflicts.columns.reason') },
@@ -174,7 +174,7 @@ defineExpose({
           v-if="pendingCount > 0"
           color="warning"
           size="sm"
-          class="ml-2 !px-0.5 !py-0"
+          class="ml-2 px-0.5! py-0!"
         >
           {{ pendingCount }}
         </RuiChip>
@@ -185,7 +185,7 @@ defineExpose({
           v-if="failedCount > 0"
           color="error"
           size="sm"
-          class="ml-2 !px-0.5 !py-0"
+          class="ml-2 px-0.5! py-0!"
         >
           {{ failedCount }}
         </RuiChip>
@@ -275,7 +275,7 @@ defineExpose({
             :disabled="isRunning || conflicts.length === 0"
             color="primary"
             hide-details
-            class="!mt-0"
+            class="mt-0!"
             @update:model-value="toggleAllOnPage(conflicts)"
           />
         </template>
@@ -285,7 +285,7 @@ defineExpose({
             :disabled="isRunning"
             color="primary"
             hide-details
-            class="!mt-0"
+            class="mt-0!"
             @update:model-value="toggleSelection(row)"
           />
         </template>

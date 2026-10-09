@@ -55,7 +55,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="grid gap-4 grid-cols-3 mt-3">
+  <div class="grid gap-x-4 gap-y-2 grid-cols-3">
     <div class="col-span-3 md:col-span-1">
       <RuiTextField
         v-model.trim="state.validatorIndex"
@@ -70,7 +70,8 @@ defineExpose({
     </div>
 
     <div class="col-span-3 md:col-span-2 flex gap-4">
-      <span class="mt-4">{{ t('common.or') }}</span>
+      <!-- centred on the field boxes, below their labels -->
+      <span class="mt-8 text-sm text-rui-text-secondary">{{ t('common.or') }}</span>
       <RuiTextField
         v-model.trim="state.publicKey"
         data-testid="eth2-public-key"

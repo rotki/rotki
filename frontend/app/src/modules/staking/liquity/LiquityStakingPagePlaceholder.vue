@@ -15,7 +15,7 @@ const getFullPath = getPublicPlaceholderImagePath;
 <template>
   <div class="relative">
     <div
-      class="grid lg:grid-cols-2 gap-4 dark:invert-[0.9] dark:hue-rotate-[180deg]"
+      class="grid lg:grid-cols-2 gap-4 dark:invert-[0.9] dark:hue-rotate-180"
     >
       <AppImage
         class="-m-4"

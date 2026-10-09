@@ -156,8 +156,9 @@ watch(tags, () => {
         />
       </template>
     </RuiAutoComplete>
+    <!-- level with the field box, below its label -->
     <RuiButton
-      class="mt-1"
+      class="mt-6"
       data-testid="add-tag-button"
       icon
       variant="text"

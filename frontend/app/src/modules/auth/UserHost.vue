@@ -51,7 +51,7 @@ const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDocker
   <DockerWarning v-else-if="showDockerWarning" />
   <div
     v-else-if="connected && !autolog"
-    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
+    class="grow w-full max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
     <RuiProgress
       color="primary"

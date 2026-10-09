@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RuiIcons } from '@rotki/ui-library';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
@@ -7,7 +8,6 @@ import { getGroupId } from '@/modules/accounts/account-utils';
 import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelectionActions.vue';
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
 import AccountExpandedRowContent from '@/modules/accounts/AccountExpandedRowContent.vue';
-import AccountTokenDetectionControls from '@/modules/accounts/AccountTokenDetectionControls.vue';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useAccountAssetSelection } from '@/modules/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/modules/accounts/use-account-balances-pagination';
@@ -16,6 +16,8 @@ import { useAccountCategoryHelper } from '@/modules/accounts/use-account-categor
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 
 const { category } = defineProps<{
   category: string;
@@ -23,7 +25,10 @@ const { category } = defineProps<{
 
 const emit = defineEmits<{
   edit: [account: AccountManageState];
+  add: [];
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const visibleTags = ref<string[]>([]);
 const addresses = ref<string[]>([]);
@@ -35,11 +40,14 @@ const expanded = ref<string[]>([]);
 const query = ref<LocationQuery>({});
 
 const { balances } = storeToRefs(useBalancesStore());
-const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
+const accountsStore = useBlockchainAccountsStore();
+const { accounts: accountsState } = storeToRefs(accountsStore);
+const { isChainSettled } = accountsStore;
 
 const {
   accounts,
   fetchData,
+  isLoading: isFetching,
   pagination,
   sort,
 } = useAccountBalancesPagination({
@@ -53,7 +61,7 @@ const {
   visibleTags,
 });
 
-const { isLoadingActive, isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(() => category);
+const { isLoadingActive } = useBlockchainAccountLoading(() => category);
 
 const { chainIds, isEvm } = useAccountCategoryHelper(() => category);
 
@@ -75,6 +83,43 @@ const isSolana = computed<boolean>(() => category === 'solana');
 const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana));
 
 const anyExpansion = computed<boolean>(() => get(accounts).data.some(item => item.expansion));
+
+const filtered = computed<boolean>(() => get(visibleTags).length > 0 || get(addresses).length > 0 || get(chains).length > 0);
+
+/**
+ * Whether an empty page is not the answer yet, so the table shows loading rather than "no accounts".
+ *
+ * @remarks
+ * Until a chain of the category has settled (its accounts read loaded or failed), nothing is known,
+ * and the page fetch that runs before the accounts land comes back empty. A failed read settles
+ * the chain too, so the table then shows the empty state or the fetch error instead of spinning.
+ */
+const awaitingAccounts = computed<boolean>(() => {
+  if (get(accounts).data.length > 0)
+    return false;
+  // with no chains known for the category there is nothing to wait on
+  const categoryChains = get(chainIds);
+  return get(isFetching) || (categoryChains.length > 0 && !categoryChains.some(chain => isChainSettled(chain)));
+});
+
+/** An empty table says whether the filters hid every account or there are none yet, and offers the way out. */
+const emptyNotice = computed<{ icon: RuiIcons; title: string; description: string }>(() => get(filtered)
+  ? {
+      description: t('account_balances.empty.filtered_description'),
+      icon: 'lu-search-x',
+      title: t('account_balances.empty.filtered_title'),
+    }
+  : {
+      description: t('account_balances.empty.description'),
+      icon: 'lu-wallet-minimal',
+      title: t('account_balances.empty.title'),
+    });
+
+function clearFilters(): void {
+  set(visibleTags, []);
+  set(addresses, []);
+  set(chains, []);
+}
 
 function getChains(row: BlockchainAccountGroupWithBalance): string[] {
   const chains = row.chains;
@@ -104,8 +149,8 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard data-testid="account-balances">
-    <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
+  <TableFrame data-testid="account-balances">
+    <template #toolbar>
       <AccountAssetSelectionActions
         :selected-count="selectedAssets?.length"
         :selection-mode="selectionMode"
@@ -117,17 +162,8 @@ defineExpose({
         @toggle-mode="toggleSelectionMode()"
       />
 
+      <!-- token and account detection live in the page's Refresh menu, so the bar holds selection and filters -->
       <template v-if="!showSelectionToggle || !selectionMode">
-        <AccountTokenDetectionControls
-          v-if="isEvm"
-          :is-detecting-tokens="isDetectingTokens"
-          :refresh-disabled="refreshDisabled"
-        />
-        <div
-          v-else
-          class="flex-1 hidden lg:block"
-        />
-
         <AccountBalancesFilterBar
           v-model:visible-tags="visibleTags"
           v-model:addresses="addresses"
@@ -135,7 +171,7 @@ defineExpose({
           :category="category"
         />
       </template>
-    </div>
+    </template>
 
     <AccountBalancesTable
       v-model:pagination="pagination"
@@ -144,13 +180,42 @@ defineExpose({
       v-model:expanded-ids="expanded"
       :data-category="category"
       :category="category"
-      class="mt-4"
-      :class="{ '[&_button[class*=_expander_]]:!animate-pulse-highlight': expanded.length === 0 && selectionMode }"
+      framed
+      :class="{ '[&_[data-id=expand-button]]:animate-pulse-highlight!': expanded.length === 0 && selectionMode }"
       group="evm"
       :accounts="accounts"
+      :fetching="awaitingAccounts"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
     >
+      <template #empty>
+        <TableEmptyNotice
+          :icon="emptyNotice.icon"
+          :title="emptyNotice.title"
+          :description="emptyNotice.description"
+        >
+          <RuiButton
+            v-if="filtered"
+            variant="outlined"
+            color="primary"
+            data-testid="accounts-empty-clear-filters"
+            @click="clearFilters()"
+          >
+            {{ t('account_balances.empty.clear_filters') }}
+          </RuiButton>
+          <RuiButton
+            v-else
+            color="primary"
+            data-testid="accounts-empty-add"
+            @click="emit('add')"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-plus" />
+            </template>
+            {{ t('blockchain_balances.add_account') }}
+          </RuiButton>
+        </TableEmptyNotice>
+      </template>
       <template #details="{ row }">
         <AccountExpandedRowContent
           ref="expandedRowContent"
@@ -165,5 +230,5 @@ defineExpose({
         />
       </template>
     </AccountBalancesTable>
-  </RuiCard>
+  </TableFrame>
 </template>

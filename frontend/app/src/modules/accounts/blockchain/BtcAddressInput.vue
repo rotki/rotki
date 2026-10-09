@@ -108,7 +108,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="mt-2 flex flex-col gap-4">
+  <div class="mt-2 flex flex-col gap-2">
     <div class="flex gap-4">
       <RuiTextField
         v-model="state.xpub"
@@ -131,10 +131,11 @@ defineExpose({
         >
           <template #activator>
             <div data-testid="xpub-advanced-toggle">
+              <!-- level with the field box, below its label -->
               <RuiButton
                 variant="text"
                 icon
-                class="mt-1"
+                class="mt-6"
                 @click="advanced = !advanced"
               >
                 <RuiIcon :name="advanced ? 'lu-chevron-up' : 'lu-chevron-down'" />

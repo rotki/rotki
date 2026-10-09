@@ -51,7 +51,7 @@ const { t } = useI18n({ useScope: 'global' });
       <ListItem
         no-hover
         no-padding
-        class="!py-0"
+        class="py-0!"
         :title="item.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {

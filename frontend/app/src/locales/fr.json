@@ -31,12 +31,10 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Dernière détection : {time}",
-        "redetect": "Redétecter les tokens",
-        "redetect_all": "Redétecter les tokens pour toutes les adresses"
+        "redetect": "Redétecter les tokens"
       }
     },
-    "edit_tooltip": "Modifier le compte",
-    "refresh_tooltip": "Actualiser les soldes {blockchain} en ignorant toutes les entrées en cache"
+    "edit_tooltip": "Modifier le compte"
   },
   "account_form": {
     "advanced_tooltip": "Afficher les options xpub avancées | Masquer les options xpub avancées",
@@ -859,8 +857,7 @@
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
     "evm_detection": {
-      "title": "Détecter les comptes EVM",
-      "tooltip": "Détecter les activités de tous les comptes EVM enregistrés dans d'autres chaînes EVM, et les enregistrer."
+      "title": "Détecter les comptes EVM"
     },
     "form_dialog": {
       "add_title": "Ajouter un compte blockchain",
@@ -1001,7 +998,6 @@
   "create_account": {
     "credentials": {
       "description": "Souviens-toi que l'utilisateur que tu créés ici est {highlight}, indépendamment du compte créé sur le web.",
-      "highlight": "seulement activé dans l'application",
       "label_password": "Mot de passe",
       "label_password_backup_reminder": "rotki enregistre toutes les données utilisateur localement. Je comprends que si je perds mon mot de passe, je perds l'accès à mes données. J'ai créé une sauvegarde du mot de passe.",
       "label_password_repeat": "Répéter le mot de passe",
@@ -1019,10 +1015,6 @@
     "have_account": {
       "description": "Vous avez déjà un compte?",
       "log_in": "Déverrouiller votre compte"
-    },
-    "introduction": {
-      "description": "rotki est une application locale qui respecte votre vie privée.\n\nLes comptes rotki sont cryptés à l'aide de votre mot de passe et {highlight}.\n\nLe compte que vous créez ici n'est utile que pour l'app, sur le web nous utilisons une base de données différente.",
-      "highlight": "enregistré dans votre dossier de fichiers"
     },
     "premium": {
       "button_premium_approve": "Oui, activer premium",
@@ -1074,7 +1066,6 @@
     "zar": "Rand sud-africain"
   },
   "currency_drop_down": {
-    "hint": "Sélectionner comme devise principale",
     "profit_currency": "Devise du profit ({currency})"
   },
   "dashboard": {
@@ -1343,13 +1334,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
-    "click_here": "Cliquez ici",
-    "no_connected_exchanges": "Vous n'avez aucune plateforme d'échange connectée. {0} pour configurer une Connexion à une Plateforme d'Échange.",
     "received_interest": "Intérêt reçu",
     "received_interest_history": "Historique",
-    "refresh_tooltip": "Rafraîchir les soldes d'échange en ignorant toutes les entrées mises en cache",
-    "select_exchange": "Sélectionner une Plateforme d'Échange",
-    "select_hint": "Sélectionnez une plateforme d'échange pour afficher les détails de l'actif.",
     "tabs": {
       "balances": "Soldes",
       "savings_interest_history": "Historique des intérêts d'épargne"
@@ -1938,11 +1924,6 @@
         "url": "L'entrée insérée n'est pas dans un format URL valide"
       }
     },
-    "description": {
-      "more_details": "{documentation} vous montre plus de détails sur l'application locale et l'utilisateur.",
-      "our_docs": "Nos documentations",
-      "welcome": "Bienvenue ! Veuillez entrer vos informations."
-    },
     "incomplete_upgrade_error": {
       "abort": "Abandon",
       "question": "Voulez-vous reprendre à partir de la dernière sauvegarde ?",
@@ -2184,7 +2165,6 @@
       "add_title": "Ajouter une note",
       "edit_title": "Modifier la note"
     },
-    "empty_notes": "Aucune note trouvée/enregistrée",
     "labels": {
       "content": "Prendre une note...",
       "title": "Titre"
@@ -2228,8 +2208,7 @@
     "confirmation": {
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"
-    },
-    "no_messages": "Aucun message !"
+    }
   },
   "overall_balances": {
     "loading": "CHARGMENT",

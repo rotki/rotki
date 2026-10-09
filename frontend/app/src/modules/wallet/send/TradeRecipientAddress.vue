@@ -63,7 +63,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
         class="flex items-center bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1 duration-50 w-full"
         data-testid="recipient-field"
         :class="{
-          '!border-rui-error': !valid,
+          'border-rui-error!': !valid,
         }"
       >
         <div
@@ -98,7 +98,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
               v-model="modelSearchValue"
               data-testid="recipient-search"
               type="text"
-              class="outline-none w-full bg-transparent text-sm placeholder:text-rui-grey-400 dark:placeholder:text-rui-grey-700"
+              class="outline-hidden w-full bg-transparent text-sm placeholder:text-rui-grey-400 dark:placeholder:text-rui-grey-700"
               placeholder="E.g. 0x9531c059098e3d194ff87febb587ab07b30b1306"
               @click="modelOpenSuggestionsMenu = true"
               @blur="applySearchInput()"
@@ -108,7 +108,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
             <RuiButton
               variant="outlined"
               color="primary"
-              class="!p-3"
+              class="p-3!"
               data-testid="recipient-open-address-book"
               @click="modelOpenOptionsDialog = true"
             >

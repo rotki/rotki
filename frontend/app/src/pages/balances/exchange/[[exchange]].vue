@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
-import ExchangeAmountRow from '@/modules/accounts/exchanges/ExchangeAmountRow.vue';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import ExchangeDetailPanel from '@/modules/balances/exchanges/ExchangeDetailPanel.vue';
+import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';
+import ExchangeBalanceCards from '@/modules/balances/exchanges/ExchangeBalanceCards.vue';
+import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
+import ExchangeBalancesRefreshButton from '@/modules/balances/exchanges/ExchangeBalancesRefreshButton.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useExchangeBalancesPage } from '@/pages/balances/exchange/use-exchange-balances-page';
+import { isBinance, useExchangeBalancesPage } from '@/pages/balances/exchange/use-exchange-balances-page';
 
 definePage({
   meta: {
@@ -23,47 +25,37 @@ const { exchange } = defineProps<{ exchange?: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const search = ref<string>('');
+
 const {
   balances,
   exchangeBalance,
   isExchangeLoading,
-  modelExchangeDetailTabs,
-  modelSelectedExchange,
-  modelSelectedTab,
+  modelView,
   navigateToExchangeSetup,
-  openExchangeDetails,
   refreshExchangeBalances,
+  refreshInView,
   refreshSelectedExchangeBalances,
   sortedExchanges,
-  usedExchanges,
+  totalBalance,
 } = useExchangeBalancesPage(() => exchange);
+
+const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(exchange) ? exchange : undefined));
 </script>
 
 <template>
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.exchange_balances')]">
     <template #buttons>
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiButton
-            color="primary"
-            variant="outlined"
-            size="lg"
-            :disabled="modelExchangeDetailTabs !== 0"
-            :loading="isExchangeLoading"
-            data-testid="refresh-exchange-balances"
-            @click="refreshExchangeBalances()"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-refresh-ccw" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ t('exchange_balances.refresh_tooltip') }}
-      </RuiTooltip>
+      <ExchangeBalancesRefreshButton
+        :exchanges="sortedExchanges"
+        :selected="exchange"
+        :loading="isExchangeLoading"
+        @refresh="refreshInView()"
+        @refresh-all="refreshExchangeBalances()"
+        @refresh-exchange="refreshSelectedExchangeBalances($event)"
+      />
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="add-exchange"
         @click="navigateToExchangeSetup()"
       >
@@ -74,108 +66,80 @@ const {
       </RuiButton>
       <HideSmallBalances :source="BalanceSource.EXCHANGES" />
     </template>
-    <RuiCard class="exchange-balances">
-      <div
-        v-if="usedExchanges.length > 0"
-        class="flex flex-col md:flex-row"
-      >
-        <div class="md:hidden mb-4">
-          <RuiMenuSelect
-            v-model="modelSelectedExchange"
-            :options="usedExchanges"
-            :label="t('exchange_balances.select_exchange')"
-            hide-details
-            variant="outlined"
-            @update:model-value="openExchangeDetails()"
-          >
-            <template #selection="{ item }">
-              <ExchangeAmountRow
-                class="pr-3 py-1"
-                :balance="exchangeBalance(item)"
-                :exchange="item"
-              />
-            </template>
-            <template #item="{ item }">
-              <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
-              />
-            </template>
-          </RuiMenuSelect>
-        </div>
-        <div class="hidden md:block w-40 shrink-0 border-r border-default">
-          <RuiTabs
-            v-model="modelSelectedTab"
-            vertical
-            align="end"
-            color="primary"
-            class="!flex w-full"
-          >
-            <RuiTab
-              v-for="(usedExchange, i) in sortedExchanges"
-              :key="i"
-              link
-              class="h-[8rem]"
-              :to="{
-                name: '/balances/exchange/[[exchange]]',
-                params: {
-                  exchange: usedExchange,
-                },
-              }"
-              :model-value="usedExchange"
-            >
-              <div class="flex flex-col items-center gap-1 pr-2">
-                <LocationDisplay
-                  :open-details="false"
-                  :identifier="usedExchange"
-                  size="36px"
-                />
-                <FiatDisplay
-                  class="text-xl"
-                  :value="exchangeBalance(usedExchange)"
-                />
-              </div>
-            </RuiTab>
-          </RuiTabs>
-        </div>
-        <div class="flex-1">
-          <ExchangeDetailPanel
-            v-if="exchange"
-            v-model="modelExchangeDetailTabs"
-            :exchange="exchange"
-            :loading="isExchangeLoading"
-            :balances="balances"
-            @refresh="refreshSelectedExchangeBalances($event)"
-          />
 
-          <div
-            v-else
-            class="p-4"
+    <ExchangeBalancesEmpty
+      v-if="sortedExchanges.length === 0"
+      @connect="navigateToExchangeSetup($event)"
+    />
+
+    <template v-else>
+      <ExchangeBalanceCards
+        :exchanges="sortedExchanges"
+        :selected="exchange"
+        :total="totalBalance"
+        :exchange-balance="exchangeBalance"
+      />
+
+      <!-- a frame rather than a card, so the table's pagination bar sticks to the page -->
+      <TableFrame>
+        <template #toolbar>
+          <!-- Binance also keeps savings, whose interest history shares the table's place -->
+          <RuiButtonGroup
+            v-if="binance"
+            v-model="modelView"
+            variant="segmented"
+            required
+            data-testid="exchange-balances-view"
           >
-            {{ t('exchange_balances.select_hint') }}
-          </div>
-        </div>
-      </div>
-      <div
-        v-else
-        class="p-2"
-      >
-        <i18n-t
-          scope="global"
-          keypath="exchange_balances.no_connected_exchanges"
-          tag="span"
+            <RuiButton model-value="balances">
+              {{ t('exchange_balances.tabs.balances') }}
+            </RuiButton>
+            <RuiButton model-value="savings">
+              {{ t('exchange_balances.tabs.savings_interest_history') }}
+            </RuiButton>
+          </RuiButtonGroup>
+          <!-- on the right, as the dashboard's tables keep their search -->
+          <RuiTextField
+            v-if="modelView === 'balances'"
+            v-model="search"
+            variant="outlined"
+            color="primary"
+            dense
+            prepend-icon="lu-search"
+            :placeholder="t('common.actions.search')"
+            :aria-label="t('common.actions.search')"
+            class="ml-auto w-full max-w-64 [&_input]:py-1.5! [&_input]:text-sm! [&_input]:leading-5! [&_input::placeholder]:opacity-100! [&_input::placeholder]:text-rui-text-secondary! [&_svg]:size-4!"
+            hide-details
+            clearable
+            data-testid="exchange-balances-search"
+            @click:clear="search = ''"
+          />
+        </template>
+
+        <BinanceSavingDetail
+          v-if="binance && modelView === 'savings'"
+          class="p-4"
+          :exchange="binance"
+        />
+        <AssetBalances
+          v-else
+          v-model:search="search"
+          data-testid="exchange-asset-balances"
+          :breakdown="{ hide: true }"
+          :loading="isExchangeLoading && balances.length === 0"
+          :balances="balances"
+          :show-per-protocol="!exchange"
+          sticky-header
         >
-          <InternalLink
-            :to="{
-              name: '/api-keys/exchanges/',
-              query: { add: 'true' },
-            }"
-            class="font-weight-regular text-body-1 text-decoration-none"
-          >
-            {{ t('exchange_balances.click_here') }}
-          </InternalLink>
-        </i18n-t>
-      </div>
-    </RuiCard>
+          <template #empty>
+            <TableEmptyNotice
+              icon="lu-coins-exchange"
+              :title="t('exchange_balances.empty_table.title')"
+              :description="t('exchange_balances.empty_table.description')"
+            />
+          </template>
+        </AssetBalances>
+      </TableFrame>
+    </template>
   </TablePageLayout>
 </template>

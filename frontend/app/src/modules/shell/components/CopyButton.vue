@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import { useSharedClipboard } from '@/modules/core/common/use-clipboard';
+
 const { value, tooltip, size } = defineProps<{
   value: string;
   tooltip: string;
   size?: 'sm' | 'lg';
 }>();
 
-const { copy } = useClipboard({ source: () => value });
+const { copy: copyClipboard } = useSharedClipboard();
+
+async function copy(): Promise<void> {
+  await copyClipboard(value);
+}
 </script>
 
 <template>

@@ -29,6 +29,7 @@ const review = ref<RemediationTimelineItem>();
 <template>
   <RuiNavigationDrawer
     v-model="open"
+    below-app-bar
     width="570px"
     temporary
     :stateless="!!review"

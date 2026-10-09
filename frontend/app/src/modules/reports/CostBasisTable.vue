@@ -87,13 +87,13 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
   <div class="relative">
     <div
       v-if="showGroupLine"
-      class="absolute w-0.5 -top-4 -bottom-4 left-[0.8125rem]"
+      class="absolute w-0.5 -top-4 -bottom-4 left-3.25"
     >
       <div class="border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2" />
     </div>
 
     <div
-      :class="{ 'pl-[2.125rem]': showGroupLine }"
+      :class="{ 'pl-8.5': showGroupLine }"
       class="grow"
     >
       <div class="flex pb-4 items-center gap-4">

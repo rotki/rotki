@@ -6,8 +6,20 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
   const accounts = ref<Accounts>({});
   const recentlyAddedAddresses = ref<Set<string>>(new Set());
   const revisions = ref<Record<string, number>>({});
+  /** Chains whose accounts read failed, so they never got a key in {@link accounts}. */
+  const failedChains = ref<Set<string>>(new Set());
 
   const revisionOf = (chain: string): number => get(revisions)[chain] ?? 0;
+
+  /**
+   * Whether a chain's accounts read has finished, loaded or failed. Until it has, an empty list for
+   * the chain means "not known yet", not "no accounts".
+   */
+  const isChainSettled = (chain: string): boolean => chain in get(accounts) || get(failedChains).has(chain);
+
+  const markFetchFailed = (chain: string): void => {
+    set(failedChains, new Set([...get(failedChains), chain]));
+  };
 
   /**
    * Bumped whenever a chain's accounts are edited locally rather than read back from the backend,
@@ -21,6 +33,11 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
     set(accounts, { ...get(accounts), [chain]: data });
+    if (get(failedChains).has(chain)) {
+      const failed = new Set(get(failedChains));
+      failed.delete(chain);
+      set(failedChains, failed);
+    }
   };
 
   const updateAccountData = (data: AccountPayload): void => {
@@ -95,6 +112,8 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     getAccountByAddress,
     getAccounts,
     invalidateChain,
+    isChainSettled,
+    markFetchFailed,
     recentlyAddedAddresses,
     removeTag,
     renameTag,

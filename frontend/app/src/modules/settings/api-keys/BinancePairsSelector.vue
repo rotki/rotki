@@ -181,8 +181,9 @@ onMounted(() => {
         :open-delay="400"
       >
         <template #activator>
+          <!-- down by the label above the field, so it lines up with the field rather than the label -->
           <RuiButton
-            class="mt-1"
+            class="mt-6"
             variant="text"
             icon
             color="primary"
