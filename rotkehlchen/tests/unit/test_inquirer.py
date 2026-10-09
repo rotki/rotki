@@ -2,8 +2,10 @@ import datetime
 import json
 import math
 import os
+import threading
 from http import HTTPStatus
 from itertools import starmap
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 from unittest import mock
 from unittest.mock import MagicMock, PropertyMock, patch
@@ -53,6 +55,11 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
+from rotkehlchen.concurrency.cancellation import (
+    CancellationToken,
+    TaskCancelledError,
+    run_cancellable,
+)
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -92,6 +99,7 @@ from rotkehlchen.inquirer import (
     BTC_PER_BSQ,
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_RATE_LIMIT_WAITING_TIME,
+    CachedPriceEntry,
     CurrentPriceOracle,
     Inquirer,
     get_underlying_asset_price,
@@ -1279,6 +1287,390 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
     assert wsteth_price != ZERO_PRICE
     assert wsteth_op_price == wsteth_price
     assert oracle_query.call_count == 1
+
+
+def _cache_and_return_price(
+        from_assets: list[Asset],
+        to_asset: Asset,
+        price: Price,
+) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+    """Act as the oracles do for a found price: cache it, then return it"""
+    for asset in from_assets:
+        Inquirer.set_cached_price(
+            cache_key=(asset, to_asset),
+            cached_price=CachedPriceEntry(price=price, time=ts_now(), oracle=CurrentPriceOracle.COINGECKO),  # noqa: E501
+        )
+    return dict.fromkeys(from_assets, (price, CurrentPriceOracle.COINGECKO))
+
+
+def _signal_waiters(arrived: threading.Semaphore) -> Any:
+    """Patch the wait for an in-flight price so each waiter releases `arrived` before waiting"""
+    original_wait = Inquirer._wait_inflight_price
+
+    def wait(entry: Any) -> None:
+        arrived.release()
+        original_wait(entry)
+
+    return mock.patch.object(Inquirer, '_wait_inflight_price', side_effect=wait)
+
+
+def _start_price_threads(
+        inquirer: Inquirer,
+        num_threads: int,
+        results: list[Price],
+        errors: list[BaseException],
+) -> list[threading.Thread]:
+    def price_eth() -> None:
+        try:
+            results.append(inquirer.find_usd_price(A_ETH))
+        except BaseException as e:  # collected to be asserted on by the test
+            errors.append(e)
+
+    threads = [threading.Thread(target=price_eth) for _ in range(num_threads)]
+    for thread in threads:
+        thread.start()
+    return threads
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_concurrent_price_queries_hit_oracle_once(inquirer: Inquirer) -> None:
+    """Concurrent callers pricing the same asset must share one oracle query.
+
+    The owner is held inside the oracle until every other caller has missed the (still empty)
+    cache and is waiting for it, so without coalescing each of them would query the oracle.
+    """
+    num_waiters, in_oracle, release, arrived = 4, threading.Event(), threading.Event(), threading.Semaphore(0)  # noqa: E501
+    results: list[Price] = []
+    errors: list[BaseException] = []
+
+    def slow_oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        in_oracle.set()
+        assert release.wait(timeout=10)
+        return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
+
+    with (
+        _signal_waiters(arrived),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=slow_oracle_query) as oracle_query,  # noqa: E501
+    ):
+        threads = _start_price_threads(inquirer, 1, results, errors)
+        assert in_oracle.wait(timeout=10)
+        threads += _start_price_threads(inquirer, num_waiters, results, errors)
+        assert all(arrived.acquire(timeout=10) for _ in range(num_waiters))
+        release.set()
+        for thread in threads:
+            thread.join(timeout=20)
+
+    assert errors == []
+    assert oracle_query.call_count == 1
+    assert results == [Price(FVal(2))] * (num_waiters + 1)
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_cached_between_cache_check_and_claim_is_not_queried_again(
+        inquirer: Inquirer,
+) -> None:
+    """A caller that missed the cache, and only claims after another caller has queried,
+    cached and released the same price, must take the cached price instead of querying."""
+    missed_cache, other_done = threading.Event(), threading.Event()
+    results: list[Price] = []
+    original_preprocess = Inquirer._preprocess_assets_to_query
+
+    def preprocess(*args: Any, **kwargs: Any) -> Any:
+        result = original_preprocess(*args, **kwargs)
+        if threading.current_thread() is not threading.main_thread():
+            missed_cache.set()
+            assert other_done.wait(timeout=10)
+        return result
+
+    with (
+        mock.patch.object(Inquirer, '_preprocess_assets_to_query', side_effect=preprocess),
+        mock.patch.object(
+            Inquirer,
+            '_query_oracle_instances',
+            side_effect=lambda from_assets, to_asset, skip_onchain=False: _cache_and_return_price(from_assets, to_asset, Price(FVal(2))),  # noqa: E501
+        ) as oracle_query,
+    ):
+        thread = threading.Thread(target=lambda: results.append(inquirer.find_usd_price(A_ETH)))
+        thread.start()
+        assert missed_cache.wait(timeout=10)
+        assert inquirer.find_usd_price(A_ETH) == Price(FVal(2))  # claims, queries and releases
+        other_done.set()
+        thread.join(timeout=10)
+
+    assert oracle_query.call_count == 1
+    assert results == [Price(FVal(2))]
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_waiters_of_failed_owner_retry_once(inquirer: Inquirer) -> None:
+    """If the owner of a price query raises, its waiters must not all retry. One of them
+    queries again and the others take its result."""
+    num_waiters, in_oracle, release, arrived = 4, threading.Event(), threading.Event(), threading.Semaphore(0)  # noqa: E501
+    results: list[Price] = []
+    errors: list[BaseException] = []
+
+    def oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        if not in_oracle.is_set():  # the owner
+            in_oracle.set()
+            assert release.wait(timeout=10)
+            raise RemoteError('owner failed')
+        return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
+
+    with (
+        _signal_waiters(arrived),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=oracle_query) as oracle_query_mock,  # noqa: E501
+    ):
+        threads = _start_price_threads(inquirer, 1, results, errors)
+        assert in_oracle.wait(timeout=10)
+        threads += _start_price_threads(inquirer, num_waiters, results, errors)
+        assert all(arrived.acquire(timeout=10) for _ in range(num_waiters))
+        release.set()
+        for thread in threads:
+            thread.join(timeout=20)
+
+    assert [str(x) for x in errors] == ['owner failed']
+    assert oracle_query_mock.call_count == 2
+    assert results == [Price(FVal(2))] * num_waiters
+    assert len(Inquirer._inflight_prices) == 0
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_waiters_of_expired_owner_retry_once(inquirer: Inquirer) -> None:
+    """If the owner of a price query misses its deadline, one waiter takes the query over and
+    the others wait for it. The late owner must not remove the entry of the one taking over."""
+    num_waiters, arrived = 4, threading.Semaphore(0)
+    in_first, release_first = threading.Event(), threading.Event()
+    in_second, release_second = threading.Event(), threading.Event()
+    results: list[Price] = []
+    errors: list[BaseException] = []
+
+    def oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        in_query, release = (in_second, release_second) if in_first.is_set() else (in_first, release_first)  # noqa: E501
+        in_query.set()
+        assert release.wait(timeout=10)
+        return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
+
+    with (
+        mock.patch('rotkehlchen.inquirer.INFLIGHT_PRICE_WAIT_SECS', 3),
+        _signal_waiters(arrived),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=oracle_query) as oracle_query_mock,  # noqa: E501
+    ):
+        threads = _start_price_threads(inquirer, 1, results, errors)
+        assert in_first.wait(timeout=10)
+        threads += _start_price_threads(inquirer, num_waiters, results, errors)
+        assert all(arrived.acquire(timeout=10) for _ in range(num_waiters))
+        assert in_second.wait(timeout=10)  # the deadline passed and one waiter took over
+        release_first.set()  # the late owner finishes while the takeover is still running
+        threads[0].join(timeout=10)
+        assert len(Inquirer._inflight_prices) == 1  # the takeover's entry is still registered
+        release_second.set()
+        for thread in threads:
+            thread.join(timeout=20)
+
+    assert errors == []
+    assert oracle_query_mock.call_count == 2
+    assert results == [Price(FVal(2))] * (num_waiters + 1)
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_cancelled_waiter_stops_promptly(inquirer: Inquirer) -> None:
+    """A task waiting on another call's price query must stop soon after being cancelled
+    instead of waiting for the owner or the deadline."""
+    in_oracle, release, arrived = threading.Event(), threading.Event(), threading.Semaphore(0)
+    token, errors = CancellationToken(), []
+
+    def slow_oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        in_oracle.set()
+        assert release.wait(timeout=10)
+        return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
+
+    def cancellable_waiter() -> None:
+        try:
+            run_cancellable(token, inquirer.find_usd_price, A_ETH)
+        except TaskCancelledError as e:
+            errors.append(e)
+
+    with (
+        _signal_waiters(arrived),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=slow_oracle_query),
+    ):
+        threads = _start_price_threads(inquirer, 1, [], [])
+        assert in_oracle.wait(timeout=10)
+        threads.append(waiter := threading.Thread(target=cancellable_waiter))
+        waiter.start()
+        assert arrived.acquire(timeout=10)
+        start = monotonic()
+        token.cancel('test')
+        waiter.join(timeout=10)
+        assert monotonic() - start < 1
+        release.set()
+        threads[0].join(timeout=10)
+
+    assert len(errors) == 1
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_cancelled_waiter_does_not_take_published_price(inquirer: Inquirer) -> None:
+    """A waiting task cancelled right before the owner publishes its result must stop
+    instead of taking the result and carrying on.
+
+    The cancellation check interval is raised so that the wait can only end by the owner
+    publishing, which is the path that has to check for cancellation too."""
+    in_oracle, release, arrived = threading.Event(), threading.Event(), threading.Semaphore(0)
+    token, errors = CancellationToken(), []
+    owner_results: list[Price] = []
+    results: list[Price] = []
+
+    def slow_oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        in_oracle.set()
+        assert release.wait(timeout=10)
+        return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
+
+    def cancellable_waiter() -> None:
+        try:
+            results.append(run_cancellable(token, inquirer.find_usd_price, A_ETH))
+        except TaskCancelledError as e:
+            errors.append(e)
+
+    with (
+        mock.patch('rotkehlchen.inquirer.INFLIGHT_PRICE_CANCEL_CHECK_SECS', 30),
+        _signal_waiters(arrived),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=slow_oracle_query),
+    ):
+        threads = _start_price_threads(inquirer, 1, owner_results, [])
+        assert in_oracle.wait(timeout=10)
+        threads.append(waiter := threading.Thread(target=cancellable_waiter))
+        waiter.start()
+        assert arrived.acquire(timeout=10)
+        token.cancel('test')
+        release.set()
+        for thread in threads:
+            thread.join(timeout=10)
+
+    assert owner_results == [Price(FVal(2))]
+    assert results == []
+    assert len(errors) == 1
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_query_of_old_session_is_not_shared_after_clear(inquirer: Inquirer) -> None:
+    """A call made after Inquirer.clear() (logout) must not wait on, or take the result of,
+    a price query that was started before it."""
+    in_oracle, release = threading.Event(), threading.Event()
+
+    def oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        if not in_oracle.is_set():  # the query of the old session
+            in_oracle.set()
+            assert release.wait(timeout=10)
+            return {x: (Price(FVal(1)), CurrentPriceOracle.COINGECKO) for x in from_assets}
+        return {x: (Price(FVal(2)), CurrentPriceOracle.COINGECKO) for x in from_assets}
+
+    with (
+        mock.patch('rotkehlchen.inquirer.INFLIGHT_PRICE_WAIT_SECS', 5),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=oracle_query) as oracle_query_mock,  # noqa: E501
+    ):
+        threads = _start_price_threads(inquirer, 1, [], [])
+        assert in_oracle.wait(timeout=10)
+        Inquirer.clear()
+        start = monotonic()
+        assert inquirer.find_usd_price(A_ETH) == Price(FVal(2))
+        assert monotonic() - start < 2  # did not wait for the old session's query
+        release.set()
+        threads[0].join(timeout=10)
+
+    assert oracle_query_mock.call_count == 2
+    assert len(Inquirer._inflight_prices) == 0
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_nested_price_query_does_not_wait_on_own_claim(inquirer: Inquirer) -> None:
+    """A price handler pricing a component asset while its outer call owns that asset's claim
+    must query it directly instead of waiting for a result it is itself blocking."""
+    nested_prices: list[Price] = []
+
+    def oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,  # pylint: disable=unused-argument
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        if A_BTC in from_assets and len(nested_prices) == 0:  # price ETH while owning ETH
+            nested_prices.append(inquirer.find_usd_price(A_ETH))
+        return {x: (Price(FVal(2)), CurrentPriceOracle.COINGECKO) for x in from_assets}
+
+    start = monotonic()
+    with (
+        mock.patch('rotkehlchen.inquirer.INFLIGHT_PRICE_WAIT_SECS', 5),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=oracle_query),
+    ):
+        prices = inquirer.find_usd_prices([A_ETH, A_BTC])
+
+    assert monotonic() - start < 2  # nobody sat out the wait timeout
+    assert prices[A_ETH] == prices[A_BTC] == Price(FVal(2))
+    assert nested_prices == [Price(FVal(2))]
+    assert len(Inquirer._inflight_prices) == 0  # the nested call released nothing it didn't claim
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_nested_price_queries_of_two_threads_do_not_deadlock(inquirer: Inquirer) -> None:
+    """Two threads that each hold claims and then price an asset the other one claimed
+    (as a liquidity token handler pricing its underlying would) must not wait on each other."""
+    barrier = threading.Barrier(2, timeout=5)  # both threads hold their claims before nesting
+    finished: list[list[Asset]] = []
+
+    def oracle_query(
+            from_assets: list[Asset],
+            to_asset: Asset,  # pylint: disable=unused-argument
+            skip_onchain: bool = False,  # pylint: disable=unused-argument
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        if A_BTC in from_assets or A_DAI in from_assets:  # the outer calls, not the nested ones
+            barrier.wait()
+            inquirer.find_usd_price(A_USDC if A_BTC in from_assets else A_ETH)
+        return {x: (Price(FVal(2)), CurrentPriceOracle.COINGECKO) for x in from_assets}
+
+    def price(assets: list[Asset]) -> None:
+        inquirer.find_usd_prices(assets)
+        finished.append(assets)
+
+    start = monotonic()
+    with (
+        mock.patch('rotkehlchen.inquirer.INFLIGHT_PRICE_WAIT_SECS', 3),
+        mock.patch.object(Inquirer, '_query_oracle_instances', side_effect=oracle_query),
+    ):
+        threads = [
+            threading.Thread(target=price, args=([A_BTC, A_ETH],)),
+            threading.Thread(target=price, args=([A_DAI, A_USDC],)),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=20)
+
+    assert len(finished) == 2  # both threads priced everything without raising
+    assert monotonic() - start < 2  # nobody sat out the wait timeout
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
