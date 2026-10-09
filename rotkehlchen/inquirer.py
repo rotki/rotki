@@ -2,9 +2,12 @@ import logging
 import operator
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
+from threading import Event, Lock, local
+from time import monotonic
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     Literal,
     NamedTuple,
     TypeVar,
@@ -78,6 +81,7 @@ from rotkehlchen.chain.evm.protocol_constants import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
+from rotkehlchen.concurrency.cancellation import checkpoint
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -184,6 +188,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
+INFLIGHT_PRICE_WAIT_SECS: Final = 60  # max wait for another call already querying the same price
+INFLIGHT_PRICE_CANCEL_CHECK_SECS: Final = 0.25  # how often a waiting call checks for cancellation
 DEFAULT_RATE_LIMIT_WAITING_TIME = 60  # seconds
 BTC_PER_BSQ = FVal('0.00000100')  # 1 BST == 100 satoshi https://docs.bisq.network/dao/specification#bsq-token
 
@@ -359,6 +365,23 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
 T = TypeVar('T', bound=Callable[..., Any])
 
 
+class InflightPrice:
+    """A price query being run by one call that other calls can wait for until `deadline`
+    (a monotonic time). After the deadline the next call to claim the price takes it over.
+    `result` is set by the owner before `event` is, and stays None if the query failed."""
+
+    def __init__(self, deadline: float) -> None:
+        self.deadline = deadline
+        self.event = Event()
+        self.result: tuple[Price, CurrentPriceOracle] | None = None
+
+
+# `count` is the number of coalesced price queries the current thread is running. Nonzero means
+# that a price handler is pricing a component asset, and such a nested call must never wait on
+# another call. `generation` is the Inquirer._inflight_generation the outermost query started at.
+_inflight_queries = local()
+
+
 class CachedPriceEntry(NamedTuple):
     price: Price
     time: Timestamp
@@ -382,6 +405,9 @@ class Inquirer:
     __instance: Inquirer | None = None
     _cached_forex_data: dict
     _cached_current_price: LRUCacheWithRemove[tuple[Asset, Asset], CachedPriceEntry]
+    _inflight_prices: dict[tuple[Asset, Asset, bool], InflightPrice]
+    _inflight_prices_lock: Lock
+    _inflight_generation: int
     _data_directory: Path
     _cryptocompare: Cryptocompare
     _coingecko: Coingecko
@@ -439,6 +465,9 @@ class Inquirer:
         Inquirer._moralis = moralis
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
+        Inquirer._inflight_prices = {}
+        Inquirer._inflight_prices_lock = Lock()
+        Inquirer._inflight_generation = 0
         Inquirer._evm_managers = {}
         Inquirer._msg_aggregator = msg_aggregator
         Inquirer.special_tokens = {
@@ -934,6 +963,190 @@ class Inquirer:
         return found_prices, replaced_assets, unpriced_assets
 
     @staticmethod
+    def _query_unpriced_assets(
+            unpriced_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool,
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        """Find prices for already normalized assets that are not in the cache, going through
+        the manual, fiat and special sources first and then the oracles."""
+        found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
+        for func in (
+            Inquirer._get_manual_prices,
+            Inquirer._query_fiat_pairs,
+            Inquirer._get_special_prices,
+        ):
+            unpriced_assets, new_found_prices = func(
+                from_assets=unpriced_assets,
+                to_asset=to_asset,
+            )
+            found_prices.update(new_found_prices)
+            if len(unpriced_assets) == 0:
+                break
+        else:
+            found_prices.update(Inquirer._query_oracle_instances(
+                from_assets=unpriced_assets,
+                to_asset=to_asset,
+                skip_onchain=skip_onchain,
+            ))
+
+        return found_prices
+
+    @staticmethod
+    def _claim_inflight_prices(
+            unpriced_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool,
+            generation: int,
+    ) -> tuple[
+        dict[Asset, tuple[Price, CurrentPriceOracle]],
+        list[Asset],
+        dict[Asset, InflightPrice],
+        dict[Asset, InflightPrice],
+    ]:
+        """Split unpriced_assets into the ones cached since the caller checked the cache, the
+        ones this call should query and the ones another call is already querying. Returns the
+        cached prices, the assets to query, the entries this call registered for a subset of them
+        (and so must release) and the entries to wait on.
+
+        The cache is rechecked under the lock because an owner fills it before releasing its
+        entry. Otherwise a call that missed the cache just before another call released could
+        query the same price again.
+
+        Claiming happens after normalization so that collection members share a key, as they
+        share a cache entry. The lock is held only to claim, never across a query. An entry past
+        its deadline is taken over by the first call to claim it, so only one waiter re-queries.
+
+        A nested call (a price handler pricing a component asset while its outer call is still
+        running) never waits and queries everything directly. Waiting could block on a result
+        only the blocked thread itself can produce, or form a cycle with another thread that
+        holds claims and waits on this one. So a thread only waits while it runs no query,
+        which rules out cycles.
+
+        If the user logged out since the call started (generation changed) nothing is claimed
+        or waited on, so a call started before a logout never shares results with the next
+        session. Nested calls inherit the generation of their outermost call.
+        """
+        cached: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
+        claimed: dict[Asset, InflightPrice] = {}
+        waiting: dict[Asset, InflightPrice] = {}
+        to_query: list[Asset] = []
+        nested, now = getattr(_inflight_queries, 'count', 0) != 0, monotonic()
+        with Inquirer._inflight_prices_lock:
+            if generation != Inquirer._inflight_generation:
+                return cached, list(unpriced_assets), claimed, waiting
+
+            for asset in unpriced_assets:
+                if (cache := Inquirer.get_cached_current_price_entry(cache_key=(asset, to_asset))) is not None:  # noqa: E501
+                    cached[asset] = cache.price, cache.oracle
+                    continue
+
+                to_query.append(asset)
+                key = (asset, to_asset, skip_onchain)
+                if (entry := Inquirer._inflight_prices.get(key)) is not None and entry.deadline > now:  # noqa: E501
+                    if not nested:
+                        waiting[asset] = entry
+                        to_query.pop()
+                    continue  # a nested call queries it directly without owning it
+
+                Inquirer._inflight_prices[key] = claimed[asset] = InflightPrice(
+                    deadline=now + INFLIGHT_PRICE_WAIT_SECS,
+                )
+
+        return cached, to_query, claimed, waiting
+
+    @staticmethod
+    def _release_inflight_prices(
+            claimed: dict[Asset, InflightPrice],
+            to_asset: Asset,
+            skip_onchain: bool,
+            found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]],
+    ) -> None:
+        """Publish the found prices to the waiters of the claimed entries and wake them.
+        An asset without a price (e.g. the query raised) leaves its result None so the
+        waiters claim it again. An entry is only removed from the registry if it is still
+        there, since after its deadline it may have been taken over or cleared at logout."""
+        with Inquirer._inflight_prices_lock:
+            for asset, entry in claimed.items():
+                if Inquirer._inflight_prices.get(key := (asset, to_asset, skip_onchain)) is entry:
+                    del Inquirer._inflight_prices[key]
+                entry.result = found_prices.get(asset)
+                entry.event.set()
+
+    @staticmethod
+    def _wait_inflight_price(entry: InflightPrice) -> None:
+        """Wait until the owner of the entry publishes its result or the entry's deadline
+        passes. Checks for cancellation every INFLIGHT_PRICE_CANCEL_CHECK_SECS so that a
+        cancelled task stops promptly. Also checks before returning, so that a cancelled
+        task never takes the published result.
+
+        May raise:
+        - TaskCancelledError if the current task got cancelled while waiting
+        """
+        while (remaining := entry.deadline - monotonic()) > 0:
+            if entry.event.wait(timeout=min(remaining, INFLIGHT_PRICE_CANCEL_CHECK_SECS)):
+                break
+            checkpoint()
+        checkpoint()
+
+    @staticmethod
+    def _query_coalesced_prices(
+            unpriced_assets: list[Asset],
+            to_asset: Asset,
+            skip_onchain: bool,
+    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
+        """Query the prices of unpriced_assets, sharing one query per price with any other
+        call pricing the same asset at the same time. The first call queries and the others
+        wait for its result. If the owner fails or misses its deadline the waiters claim the
+        price again, so that only one of them re-queries it and the rest keep waiting.
+
+        May raise:
+        - TaskCancelledError if the current task got cancelled
+        """
+        found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
+        if (depth := getattr(_inflight_queries, 'count', 0)) == 0:
+            generation = Inquirer._inflight_generation
+        else:  # nested in a query of this thread, which may have started before a logout
+            generation = _inflight_queries.generation
+        while len(unpriced_assets) != 0:
+            checkpoint()  # a task abandoned at logout must not claim prices of the next session
+            cached, to_query, claimed, waiting = Inquirer._claim_inflight_prices(
+                unpriced_assets=unpriced_assets,
+                to_asset=to_asset,
+                skip_onchain=skip_onchain,
+                generation=generation,
+            )
+            found_prices.update(cached)
+            queried_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
+            _inflight_queries.count, _inflight_queries.generation = depth + 1, generation
+            try:
+                if len(to_query) != 0:
+                    queried_prices = Inquirer._query_unpriced_assets(
+                        unpriced_assets=to_query,
+                        to_asset=to_asset,
+                        skip_onchain=skip_onchain,
+                    )
+            finally:
+                _inflight_queries.count = depth
+                Inquirer._release_inflight_prices(
+                    claimed=claimed,
+                    to_asset=to_asset,
+                    skip_onchain=skip_onchain,
+                    found_prices=queried_prices,
+                )
+            found_prices.update(queried_prices)
+
+            unpriced_assets = []
+            for asset, entry in waiting.items():
+                Inquirer._wait_inflight_price(entry)
+                if (result := entry.result) is not None:
+                    found_prices[asset] = result
+                else:  # the owner failed or missed its deadline. Claim it again
+                    unpriced_assets.append(asset)
+
+        return found_prices
+
+    @staticmethod
     def _find_prices(
             from_assets: Sequence[Asset],
             to_asset: Asset,
@@ -947,6 +1160,8 @@ class Inquirer:
 
         If all options for finding a price are unsuccessful the price will be set to ZERO_PRICE,
         and any errors will be logged in the logs.
+
+        Concurrent calls pricing the same asset share one query (see _query_coalesced_prices).
         """
         found_prices, replaced_assets, unpriced_assets = Inquirer._preprocess_assets_to_query(
             from_assets=from_assets,
@@ -954,21 +1169,15 @@ class Inquirer:
             ignore_cache=ignore_cache,
         )
         if len(unpriced_assets) != 0:
-            for func in (
-                Inquirer._get_manual_prices,
-                Inquirer._query_fiat_pairs,
-                Inquirer._get_special_prices,
-            ):
-                unpriced_assets, new_found_prices = func(
-                    from_assets=unpriced_assets,
+            if ignore_cache:  # a fresh price was asked for, so don't share anyone else's
+                found_prices.update(Inquirer._query_unpriced_assets(
+                    unpriced_assets=unpriced_assets,
                     to_asset=to_asset,
-                )
-                found_prices.update(new_found_prices)
-                if len(unpriced_assets) == 0:
-                    break
+                    skip_onchain=skip_onchain,
+                ))
             else:
-                found_prices.update(Inquirer._query_oracle_instances(
-                    from_assets=unpriced_assets,
+                found_prices.update(Inquirer._query_coalesced_prices(
+                    unpriced_assets=unpriced_assets,
                     to_asset=to_asset,
                     skip_onchain=skip_onchain,
                 ))
@@ -1679,3 +1888,10 @@ class Inquirer:
         inquirer._uniswapv2 = None
         inquirer._uniswapv3 = None
         inquirer._oracle_state = None
+        # Calls of the old session may outlive the logout. Wake their waiters and drop their
+        # entries so that no call of the next session waits on or consumes their results.
+        with Inquirer._inflight_prices_lock:
+            Inquirer._inflight_generation += 1
+            for entry in Inquirer._inflight_prices.values():
+                entry.event.set()
+            Inquirer._inflight_prices.clear()
