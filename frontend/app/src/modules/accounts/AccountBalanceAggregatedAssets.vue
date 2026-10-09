@@ -18,9 +18,9 @@ const balances = useBlockchainBalances(() => chains, () => groupId);
 <template>
   <AssetBalances
     v-model:selected="selected"
-    class="bg-white dark:bg-dark-elevated"
     :balances="balances"
     show-per-protocol
+    nested
     :selection-mode="selectionMode"
     :breakdown="{
       scope: { chains, groupId },

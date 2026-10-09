@@ -50,9 +50,9 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
       flat
       :identifier="assets[0].asset"
       :resolution-options="{ collectionParent: false }"
-      size="30px"
-      padding="1px"
-      class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
+      size="24px"
+      padding="0px"
+      class="[&_.icon-bg]:rounded-full! [&_.icon-bg]:overflow-hidden! cursor-pointer"
       @click="navigateToAsset(assets[0])"
     />
   </div>

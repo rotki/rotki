@@ -189,9 +189,11 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
     dense
   >
     <template #item.asset="{ row }">
+      <!-- nested in another row, it runs denser than the rows around it rather than taller -->
       <AssetDetails
         :asset="row.asset"
         :resolution="{ isCollectionParent: !!row.breakdown }"
+        :display="nested ? { dense: true, size: '24px' } : undefined"
       />
     </template>
     <template #item.perProtocol="{ row }">

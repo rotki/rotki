@@ -45,8 +45,8 @@ const showMore = computed<number>(() => protocols.length - visible);
       >
         <template #activator="{ open, attrs }">
           <div
-            class="rounded-full h-8 px-1 min-w-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 font-bold text-xs text-rui-light-text z-[1] cursor-pointer transition-all"
-            :class="{ 'bg-rui-grey-400 dark:bg-rui-grey-100': open }"
+            class="rounded-full h-8 px-1.5 min-w-8 bg-rui-grey-100 dark:bg-rui-grey-800 flex items-center justify-center ring-2 ring-rui-surface -ml-2 font-medium text-xs text-rui-text-secondary z-1 cursor-pointer transition-colors"
+            :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-700': open }"
             v-bind="attrs"
           >
             {{ showMore }}+

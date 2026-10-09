@@ -22,9 +22,12 @@
   },
   "account_balances": {
     "aggregated_assets": "Aggregated assets",
+    "asset_count": "{count} asset | {count} assets",
     "chain_filter": {
       "add": "Add \"{chain}\" to filter",
       "clear": "Enable all chains",
+      "excluded": "excluded",
+      "more": "{count} more chains",
       "remove": "Remove \"{chain}\" from filter"
     },
     "confirm_delete": {

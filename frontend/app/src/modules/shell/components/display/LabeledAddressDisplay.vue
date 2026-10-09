@@ -75,29 +75,41 @@ const labelDisplayed = computed(() => {
   return get(address);
 });
 
+/**
+ * A bare address reads best in monospace; a name is set like the rest of the row. An account with
+ * no label of its own gets its address as the label, so that counts as an address too.
+ */
+const showsAddress = computed<boolean>(() => {
+  const shown = get(labelDisplayed);
+  return shown === get(address) || shown === get(accountAddress);
+});
+
+/**
+ * An address is cut in the middle, keeping both ends you check it by; a name ends in a CSS
+ * ellipsis, since the width estimate assumes the narrow monospace characters of an address.
+ */
 const truncatedLabelDisplayed = computed<string>(() =>
-  truncateToWidth(get(labelDisplayed), get(displayedLabelWidth)),
+  get(showsAddress) ? truncateToWidth(get(labelDisplayed), get(displayedLabelWidth)) : get(labelDisplayed),
 );
 </script>
 
 <template>
-  <RuiChip
-    variant="outlined"
-    class="w-full hover:cursor-default max-w-[32rem] min-w-[15rem] !bg-rui-grey-100 dark:!bg-rui-grey-900"
-    :class-names="{ content: 'w-full flex items-center px-0' }"
-    size="sm"
-    color="primary"
-  >
+  <!--
+    Avatar and name, set like the rest of the row rather than as an outlined chip. The explorer or
+    copy link shows while the row is hovered or focused, so a table of accounts is not a column of
+    buttons.
+  -->
+  <div class="flex items-center gap-1 w-full max-w-128 min-w-48">
     <RuiTooltip
       :disabled="!shouldShowAmount"
       :options="{ placement: 'top' }"
       :open-delay="400"
-      class="flex-1"
+      class="flex-1 min-w-0"
     >
       <template #activator>
         <div
           data-testid="labeled-address-display"
-          class="flex items-center gap-2 text-rui-text-secondary w-full"
+          class="flex items-center gap-2 w-full"
         >
           <EnsAvatar
             :address="address"
@@ -106,21 +118,21 @@ const truncatedLabelDisplayed = computed<string>(() =>
 
           <div
             v-if="isXpub"
-            class="font-medium"
+            class="text-body-2 font-medium"
           >
             {{ t('common.xpub') }}
           </div>
 
           <div
             ref="displayedLabel"
-            class="flex-1 font-mono overflow-hidden text-xs"
-            :class="{ blur: !shouldShowAmount }"
+            class="flex-1 truncate text-body-2 font-medium text-rui-text"
+            :class="{ 'blur': !shouldShowAmount, 'font-mono text-xs': showsAddress }"
           >
             {{ truncatedLabelDisplayed }}
           </div>
         </div>
       </template>
-      <div class="[&_*]:font-mono">
+      <div class="**:font-mono">
         <div v-if="aliasName && aliasName !== address">
           {{ aliasName }}
         </div>
@@ -135,11 +147,8 @@ const truncatedLabelDisplayed = computed<string>(() =>
         </div>
       </div>
     </RuiTooltip>
-    <RuiDivider
-      vertical
-      class="h-[1.75rem] mx-1 border-black/[.12] dark:border-white/[.12]"
-    />
-    <div class="flex items-center h-[1.75rem]">
+    <!-- hidden only inside a table row that is neither hovered nor focused; elsewhere it always shows -->
+    <div class="flex items-center h-7 transition-opacity [tr:not(:hover)_&:not(:focus-within)]:opacity-0 motion-reduce:transition-none">
       <HashLink
         class="h-full"
         :text="accountAddress"
@@ -149,5 +158,5 @@ const truncatedLabelDisplayed = computed<string>(() =>
         :location="getChain(account)"
       />
     </div>
-  </RuiChip>
+  </div>
 </template>
