@@ -9,6 +9,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitvavo
 from rotkehlchen.constants.assets import A_BTC, A_ETC, A_ETH, A_EUR, A_LINK, A_USDC
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.bitvavo import (
@@ -131,7 +132,10 @@ def test_validate_api_key(bitvavo_exchange: Bitvavo) -> None:
     with patch.object(
         bitvavo_exchange,
         '_api_query',
-        side_effect=RemoteError('Bitvavo request at x failed with error code 305: inactive'),
+        side_effect=RemoteError(
+            'Bitvavo request at x failed with error code 305: inactive',
+            cause=FailureCause.AUTH,
+        ),
     ):
         valid, msg = bitvavo_exchange.validate_api_key()
 
@@ -180,7 +184,12 @@ def test_api_query_connection_error(bitvavo_exchange: Bitvavo) -> None:
 
 
 def test_query_balances_unexpected_data(bitvavo_exchange: Bitvavo) -> None:
-    with patch.object(bitvavo_exchange, '_api_query', return_value={'not': 'a list'}):
+    responses = {'/balance': {'not': 'a list'}, '/stakingBalance': []}
+    with patch.object(
+        bitvavo_exchange,
+        '_api_query',
+        side_effect=lambda endpoint: responses[endpoint],
+    ):
         balances, msg = bitvavo_exchange.query_balances()
 
     assert balances is None
@@ -190,18 +199,26 @@ def test_query_balances_unexpected_data(bitvavo_exchange: Bitvavo) -> None:
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances_skips_malformed_entries(bitvavo_exchange: Bitvavo) -> None:
     """A malformed entry is reported and skipped, the rest of the balances still count."""
-    with patch.object(bitvavo_exchange, '_api_query', return_value=[
-        {'symbol': 'BTC', 'available': '1', 'inOrder': '0'},
-        {'symbol': 'ETH', 'available': 'not a number', 'inOrder': '0'},
-        {'symbol': 'EUR'},  # amounts missing
-    ]):
+    responses = {
+        '/balance': [
+            {'symbol': 'BTC', 'available': '1', 'inOrder': '0'},
+            {'symbol': 'ETH', 'available': 'not a number', 'inOrder': '0'},
+            {'symbol': 'EUR'},  # amounts missing
+        ],
+        '/stakingBalance': [{'symbol': 'BTC'}],  # amount missing
+    }
+    with patch.object(
+        bitvavo_exchange,
+        '_api_query',
+        side_effect=lambda endpoint: responses[endpoint],
+    ):
         balances, msg = bitvavo_exchange.query_balances()
 
     assert msg == ''
     assert balances == {A_BTC: Balance(amount=FVal('1'), value=FVal('1.5'))}
     assert consume_errors(bitvavo_exchange.msg_aggregator) == [
         'Failed to deserialize a Bitvavo balance entry. Check logs for details. Ignoring it.',
-    ] * 2
+    ] * 3
 
 
 def test_query_online_margin_history(bitvavo_exchange: Bitvavo) -> None:
@@ -213,25 +230,64 @@ def test_query_online_margin_history(bitvavo_exchange: Bitvavo) -> None:
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances(bitvavo_exchange: Bitvavo) -> None:
-    """available and inOrder are summed, zero balances and unknown assets are skipped."""
-    with patch.object(bitvavo_exchange, '_api_query', return_value=[
-        {'symbol': 'BTC', 'available': '1.1', 'inOrder': '0.4'},
-        {'symbol': 'EUR', 'available': '250.5', 'inOrder': '0'},
-        {'symbol': 'ETH', 'available': '0', 'inOrder': '0'},
-        {'symbol': 'NOTAREALASSET', 'available': '5', 'inOrder': '0'},
-    ]):
+    """available, inOrder and the Fixed Staking amount are summed per asset, zero balances
+    and unknown assets are skipped.
+    """
+    responses = {
+        '/balance': [
+            {'symbol': 'BTC', 'available': '1.1', 'inOrder': '0.4'},
+            {'symbol': 'EUR', 'available': '250.5', 'inOrder': '0'},
+            {'symbol': 'ETH', 'available': '0', 'inOrder': '0'},
+            {'symbol': 'NOTAREALASSET', 'available': '5', 'inOrder': '0'},
+        ],
+        '/stakingBalance': [
+            {'symbol': 'BTC', 'amount': '0.5'},  # adds to the tradeable BTC
+            {'symbol': 'ETC', 'amount': '3'},  # held only in Fixed Staking
+            {'symbol': 'ETH', 'amount': '0'},
+        ],
+    }
+    with patch.object(
+        bitvavo_exchange,
+        '_api_query',
+        side_effect=lambda endpoint: responses[endpoint],
+    ) as api_query:
         balances, msg = bitvavo_exchange.query_balances()
 
+    assert api_query.call_args_list == [
+        call(endpoint='/balance'),
+        call(endpoint='/stakingBalance'),
+    ]
     assert msg == ''
     assert balances == {
-        A_BTC: Balance(amount=FVal('1.5'), value=FVal('2.25')),
+        A_BTC: Balance(amount=FVal('2'), value=FVal('3')),
         A_EUR: Balance(amount=FVal('250.5'), value=FVal('375.75')),
+        A_ETC: Balance(amount=FVal('3'), value=FVal('4.5')),
     }
     assert consume_errors_and_unknown_assets(bitvavo_exchange.msg_aggregator) == ([], ['NOTAREALASSET'])  # noqa: E501
 
 
+def test_query_balances_staking_query_fails(bitvavo_exchange: Bitvavo) -> None:
+    """A failing staking query fails the whole balance query instead of silently
+    reporting only the tradeable part.
+    """
+    def mock_api_query(endpoint: str) -> list[dict[str, str]]:
+        if endpoint == '/stakingBalance':
+            raise RemoteError('staking endpoint down', cause=FailureCause.NETWORK)
+        return [{'symbol': 'BTC', 'available': '1', 'inOrder': '0'}]
+
+    with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query):
+        balances, msg = bitvavo_exchange.query_balances()
+
+    assert balances is None
+    assert 'staking endpoint down' in msg
+
+
 def test_query_balances_remote_error(bitvavo_exchange: Bitvavo) -> None:
-    with patch.object(bitvavo_exchange, '_api_query', side_effect=RemoteError('boom')):
+    with patch.object(
+            bitvavo_exchange,
+            '_api_query',
+            side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
+    ):
         balances, msg = bitvavo_exchange.query_balances()
 
     assert balances is None
@@ -519,7 +575,11 @@ def test_query_online_history_events_into_queue(bitvavo_exchange: Bitvavo) -> No
 
 def test_query_online_history_events_remote_error(bitvavo_exchange: Bitvavo) -> None:
     with (
-        patch.object(bitvavo_exchange, '_api_query', side_effect=RemoteError('boom')),
+        patch.object(
+            bitvavo_exchange,
+            '_api_query',
+            side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
+        ),
         pytest.raises(RemoteError, match='boom'),
     ):
         bitvavo_exchange.query_online_history_events(
@@ -551,7 +611,7 @@ def test_failure_on_a_later_page_keeps_earlier_pages_and_records_no_range(
     """
     def mock_api_query(endpoint: str, options: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
         if options['page'] == 2:
-            raise RemoteError('page two failed')
+            raise RemoteError('page two failed', cause=FailureCause.NETWORK)
         return {'items': LEDGER_PAGE_1, 'currentPage': 1, 'totalPages': 2}
 
     with (

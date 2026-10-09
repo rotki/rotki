@@ -3,6 +3,7 @@ import logging
 import urllib.parse
 from collections import defaultdict
 from http import HTTPStatus
+from itertools import chain
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -14,7 +15,8 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -70,7 +72,7 @@ HISTORY_MAX_ITEMS: Final = 100
 # second after the query ran would fall between two ranges, so every query reaches back this
 # far before its start. Rows seen twice are deduplicated through their identifiers.
 HISTORY_OVERLAP_MS: Final = 2000
-BitvavoEndpoint = Literal['/balance', '/account/history']
+BitvavoEndpoint = Literal['/balance', '/account/history', '/stakingBalance']
 
 # GET /account/history row types that credit a single amount, mapped to the rotki event type,
 # subtype and note prefix.
@@ -194,12 +196,16 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bitvavo request at {request_url} connection error: {e!s}.') from e
+            raise RemoteError(
+                f'Bitvavo request at {request_url} connection error: {e!s}.',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             raise RemoteError(
                 f'Bitvavo request at {request_url} failed due to rate limiting. '
                 f'Bitvavo blocks the key or IP for a minute after the weight limit is exceeded.',
+                cause=FailureCause.RATE_LIMITED,
             )
 
         try:
@@ -208,6 +214,7 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Bitvavo request at {request_url} returned invalid JSON with '
                 f'HTTP status {response.status_code}: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         if response.status_code != HTTPStatus.OK:
@@ -215,10 +222,12 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
                 raise RemoteError(
                     f'Bitvavo request at {request_url} failed with error code '
                     f'{response_data["errorCode"]}: {response_data.get("error")}',
+                    cause=cause_for_status(response.status_code),
                 )
             raise RemoteError(
                 f'Bitvavo request at {request_url} responded with HTTP status '
                 f'{response.status_code}: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         return response_data
@@ -234,30 +243,39 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        """Query the spot balances of the account.
+        """Query the balances of the account, tradeable and locked.
 
-        Each entry splits the balance into what is free (``available``) and what is
-        reserved by open orders (``inOrder``). Both belong to the user, so they are summed.
+        GET /balance splits each tradeable balance into what is free (``available``) and
+        what is reserved by open orders (``inOrder``). GET /stakingBalance reports the
+        ``amount`` locked in Fixed Staking, which /balance leaves out because it cannot be
+        traded. All three belong to the user, so they are summed per asset.
+
+        A failure of either query fails the whole balance query, so that a temporarily
+        unreachable staking endpoint cannot make the locked assets silently disappear
+        from the user's net worth.
         """
         try:
             balances = self._api_query(endpoint='/balance')
+            staked = self._api_query(endpoint='/stakingBalance')
         except RemoteError as e:
             log.error('Failed to query Bitvavo balances due to %s', e)
             return None, f'Failed to query Bitvavo balances due to a remote error: {e!s}'
 
-        if not isinstance(balances, list):
-            msg = f'Bitvavo balance query returned unexpected data: {balances}'
+        if not isinstance(balances, list) or not isinstance(staked, list):
+            msg = f'Bitvavo balance query returned unexpected data: {balances} {staked}'
             log.error(msg)
             return None, msg
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-        for balance in balances:
+        for balance, amount_keys in chain(
+                ((entry, ('available', 'inOrder')) for entry in balances),
+                ((entry, ('amount',)) for entry in staked),
+        ):
             try:
-                amount = (
-                    deserialize_fval(balance['available']) +
-                    deserialize_fval(balance['inOrder'])
-                )
-                if amount == ZERO:
+                if (amount := sum(
+                    (deserialize_fval(balance[key]) for key in amount_keys),
+                    start=ZERO,
+                )) == ZERO:
                     continue
 
                 asset = asset_from_bitvavo(balance['symbol'])
@@ -463,7 +481,7 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
                     f'{msg}. Check logs for details.',
                     BadData(record=UserMessageRecord.HISTORY_EVENT, error=msg),
                 )
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
             page_events: list[HistoryBaseEntry] = []
             for entry in items:
