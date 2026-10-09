@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
+
 const {
   disabled = false,
   selectedCount = 0,
@@ -22,95 +24,71 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div
-    v-if="showSelectionToggle"
-    class="flex gap-3"
-  >
+  <template v-if="showSelectionToggle">
+    <TableSelectionBar
+      v-if="selectionMode"
+      class="grow"
+      :count="selectedCount"
+      exitable
+      @clear="emit('clear-selection')"
+      @exit="emit('toggle-mode')"
+    >
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        :disabled="selectedCount === 0"
+        :title="t('ignore_buttons.ignore_tooltip')"
+        data-testid="account-assets-ignore"
+        @click="emit('ignore', true)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-eye-off"
+            size="16"
+          />
+        </template>
+        {{ t('ignore_buttons.ignore') }}
+      </RuiButton>
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        color="error"
+        :disabled="selectedCount === 0"
+        :title="t('asset_table.mark_spam_tooltip')"
+        data-testid="account-assets-mark-spam"
+        @click="emit('mark-spam')"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-trash-2"
+            size="16"
+          />
+        </template>
+        {{ t('asset_table.mark_spam') }}
+      </RuiButton>
+    </TableSelectionBar>
     <RuiTooltip
+      v-else
       :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
         <RuiButton
           variant="text"
-          size="xl"
           :disabled="disabled"
+          data-testid="account-assets-select"
           @click="emit('toggle-mode')"
         >
           <template #prepend>
-            <RuiIcon name="lu-copy-check" />
-          </template>
-        </RuiButton>
-      </template>
-      <span>{{ selectionMode ? t('account_balances.exit_selection_mode') : t('account_balances.enter_selection_mode') }}</span>
-    </RuiTooltip>
-
-    <template v-if="selectionMode">
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            size="xl"
-            variant="outlined"
-            color="error"
-            :disabled="selectedCount === 0"
-            @click="emit('ignore', true)"
-          >
-            <template #prepend>
-              <RuiIcon
-                name="lu-eye-off"
-              />
-            </template>
-            {{ t('ignore_buttons.ignore') }}
-          </RuiButton>
-        </template>
-        <span>{{ t('ignore_buttons.ignore_tooltip') }}</span>
-      </RuiTooltip>
-      <div class="border-l border-default pl-3">
-        <RuiTooltip
-          :options="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              variant="outlined"
-              color="error"
-              size="xl"
-              :disabled="selectedCount === 0"
-              @click="emit('mark-spam')"
-            >
-              <template #prepend>
-                <RuiIcon
-                  name="lu-trash-2"
-                />
-              </template>
-              {{ t('asset_table.mark_spam') }}
-            </RuiButton>
-          </template>
-          <span>{{ t('asset_table.mark_spam_tooltip') }}</span>
-        </RuiTooltip>
-      </div>
-      <div
-        v-if="selectedCount > 0"
-        class="flex gap-2 items-center text-sm"
-      >
-        {{ t('asset_table.selected', { count: selectedCount }) }}
-        <RuiButton
-          size="sm"
-          class="!py-0 !px-1.5 !gap-0.5 dark:!bg-opacity-30 dark:!text-white"
-          @click="emit('clear-selection')"
-        >
-          <template #prepend>
             <RuiIcon
-              name="lu-x"
-              size="14"
+              name="lu-copy-check"
+              size="18"
             />
           </template>
-          {{ t('common.actions.clear_selection') }}
+          {{ t('common.actions.select') }}
         </RuiButton>
-      </div>
-    </template>
-  </div>
+      </template>
+      {{ t('account_balances.enter_selection_mode') }}
+    </RuiTooltip>
+  </template>
 </template>

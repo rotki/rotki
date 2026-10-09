@@ -81,9 +81,7 @@ const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [{
 }, {
   align: 'end',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 
@@ -103,9 +101,7 @@ const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [{
 }, {
   align: 'end',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 

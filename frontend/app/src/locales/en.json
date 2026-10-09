@@ -44,8 +44,14 @@
     },
     "detect_tokens": {
       "confirmation": {
-        "message": "Are you sure you want to redetect tokens for all chains? It might take some time.",
+        "message": "Scans every EVM address on every chain, which can take a while.",
         "title": "Re-detect tokens for all chains"
+      },
+      "menu": {
+        "all_description": "Scan every EVM address for the tokens it holds",
+        "chains_description": "Pick the chains to scan",
+        "chains_title": "Re-detect tokens on specific chains",
+        "section": "Detect"
       },
       "selection": {
         "redetect": "Re-detect",
@@ -55,10 +61,10 @@
         "type": "Type the chain"
       },
       "tooltip": {
+        "detected": "{count} tokens detected",
         "disabled": "Skipped in Settings → Chains, so rotki does not query it",
         "last_detected": "Last detected: {time}",
-        "redetect": "Re-detect tokens",
-        "redetect_all": "Re-detect tokens for all addresses"
+        "redetect": "Re-detect tokens"
       }
     },
     "detected": {
@@ -66,14 +72,14 @@
       "tooltip": "Account detection added this address on {chains}. Click to dismiss."
     },
     "edit_tooltip": "Edit account",
-    "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
-    "exit_selection_mode": "Exit selection mode",
+    "enter_selection_mode": "Select assets in an expanded account to ignore them or mark them as spam",
     "filter_field_labels": {
       "account": "Account",
       "chain": "Chain"
     },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
+    "row_menu": "More actions for this account",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
       "chain_skipped": "skipped",
@@ -84,7 +90,8 @@
       "resume": "Query this account again on {chains}",
       "resume_all": "Query this chain again | Query all {count} chains again",
       "skip": "Skip balance and history queries for this account on {chains}",
-      "skip_all": "Skip queries on this chain | Skip all {count} chains"
+      "skip_all": "Skip queries on this chain | Skip all {count} chains",
+      "title": "Skip queries"
     }
   },
   "account_form": {
@@ -1839,10 +1846,10 @@
     "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. {link}, or contact us for a custom plan, to raise your limit.",
     "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. {link}, or contact us for a custom plan, to get access.",
     "evm_detection": {
+      "description": "Find your addresses' activity on other EVM chains and add them there",
       "found": "Added on {count} chain | Added on {count} chains",
       "none": "No new chains found",
-      "title": "Detect EVM accounts",
-      "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
+      "title": "Detect EVM accounts"
     },
     "export_blockchain_accounts": "Export blockchain accounts",
     "filter": {
@@ -1869,8 +1876,7 @@
     "validator_index_label": "Ethereum validator No. {index}",
     "validators": {
       "auto_detection_info": "Validators are auto-detected from ETH deposits. Add the depositor address as an Ethereum account, decode its history events, then click refresh to update the list.",
-      "consolidated": "Consolidated into:",
-      "selected": "{count} validator(s) selected"
+      "consolidated": "Consolidated into:"
     }
   },
   "bridge_matching": {
@@ -2054,6 +2060,7 @@
       "delete": "Delete",
       "discard": "Discard",
       "dismiss": "Dismiss",
+      "done": "Done",
       "download": "Download",
       "download_csv": "Download CSV",
       "edit": "Edit",
@@ -2074,6 +2081,7 @@
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
+      "select": "Select",
       "select_all": "Select All",
       "show_less": "Show less",
       "show_more_num": "Show {count} more",
@@ -2366,7 +2374,7 @@
       "behaviour": {
         "only_refresh_balances": "Only refresh balances",
         "redetect_tokens": "Re-detect tokens and refresh balances",
-        "title": "Blockchain refresh button behaviour"
+        "title": "When you press Refresh"
       },
       "categories": {
         "bitcoin": "Bitcoin Address",
@@ -6140,6 +6148,10 @@
       "nothing_to_save": "Add a filter to save it as a view.",
       "title": "Views"
     }
+  },
+  "table_selection": {
+    "count": "{count} selected",
+    "label": "Selection actions"
   },
   "tag_creator": {
     "labels": {

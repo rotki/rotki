@@ -15,7 +15,6 @@ import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/ca
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -63,7 +62,6 @@ const debouncedSearch = refDebounced(search, 200);
 
 const { getAssetInfo } = useAssetSelectInfo();
 const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances, debouncedSearch);
-const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { isTotalPending, isValuePending } = useValuePending();
@@ -104,9 +102,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     align: 'end',
     cellClass: nested ? 'py-0 text-rui-text-secondary' : 'py-0',
     key: 'price',
-    label: nested
-      ? t('common.price')
-      : t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.price'),
     sortable: true,
   }, {
     align: 'end',
@@ -119,9 +115,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     cellClass: nested ? 'py-0 font-medium' : 'py-0',
     class: 'text-no-wrap',
     key: 'value',
-    label: nested
-      ? t('common.value')
-      : t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   }];
 

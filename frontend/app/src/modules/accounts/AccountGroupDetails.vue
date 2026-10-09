@@ -14,20 +14,16 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div
-    v-if="isXpub"
-    class="my-2"
-  >
+  <!-- the expanded cell insets its content evenly, so the content carries no outer margin -->
+  <div v-if="isXpub">
     <slot name="per-chain" />
   </div>
-  <div
-    v-else
-    class="rounded-xl my-2"
-  >
+  <div v-else>
     <RuiTabs
       v-model="tab"
       color="primary"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
+      variant="segmented"
+      class="mb-4"
     >
       <RuiTab>{{ t('account_balances.aggregated_assets') }}</RuiTab>
       <RuiTab>{{ t('account_balances.per_chain') }}</RuiTab>

@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { Blockchain } from '@rotki/common';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
+import EvmAccountsRefreshMenu from '@/modules/accounts/EvmAccountsRefreshMenu.vue';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -20,6 +19,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const menuOpen = ref<boolean>(false);
 
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
 const { useIsActive, useIsActivePrefix } = useTaskCenter();
@@ -38,7 +39,6 @@ const isEth2Loading = logicOr(
     v-if="isAccountsTabSelected"
     variant="outlined"
     color="primary"
-    size="lg"
   >
     <RuiButton
       :disabled="refreshDisabled"
@@ -50,14 +50,17 @@ const isEth2Loading = logicOr(
       </template>
       {{ t('common.refresh') }}
     </RuiButton>
-    <RuiMenu>
+    <RuiMenu
+      v-model="menuOpen"
+      :options="{ placement: 'bottom-end' }"
+      :class-names="{ root: 'flex' }"
+    >
       <template #activator="{ attrs }">
         <RuiButton
           v-bind="{
             ...attrs,
             'data-testid': 'blockchain-account-refresh',
           }"
-          size="lg"
           color="primary"
           variant="outlined"
           class="outline-0! px-2"
@@ -66,7 +69,11 @@ const isEth2Loading = logicOr(
         </RuiButton>
       </template>
 
-      <BlockchainBalanceRefreshBehaviourMenu />
+      <!-- mounted per opening, so it always starts on its entries rather than a half-finished step -->
+      <EvmAccountsRefreshMenu
+        v-if="menuOpen"
+        @close="menuOpen = false"
+      />
     </RuiMenu>
   </RuiButtonGroup>
 
@@ -74,7 +81,6 @@ const isEth2Loading = logicOr(
     v-else
     color="primary"
     variant="outlined"
-    size="lg"
     :loading="isEth2Loading"
     @click="emit('refresh')"
   >
@@ -92,7 +98,6 @@ const isEth2Loading = logicOr(
       <RuiButton
         data-testid="add-blockchain-account"
         color="primary"
-        size="lg"
         :disabled="addDisabled"
         @click="emit('add-account')"
       >

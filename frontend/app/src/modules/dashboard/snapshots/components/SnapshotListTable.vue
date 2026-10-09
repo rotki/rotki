@@ -3,7 +3,6 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
@@ -28,8 +27,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const currencySymbol = useSetting('currencySymbol');
-
 /**
  * Builds the snapshot table columns.
  *
@@ -47,7 +44,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   {
     align: 'end',
     key: 'usdValue',
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   },
   {

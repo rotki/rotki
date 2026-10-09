@@ -56,8 +56,7 @@
       "tooltip": {
         "disabled": "已在 设置 → 链 中跳过，rotki 不会查询该链",
         "last_detected": "上次检测：{time}",
-        "redetect": "重新检测代币",
-        "redetect_all": "重新检测所有地址的代币"
+        "redetect": "重新检测代币"
       }
     },
     "detected": {
@@ -66,7 +65,6 @@
     },
     "edit_tooltip": "编辑账户",
     "enter_selection_mode": "进入选择模式，批量忽略资产或标记为垃圾资产",
-    "exit_selection_mode": "退出选择模式",
     "filter_field_labels": {
       "account": "账户",
       "chain": "链"
@@ -1819,8 +1817,7 @@
     "evm_detection": {
       "found": "已在 {count} 条链上添加 | 已在 {count} 条链上添加",
       "none": "未发现新链",
-      "title": "检测 EVM 账户",
-      "tooltip": "检测所有已登记 EVM 账户在其他 EVM 链上的活动，并进行登记。"
+      "title": "检测 EVM 账户"
     },
     "export_blockchain_accounts": "导出区块链账户",
     "filter": {
@@ -1847,8 +1844,7 @@
     "validator_index_label": "以太坊验证者 No. {index}",
     "validators": {
       "auto_detection_info": "验证者会根据 ETH 质押存入自动检测。请将存入地址添加为以太坊账户，解码其历史事件，然后点击刷新以更新列表。",
-      "consolidated": "已合并至：",
-      "selected": "已选择 {count} 个验证者"
+      "consolidated": "已合并至："
     }
   },
   "bridge_matching": {

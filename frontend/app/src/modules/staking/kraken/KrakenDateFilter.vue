@@ -39,14 +39,8 @@ const matches = computed<MatchedKeywordWithBehaviour<string>>({
 </script>
 
 <template>
-  <!--
-    The bar draws a border but no surface of its own: everywhere else it sits inside a card, which
-    is what makes it read as a white input. Here it sits straight on the page background, so it
-    brings the surface its own pills already assume.
-  -->
   <PillFilterBar
     v-model:matches="matches"
-    class="bg-white dark:bg-rui-grey-900"
     :fields="fields"
     :labels="pillLabels"
   />

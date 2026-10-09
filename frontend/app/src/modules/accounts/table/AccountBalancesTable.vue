@@ -32,10 +32,12 @@ const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expandedIds = defineModel<string[]>('expandedIds', { required: true });
 
-const { accounts, category, group } = defineProps<{
+const { accounts, category, framed = false, group } = defineProps<{
   accounts: Collection<T>;
   category: string;
   group?: 'evm' | 'xpub';
+  /** Sits in a TableFrame, which draws the border, so the table leaves its own outline off. */
+  framed?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -66,7 +68,7 @@ const {
 
 const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
-const { confirmDelete, edit } = useAccountOperations<T>({
+const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
   onRefresh: () => emit('refresh'),
 });
@@ -100,7 +102,7 @@ defineExpose({
     :loading-text="t('account_balances.data_table.loading')"
     data-testid="account-table"
     single-expand
-    outlined
+    :outlined="!framed"
     sticky-header
     dense
   >
@@ -145,7 +147,7 @@ defineExpose({
         :account-operation="accountOperation"
         :is-section-loading="isSectionLoading"
         @edit="edit(group, row)"
-        @delete="confirmDelete($event)"
+        @delete="deleteAccount($event)"
       />
     </template>
     <template

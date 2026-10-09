@@ -1,14 +1,12 @@
 <script setup lang="ts">
 const { hideHeader, child, title } = defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>();
 
-const slots = defineSlots<{
+defineSlots<{
   default?: () => unknown;
   title?: () => unknown;
   buttons?: () => unknown;
   tabs?: () => unknown;
 }>();
-
-const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
 
 const lastTitleIndex = computed<number>(() => (title?.length ?? 0) - 1);
 </script>
@@ -42,7 +40,7 @@ const lastTitleIndex = computed<number>(() => (title?.length ?? 0) - 1);
               </span>
               <span
                 v-else
-                class="bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-text-secondary rounded-md px-2 py-1"
+                class="text-rui-text"
               >
                 {{ item }}
               </span>
@@ -53,10 +51,8 @@ const lastTitleIndex = computed<number>(() => (title?.length ?? 0) - 1);
         <slot name="buttons" />
       </div>
       <slot name="tabs" />
-      <div
-        class="flex flex-col gap-4"
-        :class="{ '-mt-2': hasTabs }"
-      >
+      <!-- the same 16px gap under tabs as everywhere else in the stack -->
+      <div class="flex flex-col gap-4">
         <slot />
       </div>
     </div>

@@ -18,7 +18,6 @@ import {
   type IndexedBalanceSnapshot,
   useSnapshotBalanceRows,
 } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
-import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 /**
@@ -43,8 +42,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
-
-const currencySymbol = useSetting('currencySymbol');
 
 const sort = ref<DataTableSortData<BalanceSnapshot>>({
   column: 'usdValue',
@@ -105,7 +102,7 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
   {
     align: 'end',
     key: 'usdValue',
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   },
   {

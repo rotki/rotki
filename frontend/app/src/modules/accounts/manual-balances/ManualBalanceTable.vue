@@ -15,7 +15,6 @@ import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -35,7 +34,6 @@ const tags = ref<string[]>([]);
 
 const { pillParams, source: tagsSource } = manualBalanceTagsParams(tags);
 
-const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
@@ -95,9 +93,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
 }, {
   align: 'end',
   key: 'price',
-  label: t('common.price_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.price'),
   sortable: true,
 }, {
   align: 'end',
@@ -107,9 +103,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
 }, {
   align: 'end',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }, {
   align: 'end',

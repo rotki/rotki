@@ -7,7 +7,6 @@ import { getGroupId } from '@/modules/accounts/account-utils';
 import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelectionActions.vue';
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
 import AccountExpandedRowContent from '@/modules/accounts/AccountExpandedRowContent.vue';
-import AccountTokenDetectionControls from '@/modules/accounts/AccountTokenDetectionControls.vue';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useAccountAssetSelection } from '@/modules/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/modules/accounts/use-account-balances-pagination';
@@ -16,6 +15,7 @@ import { useAccountCategoryHelper } from '@/modules/accounts/use-account-categor
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 
 const { category } = defineProps<{
   category: string;
@@ -53,7 +53,7 @@ const {
   visibleTags,
 });
 
-const { isLoadingActive, isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(() => category);
+const { isLoadingActive } = useBlockchainAccountLoading(() => category);
 
 const { chainIds, isEvm } = useAccountCategoryHelper(() => category);
 
@@ -104,8 +104,8 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard data-testid="account-balances">
-    <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
+  <TableFrame data-testid="account-balances">
+    <template #toolbar>
       <AccountAssetSelectionActions
         :selected-count="selectedAssets?.length"
         :selection-mode="selectionMode"
@@ -117,17 +117,8 @@ defineExpose({
         @toggle-mode="toggleSelectionMode()"
       />
 
+      <!-- token and account detection live in the page's Refresh menu, so the bar holds selection and filters -->
       <template v-if="!showSelectionToggle || !selectionMode">
-        <AccountTokenDetectionControls
-          v-if="isEvm"
-          :is-detecting-tokens="isDetectingTokens"
-          :refresh-disabled="refreshDisabled"
-        />
-        <div
-          v-else
-          class="flex-1 hidden lg:block"
-        />
-
         <AccountBalancesFilterBar
           v-model:visible-tags="visibleTags"
           v-model:addresses="addresses"
@@ -135,7 +126,7 @@ defineExpose({
           :category="category"
         />
       </template>
-    </div>
+    </template>
 
     <AccountBalancesTable
       v-model:pagination="pagination"
@@ -144,8 +135,8 @@ defineExpose({
       v-model:expanded-ids="expanded"
       :data-category="category"
       :category="category"
-      class="mt-4"
-      :class="{ '[&_button[class*=_expander_]]:!animate-pulse-highlight': expanded.length === 0 && selectionMode }"
+      framed
+      :class="{ '[&_[data-id=expand-button]]:animate-pulse-highlight!': expanded.length === 0 && selectionMode }"
       group="evm"
       :accounts="accounts"
       @edit="emit('edit', $event)"
@@ -165,5 +156,5 @@ defineExpose({
         />
       </template>
     </AccountBalancesTable>
-  </RuiCard>
+  </TableFrame>
 </template>

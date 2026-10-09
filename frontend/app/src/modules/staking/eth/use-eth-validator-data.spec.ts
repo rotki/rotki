@@ -108,11 +108,12 @@ describe('useEthValidatorData', () => {
     ]);
   });
 
-  it('should label the value column with the current currency symbol', () => {
+  /** The value cells carry the currency symbol, so the header leaves it out. */
+  it('should label the value column without the currency', () => {
     set(mockCurrencySymbol, 'EUR');
     const { cols } = create();
     const valueCol = get(cols).find(col => col.key === 'value');
-    expect(valueCol?.label).toBe('common.value_in_symbol:EUR');
+    expect(valueCol?.label).toBe('common.value');
   });
 
   it('should mark all columns except ownership and actions as sortable', () => {

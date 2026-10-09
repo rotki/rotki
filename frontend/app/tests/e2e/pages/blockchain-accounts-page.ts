@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 import { BigNumber, Blockchain } from '@rotki/common';
 import { waitForNoRunningTasks } from '../helpers/api';
 import { TIMEOUT_LONG, TIMEOUT_VERY_LONG } from '../helpers/constants';
-import { confirmDialog, updateLocationBalance } from '../helpers/utils';
+import { updateLocationBalance } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 export class BlockchainAccountsPage {
@@ -84,16 +84,14 @@ export class BlockchainAccountsPage {
     await editDialog.waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
-  async confirmDelete(): Promise<void> {
-    await confirmDialog(this.page, 'Account delete');
-  }
-
   /**
    * Deletes the account at the given row position and waits for the table to shrink.
    *
    * @remarks
+   * Delete sits in the row's actions menu and asks inline before it runs. The menu renders in an
+   * overlay outside the row, so its entries are found on the page; only one menu is open at a time.
    * The drop in count is the settle signal: the delete is only complete once one account has gone,
-   * and neither the dialog closing nor the progress bar detaching proves that. Address displays are
+   * and neither the menu closing nor the progress bar detaching proves that. Address displays are
    * counted rather than `tr` elements, since there is exactly one per account and no row markup
    * that could stand for something else.
    */
@@ -102,8 +100,9 @@ export class BlockchainAccountsPage {
     const initialCount = await accountAddresses.count();
 
     const rows = this.page.locator('[data-testid=account-table] tbody tr[data-id="row"]');
-    await rows.nth(position).locator('button[data-testid=row-delete]').click();
-    await this.confirmDelete();
+    await rows.nth(position).locator('button[data-testid=account-row-menu]').click();
+    await this.page.locator('button[data-testid=row-delete]').click();
+    await this.page.locator('button[data-testid=row-delete-confirm-run]').click();
 
     const blockchainSection = this.page.locator('[data-testid=account-table]');
     await blockchainSection.waitFor({ state: 'attached', timeout: TIMEOUT_LONG });

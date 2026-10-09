@@ -6,7 +6,6 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { sum } from '@/modules/core/common/display/balances';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useSetting } from '@/modules/settings/use-setting';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 interface AccountAssetBalancesProps {
@@ -27,8 +26,6 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const currencySymbol = useSetting('currencySymbol');
-
 const totalValue = computed<BigNumber>(() => sum(assets));
 
 const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
@@ -48,9 +45,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'py-1',
   class: 'text-no-wrap',
   key: 'price',
-  label: t('common.price_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.price'),
   sortable: true,
 }, {
   align: 'end',
@@ -64,9 +59,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'py-1',
   class: 'text-no-wrap',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 

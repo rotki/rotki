@@ -126,7 +126,7 @@ watchImmediate(route, (route) => {
     <template #tabs>
       <RuiTabs
         color="primary"
-        class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+        variant="segmented"
       >
         <RuiTab
           link

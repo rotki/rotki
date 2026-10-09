@@ -31,8 +31,7 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Dernière détection : {time}",
-        "redetect": "Redétecter les tokens",
-        "redetect_all": "Redétecter les tokens pour toutes les adresses"
+        "redetect": "Redétecter les tokens"
       }
     },
     "edit_tooltip": "Modifier le compte",
@@ -859,8 +858,7 @@
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
     "evm_detection": {
-      "title": "Détecter les comptes EVM",
-      "tooltip": "Détecter les activités de tous les comptes EVM enregistrés dans d'autres chaînes EVM, et les enregistrer."
+      "title": "Détecter les comptes EVM"
     },
     "form_dialog": {
       "add_title": "Ajouter un compte blockchain",

@@ -21,6 +21,12 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   })),
 }));
 
+vi.mock('@/modules/accounts/blockchain/use-account-delete', () => ({
+  useAccountDelete: vi.fn(() => ({
+    describeDeletion: (): string => 'what deleting removes',
+  })),
+}));
+
 describe('modules/accounts/table/components/table/AccountActions', () => {
   let wrapper: VueWrapper;
   let pinia: Pinia;
@@ -84,6 +90,8 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
           AccountSkipQueriesToggle: true,
           RuiButton: true,
           RuiIcon: true,
+          // the row's upkeep sits in a menu; rendered open here so its entries can be inspected
+          RuiMenu: { template: '<div><slot name="activator" v-bind="{ attrs: {} }" /><slot /></div>' },
           RuiProgress: true,
           RuiTooltip: true,
           TokenDetection: true,
@@ -253,8 +261,17 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         row,
       });
 
-      const rowActions = wrapper.findComponent({ name: 'RowActions' });
-      await rowActions.vm.$emit('delete-click');
+      const button = (testId: string): VueWrapper | undefined => wrapper.findAllComponents({ name: 'RuiButton' })
+        .find(candidate => candidate.attributes('data-testid') === testId);
+
+      // the first click only asks, inline in the menu, saying what the delete removes
+      button('row-delete')!.vm.$emit('click');
+      await nextTick();
+      expect(wrapper.emitted('delete')).toBeUndefined();
+      expect(wrapper.find('[data-testid=row-delete-confirm]').text()).toContain('what deleting removes');
+
+      button('row-delete-confirm-run')!.vm.$emit('click');
+      await nextTick();
 
       const deleteEvents = wrapper.emitted('delete');
       expect(deleteEvents).toBeDefined();

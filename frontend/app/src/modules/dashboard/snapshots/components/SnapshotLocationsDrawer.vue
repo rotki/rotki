@@ -11,7 +11,6 @@ import { approxEqualUsd, type LocationSplit } from '@/modules/dashboard/snapshot
 import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
@@ -33,7 +32,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const currencySymbol = useSetting('currencySymbol');
 const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({
@@ -82,7 +80,7 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
   {
     align: 'end',
     key: 'usdValue',
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   },
   {

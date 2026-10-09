@@ -14,6 +14,8 @@ interface AccountOperationCallbacks {
 
 interface UseAccountOperationsReturn<T extends BlockchainAccountBalance> {
   confirmDelete: (item: AccountDataRow<T>) => void;
+  /** Deletes a row the user already confirmed, inline in its actions menu. */
+  deleteAccount: (item: AccountDataRow<T>) => Promise<void>;
   edit: (group: string | undefined, row: AccountDataRow<T>) => Promise<void>;
   handleXpubChildEdit: (row: AccountDataRow<T>) => Promise<void>;
   showConfirmation: (params: ShowConfirmationParams) => void;
@@ -22,7 +24,7 @@ interface UseAccountOperationsReturn<T extends BlockchainAccountBalance> {
 export function useAccountOperations<T extends BlockchainAccountBalance>(
   callbacks: AccountOperationCallbacks,
 ): UseAccountOperationsReturn<T> {
-  const { showConfirmation } = useAccountDelete();
+  const { deleteConfirmed, showConfirmation } = useAccountDelete();
   const { showGlobalDialog } = useAddressBookForm();
   const { getAddressesNames } = useAddressesNamesApi();
 
@@ -36,6 +38,12 @@ export function useAccountOperations<T extends BlockchainAccountBalance>(
         callbacks.onRefresh();
       },
     );
+  }
+
+  async function deleteAccount(item: AccountDataRow<T>): Promise<void> {
+    await deleteConfirmed({ data: item, type: 'account' }, () => {
+      callbacks.onRefresh();
+    });
   }
 
   async function handleXpubChildEdit(row: AccountDataRow<T>): Promise<void> {
@@ -72,6 +80,7 @@ export function useAccountOperations<T extends BlockchainAccountBalance>(
 
   return {
     confirmDelete,
+    deleteAccount,
     edit,
     handleXpubChildEdit,
     showConfirmation,
