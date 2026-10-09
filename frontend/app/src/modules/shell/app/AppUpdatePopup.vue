@@ -61,7 +61,7 @@ async function install() {
     v-if="isPackaged"
     :model-value="showUpdatePopup"
     :timeout="-1"
-    class="top-[3.5rem] text-rui-text !bg-transparent"
+    class="top-14 text-rui-text bg-transparent!"
     width="380px"
   >
     <RuiCard rounded="md">

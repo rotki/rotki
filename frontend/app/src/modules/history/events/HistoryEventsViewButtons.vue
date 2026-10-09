@@ -28,7 +28,7 @@ const menuOpen = ref<boolean>(false);
   <RuiButton
     color="primary"
     size="lg"
-    class="[&>span]:!hidden lg:[&>span]:!inline"
+    class="[&>span]:hidden! lg:[&>span]:inline!"
     data-testid="history-events-add"
     @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
@@ -41,7 +41,7 @@ const menuOpen = ref<boolean>(false);
   <RuiMenu
     v-model="menuOpen"
     :options="{ placement: 'bottom-end' }"
-    :class-names="{ menu: 'max-w-[24rem]' }"
+    :class-names="{ menu: 'max-w-96' }"
     close-on-content-click
   >
     <template #activator="{ attrs }">

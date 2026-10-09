@@ -44,7 +44,7 @@ watch(
     intercepts each child's `update:model-value` as a button-selection event
     and injects `active`/`color`/`size` props into the menu's VNode, which
     destabilised its open state. Here the two buttons share a visual seam
-    via `!rounded-r-none` / `!rounded-l-none` + `-ml-px`.
+    via `rounded-r-none!` / `rounded-l-none!` + `-ml-px`.
 
     The menu stays `persistent` so that interacting with the nested
     DateTimePicker (which teleports its own time/date overlays outside this
@@ -58,7 +58,7 @@ watch(
       color="primary"
       variant="outlined"
       size="xl"
-      class="!rounded-r-none"
+      class="rounded-r-none!"
       :disabled="alreadyOnToday"
       data-testid="calendar-today"
       @click="emit('set-today')"
@@ -75,7 +75,7 @@ watch(
           variant="outlined"
           icon
           size="xl"
-          class="!rounded-l-none -ml-px !rounded"
+          class="rounded-l-none! -ml-px rounded-sm!"
           v-bind="attrs"
         >
           <RuiIcon name="lu-chevron-down" />
@@ -89,7 +89,7 @@ watch(
         <DateTimePicker
           v-model="datetime"
           variant="outlined"
-          class="w-[16rem] [&_fieldset]:!rounded-r-none"
+          class="w-64 [&_fieldset]:rounded-r-none!"
           type="epoch"
           dense
           :label="t('calendar.go_to_date')"
@@ -97,7 +97,7 @@ watch(
         />
         <RuiButton
           color="primary"
-          class="!rounded-l-none !p-2 !py-2.5"
+          class="rounded-l-none! p-2! py-2.5!"
           @click="goToSelectedDate()"
         >
           <RuiIcon

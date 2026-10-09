@@ -84,7 +84,7 @@ function close() {
   <RuiCard
     no-padding
     class="overflow-hidden flex flex-col"
-    :class="isPinned ? 'h-full !rounded-none' : 'max-h-[90vh]'"
+    :class="isPinned ? 'h-full rounded-none!' : 'max-h-[90vh]'"
     :class-names="{ content: 'flex flex-col flex-1 min-h-0 overflow-hidden' }"
     variant="flat"
   >

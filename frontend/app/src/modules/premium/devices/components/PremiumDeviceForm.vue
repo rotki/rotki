@@ -72,7 +72,7 @@ defineExpose({
       >
         <div class="mx-4 py-4 border-b border-default">
           <div class="flex gap-4 items-center">
-            <span class="font-medium w-[9rem]">
+            <span class="font-medium w-36">
               {{ t('premium_devices.form.info.user') }}
             </span>
             <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
@@ -82,7 +82,7 @@ defineExpose({
         </div>
         <div class="mx-4 py-4 border-b border-default">
           <div class="flex gap-4 items-center">
-            <span class="font-medium w-[9rem]">
+            <span class="font-medium w-36">
               {{ t('premium_devices.form.info.platform') }}
             </span>
             <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
@@ -92,7 +92,7 @@ defineExpose({
         </div>
         <div class="mx-4 py-4">
           <div class="flex gap-4 items-center">
-            <span class="font-medium w-[9rem]">
+            <span class="font-medium w-36">
               {{ t('premium_devices.form.info.last_seen') }}
             </span>
             <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">

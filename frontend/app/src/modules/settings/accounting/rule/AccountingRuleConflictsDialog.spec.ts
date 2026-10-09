@@ -227,7 +227,7 @@ describe('accountingRuleConflictsDialog', () => {
    * update would change without reading every row.
    */
   describe('highlighting the differences', () => {
-    const highlight = 'bg-rui-error-lighter/[0.1]';
+    const highlight = 'bg-rui-error-lighter/10';
 
     beforeEach(() => {
       set(modelSolveAllUsing, 'local');

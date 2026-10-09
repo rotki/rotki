@@ -78,24 +78,24 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
   baseColumns.push(
     {
       align: 'center',
-      class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
+      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'taxable',
       label: t('accounting_settings.rule.labels.taxable'),
     },
     {
       align: 'center',
-      class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
+      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'countEntireAmountSpend',
       label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     },
     {
       align: 'center',
-      class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
+      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'countCostBasisPnl',
       label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     },
     {
-      class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
+      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'accountingTreatment',
       label: t('accounting_settings.rule.labels.accounting_treatment'),
     },
@@ -143,7 +143,7 @@ function openEventsDialog(eventIds: number[]) {
         :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center h-full"
-        :class-names="{ tooltip: 'max-w-[10rem]' }"
+        :class-names="{ tooltip: 'max-w-40' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">
@@ -163,7 +163,7 @@ function openEventsDialog(eventIds: number[]) {
         :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
-        :class-names="{ tooltip: 'max-w-[10rem]' }"
+        :class-names="{ tooltip: 'max-w-40' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">
@@ -183,7 +183,7 @@ function openEventsDialog(eventIds: number[]) {
         :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
-        :class-names="{ tooltip: 'max-w-[10rem]' }"
+        :class-names="{ tooltip: 'max-w-40' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">
@@ -199,7 +199,7 @@ function openEventsDialog(eventIds: number[]) {
       </RuiTooltip>
     </template>
     <template #header.accountingTreatment>
-      <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
+      <div class="max-w-20 text-sm whitespace-normal font-medium">
         {{ t('accounting_settings.rule.labels.accounting_treatment') }}
       </div>
     </template>

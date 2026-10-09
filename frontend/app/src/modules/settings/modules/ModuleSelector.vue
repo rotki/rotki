@@ -175,7 +175,7 @@ onMounted(async () => {
         v-model="search"
         variant="outlined"
         color="primary"
-        class="min-w-[20rem] flex-1"
+        class="min-w-80 flex-1"
         :label="t('module_selector.filter')"
         clearable
         hide-details
@@ -186,7 +186,7 @@ onMounted(async () => {
         <RuiButton
           color="primary"
           :loading="loading"
-          class="!py-2"
+          class="py-2!"
           data-testid="modules_enable_all"
           @click="enableAll()"
         >
@@ -197,7 +197,7 @@ onMounted(async () => {
           color="primary"
           variant="outlined"
           :loading="loading"
-          class="!py-2"
+          class="py-2!"
           data-testid="modules_disable_all"
           @click="disableAll()"
         >
@@ -233,7 +233,7 @@ onMounted(async () => {
           placement="center"
           size="sm"
           variant="outlined"
-          class="!h-5 !bg-rui-primary-lighter/[0.1] font-medium"
+          class="h-5! bg-rui-primary-lighter/10! font-medium"
         >
           {{ selected(row.identifier) }}
         </RuiChip>

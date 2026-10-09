@@ -10,7 +10,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 </script>
 
 <template>
-  <RuiCard :class-names="{ content: '-mx-3 !pt-0' }">
+  <RuiCard :class-names="{ content: '-mx-3 pt-0!' }">
     <template #header>
       <div class="pt-2">
         {{ t('premium_components.statistics.asset_amount_and_value_over_time') }}
@@ -18,7 +18,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
     </template>
     <div class="relative">
       <AppImage
-        class="dark:invert-[0.88] dark:hue-rotate-[180deg] -m-2"
+        class="dark:invert-[0.88] dark:hue-rotate-180 -m-2"
         :src="getPublicPlaceholderImagePath('asset_amount_and_value_partial.png')"
       />
 

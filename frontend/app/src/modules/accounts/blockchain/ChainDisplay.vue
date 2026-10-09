@@ -32,7 +32,7 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
     :title="name"
     no-padding
     no-hover
-    class="!py-0"
+    class="py-0!"
     :blur-content="!shouldShowAmount"
   >
     <template #avatar>

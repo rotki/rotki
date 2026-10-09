@@ -87,7 +87,7 @@ onBeforeMount(loadProfiles);
           </h4>
           <div class="w-full">
             <RuiTabItems
-              class="!overflow-visible"
+              class="overflow-visible!"
               :model-value="step - 1"
             >
               <RuiTabItem>

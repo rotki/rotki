@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="outlined"
         icon
         color="primary"
-        class="!px-2 h-[30px]"
+        class="px-2! h-[30px]"
         @click="emit('click')"
       >
         <RuiIcon

@@ -120,7 +120,7 @@ defineExpose({
     <template #item.tags="{ row }">
       <TagDisplay
         :tags="row.tags"
-        class="!mt-0"
+        class="mt-0!"
         small
       />
     </template>

@@ -96,7 +96,7 @@ defineExpose({
       <RuiCard
         rounded="sm"
         class="w-32 items-center justify-center relative"
-        :class-names="{ content: '!p-6' }"
+        :class-names="{ content: 'p-6!' }"
       >
         <RuiTooltip
           v-if="preview && refreshable"

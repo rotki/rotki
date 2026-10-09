@@ -77,13 +77,13 @@ function redecode() {
 <template>
   <RuiMenu
     v-model="open"
-    class="!border-0"
+    class="border-0!"
     :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <RuiButton
         color="primary"
-        class="px-3 py-3 rounded-l-none -ml-[1px] border-l border-rui-primary-darker disabled:border-rui-grey-200 disabled:dark:border-rui-grey-800"
+        class="px-3 py-3 rounded-l-none -ml-px border-l border-rui-primary-darker disabled:border-rui-grey-200 dark:disabled:border-rui-grey-800"
         :disabled="disabled"
         v-bind="attrs"
       >
@@ -163,7 +163,7 @@ function redecode() {
       <RuiButton
         variant="text"
         size="sm"
-        class="w-full !justify-start"
+        class="w-full justify-start!"
         @click="emit('redecode', { type: 'page' }); reset()"
       >
         <template #prepend>

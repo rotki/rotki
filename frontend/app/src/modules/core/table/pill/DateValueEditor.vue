@@ -127,7 +127,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
   <!-- Escape is handled here rather than on each picker: the handler has to sit above both of them
        and below the menu popover to be able to keep the key from reaching it. -->
   <div
-    class="flex flex-col gap-3 p-3 min-w-[16rem]"
+    class="flex flex-col gap-3 p-3 min-w-64"
     @keydown.esc="onEscape($event)"
   >
     <!-- A little more space under the chips than between the fields, so the operator reads as

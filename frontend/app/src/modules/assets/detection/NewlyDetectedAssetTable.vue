@@ -150,7 +150,7 @@ onMounted(async () => {
   <TablePageLayout
     child
     hide-header
-    class="lg:!-mt-5"
+    class="lg:-mt-5!"
   >
     <RuiCard>
       <template #custom-header>

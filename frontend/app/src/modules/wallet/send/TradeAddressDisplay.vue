@@ -38,7 +38,7 @@ const aliasName = computed<string | undefined>(() => {
     <div class="flex flex-col">
       <div
         class="font-mono text-rui-text-secondary text-sm"
-        :class="{ '!text-xs': dense }"
+        :class="{ 'text-xs!': dense }"
       >
         {{ address }}
       </div>

@@ -70,7 +70,7 @@ defineExpose({ resetZoom });
   >
     <VChart
       ref="chartInstance"
-      class="flex-grow w-full h-[18rem]"
+      class="grow w-full h-72!"
       :option="chartOption"
       :update-options="{ notMerge: false }"
       autoresize

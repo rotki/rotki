@@ -47,7 +47,7 @@ onBeforeMount(async () => {
 
 <template>
   <RuiMenu
-    :class-names="{ menu: 'max-w-[16rem] w-[16rem] [&>div]:p-4' }"
+    :class-names="{ menu: 'max-w-64 w-64 [&>div]:p-4' }"
     :options="{ placement: 'right-end' }"
   >
     <template #activator="{ attrs }">

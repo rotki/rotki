@@ -21,16 +21,16 @@ const menuOpen = ref<boolean>(false);
  * The mockup's icon affordance: a bordered, rounded 30px box rather than a bare glyph.
  * Every button on the line shares that height so the row reads as one control strip.
  */
-const ICON_BUTTON_CLASS = '!w-[30px] !h-[30px] !p-0 !rounded-lg shrink-0';
+const ICON_BUTTON_CLASS = 'w-[30px]! h-[30px]! p-0! rounded-lg! shrink-0';
 
 /**
  * Neutral actions take the divider colour; the outlined default is near-black and too
  * heavy next to the tinted buttons. `border-default` is a ui-library stylesheet class,
  * not a Tailwind utility here, so the shades it maps to are spelled out instead.
  */
-const NEUTRAL_BORDER_CLASS = '!border-rui-grey-300 dark:!border-rui-grey-700 !text-rui-text-secondary';
+const NEUTRAL_BORDER_CLASS = 'border-rui-grey-300! dark:border-rui-grey-700! text-rui-text-secondary!';
 
-const LABELLED_BUTTON_CLASS = '!h-[30px] !py-0';
+const LABELLED_BUTTON_CLASS = 'h-[30px]! py-0!';
 
 const isCard = computed<boolean>(() => layout === UNMATCHED_LAYOUTS.CARD);
 
@@ -305,7 +305,7 @@ function accept(): void {
           variant="outlined"
           icon
           color="primary"
-          class="!px-2 h-[30px]"
+          class="px-2! h-[30px]"
           :aria-label="spec.labels.showInEventsTooltip"
           data-testid="unmatched-action-show-in-events"
           @click="request(UNMATCHED_ACTIONS.SHOW_IN_EVENTS)"

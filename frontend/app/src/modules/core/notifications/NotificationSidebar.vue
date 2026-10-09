@@ -95,7 +95,7 @@ const {
               v-for="item in TAB_ORDER"
               :key="item"
               size="sm"
-              class="!min-w-0"
+              class="min-w-0!"
               :value="item"
             >
               {{ tabCategoriesLabel[item] }}
@@ -105,7 +105,7 @@ const {
         <div
           v-if="selectedNotifications.length > 0"
           ref="contentWrapper"
-          class="ps-3.5 pe-2 mt-2 flex flex-col gap-2 !overflow-y-auto"
+          class="ps-3.5 pe-2 mt-2 flex flex-col gap-2 overflow-y-auto!"
         >
           <LazyLoader
             v-for="item in selectedNotifications"

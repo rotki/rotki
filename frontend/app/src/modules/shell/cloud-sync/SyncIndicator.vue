@@ -47,7 +47,7 @@ const {
     <RuiMenu
       id="balances-saved-dropdown"
       v-model="modelVisible"
-      :class-names="{ menu: 'z-[215]' }"
+      :class-names="{ menu: 'z-215' }"
       :persistent="modelSyncSettingMenuOpen"
     >
       <template #activator="{ attrs }">
@@ -100,7 +100,7 @@ const {
           </RuiBadge>
         </MenuTooltipButton>
       </template>
-      <div class="p-4 w-[20rem] max-w-[calc(100vw-1rem)] flex flex-col gap-4">
+      <div class="p-4 w-80 max-w-[calc(100vw-1rem)] flex flex-col gap-4">
         <div class="flex items-start justify-between">
           <div>
             <div class="font-medium">

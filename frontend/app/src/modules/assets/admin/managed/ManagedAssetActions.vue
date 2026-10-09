@@ -63,7 +63,7 @@ function handleMarkSpam(): void {
         >
           <template #activator>
             <RuiButton
-              class="min-w-[5.625rem]"
+              class="min-w-22.5"
               variant="outlined"
               color="error"
               :disabled="selected.length === 0 || spamDisabled"
@@ -88,7 +88,7 @@ function handleMarkSpam(): void {
         {{ t('asset_table.selected', { count: selected.length }) }}
         <RuiButton
           size="sm"
-          class="!py-0 !px-1.5 !gap-0.5 dark:!bg-opacity-30 dark:!text-white"
+          class="py-0! px-1.5! gap-0.5! dark:!bg-opacity-30 dark:text-white!"
           @click="clearSelection()"
         >
           <template #prepend>
@@ -105,7 +105,7 @@ function handleMarkSpam(): void {
     <PillFilterBar
       v-model:matches="filtersModel"
       v-model:params="pillParams"
-      class="flex-1 min-w-[12rem] lg:min-w-[24rem]"
+      class="flex-1 min-w-48 lg:min-w-96"
       :fields="fields"
       :labels="pillLabels"
     />

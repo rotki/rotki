@@ -24,7 +24,7 @@ const { currentTier, premium } = usePremiumHelper();
       </div>
     </div>
     <div class="pb-6">
-      <div class="text-h6 !leading-7 mb-1">
+      <div class="text-h6 leading-7! mb-1">
         {{ title }}
       </div>
       <div class="text-rui-text-secondary">
@@ -58,7 +58,7 @@ const { currentTier, premium } = usePremiumHelper();
       <GetPremiumButton />
       <RouterLink :to="{ name: '/api-keys/premium/' }">
         <RuiButton
-          class="lg:!py-2"
+          class="lg:py-2!"
         >
           <template #prepend>
             <RuiIcon name="lu-key-round" />

@@ -55,7 +55,7 @@ const { t } = useI18n({ useScope: 'global' });
             v-if="!saved"
             :disabled="loading"
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('save')"
@@ -69,7 +69,7 @@ const { t } = useI18n({ useScope: 'global' });
           <RuiButton
             v-else
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('clear')"

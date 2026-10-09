@@ -66,7 +66,7 @@ const {
 
       <RuiTooltip
         :open-delay="400"
-        :class-names="{ tooltip: 'max-w-[16rem]' }"
+        :class-names="{ tooltip: 'max-w-64' }"
       >
         <template #activator>
           <RuiButton

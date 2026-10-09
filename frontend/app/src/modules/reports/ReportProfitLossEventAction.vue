@@ -93,7 +93,7 @@ async function updatePrice(): Promise<void> {
       <template #activator="{ attrs }">
         <RuiButton
           variant="text"
-          class="!p-2"
+          class="p-2!"
           icon
           v-bind="attrs"
         >

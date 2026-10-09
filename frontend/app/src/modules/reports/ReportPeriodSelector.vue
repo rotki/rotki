@@ -171,7 +171,7 @@ const quarterModel = computed({
               required
               variant="outlined"
               active-color="primary"
-              class="flex-wrap justify-center !rounded-r-none [&>*:last-child]:!rounded-r-none"
+              class="flex-wrap justify-center rounded-r-none! [&>*:last-child]:rounded-r-none!"
               data-testid="button-group-report-period-year"
             >
               <RuiButton
@@ -186,7 +186,7 @@ const quarterModel = computed({
               v-bind="attrs"
               variant="outlined"
               :color="isOlderYearSelected ? 'primary' : undefined"
-              class="!rounded-l-none -ml-px"
+              class="rounded-l-none! -ml-px"
               data-testid="button-older-years"
             >
               <div class="flex items-center gap-2">
@@ -205,7 +205,7 @@ const quarterModel = computed({
             <RuiButton
               v-for="period in olderPeriods"
               :key="period"
-              class="!px-6"
+              class="px-6!"
               variant="list"
               @click="yearModel = period"
             >

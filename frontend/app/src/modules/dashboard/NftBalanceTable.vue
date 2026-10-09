@@ -110,7 +110,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       dense
       :hide-default-header="hidePagination"
       :hide-default-footer="hidePagination"
-      class="!rounded-t-none"
+      class="rounded-t-none!"
       :class="{ 'border-t border-default': !hidePagination }"
     >
       <template #item.name="{ row }">

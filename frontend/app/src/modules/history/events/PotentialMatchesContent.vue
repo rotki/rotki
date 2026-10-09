@@ -99,7 +99,7 @@ async function onConfirm(): Promise<void> {
         <RuiChip
           v-if="selectedMatchIds.length > 1"
           size="sm"
-          class="ml-2 !py-0"
+          class="ml-2 py-0!"
         >
           {{ selectedMatchIds.length }}
         </RuiChip>

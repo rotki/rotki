@@ -62,8 +62,8 @@ const headers: DataTableColumn<LocationData>[] = [{
   label: t('common.location'),
 }, {
   align: 'end',
-  cellClass: '!pr-12',
-  class: '!pr-12',
+  cellClass: 'pr-12!',
+  class: 'pr-12!',
   key: 'number',
   label: t('transactions.events_decoding.undecoded_transactions'),
 }, {
@@ -149,7 +149,7 @@ onMounted(() => refresh());
         class="flex flex-col justify-center gap-3"
       >
         <RuiProgress
-          class="max-w-[5rem] mx-auto"
+          class="max-w-20 mx-auto"
           thickness="3"
           size="20"
           color="primary"

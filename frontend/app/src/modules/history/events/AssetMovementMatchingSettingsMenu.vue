@@ -165,7 +165,7 @@ onMounted(() => {
     :class-names="{ menu: 'w-full max-w-96' }"
     :options="{ placement: 'bottom-end' }"
     :disabled="disabled"
-    class="!border-l-0"
+    class="border-l-0!"
   >
     <template #activator="{ attrs }">
       <RuiTooltip
@@ -180,7 +180,7 @@ onMounted(() => {
             :disabled="disabled"
             icon
             :size="isPinned ? 'sm' : 'lg'"
-            class="!rounded-l-none"
+            class="rounded-l-none!"
             :class="{ 'h-[30px]': isPinned }"
           >
             <RuiIcon name="lu-settings" />
@@ -202,14 +202,14 @@ onMounted(() => {
         :hint="t('asset_movement_matching.settings.amount_tolerance.hint')"
         :error-messages="toleranceError || toleranceRuleErrors"
         :success-messages="toleranceSuccess"
-        class="min-h-[12rem]"
+        class="min-h-48"
         @update:model-value="writeIfValid($event, tolerancePercentageSchema(messages), updateTolerance)"
       />
       <AmountInput
         v-model="timeRangeHours"
         variant="outlined"
         integer
-        class="min-h-[8rem]"
+        class="min-h-32"
         :label="t('asset_movement_matching.settings.time_range.label')"
         :hint="t('asset_movement_matching.settings.time_range.hint')"
         :error-messages="timeRangeError || timeRangeRuleErrors"

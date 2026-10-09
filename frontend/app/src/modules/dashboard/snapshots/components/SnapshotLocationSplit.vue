@@ -192,14 +192,14 @@ watch([result, isValid], () => {
           :items="locations"
           clearable
           dense
-          :menu-options="{ menuClass: 'z-[10001]' }"
+          :menu-options="{ menuClass: 'z-10001' }"
           hide-details
           :label="t('common.location')"
           data-testid="snapshot-location-split-location"
         />
         <div
           v-if="row.filled"
-          class="w-40 h-10 flex items-center gap-1 px-3 rounded border border-default"
+          class="w-40 h-10 flex items-center gap-1 px-3 rounded-sm border border-default"
           data-testid="snapshot-location-split-filled"
         >
           <SnapshotFiatDisplay
@@ -259,7 +259,7 @@ watch([result, isValid], () => {
           variant="text"
           color="primary"
           size="sm"
-          class="!py-0 !px-1"
+          class="py-0! px-1!"
           data-testid="snapshot-location-split-fill"
           @click="fillAvailable(index)"
         >

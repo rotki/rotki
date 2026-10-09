@@ -51,7 +51,7 @@ function collapse(): void {
   <!-- Collapsed state: a thin vertical strip of tool icons on the right edge. -->
   <div
     v-if="showMiniBar"
-    class="fixed right-0 top-1/2 -translate-y-1/2 z-[6] flex flex-col gap-1 p-1.5 bg-white dark:bg-rui-grey-900 border border-r-0 border-rui-grey-300 dark:border-rui-grey-800 rounded-l-lg shadow-md"
+    class="fixed right-0 top-1/2 -translate-y-1/2 z-rui-floating flex flex-col gap-1 p-1.5 bg-white dark:bg-rui-grey-900 border border-r-0 border-rui-grey-300 dark:border-rui-grey-800 rounded-l-lg shadow-md"
     data-testid="pinned-mini-bar"
   >
     <RuiTooltip
@@ -65,7 +65,7 @@ function collapse(): void {
           variant="text"
           icon
           size="sm"
-          :class="tab.name === activePinnedId ? '!bg-rui-primary !text-white' : '!text-rui-text-secondary'"
+          :class="tab.name === activePinnedId ? 'bg-rui-primary! text-white!' : 'text-rui-text-secondary!'"
           data-testid="pinned-mini-tab"
           :data-key="tab.name"
           @click="focus(tab.name)"
@@ -82,11 +82,12 @@ function collapse(): void {
 
   <RuiNavigationDrawer
     v-model="showPinned"
+    below-app-bar
     :temporary="isLgAndDown"
     :width="widthPx"
     position="right"
-    class="border-l border-rui-grey-300 dark:border-rui-grey-800 !z-[6]"
-    :class="{ '!transition-none': dragging }"
+    class="border-l border-rui-grey-300 dark:border-rui-grey-800 z-6!"
+    :class="{ 'transition-none!': dragging }"
   >
     <div class="relative h-full">
       <div
@@ -102,8 +103,8 @@ function collapse(): void {
           :class="dragging ? 'bg-rui-primary' : 'group-hover:bg-rui-primary/30'"
         />
         <div
-          class="rounded-full pointer-events-none z-[1] transition-colors py-1 w-3.5 flex items-center justify-center"
-          :class="dragging ? 'bg-rui-primary text-white' : 'bg-rui-grey-300 dark:bg-rui-grey-800 text-rui-grey-600 dark:text-rui-grey-400 group-hover:bg-rui-grey-400 group-hover:dark:bg-rui-grey-700'"
+          class="rounded-full pointer-events-none z-1 transition-colors py-1 w-3.5 flex items-center justify-center"
+          :class="dragging ? 'bg-rui-primary text-white' : 'bg-rui-grey-300 dark:bg-rui-grey-800 text-rui-grey-600 dark:text-rui-grey-400 group-hover:bg-rui-grey-400 dark:group-hover:bg-rui-grey-700'"
         >
           <RuiIcon
             name="lu-equal"
@@ -137,7 +138,7 @@ function collapse(): void {
                 :name="tab.icon"
                 size="16"
               />
-              <span class="max-w-[10rem] truncate">{{ t(tab.labelKey) }}</span>
+              <span class="max-w-40 truncate">{{ t(tab.labelKey) }}</span>
               <RuiIcon
                 name="lu-x"
                 size="14"
@@ -156,7 +157,7 @@ function collapse(): void {
             />
             <button
               type="button"
-              class="flex items-center p-1 rounded text-rui-text-secondary hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800"
+              class="flex items-center p-1 rounded-sm text-rui-text-secondary hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800"
               data-testid="pinned-collapse"
               @click="collapse()"
             >

@@ -65,7 +65,7 @@ defineExpose({
   <div
     v-for="exchange in filteredExchanges"
     :key="exchange.name"
-    class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
+    class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 dark:hover:bg-rui-grey-900 transition"
     @click="toggleSelect(exchange)"
   >
     <RuiCheckbox

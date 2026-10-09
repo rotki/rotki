@@ -21,12 +21,11 @@ const chainName = useChainName(() => chainId);
   <RuiTooltip
     :disabled="!shouldShowAmount"
     :close-delay="0"
-    :class-names="{ tooltip: '!-ml-1' }"
   >
     <template #activator>
       <ChainIcon
         :chain="chainId"
-        size="20px"
+        size="14px"
       />
     </template>
 

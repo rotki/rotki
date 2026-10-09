@@ -88,7 +88,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   label: t('common.label'),
   sortable: true,
 }, {
-  class: 'w-[12rem] xl:w-[16rem] 2xl:w-[20rem]',
+  class: 'w-48 xl:w-64 2xl:w-80',
   key: 'asset',
   label: t('common.asset'),
   sortable: true,
@@ -153,7 +153,7 @@ watchDebounced(
           <PillFilterBar
             v-model:matches="filters"
             v-model:params="pillParams"
-            class="flex-1 min-w-[16rem]"
+            class="flex-1 min-w-64"
             :fields="fields"
             :labels="pillLabels"
           />
@@ -175,7 +175,7 @@ watchDebounced(
     >
       <template #item.label="{ row }">
         <div
-          class="font-medium !pb-0 text-truncate min-w-[8rem] max-w-[16rem]"
+          class="font-medium pb-0! text-truncate min-w-32 max-w-64"
           :title="row.label"
           data-testid="label"
           :class="{
@@ -194,7 +194,7 @@ watchDebounced(
       <template #item.asset="{ row }">
         <AssetDetails
           v-if="!row.assetIsMissing"
-          class="[&>div]:max-w-[12rem] xl:[&>div]:max-w-[16rem] 2xl:[&>div]:max-w-[20rem]"
+          class="[&>div]:max-w-48 xl:[&>div]:max-w-64 2xl:[&>div]:max-w-80"
           :asset="row.asset"
           :actions="{ hideActions: true }"
         />

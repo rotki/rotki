@@ -34,7 +34,7 @@ const {
     max-width="500"
     @update:model-value="close()"
   >
-    <RuiCard :class-names="{ content: '!pb-0' }">
+    <RuiCard :class-names="{ content: 'pb-0!' }">
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">
           <CardTitle>
@@ -65,7 +65,7 @@ const {
             :actions="{ hideMenu: true }"
           />
           <div class="flex flex-col items-end">
-            <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+            <div class="text-[10px]! leading-none! text-caption text-rui-text-secondary uppercase">
               {{ t('common.datetime') }}
             </div>
             <DateDisplay
@@ -78,7 +78,7 @@ const {
 
         <div
           v-if="loading || showModeChoice"
-          class="min-h-[2.25rem] flex items-center justify-center"
+          class="min-h-9 flex items-center justify-center"
         >
           <RuiProgress
             v-if="loading"

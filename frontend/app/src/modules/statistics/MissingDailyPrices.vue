@@ -97,7 +97,7 @@ onMounted(async () => {
         {{ t('premium_components.statistics.failed_daily_prices.rate_limited.title') }}
       </RuiTab>
     </RuiTabs>
-    <div class="!max-h-[calc(100vh-18rem)] overflow-auto px-4 pt-3 pb-4">
+    <div class="max-h-[calc(100vh-18rem)]! overflow-auto px-4 pt-3 pb-4">
       <RuiTabItems
         v-model="tab"
         class="overflow-y-auto"

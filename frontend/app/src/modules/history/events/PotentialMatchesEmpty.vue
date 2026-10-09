@@ -24,7 +24,7 @@ const showWiden = computed<boolean>(() => !get(unmatchable) && canWiden);
 
 <template>
   <div
-    class="flex flex-col items-center gap-2 rounded border border-dashed border-default px-4 py-6 text-center"
+    class="flex flex-col items-center gap-2 rounded-sm border border-dashed border-default px-4 py-6 text-center"
     data-testid="potential-matches-empty"
   >
     <RuiIcon

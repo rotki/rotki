@@ -226,7 +226,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         </div>
         <!-- Reserve the text-h4 line height (2.625rem) so the loading skeleton
              doesn't shift the layout when the converted value resolves. -->
-        <div class="min-h-[2.625rem] flex items-center">
+        <div class="min-h-10.5 flex items-center">
           <SnapshotFiatDisplay
             class="text-h4"
             :value="listed.value"
@@ -256,7 +256,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
             variant="text"
             size="sm"
             color="primary"
-            class="!py-0"
+            class="py-0!"
             data-testid="snapshot-summary-show-excluded"
             @click="emit('show-excluded')"
           >
@@ -306,7 +306,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
 
       <div
         v-if="hasNfts"
-        class="flex flex-col items-end gap-2 min-w-[14rem]"
+        class="flex flex-col items-end gap-2 min-w-56"
       >
         <RuiCheckbox
           v-model="excludeNfts"
@@ -581,7 +581,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
             variant="text"
             size="sm"
             color="warning"
-            class="ml-1 !py-0"
+            class="ml-1 py-0!"
             data-testid="snapshot-summary-show-zero-value"
             @click="emit('show-zero-value')"
           >

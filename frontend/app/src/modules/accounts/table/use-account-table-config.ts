@@ -26,8 +26,8 @@ export function useAccountTableConfig<
 
     return [...(anyExpansion
       ? [{
-          cellClass: '!py-0 !pr-0 !pl-3',
-          class: '!py-0 !pr-0 !pl-3',
+          cellClass: 'py-0! pr-0! pl-3!',
+          class: 'py-0! pr-0! pl-3!',
           key: 'expand',
           label: '',
           sortable: false,
@@ -57,8 +57,8 @@ export function useAccountTableConfig<
         }]
       : []), {
       align: 'end',
-      cellClass: 'py-0 !pr-0 !pl-2',
-      class: '!pr-0 !pl-2',
+      cellClass: 'py-0 pr-0! pl-2!',
+      class: 'pr-0! pl-2!',
       key: 'assets',
       label: t('common.assets'),
     }, {
@@ -69,7 +69,7 @@ export function useAccountTableConfig<
       sortable: true,
     }, {
       align: 'end',
-      cellClass: '!p-0',
+      cellClass: 'p-0!',
       key: 'actions',
       label: t('common.actions_text'),
     }];

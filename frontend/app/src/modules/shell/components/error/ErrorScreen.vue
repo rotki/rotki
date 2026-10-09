@@ -30,7 +30,7 @@ const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
 </script>
 
 <template>
-  <div class="py-10 px-4 bg-white dark:bg-black h-full w-full z-[99999] flex flex-col items-center justify-center">
+  <div class="py-10 px-4 bg-white dark:bg-black h-full w-full z-99999 flex flex-col items-center justify-center">
     <RuiIcon
       size="96"
       color="error"
@@ -75,7 +75,7 @@ const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
         </template>
         <textarea
           v-model="errorText"
-          class="absolute -top-[999em] -left-[999em]"
+          class="absolute top-[-999em] left-[-999em]"
         />
       </div>
     </RuiCard>

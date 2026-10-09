@@ -96,11 +96,11 @@ const fallbackData = computed(() => {
           :disabled="shouldRender"
           :open-delay="400"
           class="w-full"
-          :class-names="{ tooltip: 'max-w-[10rem]' }"
+          :class-names="{ tooltip: 'max-w-40' }"
         >
           <template #activator>
             <div
-              class="my-2 bg-rui-grey-200 rounded flex items-center justify-center"
+              class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
               :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
               @click="!shouldRender ? showAllowDomainConfirmation() : null"
             >
@@ -112,7 +112,7 @@ const fallbackData = computed(() => {
               />
               <AppImage
                 v-else
-                class="rounded overflow-hidden"
+                class="rounded-sm overflow-hidden"
                 :src="renderedMedia"
                 :size="size"
                 fit="contain"
@@ -130,8 +130,8 @@ const fallbackData = computed(() => {
 
       <div class="ml-3 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">
-          <RuiSkeletonLoader class="mt-1 mb-1.5 w-[7.5rem]" />
-          <RuiSkeletonLoader class="mt-1 w-[5rem]" />
+          <RuiSkeletonLoader class="mt-1 mb-1.5 w-30" />
+          <RuiSkeletonLoader class="mt-1 w-20" />
         </template>
         <div
           v-else-if="name"

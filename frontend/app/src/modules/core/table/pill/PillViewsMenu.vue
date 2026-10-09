@@ -216,11 +216,11 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
       </RuiTooltip>
     </template>
 
-    <div class="flex flex-col min-w-[18rem] max-w-[24rem]">
+    <div class="flex flex-col min-w-72 max-w-96">
       <div
         ref="list"
         tabindex="0"
-        class="flex flex-col gap-0.5 p-1.5 max-h-[17rem] overflow-y-auto outline-none rounded-md focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rui-primary"
+        class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto outline-hidden rounded-md focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rui-primary"
         data-testid="pill-views-list"
         @keydown="onListKeydown($event)"
       >
@@ -295,7 +295,7 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
             :placeholder="t('table_filter.saved_views.name_placeholder')"
             :aria-label="t('table_filter.saved_views.name_placeholder')"
             autocomplete="off"
-            class="flex-1 min-w-0 bg-transparent px-1.5 py-1 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary disabled:text-rui-text-disabled"
+            class="flex-1 min-w-0 bg-transparent px-1.5 py-1 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary disabled:text-rui-text-disabled"
             data-testid="pill-views-name"
             @keydown.enter.prevent="save()"
             @keydown.escape="open = false"

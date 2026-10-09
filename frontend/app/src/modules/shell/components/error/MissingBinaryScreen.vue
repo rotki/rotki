@@ -16,7 +16,7 @@ const copy = useMissingBinaryCopy(() => binary);
 
 <template>
   <ErrorScreen
-    class="fixed top-0 left-0 overflow-y-auto ![justify-content:safe_center]"
+    class="fixed top-0 left-0 overflow-y-auto justify-center-safe!"
     :header="copy.header"
     :title="copy.title"
     :subtitle="copy.subtitle"

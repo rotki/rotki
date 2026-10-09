@@ -56,7 +56,7 @@ function valueLabel(value: string): string {
 
 <template>
   <div
-    class="inline-flex items-stretch h-7 text-[13px] leading-none rounded-md overflow-hidden border border-rui-grey-300 dark:border-rui-grey-700 bg-white dark:bg-rui-grey-900 shadow-sm select-none"
+    class="inline-flex items-stretch h-7 text-[13px] leading-none rounded-md overflow-hidden border border-rui-grey-300 dark:border-rui-grey-700 bg-white dark:bg-rui-grey-900 shadow-xs select-none"
     :class="disabled ? 'opacity-60' : 'cursor-pointer'"
     data-testid="filter-pill"
     :data-field="field.key"

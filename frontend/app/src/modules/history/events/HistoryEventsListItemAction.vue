@@ -39,7 +39,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:!w-24 2xl:opacity-0 2xl:group-hover/row:opacity-100 2xl:focus-within:opacity-100';
+const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:w-24! 2xl:opacity-0 2xl:group-hover/row:opacity-100 2xl:focus-within:opacity-100';
 
 const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(item));
 

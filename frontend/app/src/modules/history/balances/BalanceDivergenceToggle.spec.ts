@@ -63,6 +63,6 @@ describe('balanceDivergenceToggle', () => {
     visibility.pinPanel({ name: PinnedNames.BALANCE_DIVERGENCE, props: {} });
     await nextTick();
 
-    expect(button.classes()).toContain('!bg-rui-primary');
+    expect(button.classes()).toContain('bg-rui-primary!');
   });
 });

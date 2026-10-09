@@ -97,7 +97,7 @@ defineExpose({
       <div class="flex gap-2">
         <ChainSelect
           v-model="form.state.chain"
-          class="max-w-[20rem]"
+          class="max-w-80"
           :items="chainOptions"
           :error-messages="form.errors('chain')"
           @update:model-value="form.touch('chain')"

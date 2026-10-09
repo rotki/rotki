@@ -249,7 +249,7 @@ function redetectTokens(): void {
               <RuiButton
                 variant="text"
                 icon
-                class="!p-1"
+                class="p-1!"
                 color="primary"
                 :disabled="!address || !internalChain"
                 :loading="useQueryingBalances || isDetecting"
@@ -272,7 +272,7 @@ function redetectTokens(): void {
             ref="searchField"
             v-model="search"
             type="text"
-            class="flex-1 min-w-0 bg-transparent py-2 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary"
+            class="flex-1 min-w-0 bg-transparent py-2 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
             :placeholder="t('trade.select_asset.search')"
             :aria-label="t('trade.select_asset.search')"
             autocomplete="off"
@@ -289,7 +289,7 @@ function redetectTokens(): void {
             variant="text"
             icon
             size="sm"
-            class="!p-1 shrink-0"
+            class="p-1! shrink-0"
             :aria-label="t('common.actions.clear')"
             data-testid="trade-asset-search-clear"
             @click="search = ''"
@@ -330,7 +330,7 @@ function redetectTokens(): void {
             :key="option.asset.asset + option.asset.chain"
             type="button"
             role="option"
-            class="w-full text-left cursor-pointer py-2 px-4 focus-visible:outline-none"
+            class="w-full text-left cursor-pointer py-2 px-4 focus-visible:outline-hidden"
             :class="index === highlighted
               ? 'bg-rui-primary/10'
               : 'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"

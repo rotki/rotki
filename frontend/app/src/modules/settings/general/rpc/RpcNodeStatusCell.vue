@@ -31,7 +31,7 @@ const { t } = useI18n({ useScope: 'global' });
     <BadgeDisplay
       v-if="status === NODE_STATUS.CONNECTED"
       color="green"
-      class="items-center gap-2 !leading-6"
+      class="items-center gap-2 leading-6!"
     >
       <RuiIcon
         color="success"
@@ -49,7 +49,7 @@ const { t } = useI18n({ useScope: 'global' });
       <template #activator>
         <BadgeDisplay
           color="orange"
-          class="items-center gap-2 !leading-6"
+          class="items-center gap-2 leading-6!"
         >
           <RuiIcon
             size="16"
@@ -68,7 +68,7 @@ const { t } = useI18n({ useScope: 'global' });
     <BadgeDisplay
       v-else-if="status === NODE_STATUS.FAILED"
       color="red"
-      class="items-center gap-2 !leading-6"
+      class="items-center gap-2 leading-6!"
     >
       <RuiIcon
         color="error"
@@ -82,7 +82,7 @@ const { t } = useI18n({ useScope: 'global' });
     <BadgeDisplay
       v-else
       color="grey"
-      class="items-center gap-2 !leading-6"
+      class="items-center gap-2 leading-6!"
     >
       <RuiIcon
         color="info"

@@ -19,11 +19,11 @@ const isDevelopment = checkIfDevelopment();
     color="primary"
     :disabled="processing"
     :class="{
-      '!divide-rui-grey-200 dark:!divide-rui-grey-800': processing,
+      'divide-rui-grey-200! dark:divide-rui-grey-800!': processing,
     }"
   >
     <RuiButton
-      class="!py-2"
+      class="py-2!"
       @click="emit('redecode', { type: 'all' })"
     >
       <template #prepend>

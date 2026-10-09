@@ -40,7 +40,7 @@ function toggle(): void {
 <template>
   <div
     v-if="visible"
-    class="fixed bottom-4 right-4 z-[7] flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]"
+    class="flex flex-col items-end gap-2 max-w-full"
     @mouseenter="holdInteraction(true)"
     @mouseleave="holdInteraction(false)"
     @focusin="holdInteraction(true)"
@@ -49,7 +49,7 @@ function toggle(): void {
     <RuiCard
       v-if="showPanel"
       dense
-      class="w-[25rem] max-w-full flex flex-col gap-2 shadow-lg"
+      class="w-100 max-w-full flex flex-col gap-2 shadow-lg"
       data-testid="task-dock-panel"
     >
       <DockPanelHeader

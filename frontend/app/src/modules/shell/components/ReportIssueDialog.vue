@@ -13,7 +13,7 @@ import ReportIssueEmailButton from '@/modules/shell/components/ReportIssueEmailB
 const { close, initialDescription: storeDescription, initialTitle: storeTitle, visible } = useReportIssue();
 
 const uiClasses = {
-  tipCard: 'flex items-start gap-3 p-3 bg-rui-grey-100 dark:bg-rui-grey-800 rounded',
+  tipCard: 'flex items-start gap-3 p-3 bg-rui-grey-100 dark:bg-rui-grey-800 rounded-sm',
   tipCardIcon: 'text-rui-text-secondary shrink-0 mt-0.5',
 } as const;
 
@@ -142,7 +142,7 @@ onMounted(() => {
     persistent
   >
     <RuiCard
-      :class-names="{ content: '!pt-1.5' }"
+      :class-names="{ content: 'pt-1.5!' }"
       class="max-h-[90vh]"
     >
       <template #header>
@@ -160,7 +160,7 @@ onMounted(() => {
           :maxlength="MAX_TITLE_LENGTH"
           variant="outlined"
           dense
-          class="!text-sm"
+          class="text-sm!"
           color="primary"
         />
 
@@ -171,7 +171,7 @@ onMounted(() => {
           :maxlength="MAX_DESCRIPTION_LENGTH"
           variant="outlined"
           color="primary"
-          class="!text-sm"
+          class="text-sm!"
           min-rows="4"
           max-rows="8"
         />
@@ -260,7 +260,7 @@ onMounted(() => {
                 variant="text"
                 color="primary"
                 size="sm"
-                class="self-start -ml-1.5 !py-0"
+                class="self-start -ml-1.5 py-0!"
                 data-testid="report-issue-enable-privacy"
                 @click="openPrivacyModeMenu()"
               >

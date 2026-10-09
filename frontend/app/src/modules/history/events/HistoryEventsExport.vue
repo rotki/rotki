@@ -23,7 +23,7 @@ const { showConfirmation, taskRunning } = useHistoryEventsExport(
         variant="outlined"
         icon
         size="xl"
-        class="!rounded"
+        class="rounded-sm!"
         :disabled="taskRunning"
         @click="showConfirmation()"
       >

@@ -198,7 +198,7 @@ const { copied, copy } = useCopy(() => identifier);
       >
         <div
           v-if="showChain && chain"
-          class="!rounded-full !overflow-hidden bg-white z-[1] absolute flex items-center justify-center shadow-sm -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
+          class="rounded-full! overflow-hidden! bg-white z-1 absolute flex items-center justify-center shadow-xs -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
           :style="{ marginTop: chainIconMargin, marginLeft: chainIconMargin }"
         >
           <EvmChainIcon
@@ -209,7 +209,7 @@ const { copied, copy } = useCopy(() => identifier);
 
         <div
           v-if="protocol && !hideProtocol"
-          class="z-[1] absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
+          class="z-1 absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
           :class="{ blur: !shouldShowAmount }"
         >
           <CounterpartyDisplay
@@ -222,7 +222,7 @@ const { copied, copy } = useCopy(() => identifier);
         <div
           class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{
-            '!rounded-full !overflow-hidden': circle,
+            'rounded-full! overflow-hidden!': circle,
             'blur': !shouldShowAmount,
           }"
         >
@@ -301,7 +301,7 @@ const { copied, copy } = useCopy(() => identifier);
         v-if="protocol"
         :counterparty="protocol"
         size="14px"
-        class="!text-inherit"
+        class="text-inherit!"
       />
     </div>
     <template v-if="isEvmIdentifier(identifier)">
@@ -324,7 +324,7 @@ const { copied, copy } = useCopy(() => identifier);
                 <RuiIcon
                   name="lu-copy"
                   size="12"
-                  class="!text-rui-grey-400"
+                  class="text-rui-grey-400!"
                 />
               </template>
             </RuiButton>

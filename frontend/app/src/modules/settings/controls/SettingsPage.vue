@@ -77,8 +77,8 @@ useSettingsPageHighlight({ scrollToElement, isElementInViewport });
       class="flex-1 overflow-y-auto border-default pb-8 md:pb-16 h-full flex flex-col gap-6 md:gap-8 -mx-4 px-4 md:pr-8 -mt-4 pt-4"
       v-bind="$attrs"
       :class="{
-        'md:border-r !h-[calc(100%-72px)] md:!h-full md:mr-0': navigation.length > 0,
-        'md:!-mr-8 pt-6 md:pt-0': navigation.length === 0,
+        'md:border-r h-[calc(100%-72px)]! md:h-full! md:mr-0': navigation.length > 0,
+        'md:-mr-8! pt-6 md:pt-0': navigation.length === 0,
       }"
     >
       <slot />

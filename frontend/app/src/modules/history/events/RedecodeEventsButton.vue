@@ -15,7 +15,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <RuiButton
     variant="list"
-    :class="{ '!py-2': hasOptions }"
+    :class="{ 'py-2!': hasOptions }"
     :disabled="disabled"
     @click="emit('redecode')"
   >
@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
             icon
             variant="text"
             size="sm"
-            class="!p-2"
+            class="p-2!"
             :disabled="disabled"
             @click.stop="emit('redecode-with-options')"
           >

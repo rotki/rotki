@@ -14,7 +14,6 @@ import { useCoreScroll } from '@/modules/shell/layout/use-core-scroll';
 import { initGraph } from '@/modules/statistics/init-graph';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
-import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -52,9 +51,6 @@ const busyMessage = computed<string>(() =>
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
-/** The scroll-to-top button stacks above the task dock whenever the dock is on screen. */
-const { visible: taskDockVisible } = useTaskDock();
-
 const { isXlAndDown } = useBreakpoint();
 const { applySelected, dismissAll } = useSettingsSuggestions();
 const suggestionsStore = useSuggestionsStore();
@@ -90,13 +86,13 @@ onBeforeMount(() => {
     <AppDrawer />
 
     <header
-      class="fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
+      class="fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-14 border-b border-rui-grey-300 dark:border-rui-grey-800"
     >
-      <nav class="flex items-center md:h-16 h-[3.5rem] pl-2 px-4">
+      <nav class="flex items-center md:h-16 h-14 pl-2 px-4">
         <RuiButton
           icon
           variant="text"
-          class="!text-rui-text-secondary"
+          class="text-rui-text-secondary!"
           @click="toggleDrawer()"
         >
           <RuiIcon name="lu-menu" />
@@ -109,8 +105,8 @@ onBeforeMount(() => {
     <div
       class="py-4 w-full transition-all min-h-[calc(100vh-64px)]"
       :class="{
-        '!transition-none': pinnedDragging,
-        'pl-[3.5rem]': isMini,
+        'transition-none!': pinnedDragging,
+        'pl-14': isMini,
         'pl-[300px]': expanded,
       }"
       :style="{ paddingRight: pinnedPadding }"
@@ -127,7 +123,7 @@ onBeforeMount(() => {
           >
             <div
               v-if="busy"
-              class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-[999] flex items-center justify-center"
+              class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-999 flex items-center justify-center"
             >
               <div class="flex flex-col gap-4 justify-center items-center">
                 <RuiProgress
@@ -152,28 +148,30 @@ onBeforeMount(() => {
         </RouterView>
       </main>
 
-      <Transition
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-1"
-        enter-active-class="transition duration-300"
-        leave-from-class="opacity-1"
-        leave-to-class="opacity-0"
-        leave-active-class="transition duration-100"
-      >
-        <RuiButton
-          v-if="shouldShowScrollToTopButton"
-          color="primary"
-          class="fixed right-4 z-[6]"
-          :class="taskDockVisible ? 'bottom-20' : 'bottom-4'"
-          variant="fab"
-          size="lg"
-          icon
-          @click="scrollToTop()"
+      <!-- one stack in the corner: the scroll-to-top button sits on whatever height the dock has, and the
+           stack rises above a stuck table pagination bar -->
+      <div class="fixed right-4 bottom-[calc(1rem+var(--rui-sticky-bottom))] z-rui-floating flex flex-col items-end gap-3 max-w-[calc(100vw-2rem)] transition-[bottom]">
+        <Transition
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-1"
+          enter-active-class="transition duration-300"
+          leave-from-class="opacity-1"
+          leave-to-class="opacity-0"
+          leave-active-class="transition duration-100"
         >
-          <RuiIcon name="lu-arrow-up" />
-        </RuiButton>
-      </Transition>
-      <TaskDock />
+          <RuiButton
+            v-if="shouldShowScrollToTopButton"
+            color="primary"
+            variant="fab"
+            size="lg"
+            icon
+            @click="scrollToTop()"
+          >
+            <RuiIcon name="lu-arrow-up" />
+          </RuiButton>
+        </Transition>
+        <TaskDock />
+      </div>
     </div>
   </div>
 </template>

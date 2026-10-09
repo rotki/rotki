@@ -114,7 +114,7 @@ watch(() => items.length, (length) => {
         :indeterminate="someSelected"
         color="primary"
         size="sm"
-        class="!mt-0"
+        class="mt-0!"
         hide-details
         :label="t('asset_movement_matching.card_list.select_all')"
         data-testid="unmatched-card-select-all"
@@ -131,7 +131,7 @@ watch(() => items.length, (length) => {
     <ScrollableDialogContent fill>
       <div
         v-if="items.length === 0"
-        class="flex flex-col items-center gap-2 py-8 border border-default rounded text-body-2 text-rui-text-secondary"
+        class="flex flex-col items-center gap-2 py-8 border border-default rounded-sm text-body-2 text-rui-text-secondary"
         data-testid="unmatched-card-empty"
       >
         <RuiProgress
@@ -157,8 +157,8 @@ watch(() => items.length, (length) => {
           :class="[
             accented?.(item) ? 'border-l-rui-warning' : 'border-l-transparent',
             {
-              '!bg-rui-warning/15': highlighted?.(item),
-              '!bg-rui-primary/5': isSelected(item),
+              'bg-rui-warning/15!': highlighted?.(item),
+              'bg-rui-primary/5!': isSelected(item),
             },
           ]"
           data-testid="unmatched-card"
@@ -169,7 +169,7 @@ watch(() => items.length, (length) => {
             :model-value="isSelected(item)"
             color="primary"
             size="sm"
-            class="!mt-0"
+            class="mt-0!"
             hide-details
             @click.stop
             @update:model-value="toggle(item, $event ?? false)"

@@ -102,9 +102,9 @@ function onKeydown(event: KeyboardEvent): void {
 </script>
 
 <template>
-  <div class="flex flex-col min-w-[16rem] max-w-[20rem]">
+  <div class="flex flex-col min-w-64 max-w-80">
     <!-- The focus ring lives on this row rather than the input: the input is borderless by design,
-         so `outline-none` there needs a replacement somewhere, and the row is what reads as the
+         so `outline-hidden` there needs a replacement somewhere, and the row is what reads as the
          field. Same pattern as the bar's container. -->
     <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
       <RuiIcon
@@ -117,7 +117,7 @@ function onKeydown(event: KeyboardEvent): void {
         ref="searchField"
         v-model="search"
         type="text"
-        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary"
+        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
         :placeholder="searchPlaceholder"
         :aria-label="searchPlaceholder"
         autocomplete="off"
@@ -127,7 +127,7 @@ function onKeydown(event: KeyboardEvent): void {
       />
     </div>
 
-    <div class="flex flex-col gap-0.5 p-1.5 max-h-[17rem] overflow-y-auto">
+    <div class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto">
       <button
         v-for="(field, index) in filtered"
         :key="field.key"
@@ -168,7 +168,7 @@ function onKeydown(event: KeyboardEvent): void {
       <kbd
         v-for="hint in keyHints"
         :key="hint"
-        class="px-1 rounded border border-rui-grey-300 dark:border-rui-grey-600 font-mono text-[10px] leading-4"
+        class="px-1 rounded-sm border border-rui-grey-300 dark:border-rui-grey-600 font-mono text-[10px] leading-4"
       >
         {{ hint }}
       </kbd>

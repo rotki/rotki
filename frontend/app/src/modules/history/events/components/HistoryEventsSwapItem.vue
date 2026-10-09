@@ -238,7 +238,7 @@ function unlink(): void {
         size="sm"
         icon
         color="primary"
-        class="size-5 relative top-3 -left-2 z-[6]"
+        class="size-5 relative top-3 -left-2 z-6"
         @click="emit('toggle-expand')"
       >
         <RuiIcon
@@ -267,7 +267,7 @@ function unlink(): void {
     >
       <HistoryEventAsset
         v-if="spendEvent"
-        class="w-[11rem] lg:w-[12.5rem] xl:w-[13.5rem]"
+        class="w-44 lg:w-50 xl:w-54"
         :event="spendEvent"
         @refresh="emit('refresh')"
       />
@@ -294,7 +294,7 @@ function unlink(): void {
         <HistoryEventAsset
           v-if="receiveEvent"
           :event="receiveEvent"
-          class="w-[12rem] lg:w-[13.5rem] xl:w-[14.5rem]"
+          class="w-48 lg:w-54 xl:w-58"
           @refresh="emit('refresh')"
         />
         <span

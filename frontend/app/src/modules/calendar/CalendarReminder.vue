@@ -235,7 +235,7 @@ defineExpose({
           data-testid="reminder-toggle"
           :data-expanded="showReminders"
           :class="{
-            'hover:!bg-transparent active:!bg-transparent cursor-default': length === 0,
+            'hover:bg-transparent! active:bg-transparent! cursor-default': length === 0,
           }"
           @click="toggleReminder()"
         >

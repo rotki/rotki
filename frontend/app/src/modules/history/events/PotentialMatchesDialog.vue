@@ -54,7 +54,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
   >
     <RuiCard
       class="max-h-[90vh] flex flex-col overflow-hidden"
-      :class-names="{ content: '!pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' }"
+      :class-names="{ content: 'pb-0! flex flex-col flex-1 min-h-0 overflow-hidden' }"
     >
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">

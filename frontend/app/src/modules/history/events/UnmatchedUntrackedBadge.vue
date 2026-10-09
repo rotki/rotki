@@ -13,7 +13,7 @@ defineProps<{
   >
     <template #activator>
       <span
-        class="inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-caption bg-rui-warning/10 text-rui-warning"
+        class="inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-1.5 py-0.5 text-caption bg-rui-warning/10 text-rui-warning"
         data-testid="unmatched-untracked-badge"
       >
         <RuiIcon

@@ -59,9 +59,9 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
 
 <template>
   <div
-    class="flex flex-col items-center h-[7.5rem] p-1 relative group"
+    class="flex flex-col items-center h-30 p-1 relative group"
     :class="{
-      '[&>*]:opacity-30': !day.isCurrentMonth,
+      '*:opacity-30': !day.isCurrentMonth,
     }"
     @click="selectDate()"
   >
@@ -87,7 +87,7 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
         size="sm"
         :title="event.name"
         :class="{
-          'bg-rui-grey-400 !text-rui-text-disabled': isPast,
+          'bg-rui-grey-400 text-rui-text-disabled!': isPast,
         }"
         :bg-color="isPast ? undefined : getColor(isDark, event.color, true)"
         :text-color="isPast ? undefined : getColor(isDark, event.color)"
@@ -106,7 +106,7 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
       size="sm"
       variant="outlined"
       color="secondary"
-      class="!p-1 absolute top-1 right-1 transition opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+      class="p-1! absolute top-1 right-1 transition opacity-0 invisible group-hover:opacity-100 group-hover:visible"
       @click="add()"
     >
       <RuiIcon

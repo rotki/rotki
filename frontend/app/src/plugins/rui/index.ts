@@ -6,7 +6,6 @@ import {
 } from '@rotki/ui-library';
 import detectedIcons from 'virtual:rotki-icons';
 import { brandIcons } from '@/brand-icons';
-import '@rotki/ui-library/style.css';
 
 interface RuiPlugin {
   install: (app: App) => void;

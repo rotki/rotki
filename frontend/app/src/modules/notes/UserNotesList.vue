@@ -51,7 +51,6 @@ onMounted(async () => {
   <div class="p-4 flex items-center gap-3">
     <RuiTextField
       v-model="modelSearch"
-      variant="outlined"
       color="primary"
       dense
       class="flex-1"
@@ -151,7 +150,7 @@ onMounted(async () => {
               {{ note.title }}
             </div>
             <RuiButton
-              class="!p-2"
+              class="p-2!"
               variant="text"
               icon
               data-testid="note-pin"

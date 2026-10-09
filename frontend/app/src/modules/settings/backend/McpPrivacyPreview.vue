@@ -169,7 +169,7 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
     <div class="overflow-x-auto">
       <!-- table-fixed, because auto layout sizes the columns from their content: the values differ
            per mode, so the columns slid sideways on every switch. -->
-      <table class="w-full min-w-[42rem] table-fixed text-left font-mono text-xs">
+      <table class="w-full min-w-168 table-fixed text-left font-mono text-xs">
         <colgroup>
           <col class="w-40" />
           <col />
@@ -243,7 +243,7 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
                    the fixed row height and bring back the jump on mode switch. -->
               <span
                 v-else-if="value.kind === 'hash'"
-                class="rounded bg-rui-grey-200 px-1.5 py-0.5 text-rui-text-secondary dark:bg-rui-grey-800"
+                class="rounded-sm bg-rui-grey-200 px-1.5 py-0.5 text-rui-text-secondary dark:bg-rui-grey-800"
               >
                 {{ value.text }}
               </span>
@@ -253,7 +253,7 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
               >
                 <span
                   v-if="value.kind === 'redacted'"
-                  class="rounded bg-rui-grey-300 px-1.5 py-0.5 text-rui-text-secondary dark:bg-rui-grey-700"
+                  class="rounded-sm bg-rui-grey-300 px-1.5 py-0.5 text-rui-text-secondary dark:bg-rui-grey-700"
                 >
                   {{ value.text }}
                 </span>

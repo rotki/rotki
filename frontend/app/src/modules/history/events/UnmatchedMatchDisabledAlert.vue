@@ -36,7 +36,7 @@ const messageKey = computed<string>(() => {
   <RuiAlert
     type="warning"
     size="sm"
-    class="whitespace-break-spaces !py-0.5 !rounded-none"
+    class="whitespace-break-spaces py-0.5! rounded-none!"
   >
     <i18n-t
       scope="global"

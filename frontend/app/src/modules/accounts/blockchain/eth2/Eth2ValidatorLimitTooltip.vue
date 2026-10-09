@@ -12,7 +12,7 @@ const { validatorsLimitInfo } = useEthStaking();
     v-if="validatorsLimitInfo.showWarning"
     :open-delay="300"
     persist-on-tooltip-hover
-    :class-names="{ tooltip: 'max-w-[12rem]' }"
+    :class-names="{ tooltip: 'max-w-48' }"
   >
     <template #activator>
       <RuiIcon
@@ -26,7 +26,7 @@ const { validatorsLimitInfo } = useEthStaking();
       :label="t('plan_limit.labels.validators')"
       :limit="validatorsLimitInfo.limit"
       :total="validatorsLimitInfo.total"
-      link-class="!text-white !leading-[0]"
+      link-class="text-white! leading-0!"
       tag="div"
     />
   </RuiTooltip>

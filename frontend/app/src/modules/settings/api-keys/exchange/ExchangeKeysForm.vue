@@ -385,7 +385,7 @@ defineExpose({
           <RuiButton
             data-testid="toggle-edit-keys"
             variant="text"
-            class="!p-2"
+            class="p-2!"
             icon
             @click="toggleEdit()"
           >

@@ -41,8 +41,8 @@ const childSort = ref<DataTableSortData<MissingAcquisition>>({
 const { t } = useI18n({ useScope: 'global' });
 
 const headers = computed<DataTableColumn<GroupedMissingAcquisition>[]>(() => [{
-  cellClass: '!py-0 !pr-0 !pl-3',
-  class: '!py-0 !pr-0 !pl-3',
+  cellClass: 'py-0! pr-0! pl-3!',
+  class: 'py-0! pr-0! pl-3!',
   key: 'expand',
   label: '',
   sortable: false,

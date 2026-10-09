@@ -257,7 +257,6 @@ onMounted(() => {
             <RuiRevealableTextField
               ref="passwordRef"
               v-model="state.password"
-              variant="outlined"
               color="primary"
               autocomplete="current-password"
               :error-messages="fieldErrors('password')"
@@ -338,7 +337,7 @@ onMounted(() => {
       </div>
       <div
         v-if="errors.length > 0"
-        class="mt-8 max-w-[41.25rem] mx-auto"
+        class="mt-8 max-w-165 mx-auto"
       >
         <RuiAlert
           v-if="hasServerError"

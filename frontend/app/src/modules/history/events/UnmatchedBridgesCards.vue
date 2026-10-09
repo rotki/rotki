@@ -48,11 +48,11 @@ defineSlots<{
 
     <template #header="{ item }">
       <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        <BadgeDisplay class="!normal-case">
+        <BadgeDisplay class="normal-case!">
           {{ item.directionLabel }}
         </BadgeDisplay>
         <LocationDisplay
-          class="[&_div]:!justify-start [&_span]:!text-caption [&_span]:!text-rui-text-secondary"
+          class="[&_div]:justify-start! [&_span]:text-caption! [&_span]:text-rui-text-secondary!"
           size="16px"
           :identifier="item.location"
           horizontal
@@ -68,7 +68,7 @@ defineSlots<{
     <template #warning="{ item }">
       <div
         v-if="item.untrackedCounterpart"
-        class="flex items-start gap-1.5 rounded px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
+        class="flex items-start gap-1.5 rounded-sm px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
         data-testid="unmatched-card-untracked-reason"
       >
         <RuiIcon

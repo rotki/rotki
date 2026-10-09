@@ -38,7 +38,7 @@ function toggle(): void {
         variant="outlined"
         color="primary"
         size="sm"
-        :class="{ '!bg-rui-primary !text-white': active }"
+        :class="{ 'bg-rui-primary! text-white!': active }"
         data-testid="balance-divergence-toggle"
         @click="toggle()"
       >

@@ -113,7 +113,7 @@ const {
             v-if="!hasDecoder"
             :options="{ placement: 'top' }"
             :open-delay="400"
-            :class-names="{ tooltip: 'max-w-[12rem]' }"
+            :class-names="{ tooltip: 'max-w-48' }"
           >
             <template #activator>
               <RuiChip

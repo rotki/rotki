@@ -96,7 +96,7 @@ watch(modelSearch, () => setPage(1));
         prepend-icon="lu-search"
         :placeholder="t('common.actions.search')"
         :aria-label="t('common.actions.search')"
-        class="max-w-[16rem] w-full [&_input]:!py-1.5 [&_input]:!text-sm [&_input]:!leading-5 [&_input::placeholder]:!opacity-100 [&_input::placeholder]:!text-rui-text-secondary [&_svg]:!size-4"
+        class="max-w-64 w-full [&_input]:py-1.5! [&_input]:text-sm! [&_input]:leading-5! [&_input::placeholder]:opacity-100! [&_input::placeholder]:text-rui-text-secondary! [&_svg]:size-4!"
         hide-details
         clearable
         @click:clear="modelSearch = ''"
@@ -134,7 +134,7 @@ watch(modelSearch, () => setPage(1));
       dense
       :hide-default-header="hidePagination"
       :hide-default-footer="hidePagination"
-      class="!rounded-t-none"
+      class="rounded-t-none!"
       :class="{ 'border-t border-default': !hidePagination }"
       @update:pagination="setTablePagination($event)"
     >
@@ -160,7 +160,7 @@ watch(modelSearch, () => setPage(1));
         <RuiTooltip
           v-else-if="isPriceMissing(row.asset)"
           :open-delay="400"
-          :class-names="{ tooltip: 'max-w-[16rem]' }"
+          :class-names="{ tooltip: 'max-w-64' }"
         >
           <template #activator>
             <RuiIcon

@@ -19,7 +19,7 @@ const providerCount = computed<number>(() => get(availableProviders).length);
 <template>
   <div
     v-if="shouldShowNotification"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50"
   >
     <RuiAlert
       type="info"

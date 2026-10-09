@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex items-start gap-3 p-3 bg-rui-grey-100 dark:bg-rui-grey-800 rounded">
+  <div class="flex items-start gap-3 p-3 bg-rui-grey-100 dark:bg-rui-grey-800 rounded-sm">
     <RuiIcon
       name="lu-discord"
       class="text-rui-text-secondary shrink-0 mt-0.5"
@@ -30,7 +30,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="text"
         color="primary"
         size="sm"
-        class="self-start -ml-1.5 !py-0"
+        class="self-start -ml-1.5 py-0!"
         @click="emit('open-discord')"
       >
         {{ t('help_sidebar.report_issue.dialog.tips.discord.action') }}

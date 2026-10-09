@@ -43,7 +43,7 @@ defineSlots<{
         />
         <RuiButton
           :disabled="disabled"
-          class="z-[2] text-black -right-2 top-4 w-4 h-4 lg:w-[1.125rem] lg:h-[1.125rem] !p-0 !absolute !bg-black/[.12] dark:!bg-black dark:text-white"
+          class="z-2 text-black -right-2 top-4 w-4 h-4 lg:w-4.5 lg:h-4.5 p-0! absolute! bg-black/12! dark:bg-black! dark:text-white"
           icon
           variant="text"
           size="sm"

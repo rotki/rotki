@@ -18,7 +18,7 @@ const lastTitleIndex = computed<number>(() => (title?.length ?? 0) - 1);
     <div class="flex flex-col gap-4">
       <div
         v-if="!hideHeader"
-        class="flex flex-wrap items-center gap-2 lg:gap-4 min-h-[2.25rem]"
+        class="flex flex-wrap items-center gap-2 lg:gap-4 min-h-9"
       >
         <div
           v-if="title"

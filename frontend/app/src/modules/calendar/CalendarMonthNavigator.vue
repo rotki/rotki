@@ -21,7 +21,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
     <RuiButton
       variant="text"
       icon
-      class="!p-2"
+      class="p-2!"
       data-testid="calendar-prev-month"
       @click="prevMonth()"
     >
@@ -30,7 +30,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
     <RuiButton
       variant="text"
       icon
-      class="!p-2"
+      class="p-2!"
       data-testid="calendar-next-month"
       @click="nextMonth()"
     >

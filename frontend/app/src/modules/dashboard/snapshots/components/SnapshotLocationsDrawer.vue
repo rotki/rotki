@@ -74,7 +74,7 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
   {
     align: 'center',
     cellClass: 'py-2',
-    class: 'w-[12.5rem]',
+    class: 'w-50',
     key: 'location',
     label: t('common.location'),
     sortable: true,
@@ -87,13 +87,13 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
   },
   {
     align: 'end',
-    class: 'w-[6rem]',
+    class: 'w-24',
     key: 'share',
     label: t('dashboard.snapshot.detail.locations.share'),
   },
   {
     cellClass: 'py-2',
-    class: 'w-[6.25rem]',
+    class: 'w-25',
     key: 'action',
     label: '',
   },
@@ -137,6 +137,7 @@ function applyDistribute(): void {
 <template>
   <RuiNavigationDrawer
     v-model="open"
+    below-app-bar
     width="560px"
     temporary
     position="right"
@@ -175,7 +176,7 @@ function applyDistribute(): void {
 
     <!-- The body scrolls as a whole, so nothing in it may shrink: the table root hides its
          overflow, and as a shrinking flex item it would clip its own rows instead. -->
-    <div class="overflow-y-auto grow min-h-0 p-4 flex flex-col gap-4 [&>*]:shrink-0">
+    <div class="overflow-y-auto grow min-h-0 p-4 flex flex-col gap-4 *:shrink-0">
       <RuiDataTable
         v-model:sort="sort"
         :cols="tableHeaders"

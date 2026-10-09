@@ -93,7 +93,7 @@ onBeforeMount(async () => {
         v-if="unmatchedTransactions.length > 0"
         color="primary"
         size="sm"
-        class="ml-2 !px-0.5 !py-0"
+        class="ml-2 px-0.5! py-0!"
       >
         {{ unmatchedTransactions.length }}
       </RuiChip>
@@ -104,7 +104,7 @@ onBeforeMount(async () => {
         v-if="ignoredTransactions.length > 0"
         color="secondary"
         size="sm"
-        class="ml-2 !px-0.5 !py-0"
+        class="ml-2 px-0.5! py-0!"
       >
         {{ ignoredTransactions.length }}
       </RuiChip>
@@ -219,7 +219,7 @@ onBeforeMount(async () => {
           v-if="!isPinned && modelSelectedUnmatched.length > 0"
           size="sm"
           color="primary"
-          class="ml-2 !py-0"
+          class="ml-2 py-0!"
         >
           {{ modelSelectedUnmatched.length }}
         </RuiChip>
@@ -227,7 +227,7 @@ onBeforeMount(async () => {
       <RuiButtonGroup
         color="primary"
         class="grow justify-end"
-        :class="isPinned && modelSelectedUnmatched.length > 0 ? '!pl-2' : ''"
+        :class="isPinned && modelSelectedUnmatched.length > 0 ? 'pl-2!' : ''"
         :disabled="!isAutoMatchAllowed || autoMatchLoading"
       >
         <RuiTooltip
@@ -238,9 +238,9 @@ onBeforeMount(async () => {
           <template #activator>
             <RuiButton
               color="primary"
-              class="!rounded-r-none"
+              class="rounded-r-none!"
               :size="buttonSize"
-              :class="{ 'h-[30px] !px-3': isPinned }"
+              :class="{ 'h-[30px] px-3!': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedTransactions.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               data-testid="auto-match"
@@ -277,7 +277,7 @@ onBeforeMount(async () => {
           v-if="!isPinned && modelSelectedIgnored.length > 0"
           size="sm"
           color="primary"
-          class="ml-2 !py-0"
+          class="ml-2 py-0!"
         >
           {{ modelSelectedIgnored.length }}
         </RuiChip>

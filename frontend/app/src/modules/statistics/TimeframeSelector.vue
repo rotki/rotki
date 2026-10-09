@@ -29,15 +29,13 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButtonGroup
       v-model="modelValue"
       :disabled="disabled"
-      class="flex-wrap justify-center border border-rui-grey-200 dark:border-rui-grey-800 !divide-rui-grey-200 dark:!divide-rui-grey-800"
-      active-color="primary"
-      variant="text"
+      class="flex-wrap justify-center"
+      variant="segmented"
       required
     >
       <RuiButton
         v-for="(timeframe, i) in visibleTimeframes"
         :key="i"
-        class="!px-4"
         :disabled="!premium && !worksWithoutPremium(timeframe)"
         :model-value="timeframe"
       >

@@ -143,7 +143,7 @@ defineExpose({
         :error-messages="form.errors('weight').length > 0 ? [''] : []"
         variant="outlined"
         hide-details
-        class="w-[8rem] [&>div]:min-w-0"
+        class="w-32 [&>div]:min-w-0"
       >
         <template #append>
           {{ t('rpc_node_form.weight_per_hundred') }}

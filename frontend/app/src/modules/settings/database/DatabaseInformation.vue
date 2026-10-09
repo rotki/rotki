@@ -120,11 +120,11 @@ onMounted(loadInfo);
       <div
         v-for="(item, index) in details"
         :key="index"
-        class="mx-4 py-4 [&:not(:last-child)]:border-b border-default"
-        :class="{ '!py-2': item.copiable }"
+        class="mx-4 py-4 not-last:border-b border-default"
+        :class="{ 'py-2!': item.copiable }"
       >
         <div class="flex gap-4 items-center">
-          <span class="font-medium w-[9rem]">
+          <span class="font-medium w-36">
             {{ item.label }}
           </span>
           <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">

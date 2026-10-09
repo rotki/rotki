@@ -182,7 +182,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
         size="sm"
         icon
         color="primary"
-        class="size-5 relative top-4 -left-2 z-[6]"
+        class="size-5 relative top-4 -left-2 z-6"
         @click="emit('toggle-expand')"
       >
         <RuiIcon
