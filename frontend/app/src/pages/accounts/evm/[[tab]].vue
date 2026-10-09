@@ -155,6 +155,7 @@ watchImmediate(route, (route) => {
         ref="table"
         :category="category"
         @edit="account = $event"
+        @add="createNewBlockchainAccount()"
       />
       <EthStakingValidators
         v-else

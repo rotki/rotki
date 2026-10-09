@@ -75,6 +75,13 @@
       "tooltip": "Account detection added this address on {chains}. Click to dismiss."
     },
     "edit_tooltip": "Edit account",
+    "empty": {
+      "clear_filters": "Clear filters",
+      "description": "Add an address to start tracking its balances.",
+      "filtered_description": "Try other filters, or clear them to see every account.",
+      "filtered_title": "No accounts match the filters",
+      "title": "No accounts yet"
+    },
     "enter_selection_mode": "Select assets in an expanded account to ignore them or mark them as spam",
     "filter_field_labels": {
       "account": "Account",

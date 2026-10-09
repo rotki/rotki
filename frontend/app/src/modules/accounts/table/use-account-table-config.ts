@@ -28,8 +28,9 @@ export function useAccountTableConfig<
         }]
       : []), ...(group
       ? [{
-          cellClass: 'py-0 !px-3',
-          class: '!px-3',
+          cellClass: 'py-0 px-3!',
+          // the account takes the auto layout's spare width, so the columns after it sit together
+          class: 'px-3! w-full',
           key: 'label',
           label: t('common.account'),
           sortable: true,
