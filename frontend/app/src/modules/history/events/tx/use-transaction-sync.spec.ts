@@ -1,8 +1,8 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import type { NativeActivitySpec, RunBackendTask } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
-import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
@@ -11,6 +11,7 @@ import { useTransactionSync } from './use-transaction-sync';
 
 const mockNotifyError = vi.fn();
 const mocks = vi.hoisted(() => ({
+  fetchTransactionsTask: vi.fn(),
   markAddressCancelled: vi.fn(),
   markAddressFailed: vi.fn(),
   removeQueryStatus: vi.fn(),
@@ -46,7 +47,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({ fetchTransactionsTask: mocks.fetchTransactionsTask })),
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
@@ -152,6 +153,47 @@ describe('useTransactionSync', () => {
 
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(1, account, 'started');
       expect(mocks.setEvmlikeStatus).toHaveBeenNthCalledWith(2, account, 'finished');
+    });
+  });
+
+  describe('syncTransactionsByChains', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should send every address of a refresh the same end, lagging behind now', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
+      // Account activities are held back so they run after the clock moved: the queue is what
+      // delays the real requests, and the end must not follow it.
+      const queued: NativeActivitySpec[] = [];
+      mocks.submitTask.mockImplementation(async (spec: NativeActivitySpec) => {
+        if (spec.container)
+          return ok(undefined);
+
+        queued.push(spec);
+        return ok(undefined);
+      });
+      // Only the request being sent matters here, so the stub settles as skipped once it went out.
+      const runTask: RunBackendTask = async (task) => {
+        await task();
+        return err(Skipped({ message: 'stub' }));
+      };
+
+      const { syncTransactionsByChains } = useTransactionSync();
+      await syncTransactionsByChains([
+        { address: '0xAAA', chain: 'eth' },
+        { address: '0xBBB', chain: 'eth' },
+        { address: '0xCCC', chain: 'optimism' },
+      ]);
+      vi.setSystemTime(new Date('2026-10-09T12:05:00Z'));
+      for (const spec of queued)
+        await spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask });
+
+      const expectedEnd = Date.parse('2026-10-09T12:00:00Z') / 1000 - 15;
+      expect(mocks.fetchTransactionsTask).toHaveBeenCalledTimes(3);
+      for (const [payload] of mocks.fetchTransactionsTask.mock.calls)
+        expect(payload.toTimestamp).toBe(expectedEnd);
     });
   });
 
