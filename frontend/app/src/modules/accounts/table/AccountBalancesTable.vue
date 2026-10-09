@@ -159,7 +159,7 @@ defineExpose({
         :left-patch-colspan="anyExpansion ? 1 : 0"
         :label-colspan="group && group === 'evm' ? 4 : 2"
         :is-mobile="false"
-        class-name="[&>td]:p-4 text-sm"
+        class-name="[&>td]:px-4 [&>td]:h-11 text-sm"
       >
         <template #custom-columns>
           <td class="text-end">

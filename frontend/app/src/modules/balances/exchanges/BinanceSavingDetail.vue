@@ -150,7 +150,7 @@ watchImmediate(currencySymbol, async () => {
           <RowAppend
             label-colspan="2"
             :label="t('common.total')"
-            class="[&>td]:p-4"
+            class="[&>td]:px-4 [&>td]:py-2"
           >
             <FiatDisplay
               v-if="collection.totalValue"

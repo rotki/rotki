@@ -193,7 +193,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
       <AssetDetails
         :asset="row.asset"
         :resolution="{ isCollectionParent: !!row.breakdown }"
-        :display="nested ? { dense: true, size: '24px' } : undefined"
+        :display="nested ? { dense: true, inline: true, size: '24px' } : undefined"
       />
     </template>
     <template #item.perProtocol="{ row }">
@@ -244,7 +244,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"
-        class-name="[&>td]:p-4 text-sm"
+        class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
       >
         <FiatDisplay
           :value="total"
