@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13329` Jupiter swaps from native SOL that fund the temporary wrapped SOL account in a single transfer no longer count the swapped SOL twice. Before, the funding transfer was kept as an extra SOL spend next to the swap.
 * :bug:`-` Loading Ethereum withdrawals through Blockscout works again with Blockscout v12 instances. Before, the changed pagination of v12 made the withdrawals query fail.
 * :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
 * :bug:`13278` Choosing Email in the Report an Issue dialog now opens your mail client in the desktop app. Before, the dialog closed without opening anything and the title and description you typed were lost. If an option cannot be opened, the dialog now stays open with your report and says so.
