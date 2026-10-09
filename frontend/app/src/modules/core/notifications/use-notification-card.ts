@@ -2,6 +2,7 @@ import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
 import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { arrayify } from '@/modules/core/common/data/array';
+import { useSharedClipboard } from '@/modules/core/common/use-clipboard';
 
 /** Height in pixels beyond which the message is collapsed behind an expand arrow. */
 export const NOTIFICATION_MAX_HEIGHT = 64;
@@ -71,7 +72,7 @@ export function useNotificationCard(
 ): UseNotificationCardReturn {
   const { dismiss, height } = options;
 
-  const { copy: copyToClipboard } = useClipboard();
+  const { copy: copyToClipboard } = useSharedClipboard();
 
   const expanded = shallowRef<boolean>(false);
 
