@@ -848,7 +848,7 @@
       "ignored_assets": {
         "error": {
           "message": "Yok sayılan varlıklar alınamadı: {error}",
-          "title": "Yok sayılan varlıkları sorgulama"
+          "title": "Yok sayılan varlıklar yüklenemedi"
         }
       },
       "kraken_account": {
@@ -1162,8 +1162,8 @@
   },
   "asset_mappings": {
     "error": {
-      "message": "Şu tanımlayıcılar için varlık eşlemeleri alınamadı: {identifiers} ({message})",
-      "title": "Varlık eşlemelerini önbelleğe alma"
+      "message": "Şu tanımlayıcılar için varlık eşlemeleri alınamadı: {identifiers} ({message}) | Varlık eşlemeleri {count} kez alınamadı, en son şu tanımlayıcılar için: {identifiers} ({message})",
+      "title": "Varlık ayrıntıları yüklenemedi"
     }
   },
   "asset_movement_matching": {
