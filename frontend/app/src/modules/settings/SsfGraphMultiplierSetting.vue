@@ -87,7 +87,6 @@ watch(writeError, (message) => {
     </RuiCardHeader>
     <RuiTextField
       v-model="form.state.value"
-      variant="outlined"
       color="primary"
       min="0"
       :label="t('statistics_graph_settings.multiplier.label')"

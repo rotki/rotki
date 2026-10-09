@@ -53,12 +53,10 @@ const RuiAutoComplete = defineComponent({
     modelValue: { default: undefined, type: String },
     options: { default: () => [], type: Array },
     placeholder: { default: undefined, type: String },
-    variant: { default: undefined, type: String },
   },
   template: `<div
     class="rui-auto-complete"
     :data-label="label"
-    :data-variant="variant"
     :data-placeholder="placeholder"
     :data-dense="String(dense === true)"
     :data-hide-details="String(hideDetails === true)"
@@ -169,18 +167,6 @@ describe('assetSelect', () => {
     const open = createWrapper({ source: { items: [] } });
     expect(open.get('.rui-auto-complete').attributes('data-placeholder')).toBe('asset_select.placeholder');
     open.unmount();
-  });
-
-  it('should pass each of the three variants through, defaulting to the plain one', () => {
-    const plain = createWrapper();
-    expect(plain.get('.rui-auto-complete').attributes('data-variant')).toBe('default');
-    plain.unmount();
-
-    for (const variant of ['outlined', 'filled'] as const) {
-      const wrapper = createWrapper({ variant });
-      expect(wrapper.get('.rui-auto-complete').attributes('data-variant')).toBe(variant);
-      wrapper.unmount();
-    }
   });
 
   it('should render the selected asset in the field and every option in the menu', () => {

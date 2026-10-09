@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
     <SettingSwitch
       setting="inferZeroTimedBalances"
       size="sm"
-      class="mt-4 [&_span]:!text-sm"
+      class="mt-4 [&_span]:text-sm!"
       :debounce="1500"
       :label="t('statistics_graph_settings.infer_zero_timed_balances.label')"
       @updated="emit('updated')"

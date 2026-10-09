@@ -93,7 +93,6 @@ defineExpose({
       >
         <RuiTextField
           v-model="form.state.address"
-          variant="outlined"
           color="primary"
           :error-messages="form.errors('address')"
           :label="t('asset_management.solana_token_migration.solana_address')"
@@ -109,7 +108,6 @@ defineExpose({
       >
         <AmountInput
           v-model="decimalsModel"
-          variant="outlined"
           color="primary"
           integer
           :label="t('asset_form.labels.decimals')"
@@ -131,7 +129,6 @@ defineExpose({
           :disabled="loading"
           key-attr="identifier"
           text-attr="label"
-          variant="outlined"
           @update:model-value="form.touch('tokenKind'); clearFieldError('tokenKind')"
         />
       </div>

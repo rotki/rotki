@@ -4,10 +4,7 @@ import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTab
 import '@test/i18n';
 
 const stubs = {
-  RuiAccordion: { template: '<div><slot /></div>' },
-  RuiAccordions: { props: ['modelValue'], template: '<div :data-open="modelValue === 0"><slot /></div>' },
   RuiButton: { template: '<button v-bind="$attrs"><slot /></button>' },
-  RuiCard: { template: '<div><slot name="custom-header" /><slot /></div>' },
   RuiIcon: true,
 };
 
@@ -50,7 +47,8 @@ describe('dashboardExpandableTable', () => {
     expect(wrapper.find('[data-testid=details]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=short-details]').exists()).toBe(true);
     expect(wrapper.get('[data-testid=dashboard-table-toggle]').attributes('aria-expanded')).toBe('false');
-    expect(wrapper.get('[data-open]').attributes('data-open')).toBe('false');
+    // hidden rather than unmounted, so the table keeps its state while collapsed
+    expect(wrapper.get('[data-testid=dashboard-table-content]').attributes('style')).toContain('display: none');
 
     await wrapper.get('[data-testid=dashboard-table-toggle]').trigger('click');
     expect(wrapper.find('[data-testid=details]').exists()).toBe(true);

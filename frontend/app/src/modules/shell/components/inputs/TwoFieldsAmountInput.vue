@@ -52,37 +52,37 @@ const focused = ref<boolean>(false);
 
 const uiClasses = {
   disabledInput: `
-    [&_label]:!border-t-0
+    [&_label]:border-t-0!
     [&_label]:border
     [&_label]:border-[#0000006b]
     [&_label]:rounded-b
-    [&_label]:!rounded-t-none
-    [&_label]:!bg-rui-grey-300/40
-    dark:[&_label]:border-white/[0.42]
-    dark:[&_label]:!bg-rui-grey-800/40
-    [&_input]:!pt-6
-    [&_input]:!pb-2
+    [&_label]:rounded-t-none!
+    [&_label]:bg-rui-grey-300/40!
+    dark:[&_label]:border-white/42
+    dark:[&_label]:bg-rui-grey-800/40!
+    [&_input]:pt-6!
+    [&_input]:pb-2!
   `,
   enabledInput: `
     [&_label]:border
     [&_label]:rounded-t
-    [&_label]:!rounded-b-none
-    [&_label]:!bg-transparent
-    [&_input]:!pt-6
-    [&_input]:!pb-2
+    [&_label]:rounded-b-none!
+    [&_label]:bg-transparent!
+    [&_input]:pt-6!
+    [&_input]:pb-2!
   `,
 } as const;
 </script>
 
 <template>
   <div
-    class="relative flex [&>*]:!-my-px [&_input:focus+label]:!leading-7 [&_input:not(:placeholder-shown)+label]:!leading-7"
+    class="relative flex *:-my-px! [&_input:focus+label]:leading-7! [&_input:not(:placeholder-shown)+label]:leading-7!"
     :class="{
       'flex-col-reverse': reversed,
       'flex-col': !reversed,
-      '[&_label]:border-dotted [&_label]:!border-rui-grey-400 dark:[&_label]:!border-rui-grey-700': disabled,
-      '[&_label]:!border-rui-primary [&_label]:!border-2': focused,
-      '[&_label]:!border-rui-error [&_label]:!border-2': hasError,
+      '[&_label]:border-dotted [&_label]:border-rui-grey-400! dark:[&_label]:border-rui-grey-700!': disabled,
+      '[&_label]:border-rui-primary! [&_label]:border-2!': focused,
+      '[&_label]:border-rui-error! [&_label]:border-2!': hasError,
     }"
     v-bind="$attrs"
   >
@@ -102,7 +102,7 @@ const uiClasses = {
     />
 
     <RuiProgress
-      class="relative z-[1]"
+      class="relative z-1"
       :class="{ 'opacity-0': !loading }"
       variant="indeterminate"
       thickness="4"
@@ -126,7 +126,7 @@ const uiClasses = {
 
     <RuiButton
       icon
-      class="absolute right-5 top-14 transform -translate-y-1/2 z-[1] !p-2"
+      class="absolute right-5 top-14 transform -translate-y-1/2 z-1 p-2!"
       color="primary"
       data-testid="grouped-amount-input-swap"
       @click="reverse()"

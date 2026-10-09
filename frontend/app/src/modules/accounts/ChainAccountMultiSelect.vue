@@ -95,7 +95,6 @@ defineExpose({
     :filter="filterOption"
     key-attr="id"
     text-attr="id"
-    variant="outlined"
     chips
     dense
     hide-details

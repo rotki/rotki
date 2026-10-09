@@ -21,7 +21,7 @@ const visible = computed<boolean>(() => get(logged) && !get(isActiveTab));
   >
     <div
       v-if="visible"
-      class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-[9999] flex items-center justify-center p-4"
+      class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-9999 flex items-center justify-center p-4"
     >
       <div class="flex flex-col gap-6 justify-center items-center max-w-md text-center">
         <RuiIcon

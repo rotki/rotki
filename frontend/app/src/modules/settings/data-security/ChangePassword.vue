@@ -71,7 +71,6 @@ async function change(): Promise<void> {
         data-testid="current-password"
         :label="t('change_password.labels.password')"
         :error-messages="form.errors('currentPassword')"
-        variant="outlined"
         @update:model-value="form.touch('currentPassword')"
       />
       <RuiRevealableTextField
@@ -81,7 +80,6 @@ async function change(): Promise<void> {
         :label="t('change_password.labels.new_password')"
         prepend-icon="lu-lock-keyhole"
         :error-messages="form.errors('newPassword')"
-        variant="outlined"
         @update:model-value="form.touch('newPassword')"
       />
       <RuiRevealableTextField
@@ -91,7 +89,6 @@ async function change(): Promise<void> {
         :label="t('change_password.labels.confirm_password')"
         prepend-icon="lu-repeat"
         :error-messages="form.errors('newPasswordConfirm')"
-        variant="outlined"
         @update:model-value="form.touch('newPasswordConfirm')"
       />
       <div class="flex justify-end">

@@ -103,7 +103,6 @@ defineExpose({
         required
         persistent-hint
         max-date="now"
-        variant="outlined"
         accuracy="millisecond"
         data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
@@ -112,7 +111,6 @@ defineExpose({
       />
       <AmountInput
         v-model="state.validatorIndex"
-        variant="outlined"
         integer
         data-testid="validator-index"
         :label="t('transactions.events.form.validator_index.label')"
@@ -124,7 +122,6 @@ defineExpose({
 
     <RuiTextField
       v-model="state.txRef"
-      variant="outlined"
       color="primary"
       data-testid="tx-ref"
       :label="t('common.tx_hash')"
@@ -194,7 +191,6 @@ defineExpose({
 
       <AmountInput
         v-model="state.sequenceIndex"
-        variant="outlined"
         integer
         data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
@@ -218,7 +214,6 @@ defineExpose({
         <div class="py-2">
           <RuiTextField
             v-model="state.groupIdentifier"
-            variant="outlined"
             color="primary"
             data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"

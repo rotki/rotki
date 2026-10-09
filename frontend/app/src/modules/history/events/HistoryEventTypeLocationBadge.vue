@@ -17,7 +17,7 @@ const locationData = useLocationData(() => location);
 
 <template>
   <RuiBadge
-    class="[&_span]:!px-0"
+    class="[&_span]:px-0!"
     color="default"
     offset-x="-8"
     offset-y="6"

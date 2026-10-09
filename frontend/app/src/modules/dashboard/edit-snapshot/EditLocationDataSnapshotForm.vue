@@ -51,7 +51,6 @@ defineExpose({
     />
     <AmountInput
       v-model="form.state.usdValue"
-      variant="outlined"
       data-testid="edit-location-value"
       :label="
         t('common.value_in_symbol', {

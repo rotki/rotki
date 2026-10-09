@@ -104,7 +104,7 @@ const { getRedirectLink, modelLocation, page, staking } = useStakingPage(() => l
           </RuiTooltip>
         </div>
 
-        <div class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]">
+        <div class="text-body-1 text-rui-text-secondary text-center max-w-148">
           {{ t('staking_page.page.description') }}
         </div>
       </FullSizeContent>

@@ -42,7 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
             variant="text"
             icon
             size="sm"
-            class="!p-0.5"
+            class="p-0.5!"
             data-testid="remove-chain"
             :data-key="tab.id"
             @click.stop="emit('remove', tab.id)"

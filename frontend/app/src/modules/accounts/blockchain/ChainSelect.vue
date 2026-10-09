@@ -73,7 +73,6 @@ const mappedOptions = computed<ChainInfo[]>(() => {
     :options="mappedOptions"
     :label="t('account_form.labels.blockchain')"
     data-testid="account-blockchain-field"
-    variant="outlined"
     auto-select-first
     text-attr="name"
     :item-height="dense ? 48 : 56"

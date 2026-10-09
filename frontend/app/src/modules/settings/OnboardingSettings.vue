@@ -242,7 +242,6 @@ function showResetConfirmation() {
         data-testid="user-data-directory-input"
         :loading="!userDataDirectory"
         class="pt-2"
-        variant="outlined"
         color="primary"
         :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
         :hint="
@@ -270,7 +269,6 @@ function showResetConfirmation() {
         data-testid="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
         :hint="!!fileConfig.logDirectory ? t('backend_settings.config_file_disabled') : undefined"
-        variant="outlined"
         color="primary"
         :label="t('backend_settings.settings.log_directory.label')"
         readonly

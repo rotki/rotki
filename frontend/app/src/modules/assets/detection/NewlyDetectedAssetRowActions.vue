@@ -8,7 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <RuiButtonGroup class="dark:!divide-rui-grey-800">
+  <RuiButtonGroup class="dark:divide-rui-grey-800!">
     <RuiTooltip
       :open-delay="300"
       :close-delay="0"
@@ -18,7 +18,7 @@ const { t } = useI18n({ useScope: 'global' });
           color="success"
           icon
           variant="text"
-          class="m-auto !rounded-none"
+          class="m-auto rounded-none!"
           data-testid="accept-token"
           @click="emit('accept')"
         >
@@ -36,7 +36,7 @@ const { t } = useI18n({ useScope: 'global' });
           color="error"
           icon
           variant="text"
-          class="m-auto !rounded-none"
+          class="m-auto rounded-none!"
           data-testid="mark-token-spam"
           @click="emit('mark-spam')"
         >

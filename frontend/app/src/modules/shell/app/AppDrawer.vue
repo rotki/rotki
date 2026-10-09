@@ -25,12 +25,8 @@ watchImmediate(isXlAndDown, (isXlAndDown) => {
   <RuiNavigationDrawer
     v-model="showDrawer"
     width="300"
-    :class-names="{
-      content: {
-        'flex flex-col border-r border-rui-grey-300 dark:border-rui-grey-800': true,
-        '!top-0 !max-h-full': isXlAndDown,
-      },
-    }"
+    below-app-bar
+    :class-names="{ content: 'flex flex-col border-r border-rui-grey-300 dark:border-rui-grey-800' }"
     :mini-variant="!isXlAndDown"
     :overlay="isXlAndDown"
   >

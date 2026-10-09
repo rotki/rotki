@@ -94,7 +94,7 @@ function handleToggleSelectAllMatching(): void {
       <PillFilterBar
         v-model:matches="filters"
         v-model:params="modelPillParams"
-        class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+        class="flex-1 min-w-48 md:min-w-96"
         :fields="fields"
         :labels="pillLabels"
       >
@@ -135,7 +135,7 @@ function handleToggleSelectAllMatching(): void {
                 />
               </RuiButton>
             </template>
-            <div class="max-w-[16rem]">
+            <div class="max-w-64">
               <div class="font-medium">
                 {{ t('transactions.filter.match_exact_filter') }}
               </div>
@@ -154,7 +154,7 @@ function handleToggleSelectAllMatching(): void {
 
     <div
       v-if="selection.isActive"
-      class="flex items-center gap-1.5 h-10 bg-rui-grey-500/[0.1] rounded-md pl-3 pr-1"
+      class="flex items-center gap-1.5 h-10 bg-rui-grey-500/10 rounded-md pl-3 pr-1"
     >
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -226,7 +226,7 @@ function handleToggleSelectAllMatching(): void {
           <template #activator>
             <RuiButton
               variant="outlined"
-              class="h-7 px-2.5 !rounded-r-none"
+              class="h-7 px-2.5 rounded-r-none!"
               :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
               data-testid="selection-ignore"
               @click="handleIgnore()"
@@ -243,7 +243,7 @@ function handleToggleSelectAllMatching(): void {
           <template #activator>
             <RuiButton
               variant="outlined"
-              class="h-7 px-2.5 !rounded-l-none -ml-[1px]"
+              class="h-7 px-2.5 rounded-l-none! -ml-px"
               :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
               data-testid="selection-unignore"
               @click="handleUnignore()"

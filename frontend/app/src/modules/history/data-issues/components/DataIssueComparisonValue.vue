@@ -52,7 +52,7 @@ function textValue(event: DecodingComparisonEvent): string {
     <dd
       v-for="(event, index) in [saved, decoded]"
       :key="index"
-      class="rounded px-2 py-1 min-w-0 break-words"
+      class="rounded-sm px-2 py-1 min-w-0 break-words"
       :class="index === 0 ? 'bg-rui-error/10' : 'bg-rui-success/10'"
       :data-testid="index === 0 ? 'data-issue-diff-before' : 'data-issue-diff-after'"
     >

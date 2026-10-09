@@ -105,7 +105,7 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
   <TablePageLayout
     child
     hide-header
-    class="lg:!-mt-5"
+    class="lg:-mt-5!"
   >
     <RuiCard>
       <RuiDataTable

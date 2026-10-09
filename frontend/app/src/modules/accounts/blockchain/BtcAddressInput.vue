@@ -112,7 +112,6 @@ defineExpose({
     <div class="flex gap-4">
       <RuiTextField
         v-model="state.xpub"
-        variant="outlined"
         color="primary"
         class="flex-1"
         data-testid="xpub-key"
@@ -190,7 +189,6 @@ defineExpose({
     <div v-if="advanced">
       <RuiTextField
         v-model="state.derivationPath"
-        variant="outlined"
         color="primary"
         data-testid="xpub-derivation-path"
         :label="t('account_form.labels.btc.derivation_path')"

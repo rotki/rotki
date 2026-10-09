@@ -29,7 +29,7 @@ const pillLabels = usePillBarLabels();
     <RuiTabs
       v-model="customRuleHandling"
       color="primary"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+      class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min"
     >
       <RuiTab
         :value="CustomRuleHandling.EXCLUDE"
@@ -47,7 +47,7 @@ const pillLabels = usePillBarLabels();
 
     <PillFilterBar
       v-model:matches="filter"
-      class="flex-1 min-w-[12rem] md:min-w-[20rem]"
+      class="flex-1 min-w-48 md:min-w-80"
       :fields="fields"
       :labels="pillLabels"
     />

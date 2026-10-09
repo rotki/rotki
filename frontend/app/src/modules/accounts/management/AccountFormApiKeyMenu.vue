@@ -79,7 +79,7 @@ watch(open, followFocusIntoPanel);
   <RuiMenu
     v-if="visible"
     v-model="open"
-    :class-names="{ menu: 'w-[26rem] max-w-[90vw]' }"
+    :class-names="{ menu: 'w-104 max-w-[90vw]' }"
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
@@ -88,11 +88,11 @@ watch(open, followFocusIntoPanel);
         variant="outlined"
         color="info"
         size="lg"
-        class="!rounded-full"
+        class="rounded-full!"
+        v-bind="attrs"
         aria-haspopup="dialog"
         :aria-expanded="open"
         data-testid="api-key-menu-activator"
-        v-bind="attrs"
       >
         <template #prepend>
           <RuiIcon name="lu-info" />
@@ -106,7 +106,7 @@ watch(open, followFocusIntoPanel);
       role="dialog"
       tabindex="-1"
       :aria-label="title"
-      class="p-4 flex flex-col gap-2 text-body-2 focus:outline-none"
+      class="p-4 flex flex-col gap-2 text-body-2 focus:outline-hidden"
       data-testid="api-key-menu-content"
     >
       <div class="font-medium text-rui-text">

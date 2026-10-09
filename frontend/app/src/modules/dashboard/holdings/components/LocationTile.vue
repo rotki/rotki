@@ -27,7 +27,7 @@ const kindMarks = computed<boolean>(() => showKinds && holding.parts.length > 1)
 <template>
   <RouterLink
     :to="to"
-    class="grid grid-cols-[28px_1fr] items-center gap-x-2.5 min-w-0 !text-rui-text rounded-md border border-transparent bg-rui-grey-100 dark:bg-rui-grey-900 px-3 py-2 hover:border-default hover:bg-white dark:hover:bg-rui-grey-800"
+    class="grid grid-cols-[28px_1fr] items-center gap-x-2.5 min-w-0 text-rui-text! rounded-md border border-transparent bg-rui-grey-100 dark:bg-rui-grey-900 px-3 py-2 hover:border-default hover:bg-white dark:hover:bg-rui-grey-800"
     data-testid="dashboard-location-tile"
     :data-location="holding.place.location"
     :data-chain="holding.place.chain"

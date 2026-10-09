@@ -45,13 +45,12 @@ const { t } = useI18n({ useScope: 'global' });
     :item-height="68"
     key-attr="value"
     text-attr="value"
-    variant="outlined"
   >
     <template #item="{ item }">
       <ListItem
         no-hover
         no-padding
-        class="!py-0"
+        class="py-0!"
         :title="item.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {

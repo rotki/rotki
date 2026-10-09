@@ -94,7 +94,6 @@ watch(open, (value) => {
           v-model="modelChainId"
           :options="supportedChains"
           :label="t('general_settings.disabled_chain_queries.dialog.chain_label')"
-          variant="outlined"
           key-attr="id"
           text-attr="name"
           hide-details
@@ -120,7 +119,6 @@ watch(open, (value) => {
             v-model="modelAddress"
             :options="addressOptions"
             :label="t('general_settings.disabled_chain_queries.dialog.address_label')"
-            variant="outlined"
             key-attr="address"
             text-attr="address"
             :filter="filterAddressOption"
@@ -172,7 +170,6 @@ watch(open, (value) => {
             :model-value="modelSelectedChainIds"
             :options="chainOptionsForAddress"
             :label="t('general_settings.disabled_chain_queries.dialog.chains_label')"
-            variant="outlined"
             key-attr="id"
             text-attr="name"
             chips

@@ -37,13 +37,13 @@ onMounted(async () => {
   <TablePageLayout
     child
     hide-header
-    class="lg:!-mt-5"
+    class="lg:-mt-5!"
   >
     <RuiCard>
       <div class="mb-4 flex">
         <PillFilterBar
           v-model:matches="modelFilter"
-          class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+          class="flex-1 min-w-48 md:min-w-96"
           :fields="fields"
           :labels="pillLabels"
         />

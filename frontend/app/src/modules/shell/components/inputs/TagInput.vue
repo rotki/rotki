@@ -105,7 +105,6 @@ watch(tags, () => {
       class="tag-input flex-1"
       :hide-no-data="!search"
       :label="label"
-      variant="outlined"
       text-attr="name"
       key-attr="name"
       return-object

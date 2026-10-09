@@ -133,7 +133,6 @@ watch(writeError, (message) => {
     v-else
     v-bind="$attrs"
     v-model="selected"
-    variant="outlined"
     color="primary"
     :options="normalised"
     :label="label"

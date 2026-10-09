@@ -79,7 +79,6 @@ defineExpose({
 
     <RuiTextField
       v-model="state.txRef"
-      variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
       data-testid="tx-ref"
@@ -141,7 +140,6 @@ defineExpose({
     <RuiTextField
       v-model="state.address"
       clearable
-      variant="outlined"
       data-testid="address"
       :label="t('transactions.events.form.contract_address.label')"
       :error-messages="form.errors('address')"
@@ -151,7 +149,6 @@ defineExpose({
     <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
         v-model="state.sequenceIndex"
-        variant="outlined"
         integer
         :disabled="data.type === 'edit-group'"
         data-testid="sequence-index"

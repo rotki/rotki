@@ -211,14 +211,14 @@ const tags = useAccountTags(() => text);
 </script>
 
 <template>
-  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px] min-w-0">
+  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs **:font-mono **:leading-6 min-h-[22px] min-w-0">
     <LocationIcon
       v-if="showLocationIcon && location"
       icon
       :item="location"
-      image-class="!size-4"
+      image-class="size-4!"
       size="20px"
-      class="min-w-5 bg-white !rounded-full overflow-hidden -ml-1.5"
+      class="min-w-5 bg-white rounded-full! overflow-hidden -ml-1.5"
     />
 
     <EnsAvatar
@@ -236,7 +236,7 @@ const tags = useAccountTags(() => text);
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
       :disabled="truncateLength === 0"
-      :class-names="{ tooltip: '[&_*]:font-mono' }"
+      :class-names="{ tooltip: '**:font-mono' }"
       persist-on-tooltip-hover
     >
       <template #activator>
@@ -251,7 +251,7 @@ const tags = useAccountTags(() => text);
       <TagDisplay
         v-if="tags.length > 0"
         :tags="tags"
-        class="!mt-1 mb-2"
+        class="mt-1! mb-2"
         small
       />
 

@@ -127,7 +127,6 @@ watch(() => form.state.hide, resetThresholdForHiding);
         v-model="form.state.hideBelow"
         data-testid="hide-small-balances-threshold"
         :label="t('hide_small_balances.hide_under')"
-        variant="outlined"
         color="primary"
         min="0"
         step="0.1"

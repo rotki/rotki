@@ -78,7 +78,7 @@ const mediaStyle = computed<StyleValue>(() => {
         :disabled="shouldRender"
         :open-delay="400"
         class="w-full"
-        :class-names="{ tooltip: 'max-w-[10rem]' }"
+        :class-names="{ tooltip: 'max-w-40' }"
       >
         <template #activator>
           <ExternalLink
@@ -116,7 +116,7 @@ const mediaStyle = computed<StyleValue>(() => {
       >
         <template #activator>
           <RuiButton
-            class="!p-2"
+            class="p-2!"
             icon
             @click="showAllowDomainConfirmation()"
           >
@@ -134,7 +134,7 @@ const mediaStyle = computed<StyleValue>(() => {
       <RuiTooltip
         :options="{ placement: 'top' }"
         :open-delay="400"
-        :class-names="{ tooltip: 'max-w-[20rem]' }"
+        :class-names="{ tooltip: 'max-w-80' }"
         class="text-truncate block text-subtitle-1 font-medium"
       >
         <template #activator>
@@ -146,7 +146,7 @@ const mediaStyle = computed<StyleValue>(() => {
         v-if="item.collection"
         :options="{ placement: 'top' }"
         :open-delay="400"
-        :class-names="{ tooltip: 'max-w-[20rem] text-truncate overflow-hidden' }"
+        :class-names="{ tooltip: 'max-w-80 text-truncate overflow-hidden' }"
         class="pt-1 text-truncate max-w-full"
       >
         <template #activator>

@@ -42,9 +42,9 @@ export class BlockchainAccountsPage {
     const blockchainField = addAccountDialog.locator('[data-testid=account-blockchain-field]');
     const blockchainInput = blockchainField.locator('input');
     await blockchainField.locator('[data-id=activator]').click();
-    await this.page.locator('[role=menu]').waitFor({ state: 'visible' });
+    await this.page.locator('[role=listbox]').waitFor({ state: 'visible' });
     await blockchainInput.fill(balance.chainName);
-    const chainOption = this.page.locator('[role=menu]').getByText(balance.chainName, { exact: false }).first();
+    const chainOption = this.page.locator('[role=listbox]').getByText(balance.chainName, { exact: false }).first();
     await chainOption.waitFor({ state: 'visible' });
     await chainOption.click();
 

@@ -85,7 +85,7 @@ function toggle(row: HistoricalBalanceRow): void {
         <RuiTooltip
           v-if="row.partial"
           :open-delay="400"
-          :class-names="{ tooltip: 'max-w-[16rem]' }"
+          :class-names="{ tooltip: 'max-w-64' }"
         >
           <template #activator>
             <RuiIcon

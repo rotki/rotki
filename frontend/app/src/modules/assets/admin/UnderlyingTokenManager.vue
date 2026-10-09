@@ -109,7 +109,6 @@ function editToken(token: UnderlyingToken): void {
           v-model="form.state.address"
           :error-messages="form.errors('address')"
           data-testid="underlying-token-address"
-          variant="outlined"
           color="primary"
           :label="t('common.address')"
           @update:model-value="form.touch('address')"
@@ -123,14 +122,12 @@ function editToken(token: UnderlyingToken): void {
           :options="evmTokenKindsData"
           key-attr="identifier"
           text-attr="label"
-          variant="outlined"
         />
       </div>
 
       <div class="col-span-1">
         <RuiTextField
           v-model="form.state.weight"
-          variant="outlined"
           color="primary"
           type="number"
           max="100"

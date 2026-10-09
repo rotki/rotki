@@ -53,7 +53,7 @@ defineExpose({
   <div class="flex flex-col gap-4">
     <RuiTabs
       v-model="accountType"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
+      class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
       color="primary"
     >
       <RuiTab

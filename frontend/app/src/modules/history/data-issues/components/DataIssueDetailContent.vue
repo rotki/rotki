@@ -115,7 +115,7 @@ const resolutionNote = computed<string | undefined>(() => {
           variant="text"
           color="primary"
           size="sm"
-          class="mt-1 !px-0"
+          class="mt-1 px-0!"
           data-testid="data-issue-related-event"
           @click="goToRelatedEvent()"
         >

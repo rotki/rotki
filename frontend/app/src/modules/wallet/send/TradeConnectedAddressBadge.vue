@@ -66,7 +66,7 @@ const chain = computed<string | undefined>(() => {
           size="14px"
         />
         <HashLink
-          class="!pl-0"
+          class="pl-0!"
           :location="chain"
           :text="connectedAddress"
           copy-only

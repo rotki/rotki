@@ -107,7 +107,7 @@ watchImmediate(location, async () => {
           <RuiTabs
             v-model="tab"
             color="primary"
-            class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+            class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min"
             data-testid="address-book-scope-tabs"
           >
             <RuiTab

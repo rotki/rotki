@@ -16,7 +16,6 @@ const { t } = useI18n({ useScope: 'global' });
     hide-details
     hide-selected
     :options="items"
-    variant="outlined"
     :item-height="42"
     dense
   >

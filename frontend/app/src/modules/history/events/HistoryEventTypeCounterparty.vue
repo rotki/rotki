@@ -65,7 +65,7 @@ const displayAddress = computed<string | undefined>(() => {
 <template>
   <RuiBadge
     v-if="counterpartyData || displayAddress"
-    class="[&_span]:!px-0"
+    class="[&_span]:px-0!"
     color="default"
     offset-x="-8"
     offset-y="6"
@@ -78,7 +78,7 @@ const displayAddress = computed<string | undefined>(() => {
         <template #activator>
           <div
             class="rounded-full overflow-hidden bg-rui-grey-100 border-2 border-white dark:border-black size-6 flex items-center justify-center"
-            :class="{ '!bg-black': useDarkModeImage }"
+            :class="{ 'bg-black!': useDarkModeImage }"
           >
             <template v-if="counterpartyData">
               <RuiIcon

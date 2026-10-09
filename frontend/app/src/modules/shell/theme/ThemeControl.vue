@@ -54,7 +54,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
   <div class="relative">
     <RuiMenu
       v-if="!menu"
-      :class-names="{ menu: 'w-[16rem]' }"
+      :class-names="{ menu: 'w-64' }"
       :options="{ placement: 'bottom-end' }"
     >
       <template #activator="{ attrs }">
@@ -79,7 +79,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
           </div>
         </MenuTooltipButton>
         <RuiButton
-          class="p-0 absolute z-10 right-0  top-[1.775rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem] !bg-rui-grey-100 text-black dark:text-white dark:!bg-black"
+          class="p-0 absolute z-10 right-0  top-[1.775rem] w-4 h-4 lg:top-8 lg:w-4.5 lg:h-4.5 bg-rui-grey-100! text-black dark:text-white dark:bg-black!"
           icon
           variant="text"
           size="sm"
@@ -109,8 +109,8 @@ async function changeSelectedTheme(selectedTheme: Theme) {
             hide-track
             :tick-size="12"
             :class-names="{
-              slider: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
-              tick: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+              slider: 'bg-rui-grey-200! dark:bg-rui-grey-800!',
+              tick: 'bg-rui-grey-200! dark:bg-rui-grey-800!',
             }"
             vertical
             @update:model-value="changeSelectedTheme($event)"
@@ -120,7 +120,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
               v-for="(label, index) in labels"
               :key="label"
               class="flex flex-col flex-1 justify-center pl-2 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600 uppercase text-sm font-bold"
-              :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': selectedTheme === index }"
+              :class="{ 'text-rui-primary! dark:text-rui-primary-lighter!': selectedTheme === index }"
               @click="changeSelectedTheme(index)"
             >
               {{ label }}

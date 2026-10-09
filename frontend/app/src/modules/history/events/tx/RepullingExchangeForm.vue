@@ -109,7 +109,6 @@ defineExpose({
         v-model="form.state.exchange"
         :options="syncingExchanges"
         :label="t('common.exchange')"
-        variant="outlined"
         auto-select-first
         :item-height="48"
         text-attr="name"

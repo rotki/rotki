@@ -84,14 +84,14 @@ const emptyDescription = computed<string>(() =>
 const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
   {
     cellClass: 'py-2',
-    class: 'w-[10rem]',
+    class: 'w-40',
     key: 'categoryLabel',
     label: t('common.category'),
     sortable: true,
   },
   {
-    cellClass: 'py-0 max-w-[20rem]',
-    class: 'max-w-[20rem]',
+    cellClass: 'py-0 max-w-80',
+    class: 'max-w-80',
     key: 'assetIdentifier',
     label: t('common.asset'),
     sortable: true,
@@ -110,13 +110,13 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
   },
   {
     align: 'end',
-    class: 'w-[6rem]',
+    class: 'w-24',
     key: 'share',
     label: t('dashboard.snapshot.detail.balances.share'),
   },
   {
     cellClass: 'py-2',
-    class: 'w-[6.25rem]',
+    class: 'w-25',
     key: 'action',
     label: '',
   },
@@ -207,7 +207,7 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
             <RuiButton
               color="primary"
               size="sm"
-              class="!py-2"
+              class="py-2!"
               :disabled="locked"
               data-testid="snapshot-balances-add"
               @click="add()"

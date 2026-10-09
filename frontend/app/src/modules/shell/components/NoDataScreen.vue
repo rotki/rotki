@@ -35,7 +35,7 @@ const iconColor = computed<'secondary' | 'success'>(() => variant === 'success' 
 <template>
   <FullSizeContent
     class="gap-4"
-    :class="{ '!h-auto !mt-20': !full }"
+    :class="{ 'h-auto! mt-20!': !full }"
   >
     <div class="flex items-center justify-center mb-8">
       <div

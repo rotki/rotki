@@ -36,7 +36,7 @@ const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();
 
     <RuiCard>
       <WelcomeMessageDisplay
-        class="!bg-transparent !p-0"
+        class="bg-transparent! p-0!"
         :messages="activeWelcomeMessages"
       />
 

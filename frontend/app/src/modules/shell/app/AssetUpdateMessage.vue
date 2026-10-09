@@ -106,7 +106,6 @@ const { t } = useI18n({ useScope: 'global' });
             <RuiTextField
               :disabled="!partial"
               :model-value="upToVersion"
-              variant="outlined"
               color="primary"
               type="number"
               dense

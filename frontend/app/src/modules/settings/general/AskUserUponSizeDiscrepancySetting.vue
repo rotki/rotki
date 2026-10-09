@@ -8,16 +8,12 @@ const { dialog = false, confirm = false } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const [DefineSwitch, ReuseSwitch] = createReusableTemplate();
 </script>
 
 <template>
-  <SettingsItem setting-key="askUserUponSizeDiscrepancy">
-    <template
-      v-if="!dialog"
-      #title
-    >
-      {{ t('sync_indicator.setting.ask_user_upon_size_discrepancy.title') }}
-    </template>
+  <DefineSwitch>
     <SettingSwitch
       setting="askUserUponSizeDiscrepancy"
       inverted
@@ -30,5 +26,17 @@ const { t } = useI18n({ useScope: 'global' });
         ? t('sync_indicator.setting.ask_user_upon_size_discrepancy.confirm_label')
         : t('sync_indicator.setting.ask_user_upon_size_discrepancy.label')"
     />
+  </DefineSwitch>
+
+  <!-- in a menu or dialog only the switch: SettingsItem draws the settings page's titled row, which a narrow popup squeezes -->
+  <ReuseSwitch v-if="dialog" />
+  <SettingsItem
+    v-else
+    setting-key="askUserUponSizeDiscrepancy"
+  >
+    <template #title>
+      {{ t('sync_indicator.setting.ask_user_upon_size_discrepancy.title') }}
+    </template>
+    <ReuseSwitch />
   </SettingsItem>
 </template>

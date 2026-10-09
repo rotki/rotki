@@ -131,7 +131,6 @@ watch(writeError, (message) => {
       text-attr="label"
       :success-messages="success"
       :error-messages="error"
-      variant="outlined"
       chips
       auto-select-first
     >

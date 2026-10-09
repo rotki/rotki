@@ -129,7 +129,7 @@ function close() {
       </div>
       <div
         v-if="addresses.length > 0"
-        class="overflow-y-scroll mt-4 h-[16rem]"
+        class="overflow-y-scroll mt-4 h-64"
       >
         <div
           v-for="address in addresses"
@@ -153,7 +153,7 @@ function close() {
                 variant="text"
                 icon
                 color="primary"
-                class="!p-2 mt-0.5"
+                class="p-2! mt-0.5"
                 data-testid="queried-address-remove"
                 @click="
                   deleteQueriedAddress({
@@ -175,7 +175,7 @@ function close() {
       </div>
       <div
         v-else
-        class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
+        class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-64"
       >
         {{
           t('queried_address_dialog.all_address_queried', {

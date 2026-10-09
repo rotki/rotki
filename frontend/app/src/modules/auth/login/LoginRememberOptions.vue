@@ -45,7 +45,7 @@ const { isPackaged } = useInterop();
         :open-delay="400"
         :close-delay="0"
         class="ml-2"
-        :class-names="{ tooltip: 'max-w-[16rem]' }"
+        :class-names="{ tooltip: 'max-w-64' }"
         :text="t('login.remember_password_tooltip')"
       >
         <template #activator>

@@ -114,7 +114,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
               vertical
               indicator-position="start"
               color="primary"
-              class="!h-auto"
+              class="h-auto!"
             >
               <RuiTab
                 v-for="option in evmRailOptions"
@@ -135,7 +135,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
               vertical
               indicator-position="start"
               color="primary"
-              class="!h-auto"
+              class="h-auto!"
             >
               <RuiTab
                 v-for="option in otherRailOptions"
@@ -159,7 +159,6 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
             :model-value="selectedKey"
             :options="allRailOptions"
             :label="t('general_settings.rpc_node_setting.title')"
-            variant="outlined"
             key-attr="key"
             text-attr="label"
             hide-details

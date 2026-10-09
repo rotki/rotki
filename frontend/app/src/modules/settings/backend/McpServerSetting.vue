@@ -428,7 +428,7 @@ onBeforeMount(() => {
             v-for="option in privacyModes"
             :key="option.value"
             :value="option.value"
-            class="mb-2 w-full rounded border pl-4 transition-colors last:mb-0"
+            class="mb-2 w-full rounded-sm border pl-4 transition-colors last:mb-0"
             :class="option.classes"
           >
             <div class="py-2 pr-3">
@@ -499,7 +499,7 @@ onBeforeMount(() => {
           <span class="text-sm text-rui-text-secondary">
             {{ t('backend_settings.settings.mcp_server.token') }}
           </span>
-          <div class="flex items-center gap-2 rounded border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
+          <div class="flex items-center gap-2 rounded-sm border border-default bg-rui-grey-50 dark:bg-rui-grey-900 p-3">
             <code
               data-testid="mcp-token"
               class="flex-1 min-w-0 text-sm break-all font-mono"

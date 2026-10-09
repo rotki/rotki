@@ -115,7 +115,6 @@ defineExpose({
         required
         persistent-hint
         max-date="now"
-        variant="outlined"
         accuracy="millisecond"
         data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
@@ -188,7 +187,6 @@ defineExpose({
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-testid="notes"
-      variant="outlined"
       color="primary"
       max-rows="5"
       min-rows="3"
@@ -204,7 +202,6 @@ defineExpose({
       v-model="state.feeNotes"
       prepend-icon="lu-sticky-note"
       data-testid="fee-notes"
-      variant="outlined"
       color="primary"
       max-rows="5"
       min-rows="3"
@@ -230,7 +227,6 @@ defineExpose({
         <div class="py-2">
           <RuiTextField
             v-model="state.groupIdentifier"
-            variant="outlined"
             color="primary"
             data-testid="group-identifier"
             :disabled="state.hasActualGroupIdentifier"
@@ -241,7 +237,6 @@ defineExpose({
 
           <RuiTextField
             v-model="state.uniqueId"
-            variant="outlined"
             data-testid="unique-id"
             color="primary"
             :label="t('transactions.events.form.unique_id.label')"
@@ -251,7 +246,6 @@ defineExpose({
 
           <RuiTextField
             v-model="state.transactionId"
-            variant="outlined"
             color="primary"
             data-testid="tx-ref"
             :label="t('common.tx_hash')"
@@ -261,7 +255,6 @@ defineExpose({
 
           <ChainSelect
             v-model="state.blockchain"
-            variant="outlined"
             data-testid="blockchain-id"
             color="primary"
             custom-value

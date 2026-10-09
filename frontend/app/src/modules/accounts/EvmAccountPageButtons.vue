@@ -60,7 +60,7 @@ const isEth2Loading = logicOr(
           size="lg"
           color="primary"
           variant="outlined"
-          class="!outline-0 px-2"
+          class="outline-0! px-2"
         >
           <RuiIcon name="lu-chevron-down" />
         </RuiButton>

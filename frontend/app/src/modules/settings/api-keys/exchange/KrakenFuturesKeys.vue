@@ -59,7 +59,7 @@ function toggle(): void {
         <RuiButton
           data-testid="toggle-edit-futures-keys"
           variant="text"
-          class="!p-2"
+          class="p-2!"
           icon
           @click="toggle()"
         >
@@ -76,7 +76,6 @@ function toggle(): void {
   <Component
     :is="inputComponent"
     v-model.trim="keyModel"
-    variant="outlined"
     color="primary"
     :disabled="masked"
     :error-messages="keyErrors"
@@ -87,7 +86,6 @@ function toggle(): void {
   <Component
     :is="inputComponent"
     v-model.trim="secretModel"
-    variant="outlined"
     color="primary"
     :disabled="masked"
     :error-messages="secretErrors"

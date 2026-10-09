@@ -45,10 +45,10 @@ const {
     :class="[
       colorBgClass,
       {
-        '!rounded-none': popup,
+        'rounded-none!': popup,
       },
     ]"
-    class="!p-2 !pb-1.5 max-w-[400px]"
+    class="p-2! pb-1.5! max-w-[400px]"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
     data-id="notification"
@@ -81,7 +81,7 @@ const {
         data-id="notification_dismiss"
         variant="text"
         icon
-        class="!p-2"
+        class="p-2!"
         @click="dismiss(notification.id)"
       >
         <RuiIcon name="lu-x" />

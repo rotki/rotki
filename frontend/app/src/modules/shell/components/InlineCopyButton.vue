@@ -14,7 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       variant="text"
       icon
-      class="!bg-rui-grey-200 dark:!bg-rui-grey-900 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
+      class="bg-rui-grey-200! dark:bg-rui-grey-900! hover:bg-rui-grey-100! dark:hover:bg-rui-grey-800!"
       size="sm"
       color="primary"
     >

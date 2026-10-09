@@ -47,10 +47,11 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
 </script>
 
 <template>
+  <!-- one step over other dialogs (it may confirm for one), still under the menu layer its pickers open in -->
   <RuiDialog
     :model-value="display"
     persistent
-    z-index="10000"
+    z-index="calc(var(--rui-z-dialog) + 1)"
     :max-width="maxWidth"
     @keydown.esc.stop="emit('cancel')"
     @keydown.enter.stop="emit('confirm')"

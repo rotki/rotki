@@ -93,7 +93,6 @@ onUnmounted(() => {
           data-testid="google-calendar-access-token"
           :label="t('external_services.google_calendar.access_token')"
           placeholder="ya29.a0AfH6..."
-          variant="outlined"
           color="primary"
           rows="4"
           dense
@@ -103,7 +102,6 @@ onUnmounted(() => {
           data-testid="google-calendar-refresh-token"
           :label="t('external_services.google_calendar.refresh_token')"
           placeholder="1//04abc..."
-          variant="outlined"
           color="primary"
           rows="4"
           dense

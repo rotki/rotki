@@ -22,7 +22,6 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiTextField
     v-model="coingecko"
     data-testid="coingecko-input"
-    variant="outlined"
     color="primary"
     clearable
     class="col-span-2"
@@ -43,7 +42,6 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiTextField
     v-model="cryptocompare"
     data-testid="cryptocompare-input"
-    variant="outlined"
     color="primary"
     clearable
     class="col-span-2"

@@ -69,7 +69,6 @@ watchDebounced(search, (keyword: string) => {
     :options="visibleItems"
     text-attr="text"
     key-attr="value"
-    variant="outlined"
     dense
     auto-select-first
     :label="t('settings.search.placeholder')"

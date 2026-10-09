@@ -31,7 +31,7 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
     @cancel="emit('cancel')"
     @confirm="emit('confirm')"
   >
-    <div class="flex justify-center items-center gap-4 mt-4 border border-default rounded px-4">
+    <div class="flex justify-center items-center gap-4 mt-4 border border-default rounded-sm px-4">
       <div
         v-if="snapshot"
         class="flex flex-col items-end mr-4 py-1"

@@ -61,7 +61,7 @@ watch([qrCanvas, connectUri], () => {
       </template>
 
       <div class="flex flex-col items-center gap-6 py-4">
-        <div class="rounded-lg p-4 bg-white border border-rui-grey-300 shadow-sm">
+        <div class="rounded-lg p-4 bg-white border border-rui-grey-300 shadow-xs">
           <canvas
             ref="qrCanvas"
             class="block"

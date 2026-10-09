@@ -26,7 +26,6 @@ const {
   required,
   successMessages,
   type,
-  variant,
 } = defineProps<RuiDateTimePickerProps>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -68,7 +67,6 @@ function applyQuickOption(option: QuickOption): void {
     :required="required"
     :success-messages="successMessages"
     :type="type"
-    :variant="variant"
   >
     <template #menu-content>
       <div class="border-t border-default flex flex-col pt-2">

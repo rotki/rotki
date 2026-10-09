@@ -51,7 +51,7 @@ watch(showNotificationBar, (showNotificationBar) => {
     v-model="visibleNotification.display"
     :timeout="visibleNotification.duration"
     width="400px"
-    class="top-[3.5rem] z-[10000]"
+    class="top-14 z-10000"
     @update:model-value="displayed([visibleNotification.id])"
   >
     <Notification
@@ -67,7 +67,7 @@ watch(showNotificationBar, (showNotificationBar) => {
         >
           <template #activator>
             <RuiChip
-              class="!p-1.5"
+              class="p-1.5!"
               color="primary"
               size="sm"
             >
@@ -84,7 +84,7 @@ watch(showNotificationBar, (showNotificationBar) => {
           <template #activator>
             <RuiButton
               variant="text"
-              class="!p-1.5"
+              class="p-1.5!"
               icon
               @click="dismissAll()"
             >

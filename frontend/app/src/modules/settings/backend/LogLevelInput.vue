@@ -52,7 +52,6 @@ function icon(level: LogLevel): RuiIcons {
     :label="t('backend_settings.settings.log_level.label')"
     :success-messages="successMessages"
     :error-messages="errorMessages"
-    variant="outlined"
   >
     <template #item="{ item }">
       <ReuseLabel :item="item" />

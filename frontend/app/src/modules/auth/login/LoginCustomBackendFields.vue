@@ -35,7 +35,6 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiTextField
         v-model="url"
         color="primary"
-        variant="outlined"
         :error-messages="errorMessages"
         :disabled="saved"
         :label="t('login.custom_backend.label')"
@@ -55,7 +54,7 @@ const { t } = useI18n({ useScope: 'global' });
             v-if="!saved"
             :disabled="loading"
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('save')"
@@ -69,7 +68,7 @@ const { t } = useI18n({ useScope: 'global' });
           <RuiButton
             v-else
             variant="text"
-            class="-mr-1 !p-2"
+            class="-mr-1 p-2!"
             type="button"
             icon
             @click="emit('clear')"

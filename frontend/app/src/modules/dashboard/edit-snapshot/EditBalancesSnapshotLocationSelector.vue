@@ -33,7 +33,6 @@ function isLocationDisabled(item: TradeLocationData): boolean {
       data-testid="snapshot-location"
       clearable
       :item-disabled="isLocationDisabled"
-      :menu-options="{ menuClass: 'z-[10001]' }"
       :hide-details="false"
       :error-messages="errorMessages"
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"

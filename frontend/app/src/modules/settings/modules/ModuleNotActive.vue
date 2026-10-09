@@ -50,7 +50,7 @@ const { top } = useElementBounding(wrapper);
       >
         <template #link>
           <InternalLink
-            class="!normal-case font-weight-regular text-body-1 text-decoration-none"
+            class="normal-case! font-weight-regular text-body-1 text-decoration-none"
             :to="{ name: '/settings/modules/' }"
           >
             {{ t('module_not_active.settings_link') }}

@@ -53,7 +53,7 @@ const data: Sponsor = {
           </div>
         </div>
         <div
-          class="flex flex-col items-center flex-1 w-full font-black text-center rounded-sm px-1.5 py-0.5 relative mb-2"
+          class="flex flex-col items-center flex-1 w-full font-black text-center rounded-xs px-1.5 py-0.5 relative mb-2"
           :class="[
             drawer ? 'text-sm' : 'leading-6',
           ]"

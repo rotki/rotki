@@ -43,7 +43,6 @@ function confirm(): void {
 
       <RuiTextArea
         v-model="note"
-        variant="outlined"
         color="primary"
         :label="t('data_issues.resolve_dialog.note_label')"
         :hint="t('data_issues.resolve_dialog.note_hint')"

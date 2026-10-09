@@ -122,7 +122,6 @@ defineExpose({
     <RuiTextArea
       :model-value="form.state.description ?? ''"
       :label="t('common.description')"
-      variant="outlined"
       color="primary"
       min-rows="5"
       :error-messages="form.errors('description')"

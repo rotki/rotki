@@ -116,7 +116,6 @@ defineExpose({
         required
         persistent-hint
         max-date="now"
-        variant="outlined"
         accuracy="millisecond"
         data-testid="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
@@ -136,7 +135,6 @@ defineExpose({
 
     <RuiTextField
       v-model="state.groupIdentifier"
-      variant="outlined"
       color="primary"
       :disabled="data.type !== 'add' || state.hasActualGroupIdentifier"
       data-testid="group-identifier"
@@ -176,7 +174,6 @@ defineExpose({
       />
       <AmountInput
         v-model="state.sequenceIndex"
-        variant="outlined"
         integer
         data-testid="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
@@ -192,7 +189,6 @@ defineExpose({
       v-model="state.notes"
       prepend-icon="lu-sticky-note"
       data-testid="notes"
-      variant="outlined"
       color="primary"
       max-rows="5"
       min-rows="3"

@@ -99,8 +99,8 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     >
       <LocationIcon
         :item="item.location"
-        class="overflow-hidden rounded-sm"
-        :class="dense ? '!size-4' : '!size-6'"
+        class="overflow-hidden rounded-xs"
+        :class="dense ? 'size-4!' : 'size-6!'"
         :size="dense ? '0.875rem' : '1.25rem'"
         icon
       />
@@ -116,8 +116,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     text-attr="locationLabel"
     :filter="filter"
     :label="t('transactions.filter.account')"
-    variant="outlined"
-    :class-names="{ menu: '!min-w-full' }"
+    :class-names="{ menu: 'min-w-full!' }"
     v-bind="$attrs"
   >
     <template #selection="{ item }">
@@ -133,7 +132,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
         :dense="false"
       />
       <TagDisplay
-        class="pl-8 !mt-0"
+        class="pl-8 mt-0!"
         :tags="getTags(item)"
         small
       />

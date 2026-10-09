@@ -17,7 +17,7 @@ const showMenu = ref<boolean>(false);
 <template>
   <RuiMenu
     v-model="showMenu"
-    :class-names="{ menu: 'min-w-[18rem] max-w-[20rem]' }"
+    :class-names="{ menu: 'min-w-72 max-w-80' }"
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">

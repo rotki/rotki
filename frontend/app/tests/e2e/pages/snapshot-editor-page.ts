@@ -97,8 +97,8 @@ export class SnapshotEditorPage {
    * Edits the balance row for an asset, setting a new amount.
    *
    * @remarks
-   * The row must also hold an edit control, not just the asset text. The "USD Value" header
-   * carries asset symbols of its own, so filtering on text alone matches the header first.
+   * The row must also hold an edit control, not just the asset text: an asset name can also
+   * appear in other rows (a header, a total), so filtering on text alone can match those first.
    */
   async editBalanceRow(asset: string, newAmount: string): Promise<void> {
     const row = this.balancesTable

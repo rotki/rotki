@@ -145,7 +145,6 @@ onMounted(() => {
       <div class="flex flex-wrap items-center gap-2">
         <AmountInput
           v-model="input"
-          variant="outlined"
           dense
           hide-details
           class="w-48"

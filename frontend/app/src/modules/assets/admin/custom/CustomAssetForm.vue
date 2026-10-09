@@ -55,7 +55,6 @@ defineExpose({
       <RuiTextField
         v-model="form.state.name"
         data-testid="name"
-        variant="outlined"
         color="primary"
         clearable
         :label="t('common.name')"
@@ -75,7 +74,6 @@ defineExpose({
     <RuiTextArea
       v-model="notes"
       data-testid="notes"
-      variant="outlined"
       color="primary"
       max-rows="5"
       min-rows="3"

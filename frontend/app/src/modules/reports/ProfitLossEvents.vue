@@ -79,8 +79,8 @@ const { getChain } = useSupportedChains();
 
 const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   {
-    cellClass: '!p-0 h-px',
-    class: '!p-0',
+    cellClass: 'p-0! h-px',
+    class: 'p-0!',
     key: 'group',
     label: '',
   },
@@ -95,14 +95,14 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   },
   {
     align: 'center',
-    class: 'w-[6.875rem]',
+    class: 'w-27.5',
     key: 'type',
     label: t('common.type'),
   },
   {
     align: 'center',
     cellClass: 'py-2',
-    class: 'w-[7.5rem]',
+    class: 'w-30',
     key: 'location',
     label: t('common.location'),
   },
@@ -144,7 +144,7 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   },
   {
     align: 'end',
-    class: 'w-[8.75rem]',
+    class: 'w-35',
     key: 'actions',
     label: t('common.actions_text'),
   },
@@ -216,7 +216,7 @@ onMounted(async () => {
           v-if="row.groupId && (row.groupLine.top || row.groupLine.bottom)"
           :options="{ placement: 'right' }"
           :open-delay="400"
-          class="h-full !block"
+          class="h-full block!"
         >
           <template #activator>
             <div class="relative h-full w-2.5 ml-6">

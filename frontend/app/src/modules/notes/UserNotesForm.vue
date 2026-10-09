@@ -30,13 +30,11 @@ defineExpose({
   <div>
     <RuiTextField
       v-model="form.state.title"
-      variant="outlined"
       color="primary"
       :label="t('notes_menu.labels.title')"
     />
     <RuiTextArea
       v-model="form.state.content"
-      variant="outlined"
       color="primary"
       min-rows="3"
       rows="10"

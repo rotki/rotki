@@ -51,7 +51,7 @@ function toggle(): void {
           size="sm"
           :color="summary.urgency ? URGENCY_COLORS[summary.urgency] : undefined"
           variant="outlined"
-          class="!h-5 !px-1.5 tabular-nums"
+          class="h-5! px-1.5! tabular-nums"
           data-testid="actions-center-section-count"
         >
           {{ summary.count }}

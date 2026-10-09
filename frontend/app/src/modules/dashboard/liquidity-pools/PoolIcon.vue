@@ -70,7 +70,7 @@ const multiple = computed<boolean>(() => assets.length > 2);
         </div>
       </RuiMenu>
     </div>
-    <div class="absolute -bottom-0.5 -right-1 p-px w-4 h-4 rounded-full bg-white dark:bg-rui-grey-900 ring-1 ring-black/[0.12] dark:ring-white/[0.12]">
+    <div class="absolute -bottom-0.5 -right-1 p-px w-4 h-4 rounded-full bg-white dark:bg-rui-grey-900 ring-1 ring-black/12 dark:ring-white/12">
       <AppImage
         size="0.875rem"
         :src="icon"

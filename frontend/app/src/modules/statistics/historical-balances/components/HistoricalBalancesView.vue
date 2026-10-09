@@ -57,7 +57,7 @@ async function reload(): Promise<void> {
       <RuiTooltip
         :disabled="!blockedReason"
         :open-delay="200"
-        :class-names="{ tooltip: 'max-w-[16rem]' }"
+        :class-names="{ tooltip: 'max-w-64' }"
       >
         <template #activator>
           <RuiButton

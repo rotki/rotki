@@ -49,7 +49,7 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
   <RuiCard
     class="cursor-pointer transition-colors h-full"
     :class="active
-      ? '!border-rui-primary ring-1 ring-rui-primary bg-rui-primary/5'
+      ? 'border-rui-primary! ring-1 ring-rui-primary bg-rui-primary/5'
       : 'hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900'"
     no-padding
     :class-names="{ content: 'overflow-hidden h-full' }"

@@ -41,6 +41,5 @@ onMounted(() => {
     :label="t('exchange_keys_form.binance_history_import.start_date')"
     max-date="now"
     type="epoch"
-    variant="outlined"
   />
 </template>

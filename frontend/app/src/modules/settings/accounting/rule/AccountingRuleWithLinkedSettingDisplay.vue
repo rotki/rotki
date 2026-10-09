@@ -40,7 +40,7 @@ const value = computed<boolean>(() => {
     placement="top"
     size="sm"
     color="secondary"
-    class="[&_span]:!px-0"
+    class="[&_span]:px-0!"
     :model-value="!!selectedLinkableSetting"
   >
     <template #icon>

@@ -34,7 +34,6 @@ const { t } = useI18n({ useScope: 'global' });
       required
       persistent-hint
       max-date="now"
-      variant="outlined"
       accuracy="millisecond"
       :disabled="dateDisabled"
       data-testid="datetime"

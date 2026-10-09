@@ -45,7 +45,7 @@ const tooltipMessage = computed<string>(() =>
     <RuiTooltip
       :options="{ placement: 'top' }"
       :open-delay="400"
-      :class-names="{ tooltip: 'max-w-[10rem]' }"
+      :class-names="{ tooltip: 'max-w-40' }"
       :disabled="!isIgnoringDisabled || isLoading"
     >
       <template #activator>
@@ -63,7 +63,7 @@ const tooltipMessage = computed<string>(() =>
 
     <RuiMenu
       v-if="showMoreOptions"
-      :class-names="{ menu: 'w-[15rem]' }"
+      :class-names="{ menu: 'w-60' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">
@@ -82,7 +82,7 @@ const tooltipMessage = computed<string>(() =>
             v-bind="attrs"
             size="sm"
             :loading="menuLoading"
-            class="dark:!bg-rui-grey-800 dark:!text-white"
+            class="dark:bg-rui-grey-800! dark:text-white!"
           >
             <RuiIcon
               name="lu-chevron-down"

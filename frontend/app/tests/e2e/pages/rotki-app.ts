@@ -142,8 +142,8 @@ export class RotkiApp {
 
     if (hasAutocomplete) {
       await activator.click();
-      // Wait for dropdown menu to appear
-      const menu = this.page.locator('[role=menu]');
+      // Wait for the suggestion list to appear
+      const menu = this.page.locator('[role=listbox]');
       await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
       await usernameInput.fill(username);
       const option = menu.getByText(username, { exact: true });

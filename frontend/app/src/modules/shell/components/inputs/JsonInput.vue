@@ -60,7 +60,7 @@ onBeforeUnmount(() => {
     >
       {{ label }}
     </div>
-    <div class="json-editor rounded border border-rui-grey-500 dark:border-rui-grey-700">
+    <div class="json-editor rounded-sm border border-rui-grey-500 dark:border-rui-grey-700">
       <div ref="jsonEditorContainer" />
     </div>
   </div>

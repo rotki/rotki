@@ -107,7 +107,6 @@ watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([int
 
     <RuiTextField
       v-model="form.state.intervalDays"
-      variant="outlined"
       color="primary"
       type="number"
       step="1"

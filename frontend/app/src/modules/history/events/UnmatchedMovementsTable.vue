@@ -62,7 +62,7 @@ const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => [
 function getRowClass(row: UnmatchedMovementRow): string {
   const classes = ['transition-all'];
   if (row.groupIdentifier === highlightedGroupIdentifier) {
-    classes.push('!bg-rui-warning/15');
+    classes.push('bg-rui-warning/15!');
   }
   return classes.join(' ');
 }
@@ -128,7 +128,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
             />
             <HashLink
               v-if="row.destinationAddress"
-              class="[&_span]:!text-caption"
+              class="[&_span]:text-caption!"
               :text="row.destinationAddress"
             />
           </template>
@@ -136,7 +136,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
             v-if="row.resolvedAsExternal"
             size="sm"
             color="info"
-            class="!py-0"
+            class="py-0!"
             data-testid="unmatched-row-resolved"
           >
             {{ row.resolvedLabel }}

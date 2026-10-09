@@ -98,7 +98,7 @@ function getEvents(day: Dayjs) {
 <template>
   <div class="overflow-x-auto">
     <div
-      class="rounded-xl border border-default overflow-hidden grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r min-w-[56rem]"
+      class="rounded-xl border border-default overflow-hidden grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r min-w-224"
     >
       <CalendarWeekdays />
       <CalendarMonthDayItem

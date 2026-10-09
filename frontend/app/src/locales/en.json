@@ -43,7 +43,7 @@
     },
     "detect_tokens": {
       "confirmation": {
-        "message": "Are you sure you want to redetect tokens for all chains? It might take some time.",
+        "message": "Scans every EVM address on every chain, which can take a while.",
         "title": "Re-detect tokens for all chains"
       },
       "selection": {
@@ -65,7 +65,7 @@
       "tooltip": "Account detection added this address on {chains}. Click to dismiss."
     },
     "edit_tooltip": "Edit account",
-    "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
+    "enter_selection_mode": "Select assets in an expanded account to ignore them or mark them as spam",
     "exit_selection_mode": "Exit selection mode",
     "filter_field_labels": {
       "account": "Account",
@@ -143,10 +143,10 @@
     },
     "csv_export_settings": {
       "labels": {
-        "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
-        "have_csv_summary": "Should a summary of all events be included in the all events CSV export?"
+        "export_csv_formulas": "Export formulas in the PnL CSV",
+        "have_csv_summary": "Add a summary of all events to the all-events CSV export"
       },
-      "title": "CSV export settings"
+      "title": "PnL CSV export"
     },
     "messages": {
       "cost_basis": {
@@ -186,17 +186,17 @@
     }
   },
   "account_settings_display": {
-    "cost_basis_fees": "Cost basis fees were taken into account:",
-    "cost_basis_method": "Cost basis method:",
-    "crypto2crypto": "Crypto to crypto trades were taken into account:",
+    "cost_basis_fees": "Fees in cost basis",
+    "cost_basis_method": "Cost basis method",
+    "crypto2crypto": "Crypto to crypto trades",
     "days": "{days} days",
-    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking events are omitted until withdrawals are enabled:",
-    "gas_costs": "Gas costs were taken into account:",
-    "past_cost_basis": "Past cost basis was calculated during the report creation:",
-    "profit_currency": "Profit Currency:",
-    "subtitle": "These accounting setting were used during the report creation",
-    "tax_free_period": "There was a tax free period:",
-    "title": "Accounting Settings"
+    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking deferred to withdrawals",
+    "gas_costs": "Gas costs",
+    "past_cost_basis": "Past cost basis calculated",
+    "profit_currency": "Profit currency",
+    "subtitle": "The settings this report was generated with",
+    "tax_free_period": "Tax free period",
+    "title": "Accounting settings"
   },
   "accounting_overlay": {
     "balance_after": "Balance after this event",
@@ -245,7 +245,7 @@
           "title": "Resolving accounting rules conflicts"
         },
         "labels": {
-          "choose_version": "Choose Version"
+          "choose_version": "Keep"
         },
         "title": "Resolve accounting rules conflicts"
       },
@@ -270,43 +270,43 @@
       },
       "import": "Import accounting rules",
       "labels": {
-        "accounting_treatment": "Accounting Treatment",
+        "accounting_treatment": "Accounting treatment",
         "accounting_treatment_basis_transfer": "Basis transfer",
         "accounting_treatment_subtitle": "How rotki processes this event during accounting.",
         "accounting_treatment_swap": "Swap",
         "count_cost_basis_pnl": "Count cost basis PnL",
-        "count_cost_basis_pnl_subtitle": "Whether we have to count any profit/loss the asset may have had compared to when it was acquired.",
-        "count_entire_amount_spend": "Count entire amount spend",
-        "count_entire_amount_spend_subtitle": "Whether the entire amount is counted as a spend, which means an expense (negative pnl)",
+        "count_cost_basis_pnl_subtitle": "Count the profit or loss against what the asset cost when it was acquired.",
+        "count_entire_amount_spend": "Count entire amount as spend",
+        "count_entire_amount_spend_subtitle": "Count the whole amount as a spend, an expense with negative PnL.",
         "event_ids": "Event IDs",
         "event_subtype": "Event Sub Type",
         "event_type": "Event Type",
         "taxable": "Taxable",
-        "taxable_subtitle": "Whether the event will be considered as taxable"
+        "taxable_subtitle": "Count the event as taxable."
       },
       "learn_more": "Learn more",
-      "overwrite_by_setting": "Overwrite by value from other accounting setting",
+      "overwrite_by_setting": "Take the value from an accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
       "reset": "Reset to defaults",
       "subtitle": "Manage and view your event accounting rules",
       "tabs": {
-        "custom": "Special rules for certain events",
-        "regular": "Regular Rules"
+        "custom": "Event-specific rules",
+        "regular": "General rules"
       },
-      "title": "Accounting Rules",
-      "value_overwritten": "The value is overwritten by this setting:",
+      "title": "Accounting rules",
+      "value_overwritten": "Follows this accounting setting",
       "view_events": "View events matching this rule"
     },
     "trade": {
       "labels": {
-        "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
+        "calculate_past_cost_basis": "Calculate the cost basis from events before the report period",
         "cost_basis_method": "Cost basis method",
-        "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH staking events from accounting until withdrawals are enabled",
-        "include_crypto2crypto": "Take into account crypto to crypto trades",
-        "include_fees_in_cost_basis": "Take into account cost basis fees",
-        "include_gas_costs": "Take into account Ethereum gas costs",
-        "tax_free": "Is there a tax free period?",
-        "taxfree_after_period": "Tax free after how many days",
+        "eth_staking_taxable_after_withdrawal_enabled": "Leave ETH staking events out of accounting until withdrawals were enabled",
+        "include_crypto2crypto": "Include crypto-to-crypto trades in the PnL",
+        "include_fees_in_cost_basis": "Add fees to the cost basis",
+        "include_gas_costs": "Include Ethereum gas costs in the PnL",
+        "tax_free": "Apply a tax-free holding period",
+        "taxfree_after_period": "Tax-free after (days)",
         "use_asset_collections_in_cost_basis": "Share cost basis across assets in the same collection"
       },
       "title": "Trade Settings"
@@ -1016,7 +1016,7 @@
   },
   "app": {
     "copyright": "© Rotki Solutions GmbH 2018-{year}",
-    "moto": "the opensource portfolio manager that protects your privacy",
+    "moto": "The open source portfolio manager that protects your privacy",
     "name": "rotki",
     "quitting": {
       "message": "Shutting down..."
@@ -2012,7 +2012,7 @@
   "chain_settings": {
     "chain_queries": {
       "subtitle": "Two independent controls: which chains and addresses rotki queries for data, and which chains it checks when detecting where an address is active.",
-      "title": "Chain queries & detection"
+      "title": "Chains"
     }
   },
   "change_password": {
@@ -2190,7 +2190,7 @@
   },
   "cost_basis_table": {
     "complete": "Complete",
-    "cost_basis": "Cost Basis",
+    "cost_basis": "Cost basis",
     "headers": {
       "amount": "Amount Sold",
       "full_amount": "Total acquired by event",
@@ -2206,10 +2206,10 @@
       "restore_account": "Restore account"
     },
     "credentials": {
-      "description": "Remember that the user you create here is {highlight}, independent of the account created on the web.",
+      "description": "Pick a profile name and a password. The password encrypts everything in this profile.",
       "highlight": "only enabled in the application",
       "label_password": "Password",
-      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
+      "label_password_backup_reminder": "I saved my password somewhere safe. Without it, my local data can't be recovered.",
       "label_password_repeat": "Repeat Password",
       "label_username": "Profile Name",
       "password_sync_requirement": "Use the same password as the database you originally backed up. You can't access the database if you input a different password.",
@@ -2245,8 +2245,8 @@
     },
     "premium": {
       "button_premium_approve": "Yes, enable premium",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features?\nYou can buy premium {premiumLink}",
-      "restore_question": "Enter your rotki premium API credentials to download the database you synced from another device. You can find your credentials in your account on {premiumLink}"
+      "premium_question": "Already a premium user? Enable it now with your API credentials. {premiumLink}",
+      "restore_question": "Enter your premium API credentials to download the database you synced from another device. You can find them in {premiumLink}."
     },
     "steps": {
       "step_1": {
@@ -2271,7 +2271,7 @@
     "title": "Create Account",
     "title_restore": "Restore Account",
     "usage_analytics": {
-      "description": "Usage analytics are optional and support product improvements. When enabled, rotki sends anonymous analytics about application use. The metrics collected may change as the product evolves while remaining anonymous. You can change this setting at any time in General Settings.",
+      "description": "Optional. Anonymous usage data helps us improve rotki. You can change this any time in General Settings.",
       "label_confirm": "Submit anonymous usage analytics"
     }
   },
@@ -2357,7 +2357,7 @@
       "behaviour": {
         "only_refresh_balances": "Only refresh balances",
         "redetect_tokens": "Re-detect tokens and refresh balances",
-        "title": "Blockchain refresh button behaviour"
+        "title": "When you press Refresh"
       },
       "categories": {
         "bitcoin": "Bitcoin Address",
@@ -3009,7 +3009,7 @@
   },
   "eth2_input": {
     "ownership": {
-      "hint": "*Optional: By default it is 100%",
+      "hint": "Optional. Defaults to 100%.",
       "validation": "The value should be > 0% and <= 100%"
     },
     "ownership_percentage": "Ownership Percentage",
@@ -3058,14 +3058,14 @@
     "activate_error": {
       "title": "Activating/Deactivating node {node} failed"
     },
-    "add_button": "Add Node",
+    "add_button": "Add node",
     "add_dialog": {
-      "title": "Add an {chain} RPC Node"
+      "title": "Add an {chain} RPC node"
     },
     "add_error": {
       "title": "Adding {chain} RPC Node"
     },
-    "archive_node": "Archive Node",
+    "archive_node": "Archive",
     "confirm": {
       "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint}) for {chain}?",
       "title": "Delete {chain} RPC Node"
@@ -3086,7 +3086,7 @@
     },
     "delete_tooltip": "Delete the selected RPC Node",
     "edit_dialog": {
-      "title": "Edit {chain} RPC Node"
+      "title": "Edit {chain} RPC node"
     },
     "edit_error": {
       "title": "Editing {chain} RPC Node"
@@ -3098,7 +3098,7 @@
     },
     "no_nodes": "No RPC nodes configured for this chain",
     "node": "Node",
-    "node_weight": "Node Weight",
+    "node_weight": "Weight",
     "private_node": "This is a private node added by the user. It takes priority over public nodes",
     "public_node": "This is a public node",
     "reconnect": {
@@ -3121,7 +3121,7 @@
       }
     },
     "indexer": {
-      "add_chain": "Add specific chain setting",
+      "add_chain": "Add chain",
       "api_key_missing_alert": "{indexer} is your first priority indexer but you don't have an API key configured. Queries may be slower or fail. Consider adding an API key for better performance.",
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
@@ -3136,7 +3136,7 @@
       "enter_api_key": "Enter API key",
       "no_indexers_warning": "At least one indexer must be selected. The list cannot be empty.",
       "remove_chain": "Remove chain specific setting",
-      "subtitle": "Indexers are used to query history events. Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
+      "subtitle": "History events are queried through these indexers in order. If one fails, the next is tried.",
       "suppressed_no_indexer_chains": {
         "error": "Failed to update suppressed chains.",
         "hint": "Select chains that should not be reported when no indexer can serve them. Remove a chain to report it again.",
@@ -3145,7 +3145,7 @@
         "success": "Suppressed chains updated",
         "title": "Suppressed \"No indexer\" reports"
       },
-      "title": "Indexer Order"
+      "title": "Indexer order"
     }
   },
   "exchange_balances": {
@@ -3159,7 +3159,7 @@
     "select_hint": "Select an exchange to view asset details.",
     "tabs": {
       "balances": "Balances",
-      "savings_interest_history": "Savings Interest History"
+      "savings_interest_history": "Savings interest history"
     }
   },
   "exchange_keys_form": {
@@ -3209,21 +3209,21 @@
       "tooltip": "Edit the exchange account"
     },
     "header": {
-      "sync_enabled": "Sync Enabled"
+      "sync_enabled": "Sync enabled"
     },
     "inputs": {
-      "access_key": "Access Key",
-      "api_key": "API Key",
-      "api_key_name": "API Key Name",
-      "api_secret": "API Secret",
+      "access_key": "Access key",
+      "api_key": "API key",
+      "api_key_name": "API key name",
+      "api_secret": "API secret",
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
-      "futures_api_key": "Futures API Key",
-      "futures_api_secret": "Futures API Secret",
-      "kraken_account": "Select the type of your Kraken account",
-      "kraken_futures_keys": "Futures Keys",
+      "futures_api_key": "API key",
+      "futures_api_secret": "API secret",
+      "kraken_account": "Account type",
+      "kraken_futures_keys": "Kraken Futures keys (optional)",
       "passphrase": "Passphrase",
-      "private_key": "Private Key",
-      "signing_key": "Signing Key"
+      "private_key": "Private key",
+      "signing_key": "Signing key"
     },
     "keys": "Keys",
     "setup_hint": "Balances are being fetched. Trades, deposits and withdrawals import when you open the History page.",
@@ -3250,9 +3250,9 @@
     "block": "Blocks",
     "block_url": "Blocks will open at {blockUrl}",
     "chain_selector": "Blockchain",
-    "subtitle": "Set the external explorer urls for addresses and transaction",
+    "subtitle": "Where links to addresses, transactions, blocks and tokens open, per chain. Leave a field empty to use the default.",
     "title": "Blockchain explorers",
-    "token": "Token",
+    "token": "Tokens",
     "token_url": "Tokens will open at {tokenUrl}",
     "tx": "Transactions",
     "tx_url": "Transactions will open at {txUrl}"
@@ -3336,7 +3336,7 @@
       "errors": {
         "allowed_admin_addresses": "Allowed admin addresses:",
         "connection_failed": "Failed to connect wallet",
-        "invalid_address": "This address is not registered as an on-chain admin for any Gnosis Pay account. You can still proceed with sign-in as there may be other authorized addresses not visible on-chain. The registered admin addresses are listed below for reference.",
+        "invalid_address": "This wallet is not an owner on record of your Safe. You can still try to sign in, as Gnosis Pay may accept owners that are not visible on-chain.",
         "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
         "no_wallet_connected": "No wallet connected",
         "safe_wallet": "Safe Wallet:",
@@ -3362,9 +3362,9 @@
         "failed": "Failed to authenticate Gnosis Pay",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
         "sign_message": "Sign Message to Authenticate",
-        "step1_title": "Select Wallet Mode & Connect",
-        "step2_title": "Checking connected address eligibility",
-        "step3_title": "Sign Authentication Message",
+        "step1_title": "Connect your wallet",
+        "step2_title": "Check the wallet controls your Safe",
+        "step3_title": "Sign in",
         "success_message": "Successfully authenticated with Gnosis Pay",
         "switch_to_gnosis": "Switch to Gnosis",
         "validating_address": "Validating address...",
@@ -3405,7 +3405,7 @@
       "access_token": "Access token",
       "auth_failed": "Failed to authorize with Monerium",
       "authorizing": "Authorizing with Monerium",
-      "connect": "Get access token",
+      "connect": "Connect Monerium",
       "connected_as": "Connected as {email}",
       "description": "Used to augment Monerium EVM transactions with banking information.",
       "disconnect": "Disconnect",
@@ -3435,7 +3435,7 @@
       "hint": "Enter your OpenSea API key",
       "title": "Opensea"
     },
-    "search": "Search for external services",
+    "search": "Search services…",
     "set": {
       "error": {
         "message": "Error while settings external service api keys: {error}"
@@ -3444,7 +3444,7 @@
         "message": "Successfully updated the key for {serviceName}"
       }
     },
-    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
+    "subtitle": "rotki queries these services for prices and blockchain data. Many work without a key, where one mainly lifts rate limits; others need a key before rotki can use them at all.",
     "thegraph": {
       "description": "rotki uses the Graph to obtain a variety of information such as balancer balances and ENS data",
       "hint": "Enter your The Graph API key",
@@ -3478,15 +3478,15 @@
       }
     },
     "alias_names": {
-      "label": "Show alias name for blockchain addresses.",
-      "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown.",
+      "label": "Show names instead of addresses",
+      "title": "rotki shows the first name it finds, checking these sources from top to bottom.",
       "validation": {
         "error": "Failed to change alias names visibility"
       }
     },
     "animations": {
-      "animations_note": "Enabling this setting will enhance the app performance. However, note, that some animations may appear less smooth, as the goal is to reduce system resources usage.",
-      "title": "Reduce animations effect",
+      "animations_note": "Uses fewer system resources, at the cost of less smooth animations.",
+      "title": "Reduce animations",
       "validation": {
         "error": "Error setting animations state: {message}"
       }
@@ -3510,38 +3510,38 @@
     },
     "history_query_indicator": {
       "min_out_of_sync_period": {
-        "label": "Minimum out of sync period (hours)",
-        "subtitle": "The minimum time in hours that history must be out of sync before the action center reports it",
-        "title": "Minimum Out of Sync Period",
+        "label": "Hours out of sync",
+        "subtitle": "How long history can go without a sync before the action center reports it.",
+        "title": "History sync reminder",
         "validation": {
           "error": "Failed to set the minimum out of sync period"
         }
       },
       "reset_dismissal_status": {
-        "button": "Reset dismissal status",
-        "subtitle": "Click the button to reset the dismissal status. A dismissed history sync row counts in the action center again immediately.",
-        "success": "Dismissal status has been reset successfully",
-        "title": "Reset dismissal status"
+        "button": "Show again",
+        "subtitle": "Bring dismissed history sync reminders back to the action center.",
+        "success": "Dismissed reminders show again",
+        "title": "Dismissed reminders"
       },
-      "title": "History Sync Reminder"
+      "title": "History sync reminder"
     },
     "newly_detected_tokens": {
       "max_count": {
         "hint": "Tokens exceeding this limit will be pruned (oldest first)",
-        "label": "Maximum number of tokens",
-        "title": "Maximum Stored Tokens",
+        "label": "Maximum tokens",
+        "title": "Tokens kept",
         "validation": {
           "error": "Failed to set the maximum token count",
           "invalid_range": "Count must be between {min} and {max}",
           "non_empty": "Please enter the maximum count"
         }
       },
-      "subtitle": "Configure how newly detected tokens are stored and pruned",
-      "title": "Newly Detected Tokens",
+      "subtitle": "How many newly detected tokens rotki keeps, and for how long.",
+      "title": "Newly detected tokens",
       "ttl_days": {
         "hint": "Tokens older than this will be automatically removed",
-        "label": "Retention period (days)",
-        "title": "Token Retention Period",
+        "label": "Days",
+        "title": "Retention period",
         "validation": {
           "error": "Failed to set the retention period",
           "invalid_range": "Days must be between {min} and {max}",
@@ -3550,17 +3550,17 @@
       }
     },
     "periodic_query": {
-      "hint": "How often (in seconds) the backend will be checked for messages,",
-      "label": "Query period in seconds",
-      "title": "Periodic status query",
+      "hint": "How often the app checks the backend for new messages.",
+      "label": "Seconds",
+      "title": "Status query interval",
       "validation": {
         "error": "Error setting query period"
       }
     },
     "persist_privacy": {
-      "hint": "When disabled, privacy mode and scramble settings will reset to defaults upon login",
-      "label": "Persist privacy settings and scramble mode across sessions",
-      "title": "Persist Privacy and Scramble Mode Settings",
+      "hint": "When off, both reset to their defaults at login.",
+      "label": "Keep privacy mode and scrambling across sessions",
+      "title": "Keep privacy settings",
       "validation": {
         "error": "Error setting persist privacy settings: {message}"
       }
@@ -3573,8 +3573,8 @@
       }
     },
     "refresh_balance": {
-      "label": "Set the automatic refresh period",
-      "period_label": "How often (in minutes) your balances will be automatically refreshed",
+      "label": "Refresh balances automatically",
+      "period_label": "Every (minutes)",
       "title": "Automatic balance refresh",
       "validation": {
         "error": "Failed to set the refresh period",
@@ -3583,9 +3583,9 @@
       }
     },
     "scramble": {
-      "label": "Use this option when sharing screenshots with others, such as for bug reports.",
+      "label": "Use this when sharing screenshots, for example in bug reports.",
       "multiplier": {
-        "hint": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
+        "hint": "Scrambled amounts and values are multiplied by this number.",
         "label": "Scramble multiplier"
       },
       "title": "Scramble data",
@@ -3741,7 +3741,7 @@
         "suppress_all": "Suppress all",
         "title": "Suppress missing API key reports"
       },
-      "title": "External service settings",
+      "title": "External services",
       "validation": {
         "connect_timeout": {
           "invalid_range": "Connect timeout must be larger than {min}",
@@ -3785,7 +3785,7 @@
         "title": "Skipped External Events"
       },
       "subtitle": "Manage your history event settings.",
-      "title": "History Events"
+      "title": "History events"
     },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",
@@ -3793,12 +3793,12 @@
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
       "node_rpc_endpoint": "Node RPC endpoint",
-      "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH"
+      "treat_eth2_as_eth": "Count staked ETH (ETH2) as ETH"
     },
     "language": {
-      "click_here": "Click here for more information",
-      "contribution": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up.",
-      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
+      "click_here": "Help translate",
+      "contribution": "Translations come from the community and some are incomplete.",
+      "force_saved_language_setting_in_machine_hint": "Use this language on the login screen too",
       "label": "Selected language",
       "subtitle": "Select your preferred language",
       "title": "Language",
@@ -3808,7 +3808,7 @@
     },
     "nft_setting": {
       "allow_all_confirmation": {
-        "message": "Are you sure you want to allow images from all domains.",
+        "message": "Every NFT image will load from whichever server hosts it, and that server can see your IP address.",
         "title": "Allow images from all domains"
       },
       "label": {
@@ -3819,10 +3819,10 @@
           "allow_all": "Allow all images",
           "only_allow_whitelisted": "Only allow images from whitelisted domains"
         },
-        "whitelist_domains": "rarible.com, opensea.com",
+        "whitelist_domains": "Domains",
         "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries",
         "whitelisted_domains": "Whitelisted domains",
-        "whitelisted_domains_hint": "Enter single or multiple comma separated domains. Press the save button on the right to save the changes"
+        "whitelisted_domains_hint": "Separate several domains with commas"
       },
       "messages": {
         "error": "Error setting allowed domains for image rendering of NFTs",
@@ -3831,9 +3831,9 @@
       "subtitle": {
         "include_nfts": "Manage your NFT settings",
         "nft_images_rendering_setting": "NFT images rendering setting",
-        "nft_images_rendering_setting_hint": "Fetching NFT images from malicious server may result in leakage of your privacy, read more {link}"
+        "nft_images_rendering_setting_hint": "Loading NFT images from a malicious server can leak private information about you. Read more {link}."
       },
-      "title": "NFT settings",
+      "title": "NFTs",
       "update_whitelist_confirmation": {
         "message": "Are you sure you want to allow images for NFT from these domains? | Are you sure you want to allow images for NFT from domain: {domain} ?",
         "title": "Update whitelisted domains"
@@ -3856,8 +3856,8 @@
         "evm": "EVM chains",
         "other": "Other endpoints"
       },
-      "subtitle": "Manage and view your RPC node.",
-      "title": "RPC node setting"
+      "subtitle": "rotki asks owned nodes first, then picks among public nodes by weight.",
+      "title": "RPC nodes"
     },
     "simple_node_setting": {
       "delete_confirmation": {
@@ -3941,7 +3941,7 @@
     }
   },
   "generate": {
-    "all_time": "All Time",
+    "all_time": "All time",
     "custom_selection": "Custom",
     "labels": {
       "end_date": "End Date",
@@ -3951,7 +3951,7 @@
     "sub_period": {
       "all": "All"
     },
-    "sub_period_label": "Period Details",
+    "sub_period_label": "Quarter",
     "validation": {
       "empty_end_date": "End date cannot be empty",
       "empty_start_date": "Start date cannot be empty",
@@ -3960,7 +3960,7 @@
   },
   "global_search": {
     "no_actions": "No actions found",
-    "search_placeholder": "Search anything..."
+    "search_placeholder": "Search pages, settings and assets…"
   },
   "hash_link": {
     "open_link": "Open in external block explorer"
@@ -4058,7 +4058,7 @@
     }
   },
   "hide_small_balances": {
-    "apply_changes": "Apply Changes",
+    "apply_changes": "Apply changes",
     "apply_to_all": "Apply changes to other balances",
     "apply_to_all_hint": "Apply changes to Blockchain, Exchange, and Manual balances",
     "hide": "Hide small balances",
@@ -4213,12 +4213,12 @@
   },
   "history_events_list_swap": {
     "bridge_description": "Bridge {spendAmount} {spendAsset} on {fromChain} to {receiveAmount} {receiveAsset} on {toChain}",
-    "bridge_expanded": "Linked bridge ({count} events) - click to collapse",
+    "bridge_expanded": "Linked bridge · {count} events",
     "bridge_label": "Bridge",
     "fee_description": "{notes} with fee: {feeText}",
-    "movement_expanded": "Linked movement ({count} events) - click to collapse",
+    "movement_expanded": "Linked movement · {count} events",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}",
-    "swap_expanded": "Swap ({count} events) - click to collapse"
+    "swap_expanded": "Swap · {count} events"
   },
   "history_redecode_selection": {
     "redecode": "Redecode {total} chain | Redecode {total} chains",
@@ -4356,7 +4356,7 @@
       "import": "Import {0} from Bittrex",
       "import_types": "trades, deposits, and withdrawals",
       "name": "Bittrex",
-      "warning": "* There may be some issues with the CSV file from Bittrex if you got it via email after closing your account that could require manual intervention. The timestamp format can vary within the same CSV file, the columns may be shifted, and generally, all the data may have inconsistencies."
+      "warning": "There may be some issues with the CSV file from Bittrex if you got it via email after closing your account that could require manual intervention. The timestamp format can vary within the same CSV file, the columns may be shifted, and generally, all the data may have inconsistencies."
     },
     "blockfi": {
       "import": "Import {0} from BlockFi",
@@ -4389,7 +4389,7 @@
       "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
       "line_two_warning": "It only concerns the Crypto.com mobile application.",
       "name": "Crypto.com",
-      "source_name": "crypto.com mobile app"
+      "source_name": "Crypto.com mobile app"
     },
     "custom": {
       "import_events": "Import events",
@@ -4525,21 +4525,21 @@
     "refresh_tooltip": "Refresh your Kraken staking events"
   },
   "kraken_staking_overview": {
-    "current": "current",
+    "current": "Current value",
     "earned": "Total Earned",
     "hint": {
       "current": "Based on the current price of assets",
       "historical": "Based on the historical price of assets"
     },
-    "historical": "historical",
-    "title": "Overview"
+    "historical": "Value when received",
+    "title": "Total earned"
   },
   "kraken_staking_received": {
     "switch": {
       "current": "Current",
       "historical": "Historical"
     },
-    "title": "Earned Per Asset"
+    "title": "Earned per asset"
   },
   "liquity_page": {
     "no_premium": "The Liquity staking statistics are not available on your current plan"
@@ -4547,14 +4547,14 @@
   "liquity_pools": {
     "liquidation_gains": "Unclaimed liquidation gains",
     "no_lusd_deposited": "No LUSD deposited",
-    "rewards": "Unclaimed @:common.rewards",
+    "rewards": "Unclaimed @.lower:common.rewards",
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
     "has_proxy_addresses": "has {length} proxy address(es):",
     "query_historical_price": "Querying Liquity historical prices ({processed}/{total})",
     "query_staking_data": "Querying Liquity staking data ({processed}/{total})",
-    "refresh_tooltip": "Refresh the staked amounts and prices",
+    "refresh_tooltip": "Refresh the staked amounts, prices and staking events",
     "select_account": "Select account"
   },
   "liquity_staking_events": {
@@ -4562,24 +4562,24 @@
   },
   "liquity_statistic": {
     "estimated_pnl": "Estimated PnL",
-    "estimated_pnl_warning": "This estimation PnL takes into consideration the current unclaimed gains",
+    "estimated_pnl_warning": "This estimated PnL takes the current unclaimed gains into account",
     "no_stability_pool_gains": "No Unclaimed Stability Pool Gains",
     "no_staking_gains": "No Unclaimed Staking Gains",
     "no_statistics": "No statistics found",
-    "stability_pool_gains": "Stability Pool Gains",
-    "staking_gains": "Staking Gains",
+    "stability_pool_gains": "Stability pool gains",
+    "staking_gains": "Staking gains",
     "switch": {
       "current": "Current",
       "historical": "Historical"
     },
     "title": "Statistics",
-    "total_deposited_stability_pool": "Total Deposited Stability Pool",
-    "total_gains_stability_pool": "Total Gains Stability Pool (Claimed)",
-    "total_gains_staking": "Total Gains Staking (Claimed)",
-    "total_withdrawn_stability_pool": "Total Withdrawn Stability Pool",
+    "total_deposited_stability_pool": "Total deposited to the stability pool",
+    "total_gains_stability_pool": "Stability pool gains (claimed)",
+    "total_gains_staking": "Staking gains (claimed)",
+    "total_withdrawn_stability_pool": "Total withdrawn from the stability pool",
     "view": {
-      "hide": "Show less",
-      "show": "Show more"
+      "hide": "Hide details",
+      "show": "Show details"
     }
   },
   "loan_stake": {
@@ -4676,27 +4676,27 @@
     "add_asset": "Add asset"
   },
   "manual_balances": {
-    "add_manual_balance": "Add Manual Balance",
+    "add_manual_balance": "Add manual balance",
     "dialog": {
       "add": {
         "title": "Add a manual balance"
       },
       "edit": {
         "subtitle": "Modify balance amount, location, and tags",
-        "title": "Edit Manual Balance"
+        "title": "Edit manual balance"
       }
     }
   },
   "manual_balances_form": {
     "fields": {
-      "balance_type": "Balance Type",
+      "balance_type": "Balance type",
       "create_a_custom_asset": "Create a custom asset",
-      "input_manual_price": "Add and use manual price",
+      "input_manual_price": "Manual price",
       "label": "Label",
-      "price_asset": "in currency",
+      "price_asset": "Currency",
       "price_asset_hint": "(e.g. USD, EUR, ETH)",
       "tags": "Tags",
-      "use_fetched_price": "Use fetched price"
+      "use_fetched_price": "Fetched price"
     },
     "type": {
       "liability": "Liability"
@@ -4804,8 +4804,8 @@
     "title": "Missing prices"
   },
   "module_activator": {
-    "hint": "* Modules that are activated for all addresses will not appear here",
-    "subtitle": "Select which modules should be queried for this account",
+    "hint": "Modules active for all addresses are not listed.",
+    "subtitle": "Select which modules to query for this account.",
     "title": "Enabled modules"
   },
   "module_not_active": {
@@ -4815,27 +4815,27 @@
   },
   "module_selector": {
     "actions": {
-      "disable_all": "Disable All",
-      "enable_all": "Enable All"
+      "disable_all": "Disable all",
+      "enable_all": "Enable all"
     },
     "all_accounts": "All addresses",
-    "filter": "Search module(s)",
-    "select_accounts_hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
-    "some_accounts": "{number} address",
+    "filter": "Search modules",
+    "select_accounts_hint": "Choose the addresses this module queries",
+    "some_accounts": "{number} address | {number} addresses",
     "table": {
       "enabled": "Enabled",
-      "select_accounts": "Select accounts"
+      "select_accounts": "Queried addresses"
     },
     "tasks": {
       "toggle": "Updating modules"
     }
   },
   "module_settings": {
-    "coverage_note": "These modules only control balance queries for a few specific protocols. They are not the full list of what rotki supports. Transaction decoding automatically covers 100+ DeFi protocols regardless of these settings. See the full list of supported chains, exchanges and protocols on {link}.",
+    "coverage_note": "Everything rotki supports is listed on {link}.",
     "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "integrations_link_label": "rotki.com/integrations",
-    "subtitle": "Manage and view your balance-query module settings.",
-    "title": "Module Settings"
+    "subtitle": "Modules turn on balance queries for a few specific protocols. Transaction decoding covers every supported protocol regardless.",
+    "title": "Modules"
   },
   "modules": {
     "dashboard": {
@@ -4965,10 +4965,10 @@
   },
   "non_fungible_balances": {
     "column": {
-      "custom_price": "Custom Price",
-      "price_in_asset": "Price in Asset"
+      "custom_price": "Custom price",
+      "price_in_asset": "Price in asset"
     },
-    "ignore": "Ignore NFT",
+    "ignore": "Ignored",
     "refresh": "Refresh the balances"
   },
   "notes_menu": {
@@ -5071,7 +5071,7 @@
     "tabs": {
       "error": "Error",
       "reminder": "Reminder",
-      "view_all": "View All"
+      "view_all": "All"
     },
     "title": "Notifications",
     "view_calendar": "View Calendar"
@@ -5079,15 +5079,15 @@
   "oracle_cache_management": {
     "penalty": {
       "hints": {
-        "oracle_penalty_duration": "The duration in seconds for which an oracle is penalized",
-        "oracle_penalty_threshold_count": "The number of failures after which an oracle is penalized."
+        "oracle_penalty_duration": "How long a penalized oracle stays penalized.",
+        "oracle_penalty_threshold_count": "How many failures it takes to penalize an oracle."
       },
       "labels": {
-        "oracle_penalty_duration": "Oracle penalty duration",
-        "oracle_penalty_threshold_count": "Oracle penalty threshold count"
+        "oracle_penalty_duration": "Penalty duration",
+        "oracle_penalty_threshold_count": "Failures before penalty"
       },
-      "subtitle": "Penalty settings for misbehaving oracle(s) in runtime.",
-      "title": "Oracle penalty settings"
+      "subtitle": "An oracle that keeps failing is penalized for a while.",
+      "title": "Penalties"
     }
   },
   "oracle_prices": {
@@ -5287,7 +5287,11 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
+      "change_in_period": "in the selected period",
+      "change_in_view": "in the zoomed range",
       "check_problematic_event": "Check this and prior events for discrepancies",
+      "click_to_open_snapshot": "Click to open this snapshot",
+      "current_balances_no_snapshot": "Current balances, as there is no snapshot yet",
       "discrepancy": {
         "amount_from_current_balance": "Amount from current balance",
         "amount_from_last_event": "Amount from last event",
@@ -5325,22 +5329,37 @@
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_graph_data": "Fetching graph data",
       "history_events_no_data": "No data can be shown from history events processing.",
-      "max_visible": "Maximum assets to show",
       "negative_amount_detected": "Negative amount detected during historical processing.",
-      "netvalue_over_time": "Netvalue over time",
+      "net_value": "Net value",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
+      "others": "Others",
+      "others_count": "{count} more",
       "range_selector": {
         "data_available": "Data available",
+        "end_date": "End date",
         "ending_date_must_before_starting_date": "The ending date cannot be earlier than the starting date.",
-        "no_entries_available_before": "There are no entries available before"
+        "no_entries_available_before": "There are no entries available before",
+        "start_date": "Start date"
       },
-      "refresh_the_net_value_data": "Refresh the net value data",
       "search_asset_to_see_graph": "Search for an asset to see the graph",
+      "search_asset_to_see_graph_description": "Pick one of your assets to see how its amount, price and value changed over time.",
       "select_asset": "Search for an asset",
+      "series": {
+        "amount": "Amount",
+        "price": "Price",
+        "snapshot_amount": "Snapshot amount",
+        "snapshot_value": "Snapshot value in {currency}",
+        "value": "Value in {currency}"
+      },
+      "show_all": "Show all {count}",
+      "show_less": "Show less",
+      "snapshot_taken": "Snapshot taken",
       "some_prices_are_missing": "Some points are hidden because prices are missing.\nClick \"Fetch prices\" to try retrieving the prices.",
+      "timeframe_custom": "Custom",
+      "total": "Total",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
-      "visible_percentage": "% of visible items only:"
+      "warnings": "{count} warning | {count} warnings"
     },
     "theme_manager": {
       "dark_theme": "Dark Theme",
@@ -5350,7 +5369,7 @@
         "short": "Reset to default"
       },
       "select_color": "Select Color",
-      "text": "App theme",
+      "text": "Theme",
       "text_hint": "Manage colors for the app theme"
     },
     "unsupported_app_version": {
@@ -5390,7 +5409,7 @@
         "hint": "Enter a descriptive name for this device",
         "label": "Device Name"
       },
-      "edit_title": "Edit Device",
+      "edit_title": "Rename device",
       "error": {
         "title": "Save Failed"
       },
@@ -5406,9 +5425,9 @@
     "table": {
       "actions": {
         "delete_tooltip": "Delete device",
-        "edit_tooltip": "Edit device"
+        "edit_tooltip": "Rename device"
       },
-      "current_device": "This Device",
+      "current_device": "This device",
       "headers": {
         "device_name": "Device Name",
         "last_seen": "Last Seen",
@@ -5416,7 +5435,7 @@
         "user": "User"
       }
     },
-    "title": "Premium Devices"
+    "title": "Devices"
   },
   "premium_loading_failed": {
     "description": "This might indicate a problem with the premium component service.",
@@ -5434,8 +5453,8 @@
   },
   "premium_settings": {
     "actions": {
-      "delete": "Delete Key",
-      "replace": "Replace Key",
+      "delete": "Remove key",
+      "replace": "Replace key",
       "setup": "Setup",
       "setup_premium_key": "Setup Premium Key",
       "sync": "Allow data sync with rotki Server",
@@ -5450,8 +5469,8 @@
     "cloud_backup_upgrade_link": "Upgrade your subscription",
     "current_plan_label": "Current plan:",
     "delete_confirmation": {
-      "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
-      "title": "Delete rotki premium keys?"
+      "message": "This removes the rotki Premium key from this account, and the premium features stop working here. Your subscription stays active, and you can enter the key again at any time.",
+      "title": "Remove the rotki Premium key?"
     },
     "error": {
       "device_limit": {
@@ -5488,8 +5507,8 @@
   },
   "price_form": {
     "date_non_empty": "The date of the price cannot be empty",
-    "from_asset": "From Asset",
-    "from_non_empty": "The from asset cannot be empty",
+    "from_asset": "Asset",
+    "from_non_empty": "Pick the asset to price",
     "historic": {
       "hint": "1 {fromAsset} was worth {price} {toAsset}"
     },
@@ -5497,8 +5516,8 @@
       "hint": "1 {fromAsset} is worth {price} {toAsset}"
     },
     "price_non_empty": "The price cannot be empty",
-    "to_asset": "To Asset",
-    "to_non_empty": "The to asset cannot be empty",
+    "to_asset": "Priced in",
+    "to_non_empty": "Pick the asset the price is in",
     "update_price": "Update price"
   },
   "price_management": {
@@ -5532,14 +5551,14 @@
   },
   "price_oracle_settings": {
     "data_name": "price oracle",
-    "historic_prices": "Historic Prices",
-    "latest_prices": "Latest Prices",
+    "historic_prices": "Historical prices",
+    "latest_prices": "Latest prices",
     "latest_prices_update": "Latest order prices updated. You may need to click the 'Refresh Prices' button to apply the changes.",
-    "subtitle": "Manage which price oracles are used, in which order.",
-    "title": "Price oracle settings"
+    "subtitle": "rotki asks the oracles in this order and uses the first price it gets.",
+    "title": "Price oracles"
   },
   "price_refresh": {
-    "button": "Refresh Prices"
+    "button": "Refresh prices"
   },
   "price_table": {
     "actions": {
@@ -5580,7 +5599,7 @@
     "disabled_items": "{num} disabled {namePluralized}",
     "item": {
       "delete": "Disable the {name} entry",
-      "empty": "No price {namePluralized} found!"
+      "empty": "No {namePluralized} yet"
     }
   },
   "profit_loss_events": {
@@ -5591,8 +5610,8 @@
     "edit_historic_price": "Update historic price",
     "edit_price_warning": "You will need to regenerate the report to see the updated price in the report events.",
     "headers": {
-      "pnl_free": "Tax Free PnL",
-      "pnl_taxable": "Taxable PnL",
+      "pnl_free": "Tax Free P/L",
+      "pnl_taxable": "Taxable P/L",
       "tax_free_amount": "Tax Free Amount",
       "taxable_amount": "Taxable Amount"
     },
@@ -5600,8 +5619,8 @@
   },
   "profit_loss_overview": {
     "headers": {
-      "tax_free_profit_loss": "Tax Free Profit/Loss",
-      "taxable_profit_loss": "Taxable Profit/Loss"
+      "tax_free_profit_loss": "Tax Free P/L",
+      "taxable_profit_loss": "Taxable P/L"
     },
     "title": "Overview"
   },
@@ -5609,7 +5628,7 @@
     "actionable": {
       "actions": {
         "pin_section": "Pin Section",
-        "regenerate_report": "Re-Generate Report"
+        "regenerate_report": "Regenerate report"
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {
@@ -5666,13 +5685,13 @@
     "loading_message": "Please wait while your report is generated...",
     "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
     "processing_alert": "History events are currently being processed ({percentage}%). Please wait until processing is complete.",
-    "report_period": "Report starting from {start} to {end}",
+    "report_period": "{start} to {end}",
     "settings_tooltip": "Open the accounting settings",
     "sync_history": "Sync history now"
   },
   "profit_loss_reports": {
     "columns": {
-      "created": "Creation Date",
+      "created": "Created",
       "end": "Period End",
       "start": "Period Start",
       "taxable_profit_loss": "Taxable P/L",
@@ -5701,7 +5720,7 @@
       "message": "PnL report from {start} to {end} has been generated.",
       "title": "PnL report has been generated"
     },
-    "title": "Generated Reports"
+    "title": "Generated reports"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -5738,10 +5757,10 @@
   },
   "queried_address_dialog": {
     "add": "Add address",
-    "all_address_queried": "All your ethereum addresses are queried for {module}",
+    "all_address_queried": "Every Ethereum address is queried for {module}. Add addresses to query only those.",
     "remove_tooltip": "Remove the address from the queried addresses",
-    "subtitle": "Manage the addresses that will be queried for {module}",
-    "title": "Queried Addresses"
+    "subtitle": "Choose which Ethereum addresses rotki queries for {module}",
+    "title": "Queried addresses"
   },
   "reports_table": {
     "delete": "Delete report",
@@ -5783,7 +5802,7 @@
     "owned_hint": "Enable if this node is a private node owned by the user",
     "owned_hint_provider": "Every chain this key is added to gets it as an owned node with a weight of 0, so they are tried first and your existing nodes keep their weights relative to each other.",
     "weight": "Weight",
-    "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)",
+    "weight_hint": "Changing a public node's weight rebalances the others.",
     "weight_per_hundred": "/100"
   },
   "rpc_provider_setup": {
@@ -5970,7 +5989,7 @@
         "node_operator_hint": "Use the numeric ID assigned by Lido.",
         "node_operator_label": "Node operator ID",
         "submit": "Add node operator",
-        "title": "Track a node operator",
+        "title": "Add a node operator",
         "validation": {
           "invalid_id": "Use a non-negative whole number",
           "non_empty_address": "An address is required",
@@ -5987,13 +6006,13 @@
       "table": {
         "actions": "Actions",
         "address": "Address",
-        "bond_claimable": "Claimable bond",
-        "bond_current": "Current bond",
-        "bond_required": "Required bond",
+        "bond_claimable": "Claimable",
+        "bond_current": "Bond",
+        "bond_required": "Required",
         "description": "rotki will use the following pairs to read the stETH staking bond from the accounting contract.",
         "empty": "No node operators are tracked yet.",
-        "keys_total": "Deposited validators",
-        "node_operator": "Node operator ID",
+        "keys_total": "Validators",
+        "node_operator": "Operator",
         "not_available": "N/A",
         "operator_type": "Operator type",
         "refresh_tooltip": "Refresh Lido CSM metrics",
@@ -6437,9 +6456,9 @@
   },
   "timeframe_settings": {
     "default_timeframe": "Dashboard graph default timeframe",
-    "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",
-    "inactive_timeframes": "Inactive Timeframes",
-    "visible_timeframes": "Visible Timeframes"
+    "default_timeframe_description": "The timeframe the dashboard graph opens with after login. By default it remembers the last one you used.",
+    "inactive_timeframes": "Inactive timeframes",
+    "visible_timeframes": "Visible timeframes"
   },
   "toggle_location_link": {
     "disabled": "This functionality is available only for EVM chains or solana",
@@ -6500,7 +6519,7 @@
       "no_addresses_found": "No addresses found",
       "resolving_ens": "Resolving ENS...",
       "select_recipient_address": "Select recipient address",
-      "tracked_addresses": "Tracked Addresses"
+      "tracked_addresses": "Tracked addresses"
     },
     "select_asset": {
       "asset_count": "{count} asset | {count} assets",
@@ -6521,7 +6540,7 @@
       "wallet_connect": "Check your browser / wallet to sign the transaction. If you are using a browser wallet bridge, make sure that the browser tab is focused."
     },
     "wallet_mode": {
-      "label": "Mode",
+      "label": "Connect with",
       "local_bridge": "Local",
       "wallet_connect": "Wallet Connect"
     },
@@ -6577,7 +6596,7 @@
           "title": "Tracked accounts"
         },
         "undecoded": {
-          "action": "View status",
+          "action": "Decode",
           "description": "Missing from your history and reports until they are decoded.",
           "title": "Undecoded transactions"
         },
@@ -6608,8 +6627,8 @@
     "empty_state": {
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
-      "no_events": "No events found.\nConnect an exchange or track a blockchain address to sync your history, or add an event manually.",
-      "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed. This can take a while on the first sync."
+      "no_events": "No events yet",
+      "syncing": "Your history is being queried and decoded"
     },
     "events": {
       "accounting_rule": {
@@ -6689,7 +6708,7 @@
           "label": "Account Address"
         },
         "action": {
-          "hint": "What this event represents — e.g. receive, swap, stake."
+          "hint": "What this event represents, such as a receive, swap or stake."
         },
         "address": {
           "validation": {
@@ -6888,7 +6907,7 @@
       "show_accounting_divergence": "Highlighting accounting divergence event",
       "show_accounting_divergence_tooltip": "This row is one of the events around the detected balance mismatch.",
       "show_missing_acquisition": "Showing event for missing acquisition",
-      "show_negative_balance": "Highlighting event where negative balances detected",
+      "show_negative_balance": "Highlighting the event where the balance went negative",
       "showing_ignored_assets": "Showing all events including those with ignored assets. Click to hide.",
       "skipped": {
         "csv_export_error": "There was an error with export",
@@ -7099,9 +7118,9 @@
     "description": "Choose a wallet provider to connect with rotki",
     "no_providers": {
       "description": "Please ensure you have a wallet extension installed and enabled in your browser.",
-      "title": "No Wallet Providers Found"
+      "title": "No wallet providers found"
     },
-    "title": "Select Wallet Provider"
+    "title": "Select a wallet provider"
   },
   "welcome": {
     "update": {

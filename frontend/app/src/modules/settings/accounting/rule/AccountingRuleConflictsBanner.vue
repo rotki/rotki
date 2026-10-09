@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
       <template #append>
         <RuiChip
           size="sm"
-          class="!p-0 !bg-rui-warning-darker"
+          class="p-0! bg-rui-warning-darker!"
           color="warning"
         >
           {{ count }}

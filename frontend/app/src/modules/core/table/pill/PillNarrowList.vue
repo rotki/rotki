@@ -92,8 +92,8 @@ watch(() => highlighted, (index) => {
 <template>
   <!-- The scroll area and the footer are siblings, so the footer stays put while the rows scroll:
        a syntax hint that scrolls out of sight is one the user has to already know about to find. -->
-  <div class="flex flex-col min-w-[16rem] max-w-[20rem]">
-    <div class="flex flex-col gap-0.5 p-1.5 max-h-[17rem] overflow-y-auto">
+  <div class="flex flex-col min-w-64 max-w-80">
+    <div class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto">
       <button
         v-for="(suggestion, index) in suggestions"
         :id="narrowRowId(index)"
@@ -202,7 +202,7 @@ watch(() => highlighted, (index) => {
         :key="example"
         type="button"
         role="menuitem"
-        class="px-1.5 py-0.5 rounded transition-colors"
+        class="px-1.5 py-0.5 rounded-sm transition-colors"
         :class="suggestions.length + index === highlighted
           ? 'bg-rui-primary/10 text-rui-primary'
           : 'bg-rui-grey-100 dark:bg-rui-grey-800 text-rui-text-primary hover:bg-rui-primary/10 hover:text-rui-primary'"

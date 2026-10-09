@@ -32,6 +32,6 @@ const { t } = useI18n({ useScope: 'global' });
         child
       />
     </div>
-    <RouterView class="-mt-5 lg:-mt-[4.5rem]" />
+    <RouterView class="-mt-5 lg:-mt-18" />
   </TablePageLayout>
 </template>

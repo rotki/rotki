@@ -104,7 +104,6 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <RuiTextField
       v-model="form.state.name"
-      variant="outlined"
       color="primary"
       data-testid="node-name"
       :disabled="isEtherscan"
@@ -114,7 +113,6 @@ defineExpose({
     />
     <RuiTextField
       v-model="form.state.endpoint"
-      variant="outlined"
       color="primary"
       data-testid="node-endpoint"
       :disabled="isEtherscan"
@@ -141,9 +139,8 @@ defineExpose({
         v-model="form.state.weight"
         :disabled="form.state.owned"
         :error-messages="form.errors('weight').length > 0 ? [''] : []"
-        variant="outlined"
         hide-details
-        class="w-[8rem] [&>div]:min-w-0"
+        class="w-32 [&>div]:min-w-0"
       >
         <template #append>
           {{ t('rpc_node_form.weight_per_hundred') }}

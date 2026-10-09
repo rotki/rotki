@@ -84,7 +84,7 @@ const {
             <RuiButton
               size="sm"
               icon
-              class="-ml-1 !h-6 !px-2 text-xs !bg-rui-grey-300 hover:!bg-rui-grey-400 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 dark:!text-white"
+              class="-ml-1 h-6! px-2! text-xs bg-rui-grey-300! hover:bg-rui-grey-400! dark:bg-rui-grey-800! dark:hover:bg-rui-grey-700! dark:text-white!"
               v-bind="attrs"
             >
               {{ extraHashCount }}+

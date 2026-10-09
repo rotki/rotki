@@ -116,7 +116,6 @@ defineExpose({
     :disabled="data.type !== 'add' && !isGroupAdd"
     :label="t('common.entry_type')"
     hide-details
-    variant="outlined"
   >
     <template #selection="{ item }">
       <span class="capitalize">

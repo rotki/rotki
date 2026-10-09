@@ -143,7 +143,6 @@ async function updateField(value: string): Promise<void> {
     />
     <RuiTextField
       v-model="form.state.value"
-      variant="outlined"
       color="primary"
       :data-testid="fieldTestId"
       class="pt-4"

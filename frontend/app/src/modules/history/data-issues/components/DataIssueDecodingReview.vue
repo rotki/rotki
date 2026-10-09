@@ -57,7 +57,7 @@ async function openTransaction(groupIdentifier: string): Promise<void> {
         <section
           v-for="transaction in review?.transactions"
           :key="transaction.txHash"
-          class="border border-default rounded p-4"
+          class="border border-default rounded-sm p-4"
           data-testid="data-issue-review-transaction"
         >
           <div class="flex flex-wrap items-center justify-between gap-2 mb-4">

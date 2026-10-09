@@ -75,7 +75,6 @@ onMounted(() => {
       :error-messages="error"
       hide-details
       key-attr="identifier"
-      variant="outlined"
       v-bind="$attrs"
       @update:model-value="updateSetting($event as SupportedLanguage)"
     >

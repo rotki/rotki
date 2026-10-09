@@ -40,7 +40,7 @@ const percentage = computed<number>(() => (total > 0 ? Math.round((processed / t
       aria-hidden="true"
     />
     <CounterpartyDisplay
-      class="min-w-0 !text-xs"
+      class="min-w-0 text-xs!"
       :counterparty="protocol"
       size="0.75rem"
     />

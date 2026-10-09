@@ -39,7 +39,7 @@ function showInEvents(conflict: InternalTxConflict): void {
   >
     <RuiCard
       class="max-h-[90vh] flex flex-col overflow-hidden"
-      :class-names="{ content: '!py-0 flex flex-col flex-1 min-h-0 overflow-hidden' }"
+      :class-names="{ content: 'py-0! flex flex-col flex-1 min-h-0 overflow-hidden' }"
       divide
       data-testid="internal-tx-conflicts-dialog"
     >

@@ -60,7 +60,6 @@ defineExpose({
       <RuiTextField
         v-model.trim="state.validatorIndex"
         data-testid="eth2-validator-index"
-        variant="outlined"
         color="primary"
         :disabled="disabled || editMode"
         :label="t('common.validator_index')"
@@ -75,7 +74,6 @@ defineExpose({
         v-model.trim="state.publicKey"
         data-testid="eth2-public-key"
         class="grow"
-        variant="outlined"
         color="primary"
         :disabled="disabled || editMode"
         :label="t('eth2_input.public_key')"
@@ -88,7 +86,6 @@ defineExpose({
       <RuiTextField
         v-model.trim="state.ownershipPercentage"
         data-testid="eth2-ownership-percentage"
-        variant="outlined"
         placeholder="100"
         :disabled="disabled"
         color="primary"

@@ -70,7 +70,6 @@ function filterAddress(item: string, queryText: string): boolean {
     :filter="filterAddress"
     clearable
     custom-value
-    variant="outlined"
     data-testid="location-label"
     :label="t('transactions.events.form.account_address.label')"
     :error-messages="errorMessages"

@@ -93,7 +93,7 @@ onBeforeMount(async () => {
         v-if="unmatchedMovements.length > 0"
         color="primary"
         size="sm"
-        class="ml-2 !px-0.5 !py-0"
+        class="ml-2 px-0.5! py-0!"
       >
         {{ unmatchedMovements.length }}
       </RuiChip>
@@ -104,7 +104,7 @@ onBeforeMount(async () => {
         v-if="ignoredMovements.length > 0"
         color="secondary"
         size="sm"
-        class="ml-2 !px-0.5 !py-0"
+        class="ml-2 px-0.5! py-0!"
       >
         {{ ignoredMovements.length }}
       </RuiChip>
@@ -215,7 +215,7 @@ onBeforeMount(async () => {
           v-if="!isPinned && modelSelectedUnmatched.length > 0"
           size="sm"
           color="primary"
-          class="ml-2 !py-0"
+          class="ml-2 py-0!"
         >
           {{ modelSelectedUnmatched.length }}
         </RuiChip>
@@ -230,7 +230,7 @@ onBeforeMount(async () => {
             variant="outlined"
             color="warning"
             :size="buttonSize"
-            class="rounded-l-none -ml-[1px]"
+            class="rounded-l-none -ml-px"
             :class="{ 'h-[30px]': isPinned }"
             :disabled="!isAutoMatchAllowed || fiatMovements.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
@@ -244,7 +244,7 @@ onBeforeMount(async () => {
       </RuiTooltip>
       <RuiButtonGroup
         color="primary"
-        :class="isPinned ? '!pl-2' : 'pl-3' "
+        :class="isPinned ? 'pl-2!' : 'pl-3' "
         :disabled="!isAutoMatchAllowed || autoMatchLoading"
       >
         <RuiTooltip
@@ -255,9 +255,9 @@ onBeforeMount(async () => {
           <template #activator>
             <RuiButton
               color="primary"
-              class="!rounded-r-none"
+              class="rounded-r-none!"
               :size="buttonSize"
-              :class="{ 'h-[30px] !px-3': isPinned }"
+              :class="{ 'h-[30px] px-3!': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               data-testid="auto-match"
@@ -293,7 +293,7 @@ onBeforeMount(async () => {
           v-if="!isPinned && modelSelectedIgnored.length > 0"
           size="sm"
           color="primary"
-          class="ml-2 !py-0"
+          class="ml-2 py-0!"
         >
           {{ modelSelectedIgnored.length }}
         </RuiChip>

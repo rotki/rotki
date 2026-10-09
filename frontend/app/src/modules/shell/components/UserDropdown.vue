@@ -42,7 +42,7 @@ const { isDark } = useRotkiTheme();
   <div>
     <RuiMenu
       data-testid="user-menu"
-      :class-names="{ menu: 'min-w-[10rem] max-w-[22rem]' }"
+      :class-names="{ menu: 'min-w-40 max-w-88' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">
@@ -71,7 +71,7 @@ const { isDark } = useRotkiTheme();
               size="sm"
               variant="outlined"
               color="primary"
-              class="!cursor-pointer"
+              class="cursor-pointer!"
             >
               {{ tierLabel }}
             </RuiChip>

@@ -396,12 +396,12 @@ function focusInput(event: MouseEvent): void {
       disable-auto-focus
       persist-on-activator-click
       full-width
-      class="flex-1 min-w-[8rem]"
+      class="flex-1 min-w-32"
     >
       <template #activator="{ attrs }">
         <div
           v-bind="attrs"
-          class="flex-1 min-w-[8rem]"
+          class="flex-1 min-w-32"
         >
           <input
             ref="narrowInput"
@@ -416,7 +416,7 @@ function focusInput(event: MouseEvent): void {
             :disabled="disabled"
             autocomplete="off"
             spellcheck="false"
-            class="w-full min-w-0 bg-transparent py-1 text-sm text-rui-text-primary outline-none placeholder:text-rui-text-secondary"
+            class="w-full min-w-0 bg-transparent py-1 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
             data-testid="pill-narrow-input"
             @input="narrowOpen = true"
             @keydown="onNarrowKeydown($event)"

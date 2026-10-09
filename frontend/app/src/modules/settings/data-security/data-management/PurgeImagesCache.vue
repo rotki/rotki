@@ -82,7 +82,6 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
     <div class="flex flex-col gap-4">
       <RuiAutoComplete
         v-model="source"
-        variant="outlined"
         :label="t('data_management.purge_images_cache.select_image_source')"
         :options="purgeable"
         text-attr="text"
@@ -93,7 +92,6 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
       <AssetSelect
         v-if="source === PurgeableImageCache.ASSET_ICONS"
         v-model="assetToClear"
-        variant="outlined"
         :label="t('data_management.purge_images_cache.label.asset_to_clear')"
         :hint="t('data_management.purge_images_cache.hint')"
       />
@@ -101,7 +99,6 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
         v-else
         v-model="ensToClear"
         :options="ensNamesList"
-        variant="outlined"
         chips
         clearable
         custom-value

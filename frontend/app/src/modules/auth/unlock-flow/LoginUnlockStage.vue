@@ -64,7 +64,7 @@ watch(() => state, (current) => {
   <AssetUpdateMessage
     v-if="phase === UnlockPhase.updatePrompt"
     v-model:versions="promptedVersions"
-    class="max-w-[27.5rem] mx-auto"
+    class="max-w-110 mx-auto"
     headless
     @confirm="emit('confirm', promptedVersions.upToVersion)"
     @dismiss="dismiss($event)"
@@ -77,20 +77,20 @@ watch(() => state, (current) => {
   />
   <AssetUpdateStatus
     v-else-if="phase === UnlockPhase.applyingUpdate"
-    class="max-w-[32rem] mx-auto"
+    class="max-w-128 mx-auto"
     status="applying"
     :remote-version="promptedVersions.upToVersion"
   />
   <AssetUpdateStatus
     v-else-if="phase === UnlockPhase.checkingUpdate"
-    class="max-w-[32rem] mx-auto"
+    class="max-w-128 mx-auto"
     status="checking"
     :remote-version="0"
   />
   <UpgradeProgressDisplay v-else-if="phase === UnlockPhase.unlocking && upgradeVisible" />
   <div
     v-else-if="busy"
-    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
+    class="max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
     <RuiProgress
       color="primary"

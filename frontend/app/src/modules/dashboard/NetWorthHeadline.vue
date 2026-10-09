@@ -30,12 +30,12 @@ const indicator = computed<string>(() => {
 
 const balanceClass = computed<string>(() => {
   if (balanceDelta.isNegative())
-    return '!text-rui-error-lighter';
+    return 'text-rui-error-lighter!';
 
   if (balanceDelta.isZero())
-    return '!text-rui-grey-500';
+    return 'text-rui-grey-500!';
 
-  return '!text-rui-success';
+  return 'text-rui-success!';
 });
 </script>
 
@@ -53,12 +53,12 @@ const balanceClass = computed<string>(() => {
     >
       <RuiSkeletonLoader
         v-if="loadingNetWorth"
-        class="my-[0.5rem] w-56 h-[2rem] sm:my-[0.75rem] sm:w-72 sm:h-[2.5rem]"
+        class="my-2 w-56 h-8 sm:my-3 sm:w-72 sm:h-10"
         data-testid="overall-balances-net-worth-loading"
       />
       <FiatDisplay
         v-else
-        class="text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]"
+        class="text-[2rem] leading-12 sm:text-[3rem] sm:leading-16"
         no-truncate
         :value="netWorth"
       />

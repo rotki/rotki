@@ -131,7 +131,9 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(1.5),
         },
       });
-      expect(wrapper.find('[data-testid="amount-display"].skeleton').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="amount-display"] [data-testid="amount-skeleton"]').exists()).toBe(true);
+      // the zero-width space keeps the value's line box, so nothing moves when the value arrives
+      expect(wrapper.find('[data-testid="amount-display"]').text()).toBe('​');
       expect(wrapper.find('[data-testid="display-amount"]').exists()).toBe(false);
     });
   });

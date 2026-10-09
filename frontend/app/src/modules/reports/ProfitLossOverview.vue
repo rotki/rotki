@@ -22,7 +22,7 @@ const { t } = useI18n({ useScope: 'global' });
     <template #header>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <div class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-800 w-full">
+    <div class="rounded-md! border border-rui-grey-300 dark:border-rui-grey-800 w-full">
       <table class="w-full">
         <thead class="text-rui-text-secondary font-medium border-b border-default text-xs">
           <tr>
@@ -66,7 +66,7 @@ const { t } = useI18n({ useScope: 'global' });
           <tr v-if="Object.keys(report.overview).length === 0">
             <td
               colspan="3"
-              class="p-4 h-[3rem]"
+              class="p-4 h-12"
             />
           </tr>
           <tr class="border-t border-default font-medium">

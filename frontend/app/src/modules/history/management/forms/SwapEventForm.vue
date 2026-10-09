@@ -108,7 +108,6 @@ defineExpose({
     <RuiTextField
       v-if="data.type !== 'edit-group'"
       v-model="state.uniqueId"
-      variant="outlined"
       color="primary"
       data-testid="unique-id"
       :hint="t('swap_event_form.unique_id_hint')"

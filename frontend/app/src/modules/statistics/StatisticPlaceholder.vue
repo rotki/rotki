@@ -13,7 +13,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 <template>
   <div class="relative">
     <div
-      class="grid grid-cols-1 lg:grid-cols-2 gap-2 dark:invert-[0.9] dark:hue-rotate-[180deg]"
+      class="grid grid-cols-1 lg:grid-cols-2 gap-2 dark:invert-[0.9] dark:hue-rotate-180"
     >
       <AppImage
         class="lg:col-span-2 -m-4"

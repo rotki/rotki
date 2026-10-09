@@ -93,7 +93,7 @@ async function updatePrice(): Promise<void> {
       <template #activator="{ attrs }">
         <RuiButton
           variant="text"
-          class="!p-2"
+          class="p-2!"
           icon
           v-bind="attrs"
         >
@@ -150,7 +150,6 @@ async function updatePrice(): Promise<void> {
             />
             <AmountInput
               v-model="form.state.price"
-              variant="outlined"
               :loading="fetchingPrice"
               :disabled="fetchingPrice"
               :label="t('common.price')"
