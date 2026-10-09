@@ -5,6 +5,7 @@ import { setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { TAB_ORDER, TabCategory, useNotificationSidebar } from './use-notification-sidebar';
 
@@ -60,6 +61,15 @@ function sidebar(): ReturnType<typeof useNotificationSidebar> {
 
 function seed(notifications: NotificationData[]): void {
   set(storeToRefs(useNotificationsStore()).data, notifications);
+}
+
+function fileProblem(): void {
+  useBackendProblemsStore().record({
+    at: new Date('2026-03-04T05:06:07Z'),
+    count: 1,
+    identity: 'tag',
+    source: { fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'], key: 'local_db', subject: null, value: 'Could not read a tag', verbosity: 'error' },
+  });
 }
 
 /**
@@ -131,35 +141,72 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
     });
   });
 
+  describe('backend problems', () => {
+    beforeEach(() => {
+      fileProblem();
+    });
+
+    it.each([TabCategory.VIEW_ALL, TabCategory.ERROR])('should show the problems on the %s tab', (tab) => {
+      const { modelSelectedTab, selectedProblems } = sidebar();
+      set(modelSelectedTab, tab);
+
+      expect(get(selectedProblems)).toHaveLength(1);
+    });
+
+    it('should keep the problems off the reminder tab', () => {
+      const { modelSelectedTab, selectedProblems } = sidebar();
+      set(modelSelectedTab, TabCategory.REMINDER);
+
+      expect(get(selectedProblems)).toEqual([]);
+    });
+
+    it('should not count as empty while it holds only a problem', () => {
+      const { isEmpty } = sidebar();
+
+      expect(get(isEmpty)).toBe(false);
+    });
+
+    it('should mark the problems read once the drawer is open', async () => {
+      sidebar();
+      await nextTick();
+
+      expect(get(storeToRefs(useBackendProblemsStore()).hasUnread)).toBe(false);
+    });
+  });
+
   describe('clearing every notification', () => {
     beforeEach(() => {
       seed([notification({ id: 1 }), notification({ id: 2 })]);
+      fileProblem();
     });
 
     it('should discard nothing until the dialog is confirmed', () => {
-      const { allNotifications, showConfirmation } = sidebar();
+      const { isEmpty, showConfirmation } = sidebar();
       showConfirmation();
 
       expect(get(useConfirmStore().visible)).toBe(true);
-      expect(get(allNotifications)).toHaveLength(2);
+      expect(get(isEmpty)).toBe(false);
       expect(get(display)).toBe(true);
     });
 
-    it('should discard them and close the drawer once confirmed', async () => {
-      const { allNotifications, showConfirmation } = sidebar();
+    it('should discard the notifications and the problems, and close the drawer once confirmed', async () => {
+      const { isEmpty, showConfirmation } = sidebar();
       showConfirmation();
       await useConfirmStore().confirm();
 
-      expect(get(allNotifications)).toHaveLength(0);
+      expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(0);
+      expect(get(storeToRefs(useBackendProblemsStore()).problems)).toHaveLength(0);
+      expect(get(isEmpty)).toBe(true);
       expect(get(display)).toBe(false);
     });
 
     it('should discard nothing when the dialog is dismissed', async () => {
-      const { allNotifications, showConfirmation } = sidebar();
+      const { isEmpty, showConfirmation } = sidebar();
       showConfirmation();
       await useConfirmStore().dismiss();
 
-      expect(get(allNotifications)).toHaveLength(2);
+      expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(2);
+      expect(get(isEmpty)).toBe(false);
       expect(get(display)).toBe(true);
     });
   });

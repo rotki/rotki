@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import Notification from '@/modules/core/notifications/Notification.vue';
+import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';
 import { TAB_ORDER, TabCategory, useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
 
@@ -16,13 +17,15 @@ const { visible: dialogVisible } = storeToRefs(useConfirmStore());
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
 const {
-  allNotifications,
   close,
   initialAppear,
+  isEmpty,
   messageOverflow,
   modelSelectedTab,
   remove,
+  removeProblem,
   selectedNotifications,
+  selectedProblems,
   showConfirmation,
   silent,
   tabCategoriesLabel,
@@ -31,7 +34,7 @@ const {
 
 /** Nothing at all reads as caught up; an empty filter names what it filters and points back to All. */
 const emptyState = computed<{ title: string; description: string }>(() => {
-  if (get(allNotifications).length === 0)
+  if (get(isEmpty))
     return { description: t('notification_sidebar.empty.description'), title: t('notification_sidebar.empty.title') };
 
   const title = get(modelSelectedTab) === TabCategory.ERROR
@@ -104,7 +107,7 @@ const emptyState = computed<{ title: string; description: string }>(() => {
         </div>
       </div>
 
-      <ReuseNoMessages v-if="allNotifications.length === 0" />
+      <ReuseNoMessages v-if="isEmpty" />
       <div
         v-else
         class="flex flex-col flex-1 min-h-0"
@@ -126,10 +129,18 @@ const emptyState = computed<{ title: string; description: string }>(() => {
           </RuiTabs>
         </div>
         <div
-          v-if="selectedNotifications.length > 0"
+          v-if="selectedNotifications.length > 0 || selectedProblems.length > 0"
           ref="contentWrapper"
           class="ps-3.5 pe-2 mt-2 flex flex-col gap-2 overflow-y-auto!"
         >
+          <BackendProblemCard
+            v-for="problem in selectedProblems"
+            :key="problem.id"
+            class="grow-0 shrink-0"
+            :problem="problem"
+            @dismiss="removeProblem($event)"
+            @acted="close()"
+          />
           <LazyLoader
             v-for="item in selectedNotifications"
             :key="item.id"
@@ -165,7 +176,7 @@ const emptyState = computed<{ title: string; description: string }>(() => {
       </div>
       <div class="p-3 flex justify-end border-t border-rui-divider mt-2">
         <RuiButton
-          v-if="allNotifications.length > 0"
+          v-if="!isEmpty"
           variant="text"
           color="primary"
           class="me-auto"

@@ -934,14 +934,6 @@
         }
       }
     },
-    "statistics": {
-      "net_value": {
-        "error": {
-          "message": "Başarısız: {message}",
-          "title": "Net değer verilerini alma"
-        }
-      }
-    },
     "transactions_redecode": {
       "error": {
         "not_decoded": "İşlemler çekilemedi veya çözümlenemedi"
@@ -1611,6 +1603,19 @@
       "equities": "Hisse senetleri",
       "external": "Harici"
     }
+  },
+  "backend_problems": {
+    "title": {
+      "bad_data": "Okunamayan veri",
+      "balance_snapshot": "Bakiye anlık görüntüsü alınamadı",
+      "internal": "Dahili hata",
+      "local_db": "Veritabanı sorunu",
+      "network": "Bağlantı sorunu",
+      "price": "Eksik fiyat",
+      "unknown_asset": "Bilinmeyen varlık",
+      "unsupported": "Henüz desteklenmiyor"
+    },
+    "with_subject": "{subject}: {title}"
   },
   "backend_reload": {
     "failed": {
@@ -5044,12 +5049,6 @@
       "message": "Olay işleme ve sorgular sırasında {identifier} tanımlayıcılı yeni bir token tespit edildi.|Olay işleme ve sorgular sırasında {count} yeni token tespit edildi.",
       "title": "Yeni token tespit edildi|Yeni tokenlar tespit edildi"
     },
-    "oracle_penalized": {
-      "action": "Fiyat oracle'larını yapılandır",
-      "message_errors": "{oracle} fiyat sorgularında sürekli hata verdiği için {minutes} dakika boyunca atlanacak. Bu sürede fiyatlar diğer oracle'lardan alınır.",
-      "message_timeout": "{oracle} fiyat sorgularına yanıt vermeyi bıraktığı için {minutes} dakika boyunca atlanacak. Bu sürede fiyatlar diğer oracle'lardan alınır.",
-      "title": "{oracle} fiyat oracle'ı geçici olarak devre dışı bırakıldı"
-    },
     "premium": {
       "active": {
         "message": "Premium aboneliğiniz tespit edildi.",
@@ -5059,24 +5058,8 @@
     "reminder": {
       "open_calendar": "Takvimi aç"
     },
-    "repeated": "{message} ({count} kez görüldü)",
     "snapshot_failed": {
-      "message": "Bakiye anlık görüntüsü kaydedilemedi (konum: {location}). {error}",
-      "title": "Bakiye anlık görüntüsü alınamadı"
-    },
-    "user_message": {
-      "auth_action": "Kimlik bilgilerini güncelle",
-      "title": {
-        "auth": "Kimlik bilgileri reddedildi",
-        "bad_data": "Okunamayan veri",
-        "internal": "Dahili hata",
-        "local_db": "Veritabanı sorunu",
-        "network": "Bağlantı sorunu",
-        "price": "Eksik fiyat",
-        "unknown_asset": "Bilinmeyen varlık",
-        "unsupported": "Henüz desteklenmiyor"
-      },
-      "with_subject": "{subject}: {title}"
+      "message": "Bakiye anlık görüntüsü kaydedilemedi (konum: {location}). {error}"
     }
   },
   "notification_popup": {

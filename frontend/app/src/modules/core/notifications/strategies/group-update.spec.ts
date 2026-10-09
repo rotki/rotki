@@ -8,7 +8,7 @@ import { createGroupUpdateStrategy } from './group-update';
 const RESULT = NotificationKind.RESULT;
 
 describe('createGroupUpdateStrategy', () => {
-  const group = `${NotificationGroup.USER_MESSAGE}:coingecko`;
+  const group = NotificationGroup.BEACONCHAIN_RATE_LIMITED;
 
   let cooldown: UseNotificationCooldownReturn;
   let strategy: NotificationStrategy;
@@ -79,8 +79,8 @@ describe('createGroupUpdateStrategy', () => {
     expect(result!.notifications[0].display).toBe(false);
   });
 
-  it('should keep separate subjects of the same group apart', () => {
-    const other = `${NotificationGroup.USER_MESSAGE}:cryptocompare`;
+  it('should keep separate groups apart', () => {
+    const other = NotificationGroup.NEW_DETECTED_TOKENS;
     const existing = [createNotification(1, { group, kind: RESULT, message: 'optimism', severity: Severity.INFO, title: 'test' })];
 
     const result = strategy.process({ group: other, kind: RESULT, message: 'binance', severity: Severity.INFO, title: 'test' }, context(existing));

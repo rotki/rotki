@@ -103,7 +103,7 @@ describe('useNotificationsStore', () => {
       vi.advanceTimersByTime(100);
       batch.push(createNotification(store.getNextId(), testPayload({
         message: `msg-${i}`,
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         title: 'bulk',
       })));
     }
@@ -147,7 +147,7 @@ describe('useNotificationsStore', () => {
   it('should record the display of a grouped notification against its cooldown', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
-    const group = `${NotificationGroup.USER_MESSAGE}:coingecko`;
+    const group = NotificationGroup.NEW_DETECTED_TOKENS;
 
     store.add([
       createNotification(store.getNextId(), testPayload({ group, message: 'msg', title: 'title' })),
@@ -187,7 +187,7 @@ describe('useNotificationsStore', () => {
     const store = useNotificationsStore();
     const { hasUnread } = storeToRefs(store);
 
-    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', kind: NotificationKind.BACKEND_PROBLEM, title: 'title' }))]);
+    store.add([createNotification(store.getNextId(), testPayload({ message: 'msg', kind: NotificationKind.FAILURE, title: 'title' }))]);
 
     expect(get(hasUnread)).toBe(true);
   });

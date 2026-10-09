@@ -8,7 +8,7 @@ import HistoricPriceFormDialog from '@/modules/assets/prices/historic/HistoricPr
 import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { HistoricPriceFilterKeys, useHistoricPriceFields } from '@/modules/assets/prices/use-historic-price-fields';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
-import { useAddQuery } from '@/modules/core/common/use-add-query';
+import { type PriceAddLink, usePriceAddLink } from '@/modules/assets/prices/use-price-add-link';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -95,10 +95,16 @@ const filter = computed<{ fromAsset?: string; toAsset?: string }>(() => {
 
 const { deletePrice, items, loading, refresh } = useHistoricPrices(t, filter);
 
-function add() {
+/**
+ * Opens the add dialog, seeded from the table filter, or from the `?add=` link when it names the
+ * asset (`fromAsset`) and the time (`timestamp`, in seconds) of a price the backend found missing.
+ */
+function add(link?: PriceAddLink) {
+  const price = emptyPrice();
   set(modelValue, {
-    ...emptyPrice(),
-    fromAsset: get(filter).fromAsset ?? '',
+    ...price,
+    fromAsset: link?.fromAsset || (get(filter).fromAsset ?? ''),
+    timestamp: link?.timestamp || price.timestamp,
     toAsset: get(filter).toAsset ?? '',
   });
   set(editMode, false);
@@ -125,7 +131,7 @@ function showDeleteConfirmation(item: HistoricalPrice) {
   );
 }
 
-const { consumeAddQuery } = useAddQuery(add);
+const { consumeAddQuery } = usePriceAddLink(add);
 
 onMounted(async () => {
   await consumeAddQuery();

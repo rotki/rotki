@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
@@ -13,7 +14,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { hasUnread } = storeToRefs(useNotificationsStore());
+const { hasUnread: hasUnreadNotifications } = storeToRefs(useNotificationsStore());
+const { hasUnread: hasUnreadProblems } = storeToRefs(useBackendProblemsStore());
+
+const hasUnread = computed<boolean>(() => get(hasUnreadNotifications) || get(hasUnreadProblems));
 
 const { silent } = useSilentNotifications();
 

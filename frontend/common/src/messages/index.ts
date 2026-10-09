@@ -11,13 +11,12 @@ export enum Severity {
  *
  * @remarks
  * A condition, something that stays true until the user resolves it, is never a notification:
- * it is raised in the action center instead.
+ * it is raised in the action center instead. Nor is a classified backend problem: those fold into
+ * the drawer's backend problems tree.
  */
 export const NotificationKind = {
   /** News with an action: new tokens detected, premium turned active. Pops. */
   ANNOUNCEMENT: 'announcement',
-  /** A classified backend error or warning. Recorded, never pops. */
-  BACKEND_PROBLEM: 'backend_problem',
   /** A background request that failed with nowhere else to show it. Recorded, never pops. */
   FAILURE: 'failure',
   /** A calendar reminder, acknowledged by its action. Pops. */
@@ -32,28 +31,7 @@ export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
   BEACONCHAIN_RATE_LIMITED = 'BEACONCHAIN_RATE_LIMITED',
   MONERIUM_AUTH = 'MONERIUM_AUTH',
-  USER_MESSAGE = 'USER_MESSAGE',
   ASSET_MAPPINGS = 'ASSET_MAPPINGS',
-}
-
-/**
- * A notification group, optionally narrowed to a single subject.
- *
- * Some groups cover a whole class of notifications that must not collapse into each other: one
- * backend problem is a different event from another, and both need their own entry. Those append
- * a discriminator (`USER_MESSAGE:<identity>`) so the grouping stays per subject.
- */
-export type NotificationGroupKey = NotificationGroup | `${NotificationGroup}:${string}`;
-
-/**
- * The group a key belongs to, discarding any discriminator. Grouping policy (cooldowns, display
- * schedules) is defined per group, while collapsing happens per key. Returns undefined for a key
- * that names no known group, letting callers fall back to their default policy.
- */
-export function notificationGroupOf(key: string): NotificationGroup | undefined {
-  const separator = key.indexOf(':');
-  const group = separator === -1 ? key : key.slice(0, separator);
-  return Object.values(NotificationGroup).find(value => value === group);
 }
 
 export interface Message {
@@ -76,7 +54,7 @@ interface NotificationBase {
   readonly severity: Severity;
   readonly kind: NotificationKind;
   readonly action?: NotificationAction | NotificationAction[];
-  readonly group?: NotificationGroupKey;
+  readonly group?: NotificationGroup;
   readonly groupCount?: number;
   readonly extras?: Record<string, unknown>;
 }
