@@ -28,7 +28,7 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
     Funding payments were also identified by their hash, which is the zero hash for all of
     them, so they all got the same group identifier and only the first one ever queried
     was saved. Remove that event, since it is saved again under its own group identifier
-    by the next sync, unless it was customized or matched.
+    by the next sync, unless it was customized.
     """
     @progress_step(description='Resetting Hyperliquid Core history query ranges')
     def _reset_hyperliquid_core_history_ranges(rotki: Rotkehlchen) -> None:
@@ -44,7 +44,7 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
             write_cursor.execute(
                 'DELETE FROM history_events WHERE group_identifier=? AND location=? AND '
                 'NOT EXISTS(SELECT 1 FROM history_events_mappings WHERE '
-                'parent_identifier=history_events.identifier AND name=? AND value IN (?, ?))',
+                'parent_identifier=history_events.identifier AND name=? AND value=?)',
                 (
                     create_group_identifier_from_unique_id(
                         location=Location.HYPERLIQUID,
@@ -53,7 +53,6 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                     Location.HYPERLIQUID.serialize_for_db(),
                     HISTORY_MAPPING_KEY_STATE,
                     HistoryMappingState.CUSTOMIZED.serialize_for_db(),
-                    HistoryMappingState.MATCHED.serialize_for_db(),
                 ),
             )
 

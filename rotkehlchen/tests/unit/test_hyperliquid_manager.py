@@ -1,3 +1,4 @@
+from collections import Counter
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
@@ -5,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.api.services.transactions import TransactionsService
+from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.hyperliquid.manager import (
@@ -13,9 +15,14 @@ from rotkehlchen.chain.hyperliquid.manager import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
@@ -258,6 +265,7 @@ def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
         patch.object(EvmManager, 'query_transactions', side_effect=IncompleteTransactionsQuery('incomplete')),  # noqa: E501
         patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges', return_value=ranges),
         patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents'),
+        patch.object(HyperliquidManager, '_query_legacy_funding_events', return_value=Counter()),
         patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
         pytest.raises(IncompleteTransactionsQuery),
     ):
@@ -287,3 +295,65 @@ def test_query_proprietary_history_saves_events_of_an_asset_missing_from_the_use
     assert _stored_group_identifiers(database) == ['a']
     assert _queried_range(database) == (0, 10)
     add_error.assert_not_called()
+
+
+def test_refetch_does_not_duplicate_a_customized_legacy_funding_event(
+        database: DBHandler,
+) -> None:
+    """Migration 29 keeps a customized funding event under the zero hash group. It may have
+    any field edited, so querying the history again skips one payment with its timestamp and
+    address instead of saving it a second time. Other payments are still saved."""
+    manager, _ = _manager_with_db(database)
+    legacy_group = create_group_identifier_from_unique_id(
+        location=Location.HYPERLIQUID,
+        unique_id=ZERO_32_BYTES_HEX,
+    )
+
+    def funding(group_identifier: str, timestamp: int, amount: FVal) -> HistoryEvent:
+        event = _event(group_identifier)
+        event.timestamp = TimestampMS(timestamp)
+        event.amount = amount
+        event.notes = 'Hyperliquid funding payment'
+        return event
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=funding(legacy_group, 5000, FVal('7')),  # amount edited by the user
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
+        [funding('btc', 5000, FVal('2')), funding('eth', 5000, FVal('3')), funding('later', 6000, ONE)],  # noqa: E501
+    )
+    with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
+        assert manager.refetch_proprietary_history(
+            address=ADDRESS,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        ) == 2
+
+    assert _stored_group_identifiers(database) == sorted([legacy_group, 'eth', 'later'])
+
+
+def test_refetch_saves_distinct_entries_without_ids_at_the_same_time(database: DBHandler) -> None:
+    """Two distinct zero hash ledger entries of the same address and time, which have no
+    identifier of their own, must both be saved and not collide on the group identifier."""
+    manager, _ = _manager_with_db(database)
+    entries = [{
+        'time': 1762300800000,
+        'hash': ZERO_32_BYTES_HEX,
+        'delta': {'type': 'deposit', 'usdc': amount},
+    } for amount in ('1', '2')]
+
+    def query_list(self: HyperliquidAPI, payload: dict[str, Any], **kwargs: Any) -> list[dict[str, Any]]:  # noqa: E501
+        return entries if payload['type'] == 'userNonFundingLedgerUpdates' and payload['startTime'] <= 1762300800000 else []  # noqa: E501
+
+    with patch.object(HyperliquidAPI, '_query_list', query_list):
+        assert manager.refetch_proprietary_history(
+            address=ADDRESS,
+            start_ts=Timestamp(1762300000),
+            end_ts=Timestamp(1762301000),
+        ) == 2
+
+    assert len(set(_stored_group_identifiers(database))) == 2

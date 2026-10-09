@@ -1,18 +1,22 @@
 import logging
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -120,6 +124,56 @@ class HyperliquidManager(EvmManager):
 
         return balances
 
+    def _query_legacy_funding_events(self) -> Counter[tuple[int, str | None]]:
+        """Count the customized funding events under the zero hash by (timestamp, address).
+
+        This exists only as a side effect of the faulty funding identification, which gave every
+        payment the group of the zero hash. Migration 29 removes that event, but has to keep
+        it when the user customized it, and it can't be moved to its correct group since it has
+        no coin. Querying the history again would insert that payment a second time under its
+        own group identifier, so it is looked up here once, which is a single query that
+        returns nothing for most users, instead of once per event.
+        """
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            return Counter(cursor.execute(
+                'SELECT E.timestamp, E.location_label FROM history_events E INNER JOIN '
+                'history_events_mappings M ON M.parent_identifier=E.identifier AND '
+                'M.name=? AND M.value=? WHERE E.group_identifier=? AND E.location=?',
+                (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    create_group_identifier_from_unique_id(
+                        location=Location.HYPERLIQUID,
+                        unique_id=ZERO_32_BYTES_HEX,
+                    ),
+                    Location.HYPERLIQUID.serialize_for_db(),
+                ),
+            ))
+
+    @staticmethod
+    def _drop_legacy_funding_events(
+            events: list[HistoryBaseEntry],
+            legacy_funding: Counter[tuple[int, str | None]],
+    ) -> list[HistoryBaseEntry]:
+        """Drop the funding payments that are already saved as a customized legacy event.
+
+        The user may have edited any field of the legacy event and it has no coin, so it
+        can only be recognized by its timestamp and address. Each legacy event is a single
+        payment, so it is consumed by its first match and other payments made at the same
+        time are still saved.
+        """
+        kept: list[HistoryBaseEntry] = []
+        for event in events:
+            if (
+                event.notes == 'Hyperliquid funding payment' and
+                legacy_funding[key := (event.timestamp, event.location_label)] > 0
+            ):
+                legacy_funding[key] -= 1
+            else:
+                kept.append(event)
+
+        return kept
+
     def _save_history_batches(
             self,
             history_db: DBHistoryEvents,
@@ -136,7 +190,10 @@ class HyperliquidManager(EvmManager):
         - RemoteError
         """
         inserted = 0
-        for events in batches:
+        legacy_funding = self._query_legacy_funding_events()
+        for batch in batches:
+            events = self._drop_legacy_funding_events(batch, legacy_funding) if legacy_funding.total() != 0 else batch  # noqa: E501
+
             with self.node_inquirer.database.user_write() as write_cursor:
                 self.node_inquirer.database.add_asset_identifiers(
                     write_cursor=write_cursor,
