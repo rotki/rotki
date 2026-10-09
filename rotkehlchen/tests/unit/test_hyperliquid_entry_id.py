@@ -291,16 +291,21 @@ def test_iter_entry_pages_raises_if_the_api_returns_the_newest_entries() -> None
         _page_tids(HyperliquidAPI(), endpoint)
 
 
-def test_iter_entry_pages_raises_on_a_page_without_readable_times() -> None:
+@pytest.mark.parametrize('bad_entry', [{'tid': 3, 'time': 'x'}, {'tid': 3}])
+def test_iter_entry_pages_raises_on_an_unreadable_time(bad_entry: dict[str, Any]) -> None:
+    """An entry with an unreadable time must fail the range. Skipping it could shrink a
+    capped page below the cap, so it would look like the last one and the valid entries
+    after it would never be queried."""
+    entries = [_fill(1, 100), _fill(2, 200), bad_entry]
     with (
-        patch.object(api := HyperliquidAPI(), '_query_list', return_value=[{'tid': 1, 'time': 'x'}]),  # noqa: E501
-        pytest.raises(RemoteError, match='no readable entry time'),
+        patch.object(api := HyperliquidAPI(), '_query_list', return_value=entries),
+        pytest.raises(RemoteError, match='unreadable time'),
     ):
         list(api._iter_entry_pages(
             query_type='userFillsByTime',
             address=ADDRESS,
-            start_ts=Timestamp(1),
-            end_ts=Timestamp(2),
+            start_ts=Timestamp(RANGE_START_MS // 1000),
+            end_ts=Timestamp(RANGE_START_MS // 1000 + 10),
         ))
 
 

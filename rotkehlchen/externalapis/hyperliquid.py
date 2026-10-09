@@ -704,27 +704,27 @@ class HyperliquidAPI:
     ) -> list[tuple[TimestampMS, dict[str, Any]]]:
         """Query one page of a user history endpoint and return its entries with their time.
 
-        Both `startTime` and `endTime` are inclusive. Entries with an unreadable time are
-        logged and skipped.
+        Both `startTime` and `endTime` are inclusive.
 
         May raise:
             - RemoteError: If the query fails, an entry is outside of the requested range, or
-            no entry of a non-empty page has a readable time, since paging can't go on from it.
+            an entry has an unreadable time. Skipping such an entry would shrink a capped page
+            below the cap, so it would be taken for the last page and the rest of the range
+            would never be queried.
         """
         page: list[tuple[TimestampMS, dict[str, Any]]] = []
-        for entry in (entries := self._query_list(
+        for entry in self._query_list(
             payload={'type': query_type, 'user': address, 'startTime': start_ms, 'endTime': end_ms},  # noqa: E501
             query_name=query_type,
             wait_for_rate_limit=True,
-        )):
+        ):
             try:
                 entry_time = deserialize_timestamp_ms_from_intms(entry['time'])
             except (DeserializationError, KeyError) as e:
-                log.error(
-                    'Skipping hyperliquid %s entry %s for %s due to unreadable time field: %s',
-                    query_type, entry, address, e,
-                )
-                continue
+                raise RemoteError(
+                    f'Hyperliquid {query_type} for {address} returned an entry with an '
+                    f'unreadable time: {entry}',
+                ) from e
 
             if not start_ms <= entry_time <= end_ms:
                 raise RemoteError(
@@ -732,12 +732,6 @@ class HyperliquidAPI:
                     f'{entry_time} outside of the requested range {start_ms}-{end_ms}',
                 )
             page.append((entry_time, entry))
-
-        if len(page) == 0 and len(entries) != 0:
-            raise RemoteError(
-                f'Hyperliquid {query_type} for {address} returned a page with no readable '
-                f'entry time from {start_ms}',
-            )
 
         return page
 
