@@ -181,7 +181,7 @@ defineExpose({
       v-if="multi && !forceMultiple"
       v-model="multiple"
       color="primary"
-      class="mt-0 mb-4 flex"
+      class="-mt-2 mb-4 flex"
       hide-details
       :disabled="disabled"
     >

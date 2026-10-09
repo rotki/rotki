@@ -89,6 +89,7 @@ watch(model, (model, oldModel) => {
     :action="{ disabled: isValidatorLimitReached, primary: t('common.actions.save') }"
     :loading="loading || pending"
     :prompt-on-close="stateUpdated"
+    :layout="{ autoHeight: true }"
     @confirm="confirm()"
     @cancel="dismiss()"
   >

@@ -3029,7 +3029,7 @@
   },
   "eth2_input": {
     "ownership": {
-      "hint": "*Optional: By default it is 100%",
+      "hint": "Optional. Defaults to 100%.",
       "validation": "The value should be > 0% and <= 100%"
     },
     "ownership_percentage": "Ownership Percentage",
@@ -4831,8 +4831,8 @@
     "title": "Missing prices"
   },
   "module_activator": {
-    "hint": "* Modules that are activated for all addresses will not appear here",
-    "subtitle": "Select which modules should be queried for this account",
+    "hint": "Modules active for all addresses are not listed.",
+    "subtitle": "Select which modules to query for this account.",
     "title": "Enabled modules"
   },
   "module_not_active": {

@@ -46,17 +46,13 @@ const loading = isAccountOperationRunning();
 </script>
 
 <template>
+  <!-- laid out like the fields around it: a label, the control, then helper text -->
   <div
     v-if="visibleModules.length > 0"
-    class="flex flex-col items-start gap-4"
+    class="flex flex-col items-start"
   >
-    <div>
-      <div class="text-body-1 font-bold text-rui-text">
-        {{ t('module_activator.title') }}
-      </div>
-      <div class="text-body-2 text-rui-text-secondary">
-        {{ t('module_activator.subtitle') }}
-      </div>
+    <div class="mb-1 text-sm leading-5 font-medium text-rui-text">
+      {{ t('module_activator.title') }}
     </div>
 
     <RuiButtonGroup
@@ -81,8 +77,8 @@ const loading = isAccountOperationRunning();
         >
           <template #activator>
             <AppImage
-              height="24px"
-              width="24px"
+              height="20px"
+              width="20px"
               fit="contain"
               :src="module.icon"
             />
@@ -91,8 +87,9 @@ const loading = isAccountOperationRunning();
         </RuiTooltip>
       </RuiButton>
     </RuiButtonGroup>
-    <div class="text-caption text-rui-text-secondary">
-      {{ t('module_activator.hint') }}
+    <div class="mt-1.5 text-caption text-rui-text-secondary">
+      <p>{{ t('module_activator.subtitle') }}</p>
+      <p>{{ t('module_activator.hint') }}</p>
     </div>
   </div>
 </template>
