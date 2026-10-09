@@ -349,8 +349,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             # Checkpoints and transactions share one write transaction. If saving
             # raises, the checkpoints roll back with it, so the next refresh
             # re-queries from the previous checkpoint instead of skipping the
-            # unsaved transactions.
+            # unsaved transactions. Newly tracked addresses' checkpoints are
+            # written only after the decode below succeeds. If decoding fails they
+            # stay as never queried, so the next refresh marks them again and
+            # retries the decode instead of assuming they are fully synced.
             for address in addresses:
+                if address in new_addresses:
+                    continue
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=self.cache_key,
@@ -375,6 +380,17 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
         )
         self.decode_transactions(send_ws_notifications=True)
+
+        if len(new_addresses) != 0:
+            with self.database.conn.write_ctx() as write_cursor:
+                for address in new_addresses:
+                    self.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=self.cache_key,
+                        value=new_block_heights[address],
+                        address=address,
+                    )
+
         self._send_tx_ws_status(
             addresses=addresses,
             period=(from_timestamp, to_timestamp),

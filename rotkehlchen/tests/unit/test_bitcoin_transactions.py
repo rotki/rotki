@@ -2806,6 +2806,109 @@ def test_failed_initial_redecode_is_retried(
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_failed_decode_is_retried_for_new_address_in_mixed_refresh(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A mixed refresh where an existing address returns a transaction while a newly
+    tracked address returns none must also defer the new address's checkpoint. If the
+    decode fails, the new address's checkpoint stays missing, so the next refresh
+    treats it as newly tracked again and retries the decode instead of assuming it
+    is fully synced.
+    """
+    tracked = btc_accounts[0]
+    new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
+    tx = _esplora_tx(
+        block_height=900_001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=tracked)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=tracked)],
+        fee=1_000,
+    )
+    pages = {
+        f'/address/{tracked}/txs': [tx],
+        f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
+        f'/address/{new_address}/txs': [],
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.BITCOIN,
+                address=new_address,
+            )],
+        )
+
+    # Mixed refresh: the existing address returns a transaction, the new address
+    # returns nothing, and the decode fails.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=[tracked, new_address],
+            )
+
+    with database.conn.read_ctx() as cursor:
+        # The new address's checkpoint was not persisted, so it is still never queried,
+        # while the existing address's checkpoint advanced as usual.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) is None
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=tracked,
+        ) == 900_001
+
+    # The next refresh retries the decode and then persists the checkpoint.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=[tracked, new_address],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) == 0
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
 def test_custom_mempool_api_setting_is_queried_under_its_api_path(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
