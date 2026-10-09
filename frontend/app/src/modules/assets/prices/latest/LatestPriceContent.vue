@@ -8,8 +8,8 @@ import { isNft } from '@/modules/assets/nft-utils';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
+import { type PriceAddLink, usePriceAddLink } from '@/modules/assets/prices/use-price-add-link';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
-import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
@@ -72,7 +72,12 @@ function showDeleteConfirmation(item: ManualPriceWithUsd) {
   );
 }
 
-function add() {
+const prefill = ref<ManualPriceFormPayload | null>(null);
+
+/** Opens the add dialog, seeded with the asset an `?add=` link names, if any. */
+function add(link?: PriceAddLink) {
+  const fromAsset = link?.fromAsset;
+  set(prefill, fromAsset ? { fromAsset, price: '', toAsset: '' } : null);
   set(editableItem, null);
   set(openDialog, true);
 }
@@ -85,7 +90,7 @@ function edit(item: ManualPriceWithUsd) {
   set(openDialog, true);
 }
 
-const { consumeAddQuery } = useAddQuery(add);
+const { consumeAddQuery } = usePriceAddLink(add);
 
 onMounted(async () => {
   await refreshCurrentPrices();
@@ -194,6 +199,7 @@ onMounted(async () => {
     <LatestPriceFormDialog
       v-model:open="openDialog"
       :editable-item="editableItem"
+      :prefill="prefill"
       @refresh="refreshCurrentPrices()"
     />
   </TablePageLayout>

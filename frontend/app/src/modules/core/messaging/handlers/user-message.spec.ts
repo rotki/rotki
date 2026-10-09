@@ -1,13 +1,10 @@
-import type { MessageDelivery } from '@/modules/core/messaging/interfaces';
 import type { UserMessageData } from '@/modules/core/messaging/types/base';
-import { assert, type Notification, NotificationKind, Severity } from '@rotki/common';
-import { mockT } from '@test/i18n';
+import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { createUserMessageHandler } from '@/modules/core/messaging/handlers/user-message';
-import { userMessageGroup } from '@/modules/core/messaging/user-message-group';
-import { createNotification } from '@/modules/core/notifications/notification-utils';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import {
   PremiumInactiveCause,
@@ -15,10 +12,10 @@ import {
   useRaisedConditionsStore,
 } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-vi.mock('@/modules/core/common/use-locations', () => ({
-  useLocations: (): { getLocationData: (id: string) => { name: string } | undefined } => ({
-    getLocationData: (id: string) => (id === 'kucoin' ? { name: 'KuCoin' } : undefined),
-  }),
+const { loadKeys } = vi.hoisted(() => ({ loadKeys: vi.fn<() => Promise<void>>(async () => {}) }));
+
+vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
+  useExternalApiKeys: vi.fn(() => ({ load: loadKeys })),
 }));
 
 const badData: UserMessageData = {
@@ -30,13 +27,11 @@ const badData: UserMessageData = {
   verbosity: 'error',
 };
 
-const localDb: UserMessageData = {
-  fields: { entry: 'tag' },
-  group: ['warning', 'local_db', null, 'tag'],
-  key: 'local_db',
-  subject: null,
-  value: 'Could not read a tag',
-  verbosity: 'warning',
+const badTrade: UserMessageData = {
+  ...badData,
+  fields: { error: 'Missing key: rate', record: 'trade' },
+  group: ['error', 'bad_data', 'kucoin', 'trade'],
+  value: 'Failed to deserialize a kucoin trade. Ignoring it.',
 };
 
 function authFailure(service: string, account: string | null): UserMessageData {
@@ -52,106 +47,89 @@ function authFailure(service: string, account: string | null): UserMessageData {
 
 describe('createUserMessageHandler', () => {
   beforeEach(() => {
+    loadKeys.mockClear();
     setActivePinia(createCustomPinia());
     useLocationStore().$patch({ allLocations: { binance: { isExchange: true } } });
   });
 
-  async function notificationFor(message: UserMessageData, delivery?: MessageDelivery, handler = createUserMessageHandler(mockT)): Promise<Notification> {
-    const result = await handler.handle(message, delivery);
-    assert(result);
-    return result;
+  function problems(): BackendProblem[] {
+    return get(storeToRefs(useBackendProblemsStore()).problems);
   }
 
-  it('should show the sentence of a first occurrence under a title naming its family and location', async () => {
-    const result = await notificationFor(badData);
+  it('should file a message as a backend problem and create no notification', async () => {
+    const result = await createUserMessageHandler().handle(badData);
 
-    expect(result).toMatchObject({
-      group: userMessageGroup(badData),
-      groupCount: 1,
-      kind: NotificationKind.BACKEND_PROBLEM,
-      message: badData.value,
-      severity: Severity.ERROR,
-      title: 'notification_messages.user_message.with_subject::KuCoin, notification_messages.user_message.title.bad_data',
-    });
-  });
-
-  it('should title a message about no location by its family alone', async () => {
-    const result = await notificationFor(localDb);
-
-    expect(result).toMatchObject({
-      severity: Severity.WARNING,
-      title: 'notification_messages.user_message.title.local_db',
-    });
-  });
-
-  it('should add every send the backend held to the count of the row it folds into', async () => {
-    const { data } = storeToRefs(useNotificationsStore());
-    set(data, [createNotification(1, { group: userMessageGroup(badData), groupCount: 2, kind: NotificationKind.BACKEND_PROBLEM, message: 'earlier', severity: Severity.ERROR, title: 'kucoin' })]);
-
-    const result = await notificationFor(badData, { count: 3 });
-
-    expect(result).toMatchObject({
-      groupCount: 5,
-      message: `notification_messages.repeated::5, ${badData.value}`,
-    });
-  });
-
-  it('should keep the newer sentence when a held repeat is older than the row', async () => {
-    const rowDate = new Date('2026-09-30T09:00:00Z');
-    const { data } = storeToRefs(useNotificationsStore());
-    set(data, [{
-      ...createNotification(1, { extras: { sentence: 'newer' }, group: userMessageGroup(badData), groupCount: 1, kind: NotificationKind.BACKEND_PROBLEM, message: 'newer', severity: Severity.ERROR, title: 'kucoin' }),
-      date: rowDate,
+    expect(result).toBeNull();
+    expect(get(storeToRefs(useNotificationsStore()).data)).toEqual([]);
+    expect(problems()).toMatchObject([{
+      id: JSON.stringify(['error', 'bad_data', 'kucoin']),
+      items: [{ identity: JSON.stringify(badData.group), repeats: 1, source: badData }],
     }]);
-    const handler = createUserMessageHandler(mockT);
-
-    const older = await notificationFor(badData, { count: 1, lastSent: new Date('2026-09-30T07:00:00Z') }, handler);
-    const newer = await notificationFor(badData, { count: 1, lastSent: new Date('2026-09-30T10:00:00Z') }, handler);
-
-    expect(older.message).toBe('notification_messages.repeated::2, newer');
-    expect(newer.message).toBe(`notification_messages.repeated::2, ${badData.value}`);
   });
 
-  it.each([badData, localDb])('should keep a $key message out of the popup queue', async (message) => {
-    const result = await notificationFor(message);
+  it('should file two records of one family and location as two items under one parent', async () => {
+    const handler = createUserMessageHandler();
 
-    expect(result.kind).toBe(NotificationKind.BACKEND_PROBLEM);
-    expect(result.action).toBeUndefined();
-    expect(createNotification(1, result).display).toBe(false);
+    await handler.handle(badData);
+    await handler.handle(badTrade);
+
+    expect(problems()).toHaveLength(1);
+    expect(problems()[0].items.map(({ source }) => source.value)).toEqual(expect.arrayContaining([badData.value, badTrade.value]));
+  });
+
+  it('should count every send the backend held and date the item by the last one', async () => {
+    const lastSent = new Date('2026-09-30T07:00:00Z');
+
+    await createUserMessageHandler().handle(badData, { count: 3, lastSent });
+
+    expect(problems()[0].items).toMatchObject([{ lastSeen: lastSent, repeats: 3 }]);
   });
 
   describe('rejected credentials', () => {
-    it('should raise the row of the exchange account and create no notification', async () => {
+    it('should raise the row of the exchange account and file nothing', async () => {
       const { raised } = storeToRefs(useRaisedConditionsStore());
 
-      const result = await createUserMessageHandler(mockT).handle(authFailure('binance', 'main'));
+      const result = await createUserMessageHandler().handle(authFailure('binance', 'main'));
 
       expect(result).toBeNull();
+      expect(problems()).toEqual([]);
       expect(Object.values(get(raised))).toEqual([
         { kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'binance', name: 'main' },
       ]);
     });
 
-    it('should raise the premium row for premium credentials and create no notification', async () => {
+    it('should raise the premium row for premium credentials', async () => {
       const { raised } = storeToRefs(useRaisedConditionsStore());
 
-      const result = await createUserMessageHandler(mockT).handle(authFailure('rotki_premium', null));
+      await createUserMessageHandler().handle(authFailure('rotki_premium', null));
 
-      expect(result).toBeNull();
       expect(Object.values(get(raised))).toEqual([
         { cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE },
       ]);
     });
 
-    it('should raise the missing key row of an external service and create no notification', async () => {
+    it('should raise the missing key row of an external service', async () => {
       const { raised } = storeToRefs(useRaisedConditionsStore());
 
-      const result = await createUserMessageHandler(mockT).handle(authFailure('beaconchain', null));
+      await createUserMessageHandler().handle(authFailure('beaconchain', null));
 
-      expect(result).toBeNull();
       expect(Object.values(get(raised))).toEqual([
         { kind: RaisedConditionKind.MISSING_API_KEY, service: 'beaconchain' },
       ]);
+    });
+
+    it('should reload the saved keys for a service key the backend removed, so its row can open', async () => {
+      await createUserMessageHandler().handle(authFailure('beaconchain', null));
+
+      expect(loadKeys).toHaveBeenCalledOnce();
+    });
+
+    it('should not reload the service keys for premium or exchange credentials', async () => {
+      const handler = createUserMessageHandler();
+      await handler.handle(authFailure('rotki_premium', null));
+      await handler.handle(authFailure('binance', 'main'));
+
+      expect(loadKeys).not.toHaveBeenCalled();
     });
   });
 });

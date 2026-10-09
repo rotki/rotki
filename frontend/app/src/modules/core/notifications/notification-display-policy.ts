@@ -5,9 +5,9 @@ import { NotificationKind } from '@rotki/common';
  *
  * @remarks
  * The single place the decision lives. A result, an announcement and a reminder are things the
- * user should see now, so they pop; a backend problem and a background failure are recorded for
- * the drawer and never pop. A caller may still suppress its own popup via `display: false`, which
- * is why this answers the default rather than the final value.
+ * user should see now, so they pop; a background failure is recorded for the drawer and never
+ * pops. A caller may still suppress its own popup via `display: false`, which is why this answers
+ * the default rather than the final value.
  */
 export function displaysFor(kind: NotificationKind): boolean {
   switch (kind) {
@@ -15,7 +15,6 @@ export function displaysFor(kind: NotificationKind): boolean {
     case NotificationKind.REMINDER:
     case NotificationKind.RESULT:
       return true;
-    case NotificationKind.BACKEND_PROBLEM:
     case NotificationKind.FAILURE:
       return false;
   }

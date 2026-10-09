@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import NotificationSidebar from '@/modules/core/notifications/NotificationSidebar.vue';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 
 interface MockedDependencies {
@@ -96,6 +97,68 @@ describe('modules/core/notifications/NotificationSidebar.vue', () => {
     const remaining = wrapper.findAll('[data-id=notification]');
     expect(remaining).toHaveLength(1);
     expect(remaining[0].text()).toContain('second');
+  });
+
+  describe('backend problems', () => {
+    function fileProblem(subject: string): void {
+      useBackendProblemsStore().record({
+        at: new Date('2026-03-04T05:06:07Z'),
+        count: 1,
+        identity: 'tag',
+        source: { fields: { entry: 'tag' }, group: ['error', 'local_db', subject, 'tag'], key: 'local_db', subject, value: 'Could not read a tag', verbosity: 'error' },
+      });
+    }
+
+    it('should render one collapsed card per problem', async () => {
+      const wrapper = createWrapper();
+      fileProblem('kraken');
+      fileProblem('binance');
+      await nextTick();
+
+      expect(wrapper.findAll('[data-testid=backend-problem]')).toHaveLength(2);
+      expect(wrapper.findAll('[data-testid=backend-problem-item]')).toHaveLength(0);
+    });
+
+    it('should show the items of a problem once expanded', async () => {
+      const wrapper = createWrapper();
+      fileProblem('kraken');
+      await nextTick();
+
+      await wrapper.find('[data-testid=backend-problem-toggle]').trigger('click');
+
+      expect(wrapper.findAll('[data-testid=backend-problem-item]')).toHaveLength(1);
+    });
+
+    it('should dismiss the problem a card asks it to', async () => {
+      const wrapper = createWrapper();
+      fileProblem('kraken');
+      await nextTick();
+
+      await wrapper.find('[data-testid=backend-problem-dismiss]').trigger('click');
+
+      expect(wrapper.findAll('[data-testid=backend-problem]')).toHaveLength(0);
+      expect(get(storeToRefs(useBackendProblemsStore()).problems)).toEqual([]);
+    });
+
+    it('should close the drawer once an item action runs', async () => {
+      const wrapper = createWrapper();
+      fileProblem('kraken');
+      await nextTick();
+
+      await wrapper.find('[data-testid=backend-problem-toggle]').trigger('click');
+      await wrapper.find('[data-testid=backend-problem-item-action]').trigger('click');
+
+      expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+    });
+
+    it('should offer clearing and leave the caught-up state when only a problem is filed', async () => {
+      const wrapper = createWrapper();
+      fileProblem('kraken');
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=clear-notifications]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=notifications-empty]').exists()).toBe(false);
+    });
   });
 
   it('should show the caught-up state and nothing to clear while the list is empty', () => {

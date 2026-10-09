@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MESSAGE_WARNING = 'warning';
+const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
 
 const MessageVerbosity = z.enum([MESSAGE_WARNING, MESSAGE_ERROR]);

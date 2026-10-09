@@ -1676,6 +1676,82 @@
       "external": "External"
     }
   },
+  "backend_problems": {
+    "actions": {
+      "add_price": "Add price",
+      "copy_details": "Copy details",
+      "report_issue": "Report issue"
+    },
+    "count": "{count} problem | {count} problems",
+    "entry": {
+      "accounting_event": "Accounting event",
+      "addressbook_entry": "Address book entry",
+      "asset": "Asset",
+      "asset_update": "Asset update",
+      "balance_snapshot": "Balance snapshot",
+      "blockchain_account": "Blockchain account",
+      "db_upgrade": "Database upgrade",
+      "exchange_credentials": "Exchange credentials",
+      "history_event": "History event",
+      "manually_tracked_balance": "Manual balance",
+      "margin_position": "Margin position",
+      "market": "Market",
+      "setting": "Setting",
+      "tag": "Tag",
+      "token_list": "Token list",
+      "transaction": "Transaction"
+    },
+    "feature": {
+      "asset": "Asset type",
+      "asset_update_schema": "Asset update format",
+      "exchange_strategy": "Exchange strategy",
+      "multi_trade": "Multi-asset trade",
+      "vault_collateral_type": "Vault collateral type"
+    },
+    "more": "+{count} more not shown",
+    "operation": {
+      "background_task": "Background task",
+      "balance_query": "Balance query",
+      "data_migration": "Data migration",
+      "decoder_initialization": "Decoder startup",
+      "module_activation": "Module activation",
+      "transaction_decoding": "Transaction decoding"
+    },
+    "price_batch": "Several assets",
+    "priced_at": "at {date}",
+    "record": {
+      "asset_movement": "Deposits and withdrawals",
+      "asset_update": "Asset updates",
+      "balance": "Balances",
+      "data_update": "Data updates",
+      "history_event": "History events",
+      "market": "Markets",
+      "node": "Node",
+      "position": "Positions",
+      "premium_limits": "Premium limits",
+      "protocol_cache": "Protocol data",
+      "trade": "Trades",
+      "transaction": "Transactions",
+      "validator": "Validators",
+      "wallet": "Wallets"
+    },
+    "repeats": "×{count}",
+    "seen": "seen once | seen {count} times",
+    "show_fewer": "Show fewer",
+    "show_rest": "Show {count} more",
+    "summary": "{problems}, {seen}",
+    "title": {
+      "bad_data": "Unreadable data",
+      "balance_snapshot": "Balance snapshot failed",
+      "internal": "Internal error",
+      "local_db": "Database problem",
+      "network": "Connection problem",
+      "price": "Missing price",
+      "unknown_asset": "Unknown asset",
+      "unsupported": "Not supported yet"
+    },
+    "with_subject": "{subject}: {title}"
+  },
   "backend_reload": {
     "failed": {
       "message": "The backend could not be restarted, so it is still using the previous data. Restart it and sign in again to apply the changes. {message}",
@@ -5267,22 +5343,8 @@
     "reminder": {
       "open_calendar": "Open Calendar"
     },
-    "repeated": "{message} (seen {count} times)",
     "snapshot_failed": {
-      "message": "Could not save the balance snapshot at {location}. {error}",
-      "title": "Balance Snapshot failed"
-    },
-    "user_message": {
-      "title": {
-        "bad_data": "Unreadable data",
-        "internal": "Internal error",
-        "local_db": "Database problem",
-        "network": "Connection problem",
-        "price": "Missing price",
-        "unknown_asset": "Unknown asset",
-        "unsupported": "Not supported yet"
-      },
-      "with_subject": "{subject}: {title}"
+      "message": "Could not save the balance snapshot at {location}. {error}"
     }
   },
   "notification_popup": {

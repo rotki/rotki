@@ -1587,6 +1587,11 @@
       "external": "外部"
     }
   },
+  "backend_problems": {
+    "title": {
+      "balance_snapshot": "余额快照失败"
+    }
+  },
   "backend_reload": {
     "failed": {
       "message": "后端无法重启，因此仍在使用之前的数据。请重启后端并重新登录以应用更改。{message}",
@@ -4923,8 +4928,7 @@
       "open_calendar": "打开日历"
     },
     "snapshot_failed": {
-      "message": "无法在 {location} 保存余额快照。{error}",
-      "title": "余额快照失败"
+      "message": "无法在 {location} 保存余额快照。{error}"
     }
   },
   "notification_popup": {

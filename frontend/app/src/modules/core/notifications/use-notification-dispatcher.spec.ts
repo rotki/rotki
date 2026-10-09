@@ -12,7 +12,7 @@ const RESULT = NotificationKind.RESULT;
 
 function beaconchainRateLimited(endpoint: string): NotificationPayload {
   return {
-    kind: NotificationKind.BACKEND_PROBLEM,
+    kind: NotificationKind.FAILURE,
     message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
     severity: Severity.WARNING,
     title: endpoint,
@@ -168,7 +168,7 @@ describe('useNotificationDispatcher', () => {
 
     notify({ kind: NotificationKind.ANNOUNCEMENT, message: 'older', severity: Severity.INFO, title: 'older' });
     vi.advanceTimersByTime(1_000);
-    notify({ kind: NotificationKind.BACKEND_PROBLEM, message: 'newer', severity: Severity.INFO, title: 'newer' });
+    notify({ kind: NotificationKind.FAILURE, message: 'newer', severity: Severity.INFO, title: 'newer' });
 
     expect(get(newestFirst).map(({ message }) => message)).toEqual(['newer', 'older']);
   });
@@ -180,7 +180,7 @@ describe('useNotificationDispatcher', () => {
 
     for (let i = 0; i < 205; i++) {
       notify({
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         message: `Warning number ${i + 1}`,
         severity: Severity.WARNING,
         title: 'backend',

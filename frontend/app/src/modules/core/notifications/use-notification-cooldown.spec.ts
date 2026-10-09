@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const START = new Date('2026-01-01T00:00:00.000Z').getTime();
 
-const grouped = `${NotificationGroup.USER_MESSAGE}:coingecko`;
+const grouped = NotificationGroup.NEW_DETECTED_TOKENS;
 
 describe('useNotificationCooldown', () => {
   let cooldown: UseNotificationCooldownReturn;
@@ -52,12 +52,12 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(NotificationGroup.MONERIUM_AUTH)).toBe(false);
   });
 
-  it('should track each subject separately', () => {
+  it('should track each group separately', () => {
     cooldown.recordDisplay(grouped);
 
     vi.setSystemTime(START + 30_000);
 
     expect(cooldown.shouldSuppress(grouped)).toBe(true);
-    expect(cooldown.shouldSuppress(`${NotificationGroup.USER_MESSAGE}:cryptocompare`)).toBe(false);
+    expect(cooldown.shouldSuppress(NotificationGroup.BEACONCHAIN_RATE_LIMITED)).toBe(false);
   });
 });

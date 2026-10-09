@@ -7,7 +7,6 @@ describe('displaysFor', () => {
     [NotificationKind.ANNOUNCEMENT, true],
     [NotificationKind.REMINDER, true],
     [NotificationKind.RESULT, true],
-    [NotificationKind.BACKEND_PROBLEM, false],
     [NotificationKind.FAILURE, false],
   ])('should pop a %s notification: %s', (kind, expected) => {
     expect(displaysFor(kind)).toBe(expected);

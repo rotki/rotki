@@ -1,4 +1,4 @@
-import { NotificationGroup, type NotificationGroupKey, notificationGroupOf } from '@rotki/common';
+import { NotificationGroup } from '@rotki/common';
 import { createSharedComposable, useSessionStorage } from '@vueuse/core';
 
 const NOTIFICATION_COOLDOWN_MS = 60_000;
@@ -14,13 +14,8 @@ const UNTHROTTLED_GROUPS: Set<NotificationGroup> = new Set([
 ]);
 
 export interface UseNotificationCooldownReturn {
-  shouldSuppress: (group: NotificationGroupKey) => boolean;
-  recordDisplay: (group: NotificationGroupKey) => void;
-}
-
-function isUnthrottled(group: NotificationGroupKey): boolean {
-  const name = notificationGroupOf(group);
-  return name !== undefined && UNTHROTTLED_GROUPS.has(name);
+  shouldSuppress: (group: NotificationGroup) => boolean;
+  recordDisplay: (group: NotificationGroup) => void;
 }
 
 /**
@@ -35,15 +30,15 @@ function isUnthrottled(group: NotificationGroupKey): boolean {
 export const useNotificationCooldown = createSharedComposable((): UseNotificationCooldownReturn => {
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
 
-  function shouldSuppress(group: NotificationGroupKey): boolean {
-    if (isUnthrottled(group))
+  function shouldSuppress(group: NotificationGroup): boolean {
+    if (UNTHROTTLED_GROUPS.has(group))
       return false;
 
     const lastTime = get(lastDisplay)[group] ?? 0;
     return Date.now() - lastTime < NOTIFICATION_COOLDOWN_MS;
   }
 
-  function recordDisplay(group: NotificationGroupKey): void {
+  function recordDisplay(group: NotificationGroup): void {
     set(lastDisplay, {
       ...get(lastDisplay),
       [group]: Date.now(),

@@ -1069,6 +1069,11 @@
       "external": "Внешние"
     }
   },
+  "backend_problems": {
+    "title": {
+      "balance_snapshot": "Ошибка снимка баланса"
+    }
+  },
   "backend_settings": {
     "actions": {
       "reset": "Сбросить по умолчанию"
@@ -3156,8 +3161,7 @@
       "open_calendar": "Открыть календарь"
     },
     "snapshot_failed": {
-      "message": "Не удалось сохранить снимок баланса в {location}. {error}",
-      "title": "Ошибка снимка баланса"
+      "message": "Не удалось сохранить снимок баланса в {location}. {error}"
     }
   },
   "notification_popup": {

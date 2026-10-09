@@ -1,4 +1,5 @@
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import type { ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { assert, type Blockchain, Severity } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,8 +8,10 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { SocketMessageType } from '@/modules/core/messaging/types';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { usePremium } from '@/modules/premium/use-premium';
 
 const { mockConsumeMessages } = vi.hoisted((): { mockConsumeMessages: ReturnType<typeof vi.fn> } => ({
   mockConsumeMessages: vi.fn(),
@@ -32,8 +35,19 @@ vi.mock('@shared/utils', async (importOriginal): Promise<typeof import('@shared/
 /** A user message as `GET /messages` returns it: the websocket shape plus its count. */
 const LAST_SENT = 1790773550;
 
-function held(data: Record<string, unknown>, count = 1): Record<string, unknown> {
-  return { count, data, lastSent: LAST_SENT, type: SocketMessageType.USER_MESSAGE };
+function held(data: Record<string, unknown>, count = 1, type: SocketMessageType = SocketMessageType.USER_MESSAGE): Record<string, unknown> {
+  return { count, data, lastSent: LAST_SENT, type };
+}
+
+function localDbMessage(value: string): Record<string, unknown> {
+  return { verbosity: 'error', value, key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] };
+}
+
+const PREMIUM_ACTIVE = { expired: false, isPremiumActive: true };
+
+/** Every backend problem item filed so far, across parents. */
+function filedItems(): ProblemItem[] {
+  return get(storeToRefs(useBackendProblemsStore()).problems).flatMap(({ items }) => items);
 }
 
 function setup(): ReturnType<typeof useMessageHandling> {
@@ -125,6 +139,7 @@ describe('useMessageHandling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set(storeToRefs(useNotificationsStore()).data, []);
+    set(storeToRefs(useBackendProblemsStore()).problems, []);
   });
 
   it('should mark the detected accounts and run token detection, without notifying', async () => {
@@ -178,17 +193,16 @@ describe('useMessageHandling', () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
       messages: [
-        held({ verbosity: 'error', value: 'an error', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }),
-        held({ verbosity: 'warning', value: 'a warning', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['warning', 'local_db', null, 'tag'] }),
+        held(localDbMessage('first')),
+        held(localDbMessage('second')),
       ],
     });
 
     const { consume } = setup();
-    const { notify } = useNotificationDispatcher();
 
     await consume();
 
-    expect(vi.mocked(notify).mock.calls.map(([n]) => n.severity)).toEqual([Severity.ERROR, Severity.WARNING]);
+    expect(filedItems()).toMatchObject([{ repeats: 2, source: { value: 'second' } }]);
   });
 
   it('should tell the user how many messages the backend dropped to stay within its limits', async () => {
@@ -238,19 +252,18 @@ describe('useMessageHandling', () => {
       dropped: 0,
       messages: [
         { unexpected: true, count: 1, lastSent: LAST_SENT },
-        held({ verbosity: 'error', value: 'valid', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }),
+        held(localDbMessage('valid')),
       ],
     });
 
     const { consume } = setup();
-    const { notify } = useNotificationDispatcher();
 
     await consume();
 
-    expect(vi.mocked(notify).mock.calls.map(([n]) => n.message)).toEqual(['valid']);
+    expect(filedItems().map(({ source }) => source.value)).toEqual(['valid']);
   });
 
-  it('should render a polled classified user message as its value', async () => {
+  it('should file a polled classified user message as a backend problem, without notifying', async () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
       messages: [held({
@@ -268,31 +281,41 @@ describe('useMessageHandling', () => {
 
     await consume();
 
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(notify).mock.calls[0][0].message).toBe('Failed to deserialize a kucoin balance. Ignoring it.');
+    expect(notify).not.toHaveBeenCalled();
+    expect(filedItems().map(({ source }) => source.value)).toEqual(['Failed to deserialize a kucoin balance. Ignoring it.']);
   });
 
   it('should count a held user message as every time the backend sent it', async () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
-      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] }, 4)],
+      messages: [held(localDbMessage('kucoin is down'), 4)],
     });
 
     const { consume } = setup();
-    const { notify } = useNotificationDispatcher();
 
     await consume();
 
-    expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({
-      groupCount: 4,
-      message: 'notification_messages.repeated::4, kucoin is down',
-    });
+    expect(filedItems()).toMatchObject([{ repeats: 4 }]);
   });
 
-  it('should date a held message by when the backend last sent it, not when it was read', async () => {
+  it('should date a held user message by when the backend last sent it, not when it was read', async () => {
     mockConsumeMessages.mockResolvedValue({
       dropped: 0,
-      messages: [held({ verbosity: 'error', value: 'kucoin is down', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] })],
+      messages: [held(localDbMessage('kucoin is down'))],
+    });
+
+    const { consume } = setup();
+
+    await consume();
+
+    expect(filedItems()[0].lastSeen).toEqual(new Date(LAST_SENT * 1000));
+  });
+
+  it('should date a held notification by when the backend last sent it, not when it was read', async () => {
+    set(usePremium(), false);
+    mockConsumeMessages.mockResolvedValue({
+      dropped: 0,
+      messages: [held(PREMIUM_ACTIVE, 1, SocketMessageType.PREMIUM_STATUS_UPDATE)],
     });
 
     const { consume } = setup();
@@ -304,13 +327,11 @@ describe('useMessageHandling', () => {
   });
 
   it('should leave a websocket message to be dated when it arrives', async () => {
+    set(usePremium(), false);
     const { handleMessage } = setup();
     const { notify } = useNotificationDispatcher();
 
-    await handleMessage(JSON.stringify({
-      type: SocketMessageType.USER_MESSAGE,
-      data: { verbosity: 'error', value: 'live', key: 'local_db', subject: null, fields: { entry: 'tag' }, group: ['error', 'local_db', null, 'tag'] },
-    }));
+    await handleMessage(JSON.stringify({ type: SocketMessageType.PREMIUM_STATUS_UPDATE, data: PREMIUM_ACTIVE }));
 
     expect(vi.mocked(notify).mock.calls[0][0].date).toBeUndefined();
   });

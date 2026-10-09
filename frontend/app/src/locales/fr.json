@@ -755,6 +755,11 @@
       "external": "Externe"
     }
   },
+  "backend_problems": {
+    "title": {
+      "balance_snapshot": "Capture d'écran du solde échouée"
+    }
+  },
   "backend_settings": {
     "actions": {
       "reset": "Réinitialiser aux valeurs par défaut"
@@ -2119,8 +2124,7 @@
       }
     },
     "snapshot_failed": {
-      "message": "Impossible de sauvegarder la capture d'écran du solde à {location}. {error}",
-      "title": "Capture d'écran du solde échouée"
+      "message": "Impossible de sauvegarder la capture d'écran du solde à {location}. {error}"
     }
   },
   "notification_popup": {

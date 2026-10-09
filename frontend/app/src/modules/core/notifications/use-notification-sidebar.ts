@@ -1,7 +1,9 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 
@@ -33,8 +35,12 @@ interface UseNotificationSidebarOptions {
 }
 
 interface UseNotificationSidebarReturn {
-  /** Every notification, in priority order, whatever tab is selected. */
-  allNotifications: Readonly<Ref<NotificationData[]>>;
+  /** Whether the drawer holds neither a notification nor a backend problem, whatever tab is selected. */
+  isEmpty: ComputedRef<boolean>;
+  /** The backend problems tree the selected tab shows, newest first: none on the reminder tab. */
+  selectedProblems: ComputedRef<BackendProblem[]>;
+  /** Dismisses one backend problem with every item under it. */
+  removeProblem: (id: string) => void;
   /** Closes the drawer. */
   close: () => void;
   /**
@@ -86,6 +92,9 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
   const { markAllRead, remove } = notificationStore;
+  const problemsStore = useBackendProblemsStore();
+  const { problems } = storeToRefs(problemsStore);
+  const { markAllRead: markProblemsRead, remove: removeProblem } = problemsStore;
   const { show } = useConfirmStore();
   const { silent, toggle: toggleSilent } = useSilentNotifications();
 
@@ -105,6 +114,12 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     return all;
   });
 
+  const selectedProblems = computed<BackendProblem[]>(() =>
+    get(modelSelectedTab) === TabCategory.REMINDER ? [] : get(problems),
+  );
+
+  const isEmpty = computed<boolean>(() => get(allNotifications).length === 0 && get(problems).length === 0);
+
   function close(): void {
     set(display, false);
   }
@@ -117,9 +132,12 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
    * a drawer the user is already looking at. Items that need the user keep their place on the
    * badge; only the novelty signal is consumed here.
    */
-  watchImmediate([display, allNotifications], ([open]) => {
-    if (open)
-      markAllRead();
+  watchImmediate([display, allNotifications, problems], ([open]) => {
+    if (!open)
+      return;
+
+    markAllRead();
+    markProblemsRead();
   });
 
   function toggleSilentMode(): void {
@@ -128,6 +146,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
 
   function clear(): void {
     notificationStore.$reset();
+    problemsStore.$reset();
     close();
   }
 
@@ -159,13 +178,15 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   watch([(): number => toValue(scrollY), modelSelectedTab, selectedNotifications], trackRowAppearance);
 
   return {
-    allNotifications,
     close,
     initialAppear: readonly(initialAppear),
+    isEmpty,
     messageOverflow,
     modelSelectedTab,
     remove,
+    removeProblem,
     selectedNotifications,
+    selectedProblems,
     showConfirmation,
     silent,
     tabCategoriesLabel,

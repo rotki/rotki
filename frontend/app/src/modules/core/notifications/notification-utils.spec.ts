@@ -9,7 +9,7 @@ describe('createNotification', () => {
 
   it('should derive display from the kind of a payload that does not ask', () => {
     const popped = createNotification(1, { kind: NotificationKind.RESULT, message: 'm', severity: Severity.INFO, title: 't' });
-    const stored = createNotification(2, { kind: NotificationKind.BACKEND_PROBLEM, message: 'm', severity: Severity.INFO, title: 't' });
+    const stored = createNotification(2, { kind: NotificationKind.FAILURE, message: 'm', severity: Severity.INFO, title: 't' });
 
     expect(popped.display).toBe(true);
     expect(stored.display).toBe(false);

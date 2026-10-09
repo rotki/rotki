@@ -9,7 +9,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
 
   it('should skip non-beaconchain messages', () => {
     const result = strategy.process(
-      { message: 'some other error', kind: NotificationKind.BACKEND_PROBLEM, severity: Severity.WARNING, title: 'test' },
+      { message: 'some other error', kind: NotificationKind.FAILURE, severity: Severity.WARNING, title: 'test' },
       { getNextId: () => 1, notifications: [] },
     );
 
@@ -20,7 +20,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'Endpoint 1',
       },
@@ -43,7 +43,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old message',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'grouped',
       }),
@@ -52,7 +52,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'Endpoint 2',
       },
@@ -72,7 +72,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
       group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
       groupCount: 1,
       message: 'old message',
-      kind: NotificationKind.BACKEND_PROBLEM,
+      kind: NotificationKind.FAILURE,
       severity: Severity.WARNING,
       title: 'grouped',
     });
@@ -80,7 +80,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'Endpoint 2',
       },
@@ -98,7 +98,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
         group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
         groupCount: 1,
         message: 'old',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'grouped',
       }),
@@ -107,7 +107,7 @@ describe('createBeaconchainRateLimitStrategy', () => {
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
-        kind: NotificationKind.BACKEND_PROBLEM,
+        kind: NotificationKind.FAILURE,
         severity: Severity.WARNING,
         title: 'Endpoint 1',
       },
