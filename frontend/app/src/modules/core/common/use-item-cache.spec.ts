@@ -543,6 +543,39 @@ describe('createItemCache', () => {
       await flushPromises();
       expect(calls).toHaveLength(2);
     });
+
+    it('should retry a failing key a few times with a growing wait, then give up on it', async () => {
+      vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const calls: string[][] = [];
+      const fetch = async (keys: string[]): Promise<() => IterableIterator<{ key: string; item: string }>> => {
+        calls.push([...keys]);
+        throw new Error('backend down');
+      };
+      const { resolve } = createItemCache(fetch);
+
+      /** Asks for the key after `waitMs`, as a re-rendering reader would, and lets a batch run. */
+      const requestAfter = async (waitMs: number): Promise<void> => {
+        vi.advanceTimersByTime(waitMs);
+        resolve('KEY');
+        vi.advanceTimersByTime(1000);
+        await flushPromises();
+      };
+
+      await requestAfter(0);
+      expect(calls).toHaveLength(1);
+      // the second attempt waits 5s, the third 10s
+      await requestAfter(5500);
+      expect(calls).toHaveLength(2);
+      await requestAfter(9000);
+      expect(calls).toHaveLength(2);
+      await requestAfter(1000);
+      expect(calls).toHaveLength(3);
+
+      // after the third failure the key is held back for the full expiry, however often it is asked for
+      for (let i = 0; i < 20; i++)
+        await requestAfter(20_000);
+      expect(calls).toHaveLength(3);
+    });
   });
 
   describe('fine-grained reactivity', () => {
