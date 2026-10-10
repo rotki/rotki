@@ -10,7 +10,11 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.manager import ChainManagerWithNodesMixin, ChainManagerWithTransactions
 from rotkehlchen.chain.solana.rpc import Pubkey
-from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
+from rotkehlchen.chain.solana.utils import (
+    StakeAccountInfo,
+    deserialize_token_account,
+    lamports_to_sol,
+)
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
@@ -99,6 +103,20 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         staked_balance = lamports_to_sol(total_lamports)
         log.debug('Found %s stake accounts for %s with total staked balance %s SOL', len(stake_accounts), account, staked_balance)  # noqa: E501
         return staked_balance
+
+    def get_stake_accounts_by_owner(
+            self,
+            accounts: Sequence[SolanaAddress],
+    ) -> dict[SolanaAddress, list[StakeAccountInfo]]:
+        """Query the stake accounts of each of the given accounts, keeping only the
+        accounts that have any.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        return {
+            account: stake_accounts
+            for account in accounts
+            if (stake_accounts := self.node_inquirer.get_stake_accounts(owner=account))
+        }
 
     def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:
         """Query the token balances of the given account.

@@ -9101,6 +9101,98 @@ Getting Liquity balances
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
+Getting Solana stake accounts
+=============================
+
+.. http:get:: /api/(version)/blockchains/solana/stake/accounts
+
+   Doing a GET on this endpoint returns the stake accounts of every tracked solana address, grouped by the address that owns them (the withdrawer authority). The amount is the SOL held by the stake account, including its rent-exempt reserve. The validator is the vote account the stake is delegated to, or null if it is not delegated.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/solana/stake/accounts HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM": [{
+                  "address": "StakeAcc1111111111111111111111111111111111111",
+                  "amount": "8.5",
+                  "validator": "7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH"
+              }]
+          },
+          "message": ""
+      }
+
+   :statuscode 200: The balances were successfully returned.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query could not be reached or returned unexpected response.
+
+
+Getting Hyperliquid staking summaries
+=====================================
+
+.. http:get:: /api/(version)/blockchains/hyperliquid/stake/summary
+
+   Doing a GET on this endpoint returns the HYPE in the Hyperliquid core staking account of every tracked hyperliquid address that has any, split into the amount delegated to validators, the amount in the staking account that is not delegated and the amount queued for withdrawal back to spot.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/hyperliquid/stake/summary HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0x000000000056f99d36B6F2e0c51FD41496BbacB8": {
+                  "delegated": "10000.5",
+                  "undelegated": "100.17358863",
+                  "pending_withdrawal": "18"
+              }
+          },
+          "message": ""
+      }
+
+   :statuscode 200: The balances were successfully returned.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query could not be reached or returned unexpected response.
+
+
 Getting Liquity staked amount
 =============================
 

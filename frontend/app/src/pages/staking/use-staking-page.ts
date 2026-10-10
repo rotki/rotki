@@ -55,6 +55,8 @@ export function useStakingPage(locationProp: MaybeRefOrGetter<StakingLocation | 
     { id: 'liquity', image: getPublicProtocolImagePath('liquity.png'), name: t('staking.liquity') },
     { id: 'kraken', image: getPublicProtocolImagePath('kraken.svg'), name: t('staking.kraken') },
     { id: 'lido-csm', image: getPublicProtocolImagePath('lido_csm.svg'), name: t('staking.lido_csm') },
+    { id: 'hyperliquid', image: getPublicProtocolImagePath('hyperliquid.svg'), name: t('staking.hyperliquid') },
+    { id: 'solana', image: getPublicProtocolImagePath('solana.svg'), name: t('staking.solana') },
   ]);
 
   const page = computed<Component | null>(() => {

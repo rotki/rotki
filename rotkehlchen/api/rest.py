@@ -79,6 +79,7 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     WeightedNode,
 )
+from rotkehlchen.chain.solana.utils import lamports_to_sol
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -2299,6 +2300,43 @@ class RestAPI:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         return {'result': process_result(result), 'message': ''}
+
+    @async_api_call()
+    def get_solana_stake_accounts(self) -> dict[str, Any]:
+        """Return the stake accounts of every tracked solana address, grouped by owner."""
+        try:
+            stake_accounts = self.rotkehlchen.chains_aggregator.solana.get_stake_accounts_by_owner(
+                accounts=self.rotkehlchen.chains_aggregator.accounts.solana,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return _wrap_in_ok_result({
+            owner: [{
+                'address': stake_account.address,
+                'amount': lamports_to_sol(stake_account.lamports),
+                'validator': stake_account.voter,
+            } for stake_account in owner_stake_accounts]
+            for owner, owner_stake_accounts in stake_accounts.items()
+        })
+
+    @async_api_call()
+    def get_hyperliquid_staking_summaries(self) -> dict[str, Any]:
+        """Return the core staking account of every tracked hyperliquid address by state."""
+        try:
+            summaries = self.rotkehlchen.chains_aggregator.hyperliquid.query_staking_summaries(
+                addresses=self.rotkehlchen.chains_aggregator.accounts.hyperliquid,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return _wrap_in_ok_result({
+            address: {
+                'delegated': summary.delegated,
+                'undelegated': summary.undelegated,
+                'pending_withdrawal': summary.pending_withdrawal,
+            } for address, summary in summaries.items()
+        })
 
     @async_api_call()
     def get_eth2_validators(
