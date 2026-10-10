@@ -77,7 +77,6 @@ HYPERLIQUID_MIN_PAGE_CAP: Final = 500
 # The REST weight limit is per minute, so keep retrying rate limited requests for that long.
 HYPERLIQUID_RATE_LIMIT_WINDOW: Final = 60
 USDC_SYMBOL: Final = 'USDC'
-STAKING_SUMMARY_KEYS: Final = ('delegated', 'undelegated', 'totalPendingWithdrawal')
 HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
 
 
@@ -119,6 +118,19 @@ class FillEntry(TypedDict):
     dir: NotRequired[str]
     liquidation: NotRequired[bool]
     closedPnl: NotRequired[str]
+
+
+@dataclass(frozen=True)
+class StakingSummary:
+    """The HYPE of a user's Hyperliquid core staking account, split by state."""
+
+    delegated: FVal
+    undelegated: FVal
+    pending_withdrawal: FVal
+
+    @property
+    def total(self) -> FVal:
+        return self.delegated + self.undelegated + self.pending_withdrawal
 
 
 @dataclass(frozen=True)
@@ -476,8 +488,8 @@ class HyperliquidAPI:
 
         return usdc_hold
 
-    def query_staking_balance(self, address: ChecksumEvmAddress) -> FVal:
-        """Query the HYPE held in the user's Hyperliquid core staking account.
+    def query_staking_summary(self, address: ChecksumEvmAddress) -> StakingSummary:
+        """Query the HYPE held in the user's Hyperliquid core staking account by state.
 
         This is the HYPE delegated to validators, the HYPE in the staking account that
         is not delegated and the HYPE queued for withdrawal back to spot. None of it is
@@ -493,14 +505,23 @@ class HyperliquidAPI:
             query_name='delegatorSummary',
         )
         try:
-            return sum(
-                (self._deserialize_amount(data[key], f'delegatorSummary {key}') for key in STAKING_SUMMARY_KEYS),  # noqa: E501
-                start=ZERO,
+            return StakingSummary(
+                delegated=self._deserialize_amount(data['delegated'], 'delegatorSummary delegated'),  # noqa: E501
+                undelegated=self._deserialize_amount(data['undelegated'], 'delegatorSummary undelegated'),  # noqa: E501
+                pending_withdrawal=self._deserialize_amount(data['totalPendingWithdrawal'], 'delegatorSummary totalPendingWithdrawal'),  # noqa: E501
             )
         except (KeyError, DeserializationError) as e:
             raise RemoteError(
                 f'Hyperliquid delegatorSummary returned malformed response {data}: {e}',
             ) from e
+
+    def query_staking_balance(self, address: ChecksumEvmAddress) -> FVal:
+        """Query the total HYPE in the user's Hyperliquid core staking account.
+
+        May raise:
+            - RemoteError
+        """
+        return self.query_staking_summary(address=address).total
 
     @staticmethod
     def _entry_strict_unique_id(

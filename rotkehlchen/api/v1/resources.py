@@ -2315,6 +2315,26 @@ class DataImportResource(BaseMethodView):
         )
 
 
+class SolanaStakeAccountsResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_solana_stake_accounts(async_query=async_query)
+
+
+class HyperliquidStakingSummariesResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_hyperliquid_staking_summaries(async_query=async_query)
+
+
 class Eth2ValidatorsResource(BaseMethodView):
 
     patch_schema = Eth2ValidatorPatchSchema()

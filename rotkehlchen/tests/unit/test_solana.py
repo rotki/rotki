@@ -2,7 +2,7 @@ import struct
 from contextlib import suppress
 from functools import partial
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -571,6 +571,9 @@ def _build_stake_account_data(
     return bytes(data)
 
 
+TEST_STAKE_ADDRESS: Final = SolanaAddress('StakeAcc1111111111111111111111111111111111111')
+
+
 def test_deserialize_stake_account_delegated() -> None:
     """Test deserialization of a delegated stake account."""
     staker_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
@@ -585,8 +588,13 @@ def test_deserialize_stake_account_delegated() -> None:
     )
     assert len(data) >= STAKE_ACCOUNT_DELEGATED_SIZE
 
-    result = deserialize_stake_account(account_data=data, lamports=8_000_000_000)
+    result = deserialize_stake_account(
+        address=TEST_STAKE_ADDRESS,
+        account_data=data,
+        lamports=8_000_000_000,
+    )
     assert result == StakeAccountInfo(
+        address=TEST_STAKE_ADDRESS,
         lamports=8_000_000_000,
         staker=SolanaAddress(staker_addr),
         withdrawer=SolanaAddress(withdrawer_addr),
@@ -602,8 +610,13 @@ def test_deserialize_stake_account_initialized() -> None:
     data = _build_stake_account_data(state=1, staker=staker_addr, withdrawer=withdrawer_addr)
     assert len(data) >= STAKE_ACCOUNT_META_SIZE
 
-    result = deserialize_stake_account(account_data=data, lamports=3_000_000_000)
+    result = deserialize_stake_account(
+        address=TEST_STAKE_ADDRESS,
+        account_data=data,
+        lamports=3_000_000_000,
+    )
     assert result == StakeAccountInfo(
+        address=TEST_STAKE_ADDRESS,
         lamports=3_000_000_000,
         staker=SolanaAddress(staker_addr),
         withdrawer=SolanaAddress(withdrawer_addr),
@@ -619,13 +632,21 @@ def test_deserialize_stake_account_uninitialized() -> None:
         withdrawer='updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM',
     )
     with pytest.raises(DeserializationError, match='uninitialized'):
-        deserialize_stake_account(account_data=data, lamports=1_000_000)
+        deserialize_stake_account(
+            address=TEST_STAKE_ADDRESS,
+            account_data=data,
+            lamports=1_000_000,
+        )
 
 
 def test_deserialize_stake_account_too_short() -> None:
     """Test that stake account data that is too short raises DeserializationError."""
     with pytest.raises(DeserializationError, match='at least'):
-        deserialize_stake_account(account_data=bytes(50), lamports=1_000_000)
+        deserialize_stake_account(
+            address=TEST_STAKE_ADDRESS,
+            account_data=bytes(50),
+            lamports=1_000_000,
+        )
 
 
 def test_get_staked_balance(solana_manager: SolanaManager) -> None:
@@ -660,6 +681,30 @@ def test_get_staked_balance(solana_manager: SolanaManager) -> None:
             account=SolanaAddress(staker_addr),
         )
         assert result == FVal('8')  # 5 + 3 SOL
+
+
+def test_get_stake_accounts_by_owner(solana_manager: SolanaManager) -> None:
+    """Test that stake accounts are grouped by owner and owners without any are left out."""
+    owner = SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM')
+    voter = SolanaAddress('7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH')
+    stake_account = StakeAccountInfo(
+        address=TEST_STAKE_ADDRESS,
+        lamports=5_000_000_000,
+        staker=owner,
+        withdrawer=owner,
+        voter=voter,
+    )
+    with patch.object(
+        solana_manager.node_inquirer,
+        'get_stake_accounts',
+        side_effect=lambda owner: [stake_account] if owner == stake_account.withdrawer else [],
+    ):
+        result = solana_manager.get_stake_accounts_by_owner(accounts=[
+            owner,
+            SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'),
+        ])
+
+    assert result == {owner: [stake_account]}
 
 
 def test_get_staked_balance_no_accounts(solana_manager: SolanaManager) -> None:

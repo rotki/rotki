@@ -16,6 +16,8 @@ const STAKING: StakingInfo[] = [
   { id: 'liquity', image: '/images/protocols/liquity.png', name: 'Liquity' },
   { id: 'kraken', image: '/images/protocols/kraken.svg', name: 'Kraken' },
   { id: 'lido-csm', image: '/images/protocols/lido_csm.svg', name: 'Lido CSM' },
+  { id: 'hyperliquid', image: '/images/protocols/hyperliquid.svg', name: 'Hyperliquid' },
+  { id: 'solana', image: '/images/protocols/solana.svg', name: 'Solana' },
 ];
 
 const pageState = vi.hoisted((): { hasPage: boolean } => ({ hasPage: false }));
@@ -86,6 +88,8 @@ describe('pages/staking/[[location]]', () => {
       expect(wrapper.findAll('[data-testid=protocol-link]')).toHaveLength(STAKING.length);
       expect(getRedirectLink).toHaveBeenCalledWith('eth2');
       expect(getRedirectLink).toHaveBeenCalledWith('lido-csm');
+      expect(getRedirectLink).toHaveBeenCalledWith('solana');
+      expect(getRedirectLink).toHaveBeenCalledWith('hyperliquid');
     });
 
     it('should show an image for each location', () => {

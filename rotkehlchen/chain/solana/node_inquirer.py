@@ -439,6 +439,7 @@ class SolanaInquirer(SolanaRPCMixin):
         for keyed_account in response.value:
             try:
                 stake_accounts.append(deserialize_stake_account(
+                    address=SolanaAddress(str(keyed_account.pubkey)),
                     account_data=keyed_account.account.data,
                     lamports=keyed_account.account.lamports,
                 ))

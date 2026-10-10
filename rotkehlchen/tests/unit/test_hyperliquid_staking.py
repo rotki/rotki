@@ -5,9 +5,12 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.constants.assets import A_HYPE
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -56,6 +59,46 @@ def _staking_event(
 def test_query_staking_balance_sums_the_whole_staking_account() -> None:
     """The staking balance is the delegated, undelegated and pending withdrawal HYPE."""
     assert HyperliquidAPI().query_staking_balance(address=STAKER) == FVal('10118.67358863')
+
+
+def test_query_staking_summary_splits_the_staking_account() -> None:
+    """The summary keeps the delegated, undelegated and pending withdrawal HYPE apart."""
+    with patch.object(HyperliquidAPI, '_query_dict', return_value={
+        'delegated': '10.5',
+        'undelegated': '2.25',
+        'totalPendingWithdrawal': '1',
+        'nPendingWithdrawals': 1,
+    }):
+        summary = HyperliquidAPI().query_staking_summary(address=STAKER)
+
+    assert (summary.delegated, summary.undelegated, summary.pending_withdrawal) == (
+        FVal('10.5'), FVal('2.25'), FVal(1),
+    )
+    assert summary.total == FVal('13.75')
+
+
+def test_query_staking_summary_malformed_response() -> None:
+    with (
+        patch.object(HyperliquidAPI, '_query_dict', return_value={'delegated': '1'}),
+        pytest.raises(RemoteError, match='malformed response'),
+    ):
+        HyperliquidAPI().query_staking_summary(address=STAKER)
+
+
+def test_query_staking_summaries_skips_empty_accounts() -> None:
+    empty = StakingSummary(delegated=ZERO, undelegated=ZERO, pending_withdrawal=ZERO)
+    staked = StakingSummary(delegated=FVal(3), undelegated=ZERO, pending_withdrawal=FVal(1))
+    with patch.object(
+        HyperliquidAPI,
+        'query_staking_summary',
+        side_effect=lambda address: staked if address == STAKER else empty,
+    ):
+        result = HyperliquidManager.query_staking_summaries(addresses=[
+            STAKER,
+            string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'),
+        ])
+
+    assert result == {STAKER: staked}
 
 
 @pytest.mark.vcr(match_on=['uri', 'method', 'body'])
