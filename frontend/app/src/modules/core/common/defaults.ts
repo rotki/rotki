@@ -21,6 +21,8 @@ export const Defaults = {
   BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user
   BTC_DERIVATION_GAP_LIMIT: 20,
   BTC_MEMPOOL_API: '',
+  // where `nuthatch dev` listens; asked only once the nest is put in an indexer order
+  NUTHATCH_API_ENDPOINT: 'http://127.0.0.1:8288',
   DEFAULT_CONNECT_TIMEOUT: 30,
   DEFAULT_CSV_EXPORT_DELIMITER: ',',
   DEFAULT_CURRENCY_LOCATION: CurrencyLocation.AFTER,
