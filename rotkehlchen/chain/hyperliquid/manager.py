@@ -16,7 +16,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -146,6 +146,22 @@ class HyperliquidManager(EvmManager):
                 )
 
         return balances
+
+    @staticmethod
+    def query_staking_summaries(
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, StakingSummary]:
+        """Query the core staking account of each address, keeping only the non-empty ones.
+
+        May raise:
+            - RemoteError
+        """
+        api = HyperliquidAPI()
+        return {
+            address: summary
+            for address in addresses
+            if (summary := api.query_staking_summary(address=address)).total != ZERO
+        }
 
     @staticmethod
     def _add_core_staking_balance(
