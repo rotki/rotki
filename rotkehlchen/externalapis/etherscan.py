@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -71,7 +72,167 @@ ETHERSCAN_TIER_BY_DAILY_LIMIT: Final[dict[int, EtherscanTier]] = {
 }
 
 
-class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
+class EtherscanAccountHistory(EtherscanLikeApi, ABC):
+    """The withdrawal and produced-block queries of an indexer that answers them as Etherscan
+    does: Etherscan itself, and a nuthatch nest serving the same API."""
+
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]]:
+        """Query the indexer for ethereum blocks validated by an address.
+
+        This method is Ethereum only.
+
+        May raise:
+        - RemoteError if the query fails, the response is malformed, or pagination stops making
+        progress.
+        """
+        options = self._process_timestamp_or_blockrange(
+            chain_id=ChainID.ETHEREUM,
+            period=period,
+            options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
+        )
+        if (pagination_options := self._get_account_pagination_options(
+            action='getminedblocks',
+            options=options,
+        )) is not None:
+            options.update(pagination_options)
+        blocks = []
+        while True:
+            previous_page_state = (options.get('startblock'), options.get('page'))
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='getminedblocks',
+                options=options,
+            )
+            if len(result) == 0:
+                break
+
+            blocks.extend(result)
+            try:
+                new_options = self._maybe_paginate(result=result, options=options)
+            except KeyError as e:
+                raise RemoteError(f'Malformed {self.name} validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+            if new_options is None:
+                break
+            if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
+                raise RemoteError(f'{self.name} validated blocks pagination made no progress for {address}')  # noqa: E501
+            options = new_options
+
+        return blocks
+
+    def get_withdrawals(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> set[int]:
+        """Query the indexer for ethereum withdrawals of an address for a specific period
+        and save them in the DB. Returns newly detected validators that were not tracked in the DB.
+
+        This method is Ethereum only.
+
+        May raise:
+        - RemoteError if the etherscan query fails for some reason
+        - DeserializationError if we can't decode the response properly
+        """
+        options = self._process_timestamp_or_blockrange(ChainID.ETHEREUM, period, {'sort': 'asc', 'address': address})  # noqa: E501
+        if (pagination_options := self._get_account_pagination_options(
+            action='txsBeaconWithdrawal',
+            options=options,
+        )) is not None:
+            options.update(pagination_options)
+        last_withdrawal_idx = -1
+        touched_indices: set[int] = set()
+        with self.db.conn.read_ctx() as cursor:
+            if (idx_result := self.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.WITHDRAWALS_IDX,
+                address=address,
+            )) is not None:
+                last_withdrawal_idx = idx_result
+        dbevents = DBHistoryEvents(self.db)
+        while True:
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='txsBeaconWithdrawal',
+                options=options,
+            )
+            if (result_length := len(result)) == 0:
+                if len(touched_indices) == 0:
+                    return set()
+                break  # an exact final full page is followed by an empty page
+
+            withdrawals = []
+            try:
+                for entry in result:
+                    validator_index = int(entry['validatorIndex'])
+                    touched_indices.add(validator_index)
+                    withdrawals.append(EthWithdrawalEvent(
+                        validator_index=validator_index,
+                        timestamp=ts_sec_to_ms(deserialize_timestamp(entry['timestamp'])),
+                        amount=from_gwei(deserialize_fval(
+                            value=entry['amount'],
+                            name='withdrawal amount',
+                            location='etherscan staking withdrawals query',
+                        )),
+                        withdrawal_address=address,
+                        is_exit=False,  # is figured out later in a periodic task
+                    ))
+
+                last_withdrawal_idx = max(last_withdrawal_idx, int(result[-1]['withdrawalIndex']))
+
+            except (KeyError, ValueError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'missing key {msg}'
+
+                msg = f'Failed to deserialize {result_length} ETH withdrawals from etherscan due to {msg}'  # noqa: E501
+                log.error(msg)
+                raise DeserializationError(msg) from e
+
+            try:
+                with self.db.user_write() as write_cursor:
+                    dbevents.add_history_events(write_cursor, history=withdrawals)
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.WITHDRAWALS_TS,
+                        value=Timestamp(int(result[-1]['timestamp'])),
+                        address=address,
+                    )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                log.error(
+                    'Could not write %s withdrawals to %s due to %s',
+                    result_length,
+                    address,
+                    e,
+                )
+                return set()
+
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break  # no need to paginate further
+            options = new_options
+
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT validator_index from eth2_validators WHERE validator_index IS NOT NULL')  # noqa: E501
+            tracked_indices = {x[0] for x in cursor}
+
+        if last_withdrawal_idx != - 1:  # let's also update index if needed
+            with self.db.user_write() as write_cursor:
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.WITHDRAWALS_IDX,
+                    value=last_withdrawal_idx,
+                    address=address,
+                )
+
+        return touched_indices - tracked_indices
+
+
+class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanAccountHistory):
     """Base class for all Etherscan implementations"""
     def __init__(
             self,
@@ -84,7 +245,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             database=database,
             service_name=ExternalService.ETHERSCAN,
         )
-        EtherscanLikeApi.__init__(
+        EtherscanAccountHistory.__init__(
             self,
             database=database,
             msg_aggregator=msg_aggregator,
@@ -312,156 +473,6 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         # else
         raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')
-
-    def get_validated_blocks(
-            self,
-            address: ChecksumEvmAddress,
-            period: TimestampOrBlockRange,
-    ) -> list[dict[str, Any]]:
-        """Query etherscan for ethereum blocks validated by an address.
-
-        This method is Ethereum only.
-
-        May raise:
-        - RemoteError if the query fails, the response is malformed, or pagination stops making
-        progress.
-        """
-        options = self._process_timestamp_or_blockrange(
-            chain_id=ChainID.ETHEREUM,
-            period=period,
-            options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
-        )
-        if (pagination_options := self._get_account_pagination_options(
-            action='getminedblocks',
-            options=options,
-        )) is not None:
-            options.update(pagination_options)
-        blocks = []
-        while True:
-            previous_page_state = (options.get('startblock'), options.get('page'))
-            result = self._query(
-                chain_id=ChainID.ETHEREUM,
-                module='account',
-                action='getminedblocks',
-                options=options,
-            )
-            if len(result) == 0:
-                break
-
-            blocks.extend(result)
-            try:
-                new_options = self._maybe_paginate(result=result, options=options)
-            except KeyError as e:
-                raise RemoteError(f'Malformed Etherscan validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
-            if new_options is None:
-                break
-            if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
-                raise RemoteError(f'Etherscan validated blocks pagination made no progress for {address}')  # noqa: E501
-            options = new_options
-
-        return blocks
-
-    def get_withdrawals(
-            self,
-            address: ChecksumEvmAddress,
-            period: TimestampOrBlockRange,
-    ) -> set[int]:
-        """Query etherscan for ethereum withdrawals of an address for a specific period
-        and save them in the DB. Returns newly detected validators that were not tracked in the DB.
-
-        This method is Ethereum only.
-
-        May raise:
-        - RemoteError if the etherscan query fails for some reason
-        - DeserializationError if we can't decode the response properly
-        """
-        options = self._process_timestamp_or_blockrange(ChainID.ETHEREUM, period, {'sort': 'asc', 'address': address})  # noqa: E501
-        if (pagination_options := self._get_account_pagination_options(
-            action='txsBeaconWithdrawal',
-            options=options,
-        )) is not None:
-            options.update(pagination_options)
-        last_withdrawal_idx = -1
-        touched_indices: set[int] = set()
-        with self.db.conn.read_ctx() as cursor:
-            if (idx_result := self.db.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.WITHDRAWALS_IDX,
-                address=address,
-            )) is not None:
-                last_withdrawal_idx = idx_result
-        dbevents = DBHistoryEvents(self.db)
-        while True:
-            result = self._query(
-                chain_id=ChainID.ETHEREUM,
-                module='account',
-                action='txsBeaconWithdrawal',
-                options=options,
-            )
-            if (result_length := len(result)) == 0:
-                if len(touched_indices) == 0:
-                    return set()
-                break  # an exact final full page is followed by an empty page
-
-            withdrawals = []
-            try:
-                for entry in result:
-                    validator_index = int(entry['validatorIndex'])
-                    touched_indices.add(validator_index)
-                    withdrawals.append(EthWithdrawalEvent(
-                        validator_index=validator_index,
-                        timestamp=ts_sec_to_ms(deserialize_timestamp(entry['timestamp'])),
-                        amount=from_gwei(deserialize_fval(
-                            value=entry['amount'],
-                            name='withdrawal amount',
-                            location='etherscan staking withdrawals query',
-                        )),
-                        withdrawal_address=address,
-                        is_exit=False,  # is figured out later in a periodic task
-                    ))
-
-                last_withdrawal_idx = max(last_withdrawal_idx, int(result[-1]['withdrawalIndex']))
-
-            except (KeyError, ValueError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'missing key {msg}'
-
-                msg = f'Failed to deserialize {result_length} ETH withdrawals from etherscan due to {msg}'  # noqa: E501
-                log.error(msg)
-                raise DeserializationError(msg) from e
-
-            try:
-                with self.db.user_write() as write_cursor:
-                    dbevents.add_history_events(write_cursor, history=withdrawals)
-                    self.db.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=DBCacheDynamic.WITHDRAWALS_TS,
-                        value=Timestamp(int(result[-1]['timestamp'])),
-                        address=address,
-                    )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                log.error(f'Could not write {result_length} withdrawals to {address} due to {e!s}')
-                return set()
-
-            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
-                break  # no need to paginate further
-            options = new_options
-
-        with self.db.conn.read_ctx() as cursor:
-            cursor.execute('SELECT validator_index from eth2_validators WHERE validator_index IS NOT NULL')  # noqa: E501
-            tracked_indices = {x[0] for x in cursor}
-
-        if last_withdrawal_idx != - 1:  # let's also update index if needed
-            with self.db.user_write() as write_cursor:
-                self.db.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.WITHDRAWALS_IDX,
-                    value=last_withdrawal_idx,
-                    address=address,
-                )
-
-        return touched_indices - tracked_indices
 
     def get_l1_fee(
             self,

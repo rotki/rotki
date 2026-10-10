@@ -46,6 +46,9 @@ class DBCacheStatic(Enum):
     LAST_INTERNAL_TX_CONFLICTS_REPULL_TS: Final = 'last_internal_tx_conflicts_repull_ts'
     BEACONCHAIN_VALIDATOR_QUERY_LIMIT: Final = 'beaconchain_validator_query_limit'
     ETHERSCAN_API_KEY_TIER: Final = 'etherscan_api_key_tier'
+    # Accounts removed in rotki that a nuthatch nest has yet to be told to stop watching, as a
+    # JSON list.
+    NUTHATCH_PENDING_UNWATCH: Final = 'nuthatch_pending_unwatch'
 
 
 class LabeledLocationArgsType(TypedDict):

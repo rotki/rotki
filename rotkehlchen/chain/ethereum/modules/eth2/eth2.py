@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
@@ -18,6 +19,7 @@ from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import APIKeyNotAvailable, ChainNotSupported, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
@@ -523,16 +525,27 @@ class Eth2(EthereumModule):
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
     ) -> set[int] | None:
-        """Query etherscan for withdrawals with a blockscout fallback.
-        Returns untracked validator indices, or None if both sources fail.
+        """Query the indexers that answer withdrawals as etherscan does (etherscan, and a nuthatch
+        nest) in the configured order, etherscan always among them, with a blockscout fallback.
+        Returns untracked validator indices, or None if every source fails.
         """
-        try:
-            return self.ethereum.etherscan.get_withdrawals(
-                address=address,
-                period=period,
-            )
-        except (DeserializationError, RemoteError) as e:
-            log.error(f'Failed to query ethereum withdrawals for {address} through etherscan due to {e}. Will try blockscout.')  # noqa: E501
+        sources: list[EtherscanAccountHistory] = [
+            indexer for _, indexer in self.ethereum._get_indexers_in_order()
+            if isinstance(indexer, EtherscanAccountHistory)
+        ]
+        if self.ethereum.etherscan not in sources:  # tried before blockscout, as it always was
+            sources.append(self.ethereum.etherscan)
+        for source in sources:
+            try:
+                return source.get_withdrawals(address=address, period=period)
+            except (DeserializationError, RemoteError) as e:
+                log.error(
+                    'Failed to query ethereum withdrawals for %s through %s due to %s. '
+                    'Will try the next source.',
+                    address,
+                    source.name,
+                    e,
+                )
 
         try:
             return self.ethereum.blockscout.query_withdrawals(address)
@@ -710,6 +723,7 @@ class Eth2(EthereumModule):
             self,
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
+            only: EvmIndexer | None = None,
     ) -> list[dict[str, Any]] | None:
         """Query produced blocks from available indexers in the user-defined order.
 
@@ -720,7 +734,9 @@ class Eth2(EthereumModule):
         - Any unexpected exception raised by an indexer implementation.
         """
         tried_indexers = []
-        for _, indexer in self.ethereum._get_indexers_in_order():
+        for name, indexer in self.ethereum._get_indexers_in_order():
+            if only is not None and name != only:
+                continue
             tried_indexers.append(indexer.name)
             try:
                 return indexer.get_validated_blocks(address=address, period=period)
@@ -790,8 +806,10 @@ class Eth2(EthereumModule):
             self,
             indices: list[int],
             update_cache: bool,
-    ) -> None:
-        """Get produced blocks via etherscan/blockscout when beaconcha.in is unavailable.
+            only: EvmIndexer | None = None,
+    ) -> bool:
+        """Get produced blocks via the indexers, or only the `only` one: a nuthatch nest ahead of
+        beaconcha.in, the rest as the fallback when beaconcha.in is unavailable.
 
         Etherscan and Blockscout expose produced blocks by execution-layer address, while rotki
         tracks produced-block freshness and PnL by validator index. To bridge this, load the
@@ -802,9 +820,12 @@ class Eth2(EthereumModule):
         only attribute the block when exactly one queried validator was active for that address at
         that timestamp. New block events are skipped if the block number already exists, and the
         per-validator produced-block query cache is updated after successful processing.
+
+        Returns whether every validator was covered: each had a withdrawal address, each address
+        was answered and each block attributed.
         """
         if len(indices) == 0:
-            return
+            return True
 
         now = ts_now()
         validators_by_address: dict[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]] = defaultdict(list)  # noqa: E501
@@ -838,8 +859,12 @@ class Eth2(EthereumModule):
 
             ethereum_tracked_accounts = self.database.get_blockchain_accounts(cursor).eth
 
+        # A validator with no withdrawal address has no address to ask an indexer about.
+        addressed = {index for ranges in validators_by_address.values() for index, _, _ in ranges}
+
         dbevents = DBHistoryEvents(self.database)
         queried_indices: set[int] = set()
+        every_address = self._all_addressed(indices, addressed)
         for address, validator_ranges in validators_by_address.items():
             from_ts = min(entry[1] for entry in validator_ranges)
             to_ts = max(entry[2] for entry in validator_ranges)
@@ -848,7 +873,9 @@ class Eth2(EthereumModule):
             if (blocks := self._fetch_validated_blocks_from_external_sources(
                 address=address,
                 period=period,
+                only=only,
             )) is None:
+                every_address = False
                 continue
 
             queried_indices.update(validator_index for validator_index, _, _ in validator_ranges)
@@ -875,23 +902,59 @@ class Eth2(EthereumModule):
                     if cursor.fetchone()[0] == 1:
                         continue
 
-                if (proposer_index := self._get_proposer_index_for_validated_block(
+                if (pubkey := entry.get('proposerPubkey')):
+                    # A relay named the proposer: one of these validators, or none of them.
+                    if (proposer_index := self._proposer_by_pubkey(
+                        pubkey=pubkey,
+                        active_indices=active_indices,
+                    )) is None:
+                        continue
+                elif (proposer_index := self._get_proposer_index_for_validated_block(
                     block_number=block_number,
                     timestamp=timestamp,
                     active_indices=active_indices,
                 )) is None:
+                    every_address = False  # a source that can name the proposer should be asked
                     continue
 
-                with self.database.user_write() as write_cursor:
-                    dbevents.add_history_event(write_cursor=write_cursor, event=EthBlockEvent(
+                # A nuthatch nest also lists the relay-built blocks whose fee recipient was the
+                # builder, with what the relays say they paid this address.
+                fee_recipient = deserialize_evm_address(entry.get('feeRecipient') or address)
+                events = [EthBlockEvent(
+                    validator_index=proposer_index,
+                    timestamp=ts_sec_to_ms(timestamp),
+                    amount=reward,
+                    fee_recipient=fee_recipient,
+                    fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
+                    block_number=block_number,
+                    is_mev_reward=False,
+                )]
+                mev_amount, mev_recipient = None, fee_recipient
+                if (
+                    entry.get('mev') == 'relay' and
+                    (mev_recipient_raw := entry.get('mevRecipient'))
+                ):
+                    mev_recipient = deserialize_evm_address(mev_recipient_raw)
+                    # Paid to the block's own fee recipient, the block reward already counts what
+                    # the block paid; only a builder's separate transfer is more.
+                    mev_amount = entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')  # noqa: E501
+                if mev_amount:
+                    events.append(EthBlockEvent(
                         validator_index=proposer_index,
                         timestamp=ts_sec_to_ms(timestamp),
-                        amount=reward,
-                        fee_recipient=address,
-                        fee_recipient_tracked=address in ethereum_tracked_accounts,
+                        amount=from_wei(deserialize_fval(
+                            value=mev_amount,
+                            name='mev reward',
+                            location='validated blocks query',
+                        )),
+                        fee_recipient=mev_recipient,
+                        fee_recipient_tracked=mev_recipient in ethereum_tracked_accounts,
                         block_number=block_number,
-                        is_mev_reward=False,
+                        is_mev_reward=True,
                     ))
+                with self.database.user_write() as write_cursor:
+                    for event in events:
+                        dbevents.add_history_event(write_cursor=write_cursor, event=event)
 
         if update_cache:
             with self.database.user_write() as write_cursor:
@@ -903,13 +966,51 @@ class Eth2(EthereumModule):
                         index=index,
                     )
 
+        return every_address
+
+    def _all_addressed(self, indices: list[int], addressed: set[int]) -> bool:
+        """Whether every validator left out of `addressed` was left out for being up to date,
+        rather than for having no withdrawal address to ask about."""
+        if len(missing := set(indices) - addressed) == 0:
+            return True
+
+        with self.database.conn.read_ctx() as cursor:
+            for chunk, placeholders in get_query_chunks(list(missing)):
+                if cursor.execute(
+                    f'SELECT COUNT(*) FROM eth2_validators WHERE validator_index IN ({placeholders}) '  # noqa: E501
+                    'AND withdrawal_address IS NULL',
+                    chunk,
+                ).fetchone()[0] != 0:
+                    return False
+        return True
+
+    def _proposer_by_pubkey(self, pubkey: str, active_indices: list[int]) -> int | None:
+        """The tracked active validator with the public key a relay named as the proposer."""
+        with self.database.conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT validator_index FROM eth2_validators WHERE public_key=?',
+                (pubkey.lower(),),
+            ).fetchone()
+        return row[0] if row is not None and row[0] in active_indices else None
+
     def get_and_store_produced_blocks(
             self,
             indices: list[int],
             update_cache: bool = True,
     ) -> None:
-        """Query and store produced blocks via beaconcha.in or indexer fallback."""
+        """Query and store produced blocks: from a nuthatch nest when the indexer order names
+        one, then beaconcha.in, then the other indexers if neither covered every validator."""
         with self.beacon_inquirer.beaconchain.produced_blocks_lock:
+            # The nest goes first and beaconcha.in still runs after it, so a block the nest could
+            # not attribute or see is still found there; a block already stored is never added
+            # twice by either path.
+            nest_complete = any(
+                name == EvmIndexer.NUTHATCH for name, _ in self.ethereum._get_indexers_in_order()
+            ) and self._get_and_store_produced_blocks_from_indexers(
+                indices=indices,
+                update_cache=update_cache,
+                only=EvmIndexer.NUTHATCH,
+            )
             if self.beacon_inquirer.beaconchain.has_api_key():
                 try:
                     self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
@@ -921,10 +1022,11 @@ class Eth2(EthereumModule):
                 else:
                     return
 
-            self._get_and_store_produced_blocks_from_indexers(
-                indices=indices,
-                update_cache=update_cache,
-            )
+            if not nest_complete:
+                self._get_and_store_produced_blocks_from_indexers(
+                    indices=indices,
+                    update_cache=update_cache,
+                )
 
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the

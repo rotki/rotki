@@ -100,6 +100,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
+    from rotkehlchen.externalapis.nuthatch import Nuthatch
     from rotkehlchen.externalapis.routescan import Routescan
     from rotkehlchen.tasks.supervisor import TaskSupervisor
 
@@ -268,7 +269,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.etherscan = etherscan
         self.routescan = routescan
         self.blockscout = blockscout
-        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | Nuthatch | None] = {  # noqa: E501
             EvmIndexer.ETHERSCAN: self.etherscan,
             EvmIndexer.BLOCKSCOUT: self.blockscout,
             EvmIndexer.ROUTESCAN: self.routescan,

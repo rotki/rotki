@@ -175,6 +175,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.nuthatch import Nuthatch
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -1401,6 +1402,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chain_manager = self.get_chain_manager(chain)
             if EvmIndexer.ETHERSCAN not in chain_manager.node_inquirer.available_indexers:
                 chain_manager.node_inquirer.available_indexers[EvmIndexer.ETHERSCAN] = chain_manager.node_inquirer.etherscan  # noqa: E501
+
+    def enable_nuthatch_indexer(self, nuthatch: Nuthatch) -> None:
+        """Make a nuthatch nest available as an indexer on every chain. It is queried only on the
+        chains whose indexer order names it, and a chain it does not index drops it again.
+        """
+        for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+            self.get_chain_manager(chain).node_inquirer.available_indexers[EvmIndexer.NUTHATCH] = nuthatch  # noqa: E501
 
     def _check_single_chain_activity(
             self,
