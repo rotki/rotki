@@ -36,4 +36,9 @@ export const supportedLanguages = [
     identifier: SupportedLanguage.RU,
     label: 'Russian (Русский)',
   },
+  {
+    countries: ['tr'],
+    identifier: SupportedLanguage.TR,
+    label: 'Turkish (Türkçe)',
+  },
 ];

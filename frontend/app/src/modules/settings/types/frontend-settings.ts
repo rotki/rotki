@@ -101,6 +101,7 @@ export enum SupportedLanguage {
   CN = 'cn',
   FR = 'fr',
   RU = 'ru',
+  TR = 'tr',
 }
 
 const SupportedLanguageEnum = z.enum(SupportedLanguage);

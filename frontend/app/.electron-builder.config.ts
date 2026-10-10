@@ -92,7 +92,7 @@ export default {
     license: '../../LICENSE.md',
     createDesktopShortcut: false,
   },
-  electronLanguages: ['en-US', 'de', 'es', 'fr', 'el', 'ru', 'zh-CN'],
+  electronLanguages: ['en-US', 'de', 'es', 'fr', 'el', 'ru', 'tr', 'zh-CN'],
   mac: {
     target: [{
       target: 'default',
