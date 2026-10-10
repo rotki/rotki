@@ -1,5 +1,5 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import type { NativeActivitySpec, RunBackendTask } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +13,7 @@ import { useTransactionSync } from './use-transaction-sync';
 const mockNotifyError = vi.fn();
 const mocks = vi.hoisted(() => ({
   decodeTransactionsTask: vi.fn(),
+  fetchTransactionsTask: vi.fn(),
   statusOf: vi.fn(),
   submitTask: vi.fn(),
 }));
@@ -36,7 +37,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({ fetchTransactionsTask: mocks.fetchTransactionsTask })),
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
@@ -103,6 +104,44 @@ describe('useTransactionSync', () => {
       await syncTransactionTask(account);
 
       expect(mockNotifyError).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('syncTransactionsByChains', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should send every address of a refresh the same end, lagging behind the refresh start even when the queue runs them later', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
+      const heldBackAccountRuns: NativeActivitySpec[] = [];
+      mocks.submitTask.mockImplementation(async (spec: NativeActivitySpec) => {
+        if (spec.container)
+          return ok(undefined);
+
+        heldBackAccountRuns.push(spec);
+        return ok(undefined);
+      });
+      const sendThenSkip: RunBackendTask = async (task) => {
+        await task();
+        return err(Skipped({ message: 'stub' }));
+      };
+
+      const { syncTransactionsByChains } = useTransactionSync();
+      await syncTransactionsByChains([
+        { address: '0xAAA', chain: 'eth' },
+        { address: '0xBBB', chain: 'eth' },
+        { address: '0xCCC', chain: 'optimism' },
+      ]);
+      vi.setSystemTime(new Date('2026-10-09T12:05:00Z'));
+      for (const spec of heldBackAccountRuns)
+        await spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask: sendThenSkip });
+
+      const expectedEnd = Date.parse('2026-10-09T12:00:00Z') / 1000 - 15;
+      expect(mocks.fetchTransactionsTask).toHaveBeenCalledTimes(3);
+      for (const [payload] of mocks.fetchTransactionsTask.mock.calls)
+        expect(payload.toTimestamp).toBe(expectedEnd);
     });
   });
 

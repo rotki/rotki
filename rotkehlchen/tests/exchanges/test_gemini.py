@@ -1,7 +1,8 @@
 import os
 import warnings as test_warnings
 from collections import defaultdict
-from unittest.mock import patch
+from http import HTTPStatus
+from unittest.mock import call, patch
 
 import pytest
 import requests
@@ -26,6 +27,20 @@ from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+
+@pytest.mark.parametrize('db_settings', [{'query_retry_limit': 3}])
+def test_rate_limit_does_not_sleep_after_last_attempt(sandbox_gemini) -> None:
+    response = MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '')
+    with (
+        patch.object(sandbox_gemini.session, 'request', return_value=response) as request_mock,
+        patch('rotkehlchen.exchanges.gemini.cancellable_sleep') as sleep_mock,
+    ):
+        result = sandbox_gemini._query_continuously(method='get', endpoint='symbols')
+
+    assert result is response
+    assert request_mock.call_count == 3
+    assert sleep_mock.call_args_list == [call(1), call(1.5)]
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

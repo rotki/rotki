@@ -4,6 +4,7 @@ import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryTransactionDecoding } from './use-history-transaction-decoding';
 
@@ -15,11 +16,16 @@ interface UndecodedStatus {
   total: number;
 }
 
-const mocks = vi.hoisted(() => ({
-  runTaskResult: vi.fn(),
-  submitTask: vi.fn(),
-  undecodedStatus: new Array<{ chain: string; processed: number; total: number }>(),
-}));
+const mocks = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return {
+    decodeTransactions: vi.fn<ReturnType<typeof useHistoryEventsApi>['decodeTransactions']>(),
+    runTaskResult: vi.fn(),
+    submitTask: vi.fn(),
+    txChains: ref<{ id: string }[]>([]),
+    undecodedStatus: new Array<{ chain: string; processed: number; total: number }>(),
+  };
+});
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({ notifyError: mockNotifyError })),
@@ -46,7 +52,9 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
+    decodeTransactions: mocks.decodeTransactions,
+  })),
 }));
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
@@ -59,45 +67,42 @@ vi.mock('@/modules/history/use-decoding-status-store', () => ({
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn(() => ({
-    decodableTxChainsInfo: ref<{ id: string }[]>([]),
+    allTxChainsInfo: mocks.txChains,
     getChain: vi.fn((chain: string) => chain),
     getChainName: vi.fn((chain: string) => chain),
-    isBtcChains: vi.fn((chain: string) => ['btc', 'bch'].includes(chain)),
-    isEvmLikeChains: vi.fn(() => false),
-    isSolanaChains: vi.fn(() => false),
   })),
 }));
+
+/** The ids of the chain decodes submitted so far, in submission order. */
+function decodedIds(): string[] {
+  return mocks.submitTask.mock.calls
+    .filter(call => call[0].kind === ActivityKind.TX_DECODING)
+    .map(call => call[0].id);
+}
 
 describe('useHistoryTransactionDecoding', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     mocks.undecodedStatus = [];
+    set(mocks.txChains, []);
     mocks.submitTask.mockResolvedValue(ok(undefined));
   });
 
   describe('checkMissingEventsAndRedecode', () => {
-    /**
-     * Bitcoin decodes through its own backend path, never the EVM decode endpoint. It only reaches
-     * this store once bitcoin reports decoding progress over the websocket, so the sweep's
-     * "everything that is not evmlike is EVM" split silently starts claiming it.
-     */
-    it('should not sweep a bitcoin chain into the EVM decode', async () => {
+    it('should decode the pending transactions of every chain reporting some, bitcoin chains included, exactly once', async () => {
       const seeded: UndecodedStatus[] = [
         { chain: 'eth', processed: 0, total: 5 },
         { chain: 'btc', processed: 0, total: 3 },
+        { chain: 'bch', processed: 1, total: 2 },
+        { chain: 'solana', processed: 4, total: 4 },
       ];
       mocks.undecodedStatus = seeded;
 
       const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
       await checkMissingEventsAndRedecode();
 
-      const decoded = mocks.submitTask.mock.calls
-        .filter(call => call[0].kind === ActivityKind.TX_DECODING)
-        .map(call => call[0].id);
-
-      expect(decoded).toContain(decodeActivityId('eth'));
-      expect(decoded).not.toContain(decodeActivityId('btc'));
+      expect(decodedIds()).toStrictEqual([decodeActivityId('eth'), decodeActivityId('btc'), decodeActivityId('bch')]);
     });
   });
 
@@ -116,6 +121,46 @@ describe('useHistoryTransactionDecoding', () => {
       const { redecodeTransactions } = useHistoryTransactionDecoding();
 
       await expect(redecodeTransactions(['ethereum', 'optimism'])).resolves.toBeUndefined();
+      expect(mockNotifyError).not.toHaveBeenCalled();
+    });
+
+    it('should force a decode of every chain with transactions, bitcoin chains included, when asked to redecode all', async () => {
+      set(mocks.txChains, [{ id: 'eth' }, { id: 'btc' }, { id: 'bch' }]);
+
+      await useHistoryTransactionDecoding().redecodeTransactions();
+
+      expect(decodedIds()).toStrictEqual(['eth', 'btc', 'bch'].map(chain => decodeActivityId(chain, true)));
+      expect(mocks.submitTask.mock.calls.find(call => call[0].kind === ActivityKind.REDECODE)?.[0]).toMatchObject({
+        id: redecodeFlow.id(),
+        subtitle: undefined,
+      });
+    });
+
+    it('should keep a bitcoin-only request apart from the full run', async () => {
+      set(mocks.txChains, [{ id: 'eth' }, { id: 'btc' }, { id: 'bch' }]);
+
+      await useHistoryTransactionDecoding().redecodeTransactions(['btc', 'bch']);
+
+      expect(decodedIds()).toStrictEqual([decodeActivityId('btc', true), decodeActivityId('bch', true)]);
+      expect(mocks.submitTask.mock.calls.find(call => call[0].kind === ActivityKind.REDECODE)?.[0].id)
+        .toBe(redecodeFlow.id(['btc', 'bch']));
+    });
+
+    it('should complete a redecode of everything when only the bitcoin decode failed', async () => {
+      set(mocks.txChains, [{ id: 'eth' }, { id: 'btc' }]);
+      let flow: Promise<Result<void, TaskError>> | undefined;
+      mocks.submitTask.mockImplementation(async (spec: { id: string; kind: string; run: () => Promise<Result<void, TaskError>> }) => {
+        if (spec.kind === ActivityKind.REDECODE) {
+          flow = spec.run();
+          return flow;
+        }
+        return spec.id === decodeActivityId('btc', true) ? err(TaskFailed({ message: 'boom' })) : ok(undefined);
+      });
+
+      await useHistoryTransactionDecoding().redecodeTransactions();
+
+      assert(flow);
+      expect((await flow).ok).toBe(true);
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
@@ -191,6 +236,23 @@ describe('useHistoryTransactionDecoding', () => {
 
       expect(runTask).toHaveBeenCalledTimes(calls);
       expect(mockNotifyError).not.toHaveBeenCalled();
+    });
+
+    it('should send a forced bitcoin decode to the backend as that chain with the cache ignored', async () => {
+      mocks.submitTask.mockImplementation(async (spec: {
+        run: (ctx: { report: () => void; runTask: (task: () => Promise<unknown>) => Promise<Result<boolean, TaskError>> }) => Promise<unknown>;
+      }) => spec.run({
+        report: (): void => {},
+        runTask: async (task) => {
+          await task();
+          return ok(true);
+        },
+      }));
+
+      const { decodeTransactionsTask } = useHistoryTransactionDecoding();
+      await decodeTransactionsTask('btc', true);
+
+      expect(mocks.decodeTransactions).toHaveBeenCalledExactlyOnceWith('btc', true);
     });
 
     it('should not notify when the user cancelled the decode', async () => {

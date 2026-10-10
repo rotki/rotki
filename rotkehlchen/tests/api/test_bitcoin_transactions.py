@@ -5,14 +5,17 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcTxIO, BtcTxIODirection
 from rotkehlchen.constants.assets import A_BCH, A_BTC
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
-from rotkehlchen.types import BTCTxId, Location, SupportedBlockchain, TimestampMS
+from rotkehlchen.types import BTCTxId, Location, SupportedBlockchain, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -288,3 +291,90 @@ def test_query_bch_transactions(
         location_label=bch_accounts[0],
         notes=f'Receive {receive_amount_2} BCH from bitcoincash:qq9h55edlyekfj46jej23ek3e5sydhqqaqs4s0tjz0',  # noqa: E501
     )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
+def test_decode_and_redecode_saved_bitcoin_transactions(
+        rotkehlchen_api_server: APIServer,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Bitcoin chains go through the same pending and force redecode flow as the other chains
+    with transactions. Everything is decoded from the saved transactions, the pending ones
+    show up in the undecoded counts, and a transaction with a customized event is left as is.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    bitcoin_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.BITCOIN)
+    bitcoin_manager.refresh_tracked_accounts()
+    customized_tx_id = 'aa' * 32
+    with rotki.data.db.user_write() as write_cursor:
+        bitcoin_manager._save_transactions(write_cursor=write_cursor, transactions=[BitcoinTx(
+            tx_id=tx_id,
+            timestamp=Timestamp(1700000000 + idx),
+            block_height=800000 + idx,
+            fee=ZERO,
+            inputs=[BtcTxIO(value=ZERO, script=None, address=None, direction=BtcTxIODirection.INPUT, io_index=0)],  # noqa: E501
+            outputs=[BtcTxIO(value=FVal('3.125'), script=None, address=btc_accounts[0], direction=BtcTxIODirection.OUTPUT, io_index=0)],  # noqa: E501
+        ) for idx, tx_id in enumerate((customized_tx_id, 'bb' * 32))])
+
+    def get_events() -> list[HistoryBaseEntry]:
+        with rotki.data.db.conn.read_ctx() as cursor:
+            return DBHistoryEvents(rotki.data.db).get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+            )
+
+    def decode(chain: str, ignore_cache: bool) -> int:
+        return assert_proper_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'chain': chain, 'ignore_cache': ignore_cache},
+        ), rotkehlchen_api_server)['decoded_tx_number']
+
+    def get_undecoded() -> dict[str, dict[str, int]]:
+        return assert_proper_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        ), rotkehlchen_api_server)
+
+    assert get_undecoded() == {'bitcoin': {'undecoded': 2, 'total': 2}}
+    with patch.object(  # nothing below may query the explorers
+        bitcoin_manager,
+        '_query',
+        side_effect=AssertionError('Decoding should not query the explorers'),
+    ):
+        assert decode(chain='bch', ignore_cache=False) == 0  # nothing saved for bitcoin cash
+        assert decode(chain='btc', ignore_cache=False) == 2
+        assert get_undecoded() == {}
+        assert len(events := get_events()) == 2
+        assert all(
+            x.event_type == HistoryEventType.RECEIVE and
+            x.event_subtype == HistoryEventSubType.REWARD and
+            x.amount == FVal('3.125')
+            for x in events
+        )
+        assert decode(chain='btc', ignore_cache=False) == 0  # nothing is pending anymore
+
+        customized_event, other_event = events
+        assert customized_event.group_identifier.endswith(customized_tx_id)
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE history_events SET notes=? WHERE identifier=?',
+                (customized_notes := 'my pool payout', customized_event.identifier),
+            )
+            write_cursor.execute(
+                'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES (?, ?, ?)',  # noqa: E501
+                (customized_event.identifier, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),  # noqa: E501
+            )
+            write_cursor.execute(
+                'UPDATE history_events SET notes=? WHERE identifier=?',
+                ('to be decoded again', other_event.identifier),
+            )
+
+        # a force redecode goes over the transaction that is not customized only
+        assert decode(chain='btc', ignore_cache=True) == 1
+        assert get_undecoded() == {}
+
+    redecoded_customized_event, redecoded_other_event = get_events()
+    assert redecoded_customized_event.identifier == customized_event.identifier
+    assert redecoded_customized_event.notes == customized_notes
+    assert redecoded_other_event.group_identifier == other_event.group_identifier
+    assert redecoded_other_event.notes == other_event.notes

@@ -21,6 +21,8 @@ export const TransactionChainTypeNeedDecoding: TransactionChainType[] = [
 
 export interface TransactionRequestPayload {
   readonly accounts: BlockchainAddress[];
+  /** End of the sync in seconds. Requests of one refresh share it so the backend resolves its block once. */
+  readonly toTimestamp?: number;
 }
 
 export interface LinkedMovementMatch {

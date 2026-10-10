@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_HYPE, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -23,6 +24,7 @@ ADDR_A = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
 REPORTED_STHYPE_HOLDER = string_to_evm_address('0xD2D4867b8886C0cfC3DE5CcD5203EC66C6183764')
 STHYPE_ADDRESS = string_to_evm_address('0xfFaa4a3D97fE9107Cef8a3F48c069F577Ff76cC1')
 WSTHYPE_ADDRESS = string_to_evm_address('0x94e8396e0869c9F2200760aF0621aFd240E1CF38')
+STAKER = string_to_evm_address('0x000000000056f99d36B6F2e0c51FD41496BbacB8')  # ValiDAO validator
 A_STHYPE = Asset('eip155:999/erc20:0xfFaa4a3D97fE9107Cef8a3F48c069F577Ff76cC1')
 A_WSTHYPE = Asset('eip155:999/erc20:0x94e8396e0869c9F2200760aF0621aFd240E1CF38')
 
@@ -46,6 +48,7 @@ def test_query_balances_merges_evm_and_core_balances(
         patch('rotkehlchen.chain.hyperliquid.manager.CachedSettings'),
     ):
         mock_api_cls.return_value.query_balances.return_value = {A_USDC: FVal('500')}
+        mock_api_cls.return_value.query_staking_balance.return_value = ZERO
         mock_inquirer.find_price.return_value = ONE
 
         result = hyperliquid_manager.query_balances(addresses=[ADDR_A])
@@ -108,7 +111,30 @@ def test_query_balances_does_not_duplicate_reported_sthype_balance(
     assert A_STHYPE not in assets
 
 
-def test_query_balances_core_failure_returns_evm_only(
+@pytest.mark.vcr(match_on=['uri', 'method', 'body'])
+@pytest.mark.parametrize('hyperliquid_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='hyperliquid',
+        endpoint='https://rpc.hyperliquid.xyz/evm',
+        owned=False,
+        blockchain=SupportedBlockchain.HYPERLIQUID,
+    ),
+    active=True,
+    weight=ONE,
+),)])
+def test_query_balances_includes_staked_hype(
+        hyperliquid_manager: HyperliquidManager,
+        hyperliquid_manager_connect_at_start,
+        inquirer,
+) -> None:
+    """The ValiDAO validator has all its HYPE in the staking account and none in spot,
+    so it is reported only under the Hyperliquid label."""
+    result = hyperliquid_manager.query_balances(addresses=[STAKER])
+    assert result[STAKER].assets[A_HYPE][CPT_HYPER].amount == FVal('10118.67358863')
+    assert DEFAULT_BALANCE_LABEL not in result[STAKER].assets[A_HYPE]
+
+
+def test_query_balances_core_failure_still_returns_evm_and_staking(
         hyperliquid_manager: HyperliquidManager,
 ) -> None:
     evm_balances: defaultdict[str, BalanceSheet] = defaultdict(BalanceSheet)
@@ -123,12 +149,36 @@ def test_query_balances_core_failure_returns_evm_only(
             return_value=evm_balances,
         ),
         patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI') as mock_api_cls,
+        patch('rotkehlchen.chain.hyperliquid.manager.Inquirer') as mock_inquirer,
     ):
         mock_api_cls.return_value.query_balances.side_effect = RemoteError('api down')
+        mock_api_cls.return_value.query_staking_balance.return_value = FVal('5')
+        mock_inquirer.find_price.return_value = FVal('20')
         result = hyperliquid_manager.query_balances(addresses=[ADDR_A])
 
     assert result[ADDR_A].assets[A_HYPE][DEFAULT_BALANCE_LABEL].amount == ONE
+    assert result[ADDR_A].assets[A_HYPE][CPT_HYPER] == Balance(amount=FVal('5'), value=FVal('100'))
     assert len(result[ADDR_A].assets) == 1
+
+
+def test_query_balances_staking_failure_still_returns_core_balances(
+        hyperliquid_manager: HyperliquidManager,
+) -> None:
+    with (
+        patch(
+            'rotkehlchen.chain.evm.manager.EvmManager.query_balances',
+            return_value=defaultdict(BalanceSheet),
+        ),
+        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI') as mock_api_cls,
+        patch('rotkehlchen.chain.hyperliquid.manager.Inquirer') as mock_inquirer,
+    ):
+        mock_api_cls.return_value.query_balances.return_value = {A_USDC: FVal('500')}
+        mock_api_cls.return_value.query_staking_balance.side_effect = RemoteError('api down')
+        mock_inquirer.find_price.return_value = ONE
+        result = hyperliquid_manager.query_balances(addresses=[ADDR_A])
+
+    assert result[ADDR_A].assets[A_USDC][DEFAULT_BALANCE_LABEL].amount == FVal('500')
+    assert A_HYPE not in result[ADDR_A].assets
 
 
 def test_query_balances_does_not_double_count_open_perp_margin(globaldb) -> None:

@@ -77,6 +77,14 @@ const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAsset
 const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
 
 /**
+ * With an allow-list the field only filters the listed assets, so it must not invite a contract
+ * address the user could never pick.
+ */
+const placeholder = computed<string>(() => (source?.items?.length ?? 0) > 0
+  ? t('asset_select.filter_placeholder')
+  : t('asset_select.placeholder'));
+
+/**
  * Shared by both slots, which render the asset without its context menu. Hoisted so this is one
  * stable identity rather than a fresh object per rendered row.
  */
@@ -110,7 +118,7 @@ function onUpdateModelValue(value: string): void {
     :hint="hint"
     :label="fieldLabel"
     :clearable="clearable"
-    :placeholder="t('asset_select.placeholder')"
+    :placeholder="placeholder"
     :required="required"
     :success-messages="successMessages"
     :error-messages="errors"

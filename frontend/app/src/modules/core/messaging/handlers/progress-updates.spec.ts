@@ -95,6 +95,19 @@ describe('createProgressUpdateHandler', () => {
     );
   });
 
+  it('should report a bitcoin decode under the chain id its redecode is submitted with', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      chain: 'BTC',
+      processed: 2,
+      subtype: SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS,
+      total: 4,
+    }));
+
+    expect(mockReportProgress).toHaveBeenCalledWith(decodeActivityId('btc', false), { current: 2, total: 4 });
+    expect(mockReportProgress).toHaveBeenCalledWith(decodeActivityId('btc', true), { current: 2, total: 4 });
+  });
+
   it('should fall back to the lowercased chain when it matches no known chain', async () => {
     const handler = createProgressUpdateHandler(mockT);
     await handler.handle(createMock<ProgressUpdateResultData>({

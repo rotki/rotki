@@ -324,15 +324,14 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
         if len(tx_list) == 0:
             log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
-            if len(new_addresses) != 0:
-                # Nothing new came back, but the saved transactions the newly tracked
-                # addresses appear in were marked above and still need decoding with them
-                # tracked. Without this they would wait for a query that returns something.
-                # The checkpoints stay unwritten until the redecode succeeds: a failed
-                # redecode keeps the addresses as never queried, so the next refresh
-                # marks them again and retries the decode instead of assuming they
-                # are fully synced.
-                self.decode_transactions()
+            # Nothing new came back, but saved transactions may still be pending decoding:
+            # the ones the newly tracked addresses appear in were marked above, and others
+            # may have been marked without a query, as a DB upgrade does. Without this they
+            # would wait for a query that returns something. The checkpoints stay unwritten
+            # until the decode succeeds: a failed decode keeps the addresses as never
+            # queried, so the next refresh marks them again and retries the decode instead
+            # of assuming they are fully synced.
+            self.decode_transactions()
 
             with self.database.conn.write_ctx() as write_cursor:
                 for address in addresses:
@@ -342,7 +341,6 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                         value=new_block_heights[address],
                         address=address,
                     )
-
             return
 
         with self.database.conn.write_ctx() as write_cursor:
@@ -531,11 +529,16 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         return self.decode_transactions(tx_ids=tx_ids)
 
     def mark_addresses_transactions_for_redecode(self, addresses: list[BTCAddress]) -> None:
-        """Mark the saved transactions the given addresses take part in as pending decoding.
+        """Mark the saved transactions the given addresses take part in, but were not yet
+        saved for, as pending decoding.
 
         The events of a bitcoin transaction depend on which of its addresses are tracked, so
         a transaction that was decoded while one of these was untracked is now outdated. It
         needs no querying since the transactions are already saved.
+
+        A transaction already saved for the address was decoded with it tracked and is left
+        alone. That is what an address has when only its query checkpoint was reset to pull
+        its history again, and redecoding all of it would replace events for no reason.
         """
         with self.database.conn.write_ctx() as write_cursor:
             tx_ids: set[BTCTxId] = set()
@@ -544,6 +547,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                     cursor=write_cursor,
                     location=self.location,
                     address=self.get_api_address(address),
+                    not_queried_for=address,
                 ))
 
             if len(tx_ids) == 0:

@@ -1286,6 +1286,7 @@
     }
   },
   "asset_select": {
+    "filter_placeholder": "Filter by symbol or name",
     "label": "Asset",
     "no_results": "No assets matching your search",
     "placeholder": "Search by asset symbol, name, or the contract address."
@@ -4005,6 +4006,10 @@
             "hint": "{count}/{max} characters",
             "label": "Title"
           }
+        },
+        "open_failed": {
+          "email": "Could not open your mail client. Your report is still here: copy the email address or open Gmail from the menu next to Email.",
+          "generic": "Could not open the page in your browser. Your report is still here, so you can try again or pick another option."
         },
         "submit_options": {
           "copy_email": "Copy \"{email}\"",

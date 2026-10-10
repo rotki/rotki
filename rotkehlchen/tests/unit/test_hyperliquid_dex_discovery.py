@@ -5,6 +5,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.externalapis.hyperliquid import EntryContext, HyperliquidAPI, ParsedFillEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.hyperliquid import query_history_events
 from rotkehlchen.types import AssetAmount, Timestamp, TimestampMS
 
 
@@ -19,7 +20,7 @@ def test_dex_discovery_parses_and_caches_perp_dexs() -> None:
         assert api._discover_available_dex_names() == ['abc', 'xyz']
         assert api._discover_available_dex_names() == ['abc', 'xyz']
 
-    mock_post_info.assert_called_once_with({'type': 'perpDexs'})
+    mock_post_info.assert_called_once_with({'type': 'perpDexs'}, wait_for_rate_limit=False)
 
 
 def test_dex_discovery_handles_malformed_response() -> None:
@@ -65,8 +66,7 @@ def test_query_history_events_makes_single_call_per_endpoint() -> None:
     """History endpoints (`userFillsByTime`, `userFunding`,
     `userNonFundingLedgerUpdates`) do not take a `dex` parameter and return a
     mixed response covering the first perp dex, all HIP-3 dexs, and spot. We
-    must therefore call each of `_create_ledger_events`, `_create_funding_events`
-    and `_create_fill_events` exactly once — not per discovered dex.
+    must therefore query each of them exactly once — not per discovered dex.
     """
     api = HyperliquidAPI()
     address = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
@@ -75,11 +75,11 @@ def test_query_history_events_makes_single_call_per_endpoint() -> None:
 
     with (
         patch.object(api, '_discover_available_dex_names') as discover,
-        patch.object(api, '_create_ledger_events', return_value=[]) as ledger,
-        patch.object(api, '_create_funding_events', return_value=[]) as funding,
-        patch.object(api, '_create_fill_events', return_value=[]) as fills,
+        patch.object(api, '_populate_spot_market_cache'),
+        patch.object(api, '_iter_entry_pages', return_value=iter([])) as entry_pages,
     ):
-        history = api.query_history_events(
+        history = query_history_events(
+            api=api,
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
@@ -89,14 +89,9 @@ def test_query_history_events_makes_single_call_per_endpoint() -> None:
     # Dex discovery must not be invoked for the history path — this is what
     # previously caused Nx3 redundant calls.
     discover.assert_not_called()
-    assert ledger.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts),
-    ]
-    assert funding.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts),
-    ]
-    assert fills.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts),
+    assert entry_pages.call_args_list == [
+        call(query_type=query_type, address=address, start_ts=start_ts, end_ts=end_ts)
+        for query_type in ('userNonFundingLedgerUpdates', 'userFunding', 'userFillsByTime')
     ]
 
 
@@ -121,13 +116,8 @@ def test_create_fill_events_maps_negative_perp_fee_to_cashback() -> None:
         extra_data={},
     )
 
-    with (
-        patch.object(api, '_iter_entries_by_time', return_value=iter([context])),
-        patch.object(api, '_parse_fill_entry', return_value=parsed),
-    ):
-        events = api._create_fill_events(
-            address=address, start_ts=Timestamp(1), end_ts=Timestamp(2),
-        )
+    with patch.object(api, '_parse_fill_entry', return_value=parsed):
+        events = api._create_fill_events(address=address, contexts=[context])
 
     assert len(events) == 3
     assert events[2].event_type == HistoryEventType.RECEIVE
@@ -156,13 +146,8 @@ def test_create_fill_events_maps_negative_spot_fee_to_cashback() -> None:
         extra_data={},
     )
 
-    with (
-        patch.object(api, '_iter_entries_by_time', return_value=iter([context])),
-        patch.object(api, '_parse_fill_entry', return_value=parsed),
-    ):
-        events = api._create_fill_events(
-            address=address, start_ts=Timestamp(1), end_ts=Timestamp(2),
-        )
+    with patch.object(api, '_parse_fill_entry', return_value=parsed):
+        events = api._create_fill_events(address=address, contexts=[context])
 
     assert len(events) == 3
     assert events[2].event_type == HistoryEventType.RECEIVE

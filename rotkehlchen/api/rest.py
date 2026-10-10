@@ -204,6 +204,7 @@ from rotkehlchen.tasks.events import (
 )
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     CHAINS_WITH_TX_DECODING_TYPE,
@@ -2675,7 +2676,7 @@ class RestAPI:
     @async_api_call()
     def decode_transactions(
             self,
-            chain: CHAINS_WITH_TX_DECODING_TYPE,
+            chain: CHAINS_WITH_PENDING_TX_DECODING_TYPE,
             force_redecode: bool,
     ) -> dict[str, Any]:
         return self.transactions_service.decode_transactions(

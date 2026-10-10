@@ -52,12 +52,14 @@ const RuiAutoComplete = defineComponent({
     label: { default: undefined, type: String },
     modelValue: { default: undefined, type: String },
     options: { default: () => [], type: Array },
+    placeholder: { default: undefined, type: String },
     variant: { default: undefined, type: String },
   },
   template: `<div
     class="rui-auto-complete"
     :data-label="label"
     :data-variant="variant"
+    :data-placeholder="placeholder"
     :data-dense="String(dense === true)"
     :data-hide-details="String(hideDetails === true)"
   >
@@ -157,6 +159,16 @@ describe('assetSelect', () => {
     expect(wrapper.get('.rui-auto-complete').attributes('data-label')).toBe('Fee asset');
 
     wrapper.unmount();
+  });
+
+  it('should invite a filter rather than a search when an allow-list is set', () => {
+    const restricted = createWrapper({ source: { items: ['ETH'] } });
+    expect(restricted.get('.rui-auto-complete').attributes('data-placeholder')).toBe('asset_select.filter_placeholder');
+    restricted.unmount();
+
+    const open = createWrapper({ source: { items: [] } });
+    expect(open.get('.rui-auto-complete').attributes('data-placeholder')).toBe('asset_select.placeholder');
+    open.unmount();
   });
 
   it('should pass each of the three variants through, defaulting to the plain one', () => {

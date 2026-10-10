@@ -24,11 +24,11 @@ const search = ref<string>('');
 const selection = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
-const { decodableTxChainsInfo } = useSupportedChains();
+const { allTxChainsInfo } = useSupportedChains();
 
 const filteredChains = computed<ChainInfo[]>(() => {
   const query = getTextToken(get(search));
-  return get(decodableTxChainsInfo).filter(chain =>
+  return get(allTxChainsInfo).filter(chain =>
     getTextToken(chain.name).includes(query)
     || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
   );
@@ -36,12 +36,12 @@ const filteredChains = computed<ChainInfo[]>(() => {
 
 const indeterminate = computed<boolean>(() => {
   const selectedItems = get(selection).length;
-  return selectedItems > 0 && selectedItems < get(decodableTxChainsInfo).length;
+  return selectedItems > 0 && selectedItems < get(allTxChainsInfo).length;
 });
 
 const selected = computed<boolean>(() => {
   const selectedItems = get(selection).length;
-  return selectedItems > 0 && selectedItems === get(decodableTxChainsInfo).length;
+  return selectedItems > 0 && selectedItems === get(allTxChainsInfo).length;
 });
 
 function toggleSelection(chain: string, selected: boolean): void {
@@ -58,7 +58,7 @@ function toggleSelectAll() {
     set(selection, []);
   }
   else {
-    set(selection, get(decodableTxChainsInfo).map(chain => chain.id));
+    set(selection, get(allTxChainsInfo).map(chain => chain.id));
   }
 }
 
@@ -146,6 +146,7 @@ function redecode() {
         </RuiButton>
         <RuiButton
           color="primary"
+          data-testid="history-redecode-selection-confirm"
           :disabled="!(indeterminate || selected)"
           :loading="loading"
           @click="redecode()"

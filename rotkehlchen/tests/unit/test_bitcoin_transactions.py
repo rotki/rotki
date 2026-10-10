@@ -911,6 +911,41 @@ def test_transactions_are_saved_and_redecoded_offline(
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+def test_query_checkpoint_reset_does_not_redecode_saved_transactions(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """An address whose query checkpoint was reset is queried from the start like a newly
+    tracked one, but the transactions already saved for it were decoded with it tracked.
+    Only a transaction it takes part in without having been saved for it is outdated.
+    """
+    bitcoin_manager.query_transactions(
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        addresses=btc_accounts,
+    )
+    dbtx = bitcoin_manager.dbtx
+    bitcoin_manager.mark_addresses_transactions_for_redecode(btc_accounts)
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        assert dbtx.count_undecoded_transactions(cursor=cursor, location=Location.BITCOIN) == 0
+
+    with bitcoin_manager.database.user_write() as write_cursor:
+        write_cursor.execute(  # as if the change tx had been saved for another address only
+            'DELETE FROM bitcointx_address_mappings WHERE address=? AND tx_id IN '
+            '(SELECT identifier FROM bitcoin_transactions WHERE tx_id=?)',
+            (btc_accounts[0], CHANGE_TX_ID),
+        )
+
+    bitcoin_manager.mark_addresses_transactions_for_redecode(btc_accounts)
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        assert dbtx.get_transaction_ids(
+            cursor=cursor,
+            location=Location.BITCOIN,
+            undecoded_only=True,
+        ) == [CHANGE_TX_ID]
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
 def test_bitcoin_decoding_sends_progress_updates(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],

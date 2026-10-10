@@ -672,6 +672,12 @@ CHAINS_WITH_TRANSACTIONS: tuple[CHAINS_WITH_TRANSACTIONS_TYPE, ...] = EVM_CHAINS
 CHAINS_WITH_TX_DECODING_TYPE = EVM_CHAINS_WITH_TRANSACTIONS_TYPE | EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
 CHAINS_WITH_TX_DECODING: tuple[CHAINS_WITH_TX_DECODING_TYPE, ...] = EVM_CHAINS_WITH_TRANSACTIONS + EVMLIKE_CHAINS_WITH_TRANSACTIONS + (SupportedBlockchain.SOLANA,)  # noqa: E501
 
+# Chains whose pending transactions can be decoded, and all of them redecoded, from what is
+# saved locally. Bitcoin chains are not in CHAINS_WITH_TX_DECODING since a single transaction
+# of theirs can't be pulled and decoded by its id.
+CHAINS_WITH_PENDING_TX_DECODING_TYPE = CHAINS_WITH_TX_DECODING_TYPE | Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH]  # noqa: E501
+CHAINS_WITH_PENDING_TX_DECODING: tuple[CHAINS_WITH_PENDING_TX_DECODING_TYPE, ...] = CHAINS_WITH_TX_DECODING + (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH)  # noqa: E501
+
 CHAINS_WITH_TRANSACTION_DECODERS_TYPE = EVM_CHAINS_WITH_TRANSACTIONS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
 CHAINS_WITH_TRANSACTION_DECODERS: tuple[CHAINS_WITH_TRANSACTION_DECODERS_TYPE, ...] = EVM_CHAINS_WITH_TRANSACTIONS + (SupportedBlockchain.SOLANA,)  # noqa: E501
 

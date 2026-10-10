@@ -100,6 +100,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     {
       accounts: payload.accounts,
       asyncQuery,
+      toTimestamp: payload.toTimestamp,
     },
     {
       filterEmptyProperties: true,

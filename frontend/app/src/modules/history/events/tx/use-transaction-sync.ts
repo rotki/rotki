@@ -19,7 +19,17 @@ interface TransactionSyncParams {
   type: TransactionChainType;
   /** Activities the chain's decode waits for besides its accounts, such as the undecoded count. */
   decodeAfter?: readonly ActivityId[];
+  /** End of the sync in seconds, shared by every address request of one refresh. */
+  toTimestamp?: number;
 }
+
+/**
+ * How far behind now a refresh ends, in seconds. It has to be at least the backend's
+ * `CHAIN_TOP_LAG`: the backend ends a sync at the earlier of the requested end and now minus that
+ * lag, so a shared end only stays the same for every request of the refresh if it is already the
+ * earlier one.
+ */
+const SYNC_END_LAG_SECONDS = 15;
 
 /** A chain activity's declared children, split by whether they decide the chain's own outcome. */
 interface ChainSubtree {
@@ -34,7 +44,7 @@ interface ChainSubtree {
  */
 interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams, parent?: ActivityId) => Promise<Result<void, TaskError>>;
-  syncTransactionTask: (account: ChainAddress, parent?: ActivityId) => Promise<Result<void, TaskError>>;
+  syncTransactionTask: (account: ChainAddress, parent?: ActivityId, toTimestamp?: number) => Promise<Result<void, TaskError>>;
   syncTransactionsByChains: (accounts: ChainAddress[], parent?: ActivityId, decodeAfter?: readonly ActivityId[]) => Promise<Result<void, TaskError>[]>;
 }
 
@@ -69,6 +79,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const syncTransactionTask = async (
     account: ChainAddress,
     parent?: ActivityId,
+    toTimestamp?: number,
   ): Promise<Result<void, TaskError>> => {
     const { address, chain } = account;
 
@@ -78,6 +89,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     };
     const defaults: TransactionRequestPayload = {
       accounts: [blockchainAccount],
+      toTimestamp,
     };
 
     const chainName = getChainName(chain);
@@ -130,7 +142,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     params: TransactionSyncParams,
     parent?: ActivityId,
   ): Promise<Result<void, TaskError>> => {
-    const { accounts, decodeAfter = [], type } = params;
+    const { accounts, decodeAfter = [], toTimestamp, type } = params;
     const chainId = chainSyncActivityId(chain);
 
     let declared!: (work: ChainSubtree) => void;
@@ -156,7 +168,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       title: t('task_center.group.tx_sync'),
     });
 
-    const accountWork = accounts.map(async account => syncTransactionTask(account, chainId));
+    const accountWork = accounts.map(async account => syncTransactionTask(account, chainId, toTimestamp));
 
     const decodeWork = TransactionChainTypeNeedDecoding.includes(type)
       ? [decodeTransactionsTask(chain, false, {
@@ -177,15 +189,20 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * @remarks
    * The account set is known synchronously, so every chain and every account below it is declared
    * in this one pass. There is no limiter of its own: {@link CHAIN_SYNC_LANE} caps how many chains
-   * run at a time. Every chain's decode also waits for `decodeAfter`.
+   * run at a time. Every chain's decode also waits for `decodeAfter`. Every address request carries
+   * one shared end, so the backend resolves its block once instead of once per request, each at a
+   * slightly different time.
    */
   const syncTransactionsByChains = async (accounts: ChainAddress[], parent?: ActivityId, decodeAfter: readonly ActivityId[] = []): Promise<Result<void, TaskError>[]> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
+
+    const toTimestamp = Math.floor(Date.now() / 1000) - SYNC_END_LAG_SECONDS;
 
     return Promise.all(Object.entries(groupBy(accounts, item => item.chain))
       .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
         accounts: chainAccounts,
         decodeAfter,
+        toTimestamp,
         type: getTransactionTypeFromChain(chain),
       }, parent)));
   };

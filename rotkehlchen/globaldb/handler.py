@@ -1,5 +1,6 @@
 import logging
 import shutil
+from collections import defaultdict
 from pathlib import Path
 from threading import Lock
 from time import perf_counter
@@ -979,30 +980,41 @@ class GlobalDBHandler:
 
         bindings = tuple(bindings_list)
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, bindings)
-            tokens = []
-
-            for entry in cursor:
-                underlying_tokens: tuple[UnderlyingToken, ...] = ()
-                if issubclass(token_class, EvmToken):
-                    with GlobalDBHandler().conn.read_ctx() as other_cursor:
-                        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
-                            cursor=other_cursor,
-                            parent_token_identifier=entry[0],
-                        )
-
-                try:
-                    token: EvmToken | SolanaToken
-                    if issubclass(token_class, EvmToken):
-                        token = token_class.deserialize_from_db(entry, underlying_tokens)
-                    else:
-                        token = token_class.deserialize_from_db(entry)
-                    tokens.append(token)
-                except UnknownAsset as e:
-                    log.error(
-                        f'Found unknown swapped_for asset {e!s} in '
-                        f'the DB when deserializing a {token_class!s}',
+            entries = cursor.execute(querystr, bindings).fetchall()
+            underlying_by_parent: dict[str, list[UnderlyingToken]] = defaultdict(list)
+            if issubclass(token_class, EvmToken) and len(entries) != 0:
+                # One query for all parents instead of one per token. Scoped to the same
+                # filter so only the underlying tokens of the selected tokens are read.
+                parents_query = querystr.replace(select_columns, 'B.identifier', 1).rstrip(';')
+                for parent_id, address, token_kind, weight in cursor.execute(
+                    'SELECT A.parent_token_entry, B.address, B.token_kind, A.weight '
+                    'FROM underlying_tokens_list AS A JOIN evm_tokens AS B '
+                    'ON A.identifier=B.identifier '
+                    f'WHERE A.parent_token_entry IN ({parents_query}) ORDER BY A.rowid',
+                    bindings,
+                ):
+                    underlying_by_parent[parent_id].append(
+                        UnderlyingToken.deserialize_from_db((address, token_kind, weight)),
                     )
+
+        tokens: list = []
+        for entry in entries:
+            try:
+                token: EvmToken | SolanaToken
+                if issubclass(token_class, EvmToken):
+                    token = token_class.deserialize_from_db(
+                        entry,
+                        tuple(underlying_by_parent.get(entry[0], ())),
+                    )
+                else:
+                    token = token_class.deserialize_from_db(entry)
+                tokens.append(token)
+            except UnknownAsset as e:
+                log.error(
+                    'Found unknown swapped_for asset %s in the DB when deserializing a %s',
+                    e,
+                    token_class,
+                )
 
         return tokens
 
