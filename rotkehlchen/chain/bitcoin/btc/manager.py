@@ -186,19 +186,29 @@ class BitcoinManager(BitcoinCommonManager):
             self,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         """Query blockchain.info for transactions.
-        Returns a tuple containing the latest queried block height and the list of txs.
+        Returns a tuple containing the queried block height per address and the list of txs.
+        The api is queried in batches of up to 80 addresses, so all the addresses of a
+        batch share the newest block their batch reached.
         """
-        return self._process_raw_tx_lists(
-            raw_tx_lists=self._query_blockchain_info(
-                accounts=accounts,
-                key='txs',
-                progress_callback=options.get('progress_callback'),
-            ),
+        raw_tx_lists = self._query_blockchain_info(
+            accounts=accounts,
+            key='txs',
+            progress_callback=options.get('progress_callback'),
+        )
+        new_block_heights, txs = self._process_raw_tx_lists(
+            raw_tx_lists=raw_tx_lists,
             options=options,
             processing_fn=self.deserialize_tx_from_blockchain_info,
         )
+        # One raw tx list is returned per queried batch of 80 addresses, in order.
+        address_heights = zip(get_chunks(list(accounts), 80), new_block_heights, strict=True)
+        return {
+            address: block_height
+            for chunk, block_height in address_heights
+            for address in chunk
+        }, txs
 
     def _process_raw_tx_from_blockcypher(
             self,
@@ -247,14 +257,24 @@ class BitcoinManager(BitcoinCommonManager):
             self,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         """Query blockcypher for transactions.
         Txs from the api are ordered newest to oldest, with pagination via block_height.
-        Returns a tuple containing the latest queried block height and the list of txs.
+        Returns a tuple containing the queried block height per address and the list of txs.
+        Every address of one request batch is observed at the same snapshot, so all of
+        them share the batch's maximum safe height. Keeping one checkpoint per batch
+        preserves the address grouping of the next query; per-address heights would
+        split them into single-address groups that never coalesce again.
         """
         accounts_tx_lists: dict[BTCAddress, list[dict[str, Any]]] = defaultdict(list)
         limits = f'limit={BLOCKCYPHER_TX_LIMIT}&txlimit={BLOCKCYPHER_TX_IO_LIMIT}'
+        request_chunks: list[list[BTCAddress]] = []
         for accounts_chunk in get_chunks(list(accounts), BLOCKCYPHER_BATCH_SIZE):
+            # Remember the batch before pagination below shrinks the chunk, and make sure
+            # every queried address has a tx list even if the api omits it from a response.
+            request_chunks.append(chunk_addresses := list(accounts_chunk))
+            for address in chunk_addresses:
+                accounts_tx_lists.setdefault(address, [])
             before_height = None
             while len(accounts_chunk) > 0:
                 url = f"{BLOCKCYPHER_BASE_URL}/addrs/{';'.join(accounts_chunk)}/full?{limits}"
@@ -280,11 +300,19 @@ class BitcoinManager(BitcoinCommonManager):
                     if not entry.get('hasMore', False):
                         accounts_chunk.remove(address)
 
-        return self._process_raw_tx_lists(
+        new_block_heights, txs = self._process_raw_tx_lists(
             raw_tx_lists=list(accounts_tx_lists.values()),
             options=options,
             processing_fn=self._process_raw_tx_from_blockcypher,
         )
+        # accounts_tx_lists is keyed by address in insertion order, so its keys line up
+        # with the raw tx lists handed to the processing above.
+        address_heights = dict(zip(accounts_tx_lists, new_block_heights, strict=True))
+        return {
+            address: max(address_heights[chunk_address] for chunk_address in chunk)
+            for chunk in request_chunks
+            for address in chunk
+        }, txs
 
     def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a blockcypher.
@@ -381,11 +409,11 @@ class BitcoinManager(BitcoinCommonManager):
             base_url: str,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         """Query a mempool api, the user's own instance, for transactions. The api takes one
         address at a time and pages newest to oldest, so one raw list per address is
         handed to the common processing.
-        Returns a tuple containing the latest queried block height and the list of txs.
+        Returns a tuple containing the queried block height per address and the list of txs.
 
         The history of an address on mempool omits the transactions that touch it only via
         a P2PK script (the api indexes by script), which is why the public esplora apis
@@ -393,7 +421,7 @@ class BitcoinManager(BitcoinCommonManager):
         """
         last_queried_block = options.get('last_queried_block', 0)
         progress_callback = options.get('progress_callback')
-        return self._process_raw_tx_lists(
+        new_block_heights, txs = self._process_raw_tx_lists(
             raw_tx_lists=[query_mempool_address_transactions(
                 base_url=base_url,
                 address=address,
@@ -403,6 +431,9 @@ class BitcoinManager(BitcoinCommonManager):
             options=options,
             processing_fn=self.deserialize_tx_from_mempool,
         )
+        # The raw tx lists above are built one per address in order, so they line up
+        # with the queried accounts.
+        return dict(zip(accounts, new_block_heights, strict=True)), txs
 
     def deserialize_tx_from_mempool(self, data: dict[str, Any]) -> BitcoinTx | None:
         """Deserialize a transaction from a mempool api (esplora format).

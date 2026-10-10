@@ -142,7 +142,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             action: Literal[BtcQueryAction.TRANSACTIONS],
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         ...
 
     def _query(
@@ -150,7 +150,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             action: BtcQueryAction,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any] | None = None,
-    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | tuple[int, list[BitcoinTx]]:  # noqa: E501
+    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | tuple[dict[BTCAddress, int], list[BitcoinTx]]:  # noqa: E501
         """Queries explorer APIs for the specified action as defined in `self.api_callbacks`.
         If one query fails the next API for that action is tried, and the errors from all the
         queries are included in the resulting remote error if all fail.
@@ -254,8 +254,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         decode them into BitcoinEvents, and save the results to the db.
 
         Queries for addresses that have the same latest queried block height are batched.
-        The maximum block height from any address is then saved in the cache for all addresses
-        since they are all queried up to the same to_timestamp.
+        Each address's checkpoint is then advanced only through the blocks its own query
+        reached, so a block arriving while other addresses are still being queried can't
+        advance it past transactions that were never fetched for it.
         """
         self._send_tx_ws_status(
             addresses=addresses,
@@ -268,31 +269,35 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             accounts_str = ', '.join(addresses)
             log.debug('Querying transactions for %s accounts %s', self.blockchain, accounts_str)
 
-            accounts_by_latest_query = defaultdict(list)
+            accounts_by_latest_query: dict[int | None, list[BTCAddress]] = defaultdict(list)
             with self.database.conn.read_ctx() as cursor:
                 for address in addresses:
+                    # A missing checkpoint means the address was never queried. Keep it
+                    # distinct from a stored 0, which is a successful query that found
+                    # nothing, so the latter is not treated as newly tracked again.
                     block_height = self.database.get_dynamic_cache(
                         cursor=cursor,
                         name=self.cache_key,
                         address=address,
-                    ) or 0
+                    )
                     accounts_by_latest_query[block_height].append(address)
 
             # An address queried for the first time may already appear in transactions saved for
             # another address. Those were decoded while it was untracked, so their events are
             # outdated. Mark them now and they get decoded again along with the new ones.
-            if len(new_addresses := accounts_by_latest_query.get(0, [])) != 0:
+            if len(new_addresses := accounts_by_latest_query.get(None, [])) != 0:
                 self.mark_addresses_transactions_for_redecode(new_addresses)
 
             tx_list: list[BitcoinTx] = []
-            new_block_height = 0
+            new_block_heights: dict[BTCAddress, int] = {}
             for last_queried_block, accounts in accounts_by_latest_query.items():
-                block_height, accounts_txs = self._query(
+                queried_from = last_queried_block if last_queried_block is not None else 0
+                block_heights, accounts_txs = self._query(
                     action=BtcQueryAction.TRANSACTIONS,
                     accounts=accounts,
                     options={
                         'to_timestamp': to_timestamp,
-                        'last_queried_block': last_queried_block,
+                        'last_queried_block': queried_from,
                         'progress_callback': partial(
                             self._send_tx_query_progress,
                             accounts,
@@ -301,33 +306,58 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                         ),
                     },
                 )
-                if len(accounts_txs) == 0:
-                    new_block_height = max(new_block_height, last_queried_block)
-                    continue
-
-                new_block_height = max(new_block_height, block_height)
                 tx_list.extend(accounts_txs)
+                for address in accounts:
+                    # An address the query returned no height for keeps its checkpoint.
+                    # Never lower one either: the height an address reports is only ever
+                    # at or past the block its query started from.
+                    new_block_heights[address] = max(
+                        block_heights.get(address, queried_from),
+                        queried_from,
+                    )
         finally:
             self._send_tx_ws_status(
                 addresses=addresses,
                 period=(from_timestamp, to_timestamp),
                 status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
             )
+
         if len(tx_list) == 0:
             log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
             # Nothing new came back, but saved transactions may still be pending decoding:
             # the ones the newly tracked addresses appear in were marked above, and others
             # may have been marked without a query, as a DB upgrade does. Without this they
-            # would wait for a query that returns something.
+            # would wait for a query that returns something. The checkpoints stay unwritten
+            # until the decode succeeds: a failed decode keeps the addresses as never
+            # queried, so the next refresh marks them again and retries the decode instead
+            # of assuming they are fully synced.
             self.decode_transactions()
+
+            with self.database.conn.write_ctx() as write_cursor:
+                for address in addresses:
+                    self.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=self.cache_key,
+                        value=new_block_heights[address],
+                        address=address,
+                    )
             return
 
         with self.database.conn.write_ctx() as write_cursor:
+            # Checkpoints and transactions share one write transaction. If saving
+            # raises, the checkpoints roll back with it, so the next refresh
+            # re-queries from the previous checkpoint instead of skipping the
+            # unsaved transactions. Newly tracked addresses' checkpoints are
+            # written only after the decode below succeeds. If decoding fails they
+            # stay as never queried, so the next refresh marks them again and
+            # retries the decode instead of assuming they are fully synced.
             for address in addresses:
+                if address in new_addresses:
+                    continue
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=self.cache_key,
-                    value=new_block_height,
+                    value=new_block_heights[address],
                     address=address,
                 )
 
@@ -348,6 +378,17 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
         )
         self.decode_transactions(send_ws_notifications=True)
+
+        if len(new_addresses) != 0:
+            with self.database.conn.write_ctx() as write_cursor:
+                for address in new_addresses:
+                    self.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=self.cache_key,
+                        value=new_block_heights[address],
+                        address=address,
+                    )
+
         self._send_tx_ws_status(
             addresses=addresses,
             period=(from_timestamp, to_timestamp),
@@ -554,7 +595,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             raw_tx_lists: list[list[dict[str, Any]]],
             options: dict[str, Any],
             processing_fn: Callable[[dict[str, Any]], BitcoinTx | None],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[list[int], list[BitcoinTx]]:
         """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
         The tx lists must be ordered newest to oldest (the order used by the current APIs).
 
@@ -566,13 +607,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         If we were to quit before querying to the oldest tx, the next query would stop at the
         cached queried_block_height and the skipped older txs would never be queried.
 
-        Returns the latest queried block height (cached and referenced in subsequent queries)
-        and the list of deserialized BitcoinTxs in a tuple.
+        Returns the queried block height of each raw tx list, in the same order (cached and
+        referenced in subsequent queries), and the list of deserialized BitcoinTxs in a tuple.
         """
         tx_list: list[BitcoinTx] = []
         last_queried_block = options.get('last_queried_block', 0)
         to_timestamp = options.get('to_timestamp', ts_now())
-        new_block_height = 0
+        new_block_heights: list[int] = []
         for raw_tx_list in raw_tx_lists:
             list_start = len(tx_list)  # where the txs of this list begin
             for entry in raw_tx_list:
@@ -610,13 +651,12 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             # Each list is ordered newest to oldest, so the first tx kept from it is the
             # newest block this list reached. Taken per list since a later list may reach
             # further than the first one did.
-            block_height = (
+            new_block_heights.append(
                 tx_list[list_start].block_height
-                if len(tx_list) > list_start else last_queried_block
+                if len(tx_list) > list_start else last_queried_block,
             )
-            new_block_height = max(new_block_height, block_height)
 
-        return new_block_height, tx_list
+        return new_block_heights, tx_list
 
     def create_event(
             self,

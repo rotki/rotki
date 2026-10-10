@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+import requests
 
 from rotkehlchen.api.websockets.typedefs import (
     ProgressUpdateSubType,
     TransactionStatusStep,
     WSMessageType,
 )
+from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
 from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
@@ -1014,7 +1016,7 @@ def test_blockcypher_sends_query_progress_per_page(bitcoin_manager: BitcoinManag
         patch.object(
             bitcoin_manager,
             '_process_raw_tx_lists',
-            return_value=(900_000, []),
+            return_value=([900_000], []),
         ) as process_mock,
     ):
         bitcoin_manager._query_blockcypher_transactions(
@@ -1090,8 +1092,8 @@ def test_partial_views_from_a_single_query_are_all_saved(
     batches comes back once per batch, each time missing the other's TxIOs. Deduplicating them
     by transaction id would keep whichever came last and persist an incomplete transaction.
     """
-    def query_two_partial_views(**_kwargs: Any) -> tuple[int, list[BitcoinTx]]:
-        return 1, [
+    def query_two_partial_views(**_kwargs: Any) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
+        return dict.fromkeys(btc_accounts, 1), [
             _partial_change_tx(outputs=[CHANGE_TX_EXTERNAL_IO]),
             _partial_change_tx(outputs=[CHANGE_TX_CHANGE_IO]),
         ]
@@ -1332,6 +1334,91 @@ def test_unplaceable_txios_do_not_advance_the_query_range(
         ) is None
 
 
+def _blockcypher_batch_response(address_a: BTCAddress, address_b: BTCAddress) -> str:
+    """A blockcypher response for two addresses whose newest transactions sit in
+    different blocks, 900_001 for the first and 900_000 for the second.
+    """
+    def entry(address: BTCAddress, txid: str, block_height: int) -> dict[str, Any]:
+        return {
+            'address': address,
+            'hasMore': False,
+            'txs': [{
+                'hash': txid,
+                'confirmed': '2023-11-14T22:15:00Z',
+                'block_height': block_height,
+                'fees': 1000,
+                'vin_sz': 1,
+                'vout_sz': 1,
+                'inputs': [{'output_value': 5000000, 'addresses': [address]}],
+                'outputs': [{'value': 4999000, 'script': '00', 'addresses': [address]}],
+            }],
+        }
+
+    return json.dumps([
+        entry(address_a, 'a' * 64, 900_001),
+        entry(address_b, 'b' * 64, 900_000),
+    ])
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
+def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A blockcypher fallback query must not split addresses into single-address groups.
+
+    Blockcypher answers one request per batch of addresses, and every address of a batch
+    is observed at the same snapshot. Caching each address's own newest block would give
+    the two addresses different checkpoints, so the next refresh would query them
+    separately, one blockchain.info request each, forever. Sharing the batch's maximum
+    height keeps them grouped in a single request.
+    """
+    address_a, address_b = btc_accounts
+    info_requests: list[str] = []
+
+    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
+        if BLOCKCHAIN_INFO_BASE_URL in url:
+            info_requests.append(url)
+            if len(info_requests) == 1:
+                raise requests.exceptions.RequestException('blockchain.info is down')
+            return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
+
+        assert BLOCKCYPHER_BASE_URL in url
+        return MockResponse(200, _blockcypher_batch_response(address_a, address_b))
+
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        for address in btc_accounts:
+            assert bitcoin_manager.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                address=address,
+            ) == 900_001  # the batch's maximum, not each address's own newest block
+
+    # The next refresh goes to blockchain.info again. Both addresses share one checkpoint,
+    # so they are queried together in a single multiaddr request instead of one each.
+    first_query_info_requests = len(info_requests)
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+    assert len(info_requests) - first_query_info_requests == 1
+
+
 def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:
     """Test that every list of raw transactions is processed separately.
 
@@ -1350,7 +1437,7 @@ def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManage
             outputs=[],
         )
 
-    new_block_height, txs = bitcoin_manager._process_raw_tx_lists(
+    new_block_heights, txs = bitcoin_manager._process_raw_tx_lists(
         raw_tx_lists=[
             [{'height': 600}, {'height': 400}],  # the last one predates the requested range
             [{'height': 900}, {'height': 550}],  # this list reaches a newer block than the first
@@ -1359,7 +1446,91 @@ def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManage
         processing_fn=process,
     )
     assert [x.block_height for x in txs] == [600, 900, 550]
-    assert new_block_height == 900  # the newest block any of the lists reached
+    assert new_block_heights == [600, 900]  # the newest block each list reached, in order
+
+
+def _blockchain_info_tx(txid: str, block_height: int) -> dict[str, Any]:
+    """A minimal blockchain.info transaction at the given height."""
+    return {
+        'hash': txid,
+        'time': 1700000000,
+        'block_height': block_height,
+        'fee': 1000,
+        'vin_sz': 1,
+        'vout_sz': 1,
+        'inputs': [{'index': 0, 'prev_out': {
+            'value': 100000, 'script': '00', 'addr': P2WPKH_ADDRESS,
+        }}],
+        'out': [{'n': 0, 'value': 99000, 'script': '00', 'addr': P2WPKH_ADDRESS}],
+    }
+
+
+def test_blockchain_info_chunk_boundary_aligns_heights(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """81 addresses are queried in chunks of 80, producing two raw transaction lists.
+
+    The per-address heights must align with those chunks: the first 80 addresses get the
+    first list's height and the final address gets the second's. The addresses are
+    synthetic since only the chunking and the positional alignment are under test.
+    """
+    accounts = [BTCAddress(f'chunk-test-address-{i:03d}') for i in range(81)]
+    with patch.object(
+        BitcoinManager,
+        '_query_blockchain_info',
+        return_value=[
+            [_blockchain_info_tx(txid='a' * 64, block_height=900_001)],
+            [_blockchain_info_tx(txid='b' * 64, block_height=900_000)],
+        ],
+    ) as query_mock:
+        address_heights, _ = bitcoin_manager._query_blockchain_info_transactions(
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+    assert query_mock.call_count == 1
+    assert [address_heights[address] for address in accounts[:80]] == [900_001] * 80
+    assert address_heights[accounts[80]] == 900_000
+
+
+def _haskoin_tx(txid: str, block_height: int) -> dict[str, Any]:
+    """A minimal haskoin transaction at the given height."""
+    return {
+        'txid': txid,
+        'time': 1700000000,
+        'block': {'height': block_height},
+        'fee': 1000,
+        'inputs': [{'value': 100000, 'pkscript': '00'}],
+        'outputs': [{'value': 99000, 'pkscript': '00'}],
+    }
+
+
+def test_haskoin_chunk_boundary_aligns_heights(
+        bitcoin_cash_manager: BitcoinCashManager,
+) -> None:
+    """101 addresses are queried in chunks of 100, producing two raw transaction lists.
+
+    The per-address heights must align with those chunks: the first 100 addresses get the
+    first list's height and the final address gets the second's. The addresses are
+    synthetic since only the chunking and the positional alignment are under test.
+    """
+    accounts = [BTCAddress(f'chunk-test-address-{i:03d}') for i in range(101)]
+    with (
+        patch.object(BitcoinCashManager, '_check_haskoin_health'),
+        patch(
+            'rotkehlchen.chain.bitcoin.bch.manager.request_get',
+            side_effect=[
+                [_haskoin_tx(txid='a' * 64, block_height=900_001)],
+                [_haskoin_tx(txid='b' * 64, block_height=900_000)],
+            ],
+        ),
+    ):
+        address_heights, _ = bitcoin_cash_manager._query_haskoin_transactions(
+            base_url='https://api.haskoin.com',
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+    assert [address_heights[address] for address in accounts[:100]] == [900_001] * 100
+    assert address_heights[accounts[100]] == 900_000
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_CHANGE_OUTPUT]])
@@ -2187,7 +2358,7 @@ def test_mempool_pagination_stops_at_last_queried_block(
         f'/address/{address_a}/txs?after_txid={page_1[-1]["txid"]}': page_2,
         f'/address/{address_b}/txs': [],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address_a, address_b],
             options={
@@ -2198,7 +2369,7 @@ def test_mempool_pagination_stops_at_last_queried_block(
         )
 
     assert requests_mock.call_count == 3  # no request for the page after 850_000
-    assert block_height == 900_010
+    assert block_heights == {address_a: 900_010, address_b: 880_000}  # the address with no new txs keeps its last queried block  # noqa: E501
     assert [tx.block_height for tx in txs] == [900_010, 900_005, 900_001, 899_990]
     assert progress_callback.call_args_list == [
         call(Timestamp(1700000100)),
@@ -2220,14 +2391,14 @@ def test_mempool_pagination_with_only_unconfirmed_first_page(
         f'/address/{address}/txs?after_txid={unconfirmed_txs[-1]["txid"]}': [confirmed_tx],
         f'/address/{address}/txs?after_txid={confirmed_tx["txid"]}': [],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 0, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 3
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [tx.tx_id for tx in txs] == [confirmed_tx['txid']]
 
 
@@ -2242,14 +2413,14 @@ def test_mempool_pagination_stops_on_a_repeated_page(bitcoin_manager: BitcoinMan
         f'/address/{address}/txs': [tx],
         f'/address/{address}/txs?after_txid={tx["txid"]}': [tx],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 0, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 2
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [x.tx_id for x in txs] == [tx['txid']]
 
 
@@ -2284,14 +2455,14 @@ def test_mempool_pagination_falls_back_to_chain_pages(
         chain_page_1_path: confirmed_txs[2:3] if first_page_confirmed else confirmed_txs[:3],
         f'/address/{address}/txs/chain/{confirmed_txs[2]["txid"]}': confirmed_txs[3:],
     }) as requests_mock:
-        block_height, txs = bitcoin_manager._query_mempool_transactions(
+        block_heights, txs = bitcoin_manager._query_mempool_transactions(
             base_url='https://mempool.example/api',
             accounts=[address],
             options={'last_queried_block': 880_000, 'to_timestamp': ts_now()},
         )
 
     assert requests_mock.call_count == 4  # no request for the page after 850_000
-    assert block_height == 900_010
+    assert block_heights == {address: 900_010}
     assert [tx.block_height for tx in txs] == [900_010, 900_005, 899_990]
 
 
@@ -2370,6 +2541,406 @@ def test_custom_mempool_api_queries_transactions(
         (HistoryEventType.SPEND, HistoryEventSubType.FEE, FVal('0.00001')),
         (HistoryEventType.SPEND, HistoryEventSubType.NONE, FVal('0.00099')),
     ]
+
+
+@pytest.mark.parametrize(
+    'btc_accounts',
+    [[P2WPKH_ADDRESS, string_to_btc_address('bc1qzg82aqxsqd0kuawsrkklj8s78mvmdzm5f70vn8')]],
+)
+def test_checkpoint_does_not_advance_past_unfetched_blocks(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A block arriving between the sequential per-address queries of a mempool api must
+    not advance the checkpoint of an address past transactions it never fetched.
+
+    Regression test for https://github.com/rotki/rotki/issues/13182: address A is queried
+    first while the chain is at block 900_000, then block 900_001 arrives with a
+    transaction for B before B is queried. Only B's checkpoint may advance to 900_001;
+    A's transaction in that block is still unfetched and a later refresh must find it.
+    """
+    address_a, address_b = btc_accounts
+    tx_a = _esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address_a)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=address_a)],
+        fee=1_000,
+    )
+    tx_b = _esplora_tx(
+        block_height=900_001,
+        block_time=1700000001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=200_000, address=address_b)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=199_000, address=address_b)],
+        fee=1_000,
+    )
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{address_a}/txs': [tx_a],
+            f'/address/{address_a}/txs?after_txid={tx_a["txid"]}': [],
+            f'/address/{address_b}/txs': [tx_b],
+            f'/address/{address_b}/txs?after_txid={tx_b["txid"]}': [],
+        }),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_a,
+        ) == 900_000
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_b,
+        ) == 900_001
+
+    # A later refresh exposes A's block-900001 transaction. It must be saved and decoded,
+    # proving the missed transaction is picked up rather than skipped for good.
+    tx_a2 = _esplora_tx(
+        block_height=900_001,
+        block_time=1700000002,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=99_000, address=address_a)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=97_000, address=address_a)],
+        fee=2_000,
+    )
+    tx_a2['txid'] = 'a' * 64  # the helper derives the txid from the block height
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{address_a}/txs': [tx_a2],
+            f'/address/{address_a}/txs?after_txid={tx_a2["txid"]}': [],
+            f'/address/{address_b}/txs': [tx_b],
+            f'/address/{address_b}/txs?after_txid={tx_b["txid"]}': [],
+        }),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert tx_a2['txid'] in [
+            x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        ]
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_a,
+        ) == 900_001
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(tx_a2['txid'] in event.group_identifier for event in events)
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_checkpoint_rolls_back_when_saving_fails(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Checkpoints and transactions share one write transaction: if saving the fetched
+    transactions fails, the checkpoint must roll back with them, so the next refresh
+    re-queries from the old checkpoint instead of skipping the transactions that were
+    never stored.
+    """
+    address = btc_accounts[0]
+    tx = _esplora_tx(
+        block_height=900_001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=address)],
+        fee=1_000,
+    )
+    pages = {
+        f'/address/{address}/txs': [tx],
+        f'/address/{address}/txs?after_txid={tx["txid"]}': [],
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, '_save_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=btc_accounts,
+            )
+
+    database = bitcoin_manager.database
+    with database.conn.read_ctx() as cursor:
+        # The checkpoint was rolled back together with the failed save.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) is None
+        assert bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        ) == []
+
+    # A later refresh re-queries from the old checkpoint and stores everything.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) == 900_001
+        assert tx['txid'] in [
+            x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        ]
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_failed_initial_redecode_is_retried(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A newly tracked address whose query returns nothing still needs its saved
+    transactions decoded with it tracked. If that initial redecode fails, its
+    checkpoint must stay missing, so the next refresh treats it as newly tracked
+    again and retries the decode instead of assuming it is fully synced.
+    """
+    tracked = btc_accounts[0]
+    new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
+    tx = _esplora_tx(
+        block_height=900_000,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=tracked)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=new_address)],
+        fee=1_000,
+    )
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({
+            f'/address/{tracked}/txs': [tx],
+            f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
+        }),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.BITCOIN,
+                address=new_address,
+            )],
+        )
+
+    # The new address has no history of its own; its initial redecode fails.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=[new_address],
+            )
+
+    with database.conn.read_ctx() as cursor:
+        # The checkpoint was not persisted, so the address is still never queried.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) is None
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    # The failed redecode changed nothing: the transaction is still decoded as a
+    # spend, as it was before the new address was tracked.
+    assert not any(event.event_type == HistoryEventType.TRANSFER for event in events)
+
+    # The next refresh retries the decode and then persists the checkpoint.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=[new_address],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) == 0
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    # The retried decode ran with the new address tracked: the spend is now a transfer.
+    assert any(
+        event.event_type == HistoryEventType.TRANSFER and event.location_label == tracked
+        for event in events
+    )
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_failed_decode_is_retried_for_new_address_in_mixed_refresh(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A mixed refresh where an existing address returns a transaction while a newly
+    tracked address returns none must also defer the new address's checkpoint. If the
+    decode fails, the new address's checkpoint stays missing, so the next refresh
+    treats it as newly tracked again and retries the decode instead of assuming it
+    is fully synced.
+    """
+    tracked = btc_accounts[0]
+    new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
+    tx = _esplora_tx(
+        block_height=900_001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=tracked)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=tracked)],
+        fee=1_000,
+    )
+    pages = {
+        f'/address/{tracked}/txs': [tx],
+        f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
+        f'/address/{new_address}/txs': [],
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    database = bitcoin_manager.database
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.BITCOIN,
+                address=new_address,
+            )],
+        )
+
+    # Mixed refresh: the existing address returns a transaction, the new address
+    # returns nothing, and the decode fails.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=[tracked, new_address],
+            )
+
+    with database.conn.read_ctx() as cursor:
+        # The new address's checkpoint was not persisted, so it is still never queried,
+        # while the existing address's checkpoint advanced as usual.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) is None
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=tracked,
+        ) == 900_001
+
+    # The next refresh retries the decode and then persists the checkpoint.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=[tracked, new_address],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=new_address,
+        ) == 0
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
