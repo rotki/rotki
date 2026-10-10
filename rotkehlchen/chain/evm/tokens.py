@@ -686,16 +686,30 @@ class EvmTokens(ABC):  # noqa: B024
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
 
-                # get NFT tokens for address and ignore them from the query to avoid duplicates
-                cursor.execute(
+                # get NFT tokens for address and ignore them from the query to avoid duplicates.
+                # An NFT covers its own ERC721 token and every token of its contract without
+                # a collectible id (such as a collection level token), but not the other
+                # tokens of its collection which the NFT module may not report.
+                nft_token_ids: set[str] = set()
+                nft_contracts: set[ChecksumEvmAddress] = set()
+                for row in cursor.execute(
                     'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
                     (address,),
-                )
-                excluded_addresses = {
-                    Nft(row[0]).evm_address for row in cursor
-                    if SupportedBlockchain.deserialize(row[1]) == self.evm_inquirer.blockchain
-                }
-                token_list = [x for x in saved_list if x.evm_address not in excluded_addresses]
+                ):
+                    if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                        continue
+
+                    nft_contracts.add((nft := Nft(row[0])).evm_address)
+                    if (nft_token_id := nft.to_erc721_identifier()) is not None:
+                        nft_token_ids.add(nft_token_id)
+
+                token_list = [
+                    x for x in saved_list
+                    if x.identifier not in nft_token_ids and not (
+                        x.evm_address in nft_contracts and
+                        tokenid_to_collectible_id(x.identifier) is None
+                    )
+                ]
                 all_tokens.update(token_list)
                 addresses_to_tokens[address] = token_list
 

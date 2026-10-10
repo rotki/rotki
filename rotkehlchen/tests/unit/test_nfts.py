@@ -1,22 +1,41 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.balances import BlockchainBalancesUpdate
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
+from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, TokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
+
+
+def _add_nft_module_entry(
+        write_cursor: DBCursor,
+        nft_id: str,
+        owner_address: ChecksumEvmAddress,
+        usd_price: str,
+) -> None:
+    """Store an NFT in the nfts table as if the NFT module had queried it"""
+    write_cursor.execute('INSERT INTO assets(identifier) VALUES(?)', (nft_id,))
+    write_cursor.execute(
+        'INSERT INTO nfts(identifier, name, last_price, last_price_asset, manual_price, '
+        'owner_address, is_lp) VALUES(?, ?, ?, ?, ?, ?, ?)',
+        (nft_id, 'Pudgy Penguin', usd_price, A_USD.identifier, 0, owner_address, 0),
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -206,3 +225,96 @@ def test_add_and_delete_nft_custom_price(blockchain: ChainsAggregator):
             'SELECT last_price, last_price_asset, manual_price FROM nfts WHERE identifier=?',
             (nft_id,),
         ).fetchone() == ('0', 'ETH', 0)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+def test_nft_module_excludes_only_its_own_tokens(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13295
+
+    An NFT queried by the NFT module should only exclude its own ERC721 token from the
+    token balance query and not every token of the same collection. A collection level
+    token stays excluded since the NFT module covers the whole collection.
+    """
+    db = blockchain.database
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    tokens = [get_or_create_evm_token(
+        userdb=db,
+        evm_address=penguins,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in (None, '7535', '7536')]
+    with db.user_write() as write_cursor:
+        db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=tokens,
+        )
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=f'_nft_{penguins}_7535',
+            owner_address=user_address,
+            usd_price='3',
+        )
+
+    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
+        blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
+
+    # the collection token and #7535 are covered by the NFT module, so only #7536 is queried
+    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: [tokens[2]]}
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_nft_balance_updates_only_its_own_token(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13295
+
+    When the balance query adds the NFT module's NFTs, an NFT that is also in the chain
+    balances as an ERC721 token should update the value of its own token and not of another
+    token of the same collection.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    # #7536 is created first so that it is the first token of the contract in the DB
+    other_token, nft_token = (get_or_create_evm_token(
+        userdb=rotki.data.db,
+        evm_address=penguins,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in ('7536', '7535'))
+    with rotki.data.db.user_write() as write_cursor:
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=(nft_id := f'_nft_{penguins}_7535'),
+            owner_address=ethereum_accounts[0],
+            usd_price='3',
+        )
+
+    totals = BalanceSheet()
+    totals.assets[other_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(5))
+    totals.assets[nft_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ZERO)
+    with patch.object(
+        rotki.chains_aggregator,
+        'query_balances',
+        return_value=BlockchainBalancesUpdate(
+            given_chain=None,
+            per_account=rotki.chains_aggregator.balances,
+            totals=totals,
+        ),
+    ):
+        assets = rotki.query_balances()['assets']
+
+    assert (nft_module := rotki.chains_aggregator.get_module('nfts')) is not None
+    assert assets[nft_token]['value'] == nft_module.get_db_nft_balances(
+        filter_query=NFTFilterQuery.make(),
+    )['entries'][0]['price']
+    assert assets[other_token]['value'] == FVal(5)
+    assert Asset(nft_id) not in assets
