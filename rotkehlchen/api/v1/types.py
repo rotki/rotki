@@ -36,3 +36,4 @@ class TaskName(SerializableEnumNameMixin):
     ASSET_MOVEMENT_MATCHING = auto()
     BRIDGE_MATCHING = auto()
     DATA_ISSUE_REMEDIATION = auto()
+    CURRENT_BALANCE_DETECTION = auto()

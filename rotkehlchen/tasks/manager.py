@@ -41,6 +41,9 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.detectors.current_balance import (
+    run_current_balance_detection,
+)
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
@@ -89,6 +92,8 @@ HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
 DATA_ISSUE_REMEDIATION_TASK_NAME: Final = 'Auto-remediate data issues'
+CURRENT_BALANCE_DETECTION_REFRESH: Final = DAY_IN_SECONDS
+CURRENT_BALANCE_DETECTION_TASK_NAME: Final = 'Detect current balance mismatches'
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -199,7 +204,11 @@ class TaskManager:
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
             *(
-                [self._maybe_process_historical_balances, self._maybe_run_data_issue_remediation]
+                [
+                    self._maybe_process_historical_balances,
+                    self._maybe_run_data_issue_remediation,
+                    self._maybe_detect_current_balance_mismatches,
+                ]
                 if is_accounting_update_enabled() else []
             ),
             self._maybe_detect_evm_accounts,
@@ -665,7 +674,8 @@ class TaskManager:
         if (
             self.history_processing_coordinator.is_history_fetching() or
             self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
-            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME)
+            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME) or
+            self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME)
         ):
             return None
 
@@ -694,7 +704,8 @@ class TaskManager:
         if (
             self.history_processing_coordinator.is_history_fetching() or
             self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
-            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME)
+            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME) or
+            self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME)
         ):
             return None
 
@@ -724,6 +735,56 @@ class TaskManager:
 
     def trigger_data_issue_remediation(self) -> bool:
         return self._maybe_run_data_issue_remediation(force=True) is not None
+
+    def _maybe_detect_current_balance_mismatches(
+            self,
+            force: bool = False,
+    ) -> list[Task] | None:
+        """Schedule the comparison of derived and live balances, optionally bypassing the cooldown.
+
+        It needs fully processed balances, since a stale derived balance would be reported as a
+        mismatch with the chain.
+        """
+        if (
+            self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
+            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME) or
+            self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME)
+        ):
+            return None
+
+        if not force and should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
+            refresh_period=CURRENT_BALANCE_DETECTION_REFRESH,
+            cached_timestamps=self._scheduler_task_timestamps,
+        ) is False:
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            stale_from_ts, last_processing_ts = self.database.get_static_caches(
+                cursor=cursor,
+                names=(
+                    DBCacheStatic.STALE_BALANCES_FROM_TS,
+                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                ),
+            )
+
+        if stale_from_ts is not None or last_processing_ts is None:
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name=CURRENT_BALANCE_DETECTION_TASK_NAME,
+            exception_is_error=True,
+            method=run_current_balance_detection,
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
+        )]
+
+    def trigger_current_balance_detection(self) -> list[Task] | None:
+        """Start the detection now. Returns its tasks, or None if it can't start."""
+        return self._maybe_detect_current_balance_mismatches(force=True)
 
     def _maybe_update_snapshot_balances(self) -> list[Task] | None:
         """

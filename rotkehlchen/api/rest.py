@@ -85,6 +85,7 @@ from rotkehlchen.concurrency import (
     CancellationToken,
     Task,
     TaskCancelledError,
+    exception_of,
     wait,
 )
 from rotkehlchen.constants.misc import (
@@ -4069,6 +4070,28 @@ class RestAPI:
                     'processing completes or while history work is running.',
                     status_code=HTTPStatus.CONFLICT,
                 )
+        elif task == TaskName.CURRENT_BALANCE_DETECTION:
+            if is_accounting_update_enabled() is False:
+                return wrap_in_fail_result(
+                    message='Current balance detection is disabled',
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+            if (
+                (task_manager := self.rotkehlchen.task_manager) is None or
+                (tasks := task_manager.trigger_current_balance_detection()) is None
+            ):
+                return wrap_in_fail_result(
+                    message='Current balance detection cannot start before historical balance '
+                    'processing completes or while history work is running.',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+            for detection_task in tasks:  # finish before answering so the caller sees its issues
+                detection_task.join()
+                if (exception := exception_of(detection_task)) is not None:
+                    return wrap_in_fail_result(
+                        message=f'Current balance detection failed: {exception!s}',
+                        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    )
         else:  # task in (TaskName.ASSET_MOVEMENT_MATCHING, TaskName.BRIDGE_MATCHING)
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,
