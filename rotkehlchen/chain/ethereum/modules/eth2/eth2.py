@@ -1709,9 +1709,9 @@ class Eth2(EthereumModule):
             elif len(uncovered) != 0 and not self._told_nest_coverage_incomplete:
                 self._told_nest_coverage_incomplete = True
                 self.msg_aggregator.add_warning(
-                    'The nuthatch nest proves the blocks a validator proposed from the Dencun '
-                    'upgrade (block 19,426,587) on, and from its own first proven block. Blocks '
-                    f'of validators {", ".join(str(i) for i in sorted(uncovered))} before that, '
+                    'The nuthatch nest proves the blocks a validator proposed only from the first '
+                    'block it has proven, at the earliest the Dencun upgrade (block 19,426,587). '
+                    f'Blocks of validators {", ".join(str(i) for i in sorted(uncovered))} before that, '
                     'or that the nest could not answer for, are not covered. Add a beaconcha.in '
                     'API key to cover them.',
                     classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no source covers every validator'),  # noqa: E501
