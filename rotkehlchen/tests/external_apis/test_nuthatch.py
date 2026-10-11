@@ -22,7 +22,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeStartsLater, RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
@@ -76,6 +76,7 @@ def test_nuthatch_asks_the_configured_nest(nuthatch: Nuthatch) -> None:
 
 
 @pytest.mark.parametrize(('result', 'error'), [
+    ('NUTHATCH_INCOMPLETE: txlist for 0xd8da is not indexed at block 0; history starts at block 18000000', IndexerRangeStartsLater),  # noqa: E501
     ('NUTHATCH_INCOMPLETE: txlist for 0xd8da is not indexed at block 0', RemoteError),
     ('NUTHATCH_UNSUPPORTED: contract/getabi is not served by this nest', RemoteError),
     ("NUTHATCH_UNSUPPORTED: chainid 10 is not this nest's chain 1", ChainNotSupported),

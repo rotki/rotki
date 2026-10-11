@@ -34,6 +34,8 @@ from rotkehlchen.errors.misc import (
     DataIntegrityError,
     IncompleteTransactionsQuery,
     IndexerRangeNotCovered,
+    IndexerRangePartlyCovered,
+    IndexerRangeStartsLater,
     InputError,
     NoAvailableIndexers,
     RemoteError,
@@ -584,10 +586,22 @@ class EvmTransactions(ABC):  # noqa: B024
         - NoAvailableIndexers if no indexer is available for the chain
         """
         pending = [(start_ts, end_ts)]
+        covered_from: Timestamp | None = None
         while len(pending) != 0:
             chunk_start, chunk_end = pending.pop()
             try:
-                query(chunk_start, chunk_end, start_ts)
+                query(chunk_start, chunk_end, start_ts if covered_from is None else covered_from)
+            except IndexerRangeStartsLater as e:
+                # An indexer's history starting inside the chunk still serves the rest of it:
+                # that part is queried, and the part before is left to an indexer covering it.
+                try:
+                    first_ts = self.evm_inquirer.get_block_timestamp(block_number=e.first_block)
+                except (RemoteError, DeserializationError, KeyError):
+                    raise e from None
+                if not chunk_start < first_ts <= chunk_end:
+                    raise
+                covered_from = first_ts
+                pending.append((first_ts, chunk_end))
             except RequestTooLargeError as e:
                 if chunk_end - chunk_start <= MIN_SPLITTABLE_QUERY_RANGE:
                     raise
@@ -598,6 +612,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 )  # push the later half first so the earlier one is popped next
                 mid = Timestamp((chunk_start + chunk_end) // 2)
                 pending.extend(((Timestamp(mid + 1), chunk_end), (chunk_start, mid)))
+
+        if covered_from is not None:
+            raise IndexerRangePartlyCovered(
+                f'No configured indexer covers {self.evm_inquirer.chain_name} history before {covered_from}',  # noqa: E501
+                covered_from=covered_from,
+            )
 
     def _mark_range_as_queried(
             self,
@@ -780,6 +800,15 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangePartlyCovered as e:
+                log.warning(
+                    'Skipping %s query for %s from %s to %s, since no configured indexer '
+                    'covers it: %s', self.evm_inquirer.chain_name, address, query_start_ts,
+                    e.covered_from - 1, e,
+                )
+                not_covered = True  # the part from covered_from on was queried
+                covered_ranges.append((Timestamp(e.covered_from), query_end_ts))
+                continue
             except IndexerRangeNotCovered as e:
                 log.warning(
                     'Skipping %s transactions query for %s from %s to %s, since no '
@@ -1274,6 +1303,14 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangePartlyCovered as e:
+                log.warning(
+                    'Skipping %s query for %s from %s to %s, since no configured indexer '
+                    'covers it: %s', self.evm_inquirer.chain_name, address, query_start_ts,
+                    e.covered_from - 1, e,
+                )
+                not_covered = True  # the part from covered_from on was queried, its progress saved
+                continue
             except IndexerRangeNotCovered as e:
                 log.warning(
                     'Skipping %s internal transactions query for %s from %s to %s, since no '
@@ -1351,6 +1388,15 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
+            except IndexerRangePartlyCovered as e:
+                log.warning(
+                    'Skipping %s query for %s from %s to %s, since no configured indexer '
+                    'covers it: %s', self.evm_inquirer.chain_name, address, query_start_ts,
+                    e.covered_from - 1, e,
+                )
+                not_covered = True  # the part from covered_from on was queried
+                covered_ranges.append((Timestamp(e.covered_from), query_end_ts))
+                continue
             except IndexerRangeNotCovered as e:
                 log.warning(
                     'Skipping %s token transactions query for %s from %s to %s, since no '

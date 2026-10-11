@@ -55,6 +55,23 @@ class IndexerRangeNotCovered(RemoteError):
     """Raised when an indexer cannot serve the requested chain history range."""
 
 
+class IndexerRangeStartsLater(IndexerRangeNotCovered):
+    """Raised when an indexer's history starts inside the requested range, at first_block."""
+
+    def __init__(self, message: str, first_block: int) -> None:
+        super().__init__(message)
+        self.first_block = first_block
+
+
+class IndexerRangePartlyCovered(IndexerRangeNotCovered):
+    """Raised once the part of a range from covered_from on was queried, and the part before
+    it is covered by no indexer."""
+
+    def __init__(self, message: str, covered_from: int) -> None:
+        super().__init__(message)
+        self.covered_from = covered_from
+
+
 class BlockscoutIncompleteResponse(RemoteError):
     """Raised when Blockscout reports that the requested data is not fully indexed."""
 

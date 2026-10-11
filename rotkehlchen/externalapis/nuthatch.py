@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -11,7 +12,7 @@ from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeStartsLater, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -58,6 +59,8 @@ NUTHATCH_PAGED_ACTIONS: Final = frozenset({
     'txsBeaconWithdrawal',
     'getminedblocks',
 })
+# How a nest says a range begins before the history it was configured to keep.
+HISTORY_STARTS: Final = re.compile(r'history starts at block (\d+)')
 # Kept in a paged query's options and never sent: the pages it has read so far.
 PAGES_READ: Final = '_nuthatch_pages_read'
 # The index of an internal row's frame in its transaction's whole trace. The Etherscan-shaped
@@ -155,6 +158,11 @@ class Nuthatch(EtherscanAccountHistory):
         message = str(result)
         if message.startswith(NUTHATCH_UNSUPPORTED) and 'chainid' in message:
             raise ChainNotSupported(f'{self.name} {message}')
+        if (starts := HISTORY_STARTS.search(message)) is not None:
+            raise IndexerRangeStartsLater(
+                f'{self.name} cannot answer {action} on {chain_id.to_name()}: {message}',
+                first_block=int(starts.group(1)),
+            )
 
         raise RemoteError(f'{self.name} cannot answer {action} on {chain_id.to_name()}: {message}')
 

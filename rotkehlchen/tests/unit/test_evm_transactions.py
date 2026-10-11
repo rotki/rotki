@@ -41,6 +41,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import (
     DataIntegrityError,
     IncompleteTransactionsQuery,
+    IndexerRangeStartsLater,
     RemoteError,
     RequestTooLargeError,
 )
@@ -1937,3 +1938,42 @@ def test_address_fails_when_every_indexer_fails_its_query(
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED),
     ]
+
+
+def test_range_starting_before_an_indexers_history_is_queried_from_its_start(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """With only a nest whose history starts after an account's first activity, the account's
+    first sync asks from before that start and is refused. The part of the range the nest covers
+    is still queried and recorded; the part before it is left unrecorded, for an indexer covering
+    it, and the query reports it as not covered rather than failing."""
+    transactions = ethereum_manager.transactions
+    address = make_evm_address()
+    first_block_ts = Timestamp(1700000000)
+    asked: list[tuple[Timestamp, Timestamp, Timestamp]] = []
+    recorded: list[tuple[Timestamp, Timestamp]] = []
+
+    def query(address: Any, period: TimestampOrBlockRange, location_string: str, progress_start_ts: Timestamp, query_end: Any) -> None:  # noqa: E501
+        asked.append((Timestamp(period.from_value), Timestamp(period.to_value), progress_start_ts))
+        if period.from_value < first_block_ts:
+            raise IndexerRangeStartsLater('history starts at block 18000000', first_block=18000000)
+
+    with (
+        patch.object(transactions, '_query_and_save_transactions_for_range', side_effect=query),
+        patch.object(transactions.evm_inquirer, 'get_block_timestamp', return_value=first_block_ts) as block_ts,  # noqa: E501
+        patch.object(transactions, '_mark_range_as_queried', side_effect=lambda location_string, start_ts, end_ts, **kwargs: recorded.append((start_ts, end_ts))),  # noqa: E501
+    ):
+        outcome = transactions._get_transactions_for_range(
+            address=address,
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1750000000),
+        )
+
+    assert block_ts.call_args.kwargs['block_number'] == 18000000
+    assert asked == [
+        (1600000000, 1750000000, 1600000000),
+        (first_block_ts, 1750000000, first_block_ts),
+    ]
+    assert outcome == RangeQueryOutcome.NOT_COVERED
+    assert recorded == [(first_block_ts, 1750000000)]

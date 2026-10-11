@@ -57,6 +57,7 @@ from rotkehlchen.errors.misc import (
     ChainNotSupported,
     EventNotInABI,
     IndexerRangeNotCovered,
+    IndexerRangeStartsLater,
     InputError,
     NoAvailableIndexers,
     NotERC20Conformant,
@@ -2138,6 +2139,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if range_not_covered and all(
                 isinstance(e, (IndexerRangeNotCovered, ChainNotSupported)) for _, e in errors
         ):
+            if len(starts := [e.first_block for _, e in errors if isinstance(e, IndexerRangeStartsLater)]) != 0:  # noqa: E501
+                raise IndexerRangeStartsLater(message, first_block=min(starts))
             raise IndexerRangeNotCovered(message)
 
         raise RemoteError(message)
