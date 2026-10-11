@@ -971,7 +971,9 @@ class Eth2(EthereumModule):
                     timestamp >= now - UNRECORDED_MEV_RETRY_WINDOW
                 ):
                     # No relay had a record of the block when the nest asked. That is not "no
-                    # MEV": relays can publish late, so the block is asked about again.
+                    # MEV": relays can publish late, so the nest is asked about the block again.
+                    # Of the other sources only beaconcha.in, which runs after the nest, knows a
+                    # block's MEV; the other indexers list produced blocks without it.
                     retry_from[proposer_index] = min(timestamp, retry_from.get(proposer_index, now))  # noqa: E501
                 if mev_amount:
                     events.append(EthBlockEvent(
@@ -1010,6 +1012,28 @@ class Eth2(EthereumModule):
                     )
 
         return every_address
+
+    def _produced_blocks_cursors(self, indices: list[int]) -> dict[int, Timestamp]:
+        """Where each validator's next produced blocks query starts, for those that have one."""
+        with self.database.conn.read_ctx() as cursor:
+            return {
+                index: value for index in indices
+                if (value := self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                    index=index,
+                )) is not None
+            }
+
+    def _restore_produced_blocks_cursors(self, cursors: dict[int, Timestamp]) -> None:
+        with self.database.user_write() as write_cursor:
+            for index, value in cursors.items():
+                self.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                    value=value,
+                    index=index,
+                )
 
     def _stored_block_events(self, block_number: int) -> dict[int, int]:
         """The block's stored events, reward and MEV reward, by sequence index, each with the
@@ -1058,13 +1082,19 @@ class Eth2(EthereumModule):
             # The nest goes first and beaconcha.in still runs after it, so a block the nest could
             # not attribute or see is still found there; a block already stored is never added
             # twice by either path.
-            nest_complete = any(
+            started = ts_now()
+            nest_ordered = any(
                 name == EvmIndexer.NUTHATCH for name, _ in self.ethereum._get_indexers_in_order()
-            ) and self._get_and_store_produced_blocks_from_indexers(
+            )
+            nest_complete = nest_ordered and self._get_and_store_produced_blocks_from_indexers(
                 indices=indices,
                 update_cache=update_cache,
                 only=EvmIndexer.NUTHATCH,
             )
+            # Where the nest left a validator's next query before now, at a block awaiting its
+            # relay record or one it could not store, beaconcha.in must not move it on: only
+            # the nest can bring that block's relay record later.
+            nest_cursors = self._produced_blocks_cursors(indices) if nest_ordered and update_cache else {}  # noqa: E501
             if self.beacon_inquirer.beaconchain.has_api_key():
                 try:
                     self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
@@ -1074,6 +1104,10 @@ class Eth2(EthereumModule):
                 except (APIKeyNotAvailable, RemoteError) as e:
                     log.warning(f'Failed to query produced blocks via beaconcha.in due to {e!s}. Falling back to indexers.')  # noqa: E501
                 else:
+                    self._restore_produced_blocks_cursors({
+                        index: cursor for index, cursor in nest_cursors.items()
+                        if cursor < started
+                    })
                     return
 
             if not nest_complete:

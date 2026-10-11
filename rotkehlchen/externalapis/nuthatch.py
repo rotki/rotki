@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
-from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheStatic
@@ -22,9 +21,7 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
-    Location,
 )
-from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -252,7 +249,7 @@ class Nuthatch(EtherscanAccountHistory):
         the query early.
 
         May raise:
-        - RemoteError if the nest cannot answer, or a row lacks its trace index
+        - RemoteError if the nest cannot answer, or a row lacks its trace index or cannot be read
         """
         options: dict[str, Any] = {'sort': 'asc'}
         parent_tx_hash = None
@@ -294,12 +291,9 @@ class Nuthatch(EtherscanAccountHistory):
                         indexer=self,
                     )
                 except DeserializationError as e:
-                    self.msg_aggregator.add_warning(
-                        f'{e!s}. Skipping internal transaction {entry.get("hash")} on {chain_id.to_name()} for {account}',  # noqa: E501
-                        classification=BadData(record=UserMessageRecord.TRANSACTION, error=str(e)),
-                        subject=Location.from_chain_id(chain_id),
-                    )
-                    continue
+                    # Skipping the row would pass the rest off as the whole answer, and an empty
+                    # nest answer replaces what is stored.
+                    raise RemoteError(f'{self.name} answered an internal transaction rotki cannot read: {e!s}') from e  # noqa: E501
                 internals.append(tx)
 
             if (new_options := self._maybe_paginate(result=page, options=options)) is None:

@@ -663,3 +663,52 @@ def test_produced_block_rows_that_do_not_read_leave_the_validator_retryable(eth2
     _validator(eth2)
     assert _produced(eth2, nuthatch, [{'blockNumber': 'not a number'}])
     assert _cursor(eth2.database) is None
+
+
+def test_nuthatch_internal_that_does_not_read_refuses_the_answer(nuthatch: Nuthatch) -> None:
+    """Skipping an unreadable row would pass the rest off as the whole answer, and an empty nest
+    answer replaces the stored internals, so the answer is refused instead."""
+    row = _internal(str(make_evm_tx_hash()), trace_index=1, trace_id='0_1')
+    row['from'] = 'not an address'
+    with (
+        patch.object(nuthatch.session, 'get', return_value=_answer([row])),
+        pytest.raises(RemoteError, match='cannot read'),
+    ):
+        next(nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=make_evm_tx_hash(),
+        ))
+
+
+def test_beaconchain_does_not_move_on_a_validator_the_nest_is_waiting_on(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """The nest leaves a validator's next query at a block awaiting its relay record. beaconcha.in
+    then covers everything and moves every validator on to now, but only the nest can bring that
+    block's record, so the nest's place is kept."""
+    _validator(eth2)
+    pinned = Timestamp(ts_now() - 3600)
+    eth2.ethereum.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN)}  # noqa: E501
+
+    def nest(indices: list[int], update_cache: bool, only: EvmIndexer | None = None) -> bool:
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=pinned, index=7)  # noqa: E501
+        return True
+
+    def beaconchain(indices: list[int], update_cache: bool) -> None:
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
+
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', order),
+        # an indexer an earlier test in the process left degraded is not this test's concern
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers', side_effect=nest),
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=True),
+        patch.object(eth2.beacon_inquirer.beaconchain, '_get_and_store_produced_blocks', side_effect=beaconchain),  # noqa: E501
+    ):
+        eth2.get_and_store_produced_blocks(indices=[7])
+
+    assert (got := _cursor(eth2.database)) == pinned, f'{got=} {pinned=} now={ts_now()}'
