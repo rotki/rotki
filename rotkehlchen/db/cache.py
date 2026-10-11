@@ -60,6 +60,20 @@ class DBCacheStatic(Enum):
     NUTHATCH_PRODUCED_VALIDATORS: Final = 'nuthatch_produced_validators'
     # When a nuthatch nest was last asked about produced blocks.
     NUTHATCH_PRODUCED_LAST_RUN: Final = 'nuthatch_produced_last_run'
+    # Validators removed in rotki that a nuthatch nest has yet to be told to stop watching, as a
+    # JSON list.
+    NUTHATCH_PENDING_UNWATCH_VALIDATORS: Final = 'nuthatch_pending_unwatch_validators'
+    # Each validator's proposals a nuthatch nest has proven, as a JSON object of validator index
+    # to [first block, last block, last block's timestamp]. Blocks before the first are not
+    # covered by the nest, whatever the validator did there.
+    NUTHATCH_VALIDATOR_COVERAGE: Final = 'nuthatch_validator_coverage'
+    # Validator ranges a nuthatch nest proved, with when, as a JSON list of [validator, first
+    # block, last block, served at], asked about again while a block in them lacks its reward or
+    # the nest may still learn its relay record.
+    NUTHATCH_VALIDATOR_RANGES: Final = 'nuthatch_validator_ranges'
+    # Produced blocks booked from a nuthatch nest's proof of their proposer, as a JSON list: what
+    # no other source may book to another validator.
+    NUTHATCH_PROVEN_BLOCKS: Final = 'nuthatch_proven_blocks'
 
 
 class LabeledLocationArgsType(TypedDict):

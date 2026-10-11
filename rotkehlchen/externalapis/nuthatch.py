@@ -4,7 +4,7 @@ import re
 from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import requests
 
@@ -58,6 +58,7 @@ NUTHATCH_PAGED_ACTIONS: Final = frozenset({
     'tokentx',
     'txsBeaconWithdrawal',
     'getminedblocks',
+    'nuthatchValidatorBlocks',
 })
 # How a nest says a range begins before the history it was configured to keep.
 HISTORY_STARTS: Final = re.compile(r'history starts at block (\d+)')
@@ -69,11 +70,26 @@ TRACE_INDEX: Final = 'nuthatchTraceIndex'
 
 
 class NuthatchPage(list):  # noqa: FURB189  # a real list, as the base's callers expect
-    """A page of rows, and the snapshot the nest cut it from."""
+    """A page of rows, the snapshot the nest cut it from, and the answer's other top-level
+    fields."""
 
-    def __init__(self, rows: list[dict[str, Any]], generation: str | None) -> None:
+    def __init__(
+            self,
+            rows: list[dict[str, Any]],
+            generation: str | None,
+            meta: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(rows)
         self.generation = generation
+        self.meta = meta or {}
+
+
+class ValidatorBlocks(NamedTuple):
+    """A validator's proposals the nest proved over [from_block, through]: every block it
+    proposed there, so an empty list is a proven empty interval."""
+    from_block: int
+    through: int
+    rows: list[dict[str, Any]]
 
 
 class Nuthatch(EtherscanAccountHistory):
@@ -152,7 +168,11 @@ class Nuthatch(EtherscanAccountHistory):
         if json_ret.get('status') != '0':
             if isinstance(rows := json_ret.get('result'), list):
                 generation = json_ret.get('generation')
-                return NuthatchPage(rows, generation if isinstance(generation, str) else None)
+                return NuthatchPage(
+                    rows,
+                    generation if isinstance(generation, str) else None,
+                    {k: v for k, v in json_ret.items() if k not in {'status', 'message', 'result'}},
+                )
             return False
 
         message = str(result)
@@ -379,7 +399,68 @@ class Nuthatch(EtherscanAccountHistory):
 
         return blocks
 
-    def _nest_call(self, method: Literal['GET', 'POST'], path: str, body: dict[str, str] | None = None) -> dict[str, Any]:  # noqa: E501
+    def get_validator_blocks(
+            self,
+            validator_index: int,
+            from_block: int,
+            to_block: int | None = None,
+    ) -> ValidatorBlocks:
+        """Every block `validator_index` proposed from `from_block` through `to_block`, or through
+        the last block the nest has proven when `to_block` is None. The nest proves each block's
+        proposer from the beacon header its successor commits to, so the answer covers the
+        validator, not any address. Every page is read and checked before anything is returned.
+
+        May raise:
+        - IndexerRangeStartsLater if the nest's proposer history starts after `from_block`
+        - RemoteError if the nest cannot prove the interval, or answers rows of another validator
+        or pages that do not belong together
+        """
+        options: dict[str, Any] = {
+            'validator': str(validator_index),
+            'startblock': str(from_block),
+            'sort': 'asc',
+            'page': '1',
+            'offset': str(self.pagination_limit),
+        }
+        if to_block is not None:
+            options['endblock'] = str(to_block)
+        rows: list[dict[str, Any]] = []
+        through: int | None = None
+        while True:
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='nuthatchValidatorBlocks',
+                options=options,
+            )
+            if not isinstance(result, list):
+                raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} with {result}')  # noqa: E501
+            try:
+                page_through = int(getattr(result, 'meta', {})['verifiedThrough'])
+            except (KeyError, TypeError, ValueError) as e:
+                raise RemoteError(f'{self.name} did not say how far it proved the blocks of validator {validator_index}') from e  # noqa: E501
+            if through is not None and page_through != through:
+                raise RemoteError(f'{self.name} proved the blocks of validator {validator_index} through {through} on one page and {page_through} on another')  # noqa: E501
+            through = page_through
+            for row in result:
+                try:
+                    proposer = int(row['proposerIndex'])
+                except (KeyError, TypeError, ValueError) as e:
+                    raise RemoteError(f'{self.name} answered a block of validator {validator_index} without its proposer: {row}') from e  # noqa: E501
+                if proposer != validator_index:
+                    raise RemoteError(f'{self.name} answered block {row.get("blockNumber")}, proposed by {proposer}, for validator {validator_index}')  # noqa: E501
+            rows.extend(result)
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break
+            options = new_options
+
+        if to_block is not None and through < to_block:
+            raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} through {to_block} having proved them only through {through}')  # noqa: E501
+        if (end := through if to_block is None else to_block) < from_block:
+            raise RemoteError(f'{self.name} has proven no blocks of validator {validator_index} from block {from_block} yet')  # noqa: E501
+        return ValidatorBlocks(from_block=from_block, through=end, rows=rows)
+
+    def _nest_call(self, method: Literal['GET', 'POST'], path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:  # noqa: E501
         """One call to the nest's own management API, outside the Etherscan-shaped `/api`.
 
         May raise:
@@ -447,7 +528,9 @@ class Nuthatch(EtherscanAccountHistory):
                 cursor=cursor,
                 name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH,
             ) or '[]'))
-        watched = {str(a).lower() for a in self._nest_call('GET', '/api/watch').get('watched', [])}
+        listed = self._nest_call('GET', '/api/watch')
+        watched = {str(a).lower() for a in listed.get('watched', [])}
+        self._sync_watched_validators(listed)
         for address in sorted(tracked - watched):
             self._nest_call('POST', '/api/watch', {'address': address})
         for address in sorted(pending):
@@ -458,6 +541,52 @@ class Nuthatch(EtherscanAccountHistory):
                 self.db.set_static_cache(
                     write_cursor=write_cursor,
                     name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH,
+                    value=json.dumps(sorted(pending)),
+                )
+
+    def queue_unwatch_validators(self, indices: Sequence[int]) -> None:
+        """Remember validators the nest should stop watching, for the next sync to tell it."""
+        with self.db.conn.read_ctx() as cursor:
+            pending = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+            ) or '[]'))
+        pending.update(indices)
+        with self.db.user_write() as write_cursor:
+            self.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+                value=json.dumps(sorted(pending)),
+            )
+
+    def _sync_watched_validators(self, listed: dict[str, Any]) -> None:
+        """Tell the nest to watch every validator rotki tracks, whatever is known of its
+        activation or withdrawal address, and to stop watching those rotki removed. `listed` is
+        the nest's answer to GET /api/watch.
+
+        May raise:
+        - RemoteError if the nest cannot be reached or refuses a change
+        """
+        try:
+            watched = {int(index) for index in listed.get('validators', [])}
+        except (TypeError, ValueError) as e:
+            raise RemoteError(f'{self.name} listed its watched validators as {listed.get("validators")}') from e  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            tracked = {row[0] for row in cursor.execute('SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
+            pending = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+            ) or '[]'))
+        for index in sorted(tracked - watched):
+            self._nest_call('POST', '/api/watch', {'validator': index})
+        for index in sorted(pending):
+            if index in watched and index not in tracked:
+                self._nest_call('POST', '/api/unwatch', {'validator': index})
+            pending.discard(index)
+            with self.db.user_write() as write_cursor:
+                self.db.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
                     value=json.dumps(sorted(pending)),
                 )
 
