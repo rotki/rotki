@@ -1140,7 +1140,7 @@ def test_nuthatch_watch_sync_follows_rotkis_validators(database, nuthatch: Nutha
         calls.append((method, path, kwargs.get('json')))
         if path == '/ready':
             return MockResponse(HTTPStatus.OK, '{"chain_id": 1}')
-        return MockResponse(HTTPStatus.OK, json.dumps({'watched': [], 'validators': [8, 9]}))
+        return MockResponse(HTTPStatus.OK, json.dumps({'watched': [], 'validators': [8, 9, 10]}))
 
     cached = CachedSettings()
     order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
