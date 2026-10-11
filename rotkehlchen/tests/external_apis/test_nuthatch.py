@@ -18,12 +18,13 @@ from rotkehlchen.chain.evm.types import (
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeStartsLater, RemoteError
-from rotkehlchen.externalapis.nuthatch import Nuthatch
+from rotkehlchen.externalapis.nuthatch import Nuthatch, ValidatorBlocks
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -1071,3 +1072,248 @@ def test_nest_range_with_a_block_that_did_not_read_is_kept(eth2, nuthatch: Nutha
     with eth2.database.conn.read_ctx() as cursor:
         kept = json.loads(eth2.database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES) or '[]')  # noqa: E501
     assert [str(WITHDRAWAL), 0, 26_200_000] in [entry[:3] for entry in kept]
+
+
+def _proven(index: int = 577475, block: int = 26167074, **fields: Any) -> dict[str, Any]:
+    """A row of the nest's nuthatchValidatorBlocks: a block it proved `index` proposed."""
+    return {
+        'proposerIndex': str(index), 'blockNumber': str(block), 'timeStamp': '1767000000',
+        'blockHash': '0x' + '11' * 32, 'feeRecipient': '0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97',  # noqa: E501
+        'blockReward': '9', 'mev': 'relay', 'mevRecipient': str(FEE_RECIPIENT).lower(),
+        'mevReward': '2275207282975303', 'relays': 'flashbots,ultrasound', **fields,
+    }
+
+
+def _validator_page(rows: list[dict[str, Any]], through: Any = 26_199_998, **meta: Any) -> MockResponse:  # noqa: E501
+    body = {'status': '1', 'message': 'OK', 'result': rows, 'generation': '7', 'supportedFrom': 19426587, 'verifiedThrough': through, **meta}  # noqa: E501
+    return MockResponse(status_code=HTTPStatus.OK, text=json.dumps(body))
+
+
+def test_nuthatch_validator_blocks_read_every_page_of_one_proof(nuthatch: Nuthatch) -> None:
+    """Every page is read, through the snapshot page 1 was cut from, and the answer covers the
+    validator through what the nest proved."""
+    nuthatch.pagination_limit = 2
+    pages = [
+        _validator_page([_proven(block=19_500_000), _proven(block=19_500_001)]),
+        _validator_page([_proven(block=19_600_000)]),
+    ]
+    with patch.object(nuthatch.session, 'get', side_effect=pages) as get:
+        answer = nuthatch.get_validator_blocks(validator_index=577475, from_block=19_426_587)
+    assert (answer.from_block, answer.through) == (19_426_587, 26_199_998)
+    assert [row['blockNumber'] for row in answer.rows] == ['19500000', '19500001', '19600000']
+    second = get.call_args_list[1].kwargs['params']
+    assert (second['action'], second['validator'], second['page'], second['generation']) == ('nuthatchValidatorBlocks', '577475', '2', '7')  # noqa: E501
+    assert 'endblock' not in second, 'without an end, the nest answers through what it proved'
+
+
+@pytest.mark.parametrize('pages', [
+    [_validator_page([_proven(index=1)])],  # another validator's block
+    [_validator_page([{**_proven(), 'proposerIndex': None}])],  # no proposer
+    [_validator_page([_proven()], through=None)],  # no proven bound
+    [_validator_page([_proven(block=1), _proven(block=2)]), _validator_page([], through=5)],  # bounds that move  # noqa: E501
+])
+def test_nuthatch_validator_blocks_that_do_not_prove_the_validator_are_refused(nuthatch: Nuthatch, pages: list[MockResponse]) -> None:  # noqa: E501
+    nuthatch.pagination_limit = 2
+    with patch.object(nuthatch.session, 'get', side_effect=pages), pytest.raises(RemoteError):
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=19_426_587)
+
+
+def test_nuthatch_validator_blocks_past_the_proof_are_refused(nuthatch: Nuthatch) -> None:
+    """An answer through an end the nest says it has not proven yet is not taken."""
+    with patch.object(nuthatch.session, 'get', return_value=_validator_page([], through=100)), pytest.raises(RemoteError):  # noqa: E501
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=50, to_block=200)
+
+
+def test_nuthatch_watch_sync_follows_rotkis_validators(database, nuthatch: Nuthatch) -> None:
+    """Every validator rotki tracks is watched, also one whose activation and withdrawal address
+    are not known; a removed one is unwatched only if rotki removed it and no longer tracks it."""
+    with database.user_write() as write_cursor:
+        DBEth2(database).add_or_update_validators(write_cursor, [
+            ValidatorDetails(validator_index=7, public_key=Eth2PubKey('0x' + '07' * 48), validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=8, public_key=Eth2PubKey('0x' + '08' * 48), validator_type=ValidatorType.DISTRIBUTING, withdrawal_address=WITHDRAWAL, activation_timestamp=Timestamp(1600000000)),  # noqa: E501
+        ])
+    nuthatch.queue_unwatch_validators([9, 8])  # 8 was removed, then added again
+    calls: list[tuple[str, str, dict | None]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> MockResponse:
+        path = url.split('127.0.0.1:8288', 1)[1]
+        calls.append((method, path, kwargs.get('json')))
+        if path == '/ready':
+            return MockResponse(HTTPStatus.OK, '{"chain_id": 1}')
+        return MockResponse(HTTPStatus.OK, json.dumps({'watched': [], 'validators': [8, 9]}))
+
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', order),
+        patch.object(nuthatch.session, 'request', side_effect=request),
+    ):
+        nuthatch.sync_watched()
+
+    changes = [(path, body) for method, path, body in calls if method == 'POST' and 'validator' in (body or {})]  # noqa: E501
+    assert changes == [('/api/watch', {'validator': 7}), ('/api/unwatch', {'validator': 9})]
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS) == '[]'  # noqa: E501
+
+
+def _proven_pass(
+        eth2,
+        nuthatch: Nuthatch,
+        answers: Any,
+        head: int = 26_200_000,
+        without_mev: set[int] | None = None,
+        asked: list[tuple[int, int, int | None]] | None = None,
+) -> tuple[set[int], set[int]]:
+    """One pass of the nest's proven path. `answers` maps a validator to its rows, or is a
+    callable of validator, first block and last block returning a ValidatorBlocks or raising."""
+    def validator_blocks(validator_index: int, from_block: int, to_block: int | None = None) -> ValidatorBlocks:  # noqa: E501
+        if asked is not None:
+            asked.append((validator_index, from_block, to_block))
+        if callable(answers):
+            return answers(validator_index, from_block, to_block)
+        return ValidatorBlocks(from_block, head - 1 if to_block is None else to_block, answers.get(validator_index, []))  # noqa: E501
+
+    with (
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(nuthatch, 'finalized_head', return_value=(head, ts_now())),
+        patch.object(nuthatch, 'sync_watched'),
+        patch.object(nuthatch, 'get_validator_blocks', side_effect=validator_blocks),
+        patch.object(nuthatch, 'block_timestamp', side_effect=lambda block: Timestamp(1700000000 + block - 19_426_587)),  # noqa: E501
+    ):
+        return eth2._get_and_store_proven_blocks_from_nest(blocks_without_mev=set() if without_mev is None else without_mev)  # noqa: E501
+
+
+def _coverage(database) -> dict[str, list]:
+    with database.conn.read_ctx() as cursor:
+        return json.loads(database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE) or '{}')  # noqa: E501
+
+
+def test_proven_block_is_booked_to_its_validator_wherever_its_rewards_went(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """Validator 577475's block 26167074 paid nothing to a tracked address: the nest proves who
+    proposed it, so it is booked to the validator, as informational income, and the validator is
+    covered from Dencun through what the nest proved. Its produced-block query time is beaconcha.in's
+    and does not move."""
+    _validator(eth2)
+    unanswered, before = _proven_pass(eth2, nuthatch, {577475: [_proven()]})
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
+    with eth2.database.conn.read_ctx() as cursor:
+        tracked = cursor.execute('SELECT DISTINCT info.is_exit_or_blocknumber FROM eth_staking_events_info info JOIN history_events he ON he.identifier=info.identifier WHERE he.group_identifier=?', ('BP1_26167074',)).fetchall()  # noqa: E501
+    assert tracked == [(26167074,)]
+    assert _coverage(eth2.database)['577475'][:2] == [19_426_587, 26_199_999]
+    assert _cursor(eth2.database) is None
+    assert unanswered == set()
+    assert before == {577475}, 'active before Dencun, its earlier blocks are not covered'
+
+
+def test_proven_path_asks_a_validator_nothing_is_known_about(eth2, nuthatch: Nuthatch) -> None:
+    """A validator with no known activation or withdrawal address is asked about all the same,
+    and, its activation unknown, its blocks before the proven interval are not claimed covered."""
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=577475,
+            public_key=Eth2PubKey(PUBKEY),
+            validator_type=ValidatorType.DISTRIBUTING,
+        )])
+    _, before = _proven_pass(eth2, nuthatch, {577475: [_proven()]})
+    assert [validator for _, validator, _ in _block_events(eth2.database, 26167074)] == [577475, 577475]  # noqa: E501
+    assert before == {577475}
+
+
+def test_proven_progress_moves_only_through_what_the_nest_proved(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """The next pass asks from the block after the proven interval; a validator proven to the
+    nest's head is not asked; one that exited is not asked once proven through its exit; a
+    validator activated after the proven interval began is fully covered."""
+    _validator(eth2, index=1, pubkey='0x' + '01' * 48)
+    _validator(eth2, index=2, pubkey='0x' + '02' * 48, exited=Timestamp(1700000000 + 100))
+    with eth2.database.user_write() as write_cursor:
+        write_cursor.execute('UPDATE eth2_validators SET activation_timestamp=? WHERE validator_index=2', (1800000000,))  # noqa: E501
+    asked: list[tuple[int, int, int | None]] = []
+    _proven_pass(eth2, nuthatch, {}, head=19_426_700, asked=asked)
+    assert sorted(a for a in asked if a[2] is None) == [(1, 19_426_587, None), (2, 19_426_587, None)]  # noqa: E501
+
+    asked.clear()
+    _, before = _proven_pass(eth2, nuthatch, {}, head=19_426_800, asked=asked)
+    assert [a for a in asked if a[2] is None] == [(1, 19_426_700, None)], 'proven through its exit, validator 2 is done'  # noqa: E501
+    assert (2, 19_426_587, 19_426_699) in asked, 'its proven range is asked again for late relay records'  # noqa: E501
+    assert _coverage(eth2.database)['1'][:2] == [19_426_587, 19_426_799]
+    assert before == {1}
+
+    asked.clear()
+    _proven_pass(eth2, nuthatch, {}, head=19_426_800, asked=asked)
+    assert [a for a in asked if a[2] is None] == [], 'proven to head - 1, nothing new to ask'
+
+
+def test_proven_rows_that_name_another_validator_or_do_not_read_book_nothing(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A row that does not read refuses the whole answer: nothing is stored, the validator is
+    left uncovered and its progress does not move."""
+    _validator(eth2)
+    unanswered, _ = _proven_pass(eth2, nuthatch, {577475: [_proven(block=26167073), {**_proven(), 'timeStamp': 'not a time'}]})  # noqa: E501
+    assert unanswered == {577475}
+    assert _block_events(eth2.database, 26167073) == []
+    assert _coverage(eth2.database) == {}
+
+
+def test_proven_block_without_its_reward_is_kept_and_booked_later(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A block whose reward the nest could not read is not booked at zero: its range is kept,
+    and booked once the nest has the reward."""
+    _validator(eth2)
+    without_reward = {k: v for k, v in _proven().items() if k != 'blockReward'}
+    _proven_pass(eth2, nuthatch, {577475: [{**without_reward, 'rewardStatus': 'unavailable'}]})
+    assert _block_events(eth2.database, 26167074) == []
+    _proven_pass(eth2, nuthatch, {577475: [_proven()]})
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
+
+
+def test_proven_block_without_a_relay_record_gets_its_mev_later_once(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """No relay record is not no MEV: the block goes to the recheck, and when the nest later has
+    the record, the MEV is added without the reward twice."""
+    _validator(eth2)
+    without_mev: set[int] = set()
+    _proven_pass(eth2, nuthatch, {577475: [_proven(mev='unrecorded', mevRecipient='', mevReward='')]}, without_mev=without_mev)  # noqa: E501
+    assert without_mev == {26167074}
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009')]
+    _proven_pass(eth2, nuthatch, {577475: [_proven()]})
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
+
+
+def test_proof_replaces_an_earlier_guess_but_not_an_edit(eth2, nuthatch: Nuthatch) -> None:
+    """Events an earlier source booked to another validator are replaced by the proven ones;
+    events the user edited are kept as they are."""
+    _validator(eth2)
+    _validator(eth2, index=2, pubkey='0x' + '02' * 48)
+    dbevents = DBHistoryEvents(eth2.database)
+    guess = EthBlockEvent(validator_index=2, timestamp=TimestampMS(1767000000000), amount=ONE, fee_recipient=WITHDRAWAL, fee_recipient_tracked=False, block_number=26167074, is_mev_reward=False)  # noqa: E501
+    edited = EthBlockEvent(validator_index=2, timestamp=TimestampMS(1767000000000), amount=ONE, fee_recipient=WITHDRAWAL, fee_recipient_tracked=False, block_number=26167075, is_mev_reward=False)  # noqa: E501
+    with eth2.database.user_write() as write_cursor:
+        dbevents.add_history_event(write_cursor=write_cursor, event=guess)
+        dbevents.add_history_event(write_cursor=write_cursor, event=edited, mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED})  # noqa: E501
+    _proven_pass(eth2, nuthatch, {577475: [_proven(), _proven(block=26167075)]})
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
+    assert _block_events(eth2.database, 26167075)[0] == (0, 2, '1'), 'the edit is the user\'s'
+
+
+def test_address_answers_never_rebook_a_proven_block(eth2, nuthatch: Nuthatch) -> None:
+    """Once the nest proved a block's proposer, a relay key naming another tracked validator in
+    an address answer does not move it."""
+    _track(eth2, FEE_RECIPIENT)
+    _validator(eth2)
+    other = '0x' + '02' * 48
+    _validator(eth2, index=2, pubkey=other)
+    _proven_pass(eth2, nuthatch, {577475: [_proven(mev='unrecorded', mevRecipient='', mevReward='')]})  # noqa: E501
+    _nest_pass(eth2, nuthatch, {FEE_RECIPIENT: [{**PAID_BLOCK, 'proposerPubkey': other}]})
+    assert [validator for _, validator, _ in _block_events(eth2.database, 26167074)] == [577475, 577475]  # noqa: E501
+
+
+def test_proven_history_starting_later_leaves_the_earlier_blocks_uncovered(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A nest whose proposer history starts after Dencun is asked from there, and the blocks
+    before are left uncovered."""
+    _validator(eth2)
+
+    def later(validator_index: int, from_block: int, to_block: int | None) -> ValidatorBlocks:
+        if from_block < 20_000_000:
+            raise IndexerRangeStartsLater('history starts at block 20000000', first_block=20_000_000)  # noqa: E501
+        return ValidatorBlocks(from_block, 26_199_999, [])
+
+    with patch.object(nuthatch, 'get_validator_blocks', side_effect=later):
+        answer = eth2._ask_nest_for_validator(nuthatch, 577475, 19_426_587)
+    assert (answer.from_block, answer.through) == (20_000_000, 26_199_999)
