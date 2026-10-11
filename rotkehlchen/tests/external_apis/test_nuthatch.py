@@ -1549,9 +1549,14 @@ def test_withdrawals_before_the_nests_history_are_asked_from_its_start_and_told(
         asked.append(period)
         if period.from_value < 25_870_000:
             raise IndexerRangeStartsLater('history starts at block 25870000', first_block=25_870_000)  # noqa: E501
-        return set()
+        with eth2.database.user_write() as write_cursor:  # as the source does, page by page
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=ts_now(), address=address)  # noqa: E501
+        return {1}
 
+    cached = CachedSettings()
+    nest_only = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
     with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', nest_only),
         patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
         patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: TimestampOrBlockRange('blocks', 0, 26_200_000)),  # noqa: E501
         patch.object(nuthatch, 'get_withdrawals', side_effect=withdrawals),
@@ -1582,3 +1587,19 @@ def test_uncovered_history_is_told_from_its_real_end_once_per_session(database, 
     assert warning.call_count == 1
     assert '1970' not in warning.call_args.args[0]
     assert 'before' in warning.call_args.args[0]
+
+
+def test_withdrawals_go_nowhere_unchosen_when_the_ordered_nest_is_dropped(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A nest ordered alone but dropped for the session leaves no indexer to ask: the address
+    does not go to etherscan or blockscout, which the user did not choose."""
+    cached = CachedSettings()
+    nest_only = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    period = TimestampOrBlockRange(range_type='blocks', from_value=17034870, to_value=17300000)
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', nest_only),
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[]),
+        patch.object(eth2.ethereum.etherscan, 'get_withdrawals', return_value={6}) as etherscan,
+        patch.object(eth2.ethereum.blockscout, 'query_withdrawals', return_value={7}) as blockscout,  # noqa: E501
+    ):
+        assert eth2._fetch_withdrawals_from_external_sources(ADDRESS, period) is None
+    assert etherscan.call_count == blockscout.call_count == 0

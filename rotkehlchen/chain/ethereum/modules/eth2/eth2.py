@@ -17,6 +17,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.eth2 import DBEth2, IncludeExcludeFilterData
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import (
@@ -42,6 +43,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     Location,
@@ -559,7 +561,10 @@ class Eth2(EthereumModule):
         Returns untracked validator indices, or None if every source fails.
         """
         ordered = self.ethereum._get_indexers_in_order()
-        strict = EvmIndexer.NUTHATCH in (name for name, _ in ordered)
+        # what the user configured, not what is available now: a nest dropped for this session
+        # must not let the address go to services the user did not choose
+        configured = CachedSettings().get_evm_indexers_order_for_chain(chain_id=ChainID.ETHEREUM)
+        strict = EvmIndexer.NUTHATCH in configured
         sources: list[EtherscanAccountHistory] = [
             indexer for _, indexer in ordered if isinstance(indexer, EtherscanAccountHistory)
         ]
@@ -594,7 +599,7 @@ class Eth2(EthereumModule):
                     e,
                 )
 
-        if strict and EvmIndexer.BLOCKSCOUT not in (name for name, _ in ordered):
+        if strict and EvmIndexer.BLOCKSCOUT not in configured:
             return None  # every source the user chose failed
         try:
             return self.ethereum.blockscout.query_withdrawals(address)
@@ -654,6 +659,11 @@ class Eth2(EthereumModule):
             details = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=list(untracked_validator_indices))  # noqa: E501
             with self.database.user_write() as write_cursor:
                 DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
+                # the source records its progress page by page; put it back where it was
+                if last_query is None:
+                    self.database.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
+                else:
+                    self.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=Timestamp(int(last_query)), address=address)  # noqa: E501
             return
         if untracked_validator_indices is None:
             # Nothing is recorded, so the next query asks for the same range again.
