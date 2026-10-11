@@ -1618,6 +1618,7 @@ def test_withdrawals_query_time_is_put_back_whatever_fails_after_a_refusal(eth2,
             raise IndexerRangeStartsLater('history starts at block 25870000', first_block=25_870_000)  # noqa: E501
         with eth2.database.user_write() as write_cursor:
             eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=ts_now(), address=address)  # noqa: E501
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, value=123456, address=address)  # noqa: E501
         if fails == 'shortened query':
             raise RemoteError('the second page failed')
         return {1}
@@ -1636,3 +1637,4 @@ def test_withdrawals_query_time_is_put_back_whatever_fails_after_a_refusal(eth2,
         eth2.query_single_address_withdrawals(WITHDRAWAL, ts_now())
     with eth2.database.conn.read_ctx() as cursor:
         assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=WITHDRAWAL) is None  # noqa: E501
+        assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, address=WITHDRAWAL) is None, 'blockscout must not stop short of the gap'  # noqa: E501

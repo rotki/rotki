@@ -650,6 +650,8 @@ class Eth2(EthereumModule):
             log.warning(f'Could not turn the withdrawals range of {address} into blocks: {e!s}')
             period = None
         uncovered_before: list[int] = []
+        with self.database.conn.read_ctx() as cursor:
+            last_index = self.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, address=address)  # noqa: E501
         try:
             untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period, uncovered_before)  # noqa: E501
             if len(uncovered_before) != 0 and untracked_validator_indices is not None:
@@ -671,13 +673,18 @@ class Eth2(EthereumModule):
                 return
         finally:
             if len(uncovered_before) != 0:
-                # the source records its progress page by page, also before a failure; put it
-                # back where it was, whatever happened after
+                # the source records its progress page by page, also before a failure: the
+                # query time, and the last withdrawal index blockscout stops at. Both are put
+                # back where they were, whatever happened after.
                 with self.database.user_write() as write_cursor:
-                    if last_query is None:
-                        self.database.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
-                    else:
-                        self.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=Timestamp(int(last_query)), address=address)  # noqa: E501
+                    for name, value in (
+                        (DBCacheDynamic.WITHDRAWALS_TS, last_query),
+                        (DBCacheDynamic.WITHDRAWALS_IDX, last_index),
+                    ):
+                        if value is None:
+                            self.database.delete_dynamic_cache(write_cursor=write_cursor, name=name, address=address)  # noqa: E501
+                        else:
+                            self.database.set_dynamic_cache(write_cursor=write_cursor, name=name, value=int(value), address=address)  # type: ignore[call-overload]  # noqa: E501
         if untracked_validator_indices is None:
             # Nothing is recorded, so the next query asks for the same range again.
             self.msg_aggregator.add_warning(
