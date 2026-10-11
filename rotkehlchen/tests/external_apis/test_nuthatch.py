@@ -1,3 +1,4 @@
+import contextlib
 import json
 from http import HTTPStatus
 from typing import Any, Final, cast
@@ -1603,3 +1604,35 @@ def test_withdrawals_go_nowhere_unchosen_when_the_ordered_nest_is_dropped(eth2, 
     ):
         assert eth2._fetch_withdrawals_from_external_sources(ADDRESS, period) is None
     assert etherscan.call_count == blockscout.call_count == 0
+
+
+@pytest.mark.parametrize('fails', ['shortened query', 'validator lookup'])
+def test_withdrawals_query_time_is_put_back_whatever_fails_after_a_refusal(eth2, nuthatch: Nuthatch, fails: str) -> None:  # noqa: E501
+    """The source records its progress page by page. If the query asked again from the nest's
+    first block fails after a page, or the validator lookup after it fails, the query time is
+    still put back, so the period nothing covered is asked for again."""
+    _validator(eth2)
+
+    def withdrawals(address: ChecksumEvmAddress, period: TimestampOrBlockRange) -> set[int]:
+        if period.from_value < 25_870_000:
+            raise IndexerRangeStartsLater('history starts at block 25870000', first_block=25_870_000)  # noqa: E501
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=ts_now(), address=address)  # noqa: E501
+        if fails == 'shortened query':
+            raise RemoteError('the second page failed')
+        return {1}
+
+    cached = CachedSettings()
+    nest_only = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', nest_only),
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: TimestampOrBlockRange('blocks', 0, 26_200_000)),  # noqa: E501
+        patch.object(nuthatch, 'get_withdrawals', side_effect=withdrawals),
+        patch.object(eth2.beacon_inquirer, 'get_validator_data', side_effect=RemoteError('beacon down')),  # noqa: E501
+        patch.object(eth2.msg_aggregator, 'add_warning'),
+        contextlib.suppress(RemoteError),
+    ):
+        eth2.query_single_address_withdrawals(WITHDRAWAL, ts_now())
+    with eth2.database.conn.read_ctx() as cursor:
+        assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=WITHDRAWAL) is None  # noqa: E501

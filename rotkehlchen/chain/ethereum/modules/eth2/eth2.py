@@ -574,22 +574,22 @@ class Eth2(EthereumModule):
             if period is None:
                 break
             try:
-                return source.get_withdrawals(address=address, period=period)
+                found = source.get_withdrawals(address=address, period=period)
             except IndexerRangeStartsLater as e:
                 if not period.from_value < e.first_block <= period.to_value:
                     log.error(f'Failed to query ethereum withdrawals for {address} through {source.name}: {e!s}')  # noqa: E501
                     continue
+                # noted before asking, since the source records its progress as it goes
+                if uncovered_before is not None:
+                    uncovered_before.append(e.first_block)
                 try:
-                    found = source.get_withdrawals(
+                    return source.get_withdrawals(
                         address=address,
                         period=TimestampOrBlockRange('blocks', e.first_block, period.to_value),
                     )
                 except (DeserializationError, RemoteError) as later:
                     log.error(f'Failed to query ethereum withdrawals for {address} through {source.name} due to {later!s}')  # noqa: E501
                     continue
-                if uncovered_before is not None:
-                    uncovered_before.append(e.first_block)
-                return found
             except (DeserializationError, RemoteError) as e:
                 log.error(
                     'Failed to query ethereum withdrawals for %s through %s due to %s. '
@@ -598,16 +598,24 @@ class Eth2(EthereumModule):
                     source.name,
                     e,
                 )
+            else:  # the whole range answered: nothing in it is uncovered
+                if uncovered_before is not None:
+                    uncovered_before.clear()
+                return found
 
         if strict and EvmIndexer.BLOCKSCOUT not in configured:
             return None  # every source the user chose failed
         try:
-            return self.ethereum.blockscout.query_withdrawals(address)
+            found = self.ethereum.blockscout.query_withdrawals(address)
         except (DeserializationError, RemoteError, KeyError) as othere:
             msg = str(othere)
             if isinstance(othere, KeyError):
                 msg = f'Missing key entry for {msg}'
             log.error(f'Failed to query ethereum withdrawals for {address} through blockscout due to {msg}. Bailing out for now.')  # noqa: E501
+        else:
+            if uncovered_before is not None:  # blockscout answers the whole history
+                uncovered_before.clear()
+            return found
 
         return None
 
@@ -642,29 +650,34 @@ class Eth2(EthereumModule):
             log.warning(f'Could not turn the withdrawals range of {address} into blocks: {e!s}')
             period = None
         uncovered_before: list[int] = []
-        untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period, uncovered_before)  # noqa: E501
-        if len(uncovered_before) != 0 and untracked_validator_indices is not None:
-            # The withdrawals from the nest's first block on are stored, but the query time is
-            # not moved on past a period nothing covered, so a covering indexer added later
-            # still asks for it.
-            if (address, uncovered_before[0]) not in self._told_withdrawals_uncovered:
-                self._told_withdrawals_uncovered.add((address, uncovered_before[0]))
-                self.msg_aggregator.add_warning(
-                    f'No indexer in the Ethereum indexer order covers the withdrawals of {address} '  # noqa: E501
-                    f'before block {uncovered_before[0]}, so those were not imported. Add one that '  # noqa: E501
-                    "covers them to Ethereum's indexer order to import them.",
-                    classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no configured indexer covers the period'),  # noqa: E501
-                    subject=Location.ETHEREUM,
-                )
-            details = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=list(untracked_validator_indices))  # noqa: E501
-            with self.database.user_write() as write_cursor:
-                DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
-                # the source records its progress page by page; put it back where it was
-                if last_query is None:
-                    self.database.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
-                else:
-                    self.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=Timestamp(int(last_query)), address=address)  # noqa: E501
-            return
+        try:
+            untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period, uncovered_before)  # noqa: E501
+            if len(uncovered_before) != 0 and untracked_validator_indices is not None:
+                # The withdrawals from the nest's first block on are stored, but the query time
+                # is not moved on past a period nothing covered, so a covering indexer added
+                # later still asks for it.
+                if (address, uncovered_before[0]) not in self._told_withdrawals_uncovered:
+                    self._told_withdrawals_uncovered.add((address, uncovered_before[0]))
+                    self.msg_aggregator.add_warning(
+                        f'No indexer in the Ethereum indexer order covers the withdrawals of {address} '  # noqa: E501
+                        f'before block {uncovered_before[0]}, so those were not imported. Add one that '  # noqa: E501
+                        "covers them to Ethereum's indexer order to import them.",
+                        classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no configured indexer covers the period'),  # noqa: E501
+                        subject=Location.ETHEREUM,
+                    )
+                details = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=list(untracked_validator_indices))  # noqa: E501
+                with self.database.user_write() as write_cursor:
+                    DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
+                return
+        finally:
+            if len(uncovered_before) != 0:
+                # the source records its progress page by page, also before a failure; put it
+                # back where it was, whatever happened after
+                with self.database.user_write() as write_cursor:
+                    if last_query is None:
+                        self.database.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
+                    else:
+                        self.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=Timestamp(int(last_query)), address=address)  # noqa: E501
         if untracked_validator_indices is None:
             # Nothing is recorded, so the next query asks for the same range again.
             self.msg_aggregator.add_warning(
