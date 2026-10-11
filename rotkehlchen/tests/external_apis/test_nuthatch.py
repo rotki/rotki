@@ -876,16 +876,21 @@ def test_validators_awaiting_mev_are_picked_for_produced_blocks(eth2, nuthatch: 
         ))
     beaconchain = eth2.beacon_inquirer.beaconchain
     picked = (beaconchain.get_validators_to_query_for_blocks, beaconchain.get_outdated_validators_to_query_for_blocks)  # noqa: E501
-    assert all(7 not in select() for select in picked)
+    assert all(7 not in select() for select in picked), 'no nest in the order, nothing to wait for'
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    with patch.object(type(cached), '_evm_indexers_order_per_chain', order):
+        assert all(7 in select() for select in picked), 'the nest was never asked about it'
 
     eth2._set_mev_recheck({304})
     assert all(7 in select() for select in picked), 'a block waiting for its MEV'
     eth2._set_mev_recheck(set())
 
-    with eth2.database.user_write() as write_cursor:
-        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited + 86400, index=7)  # noqa: E501
-    assert all(7 in select() for select in picked), 'the nest was last asked inside the window'
+    with patch.object(type(cached), '_evm_indexers_order_per_chain', order):
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited + 86400, index=7)  # noqa: E501
+        assert all(7 in select() for select in picked), 'last asked inside the window'
 
-    with eth2.database.user_write() as write_cursor:
-        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
-    assert all(7 not in select() for select in picked)
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
+        assert all(7 not in select() for select in picked)

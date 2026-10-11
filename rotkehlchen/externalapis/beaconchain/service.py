@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     calculate_query_chunks,
     produced_blocks_cursor,
 )
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -36,6 +37,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
 )
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     ExternalService,
@@ -531,8 +533,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
     def _validators_awaiting_mev(self) -> set[int]:
         """Validators whose produced blocks may still get MEV from a nuthatch nest, whatever their
-        last query time says: those with a block the nest stored without its MEV reward, and
-        exited ones the nest has not been asked about since their retry window closed."""
+        last query time says: those with a block the nest stored without its MEV reward, and,
+        while Ethereum's indexer order names the nest, exited ones it has not been asked about
+        since their retry window closed."""
         with self.db.conn.read_ctx() as cursor:
             pending = json.loads(self.db.get_static_cache(
                 cursor=cursor,
@@ -544,13 +547,18 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 'WHERE he.group_identifier=? AND he.sequence_index=0',
                 (EthBlockEvent.form_group_identifier(block),),
             )}
+            if EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(
+                chain_id=ChainID.ETHEREUM,
+            ):
+                return awaiting
+
             nest_key = DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS.value[0]
-            key_name = nest_key.removesuffix('{index}')
             awaiting.update(row[0] for row in cursor.execute(
                 'SELECT ev.validator_index FROM eth2_validators ev '
-                'JOIN key_value_cache kv ON kv.name = ? || ev.validator_index '
-                'WHERE ev.exited_timestamp IS NOT NULL AND CAST(kv.value AS INTEGER) < ev.exited_timestamp + ?',  # noqa: E501
-                (key_name, UNRECORDED_MEV_RETRY_WINDOW),
+                'LEFT JOIN key_value_cache kv ON kv.name = ? || ev.validator_index '
+                'WHERE ev.exited_timestamp IS NOT NULL AND '
+                '(kv.name IS NULL OR CAST(kv.value AS INTEGER) < ev.exited_timestamp + ?)',
+                (nest_key.removesuffix('{index}'), UNRECORDED_MEV_RETRY_WINDOW),
             ))
         return awaiting
 
