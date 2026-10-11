@@ -1478,3 +1478,23 @@ def test_beaconchain_failing_part_way_cannot_book_a_proven_block_to_another_vali
     ):
         eth2.get_and_store_produced_blocks(indices=[577475])
     assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009')]
+
+
+def test_range_asked_again_whose_start_is_no_longer_proven_is_kept(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A remembered range whose start a newer nest no longer proves is kept whole, and its
+    validator reported not covered, so a reward owed before the new start is not forgotten."""
+    _validator(eth2)
+    with eth2.database.user_write() as write_cursor:
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES, value=json.dumps([[577475, 19_500_000, 19_600_000, ts_now() - 40 * 86400]]))  # noqa: E501
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE, value=json.dumps({'577475': [19_426_587, 26_199_999, 1800000000, 1700000000]}))  # noqa: E501
+
+    def later(validator_index: int, from_block: int, to_block: int | None) -> ValidatorBlocks:
+        if to_block is not None and from_block < 19_550_000:
+            raise IndexerRangeStartsLater('proposals are proven from block 19550000', first_block=19_550_000)  # noqa: E501
+        return ValidatorBlocks(from_block, 26_199_999 if to_block is None else to_block, [])
+
+    unanswered, _ = _proven_pass(eth2, nuthatch, later)
+    with eth2.database.conn.read_ctx() as cursor:
+        kept = json.loads(eth2.database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES) or '[]')  # noqa: E501
+    assert [577475, 19_500_000, 19_600_000] in [entry[:3] for entry in kept]
+    assert 577475 in unanswered

@@ -1171,7 +1171,12 @@ class Eth2(EthereumModule):
                 unanswered.add(index)
                 ranges.append((index, from_block, to_block, served_at))
                 continue
-            if lacking or not nest_range_settled(served_at=Timestamp(served_at), asked_at=asked_at):  # noqa: E501
+            if answer.from_block != from_block:
+                # The nest no longer proves the start of the range: what is owed there stays
+                # owed, and the validator is not covered until it is answered.
+                unanswered.add(index)
+                ranges.append((index, from_block, to_block, served_at))
+            elif lacking or not nest_range_settled(served_at=Timestamp(served_at), asked_at=asked_at):  # noqa: E501
                 ranges.append((index, from_block, to_block, served_at))
 
         ranges += [(index, from_block, to_block, asked_at) for index, from_block, to_block in served]  # noqa: E501
