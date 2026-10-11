@@ -2742,6 +2742,99 @@ def test_checkpoint_rolls_back_when_saving_fails(
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+def test_migrated_address_failed_decode_keeps_checkpoint(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A v53->v54 migrated address keeps a stored zero checkpoint instead of a missing
+    row, so it is not treated as newly tracked: its checkpoint is persisted together
+    with the saved transactions, before decoding. If that first decode fails, the
+    checkpoint must stay at the persisted height, so the next refresh does not pull
+    the full history from block zero again; the pending decode is retried through
+    the empty-result path instead.
+    """
+    address = btc_accounts[0]
+    database = bitcoin_manager.database
+    with database.conn.write_ctx() as write_cursor:  # the upgrade reset the row to 0
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            value=0,
+            address=address,
+        )
+    tx = _esplora_tx(
+        block_height=900_001,
+        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address)}],  # noqa: E501
+        vout=[_esplora_p2wpkh_txio(value=99_000, address=address)],
+        fee=1_000,
+    )
+    pages = {
+        f'/address/{address}/txs': [tx],
+        f'/address/{address}/txs?after_txid={tx["txid"]}': [],
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        with pytest.raises(RuntimeError, match='boom'):
+            bitcoin_manager.query_transactions(
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+                addresses=btc_accounts,
+            )
+
+    with database.conn.read_ctx() as cursor:
+        # The checkpoint was persisted before decoding, so the failed decode does not
+        # send the next refresh back to block zero. Had the upgrade deleted the row,
+        # the address would have counted as newly tracked and the checkpoint would
+        # still be missing here.
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) == 900_001
+
+    # The retry finds nothing new, so the empty-result path decodes the pending
+    # transaction instead of re-pulling the full history.
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+            return_value=(True, ''),
+        ),
+        _mock_esplora_pages({f'/address/{address}/txs': []}),
+    ):
+        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) == 900_001
+        assert tx['txid'] in [
+            x.tx_id for x in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        ]
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(tx['txid'] in event.group_identifier for event in events)
+
+
+@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
 def test_failed_initial_redecode_is_retried(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
