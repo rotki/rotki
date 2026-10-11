@@ -826,6 +826,63 @@ def test_empty_repull_allowed_when_db_has_no_internals(
     assert stored == []
 
 
+def test_empty_nuthatch_repull_replaces_existing_internals(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A nest refuses what it has not indexed, so its empty answer is complete: every internal
+    it lists for the hash reverted or moved no value. A repull through it removes stored internals
+    that an earlier import kept, where any other indexer's empty answer is refused."""
+    dbevmtx = DBEvmTx(database)
+    parent_tx = make_ethereum_transaction()
+    reverted = EvmInternalTransaction(
+        parent_tx_hash=parent_tx.tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        trace_id=3,
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
+        value=100,
+        gas=0,
+        gas_used=0,
+    )
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[parent_tx],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(parent_tx.tx_hash),
+        )
+        dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=[reverted],
+            relevant_address=None,
+        )
+
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions_with_source',
+        return_value=(iter([[]]), EvmIndexer.NUTHATCH),
+    ):
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=parent_tx.tx_hash,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    assert dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=parent_tx.tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
+    ) == []
+
+
 def test_nonempty_repull_replaces_existing_internals(
         database: DBHandler,
         ethereum_manager: EthereumManager,
@@ -1573,6 +1630,36 @@ def test_nothing_queried_when_query_end_is_unknown(
         ) is None for prefix in QUERY_KINDS)
 
 
+def test_recent_range_is_recorded_to_its_end_when_the_next_block_is_after_it(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """The last block at or before a recent range's end is a few seconds before it. If the block
+    after it is past the end, nothing lies between, so the range is recorded up to its end and
+    can join a saved range starting right after it. If the indexers do not know a next block
+    yet, they may lag, so only the last block's timestamp is recorded."""
+    transactions = ethereum_manager.transactions
+    inquirer = transactions.evm_inquirer
+    start_ts, end_ts = Timestamp(ts_now() - HOUR_IN_SECONDS), Timestamp(ts_now() - 60)
+    location = 'ETHtxs_' + make_evm_address()
+
+    def block_timestamp(block_number: int, **kwargs: Any) -> Timestamp:
+        if block_number == 1001 and not knows_next:
+            raise RemoteError('no such block yet')
+        return Timestamp(end_ts - 4) if block_number == 1000 else Timestamp(end_ts + 8)
+
+    for knows_next, recorded_end in ((False, end_ts - 4), (True, end_ts)):
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM used_query_ranges WHERE name=?', (location,))
+        with (
+            patch.object(inquirer, 'get_blocknumber_by_time', return_value=1000),
+            patch.object(inquirer, 'get_block_timestamp', side_effect=block_timestamp),
+        ):
+            transactions._mark_range_as_queried(location_string=location, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        with database.conn.read_ctx() as cursor:
+            assert database.get_used_query_range(cursor=cursor, name=location) == (start_ts, recorded_end)  # noqa: E501
+
+
 def test_sync_resolves_its_end_once(
         database: DBHandler,
         ethereum_manager: EthereumManager,
@@ -1663,8 +1750,9 @@ def test_sync_resolves_its_end_once(
 
     assert resolved_ts.count(sync_end_ts) == 1, 'the end of the sync must be resolved once'
     assert end_blocks == [end_block] * 6, 'two addresses x three query kinds'
-    # recording the ranges clamps them to how far the indexers reach, read off the same block
-    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block] * 6
+    # recording the ranges clamps them to how far the indexers reach, read off the same block,
+    # and the block after it, whose timestamp is not after the end here, so the clamp holds
+    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block, end_block + 1] * 6  # noqa: E501
     with database.conn.read_ctx() as cursor:
         for address in addresses:
             for prefix in QUERY_KINDS:

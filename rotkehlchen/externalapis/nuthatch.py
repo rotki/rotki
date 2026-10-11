@@ -7,18 +7,24 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
+    Location,
 )
+from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -28,7 +34,6 @@ if TYPE_CHECKING:
     from requests import Response
 
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
-    from rotkehlchen.chain.structures import TimestampOrBlockRange
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.indexer_stats import IndexerStats
     from rotkehlchen.types import (
@@ -59,6 +64,9 @@ NUTHATCH_PAGED_ACTIONS: Final = frozenset({
 })
 # Kept in a paged query's options and never sent: the pages it has read so far.
 PAGES_READ: Final = '_nuthatch_pages_read'
+# The index of an internal row's frame in its transaction's whole trace. The Etherscan-shaped
+# traceId only encodes depth, so two value transfers at one depth would share it.
+TRACE_INDEX: Final = 'nuthatchTraceIndex'
 
 
 class NuthatchPage(list):  # noqa: FURB189  # a real list, as the base's callers expect
@@ -223,13 +231,82 @@ class Nuthatch(EtherscanAccountHistory):
                 tx_timestamp=tx_timestamp,
             ))
         else:
-            yield from list(super().get_transactions(
+            yield self._internal_transactions(
                 chain_id=chain_id,
                 account=account,
-                action='txlistinternal',
                 period_or_hash=period_or_hash,
-                tx_timestamp=tx_timestamp,
-            ))
+            )
+
+    def _internal_transactions(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress | None,
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None,
+    ) -> list[EvmInternalTransaction]:
+        """Every internal transaction of the account or parent hash that moved value.
+
+        The nest lists a frame that reverted, or sits under one that did, with isError "1", as
+        Etherscan does. rotki keeps neither that flag nor the frame's failure, and only checks
+        whether the whole transaction failed, so such a row is dropped here. Pages are counted
+        on what the nest answered, not on what survives, or a page of reverted frames would end
+        the query early.
+
+        May raise:
+        - RemoteError if the nest cannot answer, or a row lacks its trace index
+        """
+        options: dict[str, Any] = {'sort': 'asc'}
+        parent_tx_hash = None
+        if account is not None:
+            options['address'] = str(account)
+        if isinstance(period_or_hash, TimestampOrBlockRange):
+            options = self._process_timestamp_or_blockrange(
+                chain_id=chain_id,
+                period=period_or_hash,
+                options=options,
+            )
+        elif period_or_hash is not None:
+            options['txhash'] = period_or_hash.hex()
+            parent_tx_hash = period_or_hash
+        options.update({'page': '1', 'offset': str(self.pagination_limit)})
+
+        internals: list[EvmInternalTransaction] = []
+        while True:
+            page = self._query(
+                chain_id=chain_id,
+                module='account',
+                action='txlistinternal',
+                options=options,
+            )
+            if not isinstance(page, list):
+                raise RemoteError(f'{self.name} answered internal transactions with {page}')
+            for entry in page:
+                if entry.get('callType') == 'delegatecall' or entry.get('isError') == '1':
+                    continue
+                if (trace_index := entry.get(TRACE_INDEX)) is None:
+                    raise RemoteError(f'{self.name} answered an internal transaction without {TRACE_INDEX}: {entry}')  # noqa: E501
+                try:
+                    tx, _ = deserialize_evm_transaction(
+                        data=entry | {'traceId': trace_index},
+                        internal=True,
+                        chain_id=chain_id,
+                        evm_inquirer=None,
+                        parent_tx_hash=parent_tx_hash,
+                        indexer=self,
+                    )
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'{e!s}. Skipping internal transaction {entry.get("hash")} on {chain_id.to_name()} for {account}',  # noqa: E501
+                        classification=BadData(record=UserMessageRecord.TRANSACTION, error=str(e)),
+                        subject=Location.from_chain_id(chain_id),
+                    )
+                    continue
+                internals.append(tx)  # type: ignore[arg-type]  # internal=True gives internals
+
+            if (new_options := self._maybe_paginate(result=page, options=options)) is None:
+                break
+            options = new_options
+
+        return internals
 
     def get_token_transaction_data(
             self,
@@ -302,7 +379,11 @@ class Nuthatch(EtherscanAccountHistory):
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'{self.name} {path} failed: {e!s}') from e
 
-        if response.status_code != HTTPStatus.OK:
+        # A nest that has not reached its chain head yet answers /ready with 503, and still says
+        # which chain it is on, which is all the watch sync needs to tell it what to watch.
+        if response.status_code != HTTPStatus.OK and not (
+            path == '/ready' and response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+        ):
             raise RemoteError(f'{self.name} {path} answered {response.status_code}: {response.text}')  # noqa: E501
         try:
             return jsonloads_dict(response.text)

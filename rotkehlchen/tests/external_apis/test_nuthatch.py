@@ -8,18 +8,28 @@ import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
-from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_ethereum_transaction,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Eth2PubKey, SupportedBlockchain, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 ADDRESS = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
@@ -410,3 +420,239 @@ def test_adding_an_account_with_the_nest_down_still_adds_it(rotkehlchen_api_serv
     assert pending == f'["{address}"]'
     with patch.object(rotki.nuthatch, 'sync_watched', side_effect=RemoteError('nest is down')):
         rotki._sync_nuthatch_watched()  # logs, never raises
+
+
+def test_existing_accounts_reach_a_nest_set_up_after_them(rotkehlchen_api_server) -> None:
+    """Following the guide with accounts already tracked: set the nest's address, then name it in
+    Ethereum's order. Each step tells the nest what to watch, so the accounts reach it without
+    waiting for the next login or account change. A setting that changes neither does not."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    address = make_evm_address()
+    with patch.object(rotki, 'schedule_nuthatch_watch_sync'):
+        rotki.add_single_blockchain_accounts(
+            chain=SupportedBlockchain.ETHEREUM,
+            account_data=[SingleBlockchainAccountData(address=address)],
+        )
+
+    request, calls = _nest([])
+    with (
+        patch.object(rotki, 'schedule_nuthatch_watch_sync', side_effect=rotki._sync_nuthatch_watched) as schedule,  # noqa: E501
+        patch.object(rotki.nuthatch.session, 'request', side_effect=request),
+    ):
+        assert rotki.set_settings(ModifiableDBSettings(nuthatch_api_endpoint='http://127.0.0.1:8288'))[0]  # noqa: E501
+        assert schedule.call_count == 1
+        assert ('POST', '/api/watch', {'address': str(address).lower()}) not in calls, (
+            'not yet in the order, so not yet told'
+        )
+        assert rotki.set_settings(ModifiableDBSettings(evm_indexers_order=SerializableChainIndexerOrder(
+            order={ChainID.ETHEREUM: [EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN]},
+        )))[0]
+        assert schedule.call_count == 2
+        assert ('POST', '/api/watch', {'address': str(address).lower()}) in calls
+        assert rotki.set_settings(ModifiableDBSettings(btc_derivation_gap_limit=30))[0]
+        assert schedule.call_count == 2
+
+
+def _internal(parent: str, trace_index: int, trace_id: str, is_error: str = '0', value: str = '7') -> dict[str, Any]:  # noqa: E501
+    return {
+        'hash': parent, 'blockNumber': '100', 'timeStamp': '1700000000', 'from': str(ADDRESS),
+        'to': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97', 'value': value, 'gas': '2300',
+        'gasUsed': '0', 'isError': is_error, 'traceId': trace_id, 'nuthatchTraceIndex': str(trace_index),  # noqa: E501
+        'type': 'call',
+    }
+
+
+def test_nuthatch_internals_drop_reverted_frames_and_keep_same_depth_siblings(
+        database,
+        nuthatch: Nuthatch,
+) -> None:
+    """A successful transaction whose subtree reverted: the reverted frames' transfers never
+    happened, and rotki keeps neither the flag nor the frame's failure, so they are dropped. Two
+    transfers at one depth, identical in every other stored field, share Etherscan's depth-only
+    traceId; both are kept, by the frame index, and the address and hash paths agree on them."""
+    parent_tx = make_ethereum_transaction()
+    parent = str(parent_tx.tx_hash)
+    rows = [
+        _internal(parent, trace_index=1, trace_id='0_1'),
+        _internal(parent, trace_index=2, trace_id='0_1'),
+        _internal(parent, trace_index=3, trace_id='0_1', is_error='1'),
+        _internal(parent, trace_index=4, trace_id='0_1_1', is_error='1'),
+    ]
+    with patch.object(nuthatch.session, 'get', return_value=_answer(rows)):
+        by_hash = next(nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=parent_tx.tx_hash,
+        ))
+    with patch.object(nuthatch.session, 'get', return_value=_answer(rows)):
+        by_address = next(nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=ADDRESS,
+            action='txlistinternal',
+            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=100),  # noqa: E501
+        ))
+
+    assert [tx.trace_id for tx in by_hash] == [1, 2]
+    assert [tx.trace_id for tx in by_address] == [1, 2]
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(write_cursor=write_cursor, evm_transactions=[parent_tx], relevant_address=None)  # noqa: E501
+        for txs in (by_address, by_hash):
+            dbevmtx.add_evm_internal_transactions(write_cursor=write_cursor, transactions=txs, relevant_address=None)  # noqa: E501
+    with database.conn.read_ctx() as cursor:
+        stored = cursor.execute('SELECT trace_id FROM evm_internal_transactions ORDER BY trace_id').fetchall()  # noqa: E501
+    assert stored == [(1,), (2,)]
+
+
+def test_nuthatch_internals_page_on_what_the_nest_answered(nuthatch: Nuthatch) -> None:
+    """A full page of reverted frames leaves nothing to keep, but it is still a full page: the
+    next page is asked for, not taken as the end."""
+    parent = str(make_evm_tx_hash())
+    reverted = [_internal(parent, trace_index=i, trace_id='0_1', is_error='1') for i in range(1000)]  # noqa: E501
+    tail = [_internal(parent, trace_index=1000, trace_id='0_1')]
+    with patch.object(nuthatch.session, 'get', side_effect=[_answer(reverted), _answer(tail)]) as get:  # noqa: E501
+        internals = next(nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=ADDRESS,
+            action='txlistinternal',
+            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=100),  # noqa: E501
+        ))
+
+    assert [tx.trace_id for tx in internals] == [1000]
+    assert get.call_count == 2
+
+
+def test_nuthatch_internal_without_its_frame_index_is_refused(nuthatch: Nuthatch) -> None:
+    row = _internal(str(make_evm_tx_hash()), trace_index=1, trace_id='0_1')
+    del row['nuthatchTraceIndex']
+    with (
+        patch.object(nuthatch.session, 'get', return_value=_answer([row])),
+        pytest.raises(RemoteError, match='nuthatchTraceIndex'),
+    ):
+        next(nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=ADDRESS,
+            action='txlistinternal',
+            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=100),  # noqa: E501
+        ))
+
+
+def test_nuthatch_watch_sync_reads_the_chain_of_an_unready_nest(database, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A nest that has not reached its chain head answers /ready with 503 and its chain. The watch
+    sync still tells it what to watch, or it could never be given the accounts it lacks."""
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor,
+            [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=make_evm_address())],  # noqa: E501
+        )
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    calls: list[tuple[str, str, dict | None]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> MockResponse:
+        path = url.split('127.0.0.1:8288', 1)[1]
+        calls.append((method, path, kwargs.get('json')))
+        if path == '/ready':
+            return MockResponse(HTTPStatus.SERVICE_UNAVAILABLE, '{"ready": false, "chain_id": 1, "head": null}')  # noqa: E501
+        if path == '/api/watch' and method == 'POST':
+            return MockResponse(HTTPStatus.SERVICE_UNAVAILABLE, '{"error": "busy"}')
+        return MockResponse(HTTPStatus.OK, '{"watched": []}')
+
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', order),
+        patch.object(nuthatch.session, 'request', side_effect=request),
+        pytest.raises(RemoteError, match='/api/watch answered 503'),
+    ):
+        nuthatch.sync_watched()
+
+    assert any(c[:2] == ('POST', '/api/watch') for c in calls), (
+        'past an unready /ready to the watch, where a 503 still fails the sync'
+    )
+
+
+def _validator(eth2, index: int = 7) -> None:
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=index,
+            public_key=Eth2PubKey('0x' + 'ab' * 48),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=ADDRESS,
+            activation_timestamp=Timestamp(1600000000),
+        )])
+
+
+def _produced(eth2, nuthatch: Nuthatch, rows: list[dict[str, Any]], proposer: int | None = 7) -> bool:  # noqa: E501
+    inquirer = eth2.ethereum
+    inquirer.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN)}  # noqa: E501
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', order),
+        patch.object(nuthatch, 'get_validated_blocks', return_value=rows),
+        patch.object(inquirer, 'maybe_timestamp_to_block_range', side_effect=lambda period: period),  # noqa: E501
+        patch.object(eth2, '_get_proposer_index_for_validated_block', return_value=proposer),
+    ):
+        return eth2._get_and_store_produced_blocks_from_indexers(indices=[7], update_cache=True, only=EvmIndexer.NUTHATCH)  # noqa: E501
+
+
+def _block_events(database, block: int) -> list[tuple[int, str]]:
+    with database.conn.read_ctx() as cursor:
+        return cursor.execute(
+            'SELECT sequence_index, amount FROM history_events WHERE group_identifier=? ORDER BY sequence_index',  # noqa: E501
+            (f'BP1_{block}',),
+        ).fetchall()
+
+
+def _cursor(database, index: int = 7) -> Timestamp | None:
+    with database.conn.read_ctx() as cursor:
+        return database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, index=index)  # noqa: E501
+
+
+def test_produced_block_without_a_relay_record_is_asked_about_again(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """No relay record is not "no MEV": the block's reward is stored, no MEV event is invented,
+    and the validator's next query starts at the block, so a record published late adds the MEV
+    reward to the block already stored, without its reward twice."""
+    _validator(eth2)
+    recent = ts_now() - 3600
+    block = {'blockNumber': '200', 'timeStamp': str(recent), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
+    assert _produced(eth2, nuthatch, [block])
+    assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005')]
+    assert _cursor(eth2.database) == recent, 'asked about again from the block'
+
+    recorded = {**block, 'mev': 'relay', 'mevRecipient': str(ADDRESS).lower(), 'mevReward': '4', 'paymentValue': '3000000000000000000', 'proposerPubkey': '0x' + 'ab' * 48}  # noqa: E501
+    assert _produced(eth2, nuthatch, [recorded])
+    assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
+    assert _cursor(eth2.database) > recent, 'nothing left to wait for'
+
+    assert _produced(eth2, nuthatch, [recorded])
+    assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
+
+
+def test_produced_block_without_a_relay_record_stops_being_asked_about(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """Past the retry window a block without a record no longer holds its validator back."""
+    _validator(eth2)
+    old = ts_now() - 40 * 86400
+    block = {'blockNumber': '201', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
+    assert _produced(eth2, nuthatch, [block])
+    assert _cursor(eth2.database) > old
+
+
+def test_produced_block_not_attributed_leaves_the_validator_retryable(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A block whose proposer cannot be named is not stored, and the validator's range is not
+    recorded as queried, so the next query asks again and stores it once it can be named."""
+    _validator(eth2)
+    block = {'blockNumber': '202', 'timeStamp': '1700000000', 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'none'}  # noqa: E501
+    assert not _produced(eth2, nuthatch, [block], proposer=None)
+    assert _block_events(eth2.database, 202) == []
+    assert _cursor(eth2.database) is None
+
+    assert _produced(eth2, nuthatch, [block])
+    assert _block_events(eth2.database, 202) == [(0, '0.000000000000000005')]
+    assert _cursor(eth2.database) is not None
+
+
+def test_produced_block_rows_that_do_not_read_leave_the_validator_retryable(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    _validator(eth2)
+    assert _produced(eth2, nuthatch, [{'blockNumber': 'not a number'}])
+    assert _cursor(eth2.database) is None

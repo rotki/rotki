@@ -537,10 +537,10 @@ class EvmTransactions(ABC):  # noqa: B024
                         queried_to_ts = Timestamp(max(queried_from_ts, new_transactions[-1].timestamp))  # noqa: E501
                         log.debug('%s transactions for %s -> update range %s - %s', self.evm_inquirer.chain_name, address, queried_from_ts, queried_to_ts)  # noqa: E501
                         if update_ranges:  # update last queried time for the address
-                            self.dbranges.update_used_query_range(
+                            self.dbranges.update_used_query_range_if_joined(
                                 write_cursor=write_cursor,
                                 location_string=location_string,
-                                queried_ranges=[(queried_from_ts, queried_to_ts)],
+                                queried_range=(queried_from_ts, queried_to_ts),
                             )
                         queried_from_ts = queried_to_ts
 
@@ -645,6 +645,12 @@ class EvmTransactions(ABC):  # noqa: B024
                     # different view of the chain
                     call_order=[self.evm_inquirer.indexers_node],
                 ))
+                if covered_end_ts < end_ts:
+                    covered_end_ts = self._covered_through_next_block(
+                        to_block=to_block,
+                        covered_end_ts=covered_end_ts,
+                        end_ts=end_ts,
+                    )
             except (RemoteError, NoAvailableIndexers, DeserializationError, KeyError) as e:
                 log.warning(
                     'Not recording the %s query range %s - %s for %s: could not establish how '
@@ -675,6 +681,31 @@ class EvmTransactions(ABC):  # noqa: B024
                     location_string=location_string,
                     queried_ranges=[(start_ts, covered_end_ts)],
                 )
+
+    def _covered_through_next_block(
+            self,
+            to_block: int,
+            covered_end_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Timestamp:
+        """How far a range queried up to to_block is covered, given the next block.
+
+        to_block is the last block at or before end_ts. If the indexers know a next block and it
+        is after end_ts, nothing lies between to_block and end_ts, so the range is covered up to
+        end_ts. Recording only to_block's timestamp would leave a gap before a newer saved range
+        that this range should join. An indexer that does not know the next block yet may lag,
+        so then only to_block's timestamp is established.
+        """
+        try:
+            next_ts = self.evm_inquirer.get_block_timestamp(
+                block_number=to_block + 1,
+                full_transactions=False,
+                call_order=[self.evm_inquirer.indexers_node],
+            )
+        except (RemoteError, NoAvailableIndexers, DeserializationError, KeyError):
+            return covered_end_ts
+
+        return end_ts if next_ts > end_ts else covered_end_ts
 
     def _mark_covered_ranges_as_queried(
             self,
@@ -918,10 +949,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 if update_ranges:  # update last queried time for address
                     assert location_string is not None, 'should always be given for timestamps'
                     with self.database.conn.write_ctx() as write_cursor:
-                        self.dbranges.update_used_query_range(
+                        self.dbranges.update_used_query_range_if_joined(
                             write_cursor=write_cursor,
                             location_string=location_string,
-                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                            queried_range=(queried_from_ts, queried_to_ts),
                         )
 
                 self.msg_aggregator.add_message(
@@ -1145,12 +1176,17 @@ class EvmTransactions(ABC):  # noqa: B024
         indexer_source is the indexer that produced the transactions, persisted as their
         source. It can be None for callers that did not query an indexer (no internals).
 
+        A nuthatch nest answers only what it has indexed completely and refuses anything else,
+        so its empty answer is the answer: every internal it lists for the hash moved no value or
+        reverted. Repulling such a transaction is how internals imported before the nest's
+        reverted frames were dropped get removed.
+
         May raise:
         - DataIntegrityError if the fetched list is empty but DB already has internals for this
           tx hash, indicating the indexer returned a bad/incomplete response that would
           overwrite existing data.
         """
-        if len(transactions) == 0:
+        if len(transactions) == 0 and indexer_source != EvmIndexer.NUTHATCH:
             with self.database.conn.read_ctx() as cursor:
                 existing_count = cursor.execute(
                     'SELECT COUNT(*) FROM evm_internal_transactions WHERE parent_tx IN ('
@@ -1448,10 +1484,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 if update_ranges:
                     with self.database.user_write() as write_cursor:
-                        self.dbranges.update_used_query_range(
+                        self.dbranges.update_used_query_range_if_joined(
                             write_cursor=write_cursor,
                             location_string=location_string,
-                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                            queried_range=(queried_from_ts, queried_to_ts),
                         )
                 queried_from_ts = queried_to_ts
         return queried_hashes
