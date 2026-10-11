@@ -11,12 +11,11 @@ import requests
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
-    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     calculate_query_chunks,
-    produced_blocks_cursor,
+    nest_ranges,
 )
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.concurrency import cancellable_sleep
@@ -24,7 +23,6 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.interface import (
     ExternalServiceWithApiKey,
@@ -533,9 +531,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
     def _validators_awaiting_mev(self) -> set[int]:
         """Validators whose produced blocks may still get MEV from a nuthatch nest, whatever their
-        last query time says: those with a block the nest stored without its MEV reward, and,
-        while Ethereum's indexer order names the nest, exited ones it has not been asked about
-        since their retry window closed."""
+        last query time says: those with a block stored without its MEV reward that is waiting
+        for beaconcha.in, those withdrawing to an address whose produced blocks the nest may still
+        learn relay records of, and, while Ethereum's indexer order names the nest, exited ones it
+        has not been asked about up to their exit."""
         with self.db.conn.read_ctx() as cursor:
             pending = json.loads(self.db.get_static_cache(
                 cursor=cursor,
@@ -547,6 +546,14 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 'WHERE he.group_identifier=? AND he.sequence_index=0',
                 (EthBlockEvent.form_group_identifier(block),),
             )}
+            ranges = nest_ranges(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+            ))
+            awaiting.update(row[0] for address in {entry[0] for entry in ranges} for row in cursor.execute(  # noqa: E501
+                'SELECT validator_index FROM eth2_validators WHERE withdrawal_address=?',
+                (address,),
+            ))
             if EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(
                 chain_id=ChainID.ETHEREUM,
             ):
@@ -557,8 +564,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 'SELECT ev.validator_index FROM eth2_validators ev '
                 'LEFT JOIN key_value_cache kv ON kv.name = ? || ev.validator_index '
                 'WHERE ev.exited_timestamp IS NOT NULL AND '
-                '(kv.name IS NULL OR CAST(kv.value AS INTEGER) < ev.exited_timestamp + ?)',
-                (nest_key.removesuffix('{index}'), UNRECORDED_MEV_RETRY_WINDOW),
+                '(kv.name IS NULL OR CAST(kv.value AS INTEGER) < ev.exited_timestamp)',
+                (nest_key.removesuffix('{index}'),),
             ))
         return awaiting
 
@@ -709,21 +716,13 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
             if update_cache:
-                exits: dict[int, Timestamp | None] = {}
-                with self.db.conn.read_ctx() as cursor:
-                    for chunk, placeholders in get_query_chunks(indices):
-                        exits.update(cursor.execute(
-                            'SELECT validator_index, exited_timestamp FROM eth2_validators '
-                            f'WHERE validator_index IN ({placeholders})',
-                            chunk,
-                        ).fetchall())
                 with self.db.user_write() as write_cursor:
                     now = ts_now()
                     for index in indices:
                         self.db.set_dynamic_cache(
                             write_cursor=write_cursor,
                             name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                            value=produced_blocks_cursor(now=now, exited_ts=exits.get(index)),
+                            value=now,
                             index=index,
                         )
 

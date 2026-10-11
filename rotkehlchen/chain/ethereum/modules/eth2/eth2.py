@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
+from rotkehlchen.chain.evm.transactions import CHAIN_TOP_LAG
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
@@ -20,6 +21,7 @@ from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import APIKeyNotAvailable, ChainNotSupported, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
+from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
@@ -49,14 +51,19 @@ from .constants import (
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
-    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from .structures import (
     PerformanceStatusFilter,
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
-from .utils import create_profit_filter_queries, produced_blocks_cursor, timestamp_to_slot
+from .utils import (
+    create_profit_filter_queries,
+    merge_nest_ranges,
+    nest_range_settled,
+    nest_ranges,
+    timestamp_to_slot,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -526,10 +533,11 @@ class Eth2(EthereumModule):
     def _fetch_withdrawals_from_external_sources(
             self,
             address: ChecksumEvmAddress,
-            period: TimestampOrBlockRange,
+            period: TimestampOrBlockRange | None,
     ) -> set[int] | None:
         """Query the indexers that answer withdrawals as etherscan does (etherscan, and a nuthatch
         nest) in the configured order, etherscan always among them, with a blockscout fallback.
+        Without a block range, only blockscout, which takes none, is asked.
         Returns untracked validator indices, or None if every source fails.
         """
         sources: list[EtherscanAccountHistory] = [
@@ -539,6 +547,8 @@ class Eth2(EthereumModule):
         if self.ethereum.etherscan not in sources:  # tried before blockscout, as it always was
             sources.append(self.ethereum.etherscan)
         for source in sources:
+            if period is None:
+                break
             try:
                 return source.get_withdrawals(address=address, period=period)
             except (DeserializationError, RemoteError) as e:
@@ -561,6 +571,7 @@ class Eth2(EthereumModule):
         return None
 
     def query_single_address_withdrawals(self, address: ChecksumEvmAddress, to_ts: Timestamp) -> None:  # noqa: E501
+        to_ts = self._staking_query_end(to_ts)
         with self.database.conn.read_ctx() as cursor:
             # Get the last query timestamp for this address and a count of this address's
             # validators that are either active, exited but never queried, or exited and
@@ -584,8 +595,13 @@ class Eth2(EthereumModule):
             return
 
         log.debug(f'Querying {address} ETH withdrawals from {from_ts} to {to_ts}')
-        period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
-        if (untracked_validator_indices := self._fetch_withdrawals_from_external_sources(address, period)) is None:  # noqa: E501
+        try:
+            period: TimestampOrBlockRange | None = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
+        except RemoteError as e:  # blockscout, which takes no range, can still answer
+            log.warning(f'Could not turn the withdrawals range of {address} into blocks: {e!s}')
+            period = None
+        untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period)  # noqa: E501
+        if untracked_validator_indices is None:
             # Nothing is recorded, so the next query asks for the same range again.
             self.msg_aggregator.add_warning(
                 f'Could not query the ethereum withdrawals of {address} from any source. '
@@ -822,13 +838,6 @@ class Eth2(EthereumModule):
         """Get produced blocks via the indexers, or only the `only` one: a nuthatch nest ahead of
         beaconcha.in, the rest as the fallback when beaconcha.in is unavailable.
 
-        A nest is asked again about the UNRECORDED_MEV_RETRY_WINDOW before each validator's last
-        query, since relays can publish a block's record late and the nest keeps asking them for
-        that long: a block it served without a relay record, or a builder's payment it could not
-        yet attribute, can then get its MEV. Asking the local nest again is cheap, and a block
-        already stored with its MEV is passed over.
-        The blocks found stored without an MEV reward are added to `blocks_without_mev`.
-
         Etherscan and Blockscout expose produced blocks by execution-layer address, while rotki
         tracks produced-block freshness and PnL by validator index. To bridge this, load the
         requested validators in DB chunks, group them by withdrawal address, and query each address
@@ -836,8 +845,16 @@ class Eth2(EthereumModule):
         then filtered back to validators active at the block timestamp. If a beacon node is
         configured, use it to confirm the proposer index for the execution block slot; otherwise
         only attribute the block when exactly one queried validator was active for that address at
-        that timestamp. New block events are skipped if the block number already exists, and the
-        per-validator produced-block query cache is updated after successful processing.
+        that timestamp. The per-validator produced-block query cache is updated after successful
+        processing.
+
+        A nest serves produced blocks through its finalized head only, so it is asked up to that
+        block and its query time moves on to that block's timestamp. A relay can publish a block's
+        record late, and the nest asks the relays again for UNRECORDED_MEV_RETRY_WINDOW after it
+        first served a range, so every range it served within that window is asked about again:
+        a block served without a relay record, or a builder's payment it could only attribute
+        later, then gets its MEV. The blocks left stored without an MEV reward are added to
+        `blocks_without_mev`.
 
         Returns whether every validator was covered: each had a withdrawal address, each address
         was answered and each block attributed.
@@ -845,9 +862,18 @@ class Eth2(EthereumModule):
         if len(indices) == 0:
             return True
 
-        now = ts_now()
+        asked_at = ts_now()
+        bound_block = None
+        if only == EvmIndexer.NUTHATCH:
+            try:
+                bound_block, now = self._nest().finalized_head()
+            except RemoteError as e:
+                log.warning(f'Not asking the nuthatch nest for produced blocks: {e!s}')
+                return False
+        else:
+            now = self._staking_query_end(asked_at)
+
         validators_by_address: dict[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]] = defaultdict(list)  # noqa: E501
-        exits: dict[int, Timestamp | None] = {}
         cursor_key: Literal[
             DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
             DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
@@ -866,8 +892,6 @@ class Eth2(EthereumModule):
                     if activation_ts is None:
                         continue
 
-                    exits[validator_index] = exited_ts
-
                     if update_cache is False:
                         last_query_ts = Timestamp(0)
                     else:
@@ -876,10 +900,8 @@ class Eth2(EthereumModule):
                             name=cursor_key,
                             index=validator_index,
                         ) or Timestamp(0)
-                    if only == EvmIndexer.NUTHATCH:
-                        last_query_ts = Timestamp(max(0, last_query_ts - UNRECORDED_MEV_RETRY_WINDOW))  # noqa: E501
                     from_ts = max(Timestamp(activation_ts), last_query_ts)
-                    to_ts = min(Timestamp(exited_ts) if exited_ts is not None else Timestamp(now), Timestamp(now))  # noqa: E501
+                    to_ts = min(Timestamp(exited_ts) if exited_ts is not None else now, now)
                     if from_ts < to_ts:
                         validators_by_address[deserialize_evm_address(raw_address)].append((
                             validator_index,
@@ -892,113 +914,57 @@ class Eth2(EthereumModule):
         # A validator with no withdrawal address has no address to ask an indexer about.
         addressed = {index for ranges in validators_by_address.values() for index, _, _ in ranges}
 
-        dbevents = DBHistoryEvents(self.database)
         queried_indices: set[int] = set()
         # Validators with a block in their range not yet fully stored, so their range is asked
         # again rather than recorded as queried.
         incomplete_indices: set[int] = set()
         unanswered: list[ChecksumEvmAddress] = []
         every_address = self._all_addressed(indices, addressed)
+        served: list[tuple[ChecksumEvmAddress, int, int]] = []
         for address, validator_ranges in validators_by_address.items():
             from_ts = min(entry[1] for entry in validator_ranges)
             to_ts = max(entry[2] for entry in validator_ranges)
             log.debug(f'Querying produced blocks for validator withdrawal address {address} from {from_ts} to {to_ts}')  # noqa: E501
-            period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
-            if (blocks := self._fetch_validated_blocks_from_external_sources(
-                address=address,
-                period=period,
-                only=only,
-            )) is None:
+            try:
+                period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
+            except RemoteError as e:
+                log.warning(f'Could not turn the produced blocks range of {address} into blocks: {e!s}')  # noqa: E501
+                blocks = None
+            else:
+                if bound_block is not None:
+                    period = TimestampOrBlockRange('blocks', period.from_value, min(period.to_value, bound_block))  # noqa: E501
+                blocks = self._fetch_validated_blocks_from_external_sources(
+                    address=address,
+                    period=period,
+                    only=only,
+                )
+            if blocks is None:
                 every_address = False
                 if only is None:  # the last source asked: nothing else will cover the address
                     unanswered.append(address)
                 continue
 
-            address_indices = {validator_index for validator_index, _, _ in validator_ranges}
-            queried_indices.update(address_indices)
+            if only == EvmIndexer.NUTHATCH:
+                served.append((address, period.from_value, period.to_value))
+            queried_indices.update(validator_index for validator_index, _, _ in validator_ranges)
+            incomplete, attributed = self._store_validated_blocks(
+                address=address,
+                validator_ranges=validator_ranges,
+                blocks=blocks,
+                tracked_accounts=ethereum_tracked_accounts,
+                blocks_without_mev=blocks_without_mev,
+            )
+            incomplete_indices |= incomplete
+            every_address &= attributed
 
-            for entry in blocks:
-                try:
-                    block_number, timestamp, reward = self._deserialize_validated_block(entry)
-                except (DeserializationError, TypeError, ValueError) as e:
-                    log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
-                    incomplete_indices.update(address_indices)  # whose block it was is unknown
-                    continue
-
-                active_indices = [
-                    validator_index for validator_index, active_from_ts, active_to_ts in validator_ranges  # noqa: E501
-                    if active_from_ts <= timestamp <= active_to_ts
-                ]
-                if len(active_indices) == 0:
-                    continue
-
-                stored = self._stored_block_events(block_number)
-                if BLOCK_REWARD_SEQUENCE in stored and (
-                    MEV_REWARD_SEQUENCE in stored or entry.get('mev') != 'relay'
-                ):  # nothing new to add for it
-                    if MEV_REWARD_SEQUENCE not in stored and blocks_without_mev is not None:
-                        blocks_without_mev.add(block_number)
-                    continue
-
-                if (pubkey := entry.get('proposerPubkey')):
-                    # A relay named the proposer: one of these validators, or none of them.
-                    if (proposer_index := self._proposer_by_pubkey(
-                        pubkey=pubkey,
-                        active_indices=active_indices,
-                    )) is None:
-                        continue
-                elif (proposer_index := self._get_proposer_index_for_validated_block(
-                    block_number=block_number,
-                    timestamp=timestamp,
-                    active_indices=active_indices,
-                )) is None:
-                    every_address = False  # a source that can name the proposer should be asked
-                    incomplete_indices.update(active_indices)
-                    continue
-
-                # A nuthatch nest also lists the relay-built blocks whose fee recipient was the
-                # builder, with what the relays say they paid this address.
-                fee_recipient = deserialize_evm_address(entry.get('feeRecipient') or address)
-                # Either event already stored is not added again: the insert ignores it.
-                events = [EthBlockEvent(
-                    validator_index=proposer_index,
-                    timestamp=ts_sec_to_ms(timestamp),
-                    amount=reward,
-                    fee_recipient=fee_recipient,
-                    fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
-                    block_number=block_number,
-                    is_mev_reward=False,
-                )]
-                mev_amount, mev_recipient = None, fee_recipient
-                if (
-                    entry.get('mev') == 'relay' and
-                    (mev_recipient_raw := entry.get('mevRecipient'))
-                ):
-                    mev_recipient = deserialize_evm_address(mev_recipient_raw)
-                    # Paid to the block's own fee recipient, the block reward already counts what
-                    # the block paid; only a builder's separate transfer is more.
-                    mev_amount = entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')  # noqa: E501
-                if mev_amount:
-                    events.append(EthBlockEvent(
-                        validator_index=proposer_index,
-                        timestamp=ts_sec_to_ms(timestamp),
-                        amount=from_wei(deserialize_fval(
-                            value=mev_amount,
-                            name='mev reward',
-                            location='validated blocks query',
-                        )),
-                        fee_recipient=mev_recipient,
-                        fee_recipient_tracked=mev_recipient in ethereum_tracked_accounts,
-                        block_number=block_number,
-                        is_mev_reward=True,
-                    ))
-                with self.database.user_write() as write_cursor:
-                    for event in events:
-                        dbevents.add_history_event(write_cursor=write_cursor, event=event)
-                # No relay record ('unrecorded') is not "no MEV". Of the other sources only
-                # beaconcha.in knows a block's MEV; the other indexers list blocks without it.
-                if len(events) == 1 and blocks_without_mev is not None:
-                    blocks_without_mev.add(block_number)
+        if only == EvmIndexer.NUTHATCH:
+            self._ask_nest_again(
+                now=now,
+                asked_at=asked_at,
+                served=served,
+                tracked_accounts=ethereum_tracked_accounts,
+                blocks_without_mev=blocks_without_mev,
+            )
 
         if len(unanswered) != 0:  # their validators keep their last query time, so are retried
             self.msg_aggregator.add_warning(
@@ -1013,19 +979,200 @@ class Eth2(EthereumModule):
                 for index in queried_indices - incomplete_indices:
                     self.database.set_dynamic_cache(
                         write_cursor=write_cursor,
-                        name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                        value=produced_blocks_cursor(now=now, exited_ts=exits.get(index)),
+                        name=cursor_key,
+                        value=now,
                         index=index,
                     )
-                    if only == EvmIndexer.NUTHATCH:
+                    if only == EvmIndexer.NUTHATCH:  # other sources need not ask again either
                         self.database.set_dynamic_cache(
                             write_cursor=write_cursor,
-                            name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+                            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
                             value=now,
                             index=index,
                         )
 
         return every_address
+
+    def _store_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            validator_ranges: list[tuple[int, Timestamp, Timestamp]],
+            blocks: list[dict[str, Any]],
+            tracked_accounts: Sequence[ChecksumEvmAddress],
+            blocks_without_mev: set[int] | None,
+    ) -> tuple[set[int], bool]:
+        """Store the produced blocks an indexer answered for `address`, each booked to the one of
+        `validator_ranges` that proposed it. A block already stored gets only what it lacks: its
+        MEV reward, once a relay recorded it.
+
+        Returns the validators with a block that could not be stored, and whether every block was
+        attributed to its proposer.
+        """
+        dbevents = DBHistoryEvents(self.database)
+        incomplete: set[int] = set()
+        attributed = True
+        for entry in blocks:
+            try:
+                block_number, timestamp, reward = self._deserialize_validated_block(entry)
+            except (DeserializationError, TypeError, ValueError) as e:
+                log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
+                incomplete.update(index for index, _, _ in validator_ranges)  # whose is unknown
+                continue
+
+            active_indices = [
+                validator_index for validator_index, active_from_ts, active_to_ts in validator_ranges  # noqa: E501
+                if active_from_ts <= timestamp <= active_to_ts
+            ]
+            if len(active_indices) == 0:
+                continue
+
+            stored = self._stored_block_events(block_number)
+            if BLOCK_REWARD_SEQUENCE in stored and (
+                MEV_REWARD_SEQUENCE in stored or entry.get('mev') != 'relay'
+            ):  # nothing new to add for it
+                if MEV_REWARD_SEQUENCE not in stored and blocks_without_mev is not None:
+                    blocks_without_mev.add(block_number)
+                continue
+
+            if (pubkey := entry.get('proposerPubkey')):
+                # A relay named the proposer: one of these validators, or none of them.
+                if (proposer_index := self._proposer_by_pubkey(
+                    pubkey=pubkey,
+                    active_indices=active_indices,
+                )) is None:
+                    continue
+            elif (proposer_index := self._get_proposer_index_for_validated_block(
+                block_number=block_number,
+                timestamp=timestamp,
+                active_indices=active_indices,
+            )) is None:
+                attributed = False  # a source that can name the proposer should be asked
+                incomplete.update(active_indices)
+                continue
+
+            # A nuthatch nest also lists the relay-built blocks whose fee recipient was the
+            # builder, with what the relays say they paid this address.
+            fee_recipient = deserialize_evm_address(entry.get('feeRecipient') or address)
+            # Either event already stored is not added again: the insert ignores it.
+            events = [EthBlockEvent(
+                validator_index=proposer_index,
+                timestamp=ts_sec_to_ms(timestamp),
+                amount=reward,
+                fee_recipient=fee_recipient,
+                fee_recipient_tracked=fee_recipient in tracked_accounts,
+                block_number=block_number,
+                is_mev_reward=False,
+            )]
+            mev_amount, mev_recipient = None, fee_recipient
+            if (
+                entry.get('mev') == 'relay' and
+                (mev_recipient_raw := entry.get('mevRecipient'))
+            ):
+                mev_recipient = deserialize_evm_address(mev_recipient_raw)
+                # Paid to the block's own fee recipient, the block reward already counts what
+                # the block paid; only a builder's separate transfer is more.
+                mev_amount = entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')  # noqa: E501
+            if mev_amount:
+                events.append(EthBlockEvent(
+                    validator_index=proposer_index,
+                    timestamp=ts_sec_to_ms(timestamp),
+                    amount=from_wei(deserialize_fval(
+                        value=mev_amount,
+                        name='mev reward',
+                        location='validated blocks query',
+                    )),
+                    fee_recipient=mev_recipient,
+                    fee_recipient_tracked=mev_recipient in tracked_accounts,
+                    block_number=block_number,
+                    is_mev_reward=True,
+                ))
+            with self.database.user_write() as write_cursor:
+                for event in events:
+                    dbevents.add_history_event(write_cursor=write_cursor, event=event)
+            # No relay record ('unrecorded') is not "no MEV". Of the other sources only
+            # beaconcha.in knows a block's MEV; the other indexers list blocks without it.
+            if len(events) == 1 and blocks_without_mev is not None:
+                blocks_without_mev.add(block_number)
+
+        return incomplete, attributed
+
+    def _staking_query_end(self, end_ts: Timestamp) -> Timestamp:
+        """Where a staking query asked to end at end_ts stops. With a nuthatch nest in Ethereum's
+        indexer order, CHAIN_TOP_LAG seconds behind now, as transaction syncs are: a nest refuses
+        to turn a time past its newest block into a block, and now nearly always is."""
+        if EvmIndexer.NUTHATCH in (name for name, _ in self.ethereum._get_indexers_in_order()):
+            return Timestamp(min(end_ts, ts_now() - CHAIN_TOP_LAG))
+        return end_ts
+
+    def _nest(self) -> Nuthatch:
+        """The nuthatch nest in Ethereum's indexer order.
+
+        May raise:
+        - RemoteError if the order names none
+        """
+        for name, indexer in self.ethereum._get_indexers_in_order():
+            if name == EvmIndexer.NUTHATCH and isinstance(indexer, Nuthatch):
+                return indexer
+        raise RemoteError("Ethereum's indexer order names no nuthatch nest")
+
+    def _ask_nest_again(
+            self,
+            now: Timestamp,
+            asked_at: Timestamp,
+            served: list[tuple[ChecksumEvmAddress, int, int]],
+            tracked_accounts: Sequence[ChecksumEvmAddress],
+            blocks_without_mev: set[int] | None,
+    ) -> None:
+        """Ask the nest again about the ranges it served, and remember the ones it served now. A
+        range is forgotten only after an answer given once the nest has stopped asking the relays
+        about it; one it cannot answer stays for the next time."""
+        with self.database.conn.read_ctx() as cursor:
+            remembered = nest_ranges(self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+            ))
+        ranges = []
+        for address, from_block, to_block, served_at in remembered:
+            if (blocks := self._fetch_validated_blocks_from_external_sources(
+                address=address,
+                period=TimestampOrBlockRange('blocks', from_block, to_block),
+                only=EvmIndexer.NUTHATCH,
+            )) is None:
+                ranges.append((address, from_block, to_block, served_at))
+                continue
+            self._store_validated_blocks(
+                address=address,
+                validator_ranges=self._validator_ranges(address, now),
+                blocks=blocks,
+                tracked_accounts=tracked_accounts,
+                blocks_without_mev=blocks_without_mev,
+            )
+            if not nest_range_settled(served_at=served_at, asked_at=asked_at):
+                ranges.append((address, from_block, to_block, served_at))
+
+        ranges += [(address, from_block, to_block, asked_at) for address, from_block, to_block in served]  # noqa: E501
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+                value=json.dumps([list(entry) for entry in merge_nest_ranges(ranges)]),
+            )
+
+    def _validator_ranges(
+            self,
+            address: ChecksumEvmAddress,
+            now: Timestamp,
+    ) -> list[tuple[int, Timestamp, Timestamp]]:
+        """When each validator withdrawing to `address` was active."""
+        with self.database.conn.read_ctx() as cursor:
+            return [
+                (index, Timestamp(activation_ts), Timestamp(exited_ts) if exited_ts is not None else now)  # noqa: E501
+                for index, activation_ts, exited_ts in cursor.execute(
+                    'SELECT validator_index, activation_timestamp, exited_timestamp '
+                    'FROM eth2_validators WHERE withdrawal_address=? AND activation_timestamp IS NOT NULL',  # noqa: E501
+                    (address,),
+                )
+            ]
 
     def _block_proposers(self, blocks: set[int]) -> set[int]:
         """The validators the stored produced blocks are booked to."""

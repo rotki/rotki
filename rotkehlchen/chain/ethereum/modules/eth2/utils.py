@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING, Final
 
@@ -6,6 +7,8 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
     UNRECORDED_MEV_RETRY_WINDOW,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import EthStakingEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -27,16 +30,36 @@ ETH2_GENESIS_TIMESTAMP: Final = 1606824023
 ETH2_MERGE_TIMESTAMP: Final = 1663224162
 
 
-def produced_blocks_cursor(now: Timestamp, exited_ts: Timestamp | None) -> Timestamp:
-    """Where a validator's next produced blocks query starts after one that reached `now`.
+NestRange = tuple[ChecksumEvmAddress, int, int, Timestamp]
 
-    An exited validator is only queried while this is before its exit, and its last blocks may
-    still get their relay records for UNRECORDED_MEV_RETRY_WINDOW, so until then it stays just
-    before the exit.
-    """
-    if exited_ts is not None and now < exited_ts + UNRECORDED_MEV_RETRY_WINDOW:
-        return Timestamp(min(now, exited_ts - 1))
-    return now
+
+def nest_ranges(raw: str | None) -> list[NestRange]:
+    """The produced-block ranges a nuthatch nest served and rotki has yet to ask about once more
+    after the nest stopped asking the relays for their records: (withdrawal address, first block,
+    last block, when it served them), from their JSON."""
+    return [
+        (string_to_evm_address(address), from_block, to_block, Timestamp(served_at))
+        for address, from_block, to_block, served_at in json.loads(raw or '[]')
+    ]
+
+
+def nest_range_settled(served_at: Timestamp, asked_at: Timestamp) -> bool:
+    """Whether an answer at `asked_at` for a range the nest served at `served_at` is the last
+    there is to ask for: the nest asks the relays for UNRECORDED_MEV_RETRY_WINDOW after serving
+    it, given a day's margin."""
+    return asked_at >= served_at + UNRECORDED_MEV_RETRY_WINDOW + DAY_IN_SECONDS
+
+
+def merge_nest_ranges(ranges: list[NestRange]) -> list[NestRange]:
+    """Join an address's overlapping or adjacent ranges, each joined one kept as long as its most
+    recently served part needs."""
+    merged: list[NestRange] = []
+    for address, from_block, to_block, served_at in sorted(ranges):
+        if len(merged) != 0 and (last := merged[-1])[0] == address and from_block <= last[2] + 1:
+            merged[-1] = (address, last[1], max(last[2], to_block), max(last[3], served_at))
+        else:
+            merged.append((address, from_block, to_block, served_at))
+    return merged
 
 
 def timestamp_to_slot(timestamp: Timestamp) -> int:

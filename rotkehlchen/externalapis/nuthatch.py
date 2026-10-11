@@ -21,6 +21,7 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
+    Timestamp,
 )
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -38,7 +39,6 @@ if TYPE_CHECKING:
         EvmInternalTransaction,
         EvmTransaction,
         EVMTxHash,
-        Timestamp,
     )
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -264,7 +264,8 @@ class Nuthatch(EtherscanAccountHistory):
         elif period_or_hash is not None:
             options['txhash'] = period_or_hash.hex()
             parent_tx_hash = period_or_hash
-        options.update({'page': '1', 'offset': str(self.pagination_limit)})
+        if parent_tx_hash is None:  # a hash's internals come whole, in one unpaged answer
+            options.update({'page': '1', 'offset': str(self.pagination_limit)})
 
         internals: list[EvmInternalTransaction] = []
         while True:
@@ -296,11 +297,26 @@ class Nuthatch(EtherscanAccountHistory):
                     raise RemoteError(f'{self.name} answered an internal transaction rotki cannot read: {e!s}') from e  # noqa: E501
                 internals.append(tx)
 
-            if (new_options := self._maybe_paginate(result=page, options=options)) is None:
+            if parent_tx_hash is not None or (new_options := self._maybe_paginate(result=page, options=options)) is None:  # noqa: E501
                 break
             options = new_options
 
         return internals
+
+    def finalized_head(self) -> tuple[int, Timestamp]:
+        """The block the nest's history is final through, and its timestamp. Produced blocks are
+        served through it and no further.
+
+        May raise:
+        - RemoteError if the nest cannot be reached, or has not read its chain head yet
+        """
+        if not isinstance(head := self._nest_call('GET', '/ready').get('head'), int):
+            raise RemoteError(f'{self.name} has not read its chain head yet')
+        try:
+            block = self.get_block_by_number(chain_id=ChainID.ETHEREUM, block_number=head, full_transactions=False)  # noqa: E501
+        except DeserializationError as e:
+            raise RemoteError(f'{self.name} answered block {head} with {e!s}') from e
+        return head, Timestamp(block['timestamp'])
 
     def get_token_transaction_data(
             self,

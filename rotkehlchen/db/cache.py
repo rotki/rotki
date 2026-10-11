@@ -52,6 +52,9 @@ class DBCacheStatic(Enum):
     # Produced blocks a nuthatch nest stored without their MEV reward, for beaconcha.in to be
     # asked about, as a JSON list.
     NUTHATCH_MEV_RECHECK: Final = 'nuthatch_mev_recheck'
+    # Produced-block ranges a nuthatch nest served, with when, as a JSON list, so they are asked
+    # about again while the nest may still learn their relay records.
+    NUTHATCH_PRODUCED_RANGES: Final = 'nuthatch_produced_ranges'
 
 
 class LabeledLocationArgsType(TypedDict):
