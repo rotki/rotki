@@ -14,6 +14,10 @@ CPT_ETH2: Final = 'eth2'
 # record after the block is out, and can fail to write it, so a missing one is never proof.
 UNRECORDED_MEV_RETRY_WINDOW: Final = 30 * DAY_IN_SECONDS
 
+# Ethereum's first Dencun block. From it on, each execution block commits to the beacon root of
+# its parent, so a nuthatch nest can prove who proposed a block; before it, it cannot.
+DENCUN_BLOCK: Final = 19_426_587
+
 BEACONCHAIN_MAX_EPOCH: Final = 9223372036854775807  # This is INT64 MAX. Beacon node API actually returns 18446744073709551615 which is UINT64 MAX # noqa: E501
 
 DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE: Final = 100  # Maximum number of validators allowed per beaconcha.in API request  # noqa: E501

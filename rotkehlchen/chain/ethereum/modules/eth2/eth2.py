@@ -13,6 +13,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.eth2 import DBEth2, IncludeExcludeFilterData
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -27,7 +28,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
-from rotkehlchen.externalapis.nuthatch import Nuthatch
+from rotkehlchen.externalapis.nuthatch import Nuthatch, ValidatorBlocks
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
@@ -54,6 +55,7 @@ from rotkehlchen.utils.misc import from_wei, ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
+    DENCUN_BLOCK,
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
@@ -1037,6 +1039,298 @@ class Eth2(EthereumModule):
             blocks_without_mev=blocks_without_mev,
         )
 
+    def _get_and_store_proven_blocks_from_nest(
+            self,
+            blocks_without_mev: set[int],
+    ) -> tuple[set[int], set[int]]:
+        """Store every block a nuthatch nest proves each tracked validator proposed.
+
+        The nest reads a block's proposer from the beacon header the next execution block commits
+        to, so its answer covers a validator whatever address its rewards went to. It can do so
+        only from Dencun on, and from its own first proven block. What it proved for a validator
+        is kept as one interval of blocks, moved on only through what the nest proved, never to
+        now. A validator whose activation or withdrawal address is not known is asked about all
+        the same.
+
+        Returns the validators the nest could not answer for, and those that may have proposed
+        before the interval it proved for them: for both, produced blocks are not covered.
+        """
+        try:
+            nest = self._nest()
+            head, _ = nest.finalized_head()
+        except RemoteError as e:
+            log.warning(f'Not asking the nuthatch nest for proven produced blocks: {e!s}')
+            with self.database.conn.read_ctx() as cursor:
+                return {row[0] for row in cursor.execute('SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL')}, set()  # noqa: E501
+        try:  # validators found since the last sync, or added while the nest was down
+            nest.sync_watched()
+        except RemoteError as e:
+            log.warning(f'Could not tell the nuthatch nest which validators to watch: {e!s}')
+
+        with self.database.conn.read_ctx() as cursor:
+            validators = cursor.execute(
+                'SELECT validator_index, activation_timestamp, exited_timestamp '
+                'FROM eth2_validators WHERE validator_index IS NOT NULL',
+            ).fetchall()
+            tracked_accounts = self.database.get_blockchain_accounts(cursor).eth
+        # A validator removed and added back is asked about from the start again.
+        coverage = {index: entry for index, entry in self._validator_coverage().items() if index in {row[0] for row in validators}}  # noqa: E501
+
+        unanswered: set[int] = set()
+        served: list[tuple[int, int, int]] = []
+        # The nest proves a block's proposer from its successor, so never past head - 1.
+        for index, _, exited_ts in validators:
+            covered = coverage.get(index)
+            if covered is not None and (covered[1] >= head - 1 or (exited_ts is not None and covered[2] >= exited_ts)):  # noqa: E501
+                continue
+            try:
+                answer = self._ask_nest_for_validator(nest, index, DENCUN_BLOCK if covered is None else covered[1] + 1)  # noqa: E501
+                if answer.through < answer.from_block:
+                    continue  # nothing proven past what is stored
+                through_ts = nest.block_timestamp(answer.through)
+                first_ts = covered[3] if covered is not None else nest.block_timestamp(answer.from_block)  # noqa: E501
+                self._store_proven_blocks(index, answer.rows, tracked_accounts, blocks_without_mev)
+            except RemoteError as e:
+                log.warning(f'Could not ask the nuthatch nest for the blocks of validator {index}: {e!s}')  # noqa: E501
+                unanswered.add(index)
+                continue
+
+            coverage[index] = (
+                answer.from_block if covered is None else covered[0],
+                answer.through,
+                through_ts,
+                first_ts,
+            )
+            self._set_validator_coverage(coverage)  # once its blocks are stored
+            served.append((index, answer.from_block, answer.through))
+
+        unanswered |= self._ask_nest_for_validators_again(
+            nest=nest,
+            asked_at=ts_now(),
+            served=served,
+            tracked_accounts=tracked_accounts,
+            blocks_without_mev=blocks_without_mev,
+        )
+        before = {
+            index for index, activation_ts, _ in validators
+            if (covered := coverage.get(index)) is None or activation_ts is None or activation_ts < covered[3]  # noqa: E501
+        }
+        return unanswered, before - unanswered
+
+    @staticmethod
+    def _ask_nest_for_validator(
+            nest: Nuthatch,
+            index: int,
+            from_block: int,
+            to_block: int | None = None,
+    ) -> ValidatorBlocks:
+        """The validator's blocks the nest proved from `from_block`, or from its own first proven
+        block if that is later, which leaves the blocks before it uncovered.
+
+        May raise:
+        - RemoteError if the nest cannot answer
+        """
+        try:
+            return nest.get_validator_blocks(validator_index=index, from_block=from_block, to_block=to_block)  # noqa: E501
+        except IndexerRangeStartsLater as e:
+            if e.first_block <= from_block or (to_block is not None and e.first_block > to_block):
+                raise RemoteError(str(e)) from e
+            return nest.get_validator_blocks(validator_index=index, from_block=e.first_block, to_block=to_block)  # noqa: E501
+
+    def _ask_nest_for_validators_again(
+            self,
+            nest: Nuthatch,
+            asked_at: Timestamp,
+            served: list[tuple[int, int, int]],
+            tracked_accounts: Sequence[ChecksumEvmAddress],
+            blocks_without_mev: set[int],
+    ) -> set[int]:
+        """Ask the nest again about the validator ranges it proved, and remember the ones it
+        proved now. A range is kept while a block in it lacks its reward, and until an answer
+        given once the nest has stopped asking the relays about it. Returns the validators whose
+        remembered range the nest could not answer."""
+        with self.database.conn.read_ctx() as cursor:
+            remembered = json.loads(self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES,
+            ) or '[]')
+            tracked = {row[0] for row in cursor.execute('SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
+        unanswered: set[int] = set()
+        ranges: list[tuple[int, int, int, int]] = []
+        for index, from_block, to_block, served_at in remembered:
+            if index not in tracked:
+                continue
+            try:
+                answer = self._ask_nest_for_validator(nest, index, from_block, to_block)
+                lacking = self._store_proven_blocks(index, answer.rows, tracked_accounts, blocks_without_mev)  # noqa: E501
+            except RemoteError as e:
+                log.warning(f'Could not ask the nuthatch nest again for the blocks of validator {index}: {e!s}')  # noqa: E501
+                unanswered.add(index)
+                ranges.append((index, from_block, to_block, served_at))
+                continue
+            if lacking or not nest_range_settled(served_at=Timestamp(served_at), asked_at=asked_at):  # noqa: E501
+                ranges.append((index, from_block, to_block, served_at))
+
+        ranges += [(index, from_block, to_block, asked_at) for index, from_block, to_block in served]  # noqa: E501
+        merged: list[tuple[int, int, int, int]] = []
+        for entry in sorted(ranges):
+            if len(merged) != 0 and (last := merged[-1])[0] == entry[0] and entry[1] <= last[2] + 1:  # noqa: E501
+                merged[-1] = (last[0], last[1], max(last[2], entry[2]), max(last[3], entry[3]))
+            else:
+                merged.append(entry)
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES,
+                value=json.dumps([list(entry) for entry in merged]),
+            )
+        return unanswered
+
+    def _store_proven_blocks(
+            self,
+            validator_index: int,
+            rows: list[dict[str, Any]],
+            tracked_accounts: Sequence[ChecksumEvmAddress],
+            blocks_without_mev: set[int],
+    ) -> bool:
+        """Store the blocks the nest proved `validator_index` proposed, booked to it: the proof
+        is authoritative over any relay key, beacon lookup or earlier guess. Stored events of a
+        block that disagree with the proof are replaced, unless the user edited them. A block
+        whose reward the nest could not read is left unbooked rather than booked as zero.
+
+        Returns whether a block still lacks its reward.
+
+        May raise:
+        - RemoteError if a row cannot be read; nothing of the answer is stored then
+        """
+        blocks = []
+        for row in rows:
+            try:
+                reward = None if row.get('rewardStatus') == 'unavailable' else from_wei(
+                    deserialize_fval(
+                        value=row['blockReward'],
+                        name='block reward',
+                        location='nuthatch proven blocks',
+                    ),
+                )
+                blocks.append((
+                    deserialize_int(row['blockNumber'], location='nuthatch proven blocks'),
+                    deserialize_timestamp(row['timeStamp']),
+                    deserialize_evm_address(row['feeRecipient']),
+                    reward,
+                    row,
+                ))
+            except (KeyError, DeserializationError, TypeError, ValueError) as e:
+                raise RemoteError(f'The nuthatch nest answered a block of validator {validator_index} rotki cannot read: {e!s}') from e  # noqa: E501
+
+        dbevents = DBHistoryEvents(self.database)
+        proven = self._proven_blocks()
+        lacking = False
+        for block_number, timestamp, fee_recipient, reward, row in blocks:
+            if reward is None:
+                lacking = True
+                continue
+            self._drop_disproven_block_events(block_number, validator_index, reward)
+            stored = self._stored_block_events(block_number)
+            events = []
+            if BLOCK_REWARD_SEQUENCE not in stored:
+                events.append(EthBlockEvent(
+                    validator_index=validator_index,
+                    timestamp=ts_sec_to_ms(timestamp),
+                    amount=reward,
+                    fee_recipient=fee_recipient,
+                    fee_recipient_tracked=fee_recipient in tracked_accounts,
+                    block_number=block_number,
+                    is_mev_reward=False,
+                ))
+            if MEV_REWARD_SEQUENCE not in stored:
+                try:
+                    mev_event = self._mev_reward_event(
+                        entry=row,
+                        proposer_index=validator_index,
+                        timestamp=timestamp,
+                        block_number=block_number,
+                        fee_recipient=fee_recipient,
+                        tracked_accounts=tracked_accounts,
+                    )
+                except DeserializationError as e:
+                    log.error(f'Could not read the MEV reward of block {block_number}: {e!s}')
+                    mev_event = None
+                if mev_event is None:  # unrecorded, disputed or unread: retried, never zero
+                    blocks_without_mev.add(block_number)
+                else:
+                    events.append(mev_event)
+            with self.database.user_write() as write_cursor:
+                for event in events:
+                    dbevents.add_history_event(write_cursor=write_cursor, event=event)
+            proven.add(block_number)
+
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
+                value=json.dumps(sorted(proven)),
+            )
+        return lacking
+
+    def _drop_disproven_block_events(
+            self,
+            block_number: int,
+            validator_index: int,
+            reward: FVal,
+    ) -> None:
+        """Delete a block's stored events booked to another validator, or with another block
+        reward, than the nest proved: an earlier source's guess. Events the user edited are kept
+        as they are."""
+        with self.database.user_write() as write_cursor:
+            rows = write_cursor.execute(
+                'SELECT he.identifier, he.sequence_index, info.validator_index, he.amount, '
+                'EXISTS(SELECT 1 FROM history_events_mappings m WHERE m.parent_identifier=he.identifier AND m.name=? AND m.value=?) '  # noqa: E501
+                'FROM history_events he JOIN eth_staking_events_info info ON info.identifier=he.identifier '  # noqa: E501
+                'WHERE he.group_identifier=?',
+                (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    EthBlockEvent.form_group_identifier(block_number),
+                ),
+            ).fetchall()
+            if not any(
+                booked != validator_index or (sequence == BLOCK_REWARD_SEQUENCE and FVal(amount) != reward)  # noqa: E501
+                for _, sequence, booked, amount, _ in rows
+            ):
+                return
+            if len(drop := [identifier for identifier, _, _, _, customized in rows if not customized]) != len(rows):  # noqa: E501
+                log.warning(f'Block {block_number} has edited events that disagree with the proof that validator {validator_index} proposed it. They are kept as edited.')  # noqa: E501
+            write_cursor.executemany(
+                'DELETE FROM history_events WHERE identifier=?',
+                [(identifier,) for identifier in drop],
+            )
+
+    def _validator_coverage(self) -> dict[int, tuple[int, int, Timestamp, Timestamp]]:
+        """What the nest proved per validator: first block, last block, and their timestamps in
+        the order last, first."""
+        with self.database.conn.read_ctx() as cursor:
+            raw = json.loads(self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+            ) or '{}')
+        return {int(index): (first, last, Timestamp(last_ts), Timestamp(first_ts)) for index, (first, last, last_ts, first_ts) in raw.items()}  # noqa: E501
+
+    def _set_validator_coverage(self, coverage: dict[int, tuple[int, int, Timestamp, Timestamp]]) -> None:  # noqa: E501
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+                value=json.dumps({str(index): list(entry) for index, entry in coverage.items()}),
+            )
+
+    def _proven_blocks(self) -> set[int]:
+        with self.database.conn.read_ctx() as cursor:
+            return set(json.loads(self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
+            ) or '[]'))
+
     def _store_validated_blocks(
             self,
             address: ChecksumEvmAddress,
@@ -1056,6 +1350,7 @@ class Eth2(EthereumModule):
         dbevents = DBHistoryEvents(self.database)
         incomplete: set[int] = set()
         attributed = True
+        proven = self._proven_blocks()
         for entry in blocks:
             try:
                 block_number, timestamp, reward = self._deserialize_validated_block(entry)
@@ -1079,7 +1374,12 @@ class Eth2(EthereumModule):
                     blocks_without_mev.add(block_number)
                 continue
 
-            if (pubkey := entry.get('proposerPubkey')):
+            if block_number in proven:
+                # A nest proved its proposer, which no other source's attribution overrides. Its
+                # reward is not stored yet only while the nest has none to give.
+                if (proposer_index := stored.get(BLOCK_REWARD_SEQUENCE)) is None:
+                    continue
+            elif (pubkey := entry.get('proposerPubkey')):
                 # A relay named the proposer: one of these validators, or none of them.
                 if (proposer_index := self._proposer_by_pubkey(
                     pubkey=pubkey,
@@ -1109,29 +1409,15 @@ class Eth2(EthereumModule):
                 block_number=block_number,
                 is_mev_reward=False,
             )]
-            mev_amount, mev_recipient = None, fee_recipient
-            if (
-                entry.get('mev') == 'relay' and
-                (mev_recipient_raw := entry.get('mevRecipient'))
-            ):
-                mev_recipient = deserialize_evm_address(mev_recipient_raw)
-                # Paid to the block's own fee recipient, the block reward already counts what
-                # the block paid; only a builder's separate transfer is more.
-                mev_amount = entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')  # noqa: E501
-            if mev_amount:
-                events.append(EthBlockEvent(
-                    validator_index=proposer_index,
-                    timestamp=ts_sec_to_ms(timestamp),
-                    amount=from_wei(deserialize_fval(
-                        value=mev_amount,
-                        name='mev reward',
-                        location='validated blocks query',
-                    )),
-                    fee_recipient=mev_recipient,
-                    fee_recipient_tracked=mev_recipient in tracked_accounts,
-                    block_number=block_number,
-                    is_mev_reward=True,
-                ))
+            if (mev_event := self._mev_reward_event(
+                entry=entry,
+                proposer_index=proposer_index,
+                timestamp=timestamp,
+                block_number=block_number,
+                fee_recipient=fee_recipient,
+                tracked_accounts=tracked_accounts,
+            )) is not None:
+                events.append(mev_event)
             with self.database.user_write() as write_cursor:
                 for event in events:
                     dbevents.add_history_event(write_cursor=write_cursor, event=event)
@@ -1141,6 +1427,42 @@ class Eth2(EthereumModule):
                 blocks_without_mev.add(block_number)
 
         return incomplete, attributed
+
+    @staticmethod
+    def _mev_reward_event(
+            entry: dict[str, Any],
+            proposer_index: int,
+            timestamp: Timestamp,
+            block_number: int,
+            fee_recipient: ChecksumEvmAddress,
+            tracked_accounts: Sequence[ChecksumEvmAddress],
+    ) -> EthBlockEvent | None:
+        """The MEV reward of a produced block the relays recorded, or None. No relay record is
+        not "no MEV", so it is never booked as zero.
+
+        May raise:
+        - DeserializationError if the row's MEV fields cannot be read
+        """
+        if entry.get('mev') != 'relay' or not (mev_recipient_raw := entry.get('mevRecipient')):
+            return None
+        mev_recipient = deserialize_evm_address(mev_recipient_raw)
+        # Paid to the block's own fee recipient, the block reward already counts what the block
+        # paid; only a builder's separate transfer is more.
+        if not (mev_amount := entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')):  # noqa: E501
+            return None
+        return EthBlockEvent(
+            validator_index=proposer_index,
+            timestamp=ts_sec_to_ms(timestamp),
+            amount=from_wei(deserialize_fval(
+                value=mev_amount,
+                name='mev reward',
+                location='validated blocks query',
+            )),
+            fee_recipient=mev_recipient,
+            fee_recipient_tracked=mev_recipient in tracked_accounts,
+            block_number=block_number,
+            is_mev_reward=True,
+        )
 
     def _staking_query_end(self, end_ts: Timestamp) -> Timestamp:
         """Where a staking query asked to end at end_ts stops. With a nuthatch nest in Ethereum's
@@ -1341,19 +1663,25 @@ class Eth2(EthereumModule):
             update_cache: bool = True,
     ) -> None:
         """Query and store produced blocks: from a nuthatch nest when the indexer order names
-        one, then beaconcha.in, then the other indexers when beaconcha.in is unavailable.
+        one, then beaconcha.in, then the other indexers when beaconcha.in is unavailable and no
+        nest is ordered.
 
-        Only beaconcha.in, and the other indexers by withdrawal address, cover validators. The
-        nest covers the tracked addresses, so without either the validators' coverage is
-        incomplete, and the user is told so.
+        A nest proves each validator's proposals from Dencun on; its address answers add the MEV
+        the relays recorded. Before what it proved, and where it could not answer, a validator's
+        blocks are covered only by beaconcha.in, and without it the user is told so. The other
+        indexers are not asked then: they find blocks by withdrawal address, which says nothing
+        about which validator proposed them.
         """
         with self.beacon_inquirer.beaconchain.produced_blocks_lock:
             # The nest goes first and beaconcha.in still runs after it, so a block the nest could
-            # not attribute or see is still found there; a block already stored is never added
-            # twice by either path.
+            # not prove is still found there; a block already stored is never added twice by any
+            # path, and a proven one is never booked to another validator.
             blocks_without_mev: set[int] = set()
             order = [name for name, _ in self.ethereum._get_indexers_in_order()]
+            uncovered: set[int] = set()
             if EvmIndexer.NUTHATCH in order:
+                unanswered, before = self._get_and_store_proven_blocks_from_nest(blocks_without_mev)  # noqa: E501
+                uncovered = unanswered | before
                 self._get_and_store_produced_blocks_from_nest(blocks_without_mev)
             # Kept until beaconcha.in has been asked about them, so a run where it fails or has
             # no key leaves them for a later one.
@@ -1373,18 +1701,19 @@ class Eth2(EthereumModule):
                     self._set_mev_recheck(recheck - seen)
                     return
 
-            if any(name != EvmIndexer.NUTHATCH for name in order):
+            if EvmIndexer.NUTHATCH not in order:
                 self._get_and_store_produced_blocks_from_indexers(
                     indices=indices,
                     update_cache=update_cache,
                 )
-            elif not self._told_nest_coverage_incomplete:
+            elif len(uncovered) != 0 and not self._told_nest_coverage_incomplete:
                 self._told_nest_coverage_incomplete = True
                 self.msg_aggregator.add_warning(
-                    'Produced blocks come only from the nuthatch nest, which finds the blocks '
-                    'whose rewards went to a tracked address. A validator block paid to an '
-                    'address you do not track is not found. Add a beaconcha.in API key, or '
-                    "another indexer to Ethereum's order, for complete validator coverage.",
+                    'The nuthatch nest proves the blocks a validator proposed from the Dencun '
+                    'upgrade (block 19,426,587) on, and from its own first proven block. Blocks '
+                    f'of validators {", ".join(str(i) for i in sorted(uncovered))} before that, '
+                    'or that the nest could not answer for, are not covered. Add a beaconcha.in '
+                    'API key to cover them.',
                     classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no source covers every validator'),  # noqa: E501
                     subject=Location.ETHEREUM,
                 )

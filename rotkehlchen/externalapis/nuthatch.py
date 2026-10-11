@@ -340,11 +340,19 @@ class Nuthatch(EtherscanAccountHistory):
         """
         if not isinstance(head := self._nest_call('GET', '/ready').get('head'), int):
             raise RemoteError(f'{self.name} has not read its chain head yet')
+        return head, self.block_timestamp(head)
+
+    def block_timestamp(self, block_number: int) -> Timestamp:
+        """The timestamp of an Ethereum block, as the nest's RPC has it.
+
+        May raise:
+        - RemoteError if the nest cannot answer it
+        """
         try:
-            block = self.get_block_by_number(chain_id=ChainID.ETHEREUM, block_number=head, full_transactions=False)  # noqa: E501
+            block = self.get_block_by_number(chain_id=ChainID.ETHEREUM, block_number=block_number, full_transactions=False)  # noqa: E501
         except DeserializationError as e:
-            raise RemoteError(f'{self.name} answered block {head} with {e!s}') from e
-        return head, Timestamp(block['timestamp'])
+            raise RemoteError(f'{self.name} answered block {block_number} with {e!s}') from e
+        return Timestamp(block['timestamp'])
 
     def get_token_transaction_data(
             self,
@@ -457,9 +465,12 @@ class Nuthatch(EtherscanAccountHistory):
 
         if to_block is not None and through < to_block:
             raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} through {to_block} having proved them only through {through}')  # noqa: E501
-        if (end := through if to_block is None else to_block) < from_block:
-            raise RemoteError(f'{self.name} has proven no blocks of validator {validator_index} from block {from_block} yet')  # noqa: E501
-        return ValidatorBlocks(from_block=from_block, through=end, rows=rows)
+        # `through` below `from_block` is a nest that has proven nothing new there yet.
+        return ValidatorBlocks(
+            from_block=from_block,
+            through=through if to_block is None else to_block,
+            rows=rows,
+        )
 
     def _nest_call(self, method: Literal['GET', 'POST'], path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:  # noqa: E501
         """One call to the nest's own management API, outside the Etherscan-shaped `/api`.
