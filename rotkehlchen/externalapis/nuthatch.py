@@ -60,6 +60,7 @@ NUTHATCH_PAGED_ACTIONS: Final = frozenset({
     'getminedblocks',
     'nuthatchValidatorBlocks',
 })
+ENVELOPE: Final = frozenset({'status', 'message', 'result'})
 # How a nest says a range begins before the history it was configured to keep.
 HISTORY_STARTS: Final = re.compile(r'history starts at block (\d+)')
 # Kept in a paged query's options and never sent: the pages it has read so far.
@@ -171,7 +172,7 @@ class Nuthatch(EtherscanAccountHistory):
                 return NuthatchPage(
                     rows,
                     generation if isinstance(generation, str) else None,
-                    {k: v for k, v in json_ret.items() if k not in {'status', 'message', 'result'}},
+                    {k: v for k, v in json_ret.items() if k not in ENVELOPE},
                 )
             return False
 
