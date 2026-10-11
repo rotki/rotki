@@ -2660,9 +2660,19 @@ def test_checkpoint_rolls_back_when_saving_fails(
     """Checkpoints and transactions share one write transaction: if saving the fetched
     transactions fails, the checkpoint must roll back with them, so the next refresh
     re-queries from the old checkpoint instead of skipping the transactions that were
-    never stored.
+    never stored. The address already has a checkpoint, so the test actually exercises
+    the checkpoint write: a newly tracked address would skip it and keep the assertion
+    true even if the atomicity broke.
     """
     address = btc_accounts[0]
+    database = bitcoin_manager.database
+    with database.conn.write_ctx() as write_cursor:  # seed the existing checkpoint
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            value=900_000,
+            address=address,
+        )
     tx = _esplora_tx(
         block_height=900_001,
         vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=address)}],  # noqa: E501
@@ -2689,14 +2699,14 @@ def test_checkpoint_rolls_back_when_saving_fails(
                 addresses=btc_accounts,
             )
 
-    database = bitcoin_manager.database
     with database.conn.read_ctx() as cursor:
-        # The checkpoint was rolled back together with the failed save.
+        # The checkpoint write was rolled back together with the failed save, so the
+        # previously stored 900_000 is still there instead of the new 900_001.
         assert database.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             address=address,
-        ) is None
+        ) == 900_000
         assert bitcoin_manager.dbtx.get_transactions(
             cursor=cursor,
             location=Location.BITCOIN,
