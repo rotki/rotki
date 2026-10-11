@@ -18,7 +18,13 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
-from rotkehlchen.errors.misc import APIKeyNotAvailable, ChainNotSupported, InputError, RemoteError
+from rotkehlchen.errors.misc import (
+    APIKeyNotAvailable,
+    ChainNotSupported,
+    IndexerRangeStartsLater,
+    InputError,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
 from rotkehlchen.externalapis.nuthatch import Nuthatch
@@ -966,14 +972,22 @@ class Eth2(EthereumModule):
         added to `blocks_without_mev`.
         """
         try:
-            bound_block, bound_ts = self._nest().finalized_head()
+            nest = self._nest()
+            bound_block, bound_ts = nest.finalized_head()
         except RemoteError as e:
             log.warning(f'Not asking the nuthatch nest for produced blocks: {e!s}')
             return
 
         self._repair_nest_cursors()
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN,
+                value=ts_now(),
+            )
         if len(validators := self._tracked_validators(bound_ts)) == 0:
             return
+        self._forget_nest_progress_for_new_validators({index for index, _, _ in validators})
 
         try:  # no validator proposed before the first one tracked was active
             first_block = self.ethereum.get_blocknumber_by_time(ts=min(entry[1] for entry in validators))  # noqa: E501
@@ -994,12 +1008,9 @@ class Eth2(EthereumModule):
             through = progress[address]
             if (from_block := first_block if through is None else max(first_block, through + 1)) > bound_block:  # noqa: E501
                 continue
-            if (blocks := self._fetch_validated_blocks_from_external_sources(
-                address=address,
-                period=TimestampOrBlockRange('blocks', from_block, bound_block),
-                only=EvmIndexer.NUTHATCH,
-            )) is None:
+            if (answer := self._ask_nest(nest, address, from_block, bound_block)) is None:
                 continue
+            from_block, blocks = answer
 
             self._store_validated_blocks(
                 address=address,
@@ -1168,22 +1179,20 @@ class Eth2(EthereumModule):
             ))
         ranges = []
         for address, from_block, to_block, served_at in remembered:
-            if (blocks := self._fetch_validated_blocks_from_external_sources(
-                address=address,
-                period=TimestampOrBlockRange('blocks', from_block, to_block),
-                only=EvmIndexer.NUTHATCH,
-            )) is None:
+            if (answer := self._ask_nest(self._nest(), address, from_block, to_block)) is None:
                 ranges.append((address, from_block, to_block, served_at))
                 continue
-            self._store_validated_blocks(
+            _, attributed = self._store_validated_blocks(
                 address=address,
                 validators=validators,
-                blocks=blocks,
+                blocks=answer[1],
                 tracked_accounts=tracked_accounts,
                 blocks_without_mev=blocks_without_mev,
                 allow_sole_active=False,
             )
-            if not nest_range_settled(served_at=served_at, asked_at=asked_at):
+            # Kept while a block in it has nobody to book it to, so a beacon node configured
+            # later can still name the proposer.
+            if not attributed or not nest_range_settled(served_at=served_at, asked_at=asked_at):
                 ranges.append((address, from_block, to_block, served_at))
 
         ranges += [(address, from_block, to_block, asked_at) for address, from_block, to_block in served]  # noqa: E501
@@ -1192,6 +1201,46 @@ class Eth2(EthereumModule):
                 write_cursor=write_cursor,
                 name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
                 value=json.dumps([list(entry) for entry in merge_nest_ranges(ranges)]),
+            )
+
+    def _ask_nest(
+            self,
+            nest: Nuthatch,
+            address: ChecksumEvmAddress,
+            from_block: int,
+            to_block: int,
+    ) -> tuple[int, list[dict[str, Any]]] | None:
+        """The produced blocks the nest has for `address` over the blocks, and the block they
+        start from: the nest's own first block if its history starts later. None if it cannot
+        answer."""
+        try:
+            return from_block, nest.get_validated_blocks(address=address, period=TimestampOrBlockRange('blocks', from_block, to_block))  # noqa: E501
+        except IndexerRangeStartsLater as e:
+            if not from_block < e.first_block <= to_block:
+                log.warning(f'Could not ask the nuthatch nest for the produced blocks of {address}: {e!s}')  # noqa: E501
+                return None
+            return self._ask_nest(nest, address, e.first_block, to_block)
+        except RemoteError as e:
+            log.warning(f'Could not ask the nuthatch nest for the produced blocks of {address}: {e!s}')  # noqa: E501
+            return None
+
+    def _forget_nest_progress_for_new_validators(self, validators: set[int]) -> None:
+        """A block of a validator not tracked then was passed over, so once one is added the
+        addresses' history is asked about again."""
+        with self.database.conn.read_ctx() as cursor:
+            known = set(json.loads(self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
+            ) or '[]'))
+        if validators <= known:
+            return
+        prefix = DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH.value[0].removesuffix('{address}')
+        with self.database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', (f'{prefix}%',))
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
+                value=json.dumps(sorted(validators)),
             )
 
     def _tracked_validators(self, now: Timestamp) -> list[tuple[int, Timestamp, Timestamp]]:

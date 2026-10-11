@@ -55,6 +55,11 @@ class DBCacheStatic(Enum):
     # Produced-block ranges a nuthatch nest served, with when, as a JSON list, so they are asked
     # about again while the nest may still learn their relay records.
     NUTHATCH_PRODUCED_RANGES: Final = 'nuthatch_produced_ranges'
+    # The tracked validators a nuthatch nest's produced blocks were last matched against, as a
+    # JSON list: one added since needs the addresses' history asked about again.
+    NUTHATCH_PRODUCED_VALIDATORS: Final = 'nuthatch_produced_validators'
+    # When a nuthatch nest was last asked about produced blocks.
+    NUTHATCH_PRODUCED_LAST_RUN: Final = 'nuthatch_produced_last_run'
 
 
 class LabeledLocationArgsType(TypedDict):

@@ -868,6 +868,7 @@ class DBHandler:
             DBCacheStatic.ETHERSCAN_API_KEY_TIER,
             DBCacheStatic.NUTHATCH_MEV_RECHECK,
             DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+            DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
             DBCacheStatic.NUTHATCH_PENDING_UNWATCH,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
@@ -888,6 +889,7 @@ class DBHandler:
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.NUTHATCH_MEV_RECHECK,
                 DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+                DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
                 DBCacheStatic.NUTHATCH_PENDING_UNWATCH,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
@@ -901,6 +903,7 @@ class DBHandler:
             cursor: DBCursor,
             name: Literal[
                 DBCacheStatic.LAST_BALANCE_SAVE,
+                DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,

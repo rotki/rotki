@@ -15,8 +15,8 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     calculate_query_chunks,
-    nest_ranges,
 )
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -34,6 +34,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
 )
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     ExternalService,
@@ -515,7 +516,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         """
         return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value',  # noqa: E501
-        )) | self._validators_awaiting_mev())
+        )) | self._validators_awaiting_mev(outdated_only=False))
 
     def get_outdated_validators_to_query_for_blocks(self) -> list[int]:
         """Get indices of validators that have not already been queried for blocks
@@ -525,13 +526,14 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR (kv.value <= ? AND (ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value))',  # noqa: E501
             bindings=(ts_now() - DAY_IN_SECONDS,),
-        )) | self._validators_awaiting_mev())
+        )) | self._validators_awaiting_mev(outdated_only=True))
 
-    def _validators_awaiting_mev(self) -> set[int]:
-        """Validators to pick for produced blocks whatever their last query time says, so the
-        query that asks a nuthatch nest still runs: the proposers of blocks stored without their
-        MEV reward that wait for beaconcha.in, and, while the nest has served ranges it may still
-        learn relay records of, every validator, as the nest is asked by address, not validator."""
+    def _validators_awaiting_mev(self, outdated_only: bool) -> set[int]:
+        """Validators to pick for produced blocks whatever their last query time says: the
+        proposers of blocks stored without their MEV reward that wait for beaconcha.in, and,
+        while Ethereum's indexer order names a nuthatch nest, every validator, as the nest is
+        asked by address, not validator, and no source's answer says it has nothing more to
+        tell. With `outdated_only`, only once a day after the nest was last asked."""
         with self.db.conn.read_ctx() as cursor:
             pending = json.loads(self.db.get_static_cache(
                 cursor=cursor,
@@ -543,10 +545,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 'WHERE he.group_identifier=? AND he.sequence_index=0',
                 (EthBlockEvent.form_group_identifier(block),),
             )}
-            if len(nest_ranges(self.db.get_static_cache(
-                cursor=cursor,
-                name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
-            ))) != 0:
+            last_run = self.db.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN)  # noqa: E501
+            if EvmIndexer.NUTHATCH in CachedSettings().get_evm_indexers_order_for_chain(
+                chain_id=ChainID.ETHEREUM,
+            ) and not (outdated_only and last_run is not None and last_run > ts_now() - DAY_IN_SECONDS):  # noqa: E501
                 awaiting.update(row[0] for row in cursor.execute(
                     'SELECT validator_index FROM eth2_validators WHERE activation_timestamp IS NOT NULL',  # noqa: E501
                 ))
