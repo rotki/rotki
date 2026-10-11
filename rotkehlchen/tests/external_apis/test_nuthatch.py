@@ -1431,3 +1431,50 @@ def test_a_later_source_cannot_book_a_proven_block_to_another_validator(eth2, nu
     ):
         eth2.get_and_store_produced_blocks(indices=[577475])
     assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009')]
+
+
+@pytest.mark.parametrize('second', [
+    {'generation': '8'},  # another snapshot
+    {'supportedFrom': 19500000},  # another catalogue start
+])
+def test_nuthatch_validator_pages_from_different_proofs_are_refused(nuthatch: Nuthatch, second: dict[str, Any]) -> None:  # noqa: E501
+    nuthatch.pagination_limit = 2
+    pages = [
+        _validator_page([_proven(block=19_500_000), _proven(block=19_500_001)]),
+        _validator_page([_proven(block=19_600_000)], **second),
+    ]
+    with patch.object(nuthatch.session, 'get', side_effect=pages), pytest.raises(RemoteError):
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=19_426_587)
+
+
+def test_nuthatch_range_asked_again_that_is_no_longer_proven_is_refused(nuthatch: Nuthatch) -> None:  # noqa: E501
+    """Nothing new proven is an answer only to an open question: a remembered range the nest no
+    longer proves is a refusal, so it stays to be asked again."""
+    not_yet = _refusal("NUTHATCH_INCOMPLETE: validator 577475's proposals are not proven from block 26100000 yet")  # noqa: E501
+    with patch.object(nuthatch.session, 'get', return_value=not_yet), pytest.raises(RemoteError):
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=26_100_000, to_block=26_150_000)  # noqa: E501
+
+
+def test_beaconchain_failing_part_way_cannot_book_a_proven_block_to_another_validator(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """beaconcha.in stores what it read before failing; what it booked to a proven block for
+    another validator is removed all the same."""
+    _validator(eth2)
+    _validator(eth2, index=2, pubkey='0x' + '02' * 48)
+    _proven_pass(eth2, nuthatch, {577475: [_proven(mev='unrecorded', mevRecipient='', mevReward='')]})  # noqa: E501
+
+    def store_then_fail(**kwargs: Any) -> set[int]:
+        mev = EthBlockEvent(validator_index=2, timestamp=TimestampMS(1767000000000), amount=ONE, fee_recipient=WITHDRAWAL, fee_recipient_tracked=False, block_number=26167074, is_mev_reward=True)  # noqa: E501
+        with eth2.database.user_write() as write_cursor:
+            DBHistoryEvents(eth2.database).add_history_event(write_cursor=write_cursor, event=mev)
+        raise RemoteError('beaconcha.in failed on the next block')
+
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    with (
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2, '_get_and_store_proven_blocks_from_nest', return_value=(set(), set())),
+        patch.object(eth2, '_get_and_store_produced_blocks_from_nest'),
+        patch.object(beaconchain, 'has_api_key', return_value=True),
+        patch.object(beaconchain, '_get_and_store_produced_blocks', side_effect=store_then_fail),
+    ):
+        eth2.get_and_store_produced_blocks(indices=[577475])
+    assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009')]

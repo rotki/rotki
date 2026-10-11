@@ -438,6 +438,7 @@ class Nuthatch(EtherscanAccountHistory):
             options['endblock'] = str(to_block)
         rows: list[dict[str, Any]] = []
         through: int | None = None
+        snapshot: tuple[Any, Any] | None = None
         while True:
             try:
                 result = self._query(
@@ -447,18 +448,22 @@ class Nuthatch(EtherscanAccountHistory):
                     options=options,
                 )
             except RemoteError as e:
-                if through is None and NOT_PROVEN_YET.search(str(e)) is not None:
+                # Only an open question can have nothing new for an answer; a range asked about
+                # again that is no longer proven is a refusal, and stays to be asked.
+                if through is None and to_block is None and NOT_PROVEN_YET.search(str(e)) is not None:  # noqa: E501
                     return ValidatorBlocks(from_block=from_block, through=from_block - 1, rows=[])
                 raise
             if not isinstance(result, list):
                 raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} with {result}')  # noqa: E501
+            meta = getattr(result, 'meta', {})
             try:
-                page_through = int(getattr(result, 'meta', {})['verifiedThrough'])
+                page_through = int(meta['verifiedThrough'])
             except (KeyError, TypeError, ValueError) as e:
                 raise RemoteError(f'{self.name} did not say how far it proved the blocks of validator {validator_index}') from e  # noqa: E501
-            if through is not None and page_through != through:
-                raise RemoteError(f'{self.name} proved the blocks of validator {validator_index} through {through} on one page and {page_through} on another')  # noqa: E501
-            through = page_through
+            page_snapshot = (getattr(result, 'generation', None), meta.get('supportedFrom'))
+            if through is not None and (page_through != through or page_snapshot != snapshot):
+                raise RemoteError(f'{self.name} answered the pages of validator {validator_index} from different proofs')  # noqa: E501
+            through, snapshot = page_through, page_snapshot
             for row in result:
                 try:
                     proposer = int(row['proposerIndex'])

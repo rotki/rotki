@@ -1732,9 +1732,11 @@ class Eth2(EthereumModule):
                     log.warning(f'Failed to query produced blocks via beaconcha.in due to {e!s}. Falling back to indexers.')  # noqa: E501
                 else:
                     self._set_mev_recheck(recheck - seen)
-                    # beaconcha.in books by its own proposer; a proven block's proposer stands
-                    self._enforce_proven_proposers()
                     return
+                finally:
+                    # beaconcha.in books by its own proposer, and stores what it read before
+                    # any failure; a proven block's proposer stands either way.
+                    self._enforce_proven_proposers()
 
             if EvmIndexer.NUTHATCH not in order:
                 self._get_and_store_produced_blocks_from_indexers(
