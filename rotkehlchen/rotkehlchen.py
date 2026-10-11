@@ -37,6 +37,7 @@ from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.names import NamePrioritizer
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
@@ -136,6 +137,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BTCAddress,
+    ChainID,
     ChainType,
     ChecksumEvmAddress,
     ExternalService,
@@ -943,14 +945,19 @@ class Rotkehlchen:
             method=self._sync_nuthatch_watched,
         )
 
+    @staticmethod
+    def _ethereum_orders_nuthatch() -> bool:
+        return EvmIndexer.NUTHATCH in CachedSettings().get_evm_indexers_order_for_chain(
+            chain_id=ChainID.ETHEREUM,
+        )
+
     def _sync_nuthatch_watched(self) -> None:
         try:
             self.nuthatch.sync_watched()
         except RemoteError as e:
             log.warning(
                 'Could not sync the nuthatch nest watched accounts, will retry at the next '
-                'account change or login: %s',
-                e,
+                f'account change or login: {e!s}',
             )
 
     def add_evm_accounts(
@@ -1606,15 +1613,14 @@ class Rotkehlchen:
         if settings.active_modules is not None:
             self.chains_aggregator.process_new_modules_list(settings.active_modules)
 
+        nest_was_ordered = self._ethereum_orders_nuthatch()
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
-        # A nest set up after the accounts were added, or named in an indexer order later, has
+        # A nest set up after the accounts were added, or named in Ethereum's order only now, has
         # not been told about them yet.
-        if any(x is not None for x in (
-            settings.nuthatch_api_endpoint,
-            settings.evm_indexers_order,
-            settings.default_evm_indexer_order,
-        )):
+        if settings.nuthatch_api_endpoint is not None or (
+            not nest_was_ordered and self._ethereum_orders_nuthatch()
+        ):
             self.schedule_nuthatch_watch_sync()
         if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
             self.indexer_stats.discard()

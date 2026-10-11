@@ -70,7 +70,7 @@ from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -1634,30 +1634,39 @@ def test_recent_range_is_recorded_to_its_end_when_the_next_block_is_after_it(
         database: DBHandler,
         ethereum_manager: EthereumManager,
 ) -> None:
-    """The last block at or before a recent range's end is a few seconds before it. If the block
-    after it is past the end, nothing lies between, so the range is recorded up to its end and
-    can join a saved range starting right after it. If the indexers do not know a next block
-    yet, they may lag, so only the last block's timestamp is recorded."""
+    """The last block at or before a recent range's end is a few seconds before it. Backfilling
+    up to a saved range that starts right after the end, the block after it decides: past the
+    end, nothing lies between, so the range is recorded up to its end and joins the saved one.
+    If the indexers do not know a next block yet they may lag, so only the last block's
+    timestamp is recorded, and the range is left to join later."""
     transactions = ethereum_manager.transactions
     inquirer = transactions.evm_inquirer
     start_ts, end_ts = Timestamp(ts_now() - HOUR_IN_SECONDS), Timestamp(ts_now() - 60)
     location = 'ETHtxs_' + make_evm_address()
 
-    def block_timestamp(block_number: int, **kwargs: Any) -> Timestamp:
-        if block_number == 1001 and not knows_next:
-            raise RemoteError('no such block yet')
-        return Timestamp(end_ts - 4) if block_number == 1000 else Timestamp(end_ts + 8)
+    def block_timestamp(knows_next: bool) -> Callable[..., Timestamp]:
+        def timestamp(block_number: int, **kwargs: Any) -> Timestamp:
+            if block_number == 1001 and not knows_next:
+                raise RemoteError('no such block yet')
+            return Timestamp(end_ts - 4) if block_number == 1000 else Timestamp(end_ts + 8)
+        return timestamp
 
-    for knows_next, recorded_end in ((False, end_ts - 4), (True, end_ts)):
+    saved_end = Timestamp(end_ts + 30)
+    for knows_next, recorded in ((False, (end_ts + 1, saved_end)), (True, (start_ts, saved_end))):
         with database.user_write() as write_cursor:
-            write_cursor.execute('DELETE FROM used_query_ranges WHERE name=?', (location,))
+            database.update_used_query_range(
+                write_cursor,
+                location,
+                Timestamp(end_ts + 1),
+                saved_end,
+            )
         with (
             patch.object(inquirer, 'get_blocknumber_by_time', return_value=1000),
-            patch.object(inquirer, 'get_block_timestamp', side_effect=block_timestamp),
+            patch.object(inquirer, 'get_block_timestamp', side_effect=block_timestamp(knows_next)),
         ):
             transactions._mark_range_as_queried(location_string=location, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         with database.conn.read_ctx() as cursor:
-            assert database.get_used_query_range(cursor=cursor, name=location) == (start_ts, recorded_end)  # noqa: E501
+            assert database.get_used_query_range(cursor=cursor, name=location) == recorded
 
 
 def test_sync_resolves_its_end_once(
@@ -1750,9 +1759,8 @@ def test_sync_resolves_its_end_once(
 
     assert resolved_ts.count(sync_end_ts) == 1, 'the end of the sync must be resolved once'
     assert end_blocks == [end_block] * 6, 'two addresses x three query kinds'
-    # recording the ranges clamps them to how far the indexers reach, read off the same block,
-    # and the block after it, whose timestamp is not after the end here, so the clamp holds
-    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block, end_block + 1] * 6  # noqa: E501
+    # recording the ranges clamps them to how far the indexers reach, read off the same block
+    assert [x.kwargs['block_number'] for x in block_timestamp.call_args_list] == [end_block] * 6
     with database.conn.read_ctx() as cursor:
         for address in addresses:
             for prefix in QUERY_KINDS:

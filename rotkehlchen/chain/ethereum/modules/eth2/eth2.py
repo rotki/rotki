@@ -947,17 +947,16 @@ class Eth2(EthereumModule):
                 # A nuthatch nest also lists the relay-built blocks whose fee recipient was the
                 # builder, with what the relays say they paid this address.
                 fee_recipient = deserialize_evm_address(entry.get('feeRecipient') or address)
-                events = []
-                if BLOCK_REWARD_SEQUENCE not in stored:
-                    events.append(EthBlockEvent(
-                        validator_index=proposer_index,
-                        timestamp=ts_sec_to_ms(timestamp),
-                        amount=reward,
-                        fee_recipient=fee_recipient,
-                        fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
-                        block_number=block_number,
-                        is_mev_reward=False,
-                    ))
+                # Either event already stored is not added again: the insert ignores it.
+                events = [EthBlockEvent(
+                    validator_index=proposer_index,
+                    timestamp=ts_sec_to_ms(timestamp),
+                    amount=reward,
+                    fee_recipient=fee_recipient,
+                    fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
+                    block_number=block_number,
+                    is_mev_reward=False,
+                )]
                 mev_amount, mev_recipient = None, fee_recipient
                 if (
                     entry.get('mev') == 'relay' and
@@ -974,7 +973,7 @@ class Eth2(EthereumModule):
                     # No relay had a record of the block when the nest asked. That is not "no
                     # MEV": relays can publish late, so the block is asked about again.
                     retry_from[proposer_index] = min(timestamp, retry_from.get(proposer_index, now))  # noqa: E501
-                if mev_amount and MEV_REWARD_SEQUENCE not in stored:
+                if mev_amount:
                     events.append(EthBlockEvent(
                         validator_index=proposer_index,
                         timestamp=ts_sec_to_ms(timestamp),

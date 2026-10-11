@@ -645,7 +645,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     # different view of the chain
                     call_order=[self.evm_inquirer.indexers_node],
                 ))
-                if covered_end_ts < end_ts:
+                if covered_end_ts < end_ts and self._saved_range_starts_after(location_string, end_ts):  # noqa: E501
                     covered_end_ts = self._covered_through_next_block(
                         to_block=to_block,
                         covered_end_ts=covered_end_ts,
@@ -675,12 +675,19 @@ class EvmTransactions(ABC):  # noqa: B024
                     start_ts=start_ts,
                     end_ts=covered_end_ts,
                 )
-            else:
-                self.dbranges.update_used_query_range(
+            else:  # a range the indexers did not cover up to a newer saved one is asked again
+                self.dbranges.update_used_query_range_if_joined(
                     write_cursor=write_cursor,
                     location_string=location_string,
-                    queried_ranges=[(start_ts, covered_end_ts)],
+                    queried_range=(start_ts, covered_end_ts),
                 )
+
+    def _saved_range_starts_after(self, location_string: str, end_ts: Timestamp) -> bool:
+        """Whether the saved range is newer than a range ending at end_ts, so that range has to
+        reach end_ts to join it."""
+        with self.database.conn.read_ctx() as cursor:
+            saved_range = self.database.get_used_query_range(cursor, location_string)
+        return saved_range is not None and saved_range[0] > end_ts
 
     def _covered_through_next_block(
             self,
@@ -692,8 +699,8 @@ class EvmTransactions(ABC):  # noqa: B024
 
         to_block is the last block at or before end_ts. If the indexers know a next block and it
         is after end_ts, nothing lies between to_block and end_ts, so the range is covered up to
-        end_ts. Recording only to_block's timestamp would leave a gap before a newer saved range
-        that this range should join. An indexer that does not know the next block yet may lag,
+        end_ts. Recording only to_block's timestamp would leave a gap before the newer saved
+        range this range should join. An indexer that does not know the next block yet may lag,
         so then only to_block's timestamp is established.
         """
         try:

@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +28,13 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_tx_hash,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, Eth2PubKey, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    Eth2PubKey,
+    EvmInternalTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 ADDRESS = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
@@ -439,14 +445,15 @@ def test_existing_accounts_reach_a_nest_set_up_after_them(rotkehlchen_api_server
         patch.object(rotki, 'schedule_nuthatch_watch_sync', side_effect=rotki._sync_nuthatch_watched) as schedule,  # noqa: E501
         patch.object(rotki.nuthatch.session, 'request', side_effect=request),
     ):
-        assert rotki.set_settings(ModifiableDBSettings(nuthatch_api_endpoint='http://127.0.0.1:8288'))[0]  # noqa: E501
+        assert rotki.set_settings(ModifiableDBSettings(nuthatch_api_endpoint='http://127.0.0.1:8288'))[0]
         assert schedule.call_count == 1
         assert ('POST', '/api/watch', {'address': str(address).lower()}) not in calls, (
             'not yet in the order, so not yet told'
         )
-        assert rotki.set_settings(ModifiableDBSettings(evm_indexers_order=SerializableChainIndexerOrder(
+        order = SerializableChainIndexerOrder(
             order={ChainID.ETHEREUM: [EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN]},
-        )))[0]
+        )
+        assert rotki.set_settings(ModifiableDBSettings(evm_indexers_order=order))[0]
         assert schedule.call_count == 2
         assert ('POST', '/api/watch', {'address': str(address).lower()}) in calls
         assert rotki.set_settings(ModifiableDBSettings(btc_derivation_gap_limit=30))[0]
@@ -479,19 +486,19 @@ def test_nuthatch_internals_drop_reverted_frames_and_keep_same_depth_siblings(
         _internal(parent, trace_index=4, trace_id='0_1_1', is_error='1'),
     ]
     with patch.object(nuthatch.session, 'get', return_value=_answer(rows)):
-        by_hash = next(nuthatch.get_transactions(
+        by_hash = cast('list[EvmInternalTransaction]', next(nuthatch.get_transactions(
             chain_id=ChainID.ETHEREUM,
             account=None,
             action='txlistinternal',
             period_or_hash=parent_tx.tx_hash,
-        ))
+        )))
     with patch.object(nuthatch.session, 'get', return_value=_answer(rows)):
-        by_address = next(nuthatch.get_transactions(
+        by_address = cast('list[EvmInternalTransaction]', next(nuthatch.get_transactions(
             chain_id=ChainID.ETHEREUM,
             account=ADDRESS,
             action='txlistinternal',
             period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=100),  # noqa: E501
-        ))
+        )))
 
     assert [tx.trace_id for tx in by_hash] == [1, 2]
     assert [tx.trace_id for tx in by_address] == [1, 2]
@@ -512,12 +519,12 @@ def test_nuthatch_internals_page_on_what_the_nest_answered(nuthatch: Nuthatch) -
     reverted = [_internal(parent, trace_index=i, trace_id='0_1', is_error='1') for i in range(1000)]  # noqa: E501
     tail = [_internal(parent, trace_index=1000, trace_id='0_1')]
     with patch.object(nuthatch.session, 'get', side_effect=[_answer(reverted), _answer(tail)]) as get:  # noqa: E501
-        internals = next(nuthatch.get_transactions(
+        internals = cast('list[EvmInternalTransaction]', next(nuthatch.get_transactions(
             chain_id=ChainID.ETHEREUM,
             account=ADDRESS,
             action='txlistinternal',
             period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=100),  # noqa: E501
-        ))
+        )))
 
     assert [tx.trace_id for tx in internals] == [1000]
     assert get.call_count == 2
@@ -623,7 +630,7 @@ def test_produced_block_without_a_relay_record_is_asked_about_again(eth2, nuthat
     recorded = {**block, 'mev': 'relay', 'mevRecipient': str(ADDRESS).lower(), 'mevReward': '4', 'paymentValue': '3000000000000000000', 'proposerPubkey': '0x' + 'ab' * 48}  # noqa: E501
     assert _produced(eth2, nuthatch, [recorded])
     assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
-    assert _cursor(eth2.database) > recent, 'nothing left to wait for'
+    assert (cursor := _cursor(eth2.database)) is not None and cursor > recent, 'nothing left to wait for'  # noqa: E501
 
     assert _produced(eth2, nuthatch, [recorded])
     assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
@@ -635,7 +642,7 @@ def test_produced_block_without_a_relay_record_stops_being_asked_about(eth2, nut
     old = ts_now() - 40 * 86400
     block = {'blockNumber': '201', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
     assert _produced(eth2, nuthatch, [block])
-    assert _cursor(eth2.database) > old
+    assert (cursor := _cursor(eth2.database)) is not None and cursor > old
 
 
 def test_produced_block_not_attributed_leaves_the_validator_retryable(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501

@@ -300,7 +300,7 @@ class Nuthatch(EtherscanAccountHistory):
                         subject=Location.from_chain_id(chain_id),
                     )
                     continue
-                internals.append(tx)  # type: ignore[arg-type]  # internal=True gives internals
+                internals.append(tx)
 
             if (new_options := self._maybe_paginate(result=page, options=options)) is None:
                 break
