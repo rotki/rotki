@@ -68,7 +68,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -1977,3 +1977,64 @@ def test_range_starting_before_an_indexers_history_is_queried_from_its_start(
     ]
     assert outcome == RangeQueryOutcome.NOT_COVERED
     assert recorded == [(first_block_ts, 1750000000)]
+
+
+def test_internal_range_starting_before_an_indexers_history_records_the_covered_part(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """As for normal transactions, the part of an internal transactions range a nest covers is
+    recorded, also when it held none, so the next sync does not ask it again from the start."""
+    transactions = ethereum_manager.transactions
+    first_block_ts = Timestamp(1700000000)
+    recorded: list[tuple[Timestamp, Timestamp]] = []
+
+    def query(address: Any, period: TimestampOrBlockRange, **kwargs: Any) -> None:
+        if period.from_value < first_block_ts:
+            raise IndexerRangeStartsLater('history starts at block 18000000', first_block=18000000)
+
+    with (
+        patch.object(transactions, '_query_and_save_internal_transactions_for_range', side_effect=query),  # noqa: E501
+        patch.object(transactions.evm_inquirer, 'get_block_timestamp', return_value=first_block_ts),  # noqa: E501
+        patch.object(transactions, '_mark_range_as_queried', side_effect=lambda location_string, start_ts, end_ts, **kwargs: recorded.append((start_ts, end_ts))),  # noqa: E501
+    ):
+        outcome = transactions._get_internal_transactions_for_ranges(
+            address=make_evm_address(),
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1750000000),
+        )
+
+    assert outcome == RangeQueryOutcome.NOT_COVERED
+    assert recorded == [(first_block_ts, 1750000000)]
+
+
+def test_period_no_indexer_covers_is_told_to_the_user_once_per_sync(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """A sync whose ranges start before a nest's history imports the rest and tells the user,
+    once for the whole sync, which period was not imported."""
+    transactions = ethereum_manager.transactions
+    first_block_ts = Timestamp(1700000000)
+    addresses = [make_evm_address(), make_evm_address()]
+
+    def query(address: Any, period: TimestampOrBlockRange, **kwargs: Any) -> list:
+        if period.from_value < first_block_ts:
+            raise IndexerRangeStartsLater('history starts at block 18000000', first_block=18000000)
+        return []
+
+    with (
+        patch.object(transactions, '_resolve_query_end', return_value=QueryEnd(timestamp=Timestamp(1750000000), block=20000000, failed=frozenset())),  # noqa: E501
+        patch.object(transactions, '_query_and_save_transactions_for_range', side_effect=query),
+        patch.object(transactions, '_query_and_save_internal_transactions_for_range', side_effect=query),  # noqa: E501
+        patch.object(transactions, '_get_erc20_transfers_for_ranges', return_value=RangeQueryOutcome.NOT_COVERED),  # noqa: E501
+        patch.object(transactions.evm_inquirer, 'get_block_timestamp', return_value=first_block_ts),  # noqa: E501
+        patch.object(transactions, 'get_chain_specific_multiaddress_data'),
+        patch.object(transactions.msg_aggregator, 'add_warning') as warning,
+    ):
+        transactions.query_chain(from_timestamp=Timestamp(1600000000), to_timestamp=Timestamp(1750000000), addresses=addresses)  # noqa: E501
+
+    assert warning.call_count == 1
+    told = warning.call_args.args[0]
+    assert all(str(address) in told for address in addresses)
+    assert timestamp_to_date(Timestamp(1600000000)) in told

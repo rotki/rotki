@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
     TransactionStatusSubType,
+    UserMessageRecord,
     WSMessageType,
 )
 from rotkehlchen.assets.asset import EvmToken
@@ -58,8 +59,9 @@ from rotkehlchen.types import (
     TokenKind,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.utils.misc import get_chunks, timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, QueryEnd
@@ -160,6 +162,42 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
+        # The periods no configured indexer covered in the sync running now, told to the user
+        # once when it ends. None outside a sync.
+        self._uncovered: list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]] | None = None
+
+    def _note_uncovered(self, address: ChecksumEvmAddress, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
+        if self._uncovered is not None:
+            self._uncovered.append((address, start_ts, end_ts))
+
+    @contextmanager
+    def _one_sync(self) -> Iterator[None]:
+        """Collect the uncovered periods of a sync and tell them once at its end. A sync inside
+        another leaves the telling to the outer one."""
+        if self._uncovered is not None:
+            yield
+            return
+        self._uncovered = []
+        try:
+            yield
+        finally:
+            self._tell_uncovered()
+            self._uncovered = None
+
+    def _tell_uncovered(self) -> None:
+        """Tell the user, once for the sync, which period of which addresses' history no
+        configured indexer covered, and so was not imported."""
+        if not (uncovered := self._uncovered):
+            return
+        addresses = sorted({address for address, _, _ in uncovered})
+        start, end = min(entry[1] for entry in uncovered), max(entry[2] for entry in uncovered)
+        self.msg_aggregator.add_warning(
+            f'No configured {self.evm_inquirer.chain_name} indexer covers the history of '
+            f'{", ".join(addresses)} from {timestamp_to_date(start)} to '
+            f'{timestamp_to_date(end)}, so it was not imported. Add an indexer that covers it '
+            f"to {self.evm_inquirer.chain_name}'s indexer order to import it.",
+            classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error='no configured indexer covers the period'),  # noqa: E501
+        )
 
     def _notify_tx_query_status(
             self,
@@ -334,6 +372,16 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
+        with self._one_sync():
+            return self._query_address_transactions(address, start_ts, end_ts, query_end)
+
+    def _query_address_transactions(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            query_end: QueryEnd | None,
+    ) -> bool:
         if query_end is None:
             try:
                 query_end = self._resolve_query_end(end_ts)
@@ -439,15 +487,16 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
             ]
         else:
-            failed_addresses = [
-                address for address in addresses
-                if self.single_address_query_transactions(
-                    address=address,
-                    start_ts=from_timestamp,
-                    end_ts=query_end.timestamp,
-                    query_end=query_end,
-                ) is False
-            ]
+            with self._one_sync():  # what no indexer covered is told once for all addresses
+                failed_addresses = [
+                    address for address in addresses
+                    if self.single_address_query_transactions(
+                        address=address,
+                        start_ts=from_timestamp,
+                        end_ts=query_end.timestamp,
+                        query_end=query_end,
+                    ) is False
+                ]
 
         self.get_chain_specific_multiaddress_data(addresses)
         if len(failed_addresses) != 0:  # the indexer errors were logged, not passed on
@@ -808,6 +857,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 not_covered = True  # the part from covered_from on was queried
                 covered_ranges.append((Timestamp(e.covered_from), query_end_ts))
+                self._note_uncovered(address, query_start_ts, Timestamp(e.covered_from - 1))
                 continue
             except IndexerRangeNotCovered as e:
                 log.warning(
@@ -816,6 +866,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
@@ -1281,6 +1332,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 end_ts=end_ts,
             )
         not_covered = False
+        covered_ranges: list[tuple[Timestamp, Timestamp]] = []
         for range_start_ts, range_end_ts in ranges_to_query:
             # DBQueryRanges may extend a gap past the requested half of the split.
             query_start_ts = max(range_start_ts, start_ts) if not record_range else range_start_ts
@@ -1309,7 +1361,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     'covers it: %s', self.evm_inquirer.chain_name, address, query_start_ts,
                     e.covered_from - 1, e,
                 )
-                not_covered = True  # the part from covered_from on was queried, its progress saved
+                not_covered = True  # the part from covered_from on was queried
+                # recorded even when it held no internal transactions, as no batch saved it
+                covered_ranges.append((Timestamp(e.covered_from), query_end_ts))
+                self._note_uncovered(address, query_start_ts, Timestamp(e.covered_from - 1))
                 continue
             except IndexerRangeNotCovered as e:
                 log.warning(
@@ -1318,6 +1373,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
@@ -1335,7 +1391,15 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return RangeQueryOutcome.FAILED
 
+            covered_ranges.append((query_start_ts, query_end_ts))
+
         if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
+            if record_range:
+                self._mark_covered_ranges_as_queried(
+                    location_string=location_string,
+                    covered_ranges=covered_ranges,
+                    query_end=query_end,
+                )
             return RangeQueryOutcome.NOT_COVERED
 
         log.debug('Internal %s transactions for address %s done', self.evm_inquirer.chain_name, address)  # noqa: E501
@@ -1396,6 +1460,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 not_covered = True  # the part from covered_from on was queried
                 covered_ranges.append((Timestamp(e.covered_from), query_end_ts))
+                self._note_uncovered(address, query_start_ts, Timestamp(e.covered_from - 1))
                 continue
             except IndexerRangeNotCovered as e:
                 log.warning(
@@ -1404,6 +1469,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
