@@ -49,6 +49,7 @@ from .constants import (
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
+    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from .structures import (
     PerformanceStatusFilter,
@@ -70,6 +71,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
+BLOCK_REWARD_SEQUENCE: Final = 0
+MEV_REWARD_SEQUENCE: Final = 1
 
 
 class Eth2(EthereumModule):
@@ -583,6 +586,13 @@ class Eth2(EthereumModule):
         log.debug(f'Querying {address} ETH withdrawals from {from_ts} to {to_ts}')
         period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
         if (untracked_validator_indices := self._fetch_withdrawals_from_external_sources(address, period)) is None:  # noqa: E501
+            # Nothing is recorded, so the next query asks for the same range again.
+            self.msg_aggregator.add_warning(
+                f'Could not query the ethereum withdrawals of {address} from any source. '
+                'They will be retried by the next query.',
+                classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='every withdrawals source failed'),  # noqa: E501
+                subject=Location.ETHEREUM,
+            )
             return
 
         # pull data for newly detected validators and save them in the DB
@@ -864,6 +874,13 @@ class Eth2(EthereumModule):
 
         dbevents = DBHistoryEvents(self.database)
         queried_indices: set[int] = set()
+        # Validators with a block in their range not yet fully stored, so their range is asked
+        # again rather than recorded as queried.
+        incomplete_indices: set[int] = set()
+        # The oldest block of a validator still awaiting its relay record, where its next query
+        # starts so a record published late is still picked up.
+        retry_from: dict[int, Timestamp] = {}
+        unanswered: list[ChecksumEvmAddress] = []
         every_address = self._all_addressed(indices, addressed)
         for address, validator_ranges in validators_by_address.items():
             from_ts = min(entry[1] for entry in validator_ranges)
@@ -876,15 +893,19 @@ class Eth2(EthereumModule):
                 only=only,
             )) is None:
                 every_address = False
+                if only is None:  # the last source asked: nothing else will cover the address
+                    unanswered.append(address)
                 continue
 
-            queried_indices.update(validator_index for validator_index, _, _ in validator_ranges)
+            address_indices = {validator_index for validator_index, _, _ in validator_ranges}
+            queried_indices.update(address_indices)
 
             for entry in blocks:
                 try:
                     block_number, timestamp, reward = self._deserialize_validated_block(entry)
                 except (DeserializationError, TypeError, ValueError) as e:
                     log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
+                    incomplete_indices.update(address_indices)  # whose block it was is unknown
                     continue
 
                 active_indices = [
@@ -894,13 +915,18 @@ class Eth2(EthereumModule):
                 if len(active_indices) == 0:
                     continue
 
-                with self.database.conn.read_ctx() as cursor:
-                    cursor.execute(
-                        'SELECT EXISTS(SELECT 1 FROM eth_staking_events_info WHERE is_exit_or_blocknumber=?)',  # noqa: E501
-                        (block_number,),
-                    )
-                    if cursor.fetchone()[0] == 1:
-                        continue
+                stored = self._stored_block_events(block_number)
+                if BLOCK_REWARD_SEQUENCE in stored and (
+                    MEV_REWARD_SEQUENCE in stored or entry.get('mev') != 'relay'
+                ):  # nothing new to add for it
+                    if (
+                        MEV_REWARD_SEQUENCE not in stored and
+                        entry.get('mev') == 'unrecorded' and
+                        timestamp >= now - UNRECORDED_MEV_RETRY_WINDOW
+                    ):
+                        validator = stored[BLOCK_REWARD_SEQUENCE]
+                        retry_from[validator] = min(timestamp, retry_from.get(validator, now))
+                    continue
 
                 if (pubkey := entry.get('proposerPubkey')):
                     # A relay named the proposer: one of these validators, or none of them.
@@ -915,20 +941,23 @@ class Eth2(EthereumModule):
                     active_indices=active_indices,
                 )) is None:
                     every_address = False  # a source that can name the proposer should be asked
+                    incomplete_indices.update(active_indices)
                     continue
 
                 # A nuthatch nest also lists the relay-built blocks whose fee recipient was the
                 # builder, with what the relays say they paid this address.
                 fee_recipient = deserialize_evm_address(entry.get('feeRecipient') or address)
-                events = [EthBlockEvent(
-                    validator_index=proposer_index,
-                    timestamp=ts_sec_to_ms(timestamp),
-                    amount=reward,
-                    fee_recipient=fee_recipient,
-                    fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
-                    block_number=block_number,
-                    is_mev_reward=False,
-                )]
+                events = []
+                if BLOCK_REWARD_SEQUENCE not in stored:
+                    events.append(EthBlockEvent(
+                        validator_index=proposer_index,
+                        timestamp=ts_sec_to_ms(timestamp),
+                        amount=reward,
+                        fee_recipient=fee_recipient,
+                        fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
+                        block_number=block_number,
+                        is_mev_reward=False,
+                    ))
                 mev_amount, mev_recipient = None, fee_recipient
                 if (
                     entry.get('mev') == 'relay' and
@@ -938,7 +967,14 @@ class Eth2(EthereumModule):
                     # Paid to the block's own fee recipient, the block reward already counts what
                     # the block paid; only a builder's separate transfer is more.
                     mev_amount = entry.get('paymentValue' if mev_recipient == fee_recipient else 'mevReward')  # noqa: E501
-                if mev_amount:
+                elif (
+                    entry.get('mev') == 'unrecorded' and
+                    timestamp >= now - UNRECORDED_MEV_RETRY_WINDOW
+                ):
+                    # No relay had a record of the block when the nest asked. That is not "no
+                    # MEV": relays can publish late, so the block is asked about again.
+                    retry_from[proposer_index] = min(timestamp, retry_from.get(proposer_index, now))  # noqa: E501
+                if mev_amount and MEV_REWARD_SEQUENCE not in stored:
                     events.append(EthBlockEvent(
                         validator_index=proposer_index,
                         timestamp=ts_sec_to_ms(timestamp),
@@ -956,17 +992,36 @@ class Eth2(EthereumModule):
                     for event in events:
                         dbevents.add_history_event(write_cursor=write_cursor, event=event)
 
+        if len(unanswered) != 0:  # their validators keep their last query time, so are retried
+            self.msg_aggregator.add_warning(
+                f'Could not query the produced blocks of {", ".join(unanswered)} from any source. '
+                'They will be retried by the next query.',
+                classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='every produced blocks source failed'),  # noqa: E501
+                subject=Location.ETHEREUM,
+            )
+
         if update_cache:
             with self.database.user_write() as write_cursor:
-                for index in queried_indices:
+                for index in queried_indices - incomplete_indices:
                     self.database.set_dynamic_cache(
                         write_cursor=write_cursor,
                         name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                        value=now,
+                        value=retry_from.get(index, now),
                         index=index,
                     )
 
         return every_address
+
+    def _stored_block_events(self, block_number: int) -> dict[int, int]:
+        """The block's stored events, reward and MEV reward, by sequence index, each with the
+        validator it is booked to."""
+        with self.database.conn.read_ctx() as cursor:
+            return dict(cursor.execute(
+                'SELECT he.sequence_index, info.validator_index FROM history_events he '
+                'JOIN eth_staking_events_info info ON info.identifier=he.identifier '
+                'WHERE he.group_identifier=?',
+                (EthBlockEvent.form_group_identifier(block_number),),
+            ).fetchall())
 
     def _all_addressed(self, indices: list[int], addressed: set[int]) -> bool:
         """Whether every validator left out of `addressed` was left out for being up to date,

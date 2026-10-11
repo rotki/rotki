@@ -11,6 +11,7 @@ import requests
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
@@ -578,12 +579,17 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
                 blocknumber = int(entry['block'])
                 with self.db.conn.read_ctx() as cursor:
-                    cursor.execute(
-                        'SELECT COUNT(*) from eth_staking_events_info WHERE is_exit_or_blocknumber IS ?',  # noqa: E501
-                        (blocknumber,),
-                    )
-                    if cursor.fetchone()[0] != 0:
-                        continue
+                    # A block stored without its MEV reward, by a nuthatch nest whose relays had
+                    # no record of it yet, is still asked about here for a while.
+                    stored = dict(cursor.execute(
+                        'SELECT sequence_index, timestamp FROM history_events WHERE group_identifier=?',  # noqa: E501
+                        (EthBlockEvent.form_group_identifier(blocknumber),),
+                    ).fetchall())
+                if 0 in stored and (
+                    1 in stored or
+                    stored[0] < ts_sec_to_ms(Timestamp(ts_now() - UNRECORDED_MEV_RETRY_WINDOW))
+                ):
+                    continue
 
                 block_data = self._query_block_data(blocknumber)
                 rewards_data = self._query_block_rewards(blocknumber)
@@ -657,7 +663,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         is_mev_reward=True,
                     )
                 with self.db.user_write() as write_cursor:
-                    dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
+                    if 0 not in stored:
+                        dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
                     if mev_event is not None:
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 

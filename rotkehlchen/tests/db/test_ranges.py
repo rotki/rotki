@@ -102,3 +102,21 @@ def test_update_used_query_range(database):
                     location_string=location3,
                     queried_ranges=queried_ranges,
                 )
+
+
+def test_backfill_progress_is_saved_once_it_joins(database):
+    """A query of the history before the saved range reports its progress from its own start.
+    Until it reaches the saved range that progress is a disconnected fragment, and saving it
+    would leave a gap. It is held back, and saved once it joins; progress after the saved range
+    joins it at once."""
+    dbranges = DBQueryRanges(database)
+    with database.user_write() as cursor:
+        database.update_used_query_range(cursor, 'location', 100, 200)
+        dbranges.update_used_query_range_if_joined(cursor, 'location', (0, 50))
+        assert database.get_used_query_range(cursor, 'location') == (100, 200)
+        dbranges.update_used_query_range_if_joined(cursor, 'location', (0, 99))
+        assert database.get_used_query_range(cursor, 'location') == (0, 200)
+        dbranges.update_used_query_range_if_joined(cursor, 'location', (201, 250))
+        assert database.get_used_query_range(cursor, 'location') == (0, 250)
+        dbranges.update_used_query_range_if_joined(cursor, 'fresh', (5, 10))
+        assert database.get_used_query_range(cursor, 'fresh') == (5, 10)

@@ -1700,8 +1700,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         and then querying the indexers, with blockscout first, then etherscan.
         May raise RemoteError if all indexers fail.
         """
-        # check if value exists in the cache
-        if (block_number := self.timestamp_to_block_cache[self.chain_id].get(ts)) is not None:
+        # The cache holds closest='before' answers only, which is what the range resolver fills
+        # it with, so an 'after' lookup never gets the block on the wrong side of ts.
+        if closest == 'before' and (block_number := self.timestamp_to_block_cache[self.chain_id].get(ts)) is not None:  # noqa: E501
             return block_number
 
         block_number = self._try_indexers(
@@ -1711,7 +1712,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 closest=closest,
             ),
         )
-        self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
+        if closest == 'before':
+            self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
         return block_number
 
     def maybe_get_l1_fees(

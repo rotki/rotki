@@ -1608,6 +1608,14 @@ class Rotkehlchen:
 
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
+        # A nest set up after the accounts were added, or named in an indexer order later, has
+        # not been told about them yet.
+        if any(x is not None for x in (
+            settings.nuthatch_api_endpoint,
+            settings.evm_indexers_order,
+            settings.default_evm_indexer_order,
+        )):
+            self.schedule_nuthatch_watch_sync()
         if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
             self.indexer_stats.discard()
 

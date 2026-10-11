@@ -97,7 +97,7 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
     {
       id: 'nuthatch_nest',
       image: getPublicServiceImagePath('nuthatch.svg'),
-      name: 'Nuthatch nest',
+      name: 'ETH Nuthatch Nest',
       setting: RpcSettingKey.NUTHATCH,
     },
   ]);

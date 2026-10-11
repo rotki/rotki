@@ -81,3 +81,28 @@ class DBQueryRanges:
             start_ts=min(starts),
             end_ts=max(ends),
         )
+
+    def update_used_query_range_if_joined(
+            self,
+            write_cursor: DBCursor,
+            location_string: str,
+            queried_range: tuple[Timestamp, Timestamp],
+    ) -> None:
+        """Record the progress of a query that is still running, if it joins the saved range.
+
+        A backfill of the history before the saved range writes its progress from its own start,
+        so until it reaches the saved range its progress is a disconnected older fragment. That
+        is not saved: only one continuous range is kept per location, and the range the query
+        records when it completes joins it.
+        """
+        if (saved_range := self.db.get_used_query_range(write_cursor, location_string)) is not None and (  # noqa: E501
+            queried_range[1] + 1 < saved_range[0] or saved_range[1] + 1 < queried_range[0]
+        ):
+            log.debug(f'Not saving {location_string} progress {queried_range} before it joins {saved_range}')  # noqa: E501
+            return
+
+        self.update_used_query_range(
+            write_cursor=write_cursor,
+            location_string=location_string,
+            queried_ranges=[queried_range],
+        )

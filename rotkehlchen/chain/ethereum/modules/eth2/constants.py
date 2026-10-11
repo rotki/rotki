@@ -1,6 +1,7 @@
 from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.fval import FVal
 
 UNKNOWN_VALIDATOR_INDEX: Final = -1
@@ -8,6 +9,10 @@ MIN_EFFECTIVE_BALANCE: Final = FVal(32)
 MAX_EFFECTIVE_BALANCE: Final = FVal(2048)
 
 CPT_ETH2: Final = 'eth2'
+
+# How long a produced block without a relay record keeps being asked about. A relay writes its
+# record after the block is out, and can fail to write it, so a missing one is never proof.
+UNRECORDED_MEV_RETRY_WINDOW: Final = 30 * DAY_IN_SECONDS
 
 BEACONCHAIN_MAX_EPOCH: Final = 9223372036854775807  # This is INT64 MAX. Beacon node API actually returns 18446744073709551615 which is UINT64 MAX # noqa: E501
 
