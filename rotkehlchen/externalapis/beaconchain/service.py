@@ -13,12 +13,16 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
-from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    calculate_query_chunks,
+    produced_blocks_cursor,
+)
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.interface import (
     ExternalServiceWithApiKey,
@@ -670,13 +674,21 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
             if update_cache:
+                exits: dict[int, Timestamp | None] = {}
+                with self.db.conn.read_ctx() as cursor:
+                    for chunk, placeholders in get_query_chunks(indices):
+                        exits.update(cursor.execute(
+                            'SELECT validator_index, exited_timestamp FROM eth2_validators '
+                            f'WHERE validator_index IN ({placeholders})',
+                            chunk,
+                        ).fetchall())
                 with self.db.user_write() as write_cursor:
                     now = ts_now()
                     for index in indices:
                         self.db.set_dynamic_cache(
                             write_cursor=write_cursor,
                             name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                            value=now,
+                            value=produced_blocks_cursor(now=now, exited_ts=exits.get(index)),
                             index=index,
                         )
 

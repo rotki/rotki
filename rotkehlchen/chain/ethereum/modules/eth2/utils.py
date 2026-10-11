@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from rotkehlchen.db.filtering import EthStakingEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -24,6 +25,18 @@ SECONDS_PER_SLOT: Final = 12
 
 ETH2_GENESIS_TIMESTAMP: Final = 1606824023
 ETH2_MERGE_TIMESTAMP: Final = 1663224162
+
+
+def produced_blocks_cursor(now: Timestamp, exited_ts: Timestamp | None) -> Timestamp:
+    """Where a validator's next produced blocks query starts after one that reached `now`.
+
+    An exited validator is only queried while this is before its exit, and its last blocks may
+    still get their relay records for UNRECORDED_MEV_RETRY_WINDOW, so until then it stays just
+    before the exit.
+    """
+    if exited_ts is not None and now < exited_ts + UNRECORDED_MEV_RETRY_WINDOW:
+        return Timestamp(min(now, exited_ts - 1))
+    return now
 
 
 def timestamp_to_slot(timestamp: Timestamp) -> int:

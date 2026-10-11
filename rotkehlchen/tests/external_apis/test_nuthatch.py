@@ -770,3 +770,49 @@ def test_beaconchain_failing_leaves_the_recheck_for_the_next_run(eth2, nuthatch:
     assert _block_events(eth2.database, 301) == [(0, '0.000000000000000005'), (1, '2')]
     run([], beaconchain_up=True)
     assert _block_events(eth2.database, 301) == [(0, '0.000000000000000005'), (1, '2')]
+
+
+def test_exited_validator_stays_queried_through_the_retry_window(eth2, nuthatch: Nuthatch) -> None:
+    """An exited validator is only picked for produced blocks while its last query is before its
+    exit. Its last blocks can still get relay records for the retry window, so until then its
+    last query stays just before the exit, and after it moves on as before."""
+    recently_exited = Timestamp(ts_now() - 86400)
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=7,
+            public_key=Eth2PubKey('0x' + 'ab' * 48),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=ADDRESS,
+            activation_timestamp=Timestamp(1600000000),
+            exited_timestamp=recently_exited,
+        )])
+    assert _produced(eth2, nuthatch, [])
+    assert _cursor(eth2.database) == recently_exited - 1
+    assert 7 in eth2.beacon_inquirer.beaconchain.get_validators_to_query_for_blocks()
+
+    long_exited = Timestamp(ts_now() - 40 * 86400)
+    with eth2.database.user_write() as write_cursor:
+        write_cursor.execute('UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=7', (long_exited,))  # noqa: E501
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited - 1, index=7)  # noqa: E501
+    assert _produced(eth2, nuthatch, [])
+    assert (cursor := _cursor(eth2.database)) is not None and cursor > long_exited
+    assert 7 not in eth2.beacon_inquirer.beaconchain.get_validators_to_query_for_blocks()
+
+
+def test_blocks_without_mev_are_kept_for_beaconchain_without_a_key(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """Without a beaconcha.in key there is nobody to ask yet, but adding one later must still get
+    the MEV of a block the nest stored without it."""
+    _validator(eth2)
+    old = ts_now() - 40 * 86400
+    block = {'blockNumber': '302', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
+    eth2.ethereum.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
+    with (
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(nuthatch, 'get_validated_blocks', return_value=[block]),
+        patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: period),  # noqa: E501
+        patch.object(eth2, '_get_proposer_index_for_validated_block', return_value=7),
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=False),
+    ):
+        eth2.get_and_store_produced_blocks(indices=[7])
+
+    assert eth2._mev_recheck() == {302}

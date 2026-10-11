@@ -56,7 +56,7 @@ from .structures import (
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
-from .utils import create_profit_filter_queries, timestamp_to_slot
+from .utils import create_profit_filter_queries, produced_blocks_cursor, timestamp_to_slot
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -847,6 +847,7 @@ class Eth2(EthereumModule):
 
         now = ts_now()
         validators_by_address: dict[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]] = defaultdict(list)  # noqa: E501
+        exits: dict[int, Timestamp | None] = {}
         with self.database.conn.read_ctx() as cursor:
             for chunk, placeholders in get_query_chunks(indices):
                 validator_rows = cursor.execute(
@@ -857,6 +858,8 @@ class Eth2(EthereumModule):
                 for validator_index, raw_address, activation_ts, exited_ts in validator_rows:
                     if activation_ts is None:
                         continue
+
+                    exits[validator_index] = exited_ts
 
                     if update_cache is False:
                         last_query_ts = Timestamp(0)
@@ -1004,7 +1007,7 @@ class Eth2(EthereumModule):
                     self.database.set_dynamic_cache(
                         write_cursor=write_cursor,
                         name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                        value=now,
+                        value=produced_blocks_cursor(now=now, exited_ts=exits.get(index)),
                         index=index,
                     )
 
@@ -1081,11 +1084,11 @@ class Eth2(EthereumModule):
                 only=EvmIndexer.NUTHATCH,
                 blocks_without_mev=blocks_without_mev,
             )
+            # Kept until beaconcha.in has been asked about them, so a run where it fails or has
+            # no key leaves them for a later one.
+            recheck = self._mev_recheck() | blocks_without_mev
+            self._set_mev_recheck(recheck)
             if self.beacon_inquirer.beaconchain.has_api_key():
-                # Kept until beaconcha.in has been asked about them, so a run where it fails
-                # leaves them for the next one.
-                recheck = self._mev_recheck() | blocks_without_mev
-                self._set_mev_recheck(recheck)
                 try:
                     seen = self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
                         indices=indices,
