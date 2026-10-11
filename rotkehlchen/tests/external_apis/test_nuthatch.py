@@ -981,6 +981,9 @@ def test_validators_are_picked_while_the_nest_is_ordered(eth2, nuthatch: Nuthatc
         with eth2.database.user_write() as write_cursor:
             eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN, value=ts_now())  # noqa: E501
         assert 577475 in manual(), 'a refresh always asks the nest'
+        assert 577475 in periodic(), 'the nest has not proven anything of it yet'
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE, value=json.dumps({'577475': [19_426_587, 26_199_999, 1800000000, 1700000000]}))  # noqa: E501
         assert 577475 not in periodic(), 'the periodic query waits a day'
 
 
@@ -1498,3 +1501,36 @@ def test_range_asked_again_whose_start_is_no_longer_proven_is_kept(eth2, nuthatc
         kept = json.loads(eth2.database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES) or '[]')  # noqa: E501
     assert [577475, 19_500_000, 19_600_000] in [entry[:3] for entry in kept]
     assert 577475 in unanswered
+
+
+def test_validator_without_activation_or_past_its_last_query_is_picked_for_the_nest(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """With the nest ordered, a registered validator is picked whatever its activation or its
+    legacy query time says, so its proven blocks are asked for."""
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=577475,
+            public_key=Eth2PubKey(PUBKEY),
+            validator_type=ValidatorType.DISTRIBUTING,
+            exited_timestamp=Timestamp(ts_now() - 40 * 86400),
+        )])
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=577475)  # noqa: E501
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN, value=ts_now())  # noqa: E501
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    cached = CachedSettings()
+    order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    with patch.object(type(cached), '_evm_indexers_order_per_chain', order):
+        assert 577475 in beaconchain.get_validators_to_query_for_blocks()
+        assert 577475 in beaconchain.get_outdated_validators_to_query_for_blocks()
+
+
+def test_proven_range_still_waiting_for_a_relay_record_is_kept(eth2, nuthatch: Nuthatch) -> None:
+    """A range past rotki's own settling time is kept while the nest still answers a block in it
+    without a relay record, as the nest may still learn one."""
+    _validator(eth2)
+    with eth2.database.user_write() as write_cursor:
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES, value=json.dumps([[577475, 26_100_000, 26_199_999, ts_now() - 40 * 86400]]))  # noqa: E501
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE, value=json.dumps({'577475': [19_426_587, 26_199_999, 1800000000, 1700000000]}))  # noqa: E501
+    _proven_pass(eth2, nuthatch, {577475: [_proven(mev='unrecorded', mevRecipient='', mevReward='')]})  # noqa: E501
+    with eth2.database.conn.read_ctx() as cursor:
+        kept = json.loads(eth2.database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES) or '[]')  # noqa: E501
+    assert [577475, 26_100_000, 26_199_999] in [entry[:3] for entry in kept]

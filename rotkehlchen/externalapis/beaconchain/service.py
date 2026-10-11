@@ -533,7 +533,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         proposers of blocks stored without their MEV reward that wait for beaconcha.in, and,
         while Ethereum's indexer order names a nuthatch nest, every validator, as the nest is
         asked by address, not validator, and no source's answer says it has nothing more to
-        tell. With `outdated_only`, only once a day after the nest was last asked."""
+        tell. With `outdated_only`, only once a day after the nest was last asked, except a
+        validator the nest has not been asked about yet. Neither a last query time nor a missing
+        activation leaves a validator out while the nest is ordered: the nest proves its blocks
+        by its index, and keeps its own intervals and retries."""
         with self.db.conn.read_ctx() as cursor:
             pending = json.loads(self.db.get_static_cache(
                 cursor=cursor,
@@ -545,14 +548,21 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 'WHERE he.group_identifier=? AND he.sequence_index=0',
                 (EthBlockEvent.form_group_identifier(block),),
             )}
-            last_run = self.db.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN)  # noqa: E501
-            if EvmIndexer.NUTHATCH in CachedSettings().get_evm_indexers_order_for_chain(
+            if EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(
                 chain_id=ChainID.ETHEREUM,
-            ) and not (outdated_only and last_run is not None and last_run > ts_now() - DAY_IN_SECONDS):  # noqa: E501
-                awaiting.update(row[0] for row in cursor.execute(
-                    'SELECT validator_index FROM eth2_validators WHERE activation_timestamp IS NOT NULL',  # noqa: E501
-                ))
-        return awaiting
+            ):
+                return awaiting
+            registered = {row[0] for row in cursor.execute(
+                'SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL',
+            )}
+            last_run = self.db.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN)  # noqa: E501
+            if not (outdated_only and last_run is not None and last_run > ts_now() - DAY_IN_SECONDS):  # noqa: E501
+                return awaiting | registered
+            asked = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+            ) or '{}'))
+        return awaiting | {index for index in registered if str(index) not in asked}
 
     def get_and_store_produced_blocks(
             self,

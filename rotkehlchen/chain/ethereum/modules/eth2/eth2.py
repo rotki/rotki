@@ -1176,7 +1176,12 @@ class Eth2(EthereumModule):
                 # owed, and the validator is not covered until it is answered.
                 unanswered.add(index)
                 ranges.append((index, from_block, to_block, served_at))
-            elif lacking or not nest_range_settled(served_at=Timestamp(served_at), asked_at=asked_at):  # noqa: E501
+            elif (
+                lacking or
+                # the nest may still learn a relay record, on a schedule of its own
+                any(row.get('mev') != 'relay' for row in answer.rows) or
+                not nest_range_settled(served_at=Timestamp(served_at), asked_at=asked_at)
+            ):
                 ranges.append((index, from_block, to_block, served_at))
 
         ranges += [(index, from_block, to_block, asked_at) for index, from_block, to_block in served]  # noqa: E501
