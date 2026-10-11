@@ -1,3 +1,4 @@
+import contextvars
 import time
 from contextlib import ExitStack
 from itertools import count
@@ -2038,3 +2039,30 @@ def test_period_no_indexer_covers_is_told_to_the_user_once_per_sync(
     told = warning.call_args.args[0]
     assert all(str(address) in told for address in addresses)
     assert timestamp_to_date(Timestamp(1600000000)) in told
+
+
+def test_overlapping_syncs_of_other_tasks_each_tell_their_own_uncovered_period(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """Two syncs running at once in different tasks, each greenlet with its own context: one
+    ending first does not take the other's uncovered period with it."""
+    transactions = ethereum_manager.transactions
+    first, second = make_evm_address(), make_evm_address()
+    told: list[str] = []
+
+    def first_sync() -> None:
+        with transactions._one_sync():
+            contextvars.Context().run(second_sync)  # another task's sync, ending first
+            transactions._note_uncovered(first, Timestamp(1600000000), Timestamp(1700000000))
+
+    def second_sync() -> None:
+        with transactions._one_sync():
+            transactions._note_uncovered(second, Timestamp(1600000000), Timestamp(1700000000))
+
+    with patch.object(transactions.msg_aggregator, 'add_warning', side_effect=lambda msg, **kwargs: told.append(msg)):  # noqa: E501
+        contextvars.Context().run(first_sync)
+
+    assert len(told) == 2
+    assert str(second) in told[0] and str(first) not in told[0]
+    assert str(first) in told[1] and str(second) not in told[1]

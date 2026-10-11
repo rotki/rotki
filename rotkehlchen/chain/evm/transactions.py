@@ -3,6 +3,7 @@ from abc import ABC
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import IntEnum
 from functools import wraps
 from threading import Lock
@@ -87,6 +88,12 @@ RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
 # Seconds the end of a transaction sync is kept behind now. The newest blocks may not be
 # indexed yet, and a range reaching into them would get them recorded as queried.
 CHAIN_TOP_LAG: Final = 15
+# The periods no configured indexer covered in the sync the current task runs, told to the user
+# once when it ends. None outside a sync.
+_SYNC_UNCOVERED: ContextVar[list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]] | None] = ContextVar(  # noqa: E501
+    'evm_transactions_sync_uncovered',
+    default=None,
+)
 
 
 class RangeQueryOutcome(IntEnum):
@@ -162,32 +169,31 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
-        # The periods no configured indexer covered in the sync running now, told to the user
-        # once when it ends. None outside a sync.
-        self._uncovered: list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]] | None = None
 
-    def _note_uncovered(self, address: ChecksumEvmAddress, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
-        if self._uncovered is not None:
-            self._uncovered.append((address, start_ts, end_ts))
+    @staticmethod
+    def _note_uncovered(address: ChecksumEvmAddress, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
+        if (uncovered := _SYNC_UNCOVERED.get()) is not None:
+            uncovered.append((address, start_ts, end_ts))
 
     @contextmanager
     def _one_sync(self) -> Iterator[None]:
         """Collect the uncovered periods of a sync and tell them once at its end. A sync inside
-        another leaves the telling to the outer one."""
-        if self._uncovered is not None:
+        another of the same task leaves the telling to the outer one; syncs of other tasks
+        collect their own, each greenlet having its own context."""
+        if _SYNC_UNCOVERED.get() is not None:
             yield
             return
-        self._uncovered = []
+        token = _SYNC_UNCOVERED.set([])
         try:
             yield
         finally:
-            self._tell_uncovered()
-            self._uncovered = None
+            self._tell_uncovered(_SYNC_UNCOVERED.get() or [])
+            _SYNC_UNCOVERED.reset(token)
 
-    def _tell_uncovered(self) -> None:
+    def _tell_uncovered(self, uncovered: list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]]) -> None:  # noqa: E501
         """Tell the user, once for the sync, which period of which addresses' history no
         configured indexer covered, and so was not imported."""
-        if not (uncovered := self._uncovered):
+        if len(uncovered) == 0:
             return
         addresses = sorted({address for address, _, _ in uncovered})
         start, end = min(entry[1] for entry in uncovered), max(entry[2] for entry in uncovered)
