@@ -355,6 +355,19 @@ class DBEth2:
                     DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS.value,
                 ),
             )
+            # What the nest proved for them goes with their deleted blocks, so adding them back
+            # asks for their blocks again.
+            removed = {str(index) for index in validator_indices}
+            for name, keep in (
+                (DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE, lambda raw: {k: v for k, v in raw.items() if k not in removed}),  # noqa: E501
+                (DBCacheStatic.NUTHATCH_VALIDATOR_RANGES, lambda raw: [r for r in raw if str(r[0]) not in removed]),  # noqa: E501
+                (DBCacheStatic.NUTHATCH_PROVEN_BLOCKS, lambda raw: {k: v for k, v in raw.items() if str(v) not in removed}),  # noqa: E501
+            ):
+                if (raw := cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (name.value,)).fetchone()) is not None:  # noqa: E501
+                    cursor.execute(
+                        'UPDATE key_value_cache SET value=? WHERE name=?',
+                        (json.dumps(keep(json.loads(raw[0]))), name.value),
+                    )
 
     @staticmethod
     def _validator_stats_process_queries(

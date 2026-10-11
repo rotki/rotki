@@ -1087,8 +1087,11 @@ class Eth2(EthereumModule):
                 answer = self._ask_nest_for_validator(nest, index, DENCUN_BLOCK if covered is None else covered[1] + 1)  # noqa: E501
                 if answer.through < answer.from_block:
                     continue  # nothing proven past what is stored
+                # An answer that starts later than asked leaves a gap, which the interval kept
+                # never bridges: it restarts there, and the blocks before stay uncovered.
+                joins = covered is not None and answer.from_block == covered[1] + 1
                 through_ts = nest.block_timestamp(answer.through)
-                first_ts = covered[3] if covered is not None else nest.block_timestamp(answer.from_block)  # noqa: E501
+                first_ts = covered[3] if joins and covered is not None else nest.block_timestamp(answer.from_block)  # noqa: E501
                 self._store_proven_blocks(index, answer.rows, tracked_accounts, blocks_without_mev)
             except RemoteError as e:
                 log.warning(f'Could not ask the nuthatch nest for the blocks of validator {index}: {e!s}')  # noqa: E501
@@ -1096,7 +1099,7 @@ class Eth2(EthereumModule):
                 continue
 
             coverage[index] = (
-                answer.from_block if covered is None else covered[0],
+                covered[0] if joins and covered is not None else answer.from_block,
                 answer.through,
                 through_ts,
                 first_ts,
@@ -1227,10 +1230,18 @@ class Eth2(EthereumModule):
         proven = self._proven_blocks()
         lacking = False
         for block_number, timestamp, fee_recipient, reward, row in blocks:
+            # The proven proposer takes effect whether or not the reward is known yet.
+            proven[block_number] = validator_index
+            self._drop_disproven_block_events(
+                block_number=block_number,
+                validator_index=validator_index,
+                reward=reward,
+                fee_recipient=fee_recipient,
+                fee_recipient_tracked=fee_recipient in tracked_accounts,
+            )
             if reward is None:
                 lacking = True
                 continue
-            self._drop_disproven_block_events(block_number, validator_index, reward)
             stored = self._stored_block_events(block_number)
             events = []
             if BLOCK_REWARD_SEQUENCE not in stored:
@@ -1263,28 +1274,26 @@ class Eth2(EthereumModule):
             with self.database.user_write() as write_cursor:
                 for event in events:
                     dbevents.add_history_event(write_cursor=write_cursor, event=event)
-            proven.add(block_number)
 
-        with self.database.user_write() as write_cursor:
-            self.database.set_static_cache(
-                write_cursor=write_cursor,
-                name=DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
-                value=json.dumps(sorted(proven)),
-            )
+        self._set_proven_blocks(proven)
         return lacking
 
     def _drop_disproven_block_events(
             self,
             block_number: int,
             validator_index: int,
-            reward: FVal,
+            reward: FVal | None,
+            fee_recipient: ChecksumEvmAddress | None,
+            fee_recipient_tracked: bool | None,
     ) -> None:
-        """Delete a block's stored events booked to another validator, or with another block
-        reward, than the nest proved: an earlier source's guess. Events the user edited are kept
-        as they are."""
+        """Delete a block's stored events that disagree with what the nest proved: booked to
+        another validator, or a block reward with another amount, recipient or kind of income,
+        when those are known. Such events are an earlier source's guess. Events the user edited
+        are kept as they are."""
+        income = HistoryEventType.STAKING if fee_recipient_tracked else HistoryEventType.INFORMATIONAL  # noqa: E501
         with self.database.user_write() as write_cursor:
             rows = write_cursor.execute(
-                'SELECT he.identifier, he.sequence_index, info.validator_index, he.amount, '
+                'SELECT he.identifier, he.sequence_index, info.validator_index, he.amount, he.location_label, he.type, '  # noqa: E501
                 'EXISTS(SELECT 1 FROM history_events_mappings m WHERE m.parent_identifier=he.identifier AND m.name=? AND m.value=?) '  # noqa: E501
                 'FROM history_events he JOIN eth_staking_events_info info ON info.identifier=he.identifier '  # noqa: E501
                 'WHERE he.group_identifier=?',
@@ -1294,16 +1303,32 @@ class Eth2(EthereumModule):
                     EthBlockEvent.form_group_identifier(block_number),
                 ),
             ).fetchall()
-            if not any(
-                booked != validator_index or (sequence == BLOCK_REWARD_SEQUENCE and FVal(amount) != reward)  # noqa: E501
-                for _, sequence, booked, amount, _ in rows
-            ):
-                return
-            if len(drop := [identifier for identifier, _, _, _, customized in rows if not customized]) != len(rows):  # noqa: E501
+            disagree = [
+                (identifier, customized)
+                for identifier, sequence, booked, amount, label, kind, customized in rows
+                if booked != validator_index or (sequence == BLOCK_REWARD_SEQUENCE and (
+                    (reward is not None and FVal(amount) != reward) or
+                    (fee_recipient is not None and label != fee_recipient) or
+                    (fee_recipient_tracked is not None and kind != income.serialize())
+                ))
+            ]
+            if len(drop := [identifier for identifier, customized in disagree if not customized]) != len(disagree):  # noqa: E501
                 log.warning(f'Block {block_number} has edited events that disagree with the proof that validator {validator_index} proposed it. They are kept as edited.')  # noqa: E501
             write_cursor.executemany(
                 'DELETE FROM history_events WHERE identifier=?',
                 [(identifier,) for identifier in drop],
+            )
+
+    def _enforce_proven_proposers(self) -> None:
+        """Delete stored events of proven blocks booked to another validator than the proven one,
+        which a source asked after the nest may have added. Edited events are kept."""
+        for block_number, validator_index in self._proven_blocks().items():
+            self._drop_disproven_block_events(
+                block_number=block_number,
+                validator_index=validator_index,
+                reward=None,
+                fee_recipient=None,
+                fee_recipient_tracked=None,
             )
 
     def _validator_coverage(self) -> dict[int, tuple[int, int, Timestamp, Timestamp]]:
@@ -1324,12 +1349,21 @@ class Eth2(EthereumModule):
                 value=json.dumps({str(index): list(entry) for index, entry in coverage.items()}),
             )
 
-    def _proven_blocks(self) -> set[int]:
+    def _proven_blocks(self) -> dict[int, int]:
+        """The blocks the nest proved, each with its proposer."""
         with self.database.conn.read_ctx() as cursor:
-            return set(json.loads(self.database.get_static_cache(
+            return {int(block): validator for block, validator in json.loads(self.database.get_static_cache(  # noqa: E501
                 cursor=cursor,
                 name=DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
-            ) or '[]'))
+            ) or '{}').items()}
+
+    def _set_proven_blocks(self, proven: dict[int, int]) -> None:
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
+                value=json.dumps({str(block): validator for block, validator in proven.items()}),
+            )
 
     def _store_validated_blocks(
             self,
@@ -1374,11 +1408,10 @@ class Eth2(EthereumModule):
                     blocks_without_mev.add(block_number)
                 continue
 
+            proposer_index: int | None
             if block_number in proven:
-                # A nest proved its proposer, which no other source's attribution overrides. Its
-                # reward is not stored yet only while the nest has none to give.
-                if (proposer_index := stored.get(BLOCK_REWARD_SEQUENCE)) is None:
-                    continue
+                # A nest proved its proposer, which no other source's attribution overrides.
+                proposer_index = proven[block_number]
             elif (pubkey := entry.get('proposerPubkey')):
                 # A relay named the proposer: one of these validators, or none of them.
                 if (proposer_index := self._proposer_by_pubkey(
@@ -1699,6 +1732,8 @@ class Eth2(EthereumModule):
                     log.warning(f'Failed to query produced blocks via beaconcha.in due to {e!s}. Falling back to indexers.')  # noqa: E501
                 else:
                     self._set_mev_recheck(recheck - seen)
+                    # beaconcha.in books by its own proposer; a proven block's proposer stands
+                    self._enforce_proven_proposers()
                     return
 
             if EvmIndexer.NUTHATCH not in order:
