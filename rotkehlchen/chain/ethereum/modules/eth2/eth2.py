@@ -848,6 +848,13 @@ class Eth2(EthereumModule):
         now = ts_now()
         validators_by_address: dict[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]] = defaultdict(list)  # noqa: E501
         exits: dict[int, Timestamp | None] = {}
+        cursor_key: Literal[
+            DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+            DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+        ] = (
+            DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS if only == EvmIndexer.NUTHATCH
+            else DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS
+        )
         with self.database.conn.read_ctx() as cursor:
             for chunk, placeholders in get_query_chunks(indices):
                 validator_rows = cursor.execute(
@@ -866,7 +873,7 @@ class Eth2(EthereumModule):
                     else:
                         last_query_ts = self.database.get_dynamic_cache(
                             cursor=cursor,
-                            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                            name=cursor_key,
                             index=validator_index,
                         ) or Timestamp(0)
                     if only == EvmIndexer.NUTHATCH:
@@ -1010,8 +1017,25 @@ class Eth2(EthereumModule):
                         value=produced_blocks_cursor(now=now, exited_ts=exits.get(index)),
                         index=index,
                     )
+                    if only == EvmIndexer.NUTHATCH:
+                        self.database.set_dynamic_cache(
+                            write_cursor=write_cursor,
+                            name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+                            value=now,
+                            index=index,
+                        )
 
         return every_address
+
+    def _block_proposers(self, blocks: set[int]) -> set[int]:
+        """The validators the stored produced blocks are booked to."""
+        with self.database.conn.read_ctx() as cursor:
+            return {row[0] for block in blocks for row in cursor.execute(
+                'SELECT info.validator_index FROM history_events he '
+                'JOIN eth_staking_events_info info ON info.identifier=he.identifier '
+                'WHERE he.group_identifier=? AND he.sequence_index=0',
+                (EthBlockEvent.form_group_identifier(block),),
+            )}
 
     def _mev_recheck(self) -> set[int]:
         with self.database.conn.read_ctx() as cursor:
@@ -1091,7 +1115,8 @@ class Eth2(EthereumModule):
             if self.beacon_inquirer.beaconchain.has_api_key():
                 try:
                     seen = self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
-                        indices=indices,
+                        # with whose blocks are to be rechecked, even if no longer queried
+                        indices=sorted(set(indices) | self._block_proposers(recheck)),
                         update_cache=update_cache,
                         recheck_blocks=recheck,
                     )

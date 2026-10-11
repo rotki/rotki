@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -21,6 +22,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
@@ -34,6 +36,7 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -666,11 +669,13 @@ def test_produced_block_without_a_relay_record_is_asked_about_again(eth2, nuthat
 
 def test_produced_blocks_are_asked_about_the_retry_window_before_the_last_query(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
     """The nest keeps asking the relays about a block for the retry window, so whatever it learnt
-    since rotki last asked lies within that window before the last query, however long ago."""
+    since rotki last asked it lies within that window before that query, however long ago, and
+    whatever other source moved the validator's query time on since."""
     _validator(eth2)
     last_query = Timestamp(ts_now() - 40 * 86400)
     with eth2.database.user_write() as write_cursor:
-        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=last_query, index=7)  # noqa: E501
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=last_query, index=7)  # noqa: E501
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
     asked: list[TimestampOrBlockRange] = []
     assert _produced(eth2, nuthatch, [], asked=asked)
     assert asked[0].from_value == last_query - 30 * 86400
@@ -793,7 +798,7 @@ def test_exited_validator_stays_queried_through_the_retry_window(eth2, nuthatch:
     long_exited = Timestamp(ts_now() - 40 * 86400)
     with eth2.database.user_write() as write_cursor:
         write_cursor.execute('UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=7', (long_exited,))  # noqa: E501
-        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited - 1, index=7)  # noqa: E501
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited - 1, index=7)  # noqa: E501
     assert _produced(eth2, nuthatch, [])
     assert (cursor := _cursor(eth2.database)) is not None and cursor > long_exited
     assert 7 not in eth2.beacon_inquirer.beaconchain.get_validators_to_query_for_blocks()
@@ -816,3 +821,30 @@ def test_blocks_without_mev_are_kept_for_beaconchain_without_a_key(eth2, nuthatc
         eth2.get_and_store_produced_blocks(indices=[7])
 
     assert eth2._mev_recheck() == {302}
+
+
+def test_beaconchain_is_asked_about_recheck_blocks_of_validators_no_longer_queried(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A block waiting for its MEV whose validator the selectors no longer pick, such as one that
+    exited long ago, still reaches beaconcha.in: its validator is asked about with the others."""
+    _validator(eth2)
+    with eth2.database.user_write() as write_cursor:
+        DBHistoryEvents(eth2.database).add_history_event(write_cursor, event=EthBlockEvent(
+            validator_index=7,
+            timestamp=TimestampMS(1700000000000),
+            amount=ONE,
+            fee_recipient=ADDRESS,
+            fee_recipient_tracked=True,
+            block_number=303,
+            is_mev_reward=False,
+        ))
+    eth2._set_mev_recheck({303})
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    with (
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[]),
+        patch.object(beaconchain, 'has_api_key', return_value=True),
+        patch.object(beaconchain, '_get_and_store_produced_blocks', return_value={303}) as beaconchain_query,  # noqa: E501
+    ):
+        eth2.get_and_store_produced_blocks(indices=[8])
+
+    assert beaconchain_query.call_args.kwargs['indices'] == [7, 8]
+    assert eth2._mev_recheck() == set(), 'beaconcha.in listed it'

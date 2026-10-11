@@ -338,13 +338,14 @@ class DBEth2:
             )
 
             # Delete cached timestamps
-            cursor.execute(
-                f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
-                [
-                    DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.get_db_key(index=index)
-                    for index in validator_indices
-                ],
-            )
+            for key in (
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ):
+                cursor.execute(
+                    f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
+                    [key.get_db_key(index=index) for index in validator_indices],
+                )
 
     @staticmethod
     def _validator_stats_process_queries(

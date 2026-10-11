@@ -1079,7 +1079,10 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
-            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            name: Literal[
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ],
             **kwargs: Unpack[IndexArgType],
     ) -> Timestamp | None:
         ...
@@ -1270,7 +1273,10 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
-            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            name: Literal[
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ],
             value: Timestamp,
             **kwargs: Unpack[IndexArgType],
     ) -> None:

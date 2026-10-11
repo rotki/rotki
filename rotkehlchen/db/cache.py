@@ -131,6 +131,9 @@ class DBCacheDynamic(Enum):
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
     LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
+    # When a nuthatch nest was last asked about the validator's produced blocks. Kept apart from
+    # the query time other sources move on, as the nest is asked again about a window before it.
+    NEST_PRODUCED_BLOCKS_QUERY_TS: Final = 'nest_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
     BINANCE_PAIR_LAST_ID: Final = '{location}_{location_name}_{queried_pair}', _deserialize_int_from_str  # noqa: E501  # notice that location is added because it can be either binance or binance_us
     BINANCE_PAIR_LAST_QUERY_TS: Final = '{location}_{location_name}_{queried_pair}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_BTC_TX_BLOCK: Final = 'last_btc_tx_block_{address}', _deserialize_int_from_str
