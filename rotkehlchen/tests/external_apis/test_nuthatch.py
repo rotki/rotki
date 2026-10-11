@@ -873,27 +873,31 @@ def test_produced_blocks_fallback_never_asks_the_nest(eth2, nuthatch: Nuthatch) 
     assert nest.call_count == 0
 
 
-@pytest.mark.parametrize(('order', 'has_key', 'beaconchain_asked', 'indexers_asked', 'warned'), [
-    ((EvmIndexer.NUTHATCH,), False, False, False, True),
-    ((EvmIndexer.NUTHATCH,), True, True, False, False),
-    ((EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN), False, False, True, False),
-    ((EvmIndexer.ETHERSCAN,), False, False, True, False),
+@pytest.mark.parametrize(('order', 'has_key', 'uncovered', 'beaconchain_asked', 'indexers_asked', 'warned'), [  # noqa: E501
+    ((EvmIndexer.NUTHATCH,), False, {577475}, False, False, True),
+    ((EvmIndexer.NUTHATCH,), False, set(), False, False, False),
+    ((EvmIndexer.NUTHATCH,), True, {577475}, True, False, False),
+    ((EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN), False, {577475}, False, False, True),
+    ((EvmIndexer.ETHERSCAN,), False, set(), False, True, False),
 ])
 def test_produced_blocks_ask_the_nest_then_beaconchain_then_the_indexers(
         eth2,
         nuthatch: Nuthatch,
         order: tuple[EvmIndexer, ...],
         has_key: bool,
+        uncovered: set[int],
         beaconchain_asked: bool,
         indexers_asked: bool,
         warned: bool,
 ) -> None:
-    """The nest, when ordered, is asked first and never completes a validator's coverage.
-    beaconcha.in runs when it has a key; the other indexers when it does not, unless only the
-    nest is ordered, and then the user is told validator coverage is incomplete."""
+    """The nest, when ordered, is asked first: for each validator's proven blocks, then for its
+    addresses' relay records. beaconcha.in runs when it has a key. The other indexers, which find
+    blocks by withdrawal address, run only when no nest is ordered: they cannot fill a validator's
+    gap. A validator the nest did not cover, and beaconcha.in cannot, is told to the user."""
     beaconchain = eth2.beacon_inquirer.beaconchain
     with (
         patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(name, nuthatch if name == EvmIndexer.NUTHATCH else None) for name in order]),  # noqa: E501
+        patch.object(eth2, '_get_and_store_proven_blocks_from_nest', return_value=(set(), uncovered)) as proven,  # noqa: E501
         patch.object(eth2, '_get_and_store_produced_blocks_from_nest') as nest,
         patch.object(eth2, '_get_and_store_produced_blocks_from_indexers') as indexers,
         patch.object(beaconchain, 'has_api_key', return_value=has_key),
@@ -902,7 +906,7 @@ def test_produced_blocks_ask_the_nest_then_beaconchain_then_the_indexers(
     ):
         eth2.get_and_store_produced_blocks(indices=[577475])
 
-    assert nest.called is (EvmIndexer.NUTHATCH in order)
+    assert proven.called is nest.called is (EvmIndexer.NUTHATCH in order)
     assert beaconchain_query.called is beaconchain_asked
     assert indexers.called is indexers_asked
     assert warning.called is warned
