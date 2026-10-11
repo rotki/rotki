@@ -111,6 +111,8 @@ class Eth2(EthereumModule):
         )
         self.msg_aggregator = msg_aggregator
         self._told_nest_coverage_incomplete = False
+        # (address, first covered block) of withdrawals no indexer covered before, told once
+        self._told_withdrawals_uncovered: set[tuple[ChecksumEvmAddress, int]] = set()
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
         self.deposits_re = re.compile(r'.*validator with pubkey (?P<pubkey>.*)\. Deposit.*|.*Deposit.*ETH to validator (?P<index>\d+)$')  # noqa: E501
@@ -543,23 +545,46 @@ class Eth2(EthereumModule):
             self,
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange | None,
+            uncovered_before: list[int] | None = None,
     ) -> set[int] | None:
         """Query the indexers that answer withdrawals as etherscan does (etherscan, and a nuthatch
-        nest) in the configured order, etherscan always among them, with a blockscout fallback.
-        Without a block range, only blockscout, which takes none, is asked.
+        nest) in the configured order, with a blockscout fallback. Without a nest in the order,
+        etherscan is always among them and blockscout asked last, as before. With one, only the
+        indexers the order names are asked, so the address goes to no service the user did not
+        choose. Without a block range, only blockscout, which takes none, is asked.
+
+        A nest whose history starts inside the range is asked again from its first block, which
+        is appended to `uncovered_before`: the period before it was not queried.
+
         Returns untracked validator indices, or None if every source fails.
         """
+        ordered = self.ethereum._get_indexers_in_order()
+        strict = EvmIndexer.NUTHATCH in (name for name, _ in ordered)
         sources: list[EtherscanAccountHistory] = [
-            indexer for _, indexer in self.ethereum._get_indexers_in_order()
-            if isinstance(indexer, EtherscanAccountHistory)
+            indexer for _, indexer in ordered if isinstance(indexer, EtherscanAccountHistory)
         ]
-        if self.ethereum.etherscan not in sources:  # tried before blockscout, as it always was
+        if not strict and self.ethereum.etherscan not in sources:  # before blockscout, as it was
             sources.append(self.ethereum.etherscan)
         for source in sources:
             if period is None:
                 break
             try:
                 return source.get_withdrawals(address=address, period=period)
+            except IndexerRangeStartsLater as e:
+                if not period.from_value < e.first_block <= period.to_value:
+                    log.error(f'Failed to query ethereum withdrawals for {address} through {source.name}: {e!s}')  # noqa: E501
+                    continue
+                try:
+                    found = source.get_withdrawals(
+                        address=address,
+                        period=TimestampOrBlockRange('blocks', e.first_block, period.to_value),
+                    )
+                except (DeserializationError, RemoteError) as later:
+                    log.error(f'Failed to query ethereum withdrawals for {address} through {source.name} due to {later!s}')  # noqa: E501
+                    continue
+                if uncovered_before is not None:
+                    uncovered_before.append(e.first_block)
+                return found
             except (DeserializationError, RemoteError) as e:
                 log.error(
                     'Failed to query ethereum withdrawals for %s through %s due to %s. '
@@ -569,6 +594,8 @@ class Eth2(EthereumModule):
                     e,
                 )
 
+        if strict and EvmIndexer.BLOCKSCOUT not in (name for name, _ in ordered):
+            return None  # every source the user chose failed
         try:
             return self.ethereum.blockscout.query_withdrawals(address)
         except (DeserializationError, RemoteError, KeyError) as othere:
@@ -609,7 +636,25 @@ class Eth2(EthereumModule):
         except RemoteError as e:  # blockscout, which takes no range, can still answer
             log.warning(f'Could not turn the withdrawals range of {address} into blocks: {e!s}')
             period = None
-        untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period)  # noqa: E501
+        uncovered_before: list[int] = []
+        untracked_validator_indices = self._fetch_withdrawals_from_external_sources(address, period, uncovered_before)  # noqa: E501
+        if len(uncovered_before) != 0 and untracked_validator_indices is not None:
+            # The withdrawals from the nest's first block on are stored, but the query time is
+            # not moved on past a period nothing covered, so a covering indexer added later
+            # still asks for it.
+            if (address, uncovered_before[0]) not in self._told_withdrawals_uncovered:
+                self._told_withdrawals_uncovered.add((address, uncovered_before[0]))
+                self.msg_aggregator.add_warning(
+                    f'No indexer in the Ethereum indexer order covers the withdrawals of {address} '  # noqa: E501
+                    f'before block {uncovered_before[0]}, so those were not imported. Add one that '  # noqa: E501
+                    "covers them to Ethereum's indexer order to import them.",
+                    classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no configured indexer covers the period'),  # noqa: E501
+                    subject=Location.ETHEREUM,
+                )
+            details = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=list(untracked_validator_indices))  # noqa: E501
+            with self.database.user_write() as write_cursor:
+                DBEth2(self.database).add_or_update_validators_except_ownership(write_cursor, validators=details)  # noqa: E501
+            return
         if untracked_validator_indices is None:
             # Nothing is recorded, so the next query asks for the same range again.
             self.msg_aggregator.add_warning(

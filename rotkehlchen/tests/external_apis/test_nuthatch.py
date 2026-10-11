@@ -251,10 +251,12 @@ def test_nuthatch_comes_first_where_the_order_puts_it(eth2, nuthatch: Nuthatch) 
     with (
         patch.object(type(cached), '_evm_indexers_order_per_chain', nest_only),
         patch.object(nuthatch, 'get_withdrawals', side_effect=RemoteError('not indexed')),
-        patch.object(inquirer.etherscan, 'get_withdrawals', return_value={6}),
+        patch.object(inquirer.etherscan, 'get_withdrawals', return_value={6}) as etherscan_asked,
+        patch.object(inquirer.blockscout, 'query_withdrawals', return_value={7}) as blockscout_asked,  # noqa: E501
     ):
-        assert eth2._fetch_withdrawals_from_external_sources(ADDRESS, period) == {6}, (
-            'etherscan stays the fallback for withdrawals, as it was before nests'
+        assert eth2._fetch_withdrawals_from_external_sources(ADDRESS, period) is None
+        assert etherscan_asked.call_count == blockscout_asked.call_count == 0, (
+            'with a nest ordered, the address goes to no service the order does not name'
         )
 
     with (
@@ -587,11 +589,11 @@ def test_produced_blocks_range_that_cannot_become_blocks_falls_through(eth2) -> 
 
 def test_withdrawals_range_that_cannot_become_blocks_falls_through(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
     """The same for withdrawals: without a block range the indexers that need one are passed
-    over and blockscout, which takes none, still answers. The end is kept behind now while the
-    nest is in the order."""
+    over and blockscout, ordered, which takes none, still answers. The end is kept behind now
+    while the nest is in the order."""
     _validator(eth2)
     with (
-        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch), (EvmIndexer.BLOCKSCOUT, eth2.ethereum.blockscout)]),  # noqa: E501
         patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=RemoteError('timestamp is newer than the chain head')) as conversion,  # noqa: E501
         patch.object(nuthatch, 'get_withdrawals') as nest,
         patch.object(eth2.ethereum.blockscout, 'query_withdrawals', return_value=set()) as blockscout,  # noqa: E501
@@ -1534,3 +1536,49 @@ def test_proven_range_still_waiting_for_a_relay_record_is_kept(eth2, nuthatch: N
     with eth2.database.conn.read_ctx() as cursor:
         kept = json.loads(eth2.database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_RANGES) or '[]')  # noqa: E501
     assert [577475, 26_100_000, 26_199_999] in [entry[:3] for entry in kept]
+
+
+def test_withdrawals_before_the_nests_history_are_asked_from_its_start_and_told(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """With only the nest ordered, a withdrawals range starting before its history is asked again
+    from its first block, no other service is asked, the query time is not moved past the period
+    nothing covered, and the user is told once per session, not on every refresh."""
+    _validator(eth2)
+    asked: list[TimestampOrBlockRange] = []
+
+    def withdrawals(address: ChecksumEvmAddress, period: TimestampOrBlockRange) -> set[int]:
+        asked.append(period)
+        if period.from_value < 25_870_000:
+            raise IndexerRangeStartsLater('history starts at block 25870000', first_block=25_870_000)  # noqa: E501
+        return set()
+
+    with (
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: TimestampOrBlockRange('blocks', 0, 26_200_000)),  # noqa: E501
+        patch.object(nuthatch, 'get_withdrawals', side_effect=withdrawals),
+        patch.object(eth2.ethereum.etherscan, 'get_withdrawals', return_value={6}) as etherscan,
+        patch.object(eth2.ethereum.blockscout, 'query_withdrawals', return_value={7}) as blockscout,  # noqa: E501
+        patch.object(eth2.beacon_inquirer, 'get_validator_data', return_value=[]),
+        patch.object(eth2.msg_aggregator, 'add_warning') as warning,
+    ):
+        eth2.query_single_address_withdrawals(WITHDRAWAL, ts_now())
+        eth2.query_single_address_withdrawals(WITHDRAWAL, ts_now())
+
+    assert [(p.from_value, p.to_value) for p in asked[:2]] == [(0, 26_200_000), (25_870_000, 26_200_000)]  # noqa: E501
+    assert etherscan.call_count == blockscout.call_count == 0
+    with eth2.database.conn.read_ctx() as cursor:
+        assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=WITHDRAWAL) is None  # noqa: E501
+    assert warning.call_count == 1
+    assert '25870000' in warning.call_args.args[0]
+
+
+def test_uncovered_history_is_told_from_its_real_end_once_per_session(database, nuthatch: Nuthatch, ethereum_manager) -> None:  # noqa: E501
+    """A sync from an account's beginning names the period as before the first covered time,
+    not from 1970, and the same period is not told again by the next refresh."""
+    transactions = ethereum_manager.transactions
+    with patch.object(transactions.msg_aggregator, 'add_warning') as warning:
+        for _ in range(2):
+            with transactions._one_sync():
+                transactions._note_uncovered(ADDRESS, Timestamp(0), Timestamp(1700000000 - 1))
+    assert warning.call_count == 1
+    assert '1970' not in warning.call_args.args[0]
+    assert 'before' in warning.call_args.args[0]

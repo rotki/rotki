@@ -169,6 +169,8 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
+        # (address, end) of the uncovered periods told this session, not repeated by a refresh
+        self._told_uncovered: set[tuple[ChecksumEvmAddress, Timestamp]] = set()
 
     @staticmethod
     def _note_uncovered(address: ChecksumEvmAddress, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
@@ -192,16 +194,19 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def _tell_uncovered(self, uncovered: list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]]) -> None:  # noqa: E501
         """Tell the user, once for the sync, which period of which addresses' history no
-        configured indexer covered, and so was not imported."""
-        if len(uncovered) == 0:
+        configured indexer covered, and so was not imported. A period already told this session
+        is not told again."""
+        if len(uncovered := [entry for entry in uncovered if (entry[0], entry[2]) not in self._told_uncovered]) == 0:  # noqa: E501
             return
+        self._told_uncovered.update((address, end) for address, _, end in uncovered)
         addresses = sorted({address for address, _, _ in uncovered})
         start, end = min(entry[1] for entry in uncovered), max(entry[2] for entry in uncovered)
+        # A sync from an account's very beginning starts at 0, which is no date to show.
+        period = f'before {timestamp_to_date(Timestamp(end + 1))}' if start <= 0 else f'from {timestamp_to_date(start)} to {timestamp_to_date(end)}'  # noqa: E501
         self.msg_aggregator.add_warning(
             f'No configured {self.evm_inquirer.chain_name} indexer covers the history of '
-            f'{", ".join(addresses)} from {timestamp_to_date(start)} to '
-            f'{timestamp_to_date(end)}, so it was not imported. Add an indexer that covers it '
-            f"to {self.evm_inquirer.chain_name}'s indexer order to import it.",
+            f'{", ".join(addresses)} {period}, so it was not imported. Add an indexer that '
+            f"covers it to {self.evm_inquirer.chain_name}'s indexer order to import it.",
             classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error='no configured indexer covers the period'),  # noqa: E501
         )
 
