@@ -1182,7 +1182,7 @@ class Eth2(EthereumModule):
             if (answer := self._ask_nest(self._nest(), address, from_block, to_block)) is None:
                 ranges.append((address, from_block, to_block, served_at))
                 continue
-            _, attributed = self._store_validated_blocks(
+            incomplete, attributed = self._store_validated_blocks(
                 address=address,
                 validators=validators,
                 blocks=answer[1],
@@ -1190,9 +1190,12 @@ class Eth2(EthereumModule):
                 blocks_without_mev=blocks_without_mev,
                 allow_sole_active=False,
             )
-            # Kept while a block in it has nobody to book it to, so a beacon node configured
-            # later can still name the proposer.
-            if not attributed or not nest_range_settled(served_at=served_at, asked_at=asked_at):
+            # Kept while a block in it could not be read or has nobody to book it to, so a later
+            # answer or a beacon node configured later can still store it.
+            if (
+                not attributed or len(incomplete) != 0 or
+                not nest_range_settled(served_at=served_at, asked_at=asked_at)
+            ):
                 ranges.append((address, from_block, to_block, served_at))
 
         ranges += [(address, from_block, to_block, asked_at) for address, from_block, to_block in served]  # noqa: E501
@@ -1225,18 +1228,19 @@ class Eth2(EthereumModule):
             return None
 
     def _forget_nest_progress_for_new_validators(self, validators: set[int]) -> None:
-        """A block of a validator not tracked then was passed over, so once one is added the
-        addresses' history is asked about again."""
+        """A block of a validator not tracked then was passed over, so once one is added, or
+        removed and added again, the addresses' history is asked about again."""
         with self.database.conn.read_ctx() as cursor:
             known = set(json.loads(self.database.get_static_cache(
                 cursor=cursor,
                 name=DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
             ) or '[]'))
-        if validators <= known:
+        if validators == known:
             return
         prefix = DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH.value[0].removesuffix('{address}')
         with self.database.user_write() as write_cursor:
-            write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', (f'{prefix}%',))
+            if not validators <= known:
+                write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', (f'{prefix}%',))  # noqa: E501
             self.database.set_static_cache(
                 write_cursor=write_cursor,
                 name=DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
