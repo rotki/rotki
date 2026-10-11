@@ -26,7 +26,7 @@ from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import ChainNotSupported, IndexerRangeStartsLater, RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch, ValidatorBlocks
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
@@ -1188,17 +1188,21 @@ def _coverage(database) -> dict[str, list]:
         return json.loads(database.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE) or '{}')  # noqa: E501
 
 
-def test_proven_block_is_booked_to_its_validator_wherever_its_rewards_went(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
-    """Validator 577475's block 26167074 paid nothing to a tracked address: the nest proves who
-    proposed it, so it is booked to the validator, as informational income, and the validator is
-    covered from Dencun through what the nest proved. Its produced-block query time is beaconcha.in's
-    and does not move."""
+@pytest.mark.parametrize('recipient_tracked', [False, True])
+def test_proven_block_is_booked_to_its_validator_wherever_its_rewards_went(eth2, nuthatch: Nuthatch, recipient_tracked: bool) -> None:  # noqa: E501
+    """Validator 577475's block 26167074: the nest proves who proposed it, so it is booked to the
+    validator whether or not its fee recipient is tracked, as income when it is and as
+    information when it is not, and the validator is covered from Dencun through what the nest
+    proved. Its produced-block query time is beaconcha.in's and does not move."""
     _validator(eth2)
+    if recipient_tracked:
+        _track(eth2, deserialize_evm_address(_proven()['feeRecipient']))
     unanswered, before = _proven_pass(eth2, nuthatch, {577475: [_proven()]})
     assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
     with eth2.database.conn.read_ctx() as cursor:
-        tracked = cursor.execute('SELECT DISTINCT info.is_exit_or_blocknumber FROM eth_staking_events_info info JOIN history_events he ON he.identifier=info.identifier WHERE he.group_identifier=?', ('BP1_26167074',)).fetchall()  # noqa: E501
-    assert tracked == [(26167074,)]
+        kind = cursor.execute('SELECT type FROM history_events WHERE group_identifier=? AND sequence_index=0', ('BP1_26167074',)).fetchone()[0]  # noqa: E501
+    expected = HistoryEventType.STAKING if recipient_tracked else HistoryEventType.INFORMATIONAL
+    assert kind == expected.serialize()
     assert _coverage(eth2.database)['577475'][:2] == [19_426_587, 26_199_999]
     assert _cursor(eth2.database) is None
     assert unanswered == set()
@@ -1219,7 +1223,7 @@ def test_proven_path_asks_a_validator_nothing_is_known_about(eth2, nuthatch: Nut
     assert before == {577475}
 
 
-def test_proven_progress_moves_only_through_what_the_nest_proved(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+def test_proven_progress_moves_only_through_what_the_nest_proved(eth2, nuthatch: Nuthatch) -> None:
     """The next pass asks from the block after the proven interval; a validator proven to the
     nest's head is not asked; one that exited is not asked once proven through its exit; a
     validator activated after the proven interval began is fully covered."""
@@ -1289,7 +1293,7 @@ def test_proof_replaces_an_earlier_guess_but_not_an_edit(eth2, nuthatch: Nuthatc
         dbevents.add_history_event(write_cursor=write_cursor, event=edited, mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED})  # noqa: E501
     _proven_pass(eth2, nuthatch, {577475: [_proven(), _proven(block=26167075)]})
     assert _block_events(eth2.database, 26167074) == [(0, 577475, '0.000000000000000009'), (1, 577475, '0.002275207282975303')]  # noqa: E501
-    assert _block_events(eth2.database, 26167075)[0] == (0, 2, '1'), 'the edit is the user\'s'
+    assert _block_events(eth2.database, 26167075)[0] == (0, 2, '1'), "the edit is the user's"
 
 
 def test_address_answers_never_rebook_a_proven_block(eth2, nuthatch: Nuthatch) -> None:
