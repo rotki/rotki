@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any, Final, cast
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +8,8 @@ import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     SerializableChainIndexerOrder,
@@ -24,6 +26,7 @@ from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
     make_evm_address,
@@ -34,6 +37,7 @@ from rotkehlchen.types import (
     ChainID,
     Eth2PubKey,
     EvmInternalTransaction,
+    EvmTransaction,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1012,3 +1016,63 @@ def test_withdrawals_range_that_cannot_become_blocks_falls_through(eth2, nuthatc
     assert blockscout.call_count == 1
     with eth2.database.conn.read_ctx() as cursor:
         assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=ADDRESS) is not None  # noqa: E501
+
+
+# The authorization list of the type-4 transaction the nest pins in its gate (its eip7702 case),
+# in the shape the nest serves on a txlist row: Etherscan's own txlist leaves the field out.
+NEST_AUTHORIZATION: Final = {
+    'chainId': '1',
+    'address': '0x000000009b1d0af20d8c6d0a44e162d11f9b8f00',
+    'nonce': '1',
+    'yParity': '0',
+    'r': '0x4c7ed4bff711025b9ace5cef6df93196ab91b4687f717d0a38ee6224f133ee10',
+    's': '0x2036c3b1fbd979ac7bd5cfca2603f232974923611b866ef15a1934eaae0da0f2',
+}
+DELEGATOR: Final = deserialize_evm_address('0x689256b5008983673cbdb97a227cf32f38798555')
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[DELEGATOR]])
+@pytest.mark.parametrize(('delegated_to', 'notes'), [
+    (NEST_AUTHORIZATION['address'], 'Execute account delegation to 0x000000009B1D0aF20D8C6d0A44e162d11F9b8f00'),  # noqa: E501
+    (ZERO_ADDRESS, f'Revoke account delegation for {DELEGATOR}'),
+])
+def test_nest_type4_transaction_decodes_its_delegation(
+        database,
+        ethereum_transaction_decoder,
+        ethereum_accounts,
+        nuthatch: Nuthatch,
+        delegated_to: str,
+        notes: str,
+) -> None:
+    """A delegation or its revocation imported through the nest: its txlist row carries the
+    authorization list, the receipt collected later says it is type 4, and decoding books the
+    delegation event, which it cannot from a row without the list."""
+    tx_hash = make_evm_tx_hash()
+    row = {
+        'blockNumber': '23500010', 'blockHash': str(make_evm_tx_hash()), 'timeStamp': '1758000000',
+        'hash': str(tx_hash), 'nonce': '7', 'transactionIndex': '3',
+        'from': str(DELEGATOR).lower(), 'to': str(DELEGATOR).lower(), 'value': '0', 'gas': '60000', 'gasPrice': '1000000000',  # noqa: E501
+        'input': '0x', 'methodId': '0x', 'contractAddress': '', 'cumulativeGasUsed': '900000',
+        'txreceipt_status': '1', 'gasUsed': '46000', 'isError': '0',
+        'authorizationList': [{**NEST_AUTHORIZATION, 'address': str(delegated_to).lower()}],
+    }
+    with patch.object(nuthatch.session, 'get', return_value=_answer([row])):
+        transactions = [cast('EvmTransaction', tx) for batch in nuthatch.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=DELEGATOR,
+            action='txlist',
+            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=23500000, to_value=23500020),  # noqa: E501
+        ) for tx in batch]
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(write_cursor=write_cursor, evm_transactions=transactions, relevant_address=DELEGATOR)  # noqa: E501
+
+    receipt: dict[str, Any] = {'transactionHash': str(tx_hash), 'contractAddress': None, 'status': 1, 'type': '0x4', 'logs': []}  # noqa: E501
+    evm_transactions = ethereum_transaction_decoder.transactions
+    with patch.object(evm_transactions.evm_inquirer, 'get_transaction_receipts', return_value=[receipt]):  # noqa: E501
+        evm_transactions.get_receipts_for_transactions_missing_them(addresses=[DELEGATOR])
+    events = ethereum_transaction_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
+
+    delegations = [e for e in events if e.event_subtype == HistoryEventSubType.DELEGATE]
+    assert [(e.counterparty, e.address, e.notes) for e in delegations] == [
+        (CPT_ACCOUNT_DELEGATION, deserialize_evm_address(delegated_to), notes),
+    ]
