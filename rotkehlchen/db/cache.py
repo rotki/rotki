@@ -49,6 +49,9 @@ class DBCacheStatic(Enum):
     # Accounts removed in rotki that a nuthatch nest has yet to be told to stop watching, as a
     # JSON list.
     NUTHATCH_PENDING_UNWATCH: Final = 'nuthatch_pending_unwatch'
+    # Produced blocks a nuthatch nest stored without their MEV reward, for beaconcha.in to be
+    # asked about, as a JSON list.
+    NUTHATCH_MEV_RECHECK: Final = 'nuthatch_mev_recheck'
 
 
 class LabeledLocationArgsType(TypedDict):

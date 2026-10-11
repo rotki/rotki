@@ -993,7 +993,7 @@ def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers
         )
 
     assert_simple_ok_response(response)
-    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True)
+    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True, recheck_blocks=set())
     indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
     combine_block_with_tx_events.assert_called_once_with()
 

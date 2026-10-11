@@ -11,7 +11,6 @@ import requests
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
-    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
@@ -536,7 +535,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             self,
             indices: list[int],
             update_cache: bool = True,
-    ) -> None:
+            recheck_blocks: set[int] | None = None,
+    ) -> set[int]:
         """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
 
@@ -560,6 +560,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         for each validator. Set to False when refetching historical data so that the
         normal periodic query schedule is not affected.
 
+        A block already stored is passed over unless it is stored without its MEV reward and
+        named in `recheck_blocks`. Returns the blocks beaconcha.in listed.
+
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
@@ -572,23 +575,22 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         dbevents = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)  # noqa: E501
+        listed: set[int] = set()
         try:
             for entry in data:
                 if entry.get('block') is None:
                     continue
 
                 blocknumber = int(entry['block'])
+                listed.add(blocknumber)
                 with self.db.conn.read_ctx() as cursor:
-                    # A block stored without its MEV reward, by a nuthatch nest whose relays had
-                    # no record of it yet, is still asked about here for a while.
-                    stored = dict(cursor.execute(
-                        'SELECT sequence_index, timestamp FROM history_events WHERE group_identifier=?',  # noqa: E501
+                    stored = {row[0] for row in cursor.execute(
+                        'SELECT sequence_index FROM history_events WHERE group_identifier=?',
                         (EthBlockEvent.form_group_identifier(blocknumber),),
-                    ).fetchall())
-                if 0 in stored and (
-                    1 in stored or
-                    stored[0] < ts_sec_to_ms(Timestamp(ts_now() - UNRECORDED_MEV_RETRY_WINDOW))
-                ):
+                    )}
+                # A block stored without its MEV reward that a nuthatch nest has asked to have
+                # rechecked, since no relay had a record of it, is asked about here again.
+                if 0 in stored and (1 in stored or blocknumber not in (recheck_blocks or set())):
                     continue
 
                 block_data = self._query_block_data(blocknumber)
@@ -663,8 +665,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         is_mev_reward=True,
                     )
                 with self.db.user_write() as write_cursor:
-                    if 0 not in stored:
-                        dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
+                    dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
                     if mev_event is not None:
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
@@ -683,6 +684,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(
                 f'Beaconcha.in produced blocks response error. Missing key entry {e!s}',
             ) from e
+
+        return listed
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.

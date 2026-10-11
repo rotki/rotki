@@ -321,7 +321,12 @@ def test_produced_blocks_ask_the_nest_then_beaconchain(
     order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN)}  # noqa: E501
     calls: list[EvmIndexer | None] = []
 
-    def indexers(indices: list[int], update_cache: bool, only: EvmIndexer | None = None) -> bool:
+    def indexers(
+            indices: list[int],
+            update_cache: bool,
+            only: EvmIndexer | None = None,
+            blocks_without_mev: set[int] | None = None,
+    ) -> bool:
         calls.append(only)
         return nest_complete if only is not None else True
 
@@ -589,18 +594,36 @@ def _validator(eth2, index: int = 7) -> None:
         )])
 
 
-def _produced(eth2, nuthatch: Nuthatch, rows: list[dict[str, Any]], proposer: int | None = 7) -> bool:  # noqa: E501
+def _produced(
+        eth2,
+        nuthatch: Nuthatch,
+        rows: list[dict[str, Any]],
+        proposer: int | None = 7,
+        asked: list[TimestampOrBlockRange] | None = None,
+        without_mev: set[int] | None = None,
+) -> bool:
     inquirer = eth2.ethereum
     inquirer.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
     cached = CachedSettings()
     order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN)}  # noqa: E501
+
+    def validated_blocks(address: Any, period: TimestampOrBlockRange) -> list[dict[str, Any]]:
+        if asked is not None:
+            asked.append(period)
+        return rows
+
     with (
         patch.object(type(cached), '_evm_indexers_order_per_chain', order),
-        patch.object(nuthatch, 'get_validated_blocks', return_value=rows),
+        patch.object(nuthatch, 'get_validated_blocks', side_effect=validated_blocks),
         patch.object(inquirer, 'maybe_timestamp_to_block_range', side_effect=lambda period: period),  # noqa: E501
         patch.object(eth2, '_get_proposer_index_for_validated_block', return_value=proposer),
     ):
-        return eth2._get_and_store_produced_blocks_from_indexers(indices=[7], update_cache=True, only=EvmIndexer.NUTHATCH)  # noqa: E501
+        return eth2._get_and_store_produced_blocks_from_indexers(
+            indices=[7],
+            update_cache=True,
+            only=EvmIndexer.NUTHATCH,
+            blocks_without_mev=without_mev,
+        )
 
 
 def _block_events(database, block: int) -> list[tuple[int, str]]:
@@ -617,32 +640,40 @@ def _cursor(database, index: int = 7) -> Timestamp | None:
 
 
 def test_produced_block_without_a_relay_record_is_asked_about_again(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
-    """No relay record is not "no MEV": the block's reward is stored, no MEV event is invented,
-    and the validator's next query starts at the block, so a record published late adds the MEV
-    reward to the block already stored, without its reward twice."""
+    """No relay record is not "no MEV": the block's reward is stored and no MEV event invented.
+    The nest is asked again about the retry window behind the validator's last query, so a record
+    published late adds the MEV reward to the block already stored, without its reward twice, and
+    a builder's payment the nest could only attribute later is found the same way."""
     _validator(eth2)
     recent = ts_now() - 3600
     block = {'blockNumber': '200', 'timeStamp': str(recent), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
-    assert _produced(eth2, nuthatch, [block])
+    without_mev: set[int] = set()
+    assert _produced(eth2, nuthatch, [block], without_mev=without_mev)
     assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005')]
-    assert _cursor(eth2.database) == recent, 'asked about again from the block'
+    assert without_mev == {200}, 'left for the next source that knows MEV'
 
     recorded = {**block, 'mev': 'relay', 'mevRecipient': str(ADDRESS).lower(), 'mevReward': '4', 'paymentValue': '3000000000000000000', 'proposerPubkey': '0x' + 'ab' * 48}  # noqa: E501
+    asked: list[TimestampOrBlockRange] = []
+    without_mev = set()
+    assert _produced(eth2, nuthatch, [recorded], asked=asked, without_mev=without_mev)
+    assert asked[0].from_value <= recent, 'asked again about the block'
+    assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
+    assert without_mev == set()
+
     assert _produced(eth2, nuthatch, [recorded])
     assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
-    assert (cursor := _cursor(eth2.database)) is not None and cursor > recent, 'nothing left to wait for'  # noqa: E501
-
-    assert _produced(eth2, nuthatch, [recorded])
-    assert _block_events(eth2.database, 200) == [(0, '0.000000000000000005'), (1, '3')]
 
 
-def test_produced_block_without_a_relay_record_stops_being_asked_about(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
-    """Past the retry window a block without a record no longer holds its validator back."""
+def test_produced_blocks_are_asked_about_the_retry_window_before_the_last_query(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """The nest keeps asking the relays about a block for the retry window, so whatever it learnt
+    since rotki last asked lies within that window before the last query, however long ago."""
     _validator(eth2)
-    old = ts_now() - 40 * 86400
-    block = {'blockNumber': '201', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
-    assert _produced(eth2, nuthatch, [block])
-    assert (cursor := _cursor(eth2.database)) is not None and cursor > old
+    last_query = Timestamp(ts_now() - 40 * 86400)
+    with eth2.database.user_write() as write_cursor:
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=last_query, index=7)  # noqa: E501
+    asked: list[TimestampOrBlockRange] = []
+    assert _produced(eth2, nuthatch, [], asked=asked)
+    assert asked[0].from_value == last_query - 30 * 86400
 
 
 def test_produced_block_not_attributed_leaves_the_validator_retryable(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
@@ -682,33 +713,60 @@ def test_nuthatch_internal_that_does_not_read_refuses_the_answer(nuthatch: Nutha
         ))
 
 
-def test_beaconchain_does_not_move_on_a_validator_the_nest_is_waiting_on(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
-    """The nest leaves a validator's next query at a block awaiting its relay record. beaconcha.in
-    then covers everything and moves every validator on to now, but only the nest can bring that
-    block's record, so the nest's place is kept."""
+def test_beaconchain_rechecks_blocks_the_nest_stored_without_mev(eth2, nuthatch: Nuthatch) -> None:
+    """beaconcha.in runs after the nest. A block the nest stored without its MEV reward, however
+    old, is asked about there in the same run, and beaconcha.in adds the MEV reward it knows
+    without the block reward twice."""
     _validator(eth2)
-    pinned = Timestamp(ts_now() - 3600)
+    old = ts_now() - 40 * 86400
+    block = {'blockNumber': '300', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
+    beaconchain = eth2.beacon_inquirer.beaconchain
     eth2.ethereum.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
     cached = CachedSettings()
     order = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN)}  # noqa: E501
-
-    def nest(indices: list[int], update_cache: bool, only: EvmIndexer | None = None) -> bool:
-        with eth2.database.user_write() as write_cursor:
-            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=pinned, index=7)  # noqa: E501
-        return True
-
-    def beaconchain(indices: list[int], update_cache: bool) -> None:
-        with eth2.database.user_write() as write_cursor:
-            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
-
+    builder = '0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97'
     with (
         patch.object(type(cached), '_evm_indexers_order_per_chain', order),
-        # an indexer an earlier test in the process left degraded is not this test's concern
         patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
-        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers', side_effect=nest),
-        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=True),
-        patch.object(eth2.beacon_inquirer.beaconchain, '_get_and_store_produced_blocks', side_effect=beaconchain),  # noqa: E501
+        patch.object(nuthatch, 'get_validated_blocks', return_value=[block]),
+        patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: period),  # noqa: E501
+        patch.object(eth2, '_get_proposer_index_for_validated_block', return_value=7),
+        patch.object(beaconchain, 'has_api_key', return_value=True),
+        patch.object(beaconchain, '_query_chunked_endpoint_with_cursor_pagination', return_value=[{'block': 300, 'validator': {'index': 7}}]),  # noqa: E501
+        patch.object(beaconchain, '_query_block_data', return_value={'timestamp': old, 'fee_recipient': builder}),  # noqa: E501
+        patch.object(beaconchain, '_query_block_rewards', return_value={'priority_fees': {'amount': '5', 'recipient': {'address': builder}}, 'mev': {'amount': '2000000000000000000', 'recipient': {'address': str(ADDRESS)}}, 'relay': {'producer_fee_recipient': str(ADDRESS)}}),  # noqa: E501
     ):
         eth2.get_and_store_produced_blocks(indices=[7])
 
-    assert (got := _cursor(eth2.database)) == pinned, f'{got=} {pinned=} now={ts_now()}'
+    assert _block_events(eth2.database, 300) == [(0, '0.000000000000000005'), (1, '2')]
+
+
+def test_beaconchain_failing_leaves_the_recheck_for_the_next_run(eth2, nuthatch: Nuthatch) -> None:
+    """A block the nest stored without its MEV reward stays to be rechecked by beaconcha.in until
+    it has been asked, even once the nest no longer lists it."""
+    _validator(eth2)
+    old = ts_now() - 40 * 86400
+    block = {'blockNumber': '301', 'timeStamp': str(old), 'feeRecipient': str(ADDRESS).lower(), 'blockReward': '5', 'mevRecipient': '', 'mevReward': '', 'proposerPubkey': '', 'mev': 'unrecorded'}  # noqa: E501
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    eth2.ethereum.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
+    builder = '0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97'
+
+    def run(rows: list[dict[str, Any]], beaconchain_up: bool) -> None:
+        with (
+            patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+            patch.object(nuthatch, 'get_validated_blocks', return_value=rows),
+            patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: period),  # noqa: E501
+            patch.object(eth2, '_get_proposer_index_for_validated_block', return_value=7),
+            patch.object(beaconchain, 'has_api_key', return_value=True),
+            patch.object(beaconchain, '_query_chunked_endpoint_with_cursor_pagination', return_value=[{'block': 301, 'validator': {'index': 7}}]),  # noqa: E501
+            patch.object(beaconchain, '_query_block_data', return_value={'timestamp': old, 'fee_recipient': builder}),  # noqa: E501
+            patch.object(beaconchain, '_query_block_rewards', return_value={'priority_fees': {'amount': '5', 'recipient': {'address': builder}}, 'mev': {'amount': '2000000000000000000', 'recipient': {'address': str(ADDRESS)}}, 'relay': {'producer_fee_recipient': str(ADDRESS)}}) if beaconchain_up else patch.object(beaconchain, '_query_block_rewards', side_effect=RemoteError('beaconcha.in is down')),  # noqa: E501
+        ):
+            eth2.get_and_store_produced_blocks(indices=[7])
+
+    run([block], beaconchain_up=False)
+    assert _block_events(eth2.database, 301) == [(0, '0.000000000000000005')]
+    run([], beaconchain_up=True)
+    assert _block_events(eth2.database, 301) == [(0, '0.000000000000000005'), (1, '2')]
+    run([], beaconchain_up=True)
+    assert _block_events(eth2.database, 301) == [(0, '0.000000000000000005'), (1, '2')]
