@@ -61,8 +61,11 @@ NUTHATCH_PAGED_ACTIONS: Final = frozenset({
     'nuthatchValidatorBlocks',
 })
 ENVELOPE: Final = frozenset({'status', 'message', 'result'})
-# How a nest says a range begins before the history it was configured to keep.
-HISTORY_STARTS: Final = re.compile(r'history starts at block (\d+)')
+# How a nest says a range begins before the history it was configured to keep, or, for a
+# validator's blocks, before the first block it can prove the proposer of.
+HISTORY_STARTS: Final = re.compile(r'(?:history starts at|proposals are proven from) block (\d+)')
+# How a nest says it has proven nothing of a validator's blocks from a block on yet.
+NOT_PROVEN_YET: Final = re.compile(r'proposals are not proven from block \d+ yet')
 # Kept in a paged query's options and never sent: the pages it has read so far.
 PAGES_READ: Final = '_nuthatch_pages_read'
 # The index of an internal row's frame in its transaction's whole trace. The Etherscan-shaped
@@ -436,12 +439,17 @@ class Nuthatch(EtherscanAccountHistory):
         rows: list[dict[str, Any]] = []
         through: int | None = None
         while True:
-            result = self._query(
-                chain_id=ChainID.ETHEREUM,
-                module='account',
-                action='nuthatchValidatorBlocks',
-                options=options,
-            )
+            try:
+                result = self._query(
+                    chain_id=ChainID.ETHEREUM,
+                    module='account',
+                    action='nuthatchValidatorBlocks',
+                    options=options,
+                )
+            except RemoteError as e:
+                if through is None and NOT_PROVEN_YET.search(str(e)) is not None:
+                    return ValidatorBlocks(from_block=from_block, through=from_block - 1, rows=[])
+                raise
             if not isinstance(result, list):
                 raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} with {result}')  # noqa: E501
             try:

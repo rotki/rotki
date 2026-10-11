@@ -1321,3 +1321,26 @@ def test_proven_history_starting_later_leaves_the_earlier_blocks_uncovered(eth2,
     with patch.object(nuthatch, 'get_validator_blocks', side_effect=later):
         answer = eth2._ask_nest_for_validator(nuthatch, 577475, 19_426_587)
     assert (answer.from_block, answer.through) == (20_000_000, 26_199_999)
+
+
+def _refusal(text: str) -> MockResponse:
+    return MockResponse(status_code=HTTPStatus.OK, text=json.dumps({'status': '0', 'message': 'NOTOK', 'result': text}))  # noqa: E501
+
+
+def test_nuthatch_validator_blocks_read_the_nests_refusals(nuthatch: Nuthatch) -> None:
+    """In the nest's own words: before its first provable block the answer says where that is;
+    with nothing proven past the stored interval yet, nothing new is answered and nothing fails;
+    anything else is refused."""
+    later = _refusal('NUTHATCH_UNSUPPORTED: proposals are proven from block 19500000; ask from there and use another source before it')  # noqa: E501
+    with patch.object(nuthatch.session, 'get', return_value=later), pytest.raises(IndexerRangeStartsLater) as starts:  # noqa: E501
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=19_426_587)
+    assert starts.value.first_block == 19_500_000
+
+    not_yet = _refusal("NUTHATCH_INCOMPLETE: validator 577475's proposals are not proven from block 26200000 yet")  # noqa: E501
+    with patch.object(nuthatch.session, 'get', return_value=not_yet):
+        answer = nuthatch.get_validator_blocks(validator_index=577475, from_block=26_200_000)
+    assert (answer.through, answer.rows) == (26_199_999, [])
+
+    unwatched = _refusal('NUTHATCH_INCOMPLETE: validator 577475 is not watched')
+    with patch.object(nuthatch.session, 'get', return_value=unwatched), pytest.raises(RemoteError):
+        nuthatch.get_validator_blocks(validator_index=577475, from_block=26_200_000)
