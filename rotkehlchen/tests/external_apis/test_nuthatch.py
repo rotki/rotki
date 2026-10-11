@@ -1395,18 +1395,21 @@ def test_proof_without_its_reward_still_settles_who_proposed(eth2, nuthatch: Nut
     assert [validator for _, validator, _ in _block_events(eth2.database, 26167074)] == [577475, 577475]  # noqa: E501
 
 
-def test_proof_replaces_a_guess_with_the_wrong_recipient(eth2, nuthatch: Nuthatch) -> None:
-    """An earlier event with the right validator and amount but booked as income to a tracked
-    address, where the proof names an untracked fee recipient, is replaced by information."""
-    _track(eth2, WITHDRAWAL)
+@pytest.mark.parametrize(('guessed_recipient', 'guessed_as_income'), [
+    (WITHDRAWAL, False),  # the wrong recipient, the right kind
+    (deserialize_evm_address('0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97'), True),  # the right recipient, booked as income  # noqa: E501
+])
+def test_proof_replaces_a_guess_with_the_wrong_recipient(eth2, nuthatch: Nuthatch, guessed_recipient: ChecksumEvmAddress, guessed_as_income: bool) -> None:  # noqa: E501
+    """An earlier event with the right validator and amount but another fee recipient, or booked
+    as income where the proven recipient is not tracked, is replaced by the proven information."""
     _validator(eth2)
-    guess = EthBlockEvent(validator_index=577475, timestamp=TimestampMS(1767000000000), amount=FVal('0.000000000000000009'), fee_recipient=WITHDRAWAL, fee_recipient_tracked=True, block_number=26167074, is_mev_reward=False)  # noqa: E501
+    guess = EthBlockEvent(validator_index=577475, timestamp=TimestampMS(1767000000000), amount=FVal('0.000000000000000009'), fee_recipient=guessed_recipient, fee_recipient_tracked=guessed_as_income, block_number=26167074, is_mev_reward=False)  # noqa: E501
     with eth2.database.user_write() as write_cursor:
         DBHistoryEvents(eth2.database).add_history_event(write_cursor=write_cursor, event=guess)
     _proven_pass(eth2, nuthatch, {577475: [_proven()]})
     with eth2.database.conn.read_ctx() as cursor:
         label, kind = cursor.execute('SELECT location_label, type FROM history_events WHERE group_identifier=? AND sequence_index=0', ('BP1_26167074',)).fetchone()  # noqa: E501
-    assert (label, kind) == (_proven()['feeRecipient'].lower(), HistoryEventType.INFORMATIONAL.serialize()) or (label.lower(), kind) == (_proven()['feeRecipient'].lower(), HistoryEventType.INFORMATIONAL.serialize())  # noqa: E501
+    assert (label.lower(), kind) == (_proven()['feeRecipient'], HistoryEventType.INFORMATIONAL.serialize())  # noqa: E501
 
 
 def test_a_later_source_cannot_book_a_proven_block_to_another_validator(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
