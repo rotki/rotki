@@ -1712,8 +1712,8 @@ class Eth2(EthereumModule):
                     'The nuthatch nest proves the blocks a validator proposed only from the first '
                     'block it has proven, at the earliest the Dencun upgrade (block 19,426,587). '
                     f'Blocks of validators {", ".join(str(i) for i in sorted(uncovered))} '
-                    'before that, or that the nest could not answer for, are not covered. Add a beaconcha.in '
-                    'API key to cover them.',
+                    'before that, or that the nest could not answer for, are not covered. Add a '
+                    'beaconcha.in API key to cover them.',
                     classification=NetworkFailure(record=UserMessageRecord.VALIDATOR, error='no source covers every validator'),  # noqa: E501
                     subject=Location.ETHEREUM,
                 )
