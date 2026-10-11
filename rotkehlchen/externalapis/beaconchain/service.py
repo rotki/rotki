@@ -11,6 +11,7 @@ import requests
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+    UNRECORDED_MEV_RETRY_WINDOW,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
@@ -511,21 +512,47 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
     def get_validators_to_query_for_blocks(self) -> list[int]:
         """Get indices of validators that are either active, exited but never queried,
-        or exited and queried but exited timestamp is after last query timestamp.
+        or exited and queried but exited timestamp is after last query timestamp, and those a
+        nuthatch nest's produced blocks still need asking about.
         """
-        return self._get_validators_to_query_for_blocks(
+        return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value',  # noqa: E501
-        )
+        )) | self._validators_awaiting_mev())
 
     def get_outdated_validators_to_query_for_blocks(self) -> list[int]:
         """Get indices of validators that have not already been queried for blocks
         within the last day, and that are either active, exited but never queried,
         or exited and queried but exited timestamp is after last query timestamp.
         """
-        return self._get_validators_to_query_for_blocks(
+        return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR (kv.value <= ? AND (ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value))',  # noqa: E501
             bindings=(ts_now() - DAY_IN_SECONDS,),
-        )
+        )) | self._validators_awaiting_mev())
+
+    def _validators_awaiting_mev(self) -> set[int]:
+        """Validators whose produced blocks may still get MEV from a nuthatch nest, whatever their
+        last query time says: those with a block the nest stored without its MEV reward, and
+        exited ones the nest has not been asked about since their retry window closed."""
+        with self.db.conn.read_ctx() as cursor:
+            pending = json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_MEV_RECHECK,
+            ) or '[]')
+            awaiting = {row[0] for block in pending for row in cursor.execute(
+                'SELECT info.validator_index FROM history_events he '
+                'JOIN eth_staking_events_info info ON info.identifier=he.identifier '
+                'WHERE he.group_identifier=? AND he.sequence_index=0',
+                (EthBlockEvent.form_group_identifier(block),),
+            )}
+            nest_key = DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS.value[0]
+            key_name = nest_key.removesuffix('{index}')
+            awaiting.update(row[0] for row in cursor.execute(
+                'SELECT ev.validator_index FROM eth2_validators ev '
+                'JOIN key_value_cache kv ON kv.name = ? || ev.validator_index '
+                'WHERE ev.exited_timestamp IS NOT NULL AND CAST(kv.value AS INTEGER) < ev.exited_timestamp + ?',  # noqa: E501
+                (key_name, UNRECORDED_MEV_RETRY_WINDOW),
+            ))
+        return awaiting
 
     def get_and_store_produced_blocks(
             self,

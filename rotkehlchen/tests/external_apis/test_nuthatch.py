@@ -848,3 +848,44 @@ def test_beaconchain_is_asked_about_recheck_blocks_of_validators_no_longer_queri
 
     assert beaconchain_query.call_args.kwargs['indices'] == [7, 8]
     assert eth2._mev_recheck() == set(), 'beaconcha.in listed it'
+
+
+def test_validators_awaiting_mev_are_picked_for_produced_blocks(eth2, nuthatch: Nuthatch) -> None:
+    """A validator whose last query is past its exit is not picked any more, unless a block of
+    its is waiting for its MEV, or the nest has not been asked about it since its retry window
+    closed. Once neither holds, it is left alone again."""
+    long_exited = Timestamp(ts_now() - 40 * 86400)
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=7,
+            public_key=Eth2PubKey('0x' + 'ab' * 48),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=ADDRESS,
+            activation_timestamp=Timestamp(1600000000),
+            exited_timestamp=long_exited,
+        )])
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
+        DBHistoryEvents(eth2.database).add_history_event(write_cursor, event=EthBlockEvent(
+            validator_index=7,
+            timestamp=TimestampMS(1700000000000),
+            amount=ONE,
+            fee_recipient=ADDRESS,
+            fee_recipient_tracked=True,
+            block_number=304,
+            is_mev_reward=False,
+        ))
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    picked = (beaconchain.get_validators_to_query_for_blocks, beaconchain.get_outdated_validators_to_query_for_blocks)  # noqa: E501
+    assert all(7 not in select() for select in picked)
+
+    eth2._set_mev_recheck({304})
+    assert all(7 in select() for select in picked), 'a block waiting for its MEV'
+    eth2._set_mev_recheck(set())
+
+    with eth2.database.user_write() as write_cursor:
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=long_exited + 86400, index=7)  # noqa: E501
+    assert all(7 in select() for select in picked), 'the nest was last asked inside the window'
+
+    with eth2.database.user_write() as write_cursor:
+        eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS, value=ts_now(), index=7)  # noqa: E501
+    assert all(7 not in select() for select in picked)
