@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.constants import WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
@@ -346,6 +346,15 @@ class DBEth2:
                     f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
                     [key.get_db_key(index=index) for index in validator_indices],
                 )
+            # A nuthatch nest's history was matched against the validators tracked then; their
+            # removed rewards come back only if it is asked again once they are added back.
+            cursor.execute(
+                'DELETE FROM key_value_cache WHERE name LIKE ? OR name=?',
+                (
+                    DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH.value[0].removesuffix('{address}') + '%',  # noqa: E501
+                    DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS.value,
+                ),
+            )
 
     @staticmethod
     def _validator_stats_process_queries(

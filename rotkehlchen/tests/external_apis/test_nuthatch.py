@@ -1037,18 +1037,23 @@ def test_nest_produced_blocks_are_asked_from_where_its_history_starts(eth2, nuth
     assert [validator for _, validator, _ in _block_events(eth2.database, 26167074)] == [577475, 577475]  # noqa: E501
 
 
-def test_nest_history_is_asked_again_for_a_validator_removed_and_added_again(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+@pytest.mark.parametrize('pass_between', [False, True])
+def test_nest_history_is_asked_again_for_a_validator_removed_and_added_again(eth2, nuthatch: Nuthatch, pass_between: bool) -> None:  # noqa: E501
+    """Removing a validator deletes its rewards, so adding it back, with or without a pass
+    between, asks the addresses' history again; also when it was the only one."""
     _track(eth2, FEE_RECIPIENT)
     _validator(eth2)
-    _validator(eth2, index=7, pubkey='0x' + 'cd' * 48, withdrawal=FEE_RECIPIENT)
     _nest_pass(eth2, nuthatch, {})
     with eth2.database.user_write() as write_cursor:
-        write_cursor.execute('DELETE FROM eth2_validators WHERE validator_index=7')
-    _nest_pass(eth2, nuthatch, {})
-    _validator(eth2, index=7, pubkey='0x' + 'cd' * 48, withdrawal=FEE_RECIPIENT)
+        eth2.database.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_RANGES, value='[]')  # noqa: E501
+    DBEth2(eth2.database).delete_validators([577475])
+    if pass_between:
+        _nest_pass(eth2, nuthatch, {})
+    _validator(eth2)
     asked: list[tuple[ChecksumEvmAddress, TimestampOrBlockRange]] = []
-    _nest_pass(eth2, nuthatch, {}, asked=asked)
+    _nest_pass(eth2, nuthatch, {FEE_RECIPIENT: [PAID_BLOCK]}, asked=asked)
     assert any(address == FEE_RECIPIENT and period.from_value == 0 for address, period in asked)
+    assert [validator for _, validator, _ in _block_events(eth2.database, 26167074)] == [577475, 577475]  # noqa: E501
 
 
 def test_nest_range_with_a_block_that_did_not_read_is_kept(eth2, nuthatch: Nuthatch) -> None:
