@@ -17,7 +17,6 @@ from rotkehlchen.externalapis.etherscan import EtherscanAccountHistory
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.types import (
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
@@ -416,8 +415,9 @@ class Nuthatch(EtherscanAccountHistory):
             )
 
     def sync_watched(self) -> None:
-        """Tell the nest which accounts to watch: every account rotki tracks on the nest's chain,
-        when that chain's indexer order names the nest, and none of those rotki has removed.
+        """Tell the nest which accounts to watch: every Ethereum account rotki tracks, when
+        Ethereum's indexer order names the nest, and none of those rotki has removed. The nest
+        is not contacted at all unless its address is set and the order names it.
 
         Runs as a background task after accounts change and at login. A nest that cannot be
         reached is left for the next run; nothing here may stop an account being added.
@@ -425,13 +425,13 @@ class Nuthatch(EtherscanAccountHistory):
         May raise:
         - RemoteError if the nest cannot be reached
         """
-        chain_id = self._nest_call('GET', '/ready').get('chain_id')
-        if not isinstance(chain_id, int) or chain_id not in {x.value for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS}:  # noqa: E501
+        if CachedSettings().get_entry('nuthatch_api_endpoint') == '' or EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(chain_id=ChainID.ETHEREUM):  # noqa: E501
             return
 
-        chain = ChainID.deserialize_from_db(chain_id)
-        if EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(chain_id=chain):  # noqa: E501
+        if self._nest_call('GET', '/ready').get('chain_id') != ChainID.ETHEREUM.value:
             return
+
+        chain = ChainID.ETHEREUM
 
         with self.db.conn.read_ctx() as cursor:
             tracked = {str(a).lower() for a in self.db.get_blockchain_accounts(cursor).get(chain.to_blockchain())}  # noqa: E501

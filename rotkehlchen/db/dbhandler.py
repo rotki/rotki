@@ -1063,7 +1063,7 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
-            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX, DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH],  # noqa: E501
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
         ...
@@ -1255,7 +1255,7 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
-            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX, DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH],  # noqa: E501
             value: int,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
