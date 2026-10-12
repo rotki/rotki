@@ -22,6 +22,7 @@ from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
+    ERC721_OWNERSHIP_CHECK_REFRESH,
     EVMLIKE_ACCOUNTS_DETECTION_REFRESH,
     HOUR_IN_SECONDS,
     OWNED_ASSETS_UPDATE,
@@ -46,6 +47,7 @@ from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
+    remove_unowned_erc721_tokens,
     update_aave_v3_underlying_assets,
     update_owned_assets,
     update_spark_underlying_assets,
@@ -208,6 +210,7 @@ class TaskManager:
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
             self._maybe_update_owned_assets,
+            self._maybe_remove_unowned_erc721_tokens,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_update_spark_underlying_assets,
             self._maybe_create_calendar_reminder,
@@ -974,6 +977,31 @@ class TaskManager:
             exception_is_error=True,
             method=update_owned_assets,
             user_db=self.database,
+        )]
+
+    def _maybe_remove_unowned_erc721_tokens(self) -> list[Task] | None:
+        """Checks with ownerOf that the accounts still own their detected erc721 tokens, so
+        that a transferred nft doesn't stay in the balances until the next token detection.
+        Like the rest of the automatic token detection it only runs if auto_detect_tokens
+        is enabled."""
+        if CachedSettings().get_settings().auto_detect_tokens is False:
+            return None
+
+        if should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_ERC721_OWNERSHIP_CHECK_TS,
+            refresh_period=ERC721_OWNERSHIP_CHECK_REFRESH,
+            cached_timestamps=self._scheduler_task_timestamps,
+        ) is False:
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Remove erc721 tokens that are no longer owned',
+            exception_is_error=True,
+            method=remove_unowned_erc721_tokens,
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
         )]
 
     def _maybe_update_aave_v3_underlying_assets(self) -> list[Task] | None:

@@ -49,9 +49,11 @@ from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
 )
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
     HISTORY_BASE_ENTRY_FIELDS,
 )
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN
@@ -71,6 +73,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -88,7 +91,11 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
-    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
+    from rotkehlchen.types import (
+        EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
+        ChecksumEvmAddress,
+        EVMTxHash,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -645,3 +652,84 @@ def detect_tokens_from_decoded_events(
                 blockchain=chain,
                 tokens=tokens,
             )
+
+
+def remove_unowned_erc721_tokens(
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+) -> None:
+    """Remove the erc721 tokens that the accounts no longer own from their detected tokens
+    and refresh the balances of the chains where any was removed.
+
+    The balance query counts every detected erc721 token of a collection in which the
+    account has a positive balance, so a transferred or burned nft is counted for as long
+    as the account holds another token of its collection. Without this, only a full token
+    detection drops it. Each detected token id is checked with ownerOf and the ones whose
+    check failed are kept, since their ownership is unknown.
+    """
+    with database.user_write() as write_cursor:  # set first so that a failure isn't retried at every scheduler tick  # noqa: E501
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_ERC721_OWNERSHIP_CHECK_TS,
+            value=ts_now(),
+        )
+
+    settings = CachedSettings().get_settings()
+    db_chain_ids = {chain.to_chain_id().serialize_for_db(): chain for chain in EVM_CHAINS_WITH_TRANSACTIONS}  # noqa: E501
+    # (address, token) -> the token identifier as saved, used to delete it
+    candidates: defaultdict[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, dict[tuple[ChecksumEvmAddress, EvmToken], str]] = defaultdict(dict)  # noqa: E501
+    with database.conn.read_ctx() as cursor:
+        ignored_asset_ids = database.get_ignored_asset_ids(cursor)
+        # ordered so the ownerOf calls batched into the multicalls are deterministic
+        for db_chain_id, address, token_id in cursor.execute(
+            'SELECT chain_id, account, value FROM evm_accounts_details WHERE key=? AND '
+            "value LIKE '%/erc721:%/%' ORDER BY chain_id, account, value",
+            (EVM_ACCOUNTS_DETAILS_TOKENS,),
+        ):
+            if (
+                (chain := db_chain_ids.get(db_chain_id)) is None or
+                (
+                    (disabled := settings.disabled_chain_queries.get(chain)) is not None and
+                    (len(disabled) == 0 or address in disabled)
+                ) or
+                token_id in ignored_asset_ids or
+                # ownerOf is not checked for ids it can't parse, so they'd look unowned
+                tokenid_to_collectible_id(token_id) is None
+            ):
+                continue
+
+            try:
+                candidates[chain][address, EvmToken(token_id)] = token_id
+            except (UnknownAsset, WrongAssetType):
+                continue
+
+    for chain, chain_candidates in candidates.items():
+        ownership = query_owned_erc721_tokens(
+            evm_inquirer=chains_aggregator.get_chain_manager(chain).node_inquirer,
+            candidates=list(chain_candidates),
+        )
+        if len(unowned := [
+            (address, token_id) for (address, token), token_id in chain_candidates.items()
+            if (address, token) not in ownership.owned and
+            (address, token) not in ownership.failed
+        ]) == 0:
+            continue
+
+        log.info(
+            'Removing %s %s erc721 tokens that the accounts no longer own',
+            len(unowned),
+            chain,
+        )
+        with database.user_write() as write_cursor:
+            write_cursor.executemany(
+                'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND key=? AND value=?',  # noqa: E501
+                [
+                    (address, chain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS, token_id)  # noqa: E501
+                    for address, token_id in unowned
+                ],
+            )
+
+        database.msg_aggregator.add_message(
+            message_type=WSMessageType.REFRESH_BALANCES,
+            data={'type': 'blockchain_balances', 'blockchain': chain.serialize()},
+        )
