@@ -614,11 +614,14 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         for transaction in transactions:
             try:
                 write_cursor.execute(
-                    'INSERT INTO zksynclite_transactions(tx_hash, type, timestamp, block_number, '
-                    'from_address, to_address, asset, amount, fee) '
+                    'INSERT OR IGNORE INTO zksynclite_transactions(tx_hash, type, timestamp, '
+                    'block_number, from_address, to_address, asset, amount, fee) '
                     'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     transaction.serialize_for_db(),
                 )
+                if write_cursor.rowcount == 0:
+                    continue  # already saved, e.g. by the history sync of another address
+
                 if transaction.tx_type == ZKSyncLiteTXType.SWAP:
                     identifier = write_cursor.lastrowid
                     write_cursor.execute(
@@ -675,27 +678,40 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             self,
             address: ChecksumEvmAddress,
     ) -> None:
-        """Fetch zksync transactions for an address and save in DB.
-        Get only new transactions if there are existing ones, otherwise get all transactions.
+        """Fetch and save all zksync transactions once per address.
+
+        ZKSync Lite is shut down, so its transaction history no longer changes. A per-address
+        marker avoids both using another address's cursor and querying immutable history again.
         """
-        max_tx_hash = None
         with self.database.conn.read_ctx() as cursor:
-            cursor.execute('SELECT tx_hash, max(timestamp) from zksynclite_transactions;')
-            if (max_result := cursor.fetchone()) is not None and max_result[0] is not None:
-                max_tx_hash = '0x' + max_result[0].hex()
+            if (
+                isinstance(history_sync_cache := self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+                    address=address,
+                ), int) and
+                history_sync_cache == 1
+            ):
+                return
 
         try:
-            if max_tx_hash is None:  # no existing entries, query all
-                self._query_and_save_transactions_from_hash(
+            self._query_and_save_transactions_from_hash(
+                address=address,
+                from_hash='latest',
+                direction='older',
+            )
+            with self.database.conn.write_ctx() as write_cursor:
+                if write_cursor.execute(
+                    'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain=? AND account=?',
+                    (SupportedBlockchain.ZKSYNC_LITE.value, address),
+                ).fetchone()[0] == 0:
+                    return  # removed while fetching. Its removal already cleared the marker
+
+                self.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+                    value=1,
                     address=address,
-                    from_hash='latest',
-                    direction='older',
-                )
-            else:  # get the new transactions
-                self._query_and_save_transactions_from_hash(
-                    address=address,
-                    from_hash=max_tx_hash,
-                    direction='newer',
                 )
         except RemoteError as e:
             log.error(

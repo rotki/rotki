@@ -319,6 +319,12 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
                     swap_data=None if i == 0 else ZKSyncLiteSwapData(from_asset=A_ETH, from_amount=ONE, to_asset=A_DAI, to_amount=FVal(3000)),  # noqa: E501
                 )],
             )
+        rotki.data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            value=1,
+            address=addr1,
+        )
 
     def _assert_zksynclite_txs_num(cursor: DBCursor, tx_num: int, swap_num: int) -> None:
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == tx_num  # noqa: E501
@@ -342,6 +348,11 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
         result = db.get_transactions(cursor, EvmTransactionsFilterQuery.make())
         assert len(result) == 0
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=addr1,
+        ) is None
 
     # re-add a few zksync lite transactions
     with rotki.data.db.user_write() as write_cursor:
@@ -359,6 +370,11 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: APIServer) ->
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=addr1,
+        ) is None
 
     # Check that removing btc/bch events works.
     # For each chain add three events with one customized.

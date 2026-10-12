@@ -1152,6 +1152,11 @@ class TransactionsService:
         if tx_hash is not None:
             querystr += ' WHERE tx_hash=?'
             bindings = (tx_hash,)  # type: ignore
+        else:
+            self.rotkehlchen.data.db.delete_dynamic_caches(
+                write_cursor=write_cursor,
+                key_parts=[DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED.value[0].split('{address}')[0]],
+            )
 
         write_cursor.execute(querystr, bindings)
 

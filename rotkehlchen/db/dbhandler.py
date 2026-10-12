@@ -1051,6 +1051,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             **kwargs: Unpack[AddressArgType],
     ) -> str | None:
@@ -1227,6 +1236,16 @@ class DBHandler:
             self,
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED],
             value: int,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
@@ -3353,6 +3372,11 @@ class DBHandler:
             blockchain=SupportedBlockchain.ZKSYNC_LITE,
         )
         other_addresses.remove(address)  # exclude the address in question so it's only the others
+        self.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=address,
+        )
 
         # delete events by tx_hash
         write_cursor.execute(
