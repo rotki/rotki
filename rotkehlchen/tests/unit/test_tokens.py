@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+from eth_abi import encode as encode_abi
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -17,6 +18,7 @@ from rotkehlchen.chain.evm.tokens import (
     EvmTokensWithProxies,
     generate_multicall_chunks,
     get_rpc_first_chunk_size_call_order,
+    is_nonexistent_erc721_revert,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
@@ -1192,6 +1194,20 @@ def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
             blockchain=SupportedBlockchain.ETHEREUM,
             token_exceptions=set(),
         )[0] or []) == {A_DAI, cached_nft}
+
+
+@pytest.mark.parametrize(('revert_data', 'nonexistent'), [
+    (b'\x7e\x27\x32\x89' + encode_abi(['uint256'], [1]), True),  # ERC721NonexistentToken(1)
+    (b'\xdf\x2d\x9b\x42', True),  # OwnerQueryForNonexistentToken()
+    (b'\x08\xc3\x79\xa0' + encode_abi(['string'], ['NOT_MINTED']), True),
+    (b'\x08\xc3\x79\xa0' + encode_abi(['string'], ['Pausable: paused']), False),
+    (b'\x08\xc3\x79\xa0\x00', False),  # undecodable message
+    (b'', False),  # no reason, as for an expired ENS name, so the ownership stays unknown
+])
+def test_is_nonexistent_erc721_revert(revert_data: bytes, nonexistent: bool) -> None:
+    """Only the reverts with which the common erc721 implementations reject a token id
+    that doesn't exist make ownerOf report the token as not owned."""
+    assert is_nonexistent_erc721_revert(revert_data) is nonexistent
 
 
 def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
