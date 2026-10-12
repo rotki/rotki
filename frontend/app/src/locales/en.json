@@ -5945,9 +5945,9 @@
   "staking_page": {
     "dropdown_hint": "Select a location to see more details",
     "dropdown_label": "Select location",
+    "failed_addresses": "The staking information for this address could not be loaded: {addresses} | The staking information for these addresses could not be loaded: {addresses}",
     "hyperliquid": {
       "events": "Hyperliquid staking events",
-      "fetch_failed": "Failed to query the Hyperliquid staking accounts: {message}",
       "table": {
         "address": "Address",
         "delegated": "Delegated",
@@ -6003,7 +6003,6 @@
     },
     "solana": {
       "events": "Solana staking events",
-      "fetch_failed": "Failed to query the Solana stake accounts: {message}",
       "staked": "Staked SOL",
       "table": {
         "amount": "Amount",
@@ -6267,8 +6266,10 @@
       },
       "staking": {
         "add_validator": "Adding validator {validator}",
+        "hyperliquid": "Querying Hyperliquid staking accounts",
         "kraken": "Querying Kraken staking events",
         "performance": "Refreshing ETH staking performance cache",
+        "solana": "Querying Solana stake accounts",
         "validators": "Querying ETH validators"
       },
       "token_detection": {

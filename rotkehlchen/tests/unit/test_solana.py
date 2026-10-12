@@ -704,7 +704,41 @@ def test_get_stake_accounts_by_owner(solana_manager: SolanaManager) -> None:
             SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'),
         ])
 
-    assert result == {owner: [stake_account]}
+    assert result == ({owner: [stake_account]}, [])
+
+
+def test_get_stake_accounts_by_owner_skips_failing_owner(solana_manager: SolanaManager) -> None:
+    """A failing owner is skipped, and the error is raised only if every owner fails."""
+    owner = SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM')
+    failing = SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa')
+    stake_account = StakeAccountInfo(
+        address=TEST_STAKE_ADDRESS,
+        lamports=5_000_000_000,
+        staker=owner,
+        withdrawer=owner,
+        voter=None,
+    )
+
+    def get_stake_accounts(owner: SolanaAddress) -> list[StakeAccountInfo]:
+        if owner == failing:
+            raise RemoteError('boom')
+        return [stake_account]
+
+    with patch.object(solana_manager.node_inquirer, 'get_stake_accounts', side_effect=get_stake_accounts):  # noqa: E501
+        assert solana_manager.get_stake_accounts_by_owner(accounts=[failing, owner]) == ({owner: [stake_account]}, [failing])  # noqa: E501
+        with pytest.raises(RemoteError):
+            solana_manager.get_stake_accounts_by_owner(accounts=[failing])
+
+
+def test_get_stake_accounts_readable_error(solana_manager: SolanaManager) -> None:
+    """The error of a failed stake accounts query names the getProgramAccounts requirement."""
+    with (
+        patch.object(solana_manager.node_inquirer, 'query', side_effect=RemoteError('x')),
+        pytest.raises(RemoteError, match='getProgramAccounts'),
+    ):
+        solana_manager.node_inquirer.get_stake_accounts(
+            owner=SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
+        )
 
 
 def test_get_staked_balance_no_accounts(solana_manager: SolanaManager) -> None:

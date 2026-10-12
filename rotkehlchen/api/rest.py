@@ -2324,13 +2324,16 @@ class RestAPI:
             query=lambda: self.rotkehlchen.chains_aggregator.solana.get_stake_accounts_by_owner(
                 accounts=self.rotkehlchen.chains_aggregator.accounts.solana,
             ),
-            serialize=lambda stake_accounts: {
-                owner: [{
-                    'address': stake_account.address,
-                    'amount': lamports_to_sol(stake_account.lamports),
-                    'validator': stake_account.voter,
-                } for stake_account in owner_stake_accounts]
-                for owner, owner_stake_accounts in stake_accounts.items()
+            serialize=lambda queried: {
+                'accounts': {
+                    owner: [{
+                        'address': stake_account.address,
+                        'amount': lamports_to_sol(stake_account.lamports),
+                        'validator': stake_account.voter,
+                    } for stake_account in owner_stake_accounts]
+                    for owner, owner_stake_accounts in queried[0].items()
+                },
+                'failed': queried[1],
             },
         )
 
@@ -2341,12 +2344,15 @@ class RestAPI:
             query=lambda: self.rotkehlchen.chains_aggregator.hyperliquid.query_staking_summaries(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.hyperliquid,
             ),
-            serialize=lambda summaries: {
-                address: {
-                    'delegated': summary.delegated,
-                    'undelegated': summary.undelegated,
-                    'pending_withdrawal': summary.pending_withdrawal,
-                } for address, summary in summaries.items()
+            serialize=lambda queried: {
+                'accounts': {
+                    address: {
+                        'delegated': summary.delegated,
+                        'undelegated': summary.undelegated,
+                        'pending_withdrawal': summary.pending_withdrawal,
+                    } for address, summary in queried[0].items()
+                },
+                'failed': queried[1],
             },
         )
 

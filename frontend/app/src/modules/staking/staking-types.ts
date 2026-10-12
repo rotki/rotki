@@ -101,9 +101,10 @@ const SolanaStakeAccountSchema = z.object({
 
 export type SolanaStakeAccount = z.infer<typeof SolanaStakeAccountSchema>;
 
-export const SolanaStakeAccountsSchema = z.record(z.string(), z.array(SolanaStakeAccountSchema));
-
-export type SolanaStakeAccounts = z.infer<typeof SolanaStakeAccountsSchema>;
+export const SolanaStakeAccountsSchema = z.object({
+  accounts: z.record(z.string(), z.array(SolanaStakeAccountSchema)),
+  failed: z.array(z.string()),
+});
 
 const HyperliquidStakingSummarySchema = z.object({
   delegated: NumericString,
@@ -113,6 +114,7 @@ const HyperliquidStakingSummarySchema = z.object({
 
 export type HyperliquidStakingSummary = z.infer<typeof HyperliquidStakingSummarySchema>;
 
-export const HyperliquidStakingSummariesSchema = z.record(z.string(), HyperliquidStakingSummarySchema);
-
-export type HyperliquidStakingSummaries = z.infer<typeof HyperliquidStakingSummariesSchema>;
+export const HyperliquidStakingSummariesSchema = z.object({
+  accounts: z.record(z.string(), HyperliquidStakingSummarySchema),
+  failed: z.array(z.string()),
+});

@@ -4,11 +4,11 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
-const { asset, error = '', eventsTitle, loading, refresh, restrictions, title } = defineProps<{
+const { asset, eventsTitle, failedAddresses, loading, refresh, restrictions, title } = defineProps<{
   asset: string;
-  /** The translated failure message. Nothing is shown while it is empty. */
-  error?: string;
   eventsTitle: string;
+  /** The addresses whose staking positions could not be loaded. Nothing is shown while empty. */
+  failedAddresses: string[];
   loading: boolean;
   refresh: () => Promise<void>;
   restrictions: HistoryEventsRestrictions;
@@ -57,11 +57,11 @@ onMounted(async () => {
 
     <div class="flex flex-col gap-4">
       <RuiAlert
-        v-if="error"
-        type="error"
-        data-testid="staking-error"
+        v-if="failedAddresses.length > 0"
+        type="warning"
+        data-testid="staking-failed-addresses"
       >
-        {{ error }}
+        {{ t('staking_page.failed_addresses', { addresses: failedAddresses.join(', ') }, failedAddresses.length) }}
       </RuiAlert>
 
       <slot />

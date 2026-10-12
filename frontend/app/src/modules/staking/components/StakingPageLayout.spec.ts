@@ -18,7 +18,7 @@ const HistoryEventsViewStub = defineComponent({
 describe('modules/staking/components/StakingPageLayout', () => {
   const refresh = vi.fn<() => Promise<void>>();
 
-  function mountLayout(error: string = ''): VueWrapper {
+  function mountLayout(failedAddresses: string[] = []): VueWrapper {
     return mount(StakingPageLayout, {
       global: {
         stubs: {
@@ -28,8 +28,8 @@ describe('modules/staking/components/StakingPageLayout', () => {
       },
       props: {
         asset: 'HYPE',
-        error,
         eventsTitle: 'Events',
+        failedAddresses,
         loading: false,
         refresh,
         restrictions: { location: 'hyperliquid' },
@@ -58,16 +58,16 @@ describe('modules/staking/components/StakingPageLayout', () => {
     expect(fetchPrices).toHaveBeenLastCalledWith({ ignoreCache: true, selectedAssets: ['HYPE'] });
   });
 
-  it('should show the error message when there is one', () => {
-    const wrapper = mountLayout('api down');
+  it('should warn which addresses could not be loaded', () => {
+    const wrapper = mountLayout(['0xBad', '0xWorse']);
 
-    expect(wrapper.find('[data-testid=staking-error]').text()).toContain('api down');
+    expect(wrapper.find('[data-testid=staking-failed-addresses]').text()).toContain('0xBad, 0xWorse');
   });
 
-  it('should not show an error alert when there is no error', () => {
+  it('should not warn when every address was loaded', () => {
     const wrapper = mountLayout();
 
-    expect(wrapper.find('[data-testid=staking-error]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=staking-failed-addresses]').exists()).toBe(false);
   });
 
   it('should pass the restrictions and title to the history events and render the slot', () => {

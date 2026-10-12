@@ -1,8 +1,29 @@
 import type { ComputedRef, Ref } from 'vue';
+import { map as mapResult, match, type Result } from 'plainfp/result';
+import { logger } from '@/modules/core/common/logging/logging';
+import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { activityLabel } from '@/modules/task-center/activity-labels';
+import { ActivityKind, type ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
-interface UseStakingRowsOptions<TResponse, TRow, TTotal> {
-  /** Queries the backend for the positions of every tracked account. */
-  fetch: () => Promise<TResponse>;
+/** What every staking query reports besides its positions. */
+interface StakingResponse {
+  /** The addresses whose positions could not be queried. */
+  failed: string[];
+}
+
+interface FetchedStaking<TRow> {
+  failed: string[];
+  rows: TRow[];
+}
+
+interface UseStakingRowsOptions<TResponse extends StakingResponse, TRow, TTotal> {
+  /** Which staking activity this query reports as in the task center. */
+  part: ActivityPart;
+  /** Starts the backend query for the positions of every tracked account, which runs as a task. */
+  query: () => Promise<{ taskId: number }>;
+  /** Validates the task result. */
+  parse: (result: unknown) => TResponse;
   /** Flattens the response into table rows. */
   toRows: (response: TResponse) => TRow[];
   /** Aggregates the rows into the figure shown above the table. */
@@ -10,7 +31,8 @@ interface UseStakingRowsOptions<TResponse, TRow, TTotal> {
 }
 
 export interface UseStakingRowsReturn<TRow, TTotal> {
-  error: Readonly<Ref<string>>;
+  /** The addresses the last successful query could not load. */
+  failedAddresses: ComputedRef<string[]>;
   loading: Readonly<Ref<boolean>>;
   refresh: () => Promise<void>;
   rows: ComputedRef<TRow[]>;
@@ -21,26 +43,49 @@ export interface UseStakingRowsReturn<TRow, TTotal> {
  * Loads the staking positions of a chain and exposes them as table rows with a total.
  *
  * @remarks
- * A failed query keeps the rows of the last successful one and reports the failure through
- * `error`, so a flaky backend does not blank a table the user was reading.
+ * The query runs as a task, so a failure is reported by its row in the task center and the rows
+ * of the last successful query stay on screen. The rows are taken from the task's outcome rather
+ * than written inside it, because a submit that joins a run already in flight never runs its own
+ * body, yet still receives that run's outcome.
  */
-export function useStakingRows<TResponse, TRow, TTotal>(
-  { fetch, toRows, toTotal }: UseStakingRowsOptions<TResponse, TRow, TTotal>,
+export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
+  { parse, part, query, toRows, toTotal }: UseStakingRowsOptions<TResponse, TRow, TTotal>,
 ): UseStakingRowsReturn<TRow, TTotal> {
+  const { t } = useI18n({ useScope: 'global' });
+  const { submitTask } = useNativeTask();
+
   const rows = shallowRef<TRow[]>([]);
+  const failedAddresses = shallowRef<string[]>([]);
   const loading = shallowRef<boolean>(false);
-  const error = shallowRef<string>('');
 
   const total = computed<TTotal>(() => toTotal(get(rows)));
 
   async function refresh(): Promise<void> {
     set(loading, true);
-    set(error, '');
     try {
-      set(rows, toRows(await fetch()));
-    }
-    catch (error_: unknown) {
-      set(error, error_ instanceof Error ? error_.message : String(error_));
+      const outcome = await submitTask({
+        id: makeActivityId(ActivityKind.STAKING, part),
+        kind: ActivityKind.STAKING,
+        rerunnable: true,
+        run: async ({ runTask }): Promise<Result<FetchedStaking<TRow>, TaskError>> => mapResult(
+          await runTask<unknown>(async () => query()),
+          (result) => {
+            const response = parse(result);
+            return { failed: response.failed, rows: toRows(response) };
+          },
+        ),
+        subtitle: activityLabel(ActivityKind.STAKING, part),
+        title: t('task_center.group.staking'),
+      });
+
+      match(outcome, {
+        err: () => {},
+        ok: (fetched) => {
+          set(rows, fetched.rows);
+          set(failedAddresses, fetched.failed);
+        },
+      });
+      onActionableError(outcome, error => logger.error(`action failure for ${part} staking:`, error));
     }
     finally {
       set(loading, false);
@@ -48,7 +93,7 @@ export function useStakingRows<TResponse, TRow, TTotal>(
   }
 
   return {
-    error: readonly(error),
+    failedAddresses: computed<string[]>(() => get(failedAddresses)),
     loading: readonly(loading),
     refresh,
     rows: computed<TRow[]>(() => get(rows)),

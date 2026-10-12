@@ -107,16 +107,30 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
     def get_stake_accounts_by_owner(
             self,
             accounts: Sequence[SolanaAddress],
-    ) -> dict[SolanaAddress, list[StakeAccountInfo]]:
+    ) -> tuple[dict[SolanaAddress, list[StakeAccountInfo]], list[SolanaAddress]]:
         """Query the stake accounts of each of the given accounts, keeping only the
         accounts that have any.
-        May raise RemoteError if there is a problem with querying the external service.
+
+        An account whose query fails is logged and skipped. Returns the stake accounts by
+        owner and the accounts that failed. RemoteError is raised only if the query failed
+        for every one of the given accounts.
         """
-        return {
-            account: stake_accounts
-            for account in accounts
-            if (stake_accounts := self.node_inquirer.get_stake_accounts(owner=account))
-        }
+        result: dict[SolanaAddress, list[StakeAccountInfo]] = {}
+        failed: list[SolanaAddress] = []
+        for account in accounts:
+            try:
+                stake_accounts = self.node_inquirer.get_stake_accounts(owner=account)
+            except RemoteError as e:
+                log.error('Failed to query solana stake accounts of %s due to %s', account, e)
+                failed.append(account)
+                if len(failed) == len(accounts):
+                    raise
+                continue
+
+            if stake_accounts:
+                result[account] = stake_accounts
+
+        return result, failed
 
     def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:
         """Query the token balances of the given account.

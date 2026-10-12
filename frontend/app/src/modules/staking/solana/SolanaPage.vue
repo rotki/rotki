@@ -11,19 +11,14 @@ defineOptions({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { error, loading, refresh, rows, total } = useSolanaStakeAccounts();
-
-const errorMessage = computed<string>(() => {
-  const message = get(error);
-  return message ? t('staking_page.solana.fetch_failed', { message }) : '';
-});
+const { failedAddresses, loading, refresh, rows, total } = useSolanaStakeAccounts();
 </script>
 
 <template>
   <StakingPageLayout
     :title="t('staking.solana')"
     :asset="SOL_IDENTIFIER"
-    :error="errorMessage"
+    :failed-addresses="failedAddresses"
     :events-title="t('staking_page.solana.events')"
     :loading="loading"
     :refresh="refresh"
@@ -34,17 +29,18 @@ const errorMessage = computed<string>(() => {
         {{ t('staking_page.solana.staked') }}
       </template>
       <BalanceDisplay
-        class="text-h5 mb-4"
+        class="text-h5"
         data-testid="solana-staked-total"
         :asset="SOL_IDENTIFIER"
         :value="{ amount: total }"
         :loading="loading"
         calculate-value
       />
-      <SolanaStakeAccountsTable
-        :rows="rows"
-        :loading="loading"
-      />
     </RuiCard>
+
+    <SolanaStakeAccountsTable
+      :rows="rows"
+      :loading="loading"
+    />
   </StakingPageLayout>
 </template>

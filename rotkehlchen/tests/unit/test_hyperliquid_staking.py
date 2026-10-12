@@ -21,6 +21,7 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 # The ValiDAO validator, which stakes and delegates HYPE to itself
@@ -98,7 +99,7 @@ def test_query_staking_summaries_skips_empty_accounts() -> None:
             string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'),
         ])
 
-    assert result == {STAKER: staked}
+    assert result == ({STAKER: staked}, [])
 
 
 @pytest.mark.vcr(match_on=['uri', 'method', 'body'])
@@ -260,3 +261,20 @@ def test_staking_entries_sharing_an_id_get_distinct_ids() -> None:
             f'delegatorHistory_{STAKER}_1791430048033_{ZERO_HASH}_1',
             f'delegatorHistory_{STAKER}_1791430048034_{HyperliquidAPI._entry_content_id(unknown)}',
         ]
+
+
+def test_query_staking_summaries_skips_failing_address() -> None:
+    """A failing address is skipped, and the error is raised only if every address fails."""
+    other = string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c')
+
+    def query_staking_summary(address: ChecksumEvmAddress) -> StakingSummary:
+        if address == other:
+            raise RemoteError('rate limited')
+        return StakingSummary(delegated=FVal(2), undelegated=ZERO, pending_withdrawal=ZERO)
+
+    with patch.object(HyperliquidAPI, 'query_staking_summary', side_effect=query_staking_summary):
+        summaries, failed = HyperliquidManager.query_staking_summaries([other, STAKER])
+        assert list(summaries) == [STAKER]
+        assert failed == [other]
+        with pytest.raises(RemoteError):
+            HyperliquidManager.query_staking_summaries([other])

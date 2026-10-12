@@ -5,20 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import SolanaPage from '@/modules/staking/solana/SolanaPage.vue';
 
-const { fetchPrices, pageState, refresh } = await vi.hoisted(async () => {
-  const { shallowRef } = await import('vue');
-  return {
-    fetchPrices: vi.fn<(payload: { ignoreCache: boolean; selectedAssets: string[] }) => Promise<void>>(),
-    pageState: { error: shallowRef<string>('') },
-    refresh: vi.fn<() => Promise<void>>(),
-  };
-});
+const { fetchPrices, refresh } = vi.hoisted(() => ({
+  fetchPrices: vi.fn<(payload: { ignoreCache: boolean; selectedAssets: string[] }) => Promise<void>>(),
+  refresh: vi.fn<() => Promise<void>>(),
+}));
 
 vi.mock('@/modules/staking/solana/use-solana-stake-accounts', async () => {
   const { computed, shallowRef } = await import('vue');
   return {
     useSolanaStakeAccounts: (): ReturnType<typeof useSolanaStakeAccounts> => ({
-      error: pageState.error,
+      failedAddresses: computed(() => ['0xBad']),
       loading: shallowRef<boolean>(false),
       refresh,
       rows: computed(() => []),
@@ -53,7 +49,6 @@ describe('modules/staking/solana/SolanaPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    pageState.error.value = '';
   });
 
   it('should only list the solana staking events of the solana staking counterparty', () => {
@@ -66,17 +61,16 @@ describe('modules/staking/solana/SolanaPage', () => {
     });
   });
 
+  it('should show the addresses that could not be loaded', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.find('[data-testid=staking-failed-addresses]').text()).toContain('0xBad');
+  });
+
   it('should load the stake accounts and the SOL price when opened', async () => {
     mountPage();
     await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce());
 
     expect(fetchPrices).toHaveBeenCalledWith({ ignoreCache: false, selectedAssets: ['SOL'] });
-  });
-
-  it('should show why the query failed with the chain specific message', () => {
-    pageState.error.value = 'rpc down';
-    const wrapper = mountPage();
-
-    expect(wrapper.find('[data-testid=staking-error]').text()).toContain('staking_page.solana.fetch_failed');
   });
 });

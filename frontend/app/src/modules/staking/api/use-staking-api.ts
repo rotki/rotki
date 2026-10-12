@@ -1,30 +1,27 @@
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
-import {
-  type HyperliquidStakingSummaries,
-  HyperliquidStakingSummariesSchema,
-  type SolanaStakeAccounts,
-  SolanaStakeAccountsSchema,
-} from '@/modules/staking/staking-types';
+import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 interface UseStakingApiReturn {
-  fetchHyperliquidStakingSummaries: () => Promise<HyperliquidStakingSummaries>;
-  fetchSolanaStakeAccounts: () => Promise<SolanaStakeAccounts>;
+  fetchHyperliquidStakingSummaries: () => Promise<PendingTask>;
+  fetchSolanaStakeAccounts: () => Promise<PendingTask>;
 }
 
 export function useStakingApi(): UseStakingApiReturn {
-  const fetchSolanaStakeAccounts = async (): Promise<SolanaStakeAccounts> => {
-    const response = await api.get<SolanaStakeAccounts>('/blockchains/solana/stake/accounts', {
+  const fetchSolanaStakeAccounts = async (): Promise<PendingTask> => {
+    const response = await api.get<PendingTask>('/blockchains/solana/stake/accounts', {
+      query: { asyncQuery: true },
       validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });
-    return SolanaStakeAccountsSchema.parse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const fetchHyperliquidStakingSummaries = async (): Promise<HyperliquidStakingSummaries> => {
-    const response = await api.get<HyperliquidStakingSummaries>('/blockchains/hyperliquid/stake/summary', {
+  const fetchHyperliquidStakingSummaries = async (): Promise<PendingTask> => {
+    const response = await api.get<PendingTask>('/blockchains/hyperliquid/stake/summary', {
+      query: { asyncQuery: true },
       validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });
-    return HyperliquidStakingSummariesSchema.parse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return { fetchHyperliquidStakingSummaries, fetchSolanaStakeAccounts };

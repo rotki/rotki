@@ -32,6 +32,7 @@ const columns = computed<DataTableColumn<SolanaStakeAccountRow>[]>(() => [{
   <RuiDataTable
     dense
     outlined
+    hide-default-footer
     row-attr="address"
     data-testid="solana-stake-accounts"
     :cols="columns"

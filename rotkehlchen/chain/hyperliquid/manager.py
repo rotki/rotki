@@ -150,18 +150,32 @@ class HyperliquidManager(EvmManager):
     @staticmethod
     def query_staking_summaries(
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, StakingSummary]:
+    ) -> tuple[dict[ChecksumEvmAddress, StakingSummary], list[ChecksumEvmAddress]]:
         """Query the core staking account of each address, keeping only the non-empty ones.
 
+        An address whose query fails is logged and skipped. Returns the summaries by address
+        and the addresses that failed.
+
         May raise:
-            - RemoteError
+            - RemoteError if the query failed for every one of the given addresses
         """
         api = HyperliquidAPI()
-        return {
-            address: summary
-            for address in addresses
-            if (summary := api.query_staking_summary(address=address)).total != ZERO
-        }
+        summaries: dict[ChecksumEvmAddress, StakingSummary] = {}
+        failed: list[ChecksumEvmAddress] = []
+        for address in addresses:
+            try:
+                summary = api.query_staking_summary(address=address)
+            except RemoteError as e:
+                log.error('Failed to query Hyperliquid staking of %s due to %s', address, e)
+                failed.append(address)
+                if len(failed) == len(addresses):
+                    raise
+                continue
+
+            if summary.total != ZERO:
+                summaries[address] = summary
+
+        return summaries, failed
 
     @staticmethod
     def _add_core_staking_balance(

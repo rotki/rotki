@@ -5,20 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import HyperliquidPage from '@/modules/staking/hyperliquid/HyperliquidPage.vue';
 
-const { fetchPrices, pageState, refresh } = await vi.hoisted(async () => {
-  const { shallowRef } = await import('vue');
-  return {
-    fetchPrices: vi.fn<(payload: { ignoreCache: boolean; selectedAssets: string[] }) => Promise<void>>(),
-    pageState: { error: shallowRef<string>('') },
-    refresh: vi.fn<() => Promise<void>>(),
-  };
-});
+const { fetchPrices, refresh } = vi.hoisted(() => ({
+  fetchPrices: vi.fn<(payload: { ignoreCache: boolean; selectedAssets: string[] }) => Promise<void>>(),
+  refresh: vi.fn<() => Promise<void>>(),
+}));
 
 vi.mock('@/modules/staking/hyperliquid/use-hyperliquid-staking', async () => {
   const { computed, shallowRef } = await import('vue');
   return {
     useHyperliquidStaking: (): ReturnType<typeof useHyperliquidStaking> => ({
-      error: pageState.error,
+      failedAddresses: computed(() => ['0xBad']),
       loading: shallowRef<boolean>(false),
       refresh,
       rows: computed(() => []),
@@ -53,7 +49,6 @@ describe('modules/staking/hyperliquid/HyperliquidPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    pageState.error.value = '';
   });
 
   it('should list the staking and delegation events of the core hyperliquid location only', () => {
@@ -66,17 +61,16 @@ describe('modules/staking/hyperliquid/HyperliquidPage', () => {
     });
   });
 
+  it('should show the addresses that could not be loaded', () => {
+    const wrapper = mountPage();
+
+    expect(wrapper.find('[data-testid=staking-failed-addresses]').text()).toContain('0xBad');
+  });
+
   it('should load the staking accounts and the HYPE price when opened', async () => {
     mountPage();
     await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce());
 
     expect(fetchPrices).toHaveBeenCalledWith({ ignoreCache: false, selectedAssets: ['HYPE'] });
-  });
-
-  it('should show why the query failed with the chain specific message', () => {
-    pageState.error.value = 'api down';
-    const wrapper = mountPage();
-
-    expect(wrapper.find('[data-testid=staking-error]').text()).toContain('staking_page.hyperliquid.fetch_failed');
   });
 });

@@ -9132,14 +9132,20 @@ Getting Solana stake accounts
 
       {
           "result": {
-              "updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM": [{
-                  "address": "StakeAcc1111111111111111111111111111111111111",
-                  "amount": "8.5",
-                  "validator": "7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH"
-              }]
+              "accounts": {
+                  "updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM": [{
+                      "address": "StakeAcc1111111111111111111111111111111111111",
+                      "amount": "8.5",
+                      "validator": "7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH"
+                  }]
+              },
+              "failed": ["FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa"]
           },
           "message": ""
       }
+
+   :resjson object accounts: The stake accounts grouped by owner. Owners without any are left out.
+   :resjson list failed: The tracked addresses whose stake accounts could not be queried. The query fails with a 502 only if it failed for every address.
 
    :statuscode 200: The balances were successfully returned.
    :statuscode 401: No user is currently logged in.
@@ -9178,14 +9184,20 @@ Getting Hyperliquid staking summaries
 
       {
           "result": {
-              "0x000000000056f99d36B6F2e0c51FD41496BbacB8": {
-                  "delegated": "10000.5",
-                  "undelegated": "100.17358863",
-                  "pending_withdrawal": "18"
-              }
+              "accounts": {
+                  "0x000000000056f99d36B6F2e0c51FD41496BbacB8": {
+                      "delegated": "10000.5",
+                      "undelegated": "100.17358863",
+                      "pending_withdrawal": "18"
+                  }
+              },
+              "failed": ["0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c"]
           },
           "message": ""
       }
+
+   :resjson object accounts: The staking summary of each address that has any, keyed by address.
+   :resjson list failed: The tracked addresses whose staking summary could not be queried. The query fails with a 502 only if it failed for every address.
 
    :statuscode 200: The balances were successfully returned.
    :statuscode 401: No user is currently logged in.

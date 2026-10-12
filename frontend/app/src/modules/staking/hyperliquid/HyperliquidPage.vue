@@ -18,7 +18,7 @@ interface StateTotal {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { error, loading, refresh, rows, total } = useHyperliquidStaking();
+const { failedAddresses, loading, refresh, rows, total } = useHyperliquidStaking();
 
 const stateTotals = computed<StateTotal[]>(() => [{
   key: 'delegated',
@@ -33,18 +33,13 @@ const stateTotals = computed<StateTotal[]>(() => [{
   label: t('staking_page.hyperliquid.table.pending_withdrawal'),
   testid: 'hyperliquid-pending-withdrawal-total',
 }]);
-
-const errorMessage = computed<string>(() => {
-  const message = get(error);
-  return message ? t('staking_page.hyperliquid.fetch_failed', { message }) : '';
-});
 </script>
 
 <template>
   <StakingPageLayout
     :title="t('staking.hyperliquid')"
     :asset="HYPE_IDENTIFIER"
-    :error="errorMessage"
+    :failed-addresses="failedAddresses"
     :events-title="t('staking_page.hyperliquid.events')"
     :loading="loading"
     :refresh="refresh"

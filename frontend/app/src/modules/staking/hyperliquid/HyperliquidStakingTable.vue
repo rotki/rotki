@@ -34,6 +34,7 @@ const columns = computed<DataTableColumn<HyperliquidStakingRow>[]>(() => [{
   <RuiDataTable
     dense
     outlined
+    hide-default-footer
     row-attr="address"
     data-testid="hyperliquid-staking-accounts"
     :cols="columns"

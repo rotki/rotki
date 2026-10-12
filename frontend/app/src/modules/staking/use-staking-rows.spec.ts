@@ -1,18 +1,58 @@
+import { runSpecWith } from '@test/utils/mocks/native-task';
 import { withSetup } from '@test/utils/with-setup';
-import { describe, expect, it, vi } from 'vitest';
+import { err, ok } from 'plainfp/result';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useStakingRows } from '@/modules/staking/use-staking-rows';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 
-function setup(fetch: () => Promise<string[]>): ReturnType<typeof useStakingRows<string[], string, number>> {
-  return withSetup(() => useStakingRows<string[], string, number>({
-    fetch,
-    toRows: response => response,
+const runTask = vi.hoisted(() => vi.fn());
+const submitTask = vi.hoisted(() => vi.fn());
+
+vi.mock('@/modules/task-center/use-native-task', () => ({
+  useNativeTask: (): { submitTask: typeof submitTask } => ({ submitTask }),
+}));
+
+const TestResponseSchema = z.object({ failed: z.array(z.string()), rows: z.array(z.string()) });
+
+type TestResponse = z.infer<typeof TestResponseSchema>;
+
+const query = vi.fn<() => Promise<{ taskId: number }>>();
+
+function setup(): ReturnType<typeof useStakingRows<TestResponse, string, number>> {
+  return withSetup(() => useStakingRows<TestResponse, string, number>({
+    parse: result => TestResponseSchema.parse(result),
+    part: ActivityPart.SOLANA,
+    query,
+    toRows: response => response.rows,
     toTotal: rows => rows.length,
   })).result;
 }
 
 describe('modules/staking/useStakingRows', () => {
-  it('should expose the rows of the response and the total derived from them', async () => {
-    const result = setup(vi.fn<() => Promise<string[]>>().mockResolvedValue(['a', 'b']));
+  beforeEach(() => {
+    vi.clearAllMocks();
+    query.mockResolvedValue({ taskId: 1 });
+    submitTask.mockImplementation(runSpecWith(runTask));
+    runTask.mockImplementation(async (task: () => Promise<unknown>) => {
+      await task();
+      return ok({ failed: [], rows: ['a', 'b'] });
+    });
+  });
+
+  it('should submit the query as a staking task identified by its part', async () => {
+    await setup().refresh();
+
+    expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({
+      id: `${ActivityKind.STAKING}:${ActivityPart.SOLANA}`,
+      kind: ActivityKind.STAKING,
+    }));
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('should expose the rows of the task result and the total derived from them', async () => {
+    const result = setup();
 
     await result.refresh();
 
@@ -20,33 +60,38 @@ describe('modules/staking/useStakingRows', () => {
     expect(get(result.total)).toBe(2);
   });
 
-  it('should report a failed query and keep the rows of the last successful one', async () => {
-    const fetch = vi.fn<() => Promise<string[]>>()
-      .mockResolvedValueOnce(['a'])
-      .mockRejectedValueOnce(new Error('api down'));
-    const result = setup(fetch);
+  it('should take the rows from the outcome when the submit joins a run already in flight', async () => {
+    submitTask.mockResolvedValue(ok({ failed: ['0xBad'], rows: ['joined'] }));
+    const result = setup();
 
     await result.refresh();
-    await result.refresh();
 
-    expect(get(result.error)).toBe('api down');
-    expect(get(result.rows)).toEqual(['a']);
+    expect(get(result.rows)).toEqual(['joined']);
+    expect(get(result.failedAddresses)).toEqual(['0xBad']);
+    expect(query).not.toHaveBeenCalled();
   });
 
-  it('should clear a previous error once a query succeeds', async () => {
-    const fetch = vi.fn<() => Promise<string[]>>()
-      .mockRejectedValueOnce(new Error('api down'))
-      .mockResolvedValueOnce([]);
-    const result = setup(fetch);
+  it('should expose the addresses that could not be loaded', async () => {
+    runTask.mockResolvedValue(ok({ failed: ['0xBad'], rows: ['a'] }));
+    const result = setup();
 
     await result.refresh();
+
+    expect(get(result.failedAddresses)).toEqual(['0xBad']);
+  });
+
+  it('should keep the rows of the last successful query when a later one fails', async () => {
+    const result = setup();
     await result.refresh();
 
-    expect(get(result.error)).toBe('');
+    runTask.mockResolvedValue(err(TaskFailed({ message: 'api down' })));
+    await result.refresh();
+
+    expect(get(result.rows)).toEqual(['a', 'b']);
   });
 
   it('should be loading only while a query is in flight', async () => {
-    const result = setup(vi.fn<() => Promise<string[]>>().mockResolvedValue([]));
+    const result = setup();
 
     const pending = result.refresh();
     expect(get(result.loading)).toBe(true);
