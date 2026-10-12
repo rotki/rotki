@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, Nft
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.balances import BlockchainBalancesUpdate
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
+OPENSEA_STOREFRONT = string_to_evm_address('0x495f947276749Ce646f68AC8c248420045cb7b5e')  # ERC1155
 
 
 def _add_nft_module_entry(
@@ -228,15 +229,18 @@ def test_add_and_delete_nft_custom_price(blockchain: ChainsAggregator):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('is_erc1155', [False, True])
 def test_nft_module_excludes_only_its_own_tokens(
         blockchain: ChainsAggregator,
         ethereum_accounts: list[ChecksumEvmAddress],
+        is_erc1155: bool,
 ) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/13295
 
     An NFT queried by the NFT module should only exclude its own ERC721 token from the
     token balance query and not every token of the same collection. A collection level
-    token stays excluded since the NFT module covers the whole collection.
+    token stays excluded since the NFT module covers the whole collection. An ERC1155 NFT
+    has no ERC721 token, so it only excludes the collection level token.
     """
     db = blockchain.database
     penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
@@ -256,7 +260,7 @@ def test_nft_module_excludes_only_its_own_tokens(
         )
         _add_nft_module_entry(
             write_cursor=write_cursor,
-            nft_id=f'_nft_{penguins}_7535',
+            nft_id=f'_nft_{penguins}_7535' + (f'_{user_address}' if is_erc1155 else ''),
             owner_address=user_address,
             usd_price='3',
         )
@@ -264,8 +268,48 @@ def test_nft_module_excludes_only_its_own_tokens(
     with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
         blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
 
-    # the collection token and #7535 are covered by the NFT module, so only #7536 is queried
-    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: [tokens[2]]}
+    # the collection token and the ERC721 #7535 are covered by the NFT module
+    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {
+        user_address: tokens[1:] if is_erc1155 else [tokens[2]],
+    }
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('optimism_accounts', [[TEST_ACC1]])
+def test_nft_module_excludes_no_tokens_of_other_chains(
+        blockchain: ChainsAggregator,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """The NFT module only queries Ethereum NFTs, so its NFTs should not exclude tokens of
+    another chain with the same contract address from that chain's token balance query.
+    """
+    db = blockchain.database
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    tokens = [get_or_create_evm_token(
+        userdb=db,
+        evm_address=penguins,
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in (None, '7535')]
+    with db.user_write() as write_cursor:
+        db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := optimism_accounts[0]),
+            blockchain=SupportedBlockchain.OPTIMISM,
+            tokens=tokens,
+        )
+        _add_nft_module_entry(  # the blockchain of an nfts row is always Ethereum
+            write_cursor=write_cursor,
+            nft_id=f'_nft_{penguins}_7535',
+            owner_address=user_address,
+            usd_price='3',
+        )
+
+    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
+        blockchain.optimism.tokens.query_tokens_for_addresses(addresses=[user_address])
+
+    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -278,7 +322,7 @@ def test_nft_balance_updates_only_its_own_token(
 
     When the balance query adds the NFT module's NFTs, an NFT that is also in the chain
     balances as an ERC721 token should update the value of its own token and not of another
-    token of the same collection.
+    token of the same collection. An ERC1155 NFT has no ERC721 token and is added as is.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
@@ -297,6 +341,12 @@ def test_nft_balance_updates_only_its_own_token(
             owner_address=ethereum_accounts[0],
             usd_price='3',
         )
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=(erc1155_nft_id := f'_nft_{OPENSEA_STOREFRONT}_1_{ethereum_accounts[0]}'),
+            owner_address=ethereum_accounts[0],
+            usd_price='2',
+        )
 
     totals = BalanceSheet()
     totals.assets[other_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(5))
@@ -313,8 +363,20 @@ def test_nft_balance_updates_only_its_own_token(
         assets = rotki.query_balances()['assets']
 
     assert (nft_module := rotki.chains_aggregator.get_module('nfts')) is not None
-    assert assets[nft_token]['value'] == nft_module.get_db_nft_balances(
+    nft_prices = {entry['id']: entry['price'] for entry in nft_module.get_db_nft_balances(
         filter_query=NFTFilterQuery.make(),
-    )['entries'][0]['price']
+    )['entries']}
+    assert assets[nft_token]['value'] == nft_prices[nft_id]
     assert assets[other_token]['value'] == FVal(5)
     assert Asset(nft_id) not in assets
+    assert assets[Asset(erc1155_nft_id)]['value'] == nft_prices[erc1155_nft_id]
+
+
+def test_nft_to_erc721_identifier() -> None:
+    """An ERC721 NFT maps to its ERC721 token. An ERC1155 NFT, whose identifier also has
+    the owner address, has no ERC721 token."""
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    assert Nft(f'_nft_{penguins}_7535').to_erc721_identifier() == (
+        f'eip155:1/erc721:{penguins}/7535'
+    )
+    assert Nft(f'_nft_{OPENSEA_STOREFRONT}_1_{TEST_ACC1}').to_erc721_identifier() is None
