@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, TokenKind
 
@@ -308,6 +309,46 @@ def test_nft_module_excludes_no_tokens_of_other_chains(
 
     with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
         blockchain.optimism.tokens.query_tokens_for_addresses(addresses=[user_address])
+
+    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+def test_disabled_nft_module_excludes_no_tokens(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13340
+
+    The NFTs that a disabled NFT module had stored are not added to the balances anymore,
+    so they should not exclude any token from the token balance query.
+    """
+    db = blockchain.database
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    tokens = [get_or_create_evm_token(
+        userdb=db,
+        evm_address=penguins,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in (None, '7535')]
+    with db.user_write() as write_cursor:
+        db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=tokens,
+        )
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=f'_nft_{penguins}_7535',
+            owner_address=user_address,
+            usd_price='3',
+        )
+        db.set_settings(write_cursor, ModifiableDBSettings(active_modules=[]))
+
+    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
+        blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
 
     assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
 

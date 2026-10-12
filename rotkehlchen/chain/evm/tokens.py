@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -674,6 +675,9 @@ class EvmTokens(ABC):  # noqa: B024
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
         token_exceptions = self._per_chain_token_exceptions()
+        # the NFT module's balances are only added to the balances while it is active, so its
+        # stored NFTs must not hide any token once it is disabled
+        nfts_module_active = 'nfts' in CachedSettings().get_settings().active_modules
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -692,16 +696,17 @@ class EvmTokens(ABC):  # noqa: B024
                 # tokens of its collection which the NFT module may not report.
                 nft_token_ids: set[str] = set()
                 nft_contracts: set[ChecksumEvmAddress] = set()
-                for row in cursor.execute(
-                    'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
-                    (address,),
-                ):
-                    if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
-                        continue
+                if nfts_module_active:
+                    for row in cursor.execute(
+                        'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
+                        (address,),
+                    ):
+                        if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                            continue
 
-                    nft_contracts.add((nft := Nft(row[0])).evm_address)
-                    if (nft_token_id := nft.to_erc721_identifier()) is not None:
-                        nft_token_ids.add(nft_token_id)
+                        nft_contracts.add((nft := Nft(row[0])).evm_address)
+                        if (nft_token_id := nft.to_erc721_identifier()) is not None:
+                            nft_token_ids.add(nft_token_id)
 
                 token_list = [
                     x for x in saved_list

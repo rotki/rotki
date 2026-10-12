@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13340` After you disable the NFT module, the NFTs that token detection found for your accounts show up in balances and snapshots again. Before, disabling the module hid them until it was turned back on.
 * :bug:`13345` ZKSync Lite transaction history is now fully fetched for every tracked address. Before, an address could be skipped when another tracked address had a newer transaction, leaving its older transactions and events missing.
 * :bug:`13295` NFTs that the NFT module does not report now show up in balances and snapshots when another NFT of the same collection is reported.
 * :bug:`13329` Jupiter swaps from native SOL that fund the temporary wrapped SOL account in a single transfer no longer count the swapped SOL twice. Before, the funding transfer was kept as an extra SOL spend next to the swap.
