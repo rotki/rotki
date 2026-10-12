@@ -3,7 +3,7 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { SolanaStakeAccountRow } from '@/modules/staking/solana/use-solana-stake-accounts';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { SOL_IDENTIFIER } from '@/modules/staking/solana/constants';
+import { SOL_IDENTIFIER, SOLANA_LOCATION } from '@/modules/staking/solana/constants';
 
 const { rows, loading } = defineProps<{
   rows: SolanaStakeAccountRow[];
@@ -42,20 +42,20 @@ const columns = computed<DataTableColumn<SolanaStakeAccountRow>[]>(() => [{
     <template #item.address="{ row }">
       <HashLink
         :text="row.address"
-        location="solana"
+        :location="SOLANA_LOCATION"
       />
     </template>
     <template #item.owner="{ row }">
       <HashLink
         :text="row.owner"
-        location="solana"
+        :location="SOLANA_LOCATION"
       />
     </template>
     <template #item.validator="{ row }">
       <HashLink
         v-if="row.validator"
         :text="row.validator"
-        location="solana"
+        :location="SOLANA_LOCATION"
       />
       <span
         v-else

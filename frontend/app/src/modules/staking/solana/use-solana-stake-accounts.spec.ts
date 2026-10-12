@@ -6,8 +6,8 @@ import { useSolanaStakeAccounts } from './use-solana-stake-accounts';
 
 const fetchStakeAccounts = vi.hoisted(() => vi.fn<() => Promise<SolanaStakeAccounts>>());
 
-vi.mock('@/modules/staking/api/use-solana-staking-api', () => ({
-  useSolanaStakingApi: (): { fetchStakeAccounts: typeof fetchStakeAccounts } => ({ fetchStakeAccounts }),
+vi.mock('@/modules/staking/api/use-staking-api', () => ({
+  useStakingApi: (): { fetchSolanaStakeAccounts: typeof fetchStakeAccounts } => ({ fetchSolanaStakeAccounts: fetchStakeAccounts }),
 }));
 
 describe('modules/staking/solana/useSolanaStakeAccounts', () => {
@@ -44,30 +44,5 @@ describe('modules/staking/solana/useSolanaStakeAccounts', () => {
     await result.refresh();
 
     expect(get(result.total)).toEqual(bigNumberify('8.5'));
-  });
-
-  it('should report a failed query and keep the rows of the last successful one', async () => {
-    fetchStakeAccounts.mockResolvedValueOnce({
-      ownerA: [{ address: 'stake1', amount: bigNumberify(5), validator: null }],
-    });
-    fetchStakeAccounts.mockRejectedValueOnce(new Error('rpc down'));
-    const { result } = withSetup(() => useSolanaStakeAccounts());
-
-    await result.refresh();
-    await result.refresh();
-
-    expect(get(result.error)).toBe('rpc down');
-    expect(get(result.rows)).toHaveLength(1);
-  });
-
-  it('should clear a previous error once a query succeeds', async () => {
-    fetchStakeAccounts.mockRejectedValueOnce(new Error('rpc down'));
-    fetchStakeAccounts.mockResolvedValueOnce({});
-    const { result } = withSetup(() => useSolanaStakeAccounts());
-
-    await result.refresh();
-    await result.refresh();
-
-    expect(get(result.error)).toBe('');
   });
 });

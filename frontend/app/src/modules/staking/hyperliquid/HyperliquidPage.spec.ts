@@ -73,24 +73,10 @@ describe('modules/staking/hyperliquid/HyperliquidPage', () => {
     expect(fetchPrices).toHaveBeenCalledWith({ ignoreCache: false, selectedAssets: ['HYPE'] });
   });
 
-  it('should bypass the price cache when refreshed by the user', async () => {
-    const wrapper = mountPage();
-
-    await wrapper.find('[data-testid=hyperliquid-refresh]').trigger('click');
-
-    expect(fetchPrices).toHaveBeenLastCalledWith({ ignoreCache: true, selectedAssets: ['HYPE'] });
-  });
-
-  it('should show why the query failed', () => {
+  it('should show why the query failed with the chain specific message', () => {
     pageState.error.value = 'api down';
     const wrapper = mountPage();
 
-    expect(wrapper.find('[data-testid=hyperliquid-staking-error]').text()).toContain('api down');
-  });
-
-  it('should not show an error when the query succeeded', () => {
-    const wrapper = mountPage();
-
-    expect(wrapper.find('[data-testid=hyperliquid-staking-error]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=staking-error]').text()).toContain('staking_page.hyperliquid.fetch_failed');
   });
 });

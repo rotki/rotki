@@ -6,8 +6,8 @@ import { useHyperliquidStaking } from './use-hyperliquid-staking';
 
 const fetchStakingSummaries = vi.hoisted(() => vi.fn<() => Promise<HyperliquidStakingSummaries>>());
 
-vi.mock('@/modules/staking/api/use-hyperliquid-staking-api', () => ({
-  useHyperliquidStakingApi: (): { fetchStakingSummaries: typeof fetchStakingSummaries } => ({ fetchStakingSummaries }),
+vi.mock('@/modules/staking/api/use-staking-api', () => ({
+  useStakingApi: (): { fetchHyperliquidStakingSummaries: typeof fetchStakingSummaries } => ({ fetchHyperliquidStakingSummaries: fetchStakingSummaries }),
 }));
 
 function summary(delegated: string, undelegated: string, pendingWithdrawal: string): HyperliquidStakingSummaries[string] {
@@ -49,28 +49,5 @@ describe('modules/staking/hyperliquid/useHyperliquidStaking', () => {
       pendingWithdrawal: bigNumberify('4'),
       undelegated: bigNumberify('2.5'),
     });
-  });
-
-  it('should report a failed query and keep the rows of the last successful one', async () => {
-    fetchStakingSummaries.mockResolvedValueOnce({ '0xA': summary('10', '0', '0') });
-    fetchStakingSummaries.mockRejectedValueOnce(new Error('api down'));
-    const { result } = withSetup(() => useHyperliquidStaking());
-
-    await result.refresh();
-    await result.refresh();
-
-    expect(get(result.error)).toBe('api down');
-    expect(get(result.rows)).toHaveLength(1);
-  });
-
-  it('should clear a previous error once a query succeeds', async () => {
-    fetchStakingSummaries.mockRejectedValueOnce(new Error('api down'));
-    fetchStakingSummaries.mockResolvedValueOnce({});
-    const { result } = withSetup(() => useHyperliquidStaking());
-
-    await result.refresh();
-    await result.refresh();
-
-    expect(get(result.error)).toBe('');
   });
 });

@@ -3,6 +3,8 @@ import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 
 export const SOL_IDENTIFIER = 'SOL';
 
+export const SOLANA_LOCATION = 'solana';
+
 const CPT_SOLANA_STAKE = 'solana-stake';
 
 /**

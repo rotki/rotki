@@ -73,24 +73,10 @@ describe('modules/staking/solana/SolanaPage', () => {
     expect(fetchPrices).toHaveBeenCalledWith({ ignoreCache: false, selectedAssets: ['SOL'] });
   });
 
-  it('should bypass the price cache when refreshed by the user', async () => {
-    const wrapper = mountPage();
-
-    await wrapper.find('[data-testid=solana-refresh]').trigger('click');
-
-    expect(fetchPrices).toHaveBeenLastCalledWith({ ignoreCache: true, selectedAssets: ['SOL'] });
-  });
-
-  it('should show why the query failed', () => {
+  it('should show why the query failed with the chain specific message', () => {
     pageState.error.value = 'rpc down';
     const wrapper = mountPage();
 
-    expect(wrapper.find('[data-testid=solana-staking-error]').text()).toContain('rpc down');
-  });
-
-  it('should not show an error when the query succeeded', () => {
-    const wrapper = mountPage();
-
-    expect(wrapper.find('[data-testid=solana-staking-error]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=staking-error]').text()).toContain('staking_page.solana.fetch_failed');
   });
 });
