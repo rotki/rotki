@@ -57,8 +57,10 @@ const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, 
     [Part.IMPORT]: msg.$t('task_center.activity.pnl_report.import'),
   },
   [Kind.STAKING]: {
+    [Part.HYPERLIQUID]: msg.$t('task_center.activity.staking.hyperliquid'),
     [Part.KRAKEN]: msg.$t('task_center.activity.staking.kraken'),
     [Part.PERFORMANCE]: msg.$t('task_center.activity.staking.performance'),
+    [Part.SOLANA]: msg.$t('task_center.activity.staking.solana'),
     [Part.VALIDATORS]: msg.$t('task_center.activity.staking.validators'),
   },
 };

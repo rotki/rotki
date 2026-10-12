@@ -255,7 +255,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     log.error(f'Failed to call solana node {node_info.name} due to {e}')
 
         log.error(f'Tried all solana nodes in {call_order} for {method} but did not get any response')  # noqa: E501
-        raise RemoteError(f'Failed to get {method}')
+        raise RemoteError('Could not get a response from any connected solana node')
 
     def get_raw_account_info(self, pubkey: Pubkey) -> bytes:
         """Query the raw account info for the given pubkey.
@@ -428,17 +428,24 @@ class SolanaInquirer(SolanaRPCMixin):
         Uses getProgramAccounts with a memcmp filter on the withdrawer field (offset 44).
         May raise RemoteError if there is a problem with querying the external service.
         """
-        response = self.query(
-            method=lambda client: client.get_program_accounts(
-                pubkey=STAKE_PROGRAM_ID,
-                filters=[MemcmpOpts(offset=STAKE_ACCOUNT_WITHDRAWER_OFFSET, bytes=owner)],
-            ),
-            only_program_accounts_nodes=True,
-        )
+        try:
+            response = self.query(
+                method=lambda client: client.get_program_accounts(
+                    pubkey=STAKE_PROGRAM_ID,
+                    filters=[MemcmpOpts(offset=STAKE_ACCOUNT_WITHDRAWER_OFFSET, bytes=owner)],
+                ),
+                only_program_accounts_nodes=True,
+            )
+        except RemoteError as e:
+            raise RemoteError(
+                'Could not query the solana stake accounts. This requires a connected RPC '
+                'node that supports getProgramAccounts, such as one using a Helius API key.',
+            ) from e
         stake_accounts = []
         for keyed_account in response.value:
             try:
                 stake_accounts.append(deserialize_stake_account(
+                    address=SolanaAddress(str(keyed_account.pubkey)),
                     account_data=keyed_account.account.data,
                     lamports=keyed_account.account.lamports,
                 ))

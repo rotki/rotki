@@ -92,3 +92,29 @@ const LidoCsmNodeOperatorSchema = LidoCsmNodeOperatorPayloadSchema.extend({
 export type LidoCsmNodeOperator = z.infer<typeof LidoCsmNodeOperatorSchema>;
 
 export const LidoCsmNodeOperatorListSchema = z.array(LidoCsmNodeOperatorSchema);
+
+const SolanaStakeAccountSchema = z.object({
+  address: z.string(),
+  amount: NumericString,
+  validator: z.string().nullable(),
+});
+
+export type SolanaStakeAccount = z.infer<typeof SolanaStakeAccountSchema>;
+
+export const SolanaStakeAccountsSchema = z.object({
+  accounts: z.record(z.string(), z.array(SolanaStakeAccountSchema)),
+  failed: z.array(z.string()),
+});
+
+const HyperliquidStakingSummarySchema = z.object({
+  delegated: NumericString,
+  pendingWithdrawal: NumericString,
+  undelegated: NumericString,
+});
+
+export type HyperliquidStakingSummary = z.infer<typeof HyperliquidStakingSummarySchema>;
+
+export const HyperliquidStakingSummariesSchema = z.object({
+  accounts: z.record(z.string(), HyperliquidStakingSummarySchema),
+  failed: z.array(z.string()),
+});

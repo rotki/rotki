@@ -1,5 +1,6 @@
 import json
 import sys
+from abc import ABC, abstractmethod
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
@@ -725,6 +726,24 @@ class LocationLabelsResource(BaseMethodView):
         return self.rest_api.get_location_labels()
 
 
+class AsyncQueryResource(BaseMethodView, ABC):
+    """A logged-in GET endpoint whose only argument is `async_query`.
+
+    Subclasses implement `query` by calling the matching RestAPI method.
+    """
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.query(async_query=async_query)
+
+    @abstractmethod
+    def query(self, async_query: bool) -> Response:
+        ...
+
+
 class BlockchainTransactionsResource(BaseMethodView):
     delete_schema = BlockchainTransactionDeletionSchema()
 
@@ -780,21 +799,15 @@ class BlockchainTransactionsResource(BaseMethodView):
         return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_ref=tx_ref)  # type: ignore[arg-type] # schema ensures chain is included when tx_ref is present.
 
 
-class EvmTransactionsStatusResource(BaseMethodView):
-    get_schema = AsyncQueryArgumentSchema()
+class EvmTransactionsStatusResource(AsyncQueryResource):
 
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
+    def query(self, async_query: bool) -> Response:
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
 
 
-class LatestBlockchainTransactionTimestampsResource(BaseMethodView):
-    get_schema = AsyncQueryArgumentSchema()
+class LatestBlockchainTransactionTimestampsResource(AsyncQueryResource):
 
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
+    def query(self, async_query: bool) -> Response:
         return self.rest_api.get_latest_transaction_timestamps(async_query=async_query)
 
 
@@ -821,12 +834,9 @@ class EvmTransactionLookupResource(BaseMethodView):
         )
 
 
-class HistoryStatusSummaryResource(BaseMethodView):
-    get_schema = AsyncQueryArgumentSchema()
+class HistoryStatusSummaryResource(AsyncQueryResource):
 
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
+    def query(self, async_query: bool) -> Response:
         return self.rest_api.get_history_status_summary(async_query=async_query)
 
 
@@ -873,13 +883,9 @@ class TransactionsDecodingResource(BaseMethodView):
         return self.rest_api.get_count_transactions_not_decoded(async_query=async_query)
 
 
-class EthereumAirdropsResource(BaseMethodView):
+class EthereumAirdropsResource(AsyncQueryResource):
 
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
+    def query(self, async_query: bool) -> Response:
         return self.rest_api.get_airdrops(async_query=async_query)
 
 
@@ -2313,6 +2319,18 @@ class DataImportResource(BaseMethodView):
             async_query=async_query,
             **kwargs,
         )
+
+
+class SolanaStakeAccountsResource(AsyncQueryResource):
+
+    def query(self, async_query: bool) -> Response:
+        return self.rest_api.get_solana_stake_accounts(async_query=async_query)
+
+
+class HyperliquidStakingSummariesResource(AsyncQueryResource):
+
+    def query(self, async_query: bool) -> Response:
+        return self.rest_api.get_hyperliquid_staking_summaries(async_query=async_query)
 
 
 class Eth2ValidatorsResource(BaseMethodView):

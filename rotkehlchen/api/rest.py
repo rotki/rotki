@@ -79,6 +79,7 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     WeightedNode,
 )
+from rotkehlchen.chain.solana.utils import lamports_to_sol
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -295,6 +296,22 @@ def _wrap_in_ok_result(result: Any, status_code: HTTPStatus | None = None) -> di
     if status_code:
         result['status_code'] = status_code
     return result
+
+
+def _wrap_remote_query[T](
+        query: Callable[[], T],
+        serialize: Callable[[T], Any],
+) -> dict[str, Any]:
+    """Run a query against an external service and wrap its serialized result.
+
+    A RemoteError is returned as a bad gateway failure result.
+    """
+    try:
+        result = query()
+    except RemoteError as e:
+        return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+
+    return _wrap_in_ok_result(serialize(result))
 
 
 def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
@@ -2299,6 +2316,45 @@ class RestAPI:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         return {'result': process_result(result), 'message': ''}
+
+    @async_api_call()
+    def get_solana_stake_accounts(self) -> dict[str, Any]:
+        """Return the stake accounts of every tracked solana address, grouped by owner."""
+        return _wrap_remote_query(
+            query=lambda: self.rotkehlchen.chains_aggregator.solana.get_stake_accounts_by_owner(
+                accounts=self.rotkehlchen.chains_aggregator.accounts.solana,
+            ),
+            serialize=lambda queried: {
+                'accounts': {
+                    owner: [{
+                        'address': stake_account.address,
+                        'amount': lamports_to_sol(stake_account.lamports),
+                        'validator': stake_account.voter,
+                    } for stake_account in owner_stake_accounts]
+                    for owner, owner_stake_accounts in queried[0].items()
+                },
+                'failed': queried[1],
+            },
+        )
+
+    @async_api_call()
+    def get_hyperliquid_staking_summaries(self) -> dict[str, Any]:
+        """Return the core staking account of every tracked hyperliquid address by state."""
+        return _wrap_remote_query(
+            query=lambda: self.rotkehlchen.chains_aggregator.hyperliquid.query_staking_summaries(
+                addresses=self.rotkehlchen.chains_aggregator.accounts.hyperliquid,
+            ),
+            serialize=lambda queried: {
+                'accounts': {
+                    address: {
+                        'delegated': summary.delegated,
+                        'undelegated': summary.undelegated,
+                        'pending_withdrawal': summary.pending_withdrawal,
+                    } for address, summary in queried[0].items()
+                },
+                'failed': queried[1],
+            },
+        )
 
     @async_api_call()
     def get_eth2_validators(

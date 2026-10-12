@@ -80,6 +80,7 @@ class StakeAccountInfo(NamedTuple):
     """Parsed stake account information from the Solana Stake Program.
     https://github.com/solana-labs/solana/blob/master/sdk/program/src/stake/state.rs
     """
+    address: SolanaAddress  # the address of the stake account itself
     lamports: int  # total lamports in the stake account (from account info, not data)
     staker: SolanaAddress
     withdrawer: SolanaAddress
@@ -281,7 +282,11 @@ def deserialize_solana_instruction_from_rpc(
     )
 
 
-def deserialize_stake_account(account_data: bytes, lamports: int) -> StakeAccountInfo:
+def deserialize_stake_account(
+        address: SolanaAddress,
+        account_data: bytes,
+        lamports: int,
+) -> StakeAccountInfo:
     """Deserializes stake account data from the Solana Stake Program.
 
     Stake account layout:
@@ -314,6 +319,7 @@ def deserialize_stake_account(account_data: bytes, lamports: int) -> StakeAccoun
         voter = bytes_to_solana_address(account_data[124:156])
 
     return StakeAccountInfo(
+        address=address,
         lamports=lamports,
         staker=staker,
         withdrawer=withdrawer,

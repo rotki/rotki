@@ -10,7 +10,11 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.manager import ChainManagerWithNodesMixin, ChainManagerWithTransactions
 from rotkehlchen.chain.solana.rpc import Pubkey
-from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
+from rotkehlchen.chain.solana.utils import (
+    StakeAccountInfo,
+    deserialize_token_account,
+    lamports_to_sol,
+)
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
@@ -99,6 +103,34 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         staked_balance = lamports_to_sol(total_lamports)
         log.debug('Found %s stake accounts for %s with total staked balance %s SOL', len(stake_accounts), account, staked_balance)  # noqa: E501
         return staked_balance
+
+    def get_stake_accounts_by_owner(
+            self,
+            accounts: Sequence[SolanaAddress],
+    ) -> tuple[dict[SolanaAddress, list[StakeAccountInfo]], list[SolanaAddress]]:
+        """Query the stake accounts of each of the given accounts, keeping only the
+        accounts that have any.
+
+        An account whose query fails is logged and skipped. Returns the stake accounts by
+        owner and the accounts that failed. RemoteError is raised only if the query failed
+        for every one of the given accounts.
+        """
+        result: dict[SolanaAddress, list[StakeAccountInfo]] = {}
+        failed: list[SolanaAddress] = []
+        for account in accounts:
+            try:
+                stake_accounts = self.node_inquirer.get_stake_accounts(owner=account)
+            except RemoteError as e:
+                log.error('Failed to query solana stake accounts of %s due to %s', account, e)
+                failed.append(account)
+                if len(failed) == len(accounts):
+                    raise
+                continue
+
+            if stake_accounts:
+                result[account] = stake_accounts
+
+        return result, failed
 
     def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:
         """Query the token balances of the given account.

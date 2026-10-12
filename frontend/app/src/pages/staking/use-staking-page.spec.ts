@@ -18,6 +18,8 @@ vi.mock('@/pages/staking/staking-pages', () => ({
     'kraken': { name: 'KrakenPage' },
     'lido-csm': { name: 'LidoCsmPage' },
     'liquity': { name: 'LiquityPage' },
+    'solana': { name: 'SolanaPage' },
+    'hyperliquid': { name: 'HyperliquidPage' },
   },
 }));
 
@@ -136,11 +138,11 @@ describe('pages/staking/useStakingPage', () => {
     });
   });
 
-  it('should offer the four staking locations with their images', async () => {
+  it('should offer the six staking locations with their images', async () => {
     const { staking } = setup('');
     await flushPromises();
 
-    expect(get(staking).map(item => item.id)).toEqual(['eth2', 'liquity', 'kraken', 'lido-csm']);
+    expect(get(staking).map(item => item.id)).toEqual(['eth2', 'liquity', 'kraken', 'lido-csm', 'hyperliquid', 'solana']);
     expect(get(staking)[0].image).toBe('/images/protocols/ethereum.svg');
   });
 

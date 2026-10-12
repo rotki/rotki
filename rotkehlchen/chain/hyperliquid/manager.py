@@ -16,7 +16,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -146,6 +146,36 @@ class HyperliquidManager(EvmManager):
                 )
 
         return balances
+
+    @staticmethod
+    def query_staking_summaries(
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> tuple[dict[ChecksumEvmAddress, StakingSummary], list[ChecksumEvmAddress]]:
+        """Query the core staking account of each address, keeping only the non-empty ones.
+
+        An address whose query fails is logged and skipped. Returns the summaries by address
+        and the addresses that failed.
+
+        May raise:
+            - RemoteError if the query failed for every one of the given addresses
+        """
+        api = HyperliquidAPI()
+        summaries: dict[ChecksumEvmAddress, StakingSummary] = {}
+        failed: list[ChecksumEvmAddress] = []
+        for address in addresses:
+            try:
+                summary = api.query_staking_summary(address=address)
+            except RemoteError as e:
+                log.error('Failed to query Hyperliquid staking of %s due to %s', address, e)
+                failed.append(address)
+                if len(failed) == len(addresses):
+                    raise
+                continue
+
+            if summary.total != ZERO:
+                summaries[address] = summary
+
+        return summaries, failed
 
     @staticmethod
     def _add_core_staking_balance(
