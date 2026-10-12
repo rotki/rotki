@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.chain.zksync_lite.structures import (
@@ -18,11 +19,17 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
-from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -131,6 +138,91 @@ def test_fetch_transactions(zksync_lite_manager):
         amount=FVal(6.626770825),
         fee=FVal(0.00367),
     )
+
+
+def test_fetch_transactions_tracks_address_sync(zksync_lite_manager):
+    """An address needs a full sync even if a transaction involving it already exists."""
+    address_b = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    shared_tx_hash = deserialize_evm_tx_hash('0x' + '1' * 64)
+    with zksync_lite_manager.database.conn.write_ctx() as write_cursor:
+        zksync_lite_manager.database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ZKSYNC_LITE,
+                address=address_b,
+            )],
+        )
+        for _ in range(2):  # saving an already saved transaction again is a noop
+            zksync_lite_manager._add_zksynctxs_db(
+                write_cursor=write_cursor,
+                transactions=[ZKSyncLiteTransaction(
+                    tx_hash=shared_tx_hash,
+                    tx_type=ZKSyncLiteTXType.SWAP,
+                    timestamp=Timestamp(2),
+                    block_number=2,
+                    from_address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+                    to_address=address_b,
+                    asset=A_ETH,
+                    amount=ONE,
+                    fee=None,
+                    swap_data=ZKSyncLiteSwapData(from_asset=A_ETH, from_amount=ONE, to_asset=A_DAI, to_amount=FVal(3000)),  # noqa: E501
+                )],
+            )
+        for table in ('zksynclite_transactions', 'zksynclite_swaps'):
+            assert write_cursor.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0] == 1
+
+    with patch.object(
+            zksync_lite_manager,
+            '_query_and_save_transactions_from_hash',
+    ) as query_mock:
+        zksync_lite_manager.fetch_transactions(address_b)
+        query_mock.assert_called_once_with(
+            address=address_b,
+            from_hash='latest',
+            direction='older',
+        )
+        with zksync_lite_manager.database.conn.read_ctx() as cursor:
+            assert zksync_lite_manager.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+                address=address_b,
+            ) == 1
+
+        query_mock.reset_mock()
+        zksync_lite_manager.fetch_transactions(address_b)
+        query_mock.assert_not_called()
+
+
+def test_failed_fetch_does_not_mark_zksync_lite_history_synced(zksync_lite_manager):
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    with patch.object(
+            zksync_lite_manager,
+            '_query_and_save_transactions_from_hash',
+            side_effect=RemoteError('Failed to query ZKSync Lite'),
+    ):
+        zksync_lite_manager.fetch_transactions(address)
+
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
+        assert zksync_lite_manager.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=address,
+        ) is None
+
+
+def test_fetch_for_removed_address_does_not_mark_zksync_lite_history_synced(zksync_lite_manager):
+    """An address removed while its history is fetched must be fully synced if re-added."""
+    with patch.object(zksync_lite_manager, '_query_and_save_transactions_from_hash'):
+        zksync_lite_manager.fetch_transactions(
+            address := string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
+        )
+
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
+        assert zksync_lite_manager.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=address,
+        ) is None
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

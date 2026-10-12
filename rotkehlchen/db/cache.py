@@ -59,7 +59,7 @@ class LabeledLocationIdArgsType(LabeledLocationArgsType):
 
 
 class AddressArgType(TypedDict):
-    """Type of kwargs, used to get the value of following `WITHDRAWALS_TS`, `WITHDRAWALS_IDX`, `LAST_BTC_TX_BLOCK`, `LAST_BCH_TX_BLOCK` and `SOLANA_TOKEN_ACCOUNT`"""  # noqa: E501
+    """Type of kwargs for dynamic caches keyed by a blockchain address."""
     address: ChecksumEvmAddress | BTCAddress | SolanaAddress
 
 
@@ -130,6 +130,7 @@ class DBCacheDynamic(Enum):
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
     ZKSYNC_LITE_BALANCES_CLAIMED: Final = 'zksync_lite_balances_claimed_{address}', _deserialize_int_from_str  # noqa: E501
     ZKSYNC_LITE_ELIGIBILITY: Final = 'zksync_lite_eligibility_{address}', lambda x: x
+    ZKSYNC_LITE_HISTORY_SYNCED: Final = 'zksync_lite_history_synced_{address}', _deserialize_int_from_str  # noqa: E501
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
     CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
     LAST_BLOCKCHAIN_BALANCES_QUERY_TS: Final = (

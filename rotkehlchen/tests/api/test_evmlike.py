@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE, ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -232,6 +233,14 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: APIServer) -> None:
 
     assert list(rotki.chains_aggregator.accounts.zksync_lite) == [addy_0, addy_1]
 
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            value=1,
+            address=addy_0,
+        )
+
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
@@ -239,6 +248,12 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: APIServer) -> None:
     ), json={'accounts': [addy_0]})
     assert_proper_response(response)
     assert rotki.chains_aggregator.accounts.zksync_lite == (addy_1,)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=addy_0,
+        ) is None
 
     response = requests.put(api_url_for(  # add non-checksummed evm address
         rotkehlchen_api_server,
