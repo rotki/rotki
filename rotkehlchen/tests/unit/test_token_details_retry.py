@@ -196,17 +196,20 @@ def test_partial_details_keep_the_token_retryable(
 
     assert _details(token) == (token.identifier, '', 6)
     assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == [
-        (token.identifier, ChainID.ETHEREUM, token.evm_address),
+        (token.identifier, ChainID.ETHEREUM, token.evm_address, (token.identifier, None, 6)),
     ]
 
 
 @pytest.mark.parametrize('marked', [False, True])
+@pytest.mark.parametrize('keep_name', [False, True])
 def test_token_changed_while_querying_is_not_overwritten(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         marked: bool,
+        keep_name: bool,
 ) -> None:
-    """A user edit or asset update that happens while the details are queried wins"""
+    """A user edit or asset update that happens while the details are queried wins, also
+    when it keeps the name and only changes the symbol and decimals"""
     if marked:  # created with fallbacks after a failed query
         with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
             token = get_or_create_evm_token(
@@ -222,10 +225,12 @@ def test_token_changed_while_querying_is_not_overwritten(
     else:
         token = _create_placeholder(database, 1)
 
+    name = _details(token)[0] if keep_name else 'User Name'
+
     def edit_while_querying(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
         edit_token_and_clean_cache(
             token=EvmToken(token.identifier),
-            name='User Name',
+            name=name,
             symbol='USR',
             decimals=8,
             started=None,
@@ -236,7 +241,7 @@ def test_token_changed_while_querying_is_not_overwritten(
     chains_aggregator, _ = _chains_aggregator(database=database, infos=edit_while_querying)
     retry_missing_token_details(chains_aggregator)
 
-    assert _details(token) == ('User Name', 'USR', 8)
+    assert _details(token) == (name, 'USR', 8)
     assert _marks() == {}  # nothing to retry, the token was fixed by someone else
 
 

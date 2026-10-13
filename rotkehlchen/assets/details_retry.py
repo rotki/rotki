@@ -44,6 +44,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 # retries that can find the details incomplete before the token is left as it is
 TOKEN_DETAILS_RETRY_MAX_ATTEMPTS: Final = 5
+# (name, symbol, decimals) of a token as saved in the global DB
+TokenDetails = tuple[str | None, str | None, int]
 
 
 class TokenDetailsRetryMark(NamedTuple):
@@ -141,6 +143,29 @@ def remove_token_details_retry_mark(chain_id: ChainID, address: ChecksumEvmAddre
             'DELETE FROM unique_cache WHERE key=?',
             (compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),),
         )
+
+
+def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
+    """Never query again the details of a token, since the user edited them. The token is
+    moved to the given up key, which also keeps it out of the tokens picked for having their
+    identifier as name. The transactions recorded for it are kept.
+
+    Returns whether the token was marked to be retried, which means its events may have
+    amounts calculated with details that were not the right ones.
+    """
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM unique_cache WHERE key=?',
+            (compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),),
+        )
+        was_marked = write_cursor.rowcount != 0
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
+            value=_serialize_mark(attempts=0, saved=None),
+        )
+
+    return was_marked
 
 
 def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:

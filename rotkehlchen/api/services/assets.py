@@ -27,6 +27,10 @@ from rotkehlchen.assets.asset import (
     EvmToken,
     SolanaToken,
 )
+from rotkehlchen.assets.details_retry import (
+    record_token_retry_txs_of_asset,
+    stop_token_details_retry,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetFlag, AssetType
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -288,6 +292,17 @@ class AssetsService:
             GlobalDBHandler.edit_user_asset(asset)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        if isinstance(asset, EvmToken) and stop_token_details_retry(  # keep what the user saved
+            chain_id=asset.chain_id,
+            address=asset.evm_address,
+        ):  # the events of a marked token may have used wrong decimals, so redecode them
+            record_token_retry_txs_of_asset(
+                database=self.rotkehlchen.data.db,
+                chain_id=asset.chain_id,
+                address=asset.evm_address,
+                identifier=asset.identifier,
+            )
 
         AssetResolver.clean_memory_cache(asset.identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)

@@ -1,12 +1,18 @@
 from copy import deepcopy
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.details_retry import (
+    get_token_details_retry_marks,
+    mark_token_details_retry,
+)
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -17,6 +23,7 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tasks.assets import _get_tokens_missing_details
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -799,3 +806,44 @@ def test_adding_evm_token_with_underlying_token(
             'weight': '50',
         },
     ]
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('marked', [False, True])
+def test_editing_token_stops_details_retry(
+        rotkehlchen_api_server: APIServer,
+        marked: bool,
+) -> None:
+    """A token edited by the user keeps what the user saved, even if its name is still its
+    identifier, instead of being replaced by queried details. The events of a token that was
+    marked may have amounts of wrong decimals, so its transactions are redecoded."""
+    token = get_or_create_evm_token(
+        userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+    )
+    if marked:
+        mark_token_details_retry(
+            chain_id=ChainID.ETHEREUM,
+            address=token.evm_address,
+            saved=(token.identifier, '', 18),
+        )
+    assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == [
+        (token.identifier, ChainID.ETHEREUM, token.evm_address, (token.identifier, None, 18)),
+    ]
+
+    edited: dict[str, Any] = token.to_dict()
+    del edited['identifier']
+    del edited['forked']
+    edited['symbol'], edited['decimals'] = 'USR', 8
+    with patch('rotkehlchen.api.services.assets.record_token_retry_txs_of_asset') as record_txs:
+        assert_proper_response(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=edited,
+        ))
+
+    assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == []
+    assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
+    assert record_txs.call_count == (1 if marked else 0)
+    if marked:
+        assert record_txs.call_args.kwargs['identifier'] == token.identifier

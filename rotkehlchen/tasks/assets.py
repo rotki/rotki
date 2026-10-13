@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
+    TokenDetails,
     TokenDetailsRetryMark,
     TokenRetryTx,
     count_token_details_retry_attempt,
@@ -302,28 +303,34 @@ def _batch_query_properties(
 def _get_tokens_missing_details(
         chain_ids: Sequence[ChainID],
         after_identifier: str,
-) -> list[tuple[str, ChainID, ChecksumEvmAddress]]:
+) -> list[tuple[str, ChainID, ChecksumEvmAddress, TokenDetails]]:
     """Get up to TOKEN_DETAILS_RETRY_BATCH_SIZE erc20 tokens of the given chains whose name is
     their identifier, which is what is saved when the details could not be queried, or NULL,
     which older versions saved when repairing them failed. Both show the identifier as name.
-    Tokens are returned ordered by identifier, starting after the given one.
+    Tokens are returned ordered by identifier, starting after the given one, with the details
+    they have now so that a change while their details are queried can be detected.
     """
     if len(chain_ids) == 0:
         return []
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         return [
-            (identifier, ChainID.deserialize_from_db(chain), address)
-            for identifier, chain, address in cursor.execute(
-                'SELECT A.identifier, B.chain, B.address FROM assets AS A JOIN evm_tokens AS B '
-                'ON A.identifier=B.identifier WHERE (A.name IS NULL OR A.name=A.identifier) '
+            (identifier, ChainID.deserialize_from_db(chain), address, (name, symbol, decimals))
+            for identifier, chain, address, name, symbol, decimals in cursor.execute(
+                'SELECT A.identifier, B.chain, B.address, A.name, C.symbol, B.decimals FROM '
+                'assets AS A JOIN evm_tokens AS B ON A.identifier=B.identifier LEFT JOIN '
+                'common_asset_details AS C ON C.identifier=A.identifier '
+                'WHERE (A.name IS NULL OR A.name=A.identifier) '
                 'AND B.token_kind=? '
                 'AND B.protocol IS NOT ? AND A.identifier>? '
+                # tokens edited by the user or given up are left as they are
+                'AND NOT EXISTS (SELECT 1 FROM unique_cache WHERE key=? || B.chain || B.address) '
                 f"AND B.chain IN ({','.join('?' * len(chain_ids))}) ORDER BY A.identifier LIMIT ?",
                 (
                     TokenKind.ERC20.serialize_for_db(),
                     SPAM_PROTOCOL,
                     after_identifier,
+                    CacheType.TOKEN_DETAILS_GIVEN_UP.serialize(),
                     *(chain_id.serialize_for_db() for chain_id in chain_ids),
                     TOKEN_DETAILS_RETRY_BATCH_SIZE,
                 ),
@@ -350,7 +357,7 @@ def _drop_spam_token_marks(marks: list[TokenDetailsRetryMark]) -> list[TokenDeta
     return [mark for mark in marks if mark.address not in spam_addresses]
 
 
-def _get_saved_token_details(identifier: str) -> tuple[str | None, str | None, int] | None:
+def _get_saved_token_details(identifier: str) -> TokenDetails | None:
     """Read the name, symbol and decimals of a token from the global DB, so that what is
     checked is not an older version of the token kept in memory. None if it does not exist."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -368,13 +375,14 @@ def _save_found_token_details(
         address: ChecksumEvmAddress,
         mark: TokenDetailsRetryMark | None,
         info: dict[str, Any],
+        selected_details: TokenDetails | None,
 ) -> None:
     """Save the queried details of a token that was missing them.
 
     The token is checked again under the lock, since a user edit or an asset update may have
-    changed it while its details were queried. A token without a mark has to still have its
-    identifier as name and a marked one has to still have the details saved when marked.
-    Otherwise it is left as it is.
+    changed it while its details were queried. A token without a mark has to still have the
+    details it had when selected and a marked one the details saved when marked. Otherwise
+    it is left as it is.
     """
     if mark is not None and mark.saved is None:  # the token could not be created at the time
         if create_evm_token_if_missing(
@@ -397,8 +405,7 @@ def _save_found_token_details(
         if (saved := _get_saved_token_details(identifier)) is None:
             log.debug('Token %s was deleted while its details were queried', identifier)
         elif (
-            saved[0] not in (None, identifier) if mark is None else
-            saved != mark.saved
+            saved != (selected_details if mark is None else mark.saved)
         ):
             log.debug('Token %s was edited while its details were queried', identifier)
             if mark is not None:  # its events still have the amounts of the marked details
@@ -480,9 +487,11 @@ def _retry_chain_token_details(
         chain_id: ChainID,
         node_inquirer: EvmNodeInquirer,
         tokens: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
+        selected_details: dict[ChecksumEvmAddress, TokenDetails],
 ) -> None:
     """Query in chunks the details of the given tokens of a chain and save them for the
     tokens that returned all of them. Marked tokens that did not count a failed attempt.
+    selected_details has the details that the tokens without a mark had when selected.
 
     A single token can make the query of its whole chunk fail, for example a contract that
     burns all the gas, so a chunk that fails is queried again one token at a time. A token
@@ -517,6 +526,7 @@ def _retry_chain_token_details(
                     address=address,
                     mark=mark,
                     info=info,
+                    selected_details=selected_details.get(address),
                 )
             elif mark is not None:  # tokens without a mark come back when the cursor wraps
                 count_token_details_retry_attempt(mark=mark)
@@ -628,8 +638,10 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
         )
 
     tokens_by_chain: defaultdict[ChainID, dict[ChecksumEvmAddress, TokenDetailsRetryMark | None]] = defaultdict(dict)  # noqa: E501
-    for _, chain_id, address in tokens:
+    selected_details: defaultdict[ChainID, dict[ChecksumEvmAddress, TokenDetails]] = defaultdict(dict)  # noqa: E501
+    for _, chain_id, address, details in tokens:
         tokens_by_chain[chain_id][address] = None
+        selected_details[chain_id][address] = details
     for chain_id in chain_ids:
         for mark in _drop_spam_token_marks(get_token_details_retry_marks(
             chain_id=chain_id,
@@ -643,6 +655,7 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
             chain_id=chain_id,
             node_inquirer=chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer,  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
             tokens=list(chain_tokens.items()),
+            selected_details=selected_details[chain_id],
         )
 
     _redecode_token_retry_txs(chains_aggregator=chains_aggregator, chain_ids=chain_ids)
