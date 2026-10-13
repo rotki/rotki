@@ -480,12 +480,30 @@ def _count_failed_attempts(
     tokens.clear()
 
 
+def _nodes_answer_again(
+        node_inquirer: EvmNodeInquirer,
+        answered: list[ChecksumEvmAddress],
+) -> bool:
+    """Query again the token that answered most recently in the run to tell if the nodes are
+    up. False if they fail or no token answered yet."""
+    if len(answered) == 0:
+        return False
+
+    try:
+        node_inquirer.get_multiple_erc20_contracts_info([answered[-1]])
+    except RemoteError:
+        return False
+
+    return True
+
+
 def _query_tokens_one_by_one(
         chain_id: ChainID,
         node_inquirer: EvmNodeInquirer,
         chunk: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
         failed: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
         selected_details: dict[ChecksumEvmAddress, TokenDetails],
+        answered_in_run: list[ChecksumEvmAddress],
 ) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], set[ChecksumEvmAddress], bool]:
     """Query the details of the tokens of a chunk whose query failed one at a time, to keep
     a token that makes the query fail from taking the rest of the chunk with it.
@@ -493,7 +511,10 @@ def _query_tokens_one_by_one(
     failed has the tokens whose queries failed in a row so far in the run, which may come
     from previous chunks. A query that succeeds after them means that they failed on their
     own, so they count a failed attempt. When TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries
-    fail in a row the nodes are considered down and querying stops.
+    fail in a row a token that already answered in this run (answered_in_run) is queried
+    again. If it answers the nodes are up and the streak failed on its own, so the attempts
+    are counted and the run goes on. If it fails too, or nothing answered yet, the nodes are
+    considered down and querying stops.
 
     Returns the details found, the addresses whose query succeeded and whether the nodes
     are considered down.
@@ -509,10 +530,17 @@ def _query_tokens_one_by_one(
                 address, chain_id.to_name(), e,
             )
             failed.append((address, mark))
-            if len(failed) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+            if (
+                len(failed) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES and
+                not _nodes_answer_again(node_inquirer=node_inquirer, answered=answered_in_run)
+            ):
                 return infos, answered, True
+
+            if len(failed) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+                _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)  # noqa: E501
         else:
             answered.add(address)
+            answered_in_run.append(address)
             _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)  # noqa: E501
 
     return infos, answered, False
@@ -538,7 +566,7 @@ def _retry_chain_token_details(
     tokens are left for the next run.
     """
     failed: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]] = []
-    nodes_reached = False
+    answered_in_run: list[ChecksumEvmAddress] = []
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
         try:
             infos = node_inquirer.get_multiple_erc20_contracts_info([x[0] for x in chunk])
@@ -553,12 +581,13 @@ def _retry_chain_token_details(
                 chunk=chunk,
                 failed=failed,
                 selected_details=selected_details,
+                answered_in_run=answered_in_run,
             )
         else:
             answered, nodes_down = {x[0] for x in chunk}, False
+            answered_in_run.extend(x[0] for x in chunk)
             _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)  # noqa: E501
 
-        nodes_reached |= len(answered) != 0
         for address, mark in chunk:
             if (info := infos.get(address)) is not None:
                 _save_found_token_details(
@@ -581,7 +610,7 @@ def _retry_chain_token_details(
             postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])
             return
 
-    if nodes_reached:  # the last queries of the run failed while the nodes answered the rest
+    if len(answered_in_run) != 0:  # the last queries failed while the nodes answered the rest
         _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)
     else:
         postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])

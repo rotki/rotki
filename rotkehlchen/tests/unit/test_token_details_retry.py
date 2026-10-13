@@ -645,11 +645,36 @@ def test_outage_in_the_middle_of_a_run_counts_no_attempts(database: DBHandler) -
         addresses[:2],
         addresses[2:4], [addresses[2]], [addresses[3]],
         addresses[4:], [addresses[4]],  # third failure in a row
+        [addresses[1]],  # probe with the token that answered: it fails too, so the nodes are down
     ]
     assert _marks() == {
         addresses[0]: (1, None), addresses[1]: (1, None),  # answered without details
         **dict.fromkeys(addresses[2:], (0, None)),
     }
+
+
+def test_tokens_failing_on_their_own_do_not_look_like_an_outage(database: DBHandler) -> None:
+    """Tokens that each break their own query, next to each other, reach the limit of failures
+    in a row. A token that answered in the run is queried again: as it answers the nodes are up,
+    so those tokens count an attempt, they can be given up, and the run goes on to the rest."""
+    healthy, *poison, last_a, last_b = (addresses := [_address(i) for i in range(1, 7)])
+    poison = poison[:3]
+    for address in addresses:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
+
+    def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        if any(x in poison for x in queried):
+            raise RemoteError('out of gas')
+        return {address: _info('Found') for address in queried}
+
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
+    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):
+        retry_missing_token_details(chains_aggregator)
+
+    assert _marks() == dict.fromkeys(poison, (1, None))  # counted, and the rest was found
+    for address in (healthy, last_a, last_b):
+        token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+        assert _details(token) == ('Found', 'SYM', 6)
 
 
 def test_decoder_edit_does_not_stop_missing_details_from_being_fixed(
