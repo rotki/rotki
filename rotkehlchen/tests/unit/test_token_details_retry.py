@@ -20,6 +20,8 @@ from rotkehlchen.assets.details_retry import (
     TOKEN_DETAILS_RETRY_MAX_ATTEMPTS,
     get_token_details_retry_marks,
     get_token_retry_txs,
+    mark_token_details_retry,
+    record_token_retry_tx,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
@@ -41,7 +43,11 @@ from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryF
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tasks.assets import _get_tokens_missing_details, retry_missing_token_details
+from rotkehlchen.tasks.assets import (
+    TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES,
+    _get_tokens_missing_details,
+    retry_missing_token_details,
+)
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
@@ -52,6 +58,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -571,11 +578,14 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
 def test_failed_chunk_does_not_block_following_tokens(database: DBHandler) -> None:
     tokens = sorted((_create_placeholder(database, i) for i in (1, 2, 3, 4, 5)), key=lambda x: x.identifier)  # noqa: E501
     calls = []
+    nodes_down = False
 
     def infos(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        nonlocal nodes_down
         calls.append(addresses)
-        if len(calls) == 2:
+        if nodes_down:
             raise RemoteError('nodes down')
+        nodes_down = len(calls) == 1  # the nodes go down after the first chunk
         return {address: _info('Found') for address in addresses}
 
     chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
@@ -584,17 +594,139 @@ def test_failed_chunk_does_not_block_following_tokens(database: DBHandler) -> No
         patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2),
     ):
         retry_missing_token_details(chains_aggregator)
-        # the nodes were considered unavailable so the rest of the batch was left out
+        # the failed chunk was queried again one by one, which failed too
+        assert calls[1:] == [
+            [tokens[2].evm_address, tokens[3].evm_address],
+            [tokens[2].evm_address],
+            [tokens[3].evm_address],
+        ]
         assert [EvmToken(x.identifier).name for x in tokens] == [
             'Found', 'Found', tokens[2].identifier, tokens[3].identifier, tokens[4].identifier,
         ]
         assert _get_cursor(database) == tokens[3].identifier
 
+        nodes_down = False
         retry_missing_token_details(chains_aggregator)  # continues after the skipped tokens
 
     assert calls[-1] == [tokens[4].evm_address]
     assert EvmToken(tokens[4].identifier).name == 'Found'
     assert _get_cursor(database) == ''  # wrapped. The skipped ones come back in the next cycle
+
+
+def test_token_failing_its_chunk_does_not_block_the_marks(database: DBHandler) -> None:
+    """A token that makes the query of its whole chunk fail while the nodes work is isolated:
+    the rest of its chunk is still found and it counts attempts until it is given up, instead
+    of failing the chunk of the least recently tried marks forever"""
+    poison, *others = (addresses := [_address(i) for i in (1, 2, 3)])
+    for address in addresses:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
+
+    def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        if poison in queried:
+            raise RemoteError('out of gas')
+        return {address: _info('Found') for address in queried}
+
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
+    retry_missing_token_details(chains_aggregator)
+
+    assert _marks() == {poison: (1, None)}
+    for address in others:
+        token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+        assert _details(token) == ('Found', 'SYM', 6)
+
+    for idx in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1):
+        # another token answering in the same run shows the nodes work
+        _create_placeholder(database, 10 + idx)
+        retry_missing_token_details(chains_aggregator)
+    assert _marks() == {}  # given up
+
+
+def test_marks_failing_while_nodes_are_down_go_to_the_back(database: DBHandler) -> None:
+    """When the nodes don't answer, the marks queried one by one don't count an attempt but
+    move behind the ones not tried, so they can't stay in front if they were the problem"""
+    addresses = [_address(i) for i in (1, 2, 3, 4, 5)]
+    for address in addresses:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
+
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=RemoteError('down'))  # noqa: E501
+    with patch('rotkehlchen.assets.details_retry.ts_now', return_value=ts_now() + 100):
+        retry_missing_token_details(chains_aggregator)
+
+    assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [
+        addresses,  # the chunk
+        *([x] for x in addresses[:TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES]),  # one by one
+    ]
+    marks = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
+    assert [x.address for x in marks] == addresses[3:] + addresses[:3]
+    assert all(x.attempts == 0 for x in marks)
+
+
+def test_failing_redecodes_do_not_block_the_rest(database: DBHandler) -> None:
+    """Transactions that fail to be redecoded move to the back of the queue"""
+    token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=_address(1),
+        chain_id=ChainID.ETHEREUM,
+        name='Token',
+        symbol='TKN',
+        decimals=6,
+    )
+    for tx_hash in (tx_hashes := [make_evm_tx_hash() for _ in range(3)]):
+        record_token_retry_tx(
+            database=database,
+            chain_id=ChainID.ETHEREUM,
+            address=token.evm_address,
+            tx_hash=tx_hash,
+        )
+
+    decoded: list[EVMTxHash] = []
+
+    def decode(tx_hashes: list[EVMTxHash], **kwargs: Any) -> list:
+        if tx_hashes[0] in failing:
+            raise RemoteError('receipt not found')
+        decoded.extend(tx_hashes)
+        return []
+
+    failing = set(tx_hashes[:2])
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda x: {})
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder.decode_and_get_transaction_hashes.side_effect = decode  # noqa: E501
+    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2):
+        retry_missing_token_details(chains_aggregator)
+        assert decoded == []
+        retry_missing_token_details(chains_aggregator)  # the failed ones went to the back
+
+    assert decoded == [tx_hashes[2]]
+    with database.conn.read_ctx() as cursor:
+        assert [x.tx_hash for x in get_token_retry_txs(cursor)] == tx_hashes[1:2] + tx_hashes[:1]
+
+
+def test_failing_redecode_is_tried_once_per_run(database: DBHandler) -> None:
+    """A transaction recorded for two tokens that fails to be redecoded is not tried again
+    in the same run, and stays recorded for both"""
+    tx_hash = make_evm_tx_hash()
+    for idx in (1, 2):
+        token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(idx),
+            chain_id=ChainID.ETHEREUM,
+            name='Token',
+            symbol='TKN',
+            decimals=6,
+        )
+        record_token_retry_tx(
+            database=database,
+            chain_id=ChainID.ETHEREUM,
+            address=token.evm_address,
+            tx_hash=tx_hash,
+        )
+
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda x: {})
+    (decode := chains_aggregator.get_evm_manager.return_value.transactions_decoder.decode_and_get_transaction_hashes).side_effect = RemoteError('receipt not found')  # noqa: E501
+    retry_missing_token_details(chains_aggregator)
+
+    assert decode.call_count == 1
+    with database.conn.read_ctx() as cursor:
+        assert {x.address for x in get_token_retry_txs(cursor)} == {_address(1), _address(2)}
 
 
 def test_only_normal_erc20_tokens_of_chains_with_accounts_are_queried(database: DBHandler) -> None:

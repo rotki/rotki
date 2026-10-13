@@ -32,6 +32,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -142,6 +143,20 @@ def remove_token_details_retry_mark(chain_id: ChainID, address: ChecksumEvmAddre
         )
 
 
+def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:
+    """Move marks to the back of the queue without counting an attempt, so that tokens whose
+    query failed while the nodes seemed down don't stay in front of the rest"""
+    now = ts_now()
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'UPDATE unique_cache SET last_queried_ts=? WHERE key=?',
+            [(
+                now,
+                compute_cache_key(_mark_key_parts(chain_id=mark.chain_id, address=mark.address)),
+            ) for mark in marks],
+        )
+
+
 def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
     """Count a retry that found the details incomplete. When the attempts run out the mark
     is moved to the given up key: the token keeps whatever it has and is not retried again.
@@ -213,10 +228,10 @@ def record_token_retry_txs_of_asset(
 
 
 def get_token_retry_txs(cursor: DBCursor) -> list[TokenRetryTx]:
-    """Get the recorded transactions to redecode"""
+    """Get the recorded transactions to redecode, the least recently recorded first"""
     txs = []
     for key, value in cursor.execute(
-        "SELECT name, value FROM key_value_cache WHERE name LIKE ? ESCAPE '\\'",
+        "SELECT name, value FROM key_value_cache WHERE name LIKE ? ESCAPE '\\' ORDER BY rowid",
         (f'{TOKENRETRYTXPREFIX}\\_%',),
     ):
         try:
@@ -237,4 +252,14 @@ def delete_token_retry_txs(write_cursor: DBCursor, keys: list[str]) -> None:
     write_cursor.executemany(
         'DELETE FROM key_value_cache WHERE name=?',
         [(key,) for key in keys],
+    )
+
+
+def postpone_token_retry_txs(write_cursor: DBCursor, txs: list[TokenRetryTx]) -> None:
+    """Move recorded transactions to the back of the queue by recording them again, so that
+    the ones that keep failing to be redecoded don't stay in front of the rest"""
+    delete_token_retry_txs(write_cursor=write_cursor, keys=[tx.key for tx in txs])
+    write_cursor.executemany(
+        'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
+        [(tx.key, str(tx.tx_hash)) for tx in txs],
     )

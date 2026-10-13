@@ -6,10 +6,13 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
     TokenDetailsRetryMark,
+    TokenRetryTx,
     count_token_details_retry_attempt,
     delete_token_retry_txs,
     get_token_details_retry_marks,
     get_token_retry_txs,
+    postpone_token_details_retry,
+    postpone_token_retry_txs,
     record_token_retry_txs_of_asset,
     remove_token_details_retry_mark,
 )
@@ -115,6 +118,8 @@ SYMBOL_AND_NAME_ASSETS_QUERY = (
 )
 TOKEN_DETAILS_RETRY_BATCH_SIZE: Final = 50
 TOKEN_DETAILS_RETRY_CHUNK_SIZE: Final = 25
+# single token queries that can fail in a row before the nodes are considered down
+TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES: Final = 3
 MULTISEND_SPAM_THRESHOLD = 50
 KNOWN_FALSE_POSITIVES: Final = (
     {
@@ -412,6 +417,45 @@ def _save_found_token_details(
             remove_token_details_retry_mark(chain_id=chain_id, address=address)
 
 
+def _query_tokens_one_by_one(
+        chain_id: ChainID,
+        node_inquirer: EvmNodeInquirer,
+        chunk: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
+        nodes_reached: bool,
+) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], bool]:
+    """Query the details of the tokens of a chunk whose query failed one at a time, to keep
+    a token that makes the query fail from taking the rest of the chunk with it.
+
+    Returns the details found and whether the nodes answered any query in the run. When the
+    first TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries fail and no other query of the run
+    succeeded, the nodes are considered down: querying stops and the marks of the failed
+    tokens go to the back of the queue without counting an attempt, so that they don't stay
+    in front of the other marks if they were the ones failing.
+    """
+    infos: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+    failed_marks: list[TokenDetailsRetryMark] = []
+    for idx, (address, mark) in enumerate(chunk):
+        try:
+            infos |= node_inquirer.get_multiple_erc20_contracts_info([address])
+        except RemoteError as e:
+            log.warning(
+                'Failed to query the details of token %s at %s due to %s',
+                address, chain_id.to_name(), e,
+            )
+            if mark is not None:
+                failed_marks.append(mark)
+            if nodes_reached is False and idx + 1 == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+                break  # every query failed so far
+        else:
+            nodes_reached = True
+
+    if nodes_reached is False:
+        log.error('Stopping token details retry at %s since the nodes fail', chain_id.to_name())
+        postpone_token_details_retry(marks=failed_marks)
+
+    return infos, nodes_reached
+
+
 def _retry_chain_token_details(
         database: DBHandler,
         chain_id: ChainID,
@@ -420,14 +464,31 @@ def _retry_chain_token_details(
 ) -> None:
     """Query in chunks the details of the given tokens of a chain and save them for the
     tokens that returned all of them. Marked tokens that did not count a failed attempt.
-    A remote error leaves out the rest of the tokens.
+
+    A single token can make the query of its whole chunk fail, for example a contract that
+    burns all the gas, so a chunk that fails is queried again one token at a time. A token
+    that fails alone while the nodes answer counts a failed attempt. If the queries fail
+    without any succeeding, the nodes are probably down and the rest of the tokens are left out.
     """
+    nodes_reached = False
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
         try:
             infos = node_inquirer.get_multiple_erc20_contracts_info([x[0] for x in chunk])
         except RemoteError as e:
-            log.error('Failed to query token details at %s due to %s', chain_id.to_name(), e)
-            return  # the nodes are probably not available
+            log.warning(
+                'Failed to query token details at %s due to %s. Querying them one by one',
+                chain_id.to_name(), e,
+            )
+            infos, nodes_reached = _query_tokens_one_by_one(
+                chain_id=chain_id,
+                node_inquirer=node_inquirer,
+                chunk=chunk,
+                nodes_reached=nodes_reached,
+            )
+            if nodes_reached is False:
+                return
+        else:
+            nodes_reached = True
 
         for address, mark in chunk:
             if (info := infos.get(address)) is not None:
@@ -448,8 +509,8 @@ def _redecode_token_retry_txs(
 ) -> None:
     """Redecode up to TOKEN_DETAILS_RETRY_BATCH_SIZE of the transactions recorded because a
     token in them could not be created or got its details changed, once the token exists. A
-    transaction that can't be redecoded due to a remote error stays recorded to try again in
-    the next run."""
+    transaction that can't be redecoded due to a remote error stays recorded to try again,
+    moved to the back of the queue so that it doesn't block the ones after it."""
     with chains_aggregator.database.conn.read_ctx() as cursor:
         recorded_txs = get_token_retry_txs(cursor)
 
@@ -465,8 +526,13 @@ def _redecode_token_retry_txs(
                 to_redecode.append(recorded_tx)
 
     redecoded: set[tuple[ChainID, EVMTxHash]] = set()
+    failed_tx_keys: set[tuple[ChainID, EVMTxHash]] = set()
+    failed: list[TokenRetryTx] = []
     for recorded_tx in to_redecode[:TOKEN_DETAILS_RETRY_BATCH_SIZE]:
-        if (tx_key := (recorded_tx.chain_id, recorded_tx.tx_hash)) not in redecoded:
+        if (tx_key := (recorded_tx.chain_id, recorded_tx.tx_hash)) in failed_tx_keys:
+            failed.append(recorded_tx)  # recorded for another token too. Not tried twice.
+            continue
+        if tx_key not in redecoded:
             try:
                 chains_aggregator.get_evm_manager(chain_id=recorded_tx.chain_id).transactions_decoder.decode_and_get_transaction_hashes(  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
                     tx_hashes=[recorded_tx.tx_hash],
@@ -478,6 +544,8 @@ def _redecode_token_retry_txs(
                 log.debug('Not redecoding %s due to %s', recorded_tx.tx_hash, e)
             except (RemoteError, DeserializationError) as e:
                 log.error('Failed to redecode %s due to %s', recorded_tx.tx_hash, e)
+                failed.append(recorded_tx)
+                failed_tx_keys.add(tx_key)
                 continue
 
             redecoded.add(tx_key)
@@ -485,6 +553,7 @@ def _redecode_token_retry_txs(
 
     with chains_aggregator.database.conn.write_ctx() as write_cursor:
         delete_token_retry_txs(write_cursor=write_cursor, keys=to_delete)
+        postpone_token_retry_txs(write_cursor=write_cursor, txs=failed)
 
 
 def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
@@ -503,7 +572,9 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     again from the beginning when the end is reached. Marked tokens are dropped after
     TOKEN_DETAILS_RETRY_MAX_ATTEMPTS runs that found their details incomplete.
 
-    A remote error stops the run for that chain without counting an attempt.
+    A chunk that fails with a remote error is queried one token at a time to isolate a token
+    that makes it fail. If the nodes don't answer at all the run stops for that chain without
+    counting an attempt.
     """
     with chains_aggregator.database.conn.read_ctx() as cursor:
         cursor_identifier = chains_aggregator.database.get_static_cache(
