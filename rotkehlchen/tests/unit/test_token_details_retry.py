@@ -628,6 +628,29 @@ def test_get_multiple_erc20_contracts_info(ethereum_inquirer: EthereumInquirer) 
     assert multicall.call_args.kwargs['require_success'] is False
 
 
+def test_user_requested_query_ignores_failure_cooldown(ethereum_inquirer: EthereumInquirer) -> None:  # noqa: E501
+    """After a failure the address is not queried again for a while, unless the user asks"""
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
+        pytest.raises(TokenQueryFailed),
+    ):
+        ethereum_inquirer.get_erc20_contract_info(address := _address(1))
+
+    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()) as multicall:
+        with pytest.raises(TokenQueryFailed):  # in the cooldown
+            ethereum_inquirer.get_erc20_contract_info(address)
+        assert multicall.call_count == 0
+
+        assert ethereum_inquirer.get_erc20_contract_info(
+            address=address,
+            ignore_failure_cooldown=True,
+        ) == {'decimals': 6, 'symbol': 'TKN', 'name': 'Token'}
+        # the success cleared the failure, so the next query reaches the nodes again
+        ethereum_inquirer.contract_info_erc20_cache.remove(address)
+        assert ethereum_inquirer.get_erc20_contract_info(address)['name'] == 'Token'
+        assert multicall.call_count == 2
+
+
 def test_erc20_properties_calldata(ethereum_inquirer: EthereumInquirer) -> None:
     contract = EvmContract(
         address=_address(1),

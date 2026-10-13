@@ -1433,16 +1433,19 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             abi: ABI,
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
+            ignore_failure_cooldown: bool = False,
     ) -> list[tuple[bool, bytes]]:
         """Query the given properties of a token contract.
 
         After a failure the address is not queried again until TOKEN_QUERY_FAILURE_COOLDOWN
-        passes, to not hit the nodes once per token event while they are failing.
+        passes, to not hit the nodes once per token event while they are failing. Queries
+        requested by the user should ignore the cooldown, since the nodes may be back.
 
         May raise:
         - TokenQueryFailed if the nodes could not be reached now or in the cooldown period
         """
         if (
+                ignore_failure_cooldown is False and
                 (failed_at := self.token_query_failures.get(address)) is not None and
                 ts_now() - failed_at < TOKEN_QUERY_FAILURE_COOLDOWN
         ):
@@ -1462,7 +1465,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.token_query_failures.remove(address)
         return output
 
-    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
+    def get_erc20_contract_info(
+            self,
+            address: ChecksumEvmAddress,
+            ignore_failure_cooldown: bool = False,
+    ) -> dict[str, Any]:
         """
         Query an erc20 contract address and return basic information as:
         - Decimals
@@ -1474,12 +1481,19 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC20Conformant
         - TokenQueryFailed if the nodes could not be reached
+
+        ignore_failure_cooldown queries the nodes even if the address failed recently, for
+        queries requested by the user.
         """
-        return self.get_erc20_contract_info_and_missing(address)[0]
+        return self.get_erc20_contract_info_and_missing(
+            address=address,
+            ignore_failure_cooldown=ignore_failure_cooldown,
+        )[0]
 
     def get_erc20_contract_info_and_missing(
             self,
             address: ChecksumEvmAddress,
+            ignore_failure_cooldown: bool = False,
     ) -> tuple[dict[str, Any], frozenset[str]]:
         """Same as get_erc20_contract_info but also returns which of the ERC20_PROPERTIES
         the contract did not return, since their values in the info are only defaults.
@@ -1489,7 +1503,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(abi=self.contracts.erc20_abi, properties=ERC20_PROPERTIES, address=address)  # noqa: E501
+        output = self._query_token_contract(
+            abi=self.contracts.erc20_abi,
+            properties=ERC20_PROPERTIES,
+            address=address,
+            ignore_failure_cooldown=ignore_failure_cooldown,
+        )
         result = (
             self._process_and_create_erc20_info(output=output, address=address),
             _missing_properties(properties=ERC20_PROPERTIES, output=output),

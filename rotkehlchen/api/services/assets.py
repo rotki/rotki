@@ -722,7 +722,10 @@ class AssetsService:
     ) -> dict[str, Any]:
         evm_manager: EvmManager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
         try:
-            info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
+            info = evm_manager.node_inquirer.get_erc20_contract_info(
+                address=address,
+                ignore_failure_cooldown=True,  # requested by the user
+            )
         except TokenQueryFailed as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except (BadFunctionCallOutput, NotERC20Conformant):
