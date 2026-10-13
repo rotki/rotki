@@ -789,6 +789,22 @@ class Nft(EvmToken):
         )
         return asset
 
+    def to_erc721_identifier(self) -> str | None:
+        """Return the identifier of the ERC721 token for this NFT.
+
+        Returns None for ERC1155 NFTs (`_nft_<contract>_<id>_<owner>`), which have no
+        ERC721 token.
+        """
+        if len(identifier_parts := self.identifier[len(NFT_DIRECTIVE):].split('_')) != 2:
+            return None
+
+        return evm_address_to_identifier(
+            address=self.evm_address,
+            chain_id=self.chain_id,
+            token_type=TokenKind.ERC721,
+            collectible_id=identifier_parts[1],
+        )
+
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class SolanaToken(CryptoAsset):

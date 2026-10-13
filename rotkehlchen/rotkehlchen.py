@@ -1334,10 +1334,10 @@ class Rotkehlchen:
                         # in the chain balances we update the price and continue
                         blockchain_balances = balances[blockchain_location]
                         nft = Nft(balance_entry['id'])
-                        if (nft_as_token := GlobalDBHandler.get_evm_token(
-                            address=nft.evm_address,
-                            chain_id=nft.chain_id,
-                        )) in blockchain_balances:  # we need the eip155 identifier instead of the _nft_ one.  # noqa: E501
+                        if (  # we need the eip155 identifier instead of the _nft_ one.
+                            (nft_token_id := nft.to_erc721_identifier()) is not None and
+                            (nft_as_token := Asset(nft_token_id)) in blockchain_balances
+                        ):
                             blockchain_balances[nft_as_token].value = balance_entry['price']
                         else:
                             blockchain_balances[nft] = Balance(
