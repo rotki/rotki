@@ -331,6 +331,25 @@ def _get_tokens_missing_details(
         ]
 
 
+def _drop_spam_token_marks(marks: list[TokenDetailsRetryMark]) -> list[TokenDetailsRetryMark]:
+    """Remove the marks of tokens that were found to be spam after they were marked, since
+    they are not worth querying again. Returns the rest of the marks."""
+    if len(marks) == 0:
+        return marks
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        spam_addresses = {row[0] for row in cursor.execute(
+            'SELECT address FROM evm_tokens WHERE chain=? AND protocol=? AND address IN '
+            f"({','.join('?' * len(marks))})",
+            (marks[0].chain_id.serialize_for_db(), SPAM_PROTOCOL, *(x.address for x in marks)),
+        )}
+
+    for address in spam_addresses:
+        remove_token_details_retry_mark(chain_id=marks[0].chain_id, address=address)
+
+    return [mark for mark in marks if mark.address not in spam_addresses]
+
+
 def _get_saved_token_details(identifier: str) -> tuple[str | None, str | None, int] | None:
     """Read the name, symbol and decimals of a token from the global DB, so that what is
     checked is not an older version of the token kept in memory. None if it does not exist."""
@@ -574,7 +593,7 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
 
     A chunk that fails with a remote error is queried one token at a time to isolate a token
     that makes it fail. If the nodes don't answer at all the run stops for that chain without
-    counting an attempt.
+    counting an attempt. Marks of tokens that turned out to be spam are dropped.
     """
     with chains_aggregator.database.conn.read_ctx() as cursor:
         cursor_identifier = chains_aggregator.database.get_static_cache(
@@ -607,10 +626,10 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     for _, chain_id, address in tokens:
         tokens_by_chain[chain_id][address] = None
     for chain_id in chain_ids:
-        for mark in get_token_details_retry_marks(
+        for mark in _drop_spam_token_marks(get_token_details_retry_marks(
             chain_id=chain_id,
             limit=TOKEN_DETAILS_RETRY_BATCH_SIZE,
-        ):
+        )):
             tokens_by_chain[chain_id][mark.address] = mark
 
     for chain_id, chain_tokens in tokens_by_chain.items():

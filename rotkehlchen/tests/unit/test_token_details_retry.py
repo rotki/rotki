@@ -661,6 +661,59 @@ def test_marks_failing_while_nodes_are_down_go_to_the_back(database: DBHandler) 
     assert all(x.attempts == 0 for x in marks)
 
 
+def test_spam_tokens_are_not_marked(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """Spam tokens are not worth querying again, whether they are known spam when seen or
+    found to be spam after being marked"""
+    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(name=None)):
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(1),
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+            protocol=SPAM_PROTOCOL,
+            fallback_name='Fallback',
+            fallback_symbol='FB',
+            fallback_decimals=18,
+        )
+    with patch.object(  # detected as spam from the details that were returned
+        ethereum_inquirer,
+        'multicall_2',
+        return_value=_output(decimals=None, symbol='claim at site.io'),
+    ):
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(4),
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+        )
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
+        pytest.raises(TokenQueryFailed),
+    ):
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(2),
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+            protocol=SPAM_PROTOCOL,
+            encounter=TokenEncounterInfo(tx_ref=make_evm_tx_hash()),
+        )
+    assert _marks() == {}
+    with database.conn.read_ctx() as cursor:
+        assert get_token_retry_txs(cursor) == []
+
+    spam = _create_placeholder(database, 3, protocol=SPAM_PROTOCOL)  # marked before found spam
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=spam.evm_address, saved=(spam.identifier, '', 18))  # noqa: E501
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=lambda x: {})
+    retry_missing_token_details(chains_aggregator)
+
+    assert node_inquirer.get_multiple_erc20_contracts_info.call_count == 0
+    assert _marks() == {}
+
+
 def test_failing_redecodes_do_not_block_the_rest(database: DBHandler) -> None:
     """Transactions that fail to be redecoded move to the back of the queue"""
     token = get_or_create_evm_token(

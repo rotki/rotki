@@ -590,9 +590,12 @@ def _get_or_create_token(
                 query_failed, missing = True, frozenset(ERC20_PROPERTIES)
 
             # Retry later the tokens whose query failed or that returned only some of the
-            # details. Contracts that have none of the methods are not erc20 tokens.
-            retry_details = token_kind == TokenKind.ERC20 and (
-                query_failed or 0 < len(missing) < len(ERC20_PROPERTIES)
+            # details. Contracts that have none of the methods are not erc20 tokens, and spam
+            # tokens are not worth querying again.
+            retry_details = (
+                token_kind == TokenKind.ERC20 and
+                protocol != SPAM_PROTOCOL and
+                (query_failed or 0 < len(missing) < len(ERC20_PROPERTIES))
             )
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
                 # fallbacks only replace the details that the chain did not return
@@ -668,7 +671,7 @@ def _get_or_create_token(
                 encounter=encounter,
             )
 
-        if retry_details:
+        if retry_details and not is_spam_token:
             mark_token_details_retry(
                 chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
                 address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
