@@ -10,6 +10,7 @@ import tempfile
 import threading
 import warnings as test_warnings
 from contextlib import contextmanager, suppress
+from copy import deepcopy
 from enum import auto
 from functools import wraps
 from http import HTTPStatus
@@ -81,7 +82,13 @@ def _make_vcr_thread_safe() -> None:
     created or class-checked inside another thread's unpatched window. The RLock
     keeps the nested case (stub __init__ calling force_reset inside a locked
     checkout on the same thread) deadlock-free.
+
+    Also hands every playback its own copy of the recorded response. With
+    allow_playback_repeats the cassette returns the same stored dict to every caller, and
+    VCRHTTPResponse.__init__ iterates and deletes keys from its headers, so two threads
+    replaying the same response race with "dictionary changed size during iteration".
     """
+    import vcr.cassette
     import vcr.patch  # import here to keep the patching self-contained
 
     vcr_reset_lock = threading.RLock()
@@ -109,6 +116,11 @@ def _make_vcr_thread_safe() -> None:
     builder = vcr.patch.CassettePatcherBuilder
     builder._patched_get_conn = make_locked(builder._patched_get_conn)
     builder._patched_new_conn = make_locked(builder._patched_new_conn)
+
+    original_play_response = vcr.cassette.Cassette.play_response
+    vcr.cassette.Cassette.play_response = (
+        lambda self, request: deepcopy(original_play_response(self, request))
+    )
 
 
 _make_vcr_thread_safe()
