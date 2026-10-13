@@ -60,7 +60,13 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import EthSyncError, InputError, NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    EthSyncError,
+    InputError,
+    NotERC20Conformant,
+    RemoteError,
+    TokenQueryFailed,
+)
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
@@ -717,6 +723,8 @@ class AssetsService:
         evm_manager: EvmManager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
         try:
             info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
+        except TokenQueryFailed as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except (BadFunctionCallOutput, NotERC20Conformant):
             return {
                 'result': None,

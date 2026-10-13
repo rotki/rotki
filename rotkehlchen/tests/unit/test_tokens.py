@@ -803,8 +803,8 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         erc20_cached_data = query_token_info(TokenKind.ERC20)
         erc721_cached_data = query_token_info(TokenKind.ERC721)
 
-    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20)
-    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721)
+    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20, frozenset())  # noqa: E501
+    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721, frozenset())  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

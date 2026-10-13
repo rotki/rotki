@@ -114,3 +114,5 @@ ETH_STAKING_EVENT_NULL_FIELDS: Final = 'NULL as validator_index, NULL as is_exit
 ETH_STAKING_FIELD_LENGTH: Final = 2
 
 EXTRAINTERNALTXPREFIX: Final = 'extrainternaltx'
+# key_value_cache prefix of transactions to redecode once the details of a token are found
+TOKENRETRYTXPREFIX: Final = 'tokenretrytx'

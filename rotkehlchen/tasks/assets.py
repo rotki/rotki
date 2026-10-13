@@ -4,9 +4,20 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.details_retry import (
+    TokenDetailsRetryMark,
+    count_token_details_retry_attempt,
+    delete_token_retry_txs,
+    get_token_details_retry_marks,
+    get_token_retry_txs,
+    record_token_retry_txs_of_asset,
+    remove_token_details_retry_mark,
+)
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
+    create_evm_token_if_missing,
     edit_token_and_clean_cache,
     get_or_create_evm_token,
 )
@@ -50,6 +61,7 @@ from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
 )
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
@@ -312,61 +324,184 @@ def _get_tokens_missing_details(
         ]
 
 
-def _update_token_details(
+def _get_saved_token_details(identifier: str) -> tuple[str | None, str | None, int] | None:
+    """Read the name, symbol and decimals of a token from the global DB, so that what is
+    checked is not an older version of the token kept in memory. None if it does not exist."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        return cursor.execute(
+            'SELECT A.name, C.symbol, B.decimals FROM assets AS A JOIN evm_tokens AS B '
+            'ON A.identifier=B.identifier LEFT JOIN common_asset_details AS C '
+            'ON C.identifier=A.identifier WHERE A.identifier=?',
+            (identifier,),
+        ).fetchone()
+
+
+def _save_found_token_details(
         database: DBHandler,
-        identifier: str,
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+        mark: TokenDetailsRetryMark | None,
         info: dict[str, Any],
 ) -> None:
-    """Save the queried details of a token that was missing them"""
-    with database.get_or_create_token_lock:
-        try:
-            edit_token_and_clean_cache(
-                token=EvmToken(identifier),
-                name=info['name'],
-                symbol=info['symbol'],
-                decimals=info['decimals'],
-                started=None,
-                chain_inquirer=None,  # we already have the info
+    """Save the queried details of a token that was missing them.
+
+    The token is checked again under the lock, since a user edit or an asset update may have
+    changed it while its details were queried. A token without a mark has to still have its
+    identifier as name and a marked one has to still have the details saved when marked.
+    Otherwise it is left as it is.
+    """
+    if mark is not None and mark.saved is None:  # the token could not be created at the time
+        if create_evm_token_if_missing(
+            userdb=database,
+            chain_id=chain_id,
+            address=address,
+            name=info['name'],
+            symbol=info['symbol'],
+            decimals=info['decimals'],
+        ):
+            log.debug(
+                'Created token %s at %s with its queried details',
+                address, chain_id.to_name(),
             )
-        except (UnknownAsset, WrongAssetType, DeserializationError, InputError) as e:
-            log.error('Failed to update details of token %s due to %s', identifier, e)
+        remove_token_details_retry_mark(chain_id=chain_id, address=address)
+        return
+
+    identifier = evm_address_to_identifier(address=address, chain_id=chain_id)
+    with database.get_or_create_token_lock:
+        if (saved := _get_saved_token_details(identifier)) is None:
+            log.debug('Token %s was deleted while its details were queried', identifier)
+        elif (
+            saved[0] not in (None, identifier) if mark is None else
+            saved != mark.saved
+        ):
+            log.debug('Token %s was edited while its details were queried', identifier)
+            if mark is not None:  # its events still have the amounts of the marked details
+                record_token_retry_txs_of_asset(
+                    database=database,
+                    chain_id=chain_id,
+                    address=address,
+                    identifier=identifier,
+                )
         else:
-            log.debug('Updated the details of token %s', identifier)
+            AssetResolver.clean_memory_cache(identifier)  # so the token is loaded from the DB
+            try:
+                edit_token_and_clean_cache(
+                    token=EvmToken(identifier),
+                    name=info['name'],
+                    symbol=info['symbol'],
+                    decimals=info['decimals'],
+                    started=None,
+                    chain_inquirer=None,  # we already have the info
+                )
+            except (UnknownAsset, WrongAssetType, DeserializationError, InputError) as e:
+                log.error('Failed to update details of token %s due to %s', identifier, e)
+                return  # keep the mark, if any, to try again
+            else:
+                log.debug('Updated the details of token %s', identifier)
+                # the amounts of its events were calculated with the old decimals
+                record_token_retry_txs_of_asset(
+                    database=database,
+                    chain_id=chain_id,
+                    address=address,
+                    identifier=identifier,
+                )
+
+        if mark is not None:
+            remove_token_details_retry_mark(chain_id=chain_id, address=address)
 
 
 def _retry_chain_token_details(
         database: DBHandler,
+        chain_id: ChainID,
         node_inquirer: EvmNodeInquirer,
-        tokens: list[tuple[str, ChecksumEvmAddress]],
+        tokens: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
 ) -> None:
-    """Query in chunks the details of the given (identifier, address) tokens of a chain and
-    save the ones for which a name was found. A remote error leaves out the rest of the tokens.
+    """Query in chunks the details of the given tokens of a chain and save them for the
+    tokens that returned all of them. Marked tokens that did not count a failed attempt.
+    A remote error leaves out the rest of the tokens.
     """
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
         try:
-            infos = node_inquirer.get_multiple_erc20_contracts_info([x[1] for x in chunk])
+            infos = node_inquirer.get_multiple_erc20_contracts_info([x[0] for x in chunk])
         except RemoteError as e:
-            log.error('Failed to query token details at %s due to %s', node_inquirer.chain_name, e)
+            log.error('Failed to query token details at %s due to %s', chain_id.to_name(), e)
             return  # the nodes are probably not available
 
-        for identifier, address in chunk:
-            # tokens that are not erc20 conformant or have no name are left as they are
-            if (info := infos.get(address)) is not None and info['name']:
-                _update_token_details(database=database, identifier=identifier, info=info)
+        for address, mark in chunk:
+            if (info := infos.get(address)) is not None:
+                _save_found_token_details(
+                    database=database,
+                    chain_id=chain_id,
+                    address=address,
+                    mark=mark,
+                    info=info,
+                )
+            elif mark is not None:  # tokens without a mark come back when the cursor wraps
+                count_token_details_retry_attempt(database=database, mark=mark)
+
+
+def _redecode_token_retry_txs(
+        chains_aggregator: ChainsAggregator,
+        chain_ids: Sequence[ChainID],
+) -> None:
+    """Redecode up to TOKEN_DETAILS_RETRY_BATCH_SIZE of the transactions recorded because a
+    token in them could not be created or got its details changed, once the token exists. A
+    transaction that can't be redecoded due to a remote error stays recorded to try again in
+    the next run."""
+    with chains_aggregator.database.conn.read_ctx() as cursor:
+        recorded_txs = get_token_retry_txs(cursor)
+
+    to_redecode, to_delete = [], []
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        for recorded_tx in recorded_txs:
+            if recorded_tx.chain_id not in chain_ids:
+                continue  # no accounts on the chain to redecode it for
+            if cursor.execute(
+                'SELECT COUNT(*) FROM evm_tokens WHERE chain=? AND address=?',
+                (recorded_tx.chain_id.serialize_for_db(), recorded_tx.address),
+            ).fetchone()[0] != 0:
+                to_redecode.append(recorded_tx)
+
+    redecoded: set[tuple[ChainID, EVMTxHash]] = set()
+    for recorded_tx in to_redecode[:TOKEN_DETAILS_RETRY_BATCH_SIZE]:
+        if (tx_key := (recorded_tx.chain_id, recorded_tx.tx_hash)) not in redecoded:
+            try:
+                chains_aggregator.get_evm_manager(chain_id=recorded_tx.chain_id).transactions_decoder.decode_and_get_transaction_hashes(  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
+                    tx_hashes=[recorded_tx.tx_hash],
+                    send_ws_notifications=True,
+                    ignore_cache=True,
+                    delete_customized=False,
+                )
+            except InputError as e:  # the transaction is not in the DB anymore
+                log.debug('Not redecoding %s due to %s', recorded_tx.tx_hash, e)
+            except (RemoteError, DeserializationError) as e:
+                log.error('Failed to redecode %s due to %s', recorded_tx.tx_hash, e)
+                continue
+
+            redecoded.add(tx_key)
+        to_delete.append(recorded_tx.key)
+
+    with chains_aggregator.database.conn.write_ctx() as write_cursor:
+        delete_token_retry_txs(write_cursor=write_cursor, keys=to_delete)
 
 
 def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
-    """Query again the details of tokens that were saved with their identifier as name.
+    """Query again the details of tokens that are missing them.
 
-    That happens when the details of a token can't be queried when it is first seen, for
-    example because of a remote error. Every run goes through the next
-    TOKEN_DETAILS_RETRY_BATCH_SIZE such tokens, querying them in chunks per chain with
-    the nodes. The identifier of the last token processed is saved so that tokens that can't
-    be updated, like the ones that are not erc20 conformant, don't block the rest. When
-    the end is reached the next run starts again from the beginning.
+    These are the tokens saved with their identifier as name, which happens when the token
+    is created without querying the chain, and the tokens marked when their query failed or
+    only returned some of the details. Marked tokens that could not be created at all are
+    created once their details are found and the transactions where they were seen redecoded.
 
-    A remote error stops the run for that chain. The tokens left out are tried again when
-    the cursor wraps around.
+    Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE tokens with their
+    identifier as name and the TOKEN_DETAILS_RETRY_BATCH_SIZE least recently tried marked
+    tokens of each chain, querying them in chunks per chain with the nodes. Details are only
+    saved when all of them were found. The identifier of the last token without a mark is
+    saved so that tokens that can't be updated don't block the rest, and the next run starts
+    again from the beginning when the end is reached. Marked tokens are dropped after
+    TOKEN_DETAILS_RETRY_MAX_ATTEMPTS runs that found their details incomplete.
+
+    A remote error stops the run for that chain without counting an attempt.
     """
     with chains_aggregator.database.conn.read_ctx() as cursor:
         cursor_identifier = chains_aggregator.database.get_static_cache(
@@ -375,13 +510,11 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
         ) or ''
 
     # only chains where the user has accounts can be expected to have working nodes
-    tokens = _get_tokens_missing_details(
-        chain_ids=[
-            chain_id for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            if len(chains_aggregator.accounts.get(chain_id.to_blockchain())) != 0
-        ],
-        after_identifier=cursor_identifier,
-    )
+    chain_ids = [
+        chain_id for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+        if len(chains_aggregator.accounts.get(chain_id.to_blockchain())) != 0
+    ]
+    tokens = _get_tokens_missing_details(chain_ids=chain_ids, after_identifier=cursor_identifier)
     with chains_aggregator.database.conn.write_ctx() as write_cursor:
         chains_aggregator.database.set_static_cache(
             write_cursor=write_cursor,
@@ -397,16 +530,25 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
             value=ts_now(),
         )
 
-    tokens_by_chain: defaultdict[ChainID, list[tuple[str, ChecksumEvmAddress]]] = defaultdict(list)
-    for identifier, chain_id, address in tokens:
-        tokens_by_chain[chain_id].append((identifier, address))
+    tokens_by_chain: defaultdict[ChainID, dict[ChecksumEvmAddress, TokenDetailsRetryMark | None]] = defaultdict(dict)  # noqa: E501
+    for _, chain_id, address in tokens:
+        tokens_by_chain[chain_id][address] = None
+    for chain_id in chain_ids:
+        for mark in get_token_details_retry_marks(
+            chain_id=chain_id,
+            limit=TOKEN_DETAILS_RETRY_BATCH_SIZE,
+        ):
+            tokens_by_chain[chain_id][mark.address] = mark
 
     for chain_id, chain_tokens in tokens_by_chain.items():
         _retry_chain_token_details(
             database=chains_aggregator.database,
+            chain_id=chain_id,
             node_inquirer=chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer,  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            tokens=chain_tokens,
+            tokens=list(chain_tokens.items()),
         )
+
+    _redecode_token_retry_txs(chains_aggregator=chains_aggregator, chain_ids=chain_ids)
 
 
 def _update_lending_protocol_underlying_assets(

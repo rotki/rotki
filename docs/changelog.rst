@@ -9,6 +9,7 @@ Changelog
 * :bug:`13329` Jupiter swaps from native SOL that fund the temporary wrapped SOL account in a single transfer no longer count the swapped SOL twice. Before, the funding transfer was kept as an extra SOL spend next to the swap.
 * :bug:`-` Loading Ethereum withdrawals through Blockscout works again with Blockscout v12 instances. Before, the changed pagination of v12 made the withdrawals query fail.
 * :bug:`13285` Tokens whose name, symbol and decimals could not be fetched when they were first seen are now retried in the background. Before, they kept showing their identifier as name.
+* :bug:`13285` Token details that could not be fully fetched when a token was first seen, because the nodes failed or only some of them were returned, are now fetched again in the background and the affected transactions are redecoded. Before, the token kept its identifier as name, a fallback or a wrong number of decimals, and transfers of it could be missing from history or have wrong amounts.
 * :bug:`-` Hyperliquid Core history is no longer cut off after the first page of entries, and all funding payments are now saved instead of just one. History is refetched once after upgrading to recover what was missing.
 * :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
 * :bug:`-` Leveraged Curve crvUSD loans on markets with WETH collateral no longer fail to decode.

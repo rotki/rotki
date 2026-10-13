@@ -1392,6 +1392,7 @@ class CacheType(Enum):
     STAKEDAO_V2_VAULTS = auto()
     SUPERFLUID_TOKEN_LIST_VERSION = auto()
     SUPERFLUID_SUPER_TOKENS = auto()
+    TOKEN_DETAILS_RETRY = auto()  # evm tokens whose details have to be queried again
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1458,6 +1459,7 @@ UniqueCacheType = Literal[
     CacheType.CURVE_CRVUSD_AMM,
     CacheType.MERKL_REWARD_PROTOCOLS,
     CacheType.SUPERFLUID_TOKEN_LIST_VERSION,
+    CacheType.TOKEN_DETAILS_RETRY,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

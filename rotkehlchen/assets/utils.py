@@ -14,8 +14,9 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
     WrongAssetType,
 )
+from rotkehlchen.assets.details_retry import mark_token_details_retry, record_token_retry_tx
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ERC20_PROPERTIES
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -36,7 +37,13 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, solana_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, NotSPLConformant
+from rotkehlchen.errors.misc import (
+    InputError,
+    NotERC20Conformant,
+    NotERC721Conformant,
+    NotSPLConformant,
+    TokenQueryFailed,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -86,15 +93,25 @@ def _query_or_get_given_token_info(
         symbol: str | None,
         decimals: int | None,
         token_kind: EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None,
-) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None]:  # noqa: E501
+) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None, frozenset[str]]:  # noqa: E501
     """Query basic token information for the given address.
     If unable to get the values from onchain data then the values given as arguments are used.
-    Returns the name, symbol and decimals in a tuple.
+    Returns the name, symbol, decimals and token kind in a tuple, together with the erc20
+    properties that the contract did not return. Their values are only defaults.
+
+    May raise:
+    - TokenQueryFailed if the nodes could not be reached to query an erc20 token
     """
+    missing: frozenset[str] = frozenset()
     if token_kind in EVM_TOKEN_KINDS:
         if token_kind == TokenKind.ERC20:
-            with suppress(NotERC20Conformant):
-                info = chain_inquirer.get_erc20_contract_info(address)  # type: ignore
+            try:
+                info, missing = chain_inquirer.get_erc20_contract_info_and_missing(address)  # type: ignore
+            except TokenQueryFailed:
+                raise
+            except NotERC20Conformant:
+                pass
+            else:
                 decimals = info['decimals'] if decimals is None else decimals
                 symbol = info['symbol'] if symbol is None else symbol
                 name = info['name'] if name is None else name
@@ -125,7 +142,7 @@ def _query_or_get_given_token_info(
                     metadata=metadata,
                 ) else TokenKind.SPL_TOKEN
 
-    return name, symbol, decimals, token_kind
+    return name, symbol, decimals, token_kind, missing
 
 
 def edit_token_and_clean_cache(
@@ -152,19 +169,25 @@ def edit_token_and_clean_cache(
         object.__setattr__(token, 'name', name)
         updated_fields = True
     elif token.name == token.identifier and chain_inquirer is not None:
-        # query the chain for available information
-        on_chain_name, on_chain_symbol, on_chain_decimals, _ = _query_or_get_given_token_info(
-            chain_inquirer=chain_inquirer,
-            address=token.evm_address if isinstance(token, EvmToken) else token.mint_address,
-            name=name,
-            symbol=symbol,
-            decimals=decimals,
-            token_kind=token.token_kind,
-        )
-        object.__setattr__(token, 'name', on_chain_name)
-        object.__setattr__(token, 'symbol', on_chain_symbol)
-        object.__setattr__(token, 'decimals', on_chain_decimals)
-        updated_fields = True
+        # query the chain for available information. Only complete details are saved, since
+        # the defaults of a failed or partial query would replace what the token has.
+        try:
+            *on_chain_details, _, missing = _query_or_get_given_token_info(
+                chain_inquirer=chain_inquirer,
+                address=token.evm_address if isinstance(token, EvmToken) else token.mint_address,
+                name=name,
+                symbol=symbol,
+                decimals=decimals,
+                token_kind=token.token_kind,
+            )
+        except TokenQueryFailed as e:
+            log.warning('Could not query the details of token %s due to %s', token.identifier, e)
+        else:
+            if len(missing) == 0:
+                for attribute, value in zip(('name', 'symbol', 'decimals'), on_chain_details, strict=True):  # noqa: E501
+                    if value is not None:
+                        object.__setattr__(token, attribute, value)
+                        updated_fields = True
 
     if symbol is not None and token.symbol != symbol:
         object.__setattr__(token, 'symbol', symbol)
@@ -550,23 +573,45 @@ def _get_or_create_token(
         else:
             asset_exists = False
 
+        retry_details = query_failed = False
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
-            name, symbol, decimals, token_kind = _query_or_get_given_token_info(
-                chain_inquirer=chain_inquirer,
-                address=address,
-                name=name,
-                symbol=symbol,
-                decimals=decimals,
-                token_kind=token_kind,
-            )
+            given_decimals = decimals
+            try:
+                name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
+                    chain_inquirer=chain_inquirer,
+                    address=address,
+                    name=name,
+                    symbol=symbol,
+                    decimals=decimals,
+                    token_kind=token_kind,
+                )
+            except TokenQueryFailed as e:
+                log.warning('Could not query the details of token %s due to %s', address, e)
+                query_failed, missing = True, frozenset(ERC20_PROPERTIES)
 
-            if (
-                    (missing_metadata := None in (name, symbol, decimals, token_kind)) and
-                    None not in (fallback_name, fallback_symbol, fallback_decimals)
-            ):
-                name, symbol, decimals = fallback_name, fallback_symbol, fallback_decimals
-            elif missing_metadata:
+            # Retry later the tokens whose query failed or that returned only some of the
+            # details. Contracts that have none of the methods are not erc20 tokens.
+            retry_details = token_kind == TokenKind.ERC20 and (
+                query_failed or 0 < len(missing) < len(ERC20_PROPERTIES)
+            )
+            if None not in (fallback_name, fallback_symbol, fallback_decimals):
+                # fallbacks only replace the details that the chain did not return
+                name = fallback_name if name is None else name
+                symbol = fallback_symbol if symbol is None else symbol
+                if decimals is None or ('decimals' in missing and given_decimals is None):
+                    decimals = fallback_decimals
+
+            if None in (name, symbol, decimals, token_kind):
+                if retry_details:
+                    _mark_token_without_details(
+                        userdb=userdb,
+                        chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
+                        address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
+                        encounter=encounter,
+                    )
                 raise (
+                    TokenQueryFailed(f'Could not query the details of token {address}')
+                    if query_failed else
                     NotERC20Conformant(f'Token {address} is not ERC20 conformant')
                     if token_kind == TokenKind.ERC20 else
                     NotERC721Conformant(f'Token {address} is not ERC721 conformant')
@@ -615,36 +660,125 @@ def _get_or_create_token(
             # newly queried data
             edit_token_fn(token)  # type: ignore[arg-type]  # can only be one of evm/solana
         else:
-            if encounter is None or encounter.should_notify:
-                # inform the frontend that a new token was detected
-                data: dict[str, Any] = {
-                    'token_identifier': identifier,
-                    'token_kind': 'evm' if token_class == EvmToken else 'solana',
-                }
-                if is_spam_token:
-                    data['is_ignored'] = True
-                if encounter is not None:
-                    if encounter.tx_ref is not None:
-                        data['seen_tx_reference'] = str(encounter.tx_ref)
-                    else:  # description should have been given
-                        data['seen_description'] = encounter.description
-
-                userdb.msg_aggregator.add_message(
-                    message_type=WSMessageType.NEW_TOKEN_DETECTED,
-                    data=data,
-                )
             # This can but should not raise InputError since it should not already exist.
-            GlobalDBHandler.add_asset(token)
-            # This can, but should not raise UnknownAsset, DeserializationError
-            token = token_class(token.identifier)
+            token = _add_new_token(
+                userdb=userdb,
+                token=token,
+                is_spam_token=is_spam_token,
+                encounter=encounter,
+            )
 
-            with userdb.user_write() as write_cursor:
-                userdb.add_asset_identifiers(write_cursor, [token.identifier])
-                # at this point the newly detected asset has just been added to the DB
-                if is_spam_token:
-                    userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
+        if retry_details:
+            mark_token_details_retry(
+                chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
+                address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
+                saved=(name, symbol, decimals),
+            )
 
     return token
+
+
+def _add_new_token(
+        userdb: DBHandler,
+        token: EvmToken | SolanaToken,
+        is_spam_token: bool,
+        encounter: TokenEncounterInfo | None,
+) -> EvmToken | SolanaToken:
+    """Save a token that is not in the DB yet and inform the frontend about it.
+    Has to be called holding get_or_create_token_lock.
+
+    May raise:
+    - InputError if the token is already in the DB
+    """
+    if encounter is None or encounter.should_notify:
+        # inform the frontend that a new token was detected
+        data: dict[str, Any] = {
+            'token_identifier': token.identifier,
+            'token_kind': 'evm' if isinstance(token, EvmToken) else 'solana',
+        }
+        if is_spam_token:
+            data['is_ignored'] = True
+        if encounter is not None:
+            if encounter.tx_ref is not None:
+                data['seen_tx_reference'] = str(encounter.tx_ref)
+            else:  # description should have been given
+                data['seen_description'] = encounter.description
+
+        userdb.msg_aggregator.add_message(
+            message_type=WSMessageType.NEW_TOKEN_DETECTED,
+            data=data,
+        )
+    GlobalDBHandler.add_asset(token)
+    # This can, but should not raise UnknownAsset, DeserializationError
+    token = type(token)(token.identifier)
+
+    with userdb.user_write() as write_cursor:
+        userdb.add_asset_identifiers(write_cursor, [token.identifier])
+        # at this point the newly detected asset has just been added to the DB
+        if is_spam_token:
+            userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
+
+    return token
+
+
+def create_evm_token_if_missing(
+        userdb: DBHandler,
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+        name: str,
+        symbol: str,
+        decimals: int,
+) -> bool:
+    """Create an erc20 token with the given details only if it is not in the DB. Unlike
+    get_or_create_evm_token an existing token is left untouched.
+
+    Returns whether the token was created.
+    """
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=chain_id,
+        token_kind=TokenKind.ERC20,
+        name=name,
+        symbol=symbol,
+        decimals=decimals,
+        cryptocompare=None,
+        protocol=SPAM_PROTOCOL if (
+            is_spam_token := check_if_spam_token(symbol=symbol, name=name)
+        ) else None,
+    )
+    with userdb.get_or_create_token_lock:
+        try:
+            Asset(token.identifier).check_existence()
+        except UnknownAsset:
+            pass
+        else:
+            return False
+
+        try:
+            _add_new_token(userdb=userdb, token=token, is_spam_token=is_spam_token, encounter=None)
+        except InputError as e:  # added outside the lock, like an asset update
+            log.debug('Did not create token %s due to %s', token.identifier, e)
+            return False
+
+    return True
+
+
+def _mark_token_without_details(
+        userdb: DBHandler,
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+        encounter: TokenEncounterInfo | None,
+) -> None:
+    """Mark a token that could not be created for lack of details to be retried, and
+    record the transaction where it was seen to be redecoded once the token exists."""
+    mark_token_details_retry(chain_id=chain_id, address=address, saved=None)
+    if encounter is not None and encounter.tx_ref is not None:
+        record_token_retry_tx(
+            database=userdb,
+            chain_id=chain_id,
+            address=address,
+            tx_hash=encounter.tx_ref,  # type: ignore[arg-type]  # evm encounters have evm hashes
+        )
 
 
 def get_crypto_asset_by_symbol(

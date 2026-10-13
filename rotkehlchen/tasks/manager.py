@@ -930,8 +930,12 @@ class TaskManager:
 
     def _maybe_retry_missing_token_details(self) -> list[Task] | None:
         """Retry querying the details of tokens that were stored without them because the
-        query failed when they were first seen.
+        query failed when they were first seen. Not while history is fetched, to not add to
+        the load of the nodes.
         """
+        if self.history_processing_coordinator.is_history_fetching():
+            return None
+
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS, TOKEN_DETAILS_RETRY, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 

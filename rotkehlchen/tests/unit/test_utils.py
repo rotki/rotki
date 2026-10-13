@@ -20,7 +20,8 @@ from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.constants.resolver import identifier_to_evm_address, identifier_to_evm_chain
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
+from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
 from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
@@ -37,6 +38,7 @@ from rotkehlchen.utils.misc import (
     pairwise,
     pairwise_longest,
     timestamp_to_date,
+    ts_now,
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import skip_if_running
@@ -442,7 +444,8 @@ def test_retrieve_old_erc20_token_info(ethereum_inquirer):
 
 
 def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInquirer) -> None:
-    """A failure to reach the nodes must not make a token look non conformant for good"""
+    """A failure to reach the nodes must not make a token look non conformant for good. It
+    is raised, and the address is not queried again until the cooldown passes."""
     address = to_checksum_address('0x' + '1' * 40)
     erc20_output = [
         (True, encode(['uint8'], [6])),
@@ -450,6 +453,7 @@ def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInq
         (True, encode(['string'], ['Token'])),
     ]
     erc721_output = [(True, encode(['string'], ['NFT'])), (True, encode(['string'], ['Nft']))]
+    now = ts_now()
     for getter, output in (
         (ethereum_inquirer.get_erc20_contract_info, erc20_output),
         (ethereum_inquirer.get_erc721_contract_info, erc721_output),
@@ -459,9 +463,18 @@ def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInq
             'multicall_2',
             side_effect=[RemoteError('down'), output],
         ) as multicall:
-            assert getter(address)['name'] is None
-            assert getter(address)['name'] in {'Token', 'Nft'}
-            assert getter(address)['name'] in {'Token', 'Nft'}  # cached now
+            with patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now):
+                for _ in range(2):  # the second time is in the cooldown and does not query
+                    with pytest.raises(TokenQueryFailed):
+                        getter(address)
+                assert multicall.call_count == 1
+
+            with patch(
+                'rotkehlchen.chain.evm.node_inquirer.ts_now',
+                return_value=now + TOKEN_QUERY_FAILURE_COOLDOWN,
+            ):
+                assert getter(address)['name'] in {'Token', 'Nft'}
+                assert getter(address)['name'] in {'Token', 'Nft'}  # cached now
             assert multicall.call_count == 2
 
 
