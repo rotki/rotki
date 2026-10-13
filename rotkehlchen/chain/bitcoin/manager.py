@@ -287,6 +287,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             # outdated. Mark them now and they get decoded again along with the new ones.
             if len(new_addresses := accounts_by_latest_query.get(None, [])) != 0:
                 self.mark_addresses_transactions_for_redecode(new_addresses)
+            new_addresses_set = set(new_addresses)  # membership checks below are hot
 
             tx_list: list[BitcoinTx] = []
             new_block_heights: dict[BTCAddress, int] = {}
@@ -334,13 +335,19 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             self.decode_transactions()
 
             with self.database.conn.write_ctx() as write_cursor:
-                for address in addresses:
-                    self.database.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=self.cache_key,
-                        value=new_block_heights[address],
-                        address=address,
-                    )
+                for last_queried_block, accounts in accounts_by_latest_query.items():
+                    for address in accounts:
+                        # Only a previously missing checkpoint still needs persisting here
+                        # (as zero when the query found nothing). An address whose height
+                        # did not change keeps its row untouched instead of being rewritten
+                        # with the identical value on every empty refresh.
+                        if last_queried_block is None or new_block_heights[address] != last_queried_block:  # noqa: E501
+                            self.database.set_dynamic_cache(
+                                write_cursor=write_cursor,
+                                name=self.cache_key,
+                                value=new_block_heights[address],
+                                address=address,
+                            )
             return
 
         with self.database.conn.write_ctx() as write_cursor:
@@ -352,7 +359,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             # stay as never queried, so the next refresh marks them again and
             # retries the decode instead of assuming they are fully synced.
             for address in addresses:
-                if address in new_addresses:
+                if address in new_addresses_set:
                     continue
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,

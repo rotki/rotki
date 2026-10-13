@@ -261,10 +261,12 @@ class BitcoinManager(BitcoinCommonManager):
         """Query blockcypher for transactions.
         Txs from the api are ordered newest to oldest, with pagination via block_height.
         Returns a tuple containing the queried block height per address and the list of txs.
-        Every address of one request batch is observed at the same snapshot, so all of
-        them share the batch's maximum safe height. Keeping one checkpoint per batch
-        preserves the address grouping of the next query; per-address heights would
-        split them into single-address groups that never coalesce again.
+        Every address of the whole query shares one conservative checkpoint, the lowest
+        batch maximum reached. Keeping one checkpoint per batch would permanently
+        fragment the address grouping of the next query: batches that reached different
+        heights would be queried separately, one request each, and the groups would
+        never coalesce again. A lower checkpoint only re-fetches already-seen blocks,
+        so sharing the minimum stays correct.
         """
         accounts_tx_lists: dict[BTCAddress, list[dict[str, Any]]] = defaultdict(list)
         limits = f'limit={BLOCKCYPHER_TX_LIMIT}&txlimit={BLOCKCYPHER_TX_IO_LIMIT}'
@@ -308,8 +310,16 @@ class BitcoinManager(BitcoinCommonManager):
         # accounts_tx_lists is keyed by address in insertion order, so its keys line up
         # with the raw tx lists handed to the processing above.
         address_heights = dict(zip(accounts_tx_lists, new_block_heights, strict=True))
+        if len(request_chunks) == 0:
+            return {}, txs
+        # One shared conservative watermark for every queried address: the lowest batch
+        # maximum. See the docstring for why the batches must not keep their own.
+        watermark = min(
+            max(address_heights[chunk_address] for chunk_address in chunk)
+            for chunk in request_chunks
+        )
         return {
-            address: max(address_heights[chunk_address] for chunk_address in chunk)
+            address: watermark
             for chunk in request_chunks
             for address in chunk
         }, txs

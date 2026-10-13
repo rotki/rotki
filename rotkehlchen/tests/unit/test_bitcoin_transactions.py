@@ -1,5 +1,6 @@
 import json
 import logging
+from itertools import starmap
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
@@ -1334,10 +1335,8 @@ def test_unplaceable_txios_do_not_advance_the_query_range(
         ) is None
 
 
-def _blockcypher_batch_response(address_a: BTCAddress, address_b: BTCAddress) -> str:
-    """A blockcypher response for two addresses whose newest transactions sit in
-    different blocks, 900_001 for the first and 900_000 for the second.
-    """
+def _blockcypher_batch_response(entries: list[tuple[BTCAddress, str, int]]) -> str:
+    """A blockcypher response for the given (address, txid, block height) entries."""
     def entry(address: BTCAddress, txid: str, block_height: int) -> dict[str, Any]:
         return {
             'address': address,
@@ -1354,10 +1353,7 @@ def _blockcypher_batch_response(address_a: BTCAddress, address_b: BTCAddress) ->
             }],
         }
 
-    return json.dumps([
-        entry(address_a, 'a' * 64, 900_001),
-        entry(address_b, 'b' * 64, 900_000),
-    ])
+    return json.dumps(list(starmap(entry, entries)))
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
@@ -1370,8 +1366,8 @@ def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
     Blockcypher answers one request per batch of addresses, and every address of a batch
     is observed at the same snapshot. Caching each address's own newest block would give
     the two addresses different checkpoints, so the next refresh would query them
-    separately, one blockchain.info request each, forever. Sharing the batch's maximum
-    height keeps them grouped in a single request.
+    separately, one blockchain.info request each, forever. Sharing one conservative
+    watermark for the whole query keeps them grouped in a single request.
     """
     address_a, address_b = btc_accounts
     info_requests: list[str] = []
@@ -1384,7 +1380,10 @@ def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
             return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
 
         assert BLOCKCYPHER_BASE_URL in url
-        return MockResponse(200, _blockcypher_batch_response(address_a, address_b))
+        return MockResponse(200, _blockcypher_batch_response([
+            (address_a, 'a' * 64, 900_001),
+            (address_b, 'b' * 64, 900_000),
+        ]))
 
     with (
         patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
@@ -1402,7 +1401,7 @@ def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
                 cursor=cursor,
                 name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
                 address=address,
-            ) == 900_001  # the batch's maximum, not each address's own newest block
+            ) == 900_001  # the shared watermark, not each address's own newest block
 
     # The next refresh goes to blockchain.info again. Both addresses share one checkpoint,
     # so they are queried together in a single multiaddr request instead of one each.
@@ -1417,6 +1416,136 @@ def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
             addresses=btc_accounts,
         )
     assert len(info_requests) - first_query_info_requests == 1
+
+
+@pytest.mark.parametrize('btc_accounts', [[
+    CHANGE_TX_INPUT1,
+    CHANGE_TX_INPUT2,
+    CHANGE_TX_EXTERNAL_OUTPUT,
+    CHANGE_TX_CHANGE_OUTPUT,
+]])
+def test_blockcypher_fallback_shares_watermark_across_batches(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A blockcypher fallback over several batches must keep one shared checkpoint.
+
+    Blockcypher answers two addresses per request, so four addresses take two batches.
+    Caching each batch's own maximum would leave the two batches on different
+    checkpoints, and the next blockchain.info refresh would make two requests instead
+    of one, with the groups never coalescing again. The shared conservative watermark
+    (the lowest batch maximum) keeps all four addresses on one checkpoint, so the next
+    refresh queries them together in a single request.
+    """
+    address_a, address_b, address_c, address_d = btc_accounts
+    info_requests: list[str] = []
+    batch_responses = {
+        f'{address_a};{address_b}': _blockcypher_batch_response([
+            (address_a, 'a' * 64, 900_001),
+            (address_b, 'b' * 64, 900_001),
+        ]),
+        f'{address_c};{address_d}': _blockcypher_batch_response([
+            (address_c, 'c' * 64, 900_000),
+            (address_d, 'd' * 64, 900_000),
+        ]),
+    }
+
+    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
+        if BLOCKCHAIN_INFO_BASE_URL in url:
+            info_requests.append(url)
+            if len(info_requests) == 1:
+                raise requests.exceptions.RequestException('blockchain.info is down')
+            return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
+
+        assert BLOCKCYPHER_BASE_URL in url
+        for batch_key, response in batch_responses.items():
+            if batch_key in url:
+                return MockResponse(200, response)
+        raise AssertionError(f'unexpected blockcypher request {url}')
+
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        for address in btc_accounts:
+            assert bitcoin_manager.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                address=address,
+            ) == 900_000  # the lowest batch maximum, shared by every address
+
+    # The next refresh goes to blockchain.info again. All four addresses share one
+    # checkpoint, so they are queried together in a single multiaddr request.
+    first_query_info_requests = len(info_requests)
+    with (
+        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+    assert len(info_requests) - first_query_info_requests == 1
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
+def test_empty_refresh_does_not_rewrite_unchanged_checkpoints(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """An empty refresh must not rewrite checkpoint rows whose height did not change.
+
+    Previously the empty-result path wrote every address's checkpoint on every
+    refresh, one identical INSERT OR REPLACE per address plus a commit, even when
+    nothing had moved. Only a previously missing checkpoint still needs persisting
+    (as zero); unchanged rows are left untouched.
+    """
+    address_old, address_new = btc_accounts
+    database = bitcoin_manager.database
+    with database.conn.write_ctx() as write_cursor:
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            value=900_000,
+            address=address_old,
+        )
+
+    with (
+        patch.object(bitcoin_manager, '_query', return_value=({}, [])),
+        patch.object(database, 'set_dynamic_cache', wraps=database.set_dynamic_cache) as mock_set_cache,  # noqa: E501
+    ):
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    # The unchanged checkpoint was not rewritten; the missing one was persisted as zero.
+    checkpoint_writes = [
+        (call.kwargs['address'], call.kwargs['value'])
+        for call in mock_set_cache.call_args_list
+        if call.kwargs.get('name') == DBCacheDynamic.LAST_BTC_TX_BLOCK
+    ]
+    assert checkpoint_writes == [(address_new, 0)]
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_old,
+        ) == 900_000
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address_new,
+        ) == 0
 
 
 def test_each_raw_tx_list_is_processed_on_its_own(bitcoin_manager: BitcoinManager) -> None:
