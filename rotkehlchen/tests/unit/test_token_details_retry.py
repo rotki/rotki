@@ -21,6 +21,7 @@ from rotkehlchen.assets.details_retry import (
     get_token_details_retry_marks,
     get_token_retry_txs,
 )
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import edit_token_and_clean_cache, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ERC20_PROPERTIES, ERC20_PROPERTIES_CALLDATA
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -34,6 +35,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.assets import _get_tokens_missing_details, retry_missing_token_details
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
@@ -149,6 +151,24 @@ def test_details_are_updated_only_when_found(database: DBHandler) -> None:
             cursor=cursor,
             name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
         ) is not None
+
+
+def test_token_with_null_name_is_retried(database: DBHandler) -> None:
+    """Older versions saved a NULL name when repairing a token failed. It shows the
+    identifier as name too, so it has to be picked like the other placeholders"""
+    token = _create_placeholder(database, 1)
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute('UPDATE assets SET name=NULL WHERE identifier=?', (token.identifier,))
+    AssetResolver.clean_memory_cache(token.identifier)
+    assert EvmToken(token.identifier).name == token.identifier
+    chains_aggregator, _ = _chains_aggregator(
+        database=database,
+        infos=lambda addresses: {token.evm_address: _info('Found')},
+    )
+
+    retry_missing_token_details(chains_aggregator)
+
+    assert _details(token) == ('Found', 'SYM', 6)
 
 
 def test_partial_details_keep_the_token_retryable(

@@ -299,8 +299,9 @@ def _get_tokens_missing_details(
         after_identifier: str,
 ) -> list[tuple[str, ChainID, ChecksumEvmAddress]]:
     """Get up to TOKEN_DETAILS_RETRY_BATCH_SIZE erc20 tokens of the given chains whose name is
-    their identifier, which is what is saved when the details could not be queried. Tokens are
-    returned ordered by identifier, starting after the given one.
+    their identifier, which is what is saved when the details could not be queried, or NULL,
+    which older versions saved when repairing them failed. Both show the identifier as name.
+    Tokens are returned ordered by identifier, starting after the given one.
     """
     if len(chain_ids) == 0:
         return []
@@ -310,7 +311,8 @@ def _get_tokens_missing_details(
             (identifier, ChainID.deserialize_from_db(chain), address)
             for identifier, chain, address in cursor.execute(
                 'SELECT A.identifier, B.chain, B.address FROM assets AS A JOIN evm_tokens AS B '
-                'ON A.identifier=B.identifier WHERE A.name=A.identifier AND B.token_kind=? '
+                'ON A.identifier=B.identifier WHERE (A.name IS NULL OR A.name=A.identifier) '
+                'AND B.token_kind=? '
                 'AND B.protocol IS NOT ? AND A.identifier>? '
                 f"AND B.chain IN ({','.join('?' * len(chain_ids))}) ORDER BY A.identifier LIMIT ?",
                 (
