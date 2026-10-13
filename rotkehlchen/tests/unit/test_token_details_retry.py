@@ -22,7 +22,11 @@ from rotkehlchen.assets.details_retry import (
     get_token_retry_txs,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.utils import edit_token_and_clean_cache, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    edit_token_and_clean_cache,
+    get_or_create_evm_token,
+)
 from rotkehlchen.chain.evm.constants import ERC20_PROPERTIES, ERC20_PROPERTIES_CALLDATA
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -54,7 +58,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tasks.manager import TaskManager
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 
 def _address(idx: int) -> ChecksumEvmAddress:
@@ -293,6 +297,55 @@ def test_partial_details_at_creation(
 
     assert multicall.call_count == TOKEN_DETAILS_RETRY_MAX_ATTEMPTS
     assert _details(token) == ('Fallback', 'TKN', 6)
+
+
+def test_given_up_token_keeps_what_it_has_and_is_not_retried(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """When the attempts run out nothing is deleted: the recorded transactions stay, so they
+    are redecoded if the token is added later, and the token is never retried again, even
+    when it is seen in another transaction"""
+    def see_token(tx_hash: EVMTxHash) -> None:
+        with (
+            patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(name=None)),
+            pytest.raises(NotERC20Conformant),
+        ):
+            get_or_create_evm_token(
+                userdb=database,
+                evm_address=address,
+                chain_id=ChainID.ETHEREUM,
+                evm_inquirer=ethereum_inquirer,
+                encounter=TokenEncounterInfo(tx_ref=tx_hash),
+            )
+        ethereum_inquirer.contract_info_erc20_cache.remove(address)
+
+    address = _address(1)
+    see_token(first_tx := make_evm_tx_hash())
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=lambda addresses: {})  # noqa: E501
+    for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):
+        retry_missing_token_details(chains_aggregator)
+    assert _marks() == {}
+    assert node_inquirer.get_multiple_erc20_contracts_info.call_count == TOKEN_DETAILS_RETRY_MAX_ATTEMPTS  # noqa: E501
+
+    see_token(second_tx := make_evm_tx_hash())  # seen again after giving up
+    retry_missing_token_details(chains_aggregator)
+    assert _marks() == {}  # not marked again
+    assert node_inquirer.get_multiple_erc20_contracts_info.call_count == TOKEN_DETAILS_RETRY_MAX_ATTEMPTS  # noqa: E501
+    with database.conn.read_ctx() as cursor:
+        assert {x.tx_hash for x in get_token_retry_txs(cursor)} == {first_tx, second_tx}
+
+    get_or_create_evm_token(  # added later, for example by the user
+        userdb=database,
+        evm_address=address,
+        chain_id=ChainID.ETHEREUM,
+        name='Added',
+        symbol='ADD',
+        decimals=6,
+    )
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    retry_missing_token_details(chains_aggregator)
+    assert {x.kwargs['tx_hashes'][0] for x in decoder.decode_and_get_transaction_hashes.call_args_list} == {first_tx, second_tx}  # noqa: E501
 
 
 def test_contract_without_methods_is_not_marked(

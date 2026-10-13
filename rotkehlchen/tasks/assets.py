@@ -439,7 +439,7 @@ def _retry_chain_token_details(
                     info=info,
                 )
             elif mark is not None:  # tokens without a mark come back when the cursor wraps
-                count_token_details_retry_attempt(database=database, mark=mark)
+                count_token_details_retry_attempt(mark=mark)
 
 
 def _redecode_token_retry_txs(

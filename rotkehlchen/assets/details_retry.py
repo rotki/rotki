@@ -3,7 +3,9 @@
 When the details of a token can't be fully queried while it is first seen, the token is
 marked in the global DB unique cache by chain and address. The mark keeps the details that
 were saved in the token, so that a retry can tell if a user edit or an asset update changed
-them in the meantime, and how many retries found the details still incomplete.
+them in the meantime, and how many retries found the details still incomplete. When the
+attempts run out the mark is moved to a given up key, so the token keeps whatever it has and
+is never retried again, even if it is seen again.
 
 If the token could not be created at all, the transactions where it was seen are recorded in
 the user DB so they can be redecoded once the token exists. When the details of an existing
@@ -61,8 +63,13 @@ class TokenRetryTx(NamedTuple):
 def _mark_key_parts(
         chain_id: ChainID,
         address: ChecksumEvmAddress,
-) -> tuple[Literal[CacheType.TOKEN_DETAILS_RETRY], str, str]:
-    return CacheType.TOKEN_DETAILS_RETRY, str(chain_id.serialize_for_db()), address
+        given_up: bool = False,
+) -> tuple[Literal[CacheType.TOKEN_DETAILS_RETRY, CacheType.TOKEN_DETAILS_GIVEN_UP], str, str]:
+    return (
+        CacheType.TOKEN_DETAILS_GIVEN_UP if given_up else CacheType.TOKEN_DETAILS_RETRY,
+        str(chain_id.serialize_for_db()),
+        address,
+    )
 
 
 def _serialize_mark(attempts: int, saved: tuple[str, str | None, int] | None) -> str:
@@ -75,9 +82,16 @@ def mark_token_details_retry(
         saved: tuple[str, str | None, int] | None,
 ) -> None:
     """Mark a token to have its details queried again. A token that was already marked
-    keeps its attempts, so seeing it again does not make it retry forever."""
+    keeps its attempts and one whose attempts ran out is not marked again, so seeing it
+    again does not make it retry forever."""
     key_parts = _mark_key_parts(chain_id=chain_id, address=address)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        if globaldb_get_unique_cache_value(
+            cursor=write_cursor,
+            key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
+        ) is not None:
+            return
+
         attempts = 0
         if (value := globaldb_get_unique_cache_value(write_cursor, key_parts)) is not None:
             try:
@@ -128,29 +142,30 @@ def remove_token_details_retry_mark(chain_id: ChainID, address: ChecksumEvmAddre
         )
 
 
-def count_token_details_retry_attempt(
-        database: DBHandler,
-        mark: TokenDetailsRetryMark,
-) -> None:
-    """Count a retry that found the details incomplete. When the attempts run out the token
-    is left as it is, together with the transactions waiting for it."""
-    if (attempts := mark.attempts + 1) >= TOKEN_DETAILS_RETRY_MAX_ATTEMPTS:
-        log.warning(
-            'Giving up on querying the details of token %s at %s after %d attempts',
-            mark.address, mark.chain_id.to_name(), attempts,
-        )
-        remove_token_details_retry_mark(chain_id=mark.chain_id, address=mark.address)
-        with database.conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                "DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE '\\'",
-                (f'{_tx_key_prefix(chain_id=mark.chain_id, address=mark.address)}\\_%',),
-            )
-        return
-
+def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
+    """Count a retry that found the details incomplete. When the attempts run out the mark
+    is moved to the given up key: the token keeps whatever it has and is not retried again.
+    The transactions recorded for it are kept, so they are still redecoded if the token is
+    added later, for example by the user or an asset update."""
+    attempts = mark.attempts + 1
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        if given_up := attempts >= TOKEN_DETAILS_RETRY_MAX_ATTEMPTS:
+            log.warning(
+                'Giving up on querying the details of token %s at %s after %d attempts',
+                mark.address, mark.chain_id.to_name(), attempts,
+            )
+            write_cursor.execute(
+                'DELETE FROM unique_cache WHERE key=?',
+                (compute_cache_key(_mark_key_parts(chain_id=mark.chain_id, address=mark.address)),),  # noqa: E501
+            )
+
         globaldb_set_unique_cache_value(  # also moves it to the back of the queue
             write_cursor=write_cursor,
-            key_parts=_mark_key_parts(chain_id=mark.chain_id, address=mark.address),
+            key_parts=_mark_key_parts(
+                chain_id=mark.chain_id,
+                address=mark.address,
+                given_up=given_up,
+            ),
             value=_serialize_mark(attempts=attempts, saved=mark.saved),
         )
 
