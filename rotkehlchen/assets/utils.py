@@ -1,5 +1,4 @@
 import logging
-from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, overload
 
 import regex
@@ -16,7 +15,11 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.details_retry import mark_token_details_retry
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ERC20_PROPERTIES
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    ERC20_PROPERTIES,
+    ERC721_PROPERTIES,
+)
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -96,8 +99,9 @@ def _query_or_get_given_token_info(
 ) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None, frozenset[str]]:  # noqa: E501
     """Query basic token information for the given address.
     If unable to get the values from onchain data then the values given as arguments are used.
-    Returns the name, symbol, decimals and token kind in a tuple, together with the erc20
-    properties that the contract did not return. Their values are only defaults.
+    Returns the name, symbol, decimals and token kind in a tuple, together with the
+    properties that the contract did not return. Their values are only defaults. An erc721
+    contract whose query failed is returned with empty details and all properties missing.
 
     May raise:
     - TokenQueryFailed if the nodes could not be reached to query an erc20 token
@@ -117,8 +121,18 @@ def _query_or_get_given_token_info(
                 name = info['name'] if name is None else name
 
         else:  # TokenKind.ERC721
-            with suppress(NotERC721Conformant):
+            try:
                 info = chain_inquirer.get_erc721_contract_info(address)  # type: ignore
+            except TokenQueryFailed as e:
+                # Every collectible id is a new token, so dropping their events while the
+                # nodes fail would lose most nft transfers. They are created with empty
+                # details as before, and they are not retried.
+                log.warning('Could not query the details of nft %s due to %s', address, e)
+                info, missing = {'symbol': None, 'name': None}, frozenset(ERC721_PROPERTIES)
+            except NotERC721Conformant:
+                info = None
+
+            if info is not None:
                 decimals = 0
                 symbol = info['symbol'] or '' if symbol is None else symbol
                 name = info['name'] or '' if name is None else name
@@ -574,8 +588,12 @@ def _get_or_create_token(
             asset_exists = False
 
         retry_details = query_failed = False
+        retry_missing: frozenset[str] = frozenset()
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
-            given_decimals = decimals
+            given = {
+                prop for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
+                if value is not None
+            }
             try:
                 name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
                     chain_inquirer=chain_inquirer,
@@ -591,17 +609,19 @@ def _get_or_create_token(
 
             # Retry later the tokens whose query failed or that returned only some of the
             # details. Contracts that have none of the methods are not erc20 tokens, and spam
-            # tokens are not worth querying again.
+            # tokens are not worth querying again. Details given by the caller are kept.
+            retry_missing = missing - given
             retry_details = (
                 token_kind == TokenKind.ERC20 and
                 protocol != SPAM_PROTOCOL and
-                (query_failed or 0 < len(missing) < len(ERC20_PROPERTIES))
+                (query_failed or 0 < len(missing) < len(ERC20_PROPERTIES)) and
+                len(retry_missing) != 0
             )
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
                 # fallbacks only replace the details that the chain did not return
                 name = fallback_name if name is None else name
                 symbol = fallback_symbol if symbol is None else symbol
-                if decimals is None or ('decimals' in missing and given_decimals is None):
+                if decimals is None or ('decimals' in missing and 'decimals' not in given):
                     decimals = fallback_decimals
 
             if None in (name, symbol, decimals, token_kind):
@@ -675,6 +695,7 @@ def _get_or_create_token(
                 chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
                 address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
                 saved=(name, symbol, decimals),
+                missing=retry_missing,
             )
 
     return token

@@ -46,6 +46,7 @@ from rotkehlchen.types import ChainID, Location, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.concurrency.tasks import Task
 
 
 def assert_token_entry_exists_in_result(
@@ -853,7 +854,7 @@ def test_editing_token_stops_details_retry(
 def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServer) -> None:
     """A token added by the user may have been seen before it existed, for example one that
     could not be created because its details could not be queried, so the transactions with
-    logs of its contract are redecoded and the token is not retried anymore."""
+    logs of its contract are redecoded in a task and the token is not retried anymore."""
     mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := make_evm_address()), saved=None)  # noqa: E501
     added: dict[str, Any] = EvmToken.initialize(
         address=address,
@@ -865,11 +866,23 @@ def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServ
     ).to_dict()
     del added['identifier']
     del added['forked']
-    with patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode:
+    supervisor, tasks = rotkehlchen_api_server.rest_api.rotkehlchen.task_supervisor, []
+    original_spawn_and_track = supervisor.spawn_and_track
+
+    def spawn_and_track(**kwargs: Any) -> Task:
+        tasks.append(task := original_spawn_and_track(**kwargs))
+        return task
+
+    with (
+        patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode,
+        patch.object(supervisor, 'spawn_and_track', side_effect=spawn_and_track),
+    ):
         assert_proper_sync_response_with_result(requests.put(
             api_url_for(rotkehlchen_api_server, 'allassetsresource'),
             json=added,
         ))
+        assert len(tasks) == 1  # the slow logs query does not run in the request
+        tasks[0].join(timeout=10)
 
     assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
     redecode.assert_called_once()

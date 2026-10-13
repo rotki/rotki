@@ -3,8 +3,8 @@
 The seam: when the details of an erc20 token can't be fully queried while it is first seen,
 _get_or_create_token marks it in the global DB cache. retry_missing_token_details picks the
 marked tokens and the ones whose name is their identifier, asks the node inquirer of their chain
-for the details in chunks and only saves complete details over a token that nobody else changed
-in the meantime.
+for the details in chunks and, when all of them came back, fills only the missing details that
+nobody else changed in the meantime.
 The transactions of tokens that got their details or were created that way are flagged for
 redecoding, and the periodic decoding task redecodes them.
 """
@@ -288,7 +288,8 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
     assert _details(not_found) == (not_found.identifier, '', 18)
     assert _details(other_chain)[0] == other_chain.identifier
-    assert _marks() == {}
+    # the placeholder that answered without details counts an attempt to be given up some day
+    assert _marks() == {not_found.evm_address: (1, (not_found.identifier, None, 18))}
     assert _get_cursor(database) == ''  # reached the end
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
@@ -299,14 +300,15 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
 
 @pytest.mark.parametrize('marked', [False, True])
 @pytest.mark.parametrize('keep_name', [False, True])
-def test_token_changed_while_querying_is_not_overwritten(
+def test_token_changed_while_querying_keeps_the_changes(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         marked: bool,
         keep_name: bool,
 ) -> None:
-    """A user edit or asset update that happens while the details are queried wins, also
-    when it keeps the name and only changes the symbol and decimals"""
+    """A user edit or asset update that happens while the details are queried wins. Only the
+    details it did not change are filled, so a name it kept, which is the placeholder or
+    fallback one, still gets the queried one."""
     if marked:  # created with fallbacks after a failed query
         with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
             token = get_or_create_evm_token(
@@ -338,8 +340,38 @@ def test_token_changed_while_querying_is_not_overwritten(
     chains_aggregator, _ = _chains_aggregator(database=database, infos=edit_while_querying)
     retry_missing_token_details(chains_aggregator)
 
-    assert _details(token) == (name, 'USR', 8)
+    assert _details(token) == ('Queried' if keep_name else name, 'USR', 8)
     assert _marks() == {}  # nothing to retry, the token was fixed by someone else
+
+
+@pytest.mark.parametrize('marked', [False, True])
+def test_user_edit_while_querying_is_never_overwritten(
+        database: DBHandler,
+        marked: bool,
+) -> None:
+    """A user edit stops the retry of the token. If it happens while the details are queried,
+    not even the details the user left as they were are filled, and no mark is created."""
+    token = _create_placeholder(database, 1)
+    if marked:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=(token.identifier, None, 18))  # noqa: E501
+
+    def edit_while_querying(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        edit_token_and_clean_cache(  # what the edit endpoint does
+            token=EvmToken(token.identifier),
+            name=None,
+            symbol='USR',
+            decimals=None,
+            started=None,
+            chain_inquirer=None,
+        )
+        stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+        return {token.evm_address: _info('Queried')}
+
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=edit_while_querying)
+    retry_missing_token_details(chains_aggregator)
+
+    assert _details(token) == (token.identifier, 'USR', 18)
+    assert _marks() == {}
 
 
 def test_repair_on_access_does_not_overwrite_with_defaults(
@@ -493,12 +525,16 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
         retry_missing_token_details(chains_aggregator)
         assert _get_cursor(database) == tokens[1].identifier
 
-    # broken tokens did not block the ones after them
+    # broken tokens did not block the ones after them. They got marked when their details
+    # were not found, so they are also retried from the marks until they are given up.
     assert queried == [
         [tokens[0].evm_address, tokens[1].evm_address],
-        [tokens[2].evm_address],
-        [tokens[0].evm_address, tokens[1].evm_address],
+        [tokens[2].evm_address, tokens[0].evm_address, tokens[1].evm_address],
+        [tokens[0].evm_address, tokens[1].evm_address],  # the marks are least recently tried
     ]
+    assert {address: attempts for address, (attempts, _) in _marks().items()} == {
+        tokens[0].evm_address: 3, tokens[1].evm_address: 3, tokens[2].evm_address: 1,
+    }
 
 
 def test_failed_chunk_does_not_block_following_tokens(database: DBHandler) -> None:
@@ -586,6 +622,106 @@ def test_marks_failing_while_nodes_are_down_go_to_the_back(database: DBHandler) 
     marks = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
     assert [x.address for x in marks] == addresses[3:] + addresses[:3]
     assert all(x.attempts == 0 for x in marks)
+
+
+def test_outage_in_the_middle_of_a_run_counts_no_attempts(database: DBHandler) -> None:
+    """When the nodes stop answering after a chunk of the run was queried, the run stops
+    after TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single token queries fail in a row. Their
+    marks are postponed instead of counting an attempt and the rest are not queried."""
+    addresses = [_address(i) for i in range(1, 7)]
+    for address in addresses:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
+
+    def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        if queried == addresses[:2]:
+            return {}  # the nodes answered, but these tokens have no details
+        raise RemoteError('down')
+
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
+    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):
+        retry_missing_token_details(chains_aggregator)
+
+    assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [
+        addresses[:2],
+        addresses[2:4], [addresses[2]], [addresses[3]],
+        addresses[4:], [addresses[4]],  # third failure in a row
+    ]
+    assert _marks() == {
+        addresses[0]: (1, None), addresses[1]: (1, None),  # answered without details
+        **dict.fromkeys(addresses[2:], (0, None)),
+    }
+
+
+def test_decoder_edit_does_not_stop_missing_details_from_being_fixed(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """A token created while only decimals() failed gets the default decimals and a mark that
+    remembers that only they are missing, so the symbol given by the caller is kept. A decoder
+    giving it a name later does not count as an edit of the decimals, so the retry still fixes
+    them and keeps the decoder's name. The stale info cached when the token was first seen is
+    dropped by the retry query."""
+    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=None)):
+        token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=(address := _address(1)),
+            chain_id=ChainID.ETHEREUM,
+            symbol='GIV',
+            evm_inquirer=ethereum_inquirer,
+        )
+    assert _details(token) == ('Token', 'GIV', 18)
+    assert [x.missing for x in get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)] == [frozenset({'decimals'})]  # noqa: E501
+
+    get_or_create_evm_token(  # what a protocol decoder does
+        userdb=database,
+        evm_address=address,
+        chain_id=ChainID.ETHEREUM,
+        name='Decoder Name',
+        protocol='some-protocol',
+    )
+    chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
+    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()) as multicall:
+        retry_missing_token_details(chains_aggregator)
+        # what the refresh of the asset edit form shows, not the info cached when first seen
+        assert ethereum_inquirer.get_erc20_contract_info(address=address, ignore_failure_cooldown=True)['decimals'] == 6  # noqa: E501
+        assert multicall.call_count == 2
+
+    assert _details(token) == ('Decoder Name', 'GIV', 6)
+    assert _marks() == {}
+
+
+def test_seeing_a_marked_token_again_keeps_its_place(database: DBHandler) -> None:
+    """Every sighting of a token that could not be created marks it, so marking it again as it
+    already is must not move it to the back of the queue"""
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(first := _address(1)), saved=None)
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=_address(2), saved=None)
+    with patch('rotkehlchen.globaldb.cache.ts_now', return_value=ts_now() + 100):
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=first, saved=None)
+
+    assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)[0].address == first
+
+
+@pytest.mark.parametrize('given', [{}, {'name': 'name.eth', 'symbol': 'ENS'}])
+def test_nft_is_created_when_the_nodes_fail(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        given: dict[str, str],
+) -> None:
+    """Every collectible id is a new token, so an nft seen while the nodes fail is created
+    with empty details, or the given ones, instead of dropping its events. It is not marked."""
+    with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
+        token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(1),
+            chain_id=ChainID.ETHEREUM,
+            token_kind=TokenKind.ERC721,
+            collectible_id='1',
+            evm_inquirer=ethereum_inquirer,
+            **given,  # type: ignore[arg-type]  # only name and symbol are given
+        )
+
+    assert _details(token) == (given.get('name', ''), given.get('symbol', ''), 0)
+    assert _marks() == {}
 
 
 def test_get_multiple_erc20_contracts_info(ethereum_inquirer: EthereumInquirer) -> None:

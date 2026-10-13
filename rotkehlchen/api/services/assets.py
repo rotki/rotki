@@ -269,8 +269,13 @@ class AssetsService:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
         if isinstance(asset, EvmToken):
             stop_token_details_retry(chain_id=asset.chain_id, address=asset.evm_address)
-            # transactions decoded before the token existed are missing its events
-            redecode_token_txs(
+            # transactions decoded before the token existed are missing its events. Finding
+            # them scans the logs of all transactions, so it is not done in the request.
+            self.rotkehlchen.task_supervisor.spawn_and_track(
+                after_seconds=None,
+                task_name=f'Redecode transactions of added token {asset.identifier}',
+                exception_is_error=True,
+                method=redecode_token_txs,
                 database=self.rotkehlchen.data.db,
                 chain_id=asset.chain_id,
                 address=asset.evm_address,

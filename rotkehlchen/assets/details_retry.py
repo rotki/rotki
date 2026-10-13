@@ -2,8 +2,9 @@
 
 When the details of a token can't be fully queried while it is first seen, the token is
 marked in the global DB unique cache by chain and address. The mark keeps the details that
-were saved in the token, so that a retry can tell if a user edit or an asset update changed
-them in the meantime, and how many retries found the details still incomplete. When the
+were saved in the token and which of them are only defaults or fallbacks, so that a retry fills
+only those and can tell if something else, like a decoder or an asset update, filled them in the
+meantime. It also keeps how many retries found the details still incomplete. When the
 attempts run out the mark is moved to a given up key, so the token keeps whatever it has and
 is never retried again, even if it is seen again. A given up token that could not be created
 keeps its attempts in the given up mark until the token is added, so that the transactions
@@ -18,6 +19,7 @@ import logging
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
+from rotkehlchen.chain.evm.constants import ERC20_PROPERTIES
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.globaldb.cache import (
     compute_cache_key,
@@ -46,6 +48,8 @@ log = RotkehlchenLogsAdapter(logger)
 TOKEN_DETAILS_RETRY_MAX_ATTEMPTS: Final = 5
 # (name, symbol, decimals) of a token as saved in the global DB
 TokenDetails = tuple[str | None, str | None, int]
+# index of each of the ERC20_PROPERTIES in TokenDetails
+TOKEN_DETAILS_INDEX: Final = {'name': 0, 'symbol': 1, 'decimals': 2}
 
 
 class TokenDetailsRetryMark(NamedTuple):
@@ -53,7 +57,9 @@ class TokenDetailsRetryMark(NamedTuple):
     address: ChecksumEvmAddress
     attempts: int
     # (name, symbol, decimals) saved in the token when marked. None if it was not created.
-    saved: tuple[str, str | None, int] | None
+    saved: TokenDetails | None
+    # the ERC20_PROPERTIES whose saved values are not the ones of the chain
+    missing: frozenset[str] = frozenset(ERC20_PROPERTIES)
 
 
 def _mark_key_parts(
@@ -68,37 +74,68 @@ def _mark_key_parts(
     )
 
 
-def _serialize_mark(attempts: int, saved: tuple[str, str | None, int] | None) -> str:
-    return rlk_jsondumps({'attempts': attempts, 'saved': saved})
+def _is_given_up(cursor: DBCursor, chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
+    return globaldb_get_unique_cache_value(
+        cursor=cursor,
+        key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
+    ) is not None
+
+
+def is_token_details_retry_given_up(chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
+    """Whether the details of the token are never queried again, because its attempts ran
+    out or the user edited or added it"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        return _is_given_up(cursor=cursor, chain_id=chain_id, address=address)
+
+
+def _serialize_mark(
+        attempts: int,
+        saved: TokenDetails | None,
+        missing: frozenset[str] = frozenset(ERC20_PROPERTIES),
+) -> str:
+    return rlk_jsondumps({'attempts': attempts, 'saved': saved, 'missing': sorted(missing)})
 
 
 def mark_token_details_retry(
         chain_id: ChainID,
         address: ChecksumEvmAddress,
-        saved: tuple[str, str | None, int] | None,
+        saved: TokenDetails | None,
+        missing: frozenset[str] = frozenset(ERC20_PROPERTIES),
 ) -> None:
     """Mark a token to have its details queried again. A token that was already marked
     keeps its attempts and one whose attempts ran out is not marked again, so seeing it
-    again does not make it retry forever."""
+    again does not make it retry forever. missing are the ERC20_PROPERTIES whose saved
+    values are only defaults or fallbacks."""
     key_parts = _mark_key_parts(chain_id=chain_id, address=address)
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        if globaldb_get_unique_cache_value(
-            cursor=write_cursor,
-            key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
-        ) is not None:
+    value = _serialize_mark(attempts=0, saved=saved, missing=missing)
+    # this runs for every sighting of the token while decoding, so only write when needed
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        if _is_given_up(cursor=cursor, chain_id=chain_id, address=address):
             return
 
-        attempts = 0
-        if (value := globaldb_get_unique_cache_value(write_cursor, key_parts)) is not None:
-            try:
-                attempts = jsonloads_dict(value)['attempts']
-            except (JSONDecodeError, KeyError) as e:
-                log.error('Malformed token details retry mark %s due to %s', value, e)
+        existing = globaldb_get_unique_cache_value(cursor=cursor, key_parts=key_parts)
+
+    if existing is not None:
+        try:
+            data = jsonloads_dict(existing)
+            if (
+                data.get('saved') == (None if saved is None else list(saved)) and
+                data.get('missing') == sorted(missing)
+            ):
+                return  # already marked as it is now. Keep its place in the queue
+
+            value = _serialize_mark(attempts=data['attempts'], saved=saved, missing=missing)
+        except (JSONDecodeError, KeyError) as e:
+            log.error('Malformed token details retry mark %s due to %s', existing, e)
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        if _is_given_up(cursor=write_cursor, chain_id=chain_id, address=address):
+            return  # given up since it was read
 
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=key_parts,
-            value=_serialize_mark(attempts=attempts, saved=saved),
+            value=value,
         )
 
 
@@ -123,6 +160,8 @@ def get_token_details_retry_marks(
                     address=ChecksumEvmAddress(key[len(prefix):]),
                     attempts=data['attempts'],
                     saved=None if (saved := data['saved']) is None else tuple(saved),
+                    # marks from before the missing details were kept had all of them retried
+                    missing=frozenset(data.get('missing', ERC20_PROPERTIES)),
                 ))
             except (JSONDecodeError, KeyError) as e:
                 log.error('Skipping malformed token details retry mark %s due to %s', key, e)
@@ -176,10 +215,14 @@ def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:
 
 
 def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
-    """Count a retry that found the details incomplete. When the attempts run out the mark
-    is moved to the given up key: the token keeps whatever it has and is not retried again."""
+    """Count a retry that found the details incomplete, creating the mark if the token was
+    not marked. When the attempts run out the mark is moved to the given up key: the token
+    keeps whatever it has and is not retried again."""
     attempts = mark.attempts + 1
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        if _is_given_up(cursor=write_cursor, chain_id=mark.chain_id, address=mark.address):
+            return  # the user edited it while it was queried
+
         if given_up := attempts >= TOKEN_DETAILS_RETRY_MAX_ATTEMPTS:
             log.warning(
                 'Giving up on querying the details of token %s at %s after %d attempts',
@@ -194,7 +237,7 @@ def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
                 address=mark.address,
                 given_up=given_up,
             ),
-            value=_serialize_mark(attempts=attempts, saved=mark.saved),
+            value=_serialize_mark(attempts=attempts, saved=mark.saved, missing=mark.missing),
         )
 
 

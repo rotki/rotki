@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
+    TOKEN_DETAILS_INDEX,
     TokenDetails,
     TokenDetailsRetryMark,
     count_token_details_retry_attempt,
     get_token_details_retry_marks,
+    is_token_details_retry_given_up,
     pop_given_up_tokens_added_since,
     postpone_token_details_retry,
     redecode_token_txs,
@@ -35,7 +37,7 @@ from rotkehlchen.chain.ethereum.modules.spark.constants import (
     SPARK_DATA_PROVIDER as SPARK_DATA_PROVIDER_ETH,
 )
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import ERC20_PROPERTIES, EVM_ADDRESS_REGEX, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
@@ -392,10 +394,12 @@ def _save_found_token_details(
 ) -> None:
     """Save the queried details of a token that was missing them.
 
-    The token is checked again under the lock, since a user edit or an asset update may have
-    changed it while its details were queried. A token without a mark has to still have the
-    details it had when selected and a marked one the details saved when marked. Otherwise
-    it is left as it is.
+    Only the details that were missing are saved: all of them for a token without a mark and
+    the ones recorded in the mark for a marked token. The token is checked again under the
+    lock, since a user edit, an asset update or a decoder may have changed it while its details
+    were queried. A missing detail is only saved if it still has the value it had when the
+    token was selected, for a token without a mark, or when it was marked. The ones that
+    changed are left as they are.
     """
     if mark is not None and mark.saved is None:  # the token could not be created at the time
         if create_evm_token_if_missing(
@@ -415,13 +419,22 @@ def _save_found_token_details(
         remove_token_details_retry_mark(chain_id=chain_id, address=address)
         return
 
+    expected, missing = (
+        (selected_details, ERC20_PROPERTIES) if mark is None else (mark.saved, mark.missing)
+    )
     identifier = evm_address_to_identifier(address=address, chain_id=chain_id)
     with database.get_or_create_token_lock:
+        if is_token_details_retry_given_up(chain_id=chain_id, address=address):
+            log.debug('Token %s was edited by the user while its details were queried', identifier)
+            return
+
         if (saved := _get_saved_token_details(identifier)) is None:
             log.debug('Token %s was deleted while its details were queried', identifier)
-        elif (
-            saved != (selected_details if mark is None else mark.saved)
-        ):
+        elif len(found := {
+            prop: info[prop] for prop in missing
+            if expected is not None and
+            saved[TOKEN_DETAILS_INDEX[prop]] == expected[TOKEN_DETAILS_INDEX[prop]]
+        }) == 0:
             log.debug('Token %s was edited while its details were queried', identifier)
             if mark is not None:  # its events still have the amounts of the marked details
                 redecode_token_txs(database=database, chain_id=chain_id, address=address)
@@ -430,9 +443,9 @@ def _save_found_token_details(
             try:
                 edit_token_and_clean_cache(
                     token=EvmToken(identifier),
-                    name=info['name'],
-                    symbol=info['symbol'],
-                    decimals=info['decimals'],
+                    name=found.get('name'),
+                    symbol=found.get('symbol'),
+                    decimals=found.get('decimals'),
                     started=None,
                     chain_inquirer=None,  # we already have the info
                 )
@@ -440,7 +453,7 @@ def _save_found_token_details(
                 log.error('Failed to update details of token %s due to %s', identifier, e)
                 return  # keep the mark, if any, to try again
             else:
-                log.debug('Updated the details of token %s', identifier)
+                log.debug('Updated the details %s of token %s', sorted(found), identifier)
                 # the amounts of its events were calculated with the old decimals
                 redecode_token_txs(database=database, chain_id=chain_id, address=address)
 
@@ -448,24 +461,46 @@ def _save_found_token_details(
             remove_token_details_retry_mark(chain_id=chain_id, address=address)
 
 
+def _count_failed_attempts(
+        chain_id: ChainID,
+        tokens: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
+        selected_details: dict[ChecksumEvmAddress, TokenDetails],
+) -> None:
+    """Count a failed attempt for each of the given tokens and clear the list. Tokens without
+    a mark get one with the details they had when selected, so that they are given up after
+    TOKEN_DETAILS_RETRY_MAX_ATTEMPTS like the marked ones instead of being queried forever."""
+    for address, mark in tokens:
+        count_token_details_retry_attempt(mark=TokenDetailsRetryMark(
+            chain_id=chain_id,
+            address=address,
+            attempts=0,
+            saved=selected_details[address],
+        ) if mark is None else mark)
+
+    tokens.clear()
+
+
 def _query_tokens_one_by_one(
         chain_id: ChainID,
         node_inquirer: EvmNodeInquirer,
         chunk: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
-        nodes_reached: bool,
-) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], bool]:
+        failed: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
+        selected_details: dict[ChecksumEvmAddress, TokenDetails],
+) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], set[ChecksumEvmAddress], bool]:
     """Query the details of the tokens of a chunk whose query failed one at a time, to keep
     a token that makes the query fail from taking the rest of the chunk with it.
 
-    Returns the details found and whether the nodes answered any query in the run. When the
-    first TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries fail and no other query of the run
-    succeeded, the nodes are considered down: querying stops and the marks of the failed
-    tokens go to the back of the queue without counting an attempt, so that they don't stay
-    in front of the other marks if they were the ones failing.
+    failed has the tokens whose queries failed in a row so far in the run, which may come
+    from previous chunks. A query that succeeds after them means that they failed on their
+    own, so they count a failed attempt. When TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries
+    fail in a row the nodes are considered down and querying stops.
+
+    Returns the details found, the addresses whose query succeeded and whether the nodes
+    are considered down.
     """
     infos: dict[ChecksumEvmAddress, dict[str, Any]] = {}
-    failed_marks: list[TokenDetailsRetryMark] = []
-    for idx, (address, mark) in enumerate(chunk):
+    answered: set[ChecksumEvmAddress] = set()
+    for address, mark in chunk:
         try:
             infos |= node_inquirer.get_multiple_erc20_contracts_info([address])
         except RemoteError as e:
@@ -473,18 +508,14 @@ def _query_tokens_one_by_one(
                 'Failed to query the details of token %s at %s due to %s',
                 address, chain_id.to_name(), e,
             )
-            if mark is not None:
-                failed_marks.append(mark)
-            if nodes_reached is False and idx + 1 == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
-                break  # every query failed so far
+            failed.append((address, mark))
+            if len(failed) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+                return infos, answered, True
         else:
-            nodes_reached = True
+            answered.add(address)
+            _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)  # noqa: E501
 
-    if nodes_reached is False:
-        log.error('Stopping token details retry at %s since the nodes fail', chain_id.to_name())
-        postpone_token_details_retry(marks=failed_marks)
-
-    return infos, nodes_reached
+    return infos, answered, False
 
 
 def _retry_chain_token_details(
@@ -495,14 +526,18 @@ def _retry_chain_token_details(
         selected_details: dict[ChecksumEvmAddress, TokenDetails],
 ) -> None:
     """Query in chunks the details of the given tokens of a chain and save them for the
-    tokens that returned all of them. Marked tokens that did not count a failed attempt.
-    selected_details has the details that the tokens without a mark had when selected.
+    tokens that returned all of them. The rest count a failed attempt. selected_details has
+    the details that the tokens without a mark had when selected.
 
     A single token can make the query of its whole chunk fail, for example a contract that
     burns all the gas, so a chunk that fails is queried again one token at a time. A token
-    that fails alone while the nodes answer counts a failed attempt. If the queries fail
-    without any succeeding, the nodes are probably down and the rest of the tokens are left out.
+    that fails on its own, between queries that succeed, counts a failed attempt. When
+    TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single token queries fail in a row, at any point
+    of the run, the nodes are probably down: the run stops, the marks of the tokens that
+    failed go to the back of the queue without counting an attempt and the rest of the
+    tokens are left for the next run.
     """
+    failed: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]] = []
     nodes_reached = False
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
         try:
@@ -512,17 +547,18 @@ def _retry_chain_token_details(
                 'Failed to query token details at %s due to %s. Querying them one by one',
                 chain_id.to_name(), e,
             )
-            infos, nodes_reached = _query_tokens_one_by_one(
+            infos, answered, nodes_down = _query_tokens_one_by_one(
                 chain_id=chain_id,
                 node_inquirer=node_inquirer,
                 chunk=chunk,
-                nodes_reached=nodes_reached,
+                failed=failed,
+                selected_details=selected_details,
             )
-            if nodes_reached is False:
-                return
         else:
-            nodes_reached = True
+            answered, nodes_down = {x[0] for x in chunk}, False
+            _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)  # noqa: E501
 
+        nodes_reached |= len(answered) != 0
         for address, mark in chunk:
             if (info := infos.get(address)) is not None:
                 _save_found_token_details(
@@ -533,8 +569,22 @@ def _retry_chain_token_details(
                     info=info,
                     selected_details=selected_details.get(address),
                 )
-            elif mark is not None:  # tokens without a mark come back when the cursor wraps
-                count_token_details_retry_attempt(mark=mark)
+            elif address in answered:  # the details came back incomplete
+                _count_failed_attempts(
+                    chain_id=chain_id,
+                    tokens=[(address, mark)],
+                    selected_details=selected_details,
+                )
+
+        if nodes_down:
+            log.error('Stopping token details retry at %s since the nodes fail', chain_id.to_name())  # noqa: E501
+            postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])
+            return
+
+    if nodes_reached:  # the last queries of the run failed while the nodes answered the rest
+        _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)
+    else:
+        postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])
 
 
 def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
@@ -550,14 +600,16 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE tokens with their
     identifier as name and the TOKEN_DETAILS_RETRY_BATCH_SIZE least recently tried marked
     tokens of each chain, querying them in chunks per chain with the nodes. Details are only
-    saved when all of them were found. The identifier of the last token without a mark is
-    saved so that tokens that can't be updated don't block the rest, and the next run starts
-    again from the beginning when the end is reached. Marked tokens are dropped after
-    TOKEN_DETAILS_RETRY_MAX_ATTEMPTS runs that found their details incomplete.
+    saved when all of them were found, and only the ones that were missing are written. The
+    identifier of the last token without a mark is saved so that tokens that can't be updated
+    don't block the rest, and the next run starts
+    again from the beginning when the end is reached. Tokens are given up after
+    TOKEN_DETAILS_RETRY_MAX_ATTEMPTS runs that found their details incomplete, and tokens
+    without a mark get one the first time.
 
     A chunk that fails with a remote error is queried one token at a time to isolate a token
-    that makes it fail. If the nodes don't answer at all the run stops for that chain without
-    counting an attempt. Marks of tokens that turned out to be spam are dropped.
+    that makes it fail. If several queries fail in a row the run stops for that chain without
+    counting an attempt for them. Marks of tokens that turned out to be spam are dropped.
     """
     with chains_aggregator.database.conn.read_ctx() as cursor:
         cursor_identifier = chains_aggregator.database.get_static_cache(

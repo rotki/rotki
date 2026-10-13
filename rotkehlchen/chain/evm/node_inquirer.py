@@ -1524,7 +1524,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         Only addresses for which all three were returned and could be decoded are in the
         result, so a value in it is never a default. Unlike get_erc20_contract_info this does
-        not read or write the contract info cache and a failed query is raised.
+        not read the contract info cache, it drops the entries of the queried addresses since
+        they may have the details from before they were fixed, and a failed query is raised.
 
         May raise:
         - RemoteError if the multicall could not be executed
@@ -1543,6 +1544,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         result: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         for idx, address in enumerate(addresses):
             self.token_query_failures.remove(address)  # the nodes can be reached again
+            self.contract_info_erc20_cache.remove(address)  # may have the details before a fix
             token_output = output[idx * ERC20_PROPERTIES_NUM:(idx + 1) * ERC20_PROPERTIES_NUM]
             if len(_missing_properties(properties=ERC20_PROPERTIES, output=token_output)) != 0:
                 continue
