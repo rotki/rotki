@@ -9,6 +9,7 @@ from rotkehlchen.assets.details_retry import (
     TokenDetailsRetryMark,
     count_token_details_retry_attempt,
     get_token_details_retry_marks,
+    pop_given_up_tokens_added_since,
     postpone_token_details_retry,
     redecode_token_txs,
     remove_token_details_retry_mark,
@@ -334,23 +335,39 @@ def _get_tokens_missing_details(
         ]
 
 
-def _drop_spam_token_marks(marks: list[TokenDetailsRetryMark]) -> list[TokenDetailsRetryMark]:
-    """Remove the marks of tokens that were found to be spam after they were marked, since
-    they are not worth querying again. Returns the rest of the marks."""
+def _drop_resolved_token_marks(
+        database: DBHandler,
+        marks: list[TokenDetailsRetryMark],
+) -> list[TokenDetailsRetryMark]:
+    """Remove the marks that don't need a query anymore. Tokens found to be spam after they
+    were marked are not worth querying again. Tokens that could not be created but were added
+    since, for example by an asset update, keep the details they were added with, and the
+    transactions where they were seen are flagged for redecoding. Returns the rest of the marks.
+    """
     if len(marks) == 0:
         return marks
 
+    chain_id = marks[0].chain_id
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        spam_addresses = {row[0] for row in cursor.execute(
-            'SELECT address FROM evm_tokens WHERE chain=? AND protocol=? AND address IN '
+        protocols = dict(cursor.execute(
+            'SELECT address, protocol FROM evm_tokens WHERE chain=? AND address IN '
             f"({','.join('?' * len(marks))})",
-            (marks[0].chain_id.serialize_for_db(), SPAM_PROTOCOL, *(x.address for x in marks)),
-        )}
+            (chain_id.serialize_for_db(), *(x.address for x in marks)),
+        ))
 
-    for address in spam_addresses:
-        remove_token_details_retry_mark(chain_id=marks[0].chain_id, address=address)
+    remaining = []
+    for mark in marks:
+        if (is_spam := protocols.get(mark.address) == SPAM_PROTOCOL) is False and (
+            mark.saved is not None or mark.address not in protocols
+        ):  # still has to be queried
+            remaining.append(mark)
+            continue
 
-    return [mark for mark in marks if mark.address not in spam_addresses]
+        if is_spam is False:  # could not be created when marked, but exists now
+            redecode_token_txs(database=database, chain_id=chain_id, address=mark.address, created=True)  # noqa: E501
+        remove_token_details_retry_mark(chain_id=chain_id, address=mark.address)
+
+    return remaining
 
 
 def _get_saved_token_details(identifier: str) -> TokenDetails | None:
@@ -527,7 +544,8 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     is created without querying the chain, and the tokens marked when their query failed or
     only returned some of the details. Marked tokens that could not be created at all are
     created once their details are found. Transactions of tokens whose details change or that
-    get created are flagged for redecoding.
+    get created, by the retry or by something else such as an asset update, are flagged for
+    redecoding.
 
     Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE tokens with their
     identifier as name and the TOKEN_DETAILS_RETRY_BATCH_SIZE least recently tried marked
@@ -574,10 +592,12 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
         tokens_by_chain[chain_id][address] = None
         selected_details[chain_id][address] = details
     for chain_id in chain_ids:
-        for mark in _drop_spam_token_marks(get_token_details_retry_marks(
-            chain_id=chain_id,
-            limit=TOKEN_DETAILS_RETRY_BATCH_SIZE,
-        )):
+        for address in pop_given_up_tokens_added_since(chain_id=chain_id):
+            redecode_token_txs(database=chains_aggregator.database, chain_id=chain_id, address=address, created=True)  # noqa: E501
+        for mark in _drop_resolved_token_marks(
+            database=chains_aggregator.database,
+            marks=get_token_details_retry_marks(chain_id=chain_id, limit=TOKEN_DETAILS_RETRY_BATCH_SIZE),  # noqa: E501
+        ):
             tokens_by_chain[chain_id][mark.address] = mark
 
     for chain_id, chain_tokens in tokens_by_chain.items():

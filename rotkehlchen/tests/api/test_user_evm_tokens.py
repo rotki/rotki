@@ -847,3 +847,31 @@ def test_editing_token_stops_details_retry(
     assert redecode.call_count == (1 if marked else 0)
     if marked:
         assert redecode.call_args.kwargs['address'] == token.evm_address
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServer) -> None:
+    """A token added by the user may have been seen before it existed, for example one that
+    could not be created because its details could not be queried, so the transactions with
+    logs of its contract are redecoded and the token is not retried anymore."""
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := make_evm_address()), saved=None)  # noqa: E501
+    added: dict[str, Any] = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='User Token',
+        symbol='USR',
+        decimals=8,
+    ).to_dict()
+    del added['identifier']
+    del added['forked']
+    with patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode:
+        assert_proper_sync_response_with_result(requests.put(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=added,
+        ))
+
+    assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
+    redecode.assert_called_once()
+    assert redecode.call_args.kwargs['address'] == address
+    assert redecode.call_args.kwargs['created'] is True

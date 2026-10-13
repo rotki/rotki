@@ -5,7 +5,10 @@ marked in the global DB unique cache by chain and address. The mark keeps the de
 were saved in the token, so that a retry can tell if a user edit or an asset update changed
 them in the meantime, and how many retries found the details still incomplete. When the
 attempts run out the mark is moved to a given up key, so the token keeps whatever it has and
-is never retried again, even if it is seen again.
+is never retried again, even if it is seen again. A given up token that could not be created
+keeps its attempts in the given up mark until the token is added, so that the transactions
+where it was seen are still redecoded then. Tokens the user edited or added are given up with
+no attempts.
 
 When the details of an existing token change, the transactions with its events are flagged for
 redecoding, since their amounts were calculated with the old decimals. A token that could not be
@@ -193,6 +196,32 @@ def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
             ),
             value=_serialize_mark(attempts=attempts, saved=mark.saved),
         )
+
+
+def pop_given_up_tokens_added_since(chain_id: ChainID) -> list[ChecksumEvmAddress]:
+    """Return the tokens of the chain that were given up before they could be created and
+    exist now, for example after an asset update. Their attempts are cleared so that each one
+    is returned only once."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:  # not under the write lock, rarely finds any
+        addresses = [row[0] for row in cursor.execute(
+            'SELECT B.address FROM evm_tokens AS B JOIN unique_cache AS U '
+            'ON U.key=? || B.chain || B.address WHERE B.chain=? '
+            "AND json_extract(U.value, '$.saved') IS NULL "
+            "AND json_extract(U.value, '$.attempts') > 0",
+            (CacheType.TOKEN_DETAILS_GIVEN_UP.serialize(), chain_id.serialize_for_db()),
+        )]
+    if len(addresses) == 0:
+        return addresses
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        for address in addresses:
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
+                value=_serialize_mark(attempts=0, saved=None),
+            )
+
+    return addresses
 
 
 def redecode_token_txs(

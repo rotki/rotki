@@ -267,6 +267,15 @@ class AssetsService:
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
+        if isinstance(asset, EvmToken):
+            stop_token_details_retry(chain_id=asset.chain_id, address=asset.evm_address)
+            # transactions decoded before the token existed are missing its events
+            redecode_token_txs(
+                database=self.rotkehlchen.data.db,
+                chain_id=asset.chain_id,
+                address=asset.evm_address,
+                created=True,
+            )
         if is_rebasing is not None:
             GlobalDBHandler.set_asset_flag(
                 identifier=asset.identifier,

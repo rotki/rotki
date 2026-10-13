@@ -21,6 +21,7 @@ from rotkehlchen.assets.details_retry import (
     TOKEN_DETAILS_RETRY_MAX_ATTEMPTS,
     get_token_details_retry_marks,
     mark_token_details_retry,
+    stop_token_details_retry,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
@@ -196,7 +197,9 @@ def test_given_up_token_is_never_retried(
         ethereum_inquirer: EthereumInquirer,
 ) -> None:
     """A token whose details stay incomplete is given up when the attempts run out, and is
-    not marked again when it is seen again"""
+    not marked again when it is seen again. If it is added later, for example by an asset
+    update, the transactions where it was seen are flagged for redecoding once. Tokens given
+    up because the user edited them are not."""
     def see_token() -> None:
         ethereum_inquirer.contract_info_erc20_cache.remove(address)
         with pytest.raises(NotERC20Conformant):
@@ -224,11 +227,31 @@ def test_given_up_token_is_never_retried(
     assert _marks() == {}
     assert multicall.call_count == 1  # only the query of the new sighting
 
+    edited = _create_placeholder(database, 2)
+    stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=edited.evm_address)
+    get_or_create_evm_token(  # added later, for example by an asset update
+        userdb=database,
+        evm_address=address,
+        chain_id=ChainID.ETHEREUM,
+        name='Added',
+        symbol='ADD',
+        decimals=6,
+    )
+    with patch('rotkehlchen.tasks.assets.redecode_token_txs') as redecode:
+        retry_missing_token_details(chains_aggregator)
+        retry_missing_token_details(chains_aggregator)  # flagged only once
+
+    assert [x.kwargs for x in redecode.call_args_list] == [
+        {'database': database, 'chain_id': ChainID.ETHEREUM, 'address': address, 'created': True},
+    ]
+
 
 def test_which_tokens_are_retried(database: DBHandler) -> None:
     """Placeholders of normal erc20 tokens on chains with accounts are queried, also the ones
     with a NULL name that older versions saved, and only updated when all the details were
-    found. Marks of tokens found to be spam after being marked are dropped without a query."""
+    found. Marks of tokens found to be spam after being marked are dropped without a query,
+    and so are the ones of tokens that could not be created but were added since, whose
+    transactions are flagged for redecoding instead."""
     found, not_found, null_name = (_create_placeholder(database, i) for i in (1, 2, 3))
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute('UPDATE assets SET name=NULL WHERE identifier=?', (null_name.identifier,))  # noqa: E501
@@ -238,6 +261,15 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
     other_chain = _create_placeholder(database, 6, ChainID.GNOSIS)
     spam = _create_placeholder(database, 7, protocol=SPAM_PROTOCOL)  # marked before found spam
     mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=spam.evm_address, saved=(spam.identifier, '', 18))  # noqa: E501
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(added := _address(8)), saved=None)
+    get_or_create_evm_token(  # added after it could not be created, for example by an update
+        userdb=database,
+        evm_address=added,
+        chain_id=ChainID.ETHEREUM,
+        name='Added',
+        symbol='ADD',
+        decimals=6,
+    )
     queried: list[ChecksumEvmAddress] = []
 
     def infos(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
@@ -245,9 +277,14 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
         return {x.evm_address: _info('Found') for x in (found, null_name)}
 
     chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
-    retry_missing_token_details(chains_aggregator)
+    with patch('rotkehlchen.tasks.assets.redecode_token_txs') as redecode:
+        retry_missing_token_details(chains_aggregator)
 
     assert sorted(queried) == sorted(x.evm_address for x in (found, not_found, null_name))
+    assert [x.kwargs for x in redecode.call_args_list if x.kwargs['address'] == added] == [
+        {'database': database, 'chain_id': ChainID.ETHEREUM, 'address': added, 'created': True},
+    ]
+    assert _details(EvmToken(evm_address_to_identifier(address=added, chain_id=ChainID.ETHEREUM))) == ('Added', 'ADD', 6)  # noqa: E501
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
     assert _details(not_found) == (not_found.identifier, '', 18)
     assert _details(other_chain)[0] == other_chain.identifier
