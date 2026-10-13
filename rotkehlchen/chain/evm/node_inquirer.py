@@ -26,6 +26,8 @@ from rotkehlchen.chain.evm.constants import (
     EIP7702_DELEGATION_CODE_LENGTH,
     EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
+    ERC20_PROPERTIES_CALLDATA,
+    ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     FAKE_GENESIS_TX_RECEIPT,
@@ -1451,6 +1453,38 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         )
         self.contract_info_erc20_cache.add(address, info)
         return info
+
+    def get_multiple_erc20_contracts_info(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[str, Any]]:
+        """Query decimals, symbol and name of many erc20 contracts in a single multicall.
+
+        Addresses whose answers can't be decoded as erc20 are left out of the result. Missing
+        methods are not an error and come back as in get_erc20_contract_info: None for the
+        name and symbol and the default decimals. Unlike
+        get_erc20_contract_info this does not read or write the contract info cache and does
+        not turn a failed query into empty values, so a failure can be told apart from a
+        token that has no name.
+
+        May raise:
+        - RemoteError if the multicall could not be executed
+        """
+        output = self.multicall_2(
+            require_success=False,
+            calls=[(address, data) for address in addresses for data in ERC20_PROPERTIES_CALLDATA],
+        )
+        result: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+        for idx, address in enumerate(addresses):
+            try:
+                result[address] = self._process_and_create_erc20_info(
+                    output=output[idx * ERC20_PROPERTIES_NUM:(idx + 1) * ERC20_PROPERTIES_NUM],
+                    address=address,
+                )
+            except (NotERC20Conformant, UnicodeDecodeError):  # undecodable bytes32 name/symbol
+                continue
+
+        return result
 
     def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """

@@ -35,6 +35,9 @@ class DBCacheStatic(Enum):
     GNOSIS_PAY_SAFE_MIGRATION: Final = 'gnosis_pay_safe_migration'
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'
     LAST_DB_UPGRADE: Final = 'last_db_upgrade'
+    LAST_TOKEN_DETAILS_RETRY_TS: Final = 'last_token_details_retry_ts'
+    # identifier of the last token the details retry task went through
+    TOKEN_DETAILS_RETRY_CURSOR: Final = 'token_details_retry_cursor'
     DOCKER_DEVICE_INFO: Final = 'docker_device_info'
     MONERIUM_OAUTH_CREDENTIALS: Final = 'monerium_oauth_credentials'
     # Earliest timestamp from which balance caches are stale due to event modifications.

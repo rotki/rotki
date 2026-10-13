@@ -8,6 +8,7 @@ Changelog
 * :bug:`-` Account autodetection now also checks Hyperliquid Core. Before, only HyperEVM activity was checked, so accounts active only on Hyperliquid Core were not detected. If some activity checks fail due to temporary errors such as rate limits, only those checks are retried after an hour instead of waiting a full day.
 * :bug:`13329` Jupiter swaps from native SOL that fund the temporary wrapped SOL account in a single transfer no longer count the swapped SOL twice. Before, the funding transfer was kept as an extra SOL spend next to the swap.
 * :bug:`-` Loading Ethereum withdrawals through Blockscout works again with Blockscout v12 instances. Before, the changed pagination of v12 made the withdrawals query fail.
+* :bug:`13285` Tokens whose name, symbol and decimals could not be fetched when they were first seen are now retried in the background. Before, they kept showing their identifier as name.
 * :bug:`-` Hyperliquid Core history is no longer cut off after the first page of entries, and all funding payments are now saved instead of just one. History is refetched once after upgrading to recover what was missing.
 * :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
 * :bug:`-` Leveraged Curve crvUSD loans on markets with WETH collateral no longer fail to decode.

@@ -819,6 +819,7 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+            DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
         ):
             return value
 
@@ -836,6 +837,7 @@ class DBHandler:
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+                DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
             ],
     ) -> str | None:
         ...
@@ -864,6 +866,7 @@ class DBHandler:
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
             ],
     ) -> Timestamp | None:
         ...
