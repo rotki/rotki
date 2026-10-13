@@ -6,9 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from eth_abi import encode as encode_abi
 from freezegun import freeze_time
 
-from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -26,6 +28,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
+from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -65,6 +68,7 @@ from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
     should_run_periodic_task,
 )
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.api import api_url_for, assert_ok_async_response
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
@@ -1354,6 +1358,103 @@ def test_decoding_does_not_cache_transferred_nft(
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
             token_exceptions=set(),
         )[0] or [])
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_remove_unowned_erc721_tokens(
+        task_manager: TaskManager,
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """The periodic task checks the detected erc721 token ids with ownerOf, removes the ones
+    that the account no longer owns, including burned ones, and refreshes the balances of
+    their chain. A token whose check failed and a collection level token, which has no id
+    to check, are kept. Ignored tokens and the tokens of disabled accounts are not checked.
+    Like the rest of the automatic token detection it doesn't run with auto_detect_tokens off.
+    """
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    collection_token, owned_nft, transferred_nft, burned_nft, ignored_nft, disabled_nft = (get_or_create_evm_token(  # noqa: E501
+        userdb=database,
+        evm_address=penguins,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in (None, '7535', '7536', '7537', '7538', '7539'))
+    unchecked_nft = get_or_create_evm_token(
+        userdb=database,
+        evm_address=(bayc := string_to_evm_address('0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D')),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id='1',
+    )
+    user_address, disabled_address = ethereum_accounts
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=user_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_DAI, collection_token, owned_nft, burned_nft, ignored_nft, unchecked_nft],
+        )
+        database.add_tokens_for_address(  # saved in another letter case than its identifier
+            write_cursor=write_cursor,
+            address=user_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[Asset(transferred_id := transferred_nft.identifier.lower())],
+        )
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=disabled_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[disabled_nft],
+        )
+        database.add_to_ignored_assets(write_cursor=write_cursor, asset=ignored_nft)
+        database.set_settings(write_cursor, ModifiableDBSettings(
+            auto_detect_tokens=False,
+            disabled_chain_queries={SupportedBlockchain.ETHEREUM: frozenset({disabled_address})},
+        ))
+
+    assert task_manager._maybe_remove_unowned_erc721_tokens() is None
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(auto_detect_tokens=True))
+
+    ownerof_results = {  # by collection and token id. Ignored and disabled ones are not checked
+        (penguins, 7535): (True, encode_abi(['address'], [user_address])),
+        (penguins, 7536): (True, encode_abi(['address'], [make_evm_address()])),
+        (penguins, 7537): (False, b'\x08\xc3\x79\xa0' + encode_abi(['string'], ['ERC721: owner query for nonexistent token'])),  # noqa: E501
+        (bayc, 1): (False, b''),
+    }
+    task_manager.potential_tasks = [task_manager._maybe_remove_unowned_erc721_tokens]
+    database.msg_aggregator.rotki_notifier.reset()  # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+    with patch.object(
+        task_manager.chains_aggregator.ethereum.node_inquirer,
+        'multicall_2',
+        side_effect=lambda calls, **_: [
+            ownerof_results[address, int(data[-64:], 16)] for address, data in calls
+        ],
+    ) as multicall_mock:
+        task_manager.schedule()
+        wait(task_manager.running_tasks[task_manager._maybe_remove_unowned_erc721_tokens])
+
+    assert len(multicall_mock.call_args.kwargs['calls']) == len(ownerof_results)
+    with database.conn.read_ctx() as cursor:
+        assert set(cursor.execute(
+            'SELECT account, value FROM evm_accounts_details WHERE key=?',
+            (EVM_ACCOUNTS_DETAILS_TOKENS,),
+        )) == {(user_address, token.identifier) for token in (
+            A_DAI, collection_token, owned_nft, ignored_nft, unchecked_nft,
+        )} | {(disabled_address, disabled_nft.identifier)}
+        assert transferred_id != transferred_nft.identifier
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_ERC721_OWNERSHIP_CHECK_TS,
+        ) is not None
+
+    assert database.msg_aggregator.rotki_notifier.messages == [MockedWsMessage(  # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        message_type=WSMessageType.REFRESH_BALANCES,
+        data={'type': 'blockchain_balances', 'blockchain': 'eth'},
+    )]
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

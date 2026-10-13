@@ -4,6 +4,9 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, cast
 
+from eth_abi import decode as decode_abi
+from eth_abi.exceptions import DecodingError
+
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
     token_normalized_value,
@@ -107,6 +110,19 @@ PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
 # max number of ownerOf calls batched in a single multicall
 ERC721_OWNERSHIP_CHUNK_SIZE: Final = 100
+# Revert data with which the common erc721 implementations reject ownerOf for a token id
+# that doesn't exist, because it was burned or never minted. Other reverts leave the
+# ownership unknown, since broken implementations also revert for existing tokens.
+ERC721_NONEXISTENT_TOKEN_ERRORS: Final = (
+    b'\x7e\x27\x32\x89',  # ERC721NonexistentToken(uint256) of OpenZeppelin 5
+    b'\xdf\x2d\x9b\x42',  # OwnerQueryForNonexistentToken() of ERC721A
+)
+REVERT_ERROR_STRING_SELECTOR: Final = b'\x08\xc3\x79\xa0'  # Error(string)
+ERC721_NONEXISTENT_TOKEN_MESSAGES: Final = (
+    b'ERC721: owner query for nonexistent token',  # OpenZeppelin 3, used by Uniswap V3 positions
+    b'ERC721: invalid token ID',  # OpenZeppelin 4
+    b'NOT_MINTED',  # solmate, used by Uniswap V4 positions
+)
 
 
 def generate_multicall_chunks[T](
@@ -159,6 +175,20 @@ def get_rpc_first_chunk_size_call_order(
     return web3_node_chunk_size, [*rpc_call_order, evm_inquirer.indexers_node]
 
 
+def is_nonexistent_erc721_revert(revert_data: bytes) -> bool:
+    """Whether the revert data of an ownerOf call says that the token id doesn't exist"""
+    if revert_data[:4] in ERC721_NONEXISTENT_TOKEN_ERRORS:
+        return True
+
+    if revert_data[:4] != REVERT_ERROR_STRING_SELECTOR:
+        return False
+
+    try:  # the message is decoded as bytes so that invalid utf-8 can't raise
+        return decode_abi(['bytes'], revert_data[4:])[0] in ERC721_NONEXISTENT_TOKEN_MESSAGES
+    except DecodingError:
+        return False
+
+
 @dataclass
 class ERC721OwnershipResult:
     """Result of checking the current owner of (address, erc721 token) pairs via ownerOf.
@@ -168,7 +198,8 @@ class ERC721OwnershipResult:
     - failed: pairs whose ownership could not be determined, because the query raised,
       the multicall returned fewer results than calls, or the ownerOf result was failed,
       empty or undecodable. They are neither owned nor not owned, so callers must not
-      drop previously cached entries for them.
+      drop previously cached entries for them. A token id that ownerOf reports as
+      nonexistent, such as a burned one, is not owned instead of failed.
     """
     owned: set[tuple[ChecksumEvmAddress, EvmToken]]
     failed: set[tuple[ChecksumEvmAddress, EvmToken]]
@@ -219,6 +250,10 @@ def query_owned_erc721_tokens(
             result.failed.update((address, token) for address, token, _ in chunk[len(outputs):])
 
         for (address, token, collectible_id), (status, output) in zip(chunk, outputs, strict=False):  # noqa: E501
+            if status is False and is_nonexistent_erc721_revert(output):
+                log.debug('Erc721 token %s does not exist, so %s does not own it', token, address)
+                continue
+
             if status is False or len(output) == 0:  # multicall can return success but with empty data when contract call fails  # noqa: E501
                 log.error(
                     'Failed ownerOf call for token %s and address %s',
