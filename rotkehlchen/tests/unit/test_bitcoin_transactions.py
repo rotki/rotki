@@ -18,7 +18,10 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_BASE_URL,
     BTC_GROUP_IDENTIFIER_PREFIX,
 )
-from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
+from rotkehlchen.chain.bitcoin.btc.manager import (
+    BitcoinManager,
+    query_mempool_address_transactions,
+)
 from rotkehlchen.chain.bitcoin.types import (
     BitcoinTx,
     BtcTxIO,
@@ -2929,13 +2932,19 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
         ) == 900_001
 
     # The retry finds nothing new, so the empty-result path decodes the pending
-    # transaction instead of re-pulling the full history.
+    # transaction instead of re-pulling the full history. The mempool query is
+    # watched to prove the retry resumes from the persisted checkpoint rather
+    # than block zero.
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
             return_value=(True, ''),
         ),
         _mock_esplora_pages({f'/address/{address}/txs': []}),
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.query_mempool_address_transactions',
+            wraps=query_mempool_address_transactions,
+        ) as mock_mempool_query,
     ):
         assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
         bitcoin_manager.query_transactions(
@@ -2943,6 +2952,9 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
             to_timestamp=ts_now(),
             addresses=btc_accounts,
         )
+
+    assert mock_mempool_query.call_count == 1
+    assert mock_mempool_query.call_args.kwargs['last_queried_block'] == 900_001
 
     with database.conn.read_ctx() as cursor:
         assert database.get_dynamic_cache(
