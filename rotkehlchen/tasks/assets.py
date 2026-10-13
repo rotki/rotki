@@ -7,14 +7,10 @@ from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
     TokenDetails,
     TokenDetailsRetryMark,
-    TokenRetryTx,
     count_token_details_retry_attempt,
-    delete_token_retry_txs,
     get_token_details_retry_marks,
-    get_token_retry_txs,
     postpone_token_details_retry,
-    postpone_token_retry_txs,
-    record_token_retry_txs_of_asset,
+    redecode_token_txs,
     remove_token_details_retry_mark,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -397,6 +393,8 @@ def _save_found_token_details(
                 'Created token %s at %s with its queried details',
                 address, chain_id.to_name(),
             )
+        # also if it was added meanwhile, since the events where it was seen were skipped
+        redecode_token_txs(database=database, chain_id=chain_id, address=address, created=True)
         remove_token_details_retry_mark(chain_id=chain_id, address=address)
         return
 
@@ -409,12 +407,7 @@ def _save_found_token_details(
         ):
             log.debug('Token %s was edited while its details were queried', identifier)
             if mark is not None:  # its events still have the amounts of the marked details
-                record_token_retry_txs_of_asset(
-                    database=database,
-                    chain_id=chain_id,
-                    address=address,
-                    identifier=identifier,
-                )
+                redecode_token_txs(database=database, chain_id=chain_id, address=address)
         else:
             AssetResolver.clean_memory_cache(identifier)  # so the token is loaded from the DB
             try:
@@ -432,12 +425,7 @@ def _save_found_token_details(
             else:
                 log.debug('Updated the details of token %s', identifier)
                 # the amounts of its events were calculated with the old decimals
-                record_token_retry_txs_of_asset(
-                    database=database,
-                    chain_id=chain_id,
-                    address=address,
-                    identifier=identifier,
-                )
+                redecode_token_txs(database=database, chain_id=chain_id, address=address)
 
         if mark is not None:
             remove_token_details_retry_mark(chain_id=chain_id, address=address)
@@ -532,71 +520,14 @@ def _retry_chain_token_details(
                 count_token_details_retry_attempt(mark=mark)
 
 
-def _redecode_token_retry_txs(
-        chains_aggregator: ChainsAggregator,
-        chain_ids: Sequence[ChainID],
-) -> None:
-    """Redecode up to TOKEN_DETAILS_RETRY_BATCH_SIZE of the transactions recorded because a
-    token in them could not be created or got its details changed, once the token exists. A
-    transaction that can't be redecoded due to a remote error stays recorded to try again,
-    moved to the back of the queue so that it doesn't block the ones after it."""
-    with chains_aggregator.database.conn.read_ctx() as cursor:
-        recorded_txs = get_token_retry_txs(cursor)
-
-    to_redecode, to_delete = [], []
-    # whether each token exists. Checked once per token since tokens that are never created,
-    # for example because they were given up, keep their transactions recorded
-    token_exists: dict[tuple[ChainID, ChecksumEvmAddress], bool] = {}
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        for recorded_tx in recorded_txs:
-            if recorded_tx.chain_id not in chain_ids:
-                continue  # no accounts on the chain to redecode it for
-            if (token := (recorded_tx.chain_id, recorded_tx.address)) not in token_exists:
-                token_exists[token] = cursor.execute(
-                    'SELECT COUNT(*) FROM evm_tokens WHERE chain=? AND address=?',
-                    (recorded_tx.chain_id.serialize_for_db(), recorded_tx.address),
-                ).fetchone()[0] != 0
-            if token_exists[token]:
-                to_redecode.append(recorded_tx)
-
-    redecoded: set[tuple[ChainID, EVMTxHash]] = set()
-    failed_tx_keys: set[tuple[ChainID, EVMTxHash]] = set()
-    failed: list[TokenRetryTx] = []
-    for recorded_tx in to_redecode[:TOKEN_DETAILS_RETRY_BATCH_SIZE]:
-        if (tx_key := (recorded_tx.chain_id, recorded_tx.tx_hash)) in failed_tx_keys:
-            failed.append(recorded_tx)  # recorded for another token too. Not tried twice.
-            continue
-        if tx_key not in redecoded:
-            try:
-                chains_aggregator.get_evm_manager(chain_id=recorded_tx.chain_id).transactions_decoder.decode_and_get_transaction_hashes(  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
-                    tx_hashes=[recorded_tx.tx_hash],
-                    send_ws_notifications=True,
-                    ignore_cache=True,
-                    delete_customized=False,
-                )
-            except InputError as e:  # the transaction is not in the DB anymore
-                log.debug('Not redecoding %s due to %s', recorded_tx.tx_hash, e)
-            except (RemoteError, DeserializationError) as e:
-                log.error('Failed to redecode %s due to %s', recorded_tx.tx_hash, e)
-                failed.append(recorded_tx)
-                failed_tx_keys.add(tx_key)
-                continue
-
-            redecoded.add(tx_key)
-        to_delete.append(recorded_tx.key)
-
-    with chains_aggregator.database.conn.write_ctx() as write_cursor:
-        delete_token_retry_txs(write_cursor=write_cursor, keys=to_delete)
-        postpone_token_retry_txs(write_cursor=write_cursor, txs=failed)
-
-
 def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     """Query again the details of tokens that are missing them.
 
     These are the tokens saved with their identifier as name, which happens when the token
     is created without querying the chain, and the tokens marked when their query failed or
     only returned some of the details. Marked tokens that could not be created at all are
-    created once their details are found and the transactions where they were seen redecoded.
+    created once their details are found. Transactions of tokens whose details change or that
+    get created are flagged for redecoding.
 
     Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE tokens with their
     identifier as name and the TOKEN_DETAILS_RETRY_BATCH_SIZE least recently tried marked
@@ -657,8 +588,6 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
             tokens=list(chain_tokens.items()),
             selected_details=selected_details[chain_id],
         )
-
-    _redecode_token_retry_txs(chains_aggregator=chains_aggregator, chain_ids=chain_ids)
 
 
 def _update_lending_protocol_underlying_assets(

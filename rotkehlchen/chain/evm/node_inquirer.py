@@ -26,12 +26,12 @@ from rotkehlchen.chain.evm.constants import (
     EIP7702_DELEGATION_CODE_LENGTH,
     EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
-    ERC20_PROPERTIES_CALLDATA,
     ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
+    ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.contracts import (
     EvmContract,
@@ -1529,9 +1529,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         May raise:
         - RemoteError if the multicall could not be executed
         """
+        # the calldata does not depend on the contract address
+        contract = EvmContract(
+            address=ZERO_ADDRESS,
+            abi=self.contracts.erc20_abi,
+            deployed_block=0,
+        )
+        encoded = [contract.encode(method_name=prop) for prop in ERC20_PROPERTIES]
         output = self.multicall_2(
             require_success=False,
-            calls=[(address, data) for address in addresses for data in ERC20_PROPERTIES_CALLDATA],
+            calls=[(address, data) for address in addresses for data in encoded],
         )
         result: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         for idx, address in enumerate(addresses):

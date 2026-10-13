@@ -44,8 +44,6 @@ FAKE_GENESIS_TX_RECEIPT: Final = {
 
 ERC20_PROPERTIES: Final = ('decimals', 'symbol', 'name')
 ERC20_PROPERTIES_NUM: Final = len(ERC20_PROPERTIES)
-# Encoded calls of the ERC20_PROPERTIES in the same order: decimals(), symbol(), name()
-ERC20_PROPERTIES_CALLDATA: Final = ('0x313ce567', '0x95d89b41', '0x06fdde03')
 ERC721_PROPERTIES: Final = ('symbol', 'name')
 
 # uniswap like merkle distributor claimed signature

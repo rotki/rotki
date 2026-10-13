@@ -7,21 +7,20 @@ them in the meantime, and how many retries found the details still incomplete. W
 attempts run out the mark is moved to a given up key, so the token keeps whatever it has and
 is never retried again, even if it is seen again.
 
-If the token could not be created at all, the transactions where it was seen are recorded in
-the user DB so they can be redecoded once the token exists. When the details of an existing
-token change, all the transactions with its events are recorded too, since the amounts of the
-events were calculated with the old decimals.
+When the details of an existing token change, the transactions with its events are flagged for
+redecoding, since their amounts were calculated with the old decimals. A token that could not be
+created at all gets the transactions with logs of its contract flagged once it is created.
 """
 import logging
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
-from rotkehlchen.db.constants import TOKENRETRYTXPREFIX
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.globaldb.cache import (
     compute_cache_key,
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
+    globaldb_update_cache_last_ts,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -29,10 +28,8 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EVMTxHash,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -54,13 +51,6 @@ class TokenDetailsRetryMark(NamedTuple):
     attempts: int
     # (name, symbol, decimals) saved in the token when marked. None if it was not created.
     saved: tuple[str, str | None, int] | None
-
-
-class TokenRetryTx(NamedTuple):
-    key: str
-    chain_id: ChainID
-    address: ChecksumEvmAddress
-    tx_hash: EVMTxHash
 
 
 def _mark_key_parts(
@@ -137,28 +127,30 @@ def get_token_details_retry_marks(
     return marks
 
 
+def _delete_mark(write_cursor: DBCursor, chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
+    """Delete the retry mark of a token. Returns whether it was marked."""
+    write_cursor.execute(
+        'DELETE FROM unique_cache WHERE key=?',
+        (compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),),
+    )
+    return write_cursor.rowcount != 0
+
+
 def remove_token_details_retry_mark(chain_id: ChainID, address: ChecksumEvmAddress) -> None:
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'DELETE FROM unique_cache WHERE key=?',
-            (compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),),
-        )
+        _delete_mark(write_cursor=write_cursor, chain_id=chain_id, address=address)
 
 
 def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
     """Never query again the details of a token, since the user edited them. The token is
     moved to the given up key, which also keeps it out of the tokens picked for having their
-    identifier as name. The transactions recorded for it are kept.
+    identifier as name.
 
     Returns whether the token was marked to be retried, which means its events may have
     amounts calculated with details that were not the right ones.
     """
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'DELETE FROM unique_cache WHERE key=?',
-            (compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),),
-        )
-        was_marked = write_cursor.rowcount != 0
+        was_marked = _delete_mark(write_cursor=write_cursor, chain_id=chain_id, address=address)
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
@@ -171,22 +163,18 @@ def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> 
 def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:
     """Move marks to the back of the queue without counting an attempt, so that tokens whose
     query failed while the nodes seemed down don't stay in front of the rest"""
-    now = ts_now()
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        write_cursor.executemany(
-            'UPDATE unique_cache SET last_queried_ts=? WHERE key=?',
-            [(
-                now,
-                compute_cache_key(_mark_key_parts(chain_id=mark.chain_id, address=mark.address)),
-            ) for mark in marks],
-        )
+        for mark in marks:
+            globaldb_update_cache_last_ts(
+                write_cursor=write_cursor,
+                cache_type=CacheType.TOKEN_DETAILS_RETRY,
+                key_parts=(str(mark.chain_id.serialize_for_db()), mark.address),
+            )
 
 
 def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
     """Count a retry that found the details incomplete. When the attempts run out the mark
-    is moved to the given up key: the token keeps whatever it has and is not retried again.
-    The transactions recorded for it are kept, so they are still redecoded if the token is
-    added later, for example by the user or an asset update."""
+    is moved to the given up key: the token keeps whatever it has and is not retried again."""
     attempts = mark.attempts + 1
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         if given_up := attempts >= TOKEN_DETAILS_RETRY_MAX_ATTEMPTS:
@@ -194,10 +182,7 @@ def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
                 'Giving up on querying the details of token %s at %s after %d attempts',
                 mark.address, mark.chain_id.to_name(), attempts,
             )
-            write_cursor.execute(
-                'DELETE FROM unique_cache WHERE key=?',
-                (compute_cache_key(_mark_key_parts(chain_id=mark.chain_id, address=mark.address)),),  # noqa: E501
-            )
+            _delete_mark(write_cursor=write_cursor, chain_id=mark.chain_id, address=mark.address)
 
         globaldb_set_unique_cache_value(  # also moves it to the back of the queue
             write_cursor=write_cursor,
@@ -210,93 +195,41 @@ def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
         )
 
 
-def _tx_key_prefix(chain_id: ChainID, address: ChecksumEvmAddress) -> str:
-    return f'{TOKENRETRYTXPREFIX}_{chain_id.serialize_for_db()}_{address}'
-
-
-def record_token_retry_tx(
+def redecode_token_txs(
         database: DBHandler,
         chain_id: ChainID,
         address: ChecksumEvmAddress,
-        tx_hash: EVMTxHash,
+        created: bool = False,
 ) -> None:
-    """Record a transaction to redecode once the token at the given address exists"""
-    with database.conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-            (f'{_tx_key_prefix(chain_id=chain_id, address=address)}_{tx_hash!s}', str(tx_hash)),
-        )
-
-
-def record_token_retry_txs_of_asset(
-        database: DBHandler,
-        chain_id: ChainID,
-        address: ChecksumEvmAddress,
-        identifier: str,
-) -> None:
-    """Record for redecoding all the transactions with events of the token. Used when the
-    details of a token change, since the amounts of its events used the old decimals."""
-    with database.conn.write_ctx() as write_cursor:
-        tx_hashes = [deserialize_evm_tx_hash(row[0]) for row in write_cursor.execute(
-            'SELECT DISTINCT chain_events_info.tx_ref FROM history_events INNER JOIN '
-            'chain_events_info ON history_events.identifier=chain_events_info.identifier '
-            'WHERE history_events.asset=?',
-            (identifier,),
-        ).fetchall()]  # materialized since the same cursor writes next
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-            [
-                (f'{_tx_key_prefix(chain_id=chain_id, address=address)}_{tx_hash!s}', str(tx_hash))
-                for tx_hash in tx_hashes
-            ],
-        )
-
-
-def get_token_retry_txs(cursor: DBCursor) -> list[TokenRetryTx]:
-    """Get the recorded transactions to redecode, the least recently recorded first"""
-    txs = []
-    for key, value in cursor.execute(
-        "SELECT name, value FROM key_value_cache WHERE name LIKE ? ESCAPE '\\' ORDER BY rowid",
-        (f'{TOKENRETRYTXPREFIX}\\_%',),
-    ):
-        try:
-            _, chain_id, address, _ = key.split('_')
-            txs.append(TokenRetryTx(
-                key=key,
-                chain_id=ChainID.deserialize_from_db(int(chain_id)),
-                address=ChecksumEvmAddress(address),
-                tx_hash=deserialize_evm_tx_hash(value),
-            ))
-        except (ValueError, DeserializationError) as e:
-            log.error('Skipping malformed token retry transaction %s due to %s', key, e)
-
-    return txs
-
-
-def delete_token_retry_txs(write_cursor: DBCursor, keys: list[str]) -> None:
-    write_cursor.executemany(
-        'DELETE FROM key_value_cache WHERE name=?',
-        [(key,) for key in keys],
+    """Flag for redecoding the transactions with events of the token, since their amounts
+    were calculated with details that the token does not have anymore. If the token was just
+    created there are no events of it, so the transactions with logs of its contract are
+    flagged instead, to decode the events that were skipped for lack of the token."""
+    from rotkehlchen.db.evmtx import DBEvmTx  # avoid circular import
+    query, value = (
+        (
+            'evmtx_receipt_logs AS L JOIN evm_transactions AS E ON E.identifier=L.tx_id '
+            'WHERE E.chain_id=? AND L.address=?'
+        ),
+        address,
+    ) if created else (
+        (
+            'history_events AS H JOIN chain_events_info AS C ON H.identifier=C.identifier '
+            'JOIN evm_transactions AS E ON E.tx_hash=C.tx_ref WHERE E.chain_id=? AND H.asset=?'
+        ),
+        evm_address_to_identifier(address=address, chain_id=chain_id),
     )
 
-
-def delete_token_retry_txs_not_in_db(write_cursor: DBCursor) -> None:
-    """Delete the recorded transactions that are not in the DB anymore, for example because
-    they were purged or the account that had them was removed"""
-    delete_token_retry_txs(write_cursor=write_cursor, keys=[
-        tx.key for tx in get_token_retry_txs(write_cursor)
-        if write_cursor.execute(
-            'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-            (tx.tx_hash, tx.chain_id.serialize_for_db()),
-        ).fetchone()[0] == 0
-    ])
-
-
-def postpone_token_retry_txs(write_cursor: DBCursor, txs: list[TokenRetryTx]) -> None:
-    """Move recorded transactions to the back of the queue by recording them again, so that
-    the ones that keep failing to be redecoded don't stay in front of the rest"""
-    delete_token_retry_txs(write_cursor=write_cursor, keys=[tx.key for tx in txs])
-    write_cursor.executemany(
-        'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
-        [(tx.key, str(tx.tx_hash)) for tx in txs],
-    )
+    with database.conn.read_ctx() as cursor:  # the logs query is slow. Not under the write lock
+        transactions = {
+            tx_id: deserialize_evm_tx_hash(tx_hash) for tx_id, tx_hash in cursor.execute(
+                f'SELECT DISTINCT E.identifier, E.tx_hash FROM {query}',
+                (chain_id.serialize_for_db(), value),
+            )
+        }
+    with database.conn.write_ctx() as write_cursor:
+        DBEvmTx(database).flag_transactions_for_redecoding(
+            write_cursor=write_cursor,
+            transactions=transactions,
+            chain_id=chain_id,  # type: ignore[arg-type]  # only chains with transactions have any
+        )

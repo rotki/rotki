@@ -14,7 +14,7 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
     WrongAssetType,
 )
-from rotkehlchen.assets.details_retry import mark_token_details_retry, record_token_retry_tx
+from rotkehlchen.assets.details_retry import mark_token_details_retry
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ERC20_PROPERTIES
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
@@ -605,12 +605,11 @@ def _get_or_create_token(
                     decimals = fallback_decimals
 
             if None in (name, symbol, decimals, token_kind):
-                if retry_details:
-                    _mark_token_without_details(
-                        userdb=userdb,
+                if retry_details:  # its transactions are redecoded once it is created
+                    mark_token_details_retry(
                         chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
                         address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
-                        encounter=encounter,
+                        saved=None,
                     )
                 raise (
                     TokenQueryFailed(f'Could not query the details of token {address}')
@@ -764,24 +763,6 @@ def create_evm_token_if_missing(
             return False
 
     return True
-
-
-def _mark_token_without_details(
-        userdb: DBHandler,
-        chain_id: ChainID,
-        address: ChecksumEvmAddress,
-        encounter: TokenEncounterInfo | None,
-) -> None:
-    """Mark a token that could not be created for lack of details to be retried, and
-    record the transaction where it was seen to be redecoded once the token exists."""
-    mark_token_details_retry(chain_id=chain_id, address=address, saved=None)
-    if encounter is not None and encounter.tx_ref is not None:
-        record_token_retry_tx(
-            database=userdb,
-            chain_id=chain_id,
-            address=address,
-            tx_hash=encounter.tx_ref,  # type: ignore[arg-type]  # evm encounters have evm hashes
-        )
 
 
 def get_crypto_asset_by_symbol(

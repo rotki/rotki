@@ -836,7 +836,7 @@ def test_editing_token_stops_details_retry(
     del edited['identifier']
     del edited['forked']
     edited['symbol'], edited['decimals'] = 'USR', 8
-    with patch('rotkehlchen.api.services.assets.record_token_retry_txs_of_asset') as record_txs:
+    with patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode:
         assert_proper_response(requests.patch(
             api_url_for(rotkehlchen_api_server, 'allassetsresource'),
             json=edited,
@@ -844,6 +844,6 @@ def test_editing_token_stops_details_retry(
 
     assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == []
     assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
-    assert record_txs.call_count == (1 if marked else 0)
+    assert redecode.call_count == (1 if marked else 0)
     if marked:
-        assert record_txs.call_args.kwargs['identifier'] == token.identifier
+        assert redecode.call_args.kwargs['address'] == token.evm_address

@@ -27,10 +27,7 @@ from rotkehlchen.assets.asset import (
     EvmToken,
     SolanaToken,
 )
-from rotkehlchen.assets.details_retry import (
-    record_token_retry_txs_of_asset,
-    stop_token_details_retry,
-)
+from rotkehlchen.assets.details_retry import redecode_token_txs, stop_token_details_retry
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetFlag, AssetType
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -297,11 +294,10 @@ class AssetsService:
             chain_id=asset.chain_id,
             address=asset.evm_address,
         ):  # the events of a marked token may have used wrong decimals, so redecode them
-            record_token_retry_txs_of_asset(
+            redecode_token_txs(
                 database=self.rotkehlchen.data.db,
                 chain_id=asset.chain_id,
                 address=asset.evm_address,
-                identifier=asset.identifier,
             )
 
         AssetResolver.clean_memory_cache(asset.identifier)
