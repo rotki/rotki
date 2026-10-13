@@ -782,6 +782,61 @@ def test_failing_redecode_is_tried_once_per_run(database: DBHandler) -> None:
         assert {x.address for x in get_token_retry_txs(cursor)} == {_address(1), _address(2)}
 
 
+@pytest.mark.parametrize('deletion', ['purge', 'account_removal'])
+def test_recorded_txs_are_deleted_with_their_transactions(
+        database: DBHandler,
+        deletion: str,
+) -> None:
+    """Recorded transactions go away when their transaction is deleted from the DB, and only
+    those, so that they don't pile up for tokens that are never created"""
+    user, other_user = make_evm_address(), make_evm_address()
+    deleted, kept = (EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=18000000,
+        from_address=from_address,
+        to_address=_address(1),
+        value=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
+        input_data=b'',
+        nonce=0,
+    ) for from_address in (user, other_user))
+    with database.user_write() as write_cursor:
+        for transaction in (deleted, kept):
+            DBEvmTx(database).add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[transaction],
+                relevant_address=transaction.from_address,
+            )
+    for transaction in (deleted, kept):
+        record_token_retry_tx(
+            database=database,
+            chain_id=ChainID.ETHEREUM,
+            address=_address(1),
+            tx_hash=transaction.tx_hash,
+        )
+
+    with database.user_write() as write_cursor:
+        if deletion == 'purge':
+            DBEvmTx(database).delete_evm_transaction_data(
+                write_cursor=write_cursor,
+                chain=SupportedBlockchain.ETHEREUM,
+                tx_hash=deleted.tx_hash,
+            )
+        else:
+            DBEvmTx(database).delete_transactions(
+                write_cursor=write_cursor,
+                address=user,
+                chain=SupportedBlockchain.ETHEREUM,
+            )
+
+    with database.conn.read_ctx() as cursor:
+        assert [x.tx_hash for x in get_token_retry_txs(cursor)] == [kept.tx_hash]
+
+
 def test_only_normal_erc20_tokens_of_chains_with_accounts_are_queried(database: DBHandler) -> None:
     normal = _create_placeholder(database, 1)
     _create_placeholder(database, 2, protocol=SPAM_PROTOCOL)

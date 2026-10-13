@@ -534,14 +534,19 @@ def _redecode_token_retry_txs(
         recorded_txs = get_token_retry_txs(cursor)
 
     to_redecode, to_delete = [], []
+    # whether each token exists. Checked once per token since tokens that are never created,
+    # for example because they were given up, keep their transactions recorded
+    token_exists: dict[tuple[ChainID, ChecksumEvmAddress], bool] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
         for recorded_tx in recorded_txs:
             if recorded_tx.chain_id not in chain_ids:
                 continue  # no accounts on the chain to redecode it for
-            if cursor.execute(
-                'SELECT COUNT(*) FROM evm_tokens WHERE chain=? AND address=?',
-                (recorded_tx.chain_id.serialize_for_db(), recorded_tx.address),
-            ).fetchone()[0] != 0:
+            if (token := (recorded_tx.chain_id, recorded_tx.address)) not in token_exists:
+                token_exists[token] = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_tokens WHERE chain=? AND address=?',
+                    (recorded_tx.chain_id.serialize_for_db(), recorded_tx.address),
+                ).fetchone()[0] != 0
+            if token_exists[token]:
                 to_redecode.append(recorded_tx)
 
     redecoded: set[tuple[ChainID, EVMTxHash]] = set()

@@ -255,6 +255,18 @@ def delete_token_retry_txs(write_cursor: DBCursor, keys: list[str]) -> None:
     )
 
 
+def delete_token_retry_txs_not_in_db(write_cursor: DBCursor) -> None:
+    """Delete the recorded transactions that are not in the DB anymore, for example because
+    they were purged or the account that had them was removed"""
+    delete_token_retry_txs(write_cursor=write_cursor, keys=[
+        tx.key for tx in get_token_retry_txs(write_cursor)
+        if write_cursor.execute(
+            'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx.tx_hash, tx.chain_id.serialize_for_db()),
+        ).fetchone()[0] == 0
+    ])
+
+
 def postpone_token_retry_txs(write_cursor: DBCursor, txs: list[TokenRetryTx]) -> None:
     """Move recorded transactions to the back of the queue by recording them again, so that
     the ones that keep failing to be redecoded don't stay in front of the rest"""

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, get_args
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.assets.details_retry import delete_token_retry_txs_not_in_db
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
@@ -397,6 +398,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 )
 
         write_cursor.execute(delete_query, delete_bindings)  # finally delete transactions
+        delete_token_retry_txs_not_in_db(write_cursor)
 
     def get_transaction_hashes_no_receipt(
             self,
@@ -665,6 +667,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             'DELETE FROM key_value_cache WHERE name LIKE ?',
             [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash!s}',) for tx_hash in tx_hashes],  # noqa: E501
         )
+        delete_token_retry_txs_not_in_db(write_cursor)
 
     def get_queried_range(
             self,
