@@ -1416,7 +1416,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             abi: ABI,
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
-    ) -> list[tuple[bool, bytes]]:
+    ) -> tuple[list[tuple[bool, bytes]], bool]:
+        """Query the given properties of a token contract.
+
+        Returns the call results and whether the query itself failed. A failed query has
+        all calls marked as failed, same as a contract that doesn't have the methods, and
+        the flag is the only thing that tells them apart.
+        """
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
@@ -1427,9 +1433,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         except RemoteError:
             # If something happens in the connection the output should have
             # the same length as the tuple of properties
-            output = [(False, b'')] * len(properties)
+            return [(False, b'')] * len(properties), True
 
-        return output
+        return output, False
 
     def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
@@ -1446,12 +1452,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(abi=self.contracts.erc20_abi, properties=ERC20_PROPERTIES, address=address)  # noqa: E501
+        output, query_failed = self._query_token_contract(abi=self.contracts.erc20_abi, properties=ERC20_PROPERTIES, address=address)  # noqa: E501
         info = self._process_and_create_erc20_info(
             output=output,
             address=address,
         )
-        self.contract_info_erc20_cache.add(address, info)
+        if query_failed is False:  # don't make a failure to reach the nodes stick
+            self.contract_info_erc20_cache.add(address, info)
         return info
 
     def get_multiple_erc20_contracts_info(
@@ -1501,7 +1508,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if (cache := self.contract_info_erc721_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(abi=self.contracts.erc721_abi, properties=ERC721_PROPERTIES, address=address)  # noqa: E501
+        output, query_failed = self._query_token_contract(abi=self.contracts.erc721_abi, properties=ERC721_PROPERTIES, address=address)  # noqa: E501
 
         try:
             decoded = self._process_contract_info(
@@ -1519,7 +1526,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 value = value.rstrip(b'\x00').decode()  # noqa: PLW2901
             info[prop] = value
 
-        self.contract_info_erc721_cache.add(address, info)
+        if query_failed is False:  # don't make a failure to reach the nodes stick
+            self.contract_info_erc721_cache.add(address, info)
         return info
 
     def _process_contract_info(
