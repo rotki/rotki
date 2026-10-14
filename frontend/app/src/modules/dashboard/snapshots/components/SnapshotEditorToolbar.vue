@@ -49,8 +49,32 @@ function deleteSnapshot(): void {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-4 min-h-9">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <nav class="flex items-center text-sm font-medium">
+        <span class="text-rui-text-secondary">{{ t('navigation_menu.statistics') }}</span>
+        <RuiIcon
+          name="lu-chevron-right"
+          size="16"
+          class="mx-2 text-rui-text-secondary"
+        />
+        <RouterLink
+          :to="{ name: '/statistics/snapshots/' }"
+          class="text-rui-text-secondary hover:text-rui-text"
+          data-testid="snapshot-breadcrumb-list"
+        >
+          {{ t('dashboard.snapshot.list.title') }}
+        </RouterLink>
+        <RuiIcon
+          name="lu-chevron-right"
+          size="16"
+          class="mx-2 text-rui-text-secondary"
+        />
+        <h1 class="text-sm font-medium text-rui-text">
+          <DateDisplay :timestamp="timestamp" />
+        </h1>
+      </nav>
+
       <div class="flex">
         <RuiTooltip :open-delay="400">
           <template #activator>
@@ -83,10 +107,6 @@ function deleteSnapshot(): void {
           {{ t('dashboard.snapshot.detail.navigation.next') }}
         </RuiTooltip>
       </div>
-
-      <h4 class="text-h6">
-        <DateDisplay :timestamp="timestamp" />
-      </h4>
 
       <RuiMenu
         v-if="isDirty"

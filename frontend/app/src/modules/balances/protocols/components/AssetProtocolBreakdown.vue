@@ -54,10 +54,7 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
   >
     <template #item.protocol="{ row }">
       <div class="flex items-center gap-3">
-        <ProtocolIcon
-          :protocol="transformCase(row.protocol)"
-          :size="20"
-        >
+        <ProtocolIcon :protocol="transformCase(row.protocol)">
           <template #default="{ protocol }">
             <div class="flex items-center gap-2">
               <div class="font-medium">

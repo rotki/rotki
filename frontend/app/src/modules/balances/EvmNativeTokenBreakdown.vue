@@ -5,14 +5,12 @@ import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/modules/accounts/IconTokenDisplay.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { assetsAtLocation, mergedBreakdown } from '@/modules/balances/aggregation/core/asset-breakdown';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 
 const {
@@ -59,8 +57,6 @@ const rows = computed<AssetBreakdown[]>(() => mergedBreakdown(get(breakdown), it
   // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
   matchChain(item.location) || item.location));
 
-const currencySymbol = useSetting('currencySymbol');
-
 const sort = ref<DataTableSortData<AssetBreakdown>>({
   column: 'value',
   direction: 'desc' as const,
@@ -91,9 +87,7 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
     align: 'end',
     cellClass: 'py-2',
     key: 'value',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol) ?? CURRENCY_USD,
-    }),
+    label: t('common.value'),
     sortable: true,
   }];
 

@@ -1,94 +1,114 @@
 <script setup lang="ts">
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
-import IgnoreButtons from '@/modules/history/IgnoreButtons.vue';
+import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 const ignoredAssetsHandling = defineModel<IgnoredAssetsHandlingType>('ignoredAssetsHandling', { required: true });
+const selectionMode = defineModel<boolean>('selectionMode', { required: true });
 
 const emit = defineEmits<{
   'mass-ignore': [ignored: boolean];
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
+/** Ignoring what is already ignored, or the reverse, has nothing to act on under that filter. */
 const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => {
   const handling = get(ignoredAssetsHandling);
   return {
-    ignore: handling === IgnoredAssetHandlingType.SHOW_ONLY,
-    unIgnore: handling === IgnoredAssetHandlingType.EXCLUDE,
+    ignore: get(selected).length === 0 || handling === IgnoredAssetHandlingType.SHOW_ONLY,
+    unIgnore: get(selected).length === 0 || handling === IgnoredAssetHandlingType.EXCLUDE,
   };
 });
 
-function massIgnore(ignored: boolean) {
-  emit('mass-ignore', ignored);
+function exitSelection(): void {
+  set(selected, []);
+  set(selectionMode, false);
 }
-
-const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex items-center justify-between flex-wrap gap-2">
-    <div class="flex gap-2">
-      <IgnoreButtons
-        :disabled="selected.length === 0"
-        :disabled-actions="disabledIgnoreActions"
-        @ignore="massIgnore($event)"
-      />
-      <div
-        v-if="selected.length > 0"
-        class="flex items-center gap-2"
-      >
-        <span class="text-body-2 text-rui-text-secondary">
-          {{ t('asset_table.selected', { count: selected.length }) }}
-        </span>
+  <TableSelectionBar
+    v-if="selectionMode"
+    class="grow"
+    :count="selected.length"
+    exitable
+    @clear="selected = []"
+    @exit="exitSelection()"
+  >
+    <RuiButton
+      size="sm"
+      variant="outlined"
+      :disabled="disabledIgnoreActions.ignore"
+      :title="t('ignore_buttons.ignore_tooltip')"
+      data-testid="nft-balances-ignore"
+      @click="emit('mass-ignore', true)"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-eye-off"
+          size="16"
+        />
+      </template>
+      {{ t('ignore_buttons.ignore') }}
+    </RuiButton>
+    <RuiButton
+      size="sm"
+      variant="outlined"
+      :disabled="disabledIgnoreActions.unIgnore"
+      :title="t('ignore_buttons.unignore_tooltip')"
+      data-testid="nft-balances-unignore"
+      @click="emit('mass-ignore', false)"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-eye"
+          size="16"
+        />
+      </template>
+      {{ t('ignore_buttons.unignore') }}
+    </RuiButton>
+  </TableSelectionBar>
+  <template v-else>
+    <RuiTooltip
+      :options="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
         <RuiButton
-          size="sm"
-          variant="outlined"
-          @click="selected = []"
+          variant="text"
+          data-testid="nft-balances-select"
+          @click="selectionMode = true"
         >
-          {{ t('common.actions.clear_selection') }}
+          <template #prepend>
+            <RuiIcon
+              name="lu-copy-check"
+              size="18"
+            />
+          </template>
+          {{ t('common.actions.select') }}
         </RuiButton>
-      </div>
-    </div>
-    <div>
-      <RuiMenu :options="{ placement: 'bottom-end' }">
-        <template #activator="{ attrs }">
-          <RuiButton
-            variant="outlined"
-            v-bind="attrs"
-          >
-            <template #append>
-              <RuiIcon name="lu-chevron-down" />
-            </template>
-            {{ t('common.actions.filter') }}
-          </RuiButton>
-        </template>
-        <div class="p-2">
-          <div class="font-bold uppercase p-2 text-sm">
-            {{ t('asset_table.filter_by_ignored_status') }}
-          </div>
-          <div class="pb-2 px-3">
-            <RuiRadioGroup
-              v-model="ignoredAssetsHandling"
-              class="mt-0"
-              data-testid="asset-filter-ignored"
-              hide-details
-              color="primary"
-            >
-              <RuiRadio
-                value="none"
-                :label="t('asset_table.show_all')"
-              />
-              <RuiRadio
-                value="exclude"
-                :label="t('asset_table.only_show_unignored')"
-              />
-              <RuiRadio
-                value="show_only"
-                :label="t('asset_table.only_show_ignored', 2)"
-              />
-            </RuiRadioGroup>
-          </div>
-        </div>
-      </RuiMenu>
-    </div>
-  </div>
+      </template>
+      {{ t('non_fungible_balances.enter_selection_mode') }}
+    </RuiTooltip>
+    <RuiButtonGroup
+      v-model="ignoredAssetsHandling"
+      variant="segmented"
+      required
+      size="sm"
+      class="ml-auto"
+      :aria-label="t('asset_table.filter_by_ignored_status')"
+      data-testid="asset-filter-ignored"
+    >
+      <RuiButton :model-value="IgnoredAssetHandlingType.NONE">
+        {{ t('non_fungible_balances.ignored_filter.all') }}
+      </RuiButton>
+      <RuiButton :model-value="IgnoredAssetHandlingType.EXCLUDE">
+        {{ t('non_fungible_balances.ignored_filter.not_ignored') }}
+      </RuiButton>
+      <RuiButton :model-value="IgnoredAssetHandlingType.SHOW_ONLY">
+        {{ t('non_fungible_balances.ignored_filter.ignored') }}
+      </RuiButton>
+    </RuiButtonGroup>
+  </template>
 </template>

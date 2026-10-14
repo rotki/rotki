@@ -98,15 +98,16 @@ defineExpose({
       :error-messages="form.errors('category')"
       @update:model-value="form.touch('category')"
     />
-    <div>
-      <div class="text-rui-text-secondary text-caption">
-        {{ t('common.asset') }}
+    <div class="flex flex-col gap-1 pb-5">
+      <div class="text-sm font-medium text-rui-text">
+        {{ t('common.type') }}
       </div>
       <div>
         <RuiRadioGroup
           v-model="assetType"
           color="primary"
           inline
+          hide-details
           :disabled="edit"
         >
           <RuiRadio
@@ -132,9 +133,12 @@ defineExpose({
       @update:asset="updateAsset($event)"
     />
 
-    <!-- Anchored above the location selector (and kept while it's hidden in split
-      mode) so the caller's split toggle doesn't jump when the selector unmounts. -->
-    <slot name="before-location" />
+    <div
+      v-if="$slots['before-location']"
+      class="pb-3"
+    >
+      <slot name="before-location" />
+    </div>
 
     <EditBalancesSnapshotLocationSelector
       v-if="!hideLocation"

@@ -70,7 +70,6 @@
       "chain": "Zincir"
     },
     "per_chain": "Zincir bazında",
-    "refresh_tooltip": "Önbellekteki kayıtları yok sayarak {blockchain} bakiyelerini yenile",
     "skip_queries": {
       "chain_marker": "rotki bu hesabı {chain} zincirinde sorgulamaz",
       "chain_skipped": "atlandı",
@@ -1311,10 +1310,7 @@
       "subtitle": "Yeni tespit edilen tokenların listesini inceleyin ve istediğiniz varlıkları spam token listesine ekleyin",
       "token_type": "Token türü"
     },
-    "only_show_ignored": "Yalnızca yok sayılan varlıkları göster ({length}) | Yalnızca yok sayılan varlıkları göster",
-    "only_show_unignored": "Yalnızca yok sayılmayan varlıkları göster",
     "selected": "{count} varlık seçildi",
-    "show_all": "Tümünü göster",
     "underlying_tokens": "Dayanak tokenlar"
   },
   "asset_update": {
@@ -1731,10 +1727,24 @@
   },
   "bank_balances": {
     "add_bank": "Banka bağlantısı ekle",
-    "click_here": "buraya tıklayın",
-    "no_balances": "Banka bağlantılarınızdan henüz bakiye gelmedi. Sorgulamak için yenileyin.",
-    "no_connections": "Henüz bir banka bağlantısı kurulmadı. Bağlantı eklemek için {0}.",
-    "refresh_tooltip": "Bağlı tüm bankaların güncel bakiyelerini sorgula"
+    "connections": "Banka bağlantıları",
+    "empty": {
+      "description": "Bir banka hesabı bağlayın; rotki bakiyelerini ve işlemlerini doğrudan bu cihazdan okur. Hiçbir zaman para transferi yapmaz.",
+      "supported": "Desteklenen bankalar",
+      "title": "Henüz bağlı banka yok"
+    },
+    "empty_table": {
+      "description": "Bankalarınız henüz bir bakiye bildirmedi. Yeniden sormak için yenileyin.",
+      "title": "Henüz bakiye yok"
+    },
+    "refresh_tooltip": "Bağlı tüm bankaların güncel bakiyelerini sorgula",
+    "status": {
+      "authenticate": "Kimlik doğrula",
+      "authentication": "TAN bekleniyor, bakiyeler güncel olmayabilir",
+      "failed": "Senkronize edilemedi: {error}",
+      "review": "İncele",
+      "synced": "{time} senkronize edildi"
+    }
   },
   "bank_settings": {
     "authentication": {
@@ -2357,9 +2367,6 @@
         "solana": "Solana adresi",
         "substrate": "Substrate adresi"
       }
-    },
-    "exchange_balances": {
-      "refresh": "{exchange} bakiyelerini yenile"
     },
     "holdings": {
       "add": {
@@ -3142,13 +3149,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Borsa ekle",
-    "click_here": "buraya tıklayın",
-    "no_connected_exchanges": "Bağlı bir borsanız yok. Borsa bağlantısı kurmak için {0}.",
     "received_interest": "Alınan faiz",
     "received_interest_history": "Geçmiş",
-    "refresh_tooltip": "Önbellekteki kayıtları yok sayarak borsa bakiyelerini yenile",
-    "select_exchange": "Borsa seç",
-    "select_hint": "Varlık ayrıntılarını görüntülemek için bir borsa seçin.",
     "tabs": {
       "balances": "Bakiyeler",
       "savings_interest_history": "Tasarruf faizi geçmişi"
@@ -4573,7 +4575,17 @@
     "unclaimed_rewards": "Talep edilmemiş ödüller"
   },
   "locations": {
-    "total_asset_price": "Toplam varlık fiyatı"
+    "empty": {
+      "add_account": "Hesap ekle",
+      "add_manual": "Manuel bakiye ekle",
+      "bank": "Bakiyelerini burada görmek için {name} bağlantısını kurun.",
+      "chain": "Bakiyelerini burada görmek için {name} üzerinde bir hesap ekleyin.",
+      "connect": "{name} bağla",
+      "exchange": "Bakiyelerini burada görmek için {name} bağlantısını kurun.",
+      "manual": "Burada izlemek için {name} konumunda manuel bir bakiye ekleyin.",
+      "title": "{name} konumunda bakiye yok"
+    },
+    "refreshing": "Bakiyeler yenileniyor"
   },
   "login": {
     "auto_logout_notice": "{minutes} dakika boyunca etkinlik olmadığı için oturumunuz kapatıldı. | {minutes} dakika boyunca etkinlik olmadığı için oturumunuz kapatıldı.",
@@ -4955,12 +4967,37 @@
       "collection": "Koleksiyon"
     }
   },
+  "nft_settings": {
+    "addresses": {
+      "all": "Tüm Ethereum adresleri",
+      "manage": "Yönet",
+      "some": "{count} adres | {count} adres",
+      "title": "Sorgulanan adresler"
+    },
+    "images": {
+      "title": "Görsel yükleme"
+    },
+    "title": "NFT ayarları"
+  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "Özel fiyat",
       "price_in_asset": "Varlık cinsinden fiyat"
     },
+    "empty": {
+      "description": "rotki, EVM hesaplarınızın sahip olduğu NFT'leri listeler. Bunları aramak için bir hesap ekledikten sonra yenileyin.",
+      "filtered_description": "Bu yok sayılma durumunda NFT yok. Diğerlerini görmek için tümünü gösterin.",
+      "filtered_title": "Bu filtreyle eşleşen kayıt yok",
+      "show_all": "Tümünü göster",
+      "title": "NFT bulunamadı"
+    },
+    "enter_selection_mode": "NFT'leri toplu olarak yok saymak veya yok saymayı kaldırmak için seçin",
     "ignore": "Yok sayıldı",
+    "ignored_filter": {
+      "all": "Tümü",
+      "ignored": "Yok sayılan",
+      "not_ignored": "Yok sayılmayan"
+    },
     "refresh": "Bakiyeleri yenile"
   },
   "notes_menu": {

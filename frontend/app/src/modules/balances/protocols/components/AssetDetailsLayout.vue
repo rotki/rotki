@@ -55,7 +55,6 @@ const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
       </RuiTabItems>
     </template>
 
-    <!-- Single rounded div when only one slot is available -->
     <template v-else>
       <div class="bg-white dark:bg-dark-elevated rounded-xl">
         <slot

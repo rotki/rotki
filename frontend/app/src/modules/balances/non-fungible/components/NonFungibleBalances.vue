@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Module } from '@/modules/core/common/modules';
 import NonFungibleBalancesFilter from '@/modules/accounts/balances/NonFungibleBalancesFilter.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
+import { IgnoredAssetHandlingType } from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -14,8 +16,6 @@ import { useNftAssetIgnoring } from '../use-nft-asset-ignoring';
 import { useNftData } from '../use-nft-data';
 import { useNftPriceManagement } from '../use-nft-price-management';
 import NonFungibleBalancesActions from './NonFungibleBalancesActions.vue';
-
-defineProps<{ modules: Module[] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { useIsAssetIgnored } = useAssetsStore();
@@ -37,8 +37,14 @@ const {
 
 const emptyState = useTableEmptyState({ error });
 
+const selectionMode = ref<boolean>(false);
+
+/** Hiding ignored or unignored NFTs can leave an empty table that is only a filter away from rows. */
+const filtered = computed<boolean>(() => get(modelIgnoredAssetsHandling) !== IgnoredAssetHandlingType.NONE);
+
 const {
   customPrice,
+  hasCustomPrice,
   modelOpenPriceDialog,
   setPriceForm,
   showDeleteConfirmation,
@@ -65,32 +71,32 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.non_fungible_balances')]">
     <template #buttons>
       <NonFungibleBalancesActions
-        :modules="modules"
         :section-loading="sectionLoading"
         @refresh="refreshNonFungibleBalances(true)"
       />
     </template>
 
-    <RuiCard>
-      <NonFungibleBalancesFilter
-        class="mb-4"
-        :selected="modelSelected"
-        :ignored-assets-handling="modelIgnoredAssetsHandling"
-        @update:selected="modelSelected = $event"
-        @update:ignored-assets-handling="modelIgnoredAssetsHandling = $event"
-        @mass-ignore="massIgnore($event)"
-      />
+    <TableFrame data-testid="nft-balances">
+      <template #toolbar>
+        <NonFungibleBalancesFilter
+          v-model:selected="modelSelected"
+          v-model:ignored-assets-handling="modelIgnoredAssetsHandling"
+          v-model:selection-mode="selectionMode"
+          @mass-ignore="massIgnore($event)"
+        />
+      </template>
       <RuiDataTable
-        v-model="modelSelected"
         v-model:sort.external="sort"
         v-model:pagination.external="pagination"
+        :model-value="selectionMode ? modelSelected : undefined"
         row-attr="id"
-        outlined
         dense
+        class="bg-rui-surface"
         :cols="cols"
         :empty="emptyState"
         :rows="data"
         :loading="dataLoading"
+        @update:model-value="modelSelected = $event ?? []"
       >
         <template #item.name="{ row }">
           <NftDetails :identifier="row.id" />
@@ -136,23 +142,52 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           />
           <div v-else />
         </template>
-        <template #body.append>
+        <template
+          v-if="data.length > 0"
+          #body.append
+        >
           <RowAppend
             v-if="totalValue"
-            label-colspan="4"
+            :label-colspan="selectionMode ? 4 : 3"
             :label="t('common.total')"
-            class="[&>td]:p-4"
+            class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
             :right-patch-colspan="2"
           >
-            <FiatDisplay :value="totalValue" />
+            <FiatDisplay
+              class="font-bold"
+              :value="totalValue"
+            />
           </RowAppend>
         </template>
+        <template
+          v-if="!error"
+          #no-data
+        >
+          <TableEmptyNotice
+            :icon="filtered ? 'lu-search-x' : 'lu-image'"
+            :title="filtered ? t('non_fungible_balances.empty.filtered_title') : t('non_fungible_balances.empty.title')"
+            :description="filtered ? t('non_fungible_balances.empty.filtered_description') : t('non_fungible_balances.empty.description')"
+            :data-testid="filtered ? 'nft-balances-empty-filtered' : 'nft-balances-empty'"
+          >
+            <RuiButton
+              v-if="filtered"
+              variant="outlined"
+              color="primary"
+              data-testid="nft-balances-empty-show-all"
+              @click="modelIgnoredAssetsHandling = IgnoredAssetHandlingType.NONE"
+            >
+              {{ t('non_fungible_balances.empty.show_all') }}
+            </RuiButton>
+          </TableEmptyNotice>
+        </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <LatestPriceFormDialog
       v-model:open="modelOpenPriceDialog"
-      :editable-item="customPrice"
+      :editable-item="hasCustomPrice ? customPrice : null"
+      :prefill="hasCustomPrice ? null : customPrice"
+      disable-from-asset
       @refresh="fetchData()"
     />
   </TablePageLayout>

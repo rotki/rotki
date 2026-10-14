@@ -42,6 +42,18 @@ describe('useBankData', () => {
     ]);
   });
 
+  it('should merge an asset held at several banks into one row and leave exchanges out', () => {
+    useAssetsStore().ignoredAssets = ['SPAM'];
+    const { balances } = useBankData();
+    expect(get(balances).map(row => [row.asset, row.amount.toFixed()])).toEqual([['EUR', '500']]);
+  });
+
+  it('should total every bank, ignored assets left out', () => {
+    useAssetsStore().ignoredAssets = ['SPAM'];
+    const { total } = useBankData();
+    expect(get(total).toFixed()).toBe('500');
+  });
+
   it('should tell bank locations from exchanges', () => {
     const { isBankLocation } = useBankData();
     expect(isBankLocation('qonto')).toBe(true);

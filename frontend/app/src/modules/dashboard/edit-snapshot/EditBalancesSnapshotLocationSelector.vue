@@ -63,7 +63,7 @@ function isLocationDisabled(item: TradeLocationData): boolean {
       </div>
       <div class="flex items-center gap-6">
         <div class="flex flex-col gap-0.5">
-          <span class="text-caption text-rui-text-secondary uppercase tracking-wide">
+          <span class="text-caption text-rui-text-secondary">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
           </span>
           <SnapshotFiatDisplay
@@ -77,7 +77,7 @@ function isLocationDisabled(item: TradeLocationData): boolean {
           name="lu-arrow-right"
         />
         <div class="flex flex-col gap-0.5">
-          <span class="text-caption text-rui-text-secondary uppercase tracking-wide">
+          <span class="text-caption text-rui-text-secondary">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
           </span>
           <SnapshotFiatDisplay

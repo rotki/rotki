@@ -221,14 +221,12 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
   <RuiCard data-testid="snapshot-summary">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <div class="text-caption text-rui-text-secondary">
+        <div class="text-sm text-rui-text-secondary">
           {{ t('dashboard.snapshot.detail.summary.net_worth') }}
         </div>
-        <!-- Reserve the text-h4 line height (2.625rem) so the loading skeleton
-             doesn't shift the layout when the converted value resolves. -->
-        <div class="min-h-10.5 flex items-center">
+        <div class="min-h-8 flex items-center">
           <SnapshotFiatDisplay
-            class="text-h4"
+            class="text-2xl font-semibold tabular-nums"
             :value="listed.value"
             :timestamp="timestamp"
             data-testid="snapshot-summary-net-worth"
@@ -369,6 +367,8 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           />
           <LocationDisplay
             v-if="!segment.other"
+            horizontal
+            size="16px"
             :opens-details="false"
             :identifier="segment.location"
           />

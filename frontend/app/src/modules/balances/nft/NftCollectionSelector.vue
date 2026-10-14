@@ -12,6 +12,8 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiAutoComplete
     v-model="model"
     :label="t('nft_gallery.select_collection')"
+    label-placement="hidden"
+    :placeholder="t('nft_gallery.select_collection')"
     clearable
     hide-details
     hide-selected

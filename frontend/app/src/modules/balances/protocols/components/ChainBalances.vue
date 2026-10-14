@@ -20,7 +20,6 @@ const hiddenCount = computed<number>(() => Math.max(0, get(chainEntries).length 
 </script>
 
 <template>
-  <!-- logos sit in equal round chips that overlap a little, so marks with different padding read as one group -->
   <div class="flex items-center -space-x-1.5">
     <div
       v-for="[chainId, chainBalance] in shown"

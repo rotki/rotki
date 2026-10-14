@@ -88,7 +88,6 @@
       "chain": "Chain"
     },
     "per_chain": "Per chain",
-    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
     "row_menu": "More actions for this account",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
@@ -1049,7 +1048,12 @@
     }
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the balances..."
+    "loading": "Please wait while rotki queries the balances...",
+    "no_match": {
+      "clear": "Clear search",
+      "description": "Nothing here matches \"{search}\". Try another name or symbol.",
+      "title": "No matching assets"
+    }
   },
   "asset_details_layout": {
     "tab": {
@@ -1340,10 +1344,7 @@
       "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list",
       "token_type": "Token Type"
     },
-    "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
-    "only_show_unignored": "Only show un-ignored assets",
     "selected": "{count} asset(s) selected",
-    "show_all": "Show all",
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
@@ -1760,10 +1761,24 @@
   },
   "bank_balances": {
     "add_bank": "Add a bank connection",
-    "click_here": "Click here",
-    "no_balances": "No balances were returned by your bank connections yet. Refresh to query them.",
-    "no_connections": "No bank connections have been set up yet. {0} to add one.",
-    "refresh_tooltip": "Query the current balances of every connected bank"
+    "connections": "Bank connections",
+    "empty": {
+      "description": "Connect a bank account and rotki reads its balances and transactions directly from this machine. It never moves money.",
+      "supported": "Supported banks",
+      "title": "No bank connected yet"
+    },
+    "empty_table": {
+      "description": "Your banks have not reported any balance yet. Refresh to ask them again.",
+      "title": "No balances yet"
+    },
+    "refresh_tooltip": "Query the current balances of every connected bank",
+    "status": {
+      "authenticate": "Authenticate",
+      "authentication": "Waiting for a TAN, balances may be out of date",
+      "failed": "Could not sync: {error}",
+      "review": "Review",
+      "synced": "Synced {time}"
+    }
   },
   "bank_settings": {
     "authentication": {
@@ -1882,6 +1897,10 @@
       "message": "Error importing blockchain accounts: {error}"
     },
     "last_refresh_tooltip": "Last time blockchain balances were refreshed",
+    "refresh_menu": {
+      "prices": "Refresh prices only",
+      "prices_description": "Fetch the latest prices without querying the chains"
+    },
     "solana_warning": "This is an initial Solana integration. Only a few protocols are currently supported, but more will be added over time.",
     "tabs": {
       "accounts": "Accounts",
@@ -2394,9 +2413,6 @@
         "substrate": "Substrate Address"
       }
     },
-    "exchange_balances": {
-      "refresh": "Refresh {exchange} balances"
-    },
     "holdings": {
       "add": {
         "bank": "Bank",
@@ -2697,7 +2713,8 @@
     "no_assets": "No assets yet. Your balances will appear here once the first query completes.",
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "price_unknown": "No price could be found for this asset from any of your configured oracles, so it does not count towards your net worth. You can set a price manually in the price manager.",
-    "select_visible_columns": "Select visible columns"
+    "select_visible_columns": "Select visible columns",
+    "visible_columns": "Visible columns"
   },
   "data_issues": {
     "action": {
@@ -3178,13 +3195,28 @@
   },
   "exchange_balances": {
     "add_exchange": "Add exchange",
-    "click_here": "Click here",
-    "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
+    "cards": {
+      "all": "All exchanges",
+      "label": "Exchanges"
+    },
+    "empty": {
+      "connect": "Connect an exchange",
+      "description": "rotki reads your exchange balances with a read-only API key, which stays on this machine.",
+      "popular": "Or start with",
+      "title": "No exchanges connected"
+    },
+    "empty_table": {
+      "description": "The last query found nothing here. Refresh to query the exchange again.",
+      "title": "No balances on this exchange"
+    },
     "received_interest": "Received Interest",
     "received_interest_history": "History",
-    "refresh_tooltip": "Refresh exchange balances ignoring any cached entries",
-    "select_exchange": "Select Exchange",
-    "select_hint": "Select an exchange to view asset details.",
+    "refresh_menu": {
+      "all": "Refresh all exchanges",
+      "exchange": "Refresh {exchange}",
+      "section": "One exchange",
+      "title": "More refresh options"
+    },
     "tabs": {
       "balances": "Balances",
       "savings_interest_history": "Savings interest history"
@@ -4633,7 +4665,17 @@
     "unclaimed_rewards": "Unclaimed rewards"
   },
   "locations": {
-    "total_asset_price": "Total Asset Price"
+    "empty": {
+      "add_account": "Add an account",
+      "add_manual": "Add a manual balance",
+      "bank": "Connect {name} to see its balances here.",
+      "chain": "Add an account on {name} to see its balances here.",
+      "connect": "Connect {name}",
+      "exchange": "Connect {name} to see its balances here.",
+      "manual": "Add a manual balance at {name} to track it here.",
+      "title": "No balances at {name}"
+    },
+    "refreshing": "Refreshing balances"
   },
   "login": {
     "auto_logout_notice": "You were logged out after {minutes} minute without activity. | You were logged out after {minutes} minutes without activity.",
@@ -5017,15 +5059,41 @@
     "select_account": "Select account",
     "select_collection": "Select collection",
     "sort": {
+      "by": "Sort by",
       "collection": "Collection"
     }
+  },
+  "nft_settings": {
+    "addresses": {
+      "all": "Every Ethereum address",
+      "manage": "Manage",
+      "some": "{count} address | {count} addresses",
+      "title": "Queried addresses"
+    },
+    "images": {
+      "title": "Image loading"
+    },
+    "title": "NFT settings"
   },
   "non_fungible_balances": {
     "column": {
       "custom_price": "Custom price",
       "price_in_asset": "Price in asset"
     },
+    "empty": {
+      "description": "rotki lists the NFTs your EVM accounts hold. Refresh after adding an account to look for them.",
+      "filtered_description": "No NFT has that ignored status. Show all to see the rest.",
+      "filtered_title": "Nothing matches this filter",
+      "show_all": "Show all",
+      "title": "No NFTs found"
+    },
+    "enter_selection_mode": "Select NFTs to ignore or unignore them together",
     "ignore": "Ignored",
+    "ignored_filter": {
+      "all": "All",
+      "ignored": "Ignored",
+      "not_ignored": "Not ignored"
+    },
     "refresh": "Refresh the balances"
   },
   "notes_menu": {
@@ -6021,6 +6089,7 @@
   "snapshot_import_dialog": {
     "balance_snapshot_file": "Balance snapshot file",
     "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
+    "description": "Choose both CSV files of a snapshot. After a successful import you are logged out, so the snapshot loads on your next login.",
     "location_data_snapshot_file": "Location data snapshot file",
     "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
     "title": "Import snapshot manually"

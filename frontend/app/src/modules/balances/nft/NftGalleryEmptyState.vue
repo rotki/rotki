@@ -2,57 +2,40 @@
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 
-interface Props {
+const { error } = defineProps<{
   error: string;
   nftLimited: boolean;
-}
-
-defineProps<Props>();
-
-const emit = defineEmits<{
-  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <NoDataScreen full>
+  <NoDataScreen
+    :icon="error ? 'lu-image-off' : 'lu-image'"
+    data-testid="nft-gallery-empty"
+  >
     <template #title>
       {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>
-    <div v-if="nftLimited">
-      <i18n-t
-        scope="global"
-        keypath="nft_gallery.fill_api_key"
-      >
-        <template #link>
-          <InternalLink
-            :to="{
-              name: '/api-keys/external/',
-              query: { service: 'opensea' },
-            }"
-          >
-            {{ t('nft_gallery.open_sea') }}
-          </InternalLink>
-        </template>
-      </i18n-t>
-    </div>
-    <div v-else>
-      {{ error ? error : t('nft_gallery.empty_subtitle') }}
-    </div>
-    <RuiButton
-      color="primary"
-      class="mx-auto mt-8"
-      @click="emit('refresh')"
+    <i18n-t
+      v-if="nftLimited"
+      scope="global"
+      keypath="nft_gallery.fill_api_key"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-refresh-ccw"
-          size="20"
-        />
+      <template #link>
+        <InternalLink
+          :to="{
+            name: '/api-keys/external/',
+            query: { service: 'opensea' },
+          }"
+        >
+          {{ t('nft_gallery.open_sea') }}
+        </InternalLink>
       </template>
-      {{ t('common.refresh') }}
-    </RuiButton>
+    </i18n-t>
+    <template v-else>
+      {{ error ? error : t('nft_gallery.empty_subtitle') }}
+    </template>
   </NoDataScreen>
 </template>

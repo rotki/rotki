@@ -4,7 +4,7 @@ import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/us
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 const visible = ref<boolean>(false);
@@ -41,69 +41,71 @@ async function forceSaveAndClose(): Promise<void> {
         <RuiIcon name="lu-git-commit-vertical" />
       </MenuTooltipButton>
     </template>
-    <div class="p-4 md:w-64 w-full">
-      <div class="font-medium">
-        {{ t('snapshot_action_button.snapshot_title') }}
-      </div>
-
-      <div class="pt-0.5 text-sm text-rui-text-secondary">
-        <DateDisplay
-          v-if="lastBalanceSave"
-          :timestamp="lastBalanceSave"
-        />
-
-        <span v-else>
-          {{ t('common.never') }}
-        </span>
-      </div>
-
-      <RuiDivider class="my-4" />
-
-      <div class="flex items-center gap-4">
-        <RuiButton
-          color="primary"
-          variant="outlined"
-          :loading="forceSaving"
-          @click="forceSaveAndClose()"
+    <div class="p-4 md:w-64 w-full flex flex-col gap-4">
+      <div class="flex flex-col gap-0.5">
+        <div class="font-medium">
+          {{ t('snapshot_action_button.snapshot_title') }}
+        </div>
+        <div
+          class="text-sm text-rui-text-secondary"
+          data-testid="snapshot-last-save"
         >
-          <template #prepend>
-            <RuiIcon name="lu-save" />
-          </template>
-          {{ t('snapshot_action_button.force_save') }}
-        </RuiButton>
+          <TimeAgoDisplay
+            v-if="lastBalanceSave"
+            :timestamp="lastBalanceSave"
+          />
+          <span v-else>{{ t('common.never') }}</span>
+        </div>
+      </div>
+
+      <RuiDivider />
+
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-4">
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            :loading="forceSaving"
+            @click="forceSaveAndClose()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-save" />
+            </template>
+            {{ t('snapshot_action_button.force_save') }}
+          </RuiButton>
+
+          <RuiTooltip
+            :open-delay="400"
+            :class-names="{ tooltip: 'max-w-64' }"
+          >
+            <template #activator>
+              <RuiIcon
+                name="lu-info"
+                size="18"
+                color="primary"
+              />
+            </template>
+            {{ t('snapshot_action_button.snapshot_tooltip') }}
+          </RuiTooltip>
+        </div>
 
         <RuiTooltip
           :open-delay="400"
           :class-names="{ tooltip: 'max-w-64' }"
         >
           <template #activator>
-            <RuiIcon
-              name="lu-info"
-              size="18"
-              color="primary"
+            <SettingSwitch
+              setting="ignoreSnapshotError"
+              control="checkbox"
+              :label="t('snapshot_action_button.ignore_errors_label')"
+              hide-details
             />
           </template>
-          {{ t('snapshot_action_button.snapshot_tooltip') }}
+          {{ t('snapshot_action_button.ignore_errors_tooltip') }}
         </RuiTooltip>
       </div>
 
-      <RuiTooltip
-        class="mt-2"
-        :open-delay="400"
-        :class-names="{ tooltip: 'max-w-64' }"
-      >
-        <template #activator>
-          <SettingSwitch
-            setting="ignoreSnapshotError"
-            control="checkbox"
-            :label="t('snapshot_action_button.ignore_errors_label')"
-            hide-details
-          />
-        </template>
-        {{ t('snapshot_action_button.ignore_errors_tooltip') }}
-      </RuiTooltip>
-
-      <RuiDivider class="mb-4" />
+      <RuiDivider />
 
       <div>
         <div class="font-medium pb-2">

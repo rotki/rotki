@@ -1,12 +1,7 @@
 <script setup lang="ts">
-import type { BigNumber, Message } from '@rotki/common';
-import dayjs from 'dayjs';
-import { downloadFileByBlob } from '@/modules/core/common/file/download';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import type { BigNumber } from '@rotki/common';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
-import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const display = defineModel<boolean>({ default: false, required: true });
@@ -20,66 +15,11 @@ const { balance, timestamp = 0 } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { setMessage } = useMessageStore();
-const snapshotApi = useSnapshotApi();
-const { appSession, openDirectory } = useInterop();
+const { exporting, exportSnapshot } = useSnapshotExport();
 
-async function downloadSnapshot() {
-  const response = await snapshotApi.downloadSnapshot(timestamp);
-
-  const date = dayjs(timestamp * 1000).format('YYYYDDMMHHmmss');
-  const fileName = `${date}-snapshot.zip`;
-
-  downloadFileByBlob(response, fileName);
-
-  set(display, false);
-}
-
-async function exportSnapshotCSV() {
-  let message: Message | null = null;
-
-  try {
-    if (appSession) {
-      const path = await openDirectory(t('common.select_directory'));
-
-      if (!path)
-        return;
-
-      const success = await snapshotApi.exportSnapshotCSV({
-        path,
-        timestamp,
-      });
-
-      message = {
-        description: success
-          ? t('dashboard.snapshot.download.message.success')
-          : t('dashboard.snapshot.download.message.failure'),
-        success,
-        title: t('dashboard.snapshot.download.message.title'),
-      };
-
-      set(display, false);
-    }
-    else {
-      await downloadSnapshot();
-    }
-  }
-  catch (error: unknown) {
-    message = {
-      description: getErrorMessage(error),
-      success: false,
-      title: t('dashboard.snapshot.download.message.title'),
-    };
-  }
-
-  if (message)
-    setMessage(message);
-}
-
-async function exportSnapshot() {
-  if (appSession)
-    await exportSnapshotCSV();
-  else await downloadSnapshot();
+async function download(): Promise<void> {
+  if (await exportSnapshot(timestamp))
+    set(display, false);
 }
 </script>
 
@@ -125,8 +65,9 @@ async function exportSnapshot() {
         </RuiButton>
         <RuiButton
           color="primary"
+          :loading="exporting === timestamp"
           data-testid="export-snapshot-download"
-          @click="exportSnapshot()"
+          @click="download()"
         >
           <template #prepend>
             <RuiIcon name="lu-file-down" />

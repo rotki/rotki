@@ -70,7 +70,6 @@
       "chain": "链"
     },
     "per_chain": "按链",
-    "refresh_tooltip": "刷新 {blockchain} 余额（忽略所有缓存）",
     "skip_queries": {
       "chain_marker": "rotki 不会在 {chain} 上查询此账户",
       "chain_skipped": "已跳过",
@@ -1306,10 +1305,7 @@
       "subtitle": "检查新检测到的代币列表，并将垃圾资产加入垃圾代币列表",
       "token_type": "代币类型"
     },
-    "only_show_ignored": "仅显示已忽略的资产（{length}） | 仅显示已忽略的资产",
-    "only_show_unignored": "仅显示未忽略的资产",
     "selected": "已选择 {count} 个资产",
-    "show_all": "显示全部",
     "underlying_tokens": "底层代币"
   },
   "asset_update": {
@@ -1711,10 +1707,24 @@
   },
   "bank_balances": {
     "add_bank": "添加银行连接",
-    "click_here": "点击这里",
-    "no_balances": "你的银行连接尚未返回任何余额。请刷新以查询。",
-    "no_connections": "尚未设置任何银行连接。{0}添加一个。",
-    "refresh_tooltip": "查询所有已连接银行的当前余额"
+    "connections": "银行连接",
+    "empty": {
+      "description": "连接银行账户后，rotki 会直接从本机读取其余额和交易记录，绝不会转移资金。",
+      "supported": "支持的银行",
+      "title": "尚未连接银行"
+    },
+    "empty_table": {
+      "description": "你的银行尚未返回任何余额。请刷新以再次查询。",
+      "title": "暂无余额"
+    },
+    "refresh_tooltip": "查询所有已连接银行的当前余额",
+    "status": {
+      "authenticate": "验证",
+      "authentication": "等待 TAN 验证，余额可能不是最新的",
+      "failed": "无法同步：{error}",
+      "review": "查看",
+      "synced": "同步于{time}"
+    }
   },
   "bank_settings": {
     "authentication": {
@@ -2337,9 +2347,6 @@
         "solana": "Solana 地址",
         "substrate": "Substrate 地址"
       }
-    },
-    "exchange_balances": {
-      "refresh": "刷新 {exchange} 余额"
     },
     "holdings": {
       "add": {
@@ -3118,13 +3125,8 @@
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
-    "click_here": "点击这里",
-    "no_connected_exchanges": "你还没有连接任何交易所。{0}添加交易所连接。",
     "received_interest": "已收利息",
     "received_interest_history": "历史",
-    "refresh_tooltip": "忽略缓存，刷新交易所余额",
-    "select_exchange": "选择交易所",
-    "select_hint": "选择交易所查看资产详情。",
     "tabs": {
       "balances": "余额",
       "savings_interest_history": "理财利息历史"
@@ -4494,7 +4496,17 @@
     "unclaimed_rewards": "未领取的奖励"
   },
   "locations": {
-    "total_asset_price": "资产总价值"
+    "empty": {
+      "add_account": "添加账户",
+      "add_manual": "添加手动余额",
+      "bank": "连接 {name} 以在此查看其余额。",
+      "chain": "在 {name} 上添加账户以在此查看其余额。",
+      "connect": "连接 {name}",
+      "exchange": "连接 {name} 以在此查看其余额。",
+      "manual": "在 {name} 添加手动余额以在此跟踪。",
+      "title": "{name} 没有余额"
+    },
+    "refreshing": "正在刷新余额"
   },
   "login": {
     "button_create_account": "创建账户",
@@ -4832,12 +4844,37 @@
       "collection": "收藏集"
     }
   },
+  "nft_settings": {
+    "addresses": {
+      "all": "所有以太坊地址",
+      "manage": "管理",
+      "some": "{count} 个地址",
+      "title": "查询的地址"
+    },
+    "images": {
+      "title": "图片加载"
+    },
+    "title": "NFT 设置"
+  },
   "non_fungible_balances": {
     "column": {
       "custom_price": "自定义价格",
       "price_in_asset": "以资产计的价格"
     },
+    "empty": {
+      "description": "rotki 会列出你的 EVM 账户持有的 NFT。添加账户后刷新即可查找。",
+      "filtered_description": "没有处于该忽略状态的 NFT。显示全部以查看其他条目。",
+      "filtered_title": "没有符合此筛选条件的条目",
+      "show_all": "显示全部",
+      "title": "未找到 NFT"
+    },
+    "enter_selection_mode": "选择 NFT 以批量忽略或取消忽略",
     "ignore": "已忽略",
+    "ignored_filter": {
+      "all": "全部",
+      "ignored": "已忽略",
+      "not_ignored": "未忽略"
+    },
     "refresh": "刷新余额"
   },
   "notes_menu": {

@@ -85,8 +85,18 @@ test.describe.serial('bank connections', () => {
 
   test('should show the bank balance on Balances > Banks', async () => {
     await banksPage.visitBalances();
-    await expect(banksPage.balancesCard()).toContainText('Qonto', { timeout: TIMEOUT_MEDIUM });
-    await expect(banksPage.balancesCard()).toContainText('250');
+    await expect(banksPage.balancesTable()).toContainText('Qonto', { timeout: TIMEOUT_MEDIUM });
+    await expect(banksPage.balancesTable()).toContainText('250');
+  });
+
+  test('should name each connection in the balances toolbar with what it needs', async () => {
+    await expect(banksPage.balancesConnection(HEALTHY)).toHaveAttribute('data-state', 'ok');
+    const revoked = banksPage.balancesConnection(REVOKED);
+    await expect(revoked).toHaveAttribute('data-state', 'failed');
+    await expect(revoked).toContainText('401 Unauthorized: the API key was revoked');
+
+    await revoked.locator('[data-testid=bank-balances-connection-action]').click();
+    await expect(ctx.sharedPage).toHaveURL(/\/api-keys\/banks/);
   });
 
   test('should show the same bank total on the dashboard card', async () => {
@@ -123,5 +133,30 @@ test.describe.serial('bank connections', () => {
     await banksPage.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
     expect(requests.authenticated).toEqual([{ location: 'qonto', name: NEEDS_TAN, response: '123456' }]);
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
+  });
+});
+
+test.describe.serial('bank balances without connections', () => {
+  let ctx: SharedTestContext;
+  let banksPage: BanksPage;
+
+  test.beforeAll(async ({ browser, request }) => {
+    ctx = await createLoggedInContext(browser, request);
+    await fakeBankEndpoints(ctx.sharedPage, { connections: [], usdBalance: '0' });
+    banksPage = new BanksPage(ctx.sharedPage);
+    await banksPage.visitBalances();
+  });
+
+  test.afterAll(async () => {
+    await cleanupContext(ctx);
+  });
+
+  test('should explain the page and open the add dialog on the bank picked', async () => {
+    await expect(banksPage.balancesEmpty()).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+    await expect(ctx.sharedPage.locator('[data-testid=refresh-bank-balances]')).toHaveCount(0);
+
+    await banksPage.balancesEmpty().locator('[data-testid=bank-balances-empty-shortcut][data-bank=qonto]').click();
+    await banksPage.dialog().waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await expect(ctx.sharedPage.locator('[data-testid=bank-connection-secret-api_key]')).toBeVisible();
   });
 });

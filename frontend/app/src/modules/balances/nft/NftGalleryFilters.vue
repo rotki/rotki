@@ -26,26 +26,29 @@ const chains = [Blockchain.ETH];
 </script>
 
 <template>
-  <RuiCard :class-names="{ content: 'grid md:grid-cols-8 gap-4' }">
+  <div
+    class="flex flex-wrap items-center gap-3"
+    data-testid="nft-gallery-filters"
+  >
     <BlockchainAccountSelector
       v-model="selectedAccounts"
-      class="md:col-span-3"
+      class="w-full sm:w-72"
       :source="{ chains, usableAddresses: availableAddresses }"
       :field="{ dense: true, label: t('nft_gallery.select_account') }"
+      label-placement="hidden"
+      :placeholder="t('nft_gallery.select_account')"
     />
 
     <NftCollectionSelector
       v-model="selectedCollection"
-      class="md:col-span-3"
+      class="w-full sm:w-64"
       :items="collections"
-      variant="outlined"
-      density="compact"
     />
 
     <NftSorter
       v-model:sort-by="sortBy"
       v-model:sort-desc="sortDescending"
-      class="md:col-span-2"
+      class="sm:ml-auto"
     />
-  </RuiCard>
+  </div>
 </template>

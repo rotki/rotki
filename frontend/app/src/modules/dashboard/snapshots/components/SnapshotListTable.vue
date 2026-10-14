@@ -3,7 +3,6 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
@@ -13,11 +12,13 @@ const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
 /** Two-way bound so the caller can persist the page across navigation. */
 const pagination = defineModel<TablePaginationData | undefined>('pagination', { default: undefined });
 
-const { emptyDescription, loading = false, rows } = defineProps<{
+const { emptyDescription, exporting, loading = false, rows } = defineProps<{
   rows: SnapshotListRow[];
   loading?: boolean;
   /** Empty-state message; lets the caller distinguish "no snapshots" from "none in range". */
   emptyDescription?: string;
+  /** The snapshot being exported, whose download button spins meanwhile. */
+  exporting?: number;
 }>();
 
 const emit = defineEmits<{
@@ -27,8 +28,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const currencySymbol = useSetting('currencySymbol');
 
 /**
  * Builds the snapshot table columns.
@@ -47,7 +46,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   {
     align: 'end',
     key: 'usdValue',
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   },
   {
@@ -113,14 +112,12 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
             <RuiButton
               variant="text"
               icon
-              size="sm"
-              color="primary"
               data-testid="snapshot-open"
               @click="emit('open', row.timestamp)"
             >
               <RuiIcon
                 name="lu-pencil"
-                size="18"
+                size="16"
               />
             </RuiButton>
           </template>
@@ -135,13 +132,14 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
             <RuiButton
               variant="text"
               icon
-              size="sm"
+              :loading="exporting === row.timestamp"
+              :disabled="exporting !== undefined && exporting !== row.timestamp"
               data-testid="snapshot-export"
               @click="emit('export', row.timestamp)"
             >
               <RuiIcon
                 name="lu-download"
-                size="18"
+                size="16"
               />
             </RuiButton>
           </template>
@@ -156,14 +154,12 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
             <RuiButton
               variant="text"
               icon
-              size="sm"
-              color="error"
               data-testid="snapshot-delete"
               @click="emit('delete', row.timestamp)"
             >
               <RuiIcon
                 name="lu-trash-2"
-                size="18"
+                size="16"
               />
             </RuiButton>
           </template>

@@ -18,10 +18,7 @@ const dot = '•';
 
 <template>
   <div class="flex items-center gap-3 py-1">
-    <ProtocolIcon
-      :protocol="toSnakeCase(protocolBalance.protocol)"
-      :size="20"
-    />
+    <ProtocolIcon :protocol="toSnakeCase(protocolBalance.protocol)" />
 
     <div class="flex flex-col flex-1">
       <div class="font-medium text-sm">

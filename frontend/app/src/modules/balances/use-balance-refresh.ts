@@ -1,10 +1,10 @@
 import type { MaybeRef } from 'vue';
-import type { BalanceSource, RefreshOutcome } from '@/modules/balances/refresh/core/refresh-types';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { createBalanceRefresher } from '@/modules/balances/refresh/core/balance-refresher';
+import { type BalanceSource, type RefreshOutcome, RefreshSource } from '@/modules/balances/refresh/core/refresh-types';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useBanks } from '@/modules/banks/use-banks';
@@ -88,6 +88,11 @@ export const useBalanceRefresh = createSharedComposable(() => {
     logFailures(await refresher.refreshSource(source, { redetect: false }));
   }
 
+  /** Every chain, following the user's refresh button behaviour, then prices, so the new balances are the ones valued. */
+  async function refreshBlockchainAndPrices(): Promise<void> {
+    logFailures(await refresher.refreshSource(RefreshSource.BLOCKCHAIN));
+  }
+
   /** Refreshes the given chains, or every chain, following the user's refresh button behaviour. */
   async function handleBlockchainRefresh(blockchain?: MaybeRef<string | string[] | undefined>, forceRedetect = false): Promise<void> {
     const chains = get(blockchain);
@@ -124,6 +129,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
     redetectAndRefreshAll,
     refreshAll,
     refreshAllPrices,
+    refreshBlockchainAndPrices,
     refreshBlockchainBalances: refreshChainBalances,
     refreshExchangeBalance,
     refreshExchangeBalances,

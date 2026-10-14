@@ -34,8 +34,7 @@
         "redetect": "Redétecter les tokens"
       }
     },
-    "edit_tooltip": "Modifier le compte",
-    "refresh_tooltip": "Actualiser les soldes {blockchain} en ignorant toutes les entrées en cache"
+    "edit_tooltip": "Modifier le compte"
   },
   "account_form": {
     "advanced_tooltip": "Afficher les options xpub avancées | Masquer les options xpub avancées",
@@ -603,10 +602,7 @@
       "select_deselect_all_tokens": "Sélectionner/Désélectionner tous les jetons",
       "subtitle": "Inspecter la liste des jetons détectés récemment et ajouter tous les jetons spam à la liste des jetons ignorés"
     },
-    "only_show_ignored": "Seuls les actifs ignorés ({length}) visibles | Seuls les actifs ignorés",
-    "only_show_unignored": "Seuls les actifs non ignorés visibles",
     "selected": "{count} actif(s) sélectionné(s)",
-    "show_all": "Afficher tout",
     "underlying_tokens": "Jetons sous-jacents"
   },
   "asset_update": {
@@ -1330,13 +1326,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
-    "click_here": "Cliquez ici",
-    "no_connected_exchanges": "Vous n'avez aucune plateforme d'échange connectée. {0} pour configurer une Connexion à une Plateforme d'Échange.",
     "received_interest": "Intérêt reçu",
     "received_interest_history": "Historique",
-    "refresh_tooltip": "Rafraîchir les soldes d'échange en ignorant toutes les entrées mises en cache",
-    "select_exchange": "Sélectionner une Plateforme d'Échange",
-    "select_hint": "Sélectionnez une plateforme d'échange pour afficher les détails de l'actif.",
     "tabs": {
       "balances": "Soldes",
       "savings_interest_history": "Historique des intérêts d'épargne"
@@ -1897,9 +1888,6 @@
     "no_lqty_staked": "Aucun LQTY engagé",
     "title": "Engagement",
     "unclaimed_rewards": "Récompenses non réclamées"
-  },
-  "locations": {
-    "total_asset_price": "Prix total de l'actif"
   },
   "login": {
     "button_create_account": "Créer un compte",

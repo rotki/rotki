@@ -2,12 +2,11 @@
 import { Blockchain, toSentenceCase } from '@rotki/common';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
-import AppImage from '@/modules/shell/components/AppImage.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
-const { protocol, size = 20, hideTooltip } = defineProps<{
+const { protocol, hideTooltip } = defineProps<{
   protocol: string;
-  size?: number;
   hideTooltip?: boolean;
 }>();
 
@@ -32,27 +31,26 @@ const { t } = useI18n({ useScope: 'global' });
   >
     <template #activator>
       <div
-        class="rounded-full overflow-hidden size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700"
+        class="rounded-full overflow-hidden size-7 shrink-0 flex items-center justify-center"
         :class="{ relative: isProxy }"
       >
         <RuiIcon
           v-if="protocolData?.type === 'icon'"
           color="secondary"
-          :size="size"
+          size="16"
           :name="protocolData.icon"
         />
-        <AppImage
+        <IconMark
           v-else-if="protocolData?.type === 'image'"
-          class="rounded-full overflow-hidden"
           :src="protocolData.image"
-          size="24px"
-          fit="contain"
+          :alt="protocolData.name"
+          size="28px"
         />
         <RuiIcon
           v-else
           name="lu-blocks"
           color="secondary"
-          :size="size"
+          size="16"
         />
         <div
           v-if="isProxy"

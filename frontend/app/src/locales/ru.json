@@ -58,8 +58,7 @@
     },
     "edit_tooltip": "Редактировать аккаунт",
     "enter_selection_mode": "Войти в режим выбора для массового игнорирования или пометки спама",
-    "per_chain": "По сетям",
-    "refresh_tooltip": "Обновить балансы {blockchain}, игнорируя кэш"
+    "per_chain": "По сетям"
   },
   "account_form": {
     "advanced_tooltip": "Показать расширенные настройки xpub | Скрыть расширенные настройки xpub",
@@ -840,10 +839,7 @@
       "select_deselect_all_tokens": "Выбрать/отменить все токены",
       "subtitle": "Просмотрите список новых обнаруженных токенов и добавьте любые активы в список спам-токенов"
     },
-    "only_show_ignored": "Показать только игнорируемые активы ({length}) | Показать только игнорируемые активы",
-    "only_show_unignored": "Показать только неигнорируемые активы",
     "selected": "Выбрано {count} актив(ов)",
-    "show_all": "Показать все",
     "underlying_tokens": "Базовые токены"
   },
   "asset_update": {
@@ -1489,9 +1485,6 @@
         "substrate": "Substrate адрес"
       }
     },
-    "exchange_balances": {
-      "refresh": "Обновить балансы {exchange}"
-    },
     "liabilities": {
       "title": "Обязательства"
     },
@@ -1841,13 +1834,8 @@
   },
   "exchange_balances": {
     "add_exchange": "Добавить биржу",
-    "click_here": "Нажмите здесь",
-    "no_connected_exchanges": "У вас нет подключенных бирж. {0}, чтобы настроить подключение к бирже.",
     "received_interest": "Полученные проценты",
     "received_interest_history": "История",
-    "refresh_tooltip": "Обновить балансы биржи, игнорируя кэш",
-    "select_exchange": "Выберите биржу",
-    "select_hint": "Выберите биржу для просмотра деталей актива.",
     "tabs": {
       "balances": "Балансы",
       "savings_interest_history": "История процентов по сбережениям"
@@ -2833,9 +2821,6 @@
     "no_lqty_staked": "Нет стейкнутых LQTY",
     "title": "Стейк",
     "unclaimed_rewards": "Невостребованные награды"
-  },
-  "locations": {
-    "total_asset_price": "Общая цена активов"
   },
   "login": {
     "button_create_account": "Создать аккаунт",

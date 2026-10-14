@@ -21,11 +21,6 @@ const expanded = ref<boolean>(true);
 </script>
 
 <template>
-  <!--
-    A plain frame, not a RuiCard: the card's scrolling content and the accordion's clipping would each
-    make a scroll box the table's sticky pagination bar binds to, so it could never stick. Header
-    padding, label colors and tabular figures are the table's own defaults, so no descendant overrides.
-  -->
   <section class="rounded-rui-card border border-rui-divider bg-rui-surface">
     <div class="flex justify-between items-center flex-wrap py-2 px-4 gap-x-4 gap-y-2">
       <CardTitle class="gap-x-2.5">
