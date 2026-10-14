@@ -23,10 +23,15 @@ const mappings: HistoryEventTypeData = {
       direction: 'in',
       group: 'bridge',
     },
+    'mev reward': {
+      counterpartyMappings: { default: { color: 'success', icon: 'lu-zap', label: 'mev reward' } },
+      direction: 'in',
+      group: 'validator',
+    },
     'receive': {
       counterpartyMappings: {
         'aave-v3': { icon: 'lu-coins', label: 'receive from aave' },
-        'default': { icon: 'lu-download', label: 'receive' },
+        'default': { color: 'success', icon: 'lu-download', label: 'receive' },
       },
       direction: 'in',
       group: 'receive',
@@ -34,9 +39,15 @@ const mappings: HistoryEventTypeData = {
   },
   eventCategoryGroups: {},
   globalMappings: {
+    informational: {
+      'mev reward': { default: 'mev reward' },
+    },
     receive: {
       bridge: { default: 'bridge receive' },
       none: { default: 'receive' },
+    },
+    staking: {
+      'mev reward': { default: 'mev reward' },
     },
   },
 };
@@ -79,6 +90,24 @@ describe('useHistoryEventMappings', () => {
         direction: 'in',
         identifier: 'bridge receive',
       });
+    });
+
+    it('should keep the category color and direction for an event that moves funds', async () => {
+      const { findEventTypeData } = await setup();
+
+      expect(findEventTypeData({ eventSubtype: 'mev reward', eventType: 'staking' })).toMatchObject({
+        color: 'success',
+        direction: 'in',
+        identifier: 'mev reward',
+      });
+    });
+
+    it('should make an informational event neutral and uncolored, as the backend counts it', async () => {
+      const { findEventTypeData } = await setup();
+      const data = findEventTypeData({ eventSubtype: 'mev reward', eventType: 'informational' });
+
+      expect(data).toMatchObject({ direction: 'neutral', icon: 'lu-zap', identifier: 'mev reward' });
+      expect(data.color).toBeUndefined();
     });
 
     it('should prefer the counterparty specific details when there are any', async () => {

@@ -23,6 +23,17 @@ type Event = MaybeRefOrGetter<{
   isExit?: boolean;
 }>;
 
+/**
+ * An informational event moves no funds, so the backend counts it as neutral even when its category
+ * comes in (a relayer-reported MEV reward, a queued withdrawal), and it gets no color.
+ */
+function withInformationalNeutral(detail: HistoryEventCategoryDetailWithId, eventType: string): HistoryEventCategoryDetailWithId {
+  if (eventType !== 'informational')
+    return detail;
+
+  return { ...detail, color: undefined, direction: 'neutral' };
+}
+
 export const useHistoryEventMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n binds t and te to the composer it returns, so destructuring them is safe
   const { t, te } = useI18n({ useScope: 'global' });
@@ -192,11 +203,11 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       const categoryDetail = data.counterpartyMappings[counterpartyVal] || data.counterpartyMappings[defaultKey];
 
       if (categoryDetail) {
-        return {
+        return withInformationalNeutral({
           ...categoryDetail,
           direction: data.direction,
           identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
-        };
+        }, eventType);
       }
     }
 
